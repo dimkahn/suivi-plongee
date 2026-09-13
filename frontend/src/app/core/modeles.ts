@@ -11,6 +11,7 @@ export interface Session {
 
 export interface CursusVue {
   id: number;
+  eleveId: number;
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
   saison: string;
@@ -171,6 +172,38 @@ export interface Controle {
   libelle: string;
   satisfait: boolean;
   detail: string;
+}
+
+export interface CritereReferentielVue {
+  id: number;
+  ordre: number;
+  savoirFaire: string;
+  critereRealisation: string | null;
+}
+
+export interface BlocReferentielVue {
+  id: number;
+  code: string;
+  intitule: string;
+  ordre: number;
+  evaluationTransverse: boolean;
+  validerEnDernier: boolean;
+  criteres: CritereReferentielVue[];
+}
+
+export interface ReferentielVue {
+  id: number;
+  niveau: 'N1' | 'N2' | 'N3';
+  versionMft: string;
+  source: string;
+  ageMinimum: number;
+  niveauPrerequis: 'N1' | 'N2' | 'N3' | null;
+  qualificationRequise: string | null;
+  milieuNaturelExclusif: boolean;
+  niveauEncadrantValidation: 'E1' | 'E2' | 'E3' | 'E4';
+  niveauEncadrantDelivrance: 'E1' | 'E2' | 'E3' | 'E4';
+  prerogativeProfondeur: number;
+  blocs: BlocReferentielVue[];
 }
 
 export interface Eligibilite {

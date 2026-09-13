@@ -1,9 +1,11 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { EleveVue } from '../../core/modeles';
+import { CursusVue, EleveVue, SaisonVue } from '../../core/modeles';
+
+const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 
 interface FormulaireEleve {
   nom: string;
@@ -59,13 +61,41 @@ function depuis(e: EleveVue): FormulaireEleve {
       }
     </section>
 
+    <section class="filtres">
+      <div>
+        <label for="filtre-nom">Rechercher un élève</label>
+        <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
+               [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+      </div>
+      <div>
+        <label for="filtre-saison">Saison</label>
+        <select id="filtre-saison" name="filtreSaison" [ngModel]="filtreSaisonId()"
+                (ngModelChange)="changerSaison($event)">
+          @for (s of saisons(); track s.id) {
+            <option [ngValue]="s.id">{{ s.libelle }}{{ s.ouverte ? ' (en cours)' : '' }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label for="filtre-statut">Statut de l'inscription</label>
+        <select id="filtre-statut" name="filtreStatut" [ngModel]="filtreStatut()"
+                (ngModelChange)="filtreStatut.set($event)">
+          <option value="TOUS">Tous</option>
+          <option value="NON_INSCRIT">Non inscrit sur la saison</option>
+          @for (s of statuts; track s) { <option [value]="s">{{ s }}</option> }
+        </select>
+      </div>
+    </section>
+
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun élève enregistré.</p></div>
+    } @else if (listeFiltree().length === 0) {
+      <div class="carte vide"><p>Aucun élève ne correspond aux filtres.</p></div>
     } @else {
       <ul>
-        @for (e of liste(); track e.id) {
+        @for (e of listeFiltree(); track e.id) {
           <li class="carte">
             @if (edition() === e.id) {
               @if (formulaireEdition(); as f) {
@@ -135,6 +165,14 @@ function depuis(e: EleveVue): FormulaireEleve {
     .case input { width: auto; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
+    .filtres {
+      display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); align-items: flex-end;
+      margin-bottom: var(--pas-2);
+    }
+    .filtres > div { min-width: 220px; flex: 1 1 220px; }
+    .filtres label { margin: 0 0 4px; }
+    .filtres input, .filtres select { margin: 0; }
+
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
@@ -149,10 +187,40 @@ function depuis(e: EleveVue): FormulaireEleve {
 export class ElevesComponent {
   private api = inject(ApiService);
 
+  readonly statuts = STATUTS;
+
   liste = signal<EleveVue[]>([]);
+  saisons = signal<SaisonVue[]>([]);
+  cursusDeLaSaison = signal<CursusVue[]>([]);
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
+
+  filtreNom = signal('');
+  filtreSaisonId = signal<number | null>(null);
+  filtreStatut = signal('TOUS');
+
+  /**
+   * Un élève ne porte pas de saison ni de statut en propre : on croise avec ses
+   * cursus (inscriptions) dans la saison choisie pour filtrer par statut.
+   */
+  listeFiltree = computed(() => {
+    const recherche = this.filtreNom().trim().toLocaleLowerCase();
+    const statut = this.filtreStatut();
+    const cursusParEleve = new Map<number, CursusVue[]>();
+    for (const c of this.cursusDeLaSaison()) {
+      const liste = cursusParEleve.get(c.eleveId) ?? [];
+      liste.push(c);
+      cursusParEleve.set(c.eleveId, liste);
+    }
+    return this.liste().filter(e => {
+      if (recherche && !`${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche)) return false;
+      if (statut === 'TOUS') return true;
+      const cursus = cursusParEleve.get(e.id) ?? [];
+      if (statut === 'NON_INSCRIT') return cursus.length === 0;
+      return cursus.some(c => c.statut === statut);
+    });
+  });
 
   formulaireCreation = signal<FormulaireEleve>(formulaireVide());
   edition = signal<number | null>(null);
@@ -165,11 +233,27 @@ export class ElevesComponent {
   private async charger(): Promise<void> {
     this.chargement.set(true);
     try {
-      this.liste.set(await firstValueFrom(this.api.eleves()));
+      const [liste, saisons] = await Promise.all([
+        firstValueFrom(this.api.eleves()),
+        firstValueFrom(this.api.saisons())
+      ]);
+      this.liste.set(liste);
+      this.saisons.set(saisons);
+      const saisonCourante = saisons.find(s => s.ouverte) ?? saisons[0] ?? null;
+      if (saisonCourante) await this.changerSaison(saisonCourante.id);
     } catch {
       this.message.set('Impossible de charger la liste des élèves.');
     } finally {
       this.chargement.set(false);
+    }
+  }
+
+  async changerSaison(saisonId: number): Promise<void> {
+    this.filtreSaisonId.set(saisonId);
+    try {
+      this.cursusDeLaSaison.set(await firstValueFrom(this.api.cursusDeLaSaison(saisonId)));
+    } catch {
+      this.message.set("Impossible de charger les inscriptions de cette saison.");
     }
   }
 

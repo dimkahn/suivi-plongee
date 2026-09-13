@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   CursusVue, Eligibilite, EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue,
-  MoniteurVue, RosterVue, SaisonVue, SeanceVue, Statut
+  MoniteurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -43,6 +43,11 @@ export class ApiService {
 
   cursus(): Promise<CursusVue[]> {
     return this.lireOuRetomber('cursus', () => this.http.get<CursusVue[]>('/api/cursus'));
+  }
+
+  /** Pour les écrans d'administration : consultation d'une saison au choix, sans passer par le cache hors ligne. */
+  cursusDeLaSaison(saisonId: number): Observable<CursusVue[]> {
+    return this.http.get<CursusVue[]>('/api/cursus', { params: { saisonId } });
   }
 
   seances(): Promise<SeanceVue[]> {
@@ -244,6 +249,20 @@ export class ApiService {
     moniteurReferentId: number | null; statut: string;
   }): Observable<CursusVue> {
     return this.http.put<CursusVue>(`/api/cursus/${id}`, demande);
+  }
+
+  // ----------------------------------------------------------------
+  //  Référentiel MFT. Lecture seule côté appli : une révision se publie en
+  //  éditant outils/generer_referentiel.py puis une migration Flyway, jamais
+  //  depuis l'écran d'administration.
+  // ----------------------------------------------------------------
+
+  referentiels(): Observable<ReferentielVue[]> {
+    return this.http.get<ReferentielVue[]>('/api/referentiels');
+  }
+
+  referentiel(id: number): Observable<ReferentielVue> {
+    return this.http.get<ReferentielVue>(`/api/referentiels/${id}`);
   }
 
   // ----------------------------------------------------------------

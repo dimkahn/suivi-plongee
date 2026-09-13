@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -58,13 +58,19 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
       </button>
     </section>
 
+    <label for="filtre-nom">Rechercher un élève</label>
+    <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
+           [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun cursus enregistré.</p></div>
+    } @else if (listeFiltree().length === 0) {
+      <div class="carte vide"><p>Aucune inscription ne correspond à la recherche.</p></div>
     } @else {
       <ul>
-        @for (c of liste(); track c.id) {
+        @for (c of listeFiltree(); track c.id) {
           <li class="carte">
             @if (edition() === c.id) {
               @if (formulaireEdition(); as f) {
@@ -113,6 +119,7 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
+    #filtre-nom { max-width: 320px; }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -139,6 +146,13 @@ export class CursusAdminComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
+
+  filtreNom = signal('');
+  listeFiltree = computed(() => {
+    const recherche = this.filtreNom().trim().toLocaleLowerCase();
+    if (!recherche) return this.liste();
+    return this.liste().filter(c => c.eleve.toLocaleLowerCase().includes(recherche));
+  });
 
   eleveId: number | null = null;
   niveau: 'N1' | 'N2' | 'N3' = 'N1';
