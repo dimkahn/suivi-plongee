@@ -45,7 +45,9 @@ export interface BlocVue {
 
 export interface GrilleVue {
   cursusId: number;
+  eleveId: number;
   eleve: string;
+  aPhoto: boolean;
   niveau: 'N1' | 'N2' | 'N3';
   versionMft: string;
   saison: string;

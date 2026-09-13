@@ -1,4 +1,6 @@
-import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component, OnDestroy, computed, inject, input, signal, ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -26,6 +28,12 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
+        @if (urlPhoto(); as photo) {
+          <img class="avatar" [src]="photo" [alt]="g.eleve" width="72" height="72">
+        } @else {
+          <div class="avatar silhouette" [attr.aria-label]="g.eleve">{{ initiales(g.eleve) }}</div>
+        }
+
         <svg class="jauge" viewBox="0 0 64 168" role="img"
              [attr.aria-label]="'Progression : ' + g.criteresAcquis + ' critères acquis sur ' + g.criteresTotal">
           <rect x="18" y="14" width="28" height="140" rx="4" fill="#E7EEF0"/>
@@ -211,6 +219,11 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .entete { display: flex; gap: var(--pas-3); align-items: center; padding: var(--pas-3); }
+    .avatar { flex: none; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--fond); }
+    .silhouette {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-titres), sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--craie);
+    }
     .jauge { width: 64px; height: 168px; flex: none; }
     .jauge rect:nth-child(2) { transition: height .35s ease-out; }
     .resume h1 { margin-bottom: 2px; }
@@ -280,7 +293,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     }
   `]
 })
-export class GrilleComponent {
+export class GrilleComponent implements OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private file = inject(FileAttenteService);
@@ -294,6 +307,7 @@ export class GrilleComponent {
   message = signal<string | null>(null);
   erreurChargement = signal(false);
   ageDuCache = signal<string | null>(null);
+  urlPhoto = signal<string | null>(null);
 
   /** Historique des critères consultés, tenu par critereId. */
   historiqueOuverts = signal<Set<number>>(new Set());
@@ -364,14 +378,32 @@ export class GrilleComponent {
 
   private async charger(): Promise<void> {
     try {
-      this.grille.set(await this.api.grille(Number(this.id())));
+      const g = await this.api.grille(Number(this.id()));
+      this.grille.set(g);
       this.seances.set(await this.api.seances());
       this.erreurChargement.set(false);
       if (!this.reseau.enLigne()) await this.afficherAgeDuCache();
       else this.ageDuCache.set(null);
+      if (g.aPhoto) this.chargerPhoto(g.eleveId);
     } catch {
       this.erreurChargement.set(true);
     }
+  }
+
+  private chargerPhoto(eleveId: number): void {
+    this.api.photoEleve(eleveId).subscribe({
+      next: blob => this.urlPhoto.set(URL.createObjectURL(blob)),
+      error: () => { /* pas de photo consultable : la silhouette reste affichée */ }
+    });
+  }
+
+  ngOnDestroy(): void {
+    const url = this.urlPhoto();
+    if (url) URL.revokeObjectURL(url);
+  }
+
+  initiales(nom: string): string {
+    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
   }
 
   private async afficherAgeDuCache(): Promise<void> {
