@@ -1,6 +1,7 @@
 package fr.club.plongee.referentiel;
 
 import fr.club.plongee.commun.RessourceIntrouvableException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,9 +33,11 @@ public class ReferentielController {
         return referentiels.findByActifTrueOrderByNiveau().stream().map(r -> versSansBlocs(r)).toList();
     }
 
+    /** {@code open-in-view} est désactivé : la session reste ouverte le temps de lire les critères des blocs. */
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ReferentielVue detail(@PathVariable Long id) {
-        Referentiel r = referentiels.findById(id)
+        Referentiel r = referentiels.chargerComplet(id)
                 .orElseThrow(() -> new RessourceIntrouvableException("Referentiel introuvable"));
         return vers(r);
     }

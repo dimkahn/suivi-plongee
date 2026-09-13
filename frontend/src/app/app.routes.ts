@@ -74,6 +74,12 @@ export const routes: Routes = [
       .then(m => m.CursusAdminComponent)
   },
   {
+    path: 'admin/referentiel',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/referentiel-admin.component')
+      .then(m => m.ReferentielAdminComponent)
+  },
+  {
     path: 'trombinoscope',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/roster/trombinoscope.component')
