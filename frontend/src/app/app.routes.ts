@@ -38,16 +38,46 @@ export const routes: Routes = [
       .then(m => m.RosterComponent)
   },
   {
-    path: 'seances/nouvelle',
+    path: 'seances',
     canActivate: [gardeConnecte, gardeAdmin],
-    loadComponent: () => import('./features/seances/seance-creation.component')
-      .then(m => m.SeanceCreationComponent)
+    loadComponent: () => import('./features/seances/seances.component')
+      .then(m => m.SeancesComponent)
+  },
+  {
+    path: 'admin',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/admin-accueil.component')
+      .then(m => m.AdminAccueilComponent)
   },
   {
     path: 'admin/moniteurs',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/moniteurs.component')
       .then(m => m.MoniteursComponent)
+  },
+  {
+    path: 'admin/eleves',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/eleves.component')
+      .then(m => m.ElevesComponent)
+  },
+  {
+    path: 'admin/saisons',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/saisons.component')
+      .then(m => m.SaisonsComponent)
+  },
+  {
+    path: 'admin/cursus',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/cursus-admin.component')
+      .then(m => m.CursusAdminComponent)
+  },
+  {
+    path: 'trombinoscope',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/roster/trombinoscope.component')
+      .then(m => m.TrombinoscopeComponent)
   },
   { path: '**', redirectTo: 'cursus' }
 ];

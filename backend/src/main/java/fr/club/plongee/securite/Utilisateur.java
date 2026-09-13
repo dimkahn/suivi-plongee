@@ -1,12 +1,16 @@
 package fr.club.plongee.securite;
 
 import jakarta.persistence.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Set;
 
+/** Comptes moniteurs/admin gérés à la main : historisés via Envers (voir fr.club.plongee.audit). */
 @Entity
+@Audited
 public class Utilisateur {
 
     @Id
@@ -37,6 +41,8 @@ public class Utilisateur {
     @Column(nullable = false)
     private Instant creeLe = Instant.now();
 
+    /** Pas de table _AUD dédiée pour une simple collection de rôles : hors du périmètre audité. */
+    @NotAudited
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "utilisateur_role", joinColumns = @JoinColumn(name = "utilisateur_id"))
     @Column(name = "role")

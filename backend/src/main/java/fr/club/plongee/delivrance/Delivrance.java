@@ -3,10 +3,13 @@ package fr.club.plongee.delivrance;
 import fr.club.plongee.formation.Cursus;
 import fr.club.plongee.securite.Utilisateur;
 import jakarta.persistence.*;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
 
+/** Historisée via Envers (voir fr.club.plongee.audit) : la délivrance d'un brevet ne se refait pas. */
 @Entity
+@Audited
 public class Delivrance {
 
     @Id

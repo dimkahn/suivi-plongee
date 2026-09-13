@@ -15,10 +15,11 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
           <div class="identite">
             @if (auth.estMoniteur() || auth.estAdmin()) {
               <a routerLink="/eleves" class="bouton-discret">Infos élèves</a>
+              <a routerLink="/trombinoscope" class="bouton-discret">Trombinoscope</a>
             }
             @if (auth.estAdmin()) {
-              <a routerLink="/seances/nouvelle" class="bouton-discret">Nouvelle séance</a>
-              <a routerLink="/admin/moniteurs" class="bouton-discret">Moniteurs</a>
+              <a routerLink="/seances" class="bouton-discret">Séances</a>
+              <a routerLink="/admin" class="bouton-discret">Administration</a>
             }
             @if (auth.estMoniteur()) {
               <button type="button" class="bouton-discret" (click)="bandeau?.precharger()">

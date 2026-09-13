@@ -2,12 +2,29 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
-  CursusVue, Eligibilite, EvaluationVue, GrilleVue, MatriceVue, MoniteurVue,
-  RosterVue, SeanceVue, Statut
+  CursusVue, Eligibilite, EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue,
+  MoniteurVue, RosterVue, SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
+
+interface DemandeSeance {
+  dateSeance: string;
+  milieu: 'ARTIFICIEL' | 'NATUREL';
+  lieu?: string | null;
+  profondeurMax?: number | null;
+  commentaire?: string | null;
+}
+
+interface DemandeEleve {
+  nom: string;
+  prenom: string;
+  dateNaissance?: string | null;
+  numeroLicence?: string | null;
+  certificatValideJusquAu?: string | null;
+  autorisationLegale: boolean;
+}
 
 interface Paquet {
   genereLe: string;
@@ -32,15 +49,18 @@ export class ApiService {
     return this.lireOuRetomber('seances', () => this.http.get<SeanceVue[]>('/api/seances'));
   }
 
-  /** Création réservée aux ADMIN et MONITEUR côté serveur ; nécessite le réseau. */
-  creerSeance(demande: {
-    dateSeance: string;
-    milieu: 'ARTIFICIEL' | 'NATUREL';
-    lieu?: string | null;
-    profondeurMax?: number | null;
-    commentaire?: string | null;
-  }): Observable<SeanceVue> {
+  /** Création/modification réservées aux ADMIN et MONITEUR côté serveur ; nécessitent le réseau. */
+  creerSeance(demande: DemandeSeance): Observable<SeanceVue> {
     return this.http.post<SeanceVue>('/api/seances', demande);
+  }
+
+  modifierSeance(id: number, demande: DemandeSeance): Observable<SeanceVue> {
+    return this.http.put<SeanceVue>(`/api/seances/${id}`, demande);
+  }
+
+  /** Réservée à l'ADMIN ; refusée côté serveur si la séance porte déjà présences/évaluations. */
+  supprimerSeance(id: number): Observable<unknown> {
+    return this.http.delete(`/api/seances/${id}`);
   }
 
   grille(cursusId: number): Promise<GrilleVue> {
@@ -139,6 +159,91 @@ export class ApiService {
 
   supprimerMoniteur(id: number): Observable<unknown> {
     return this.http.delete(`/api/admin/moniteurs/${id}`);
+  }
+
+  // ----------------------------------------------------------------
+  //  Trombinoscope. Une photo n'est jamais affichée sans le consentement
+  //  autorisationImage (distinct de l'autorisation de pratiquer).
+  // ----------------------------------------------------------------
+
+  trombinoscope(niveau?: 'N1' | 'N2' | 'N3'): Observable<LigneTrombinoscope[]> {
+    const params = niveau ? { params: { niveau } } : {};
+    return this.http.get<LigneTrombinoscope[]>('/api/trombinoscope', params);
+  }
+
+  /** À convertir en URL d'objet côté composant : l'auth passe par un en-tête, pas par un cookie. */
+  photoEleve(eleveId: number): Observable<Blob> {
+    return this.http.get(`/api/eleves/${eleveId}/photo`, { responseType: 'blob' });
+  }
+
+  changerAutorisationImage(eleveId: number, autorisationImage: boolean): Observable<unknown> {
+    return this.http.put(`/api/eleves/${eleveId}/autorisation-image`, { autorisationImage });
+  }
+
+  deposerPhotoEleve(eleveId: number, fichier: File): Observable<unknown> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post(`/api/eleves/${eleveId}/photo`, donnees);
+  }
+
+  supprimerPhotoEleve(eleveId: number): Observable<unknown> {
+    return this.http.delete(`/api/eleves/${eleveId}/photo`);
+  }
+
+  // ----------------------------------------------------------------
+  //  Saisons. Lecture pour les encadrants, écriture réservée à l'ADMIN.
+  // ----------------------------------------------------------------
+
+  saisons(): Observable<SaisonVue[]> {
+    return this.http.get<SaisonVue[]>('/api/saisons');
+  }
+
+  creerSaison(demande: { libelle: string; dateDebut: string; dateFin: string }): Observable<SaisonVue> {
+    return this.http.post<SaisonVue>('/api/saisons', demande);
+  }
+
+  changerOuvertureSaison(id: number, ouverte: boolean): Observable<SaisonVue> {
+    return this.http.put<SaisonVue>(`/api/saisons/${id}/ouverture`, { ouverte });
+  }
+
+  // ----------------------------------------------------------------
+  //  Élèves : dossier (identité, consentements), réservé à l'ADMIN en écriture.
+  // ----------------------------------------------------------------
+
+  eleves(): Observable<EleveVue[]> {
+    return this.http.get<EleveVue[]>('/api/eleves');
+  }
+
+  creerEleve(demande: DemandeEleve): Observable<EleveVue> {
+    return this.http.post<EleveVue>('/api/eleves', demande);
+  }
+
+  modifierEleve(id: number, demande: DemandeEleve): Observable<EleveVue> {
+    return this.http.put<EleveVue>(`/api/eleves/${id}`, demande);
+  }
+
+  archiverEleve(id: number): Observable<EleveVue> {
+    return this.http.post<EleveVue>(`/api/eleves/${id}/archivage`, {});
+  }
+
+  desarchiverEleve(id: number): Observable<EleveVue> {
+    return this.http.delete<EleveVue>(`/api/eleves/${id}/archivage`);
+  }
+
+  // ----------------------------------------------------------------
+  //  Inscription d'un élève dans une formation (cursus), réservée à l'ADMIN.
+  // ----------------------------------------------------------------
+
+  inscrireCursus(demande: {
+    eleveId: number; saisonId: number; niveau: 'N1' | 'N2' | 'N3'; moniteurReferentId?: number | null;
+  }): Observable<CursusVue> {
+    return this.http.post<CursusVue>('/api/cursus', demande);
+  }
+
+  modifierCursus(id: number, demande: {
+    moniteurReferentId: number | null; statut: string;
+  }): Observable<CursusVue> {
+    return this.http.put<CursusVue>(`/api/cursus/${id}`, demande);
   }
 
   // ----------------------------------------------------------------
