@@ -1,0 +1,15 @@
+{
+  "name": "Suivi des formations de plongée",
+  "short_name": "Suivi plongée",
+  "description": "Suivi des compétences MFT des plongeurs N1, N2 et N3",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F7F8",
+  "theme_color": "#0A5C70",
+  "lang": "fr",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
