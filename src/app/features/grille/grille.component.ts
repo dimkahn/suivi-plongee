@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
@@ -159,6 +159,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       <p class="vide">Chargement de la grille…</p>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .entete { display: flex; gap: var(--pas-3); align-items: center; padding: var(--pas-3); }
     .jauge { width: 64px; height: 168px; flex: none; }

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { FileAttenteService, SaisieRefusee } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
@@ -54,6 +54,7 @@ import { ReseauService } from '../../core/reseau.service';
       <div class="bandeau attente" role="status"><span>{{ m }}</span></div>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .bandeau {
       display: flex; align-items: baseline; justify-content: space-between;

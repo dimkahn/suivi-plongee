@@ -1,4 +1,4 @@
-import { Component, ViewChild, inject, signal } from '@angular/core';
+import { Component, ViewChild, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
@@ -34,6 +34,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
       <p class="vide">Ouverture de la session…</p>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     header {
       display: flex; align-items: center; justify-content: space-between;
