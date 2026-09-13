@@ -1,35 +1,43 @@
 /* ------------------------------------------------------------------
    Jetons de design.
 
-   L'application se consulte au bord d'un bassin ou sur un bateau :
-   mains mouillées, lumière difficile, écran de téléphone. D'où le choix
-   d'Atkinson Hyperlegible (dessinée pour la lisibilité en conditions
-   dégradées) et de cibles tactiles larges plutôt que d'une densité
-   d'information maximale.
+   Identité visuelle alignée sur cppjvo.fr (Poppins/Nunito, palette
+   océan/corail) : le club a une charte, l'appli la reprend plutôt que
+   d'inventer la sienne. L'application se consulte au bord d'un bassin
+   ou sur un bateau, mains mouillées, lumière difficile, écran de
+   téléphone : on garde malgré tout des cibles tactiles larges plutôt
+   qu'une densité d'information maximale.
    ------------------------------------------------------------------ */
 
 :root {
-  --fond:      #F4F7F8;
+  --fond:      #F8FAFC;
   --carte:     #FFFFFF;
-  --encre:     #0E2A33;
-  --profond:   #0A5C70;
-  --craie:     #63808C;
-  --trait:     #DCE5E8;
+  --encre:     #0F172A;
+  --profond:   #0891B2;
+  --profond-fonce: #0C3547;
+  --craie:     #64748B;
+  --trait:     #E2E8F0;
 
-  --acquis:    #1D7A5F;
-  --acquis-clair:  #E4F1EC;
+  --accent:    #F97316;
+  --accent-clair: #FDBA74;
+
+  --acquis:    #16A34A;
+  --acquis-clair:  #F0FDF4;
   --en-cours:  #B26B00;
-  --en-cours-clair: #FBF0DE;
+  --en-cours-clair: #FEF3C7;
 
-  --r:  10px;
-  --r-s: 6px;
+  --r:  16px;
+  --r-s: 8px;
 
   --pas:   8px;
   --pas-2: 16px;
   --pas-3: 24px;
   --pas-4: 40px;
 
-  --ombre: 0 1px 2px rgba(14, 42, 51, .06), 0 4px 16px rgba(14, 42, 51, .05);
+  --ombre: 0 4px 24px rgba(8, 145, 178, .15);
+
+  --font-titres: 'Poppins', sans-serif;
+  --font-texte:  'Nunito', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -38,13 +46,13 @@ html, body {
   margin: 0;
   background: var(--fond);
   color: var(--encre);
-  font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-texte), system-ui, -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
 }
 
-h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.25; }
+h1, h2, h3 { margin: 0; font-family: var(--font-titres), sans-serif; font-weight: 700; line-height: 1.25; }
 h1 { font-size: 1.5rem; letter-spacing: -0.01em; }
 h2 { font-size: 1.125rem; }
 h3 { font-size: 1rem; }
@@ -66,7 +74,7 @@ button {
   outline-offset: 2px;
 }
 
-input, select {
+input, select, textarea {
   font: inherit;
   color: inherit;
   padding: 10px 12px;
@@ -77,11 +85,12 @@ input, select {
 }
 
 .bouton-principal {
-  background: var(--profond);
+  background: linear-gradient(135deg, var(--profond-fonce), var(--profond));
   color: #fff;
   padding: 12px 20px;
   border-radius: var(--r-s);
-  font-weight: 700;
+  font-family: var(--font-titres), sans-serif;
+  font-weight: 600;
   min-height: 44px;
 }
 .bouton-principal:disabled { background: var(--craie); cursor: not-allowed; }

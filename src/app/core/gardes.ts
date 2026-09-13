@@ -15,3 +15,18 @@ export const gardeMoniteur: CanActivateFn = () => {
   const auth = inject(AuthService);
   return auth.estMoniteur() || inject(Router).createUrlTree(['/cursus']);
 };
+
+/**
+ * Confort d'affichage, pas une mesure de sécurité : l'autorisation réelle
+ * est portée par les @PreAuthorize du serveur.
+ */
+export const gardeAdmin: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.estAdmin() || inject(Router).createUrlTree(['/cursus']);
+};
+
+/** Encadrants au sens large : moniteurs et administrateurs. */
+export const gardeEncadrant: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.estMoniteur() || auth.estAdmin() || inject(Router).createUrlTree(['/cursus']);
+};

@@ -13,6 +13,13 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
         <header>
           <a routerLink="/cursus" class="marque">Suivi des formations</a>
           <div class="identite">
+            @if (auth.estMoniteur() || auth.estAdmin()) {
+              <a routerLink="/eleves" class="bouton-discret">Infos élèves</a>
+            }
+            @if (auth.estAdmin()) {
+              <a routerLink="/seances/nouvelle" class="bouton-discret">Nouvelle séance</a>
+              <a routerLink="/admin/moniteurs" class="bouton-discret">Moniteurs</a>
+            }
             @if (auth.estMoniteur()) {
               <button type="button" class="bouton-discret" (click)="bandeau?.precharger()">
                 Préparer hors ligne
@@ -40,11 +47,14 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
       display: flex; align-items: center; justify-content: space-between;
       gap: var(--pas-2); flex-wrap: wrap;
       padding: var(--pas-2) var(--pas-3);
-      background: var(--profond); color: #fff;
+      background: linear-gradient(135deg, var(--profond-fonce), var(--profond)); color: #fff;
     }
     .marque { color: #fff; text-decoration: none; font-weight: 700; }
     .identite { display: flex; align-items: center; gap: var(--pas-2); font-size: .9375rem; }
-    .identite .bouton-discret { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
+    .identite .bouton-discret {
+      background: transparent; color: #fff; border-color: rgba(255,255,255,.4);
+      text-decoration: none;
+    }
     .niveau {
       border: 1px solid rgba(255,255,255,.5); border-radius: var(--r-s);
       padding: 2px 8px; font-weight: 700; font-size: .8125rem;

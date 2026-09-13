@@ -1,10 +1,13 @@
 import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileAttenteService } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
-import { BlocVue, CritereVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
+import { BlocVue, CritereVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -19,6 +22,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
 @Component({
   selector: 'app-grille',
   standalone: true,
+  imports: [FormsModule, RouterLink],
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -48,6 +52,9 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
           @if (ageDuCache(); as age) {
             <p class="secondaire">Grille consultée hors ligne, dernière mise à jour {{ age }}.</p>
           }
+          <a [routerLink]="['/cursus', id(), 'matrice']" class="lien-matrice">
+            Vue globale (toutes les séances)
+          </a>
         </div>
       </div>
 
@@ -117,31 +124,73 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
           <ul>
             @for (critere of bloc.criteres; track critere.id) {
               <li>
-                <div class="libelle">
-                  <span>{{ critere.savoirFaire }}</span>
-                  @if (critere.critereRealisation) {
-                    <span class="secondaire">{{ critere.critereRealisation }}</span>
-                  }
-                  @if (critere.enAttente) {
-                    <span class="attente">En attente d'envoi</span>
-                  } @else if (critere.parQui) {
-                    <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le }}</span>
-                  }
+                <div class="ligne">
+                  <div class="libelle">
+                    <span>{{ critere.savoirFaire }}</span>
+                    @if (critere.critereRealisation) {
+                      <span class="secondaire">{{ critere.critereRealisation }}</span>
+                    }
+                    @if (critere.enAttente) {
+                      <span class="attente">En attente d'envoi</span>
+                    } @else if (critere.parQui) {
+                      <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le }}</span>
+                    }
+                  </div>
+
+                  <div class="etats" role="group" [attr.aria-label]="critere.savoirFaire">
+                    @for (choix of etats; track choix.valeur) {
+                      <button type="button"
+                              [class]="'etat ' + choix.classe"
+                              [class.actif]="critere.statut === choix.valeur"
+                              [class.differe]="critere.enAttente && critere.statut === choix.valeur"
+                              [disabled]="!peutSaisir() || bloc.valide"
+                              [attr.aria-pressed]="critere.statut === choix.valeur"
+                              (click)="noter(bloc, critere, choix.valeur)">
+                        {{ choix.libelle }}
+                      </button>
+                    }
+                  </div>
                 </div>
 
-                <div class="etats" role="group" [attr.aria-label]="critere.savoirFaire">
-                  @for (choix of etats; track choix.valeur) {
-                    <button type="button"
-                            [class]="'etat ' + choix.classe"
-                            [class.actif]="critere.statut === choix.valeur"
-                            [class.differe]="critere.enAttente && critere.statut === choix.valeur"
-                            [disabled]="!peutSaisir() || bloc.valide"
-                            [attr.aria-pressed]="critere.statut === choix.valeur"
-                            (click)="noter(bloc, critere, choix.valeur)">
-                      {{ choix.libelle }}
-                    </button>
-                  }
-                </div>
+                <button type="button" class="lien-historique"
+                        (click)="basculerHistorique(critere.id)">
+                  {{ historiqueOuverts().has(critere.id) ? 'Masquer l’historique' : 'Voir l’historique' }}
+                </button>
+
+                @if (historiqueOuverts().has(critere.id)) {
+                  <div class="historique">
+                    @if (chargementHistorique().has(critere.id)) {
+                      <p class="secondaire">Chargement…</p>
+                    } @else {
+                      @let entrees = historiques()[critere.id] ?? [];
+                      @if (entrees.length === 0) {
+                        <p class="secondaire">Aucune évaluation enregistrée pour ce critère.</p>
+                      } @else {
+                        @for (entree of entrees; track entree.id) {
+                          <div class="entree-historique">
+                            <span class="secondaire">
+                              {{ entree.dateEvaluation }} · {{ entree.parQui }} · {{ libelleStatut(entree.statut) }}
+                            </span>
+                            @if (entree.commentaire) { <p>{{ entree.commentaire }}</p> }
+                          </div>
+                        }
+                      }
+                    }
+
+                    @if (peutSaisir() && !bloc.valide) {
+                      <div class="ajout-commentaire">
+                        <textarea rows="2" placeholder="Ajouter un commentaire pour ce critère…"
+                                  [ngModel]="brouillons()[critere.id] ?? ''"
+                                  (ngModelChange)="modifierBrouillon(critere.id, $event)"></textarea>
+                        <button type="button" class="bouton-discret"
+                                [disabled]="!(brouillons()[critere.id] ?? '').trim()"
+                                (click)="commenter(bloc, critere)">
+                          Ajouter le commentaire
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
               </li>
             }
           </ul>
@@ -166,6 +215,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     .jauge rect:nth-child(2) { transition: height .35s ease-out; }
     .resume h1 { margin-bottom: 2px; }
     .score { margin: var(--pas) 0 0; font-weight: 700; }
+    .lien-matrice { display: inline-block; margin-top: var(--pas); font-size: .875rem; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -185,9 +235,9 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     .valide { margin: 0; color: var(--acquis); font-weight: 700; font-size: .9375rem; }
 
     ul { list-style: none; margin: 0; padding: 0; }
-    li {
-      display: flex; justify-content: space-between; align-items: center;
-      gap: var(--pas-2); padding: var(--pas-2) 0; border-top: 1px solid var(--trait);
+    li { padding: var(--pas-2) 0; border-top: 1px solid var(--trait); }
+    .ligne {
+      display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2);
     }
     .libelle { display: flex; flex-direction: column; gap: 2px; max-width: 62ch; }
     .trace { font-style: italic; }
@@ -206,9 +256,24 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     /* Le pointillé dit « enregistré ici, pas encore chez le serveur ». */
     .etat.differe { border-style: dashed; }
 
+    .lien-historique {
+      margin-top: 4px; padding: 0; min-height: auto; background: none; border: none;
+      color: var(--profond); font-size: .8125rem; text-decoration: underline;
+    }
+
+    .historique {
+      margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s);
+      background: var(--fond); display: flex; flex-direction: column; gap: var(--pas);
+    }
+    .entree-historique { font-size: .875rem; }
+    .entree-historique p { margin: 2px 0 0; max-width: none; }
+    .ajout-commentaire { display: flex; flex-direction: column; gap: var(--pas); }
+    .ajout-commentaire textarea { resize: vertical; }
+    .ajout-commentaire button { align-self: flex-start; }
+
     @media (max-width: 720px) {
       .entete { flex-direction: row; padding: var(--pas-2); }
-      li { flex-direction: column; align-items: stretch; }
+      .ligne { flex-direction: column; align-items: stretch; }
       .etats { justify-content: stretch; }
       .etat { flex: 1; }
       .barre-seance { flex-direction: column; align-items: stretch; }
@@ -229,6 +294,12 @@ export class GrilleComponent {
   message = signal<string | null>(null);
   erreurChargement = signal(false);
   ageDuCache = signal<string | null>(null);
+
+  /** Historique des critères consultés, tenu par critereId. */
+  historiqueOuverts = signal<Set<number>>(new Set());
+  chargementHistorique = signal<Set<number>>(new Set());
+  historiques = signal<Record<number, EvaluationVue[]>>({});
+  brouillons = signal<Record<number, string>>({});
 
   readonly etats = [
     { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },
@@ -372,5 +443,91 @@ export class GrilleComponent {
       error: (e: HttpErrorResponse) =>
         this.message.set(e.error?.detail ?? 'La validation n’a pas pu être enregistrée.')
     });
+  }
+
+  libelleStatut(statut: string): string {
+    return this.etats.find(e => e.valeur === statut)?.libelle ?? statut;
+  }
+
+  /**
+   * Ouvre/ferme l'historique complet d'un critère (une ligne par saisie,
+   * table en ajout seul). Chargé à la demande, une seule fois par ouverture.
+   */
+  async basculerHistorique(critereId: number): Promise<void> {
+    const ouverts = new Set(this.historiqueOuverts());
+    if (ouverts.has(critereId)) {
+      ouverts.delete(critereId);
+      this.historiqueOuverts.set(ouverts);
+      return;
+    }
+    ouverts.add(critereId);
+    this.historiqueOuverts.set(ouverts);
+    await this.chargerHistorique(critereId);
+  }
+
+  private async chargerHistorique(critereId: number): Promise<void> {
+    const enCours = new Set(this.chargementHistorique());
+    enCours.add(critereId);
+    this.chargementHistorique.set(enCours);
+    try {
+      const liste = await firstValueFrom(this.api.historique(Number(this.id()), critereId));
+      this.historiques.set({ ...this.historiques(), [critereId]: liste });
+    } catch {
+      this.historiques.set({ ...this.historiques(), [critereId]: [] });
+    } finally {
+      const suite = new Set(this.chargementHistorique());
+      suite.delete(critereId);
+      this.chargementHistorique.set(suite);
+    }
+  }
+
+  modifierBrouillon(critereId: number, texte: string): void {
+    this.brouillons.set({ ...this.brouillons(), [critereId]: texte });
+  }
+
+  /**
+   * Un commentaire est une nouvelle ligne d'évaluation, au même statut que
+   * l'état courant : la table étant en ajout seul, on ne modifie jamais une
+   * saisie passée, on en ajoute une qui ne fait que commenter.
+   */
+  async commenter(bloc: BlocAffiche, critere: CritereAffiche): Promise<void> {
+    const texte = (this.brouillons()[critere.id] ?? '').trim();
+    if (!texte) return;
+
+    const seance = this.seances().find(s => s.id === this.seanceId()) ?? null;
+
+    if (!bloc.evaluationTransverse && !seance) {
+      this.message.set('Choisissez d’abord la séance évaluée.');
+      return;
+    }
+    const refus = this.verifierLocalement(seance);
+    if (refus) {
+      this.message.set(refus);
+      return;
+    }
+
+    this.message.set(null);
+    await this.file.empiler({
+      cursusId: Number(this.id()),
+      critereId: critere.id,
+      seanceId: seance ? seance.id : null,
+      statut: critere.statut,
+      commentaire: texte,
+      dateEvaluation: seance ? seance.date : new Date().toISOString().slice(0, 10)
+    });
+
+    const restants = { ...this.brouillons() };
+    delete restants[critere.id];
+    this.brouillons.set(restants);
+
+    // Le commentaire vient d'être ajouté hors ligne ou en ligne : l'historique
+    // affiché ne le montrera qu'une fois rechargé depuis le serveur.
+    if (this.historiqueOuverts().has(critere.id) && this.reseau.enLigne()) {
+      await this.chargerHistorique(critere.id);
+    }
+
+    if (this.reseau.enLigne()) {
+      setTimeout(() => void this.charger(), 1500);
+    }
   }
 }

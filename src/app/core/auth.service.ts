@@ -17,6 +17,7 @@ export class AuthService {
   readonly connecte = computed(() => this.session() !== null);
   readonly roles = computed(() => this.session()?.roles ?? []);
   readonly estMoniteur = computed(() => this.roles().includes('MONITEUR'));
+  readonly estAdmin = computed(() => this.roles().includes('ADMIN'));
   readonly niveau = computed(() => this.session()?.niveauEncadrement ?? null);
 
   get jeton(): string | null {
@@ -34,6 +35,15 @@ export class AuthService {
     return this.http
       .post<Session>('/api/auth/rafraichir', {}, { withCredentials: true })
       .pipe(tap(s => this.session.set(s)));
+  }
+
+  /** Toujours la même réponse au moniteur, que le compte existe ou non. */
+  motDePasseOublie(email: string): Observable<unknown> {
+    return this.http.post('/api/auth/mot-de-passe-oublie', { email });
+  }
+
+  reinitialiserMotDePasse(jeton: string, nouveauMotDePasse: string): Observable<unknown> {
+    return this.http.post('/api/auth/reinitialiser-mot-de-passe', { jeton, nouveauMotDePasse });
   }
 
   deconnexion(): void {

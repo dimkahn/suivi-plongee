@@ -4,8 +4,8 @@
   "description": "Suivi des compétences MFT des plongeurs N1, N2 et N3",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F4F7F8",
-  "theme_color": "#0A5C70",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0C3547",
   "lang": "fr",
   "orientation": "portrait",
   "icons": [
