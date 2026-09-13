@@ -5,10 +5,9 @@ import { AuthService } from '../../core/auth.service';
 import { CursusVue } from '../../core/modeles';
 
 @Component({
-  selector: 'app-cursus-liste',
-  standalone: true,
-  imports: [RouterLink],
-  template: `
+    selector: 'app-cursus-liste',
+    imports: [RouterLink],
+    template: `
     <h1>Formations en cours</h1>
     <p class="secondaire">{{ sousTitre() }}</p>
 
@@ -39,7 +38,7 @@ import { CursusVue } from '../../core/modeles';
       }
     }
   `,
-  styles: [`
+    styles: [`
     h1 { margin-bottom: var(--pas); }
     section { margin-top: var(--pas-4); }
     h2 { margin-bottom: var(--pas-2); color: var(--profond); }
