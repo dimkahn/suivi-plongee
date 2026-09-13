@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: plongee
+      POSTGRES_USER: plongee
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-plongee}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plongee -d plongee"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/plongee
+      DB_USER: plongee
+      DB_PASSWORD: ${DB_PASSWORD:-plongee}
+      JWT_SECRET: ${JWT_SECRET:-Y2hhbmdlLW1lLWVuLXByb2R1Y3Rpb24tY2xlLWRlLTQ4LW9jdGV0cy1taW5pbXVt}
+      CORS_ORIGINES: http://localhost:4200
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
+
+volumes:
+  db-data:
