@@ -1,0 +1,8 @@
+# Reverse proxy HTTPS pour le déploiement internet. Caddy obtient et
+# renouvelle seul le certificat Let's Encrypt pour {$DOMAINE} — aucune
+# configuration TLS manuelle, à condition que ce nom de domaine pointe déjà
+# vers l'IP publique de la machine (voir DEPLOIEMENT.md).
+
+{$DOMAINE} {
+	reverse_proxy frontend:80
+}

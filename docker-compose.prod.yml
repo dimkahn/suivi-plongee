@@ -1,0 +1,69 @@
+## Déploiement internet (VM Oracle Cloud Always Free, ou toute VM Linux avec
+## Docker et un nom de domaine). Voir DEPLOIEMENT.md pour le pas-à-pas complet.
+##
+## Différences avec docker-compose.yml (dev/test local) :
+##  - aucun port de base/backend publié sur l'hôte : seul Caddy est exposé,
+##    db et backend ne sont joignables que par les autres conteneurs ;
+##  - Caddy termine le TLS (certificat Let's Encrypt automatique) et sert de
+##    reverse proxy vers le frontend, dont nginx.conf relaie déjà /api vers
+##    le backend en interne ;
+##  - redémarrage automatique des conteneurs (restart: unless-stopped) ;
+##  - aucun secret par défaut : DB_PASSWORD, JWT_SECRET et DOMAINE doivent
+##    être définis dans un fichier .env (voir .env.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plongee
+      POSTGRES_USER: plongee
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?definir DB_PASSWORD dans .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plongee -d plongee"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://db:5432/plongee
+      DB_USER: plongee
+      DB_PASSWORD: ${DB_PASSWORD:?definir DB_PASSWORD dans .env}
+      JWT_SECRET: ${JWT_SECRET:?definir JWT_SECRET dans .env (openssl rand -base64 48)}
+      CORS_ORIGINES: https://${DOMAINE:?definir DOMAINE dans .env}
+      FRONTEND_URL: https://${DOMAINE:?definir DOMAINE dans .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAINE: ${DOMAINE:?definir DOMAINE dans .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:
