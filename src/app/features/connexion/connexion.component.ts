@@ -4,9 +4,9 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
-    selector: 'app-connexion',
-    imports: [FormsModule],
-    template: `
+  selector: 'app-connexion',
+  imports: [FormsModule],
+  template: `
     <div class="accueil">
       <div class="carte panneau">
         <h1>Suivi des formations de plongée</h1>
@@ -31,7 +31,7 @@ import { AuthService } from '../../core/auth.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .accueil { min-height: 100dvh; display: grid; place-items: center; padding: var(--pas-3); }
     .panneau { width: 100%; max-width: 420px; padding: var(--pas-4) var(--pas-3); }
     h1 { margin-bottom: var(--pas); font-size: 1.375rem; }
