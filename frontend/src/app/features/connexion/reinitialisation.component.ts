@@ -14,7 +14,12 @@ import { AuthService } from '../../core/auth.service';
   template: `
     <div class="accueil">
       <div class="carte panneau">
-        <h1>Choisir un mot de passe</h1>
+        <h1>{{ invitation() ? 'Bienvenue : choisissez votre mot de passe' : 'Choisir un mot de passe' }}</h1>
+        @if (invitation() && !jetonAbsent() && !succes()) {
+          <p class="secondaire">
+            Votre compte moniteur a été créé. Choisissez votre mot de passe pour l'activer.
+          </p>
+        }
 
         @if (jetonAbsent()) {
           <div class="alerte">
@@ -67,6 +72,7 @@ export class ReinitialisationComponent {
 
   private jeton = this.route.snapshot.queryParamMap.get('jeton');
   jetonAbsent = signal(!this.jeton);
+  invitation = signal(this.route.snapshot.queryParamMap.get('invitation') === '1');
 
   motDePasse = '';
   confirmation = '';

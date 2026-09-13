@@ -27,4 +27,10 @@ public class ServiceNotificationConsole implements ServiceNotification {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton;
         log.info("Lien de reinitialisation de mot de passe pour {} : {}", destinataire.getEmail(), lien);
     }
+
+    @Override
+    public void envoyerLienInvitation(Utilisateur destinataire, String jeton) {
+        String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton + "&invitation=1";
+        log.info("Lien d'invitation (definition du mot de passe) pour {} : {}", destinataire.getEmail(), lien);
+    }
 }
