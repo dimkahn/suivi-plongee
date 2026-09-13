@@ -1,0 +1,123 @@
+/* ------------------------------------------------------------------
+   Jetons de design.
+
+   L'application se consulte au bord d'un bassin ou sur un bateau :
+   mains mouillées, lumière difficile, écran de téléphone. D'où le choix
+   d'Atkinson Hyperlegible (dessinée pour la lisibilité en conditions
+   dégradées) et de cibles tactiles larges plutôt que d'une densité
+   d'information maximale.
+   ------------------------------------------------------------------ */
+
+:root {
+  --fond:      #F4F7F8;
+  --carte:     #FFFFFF;
+  --encre:     #0E2A33;
+  --profond:   #0A5C70;
+  --craie:     #63808C;
+  --trait:     #DCE5E8;
+
+  --acquis:    #1D7A5F;
+  --acquis-clair:  #E4F1EC;
+  --en-cours:  #B26B00;
+  --en-cours-clair: #FBF0DE;
+
+  --r:  10px;
+  --r-s: 6px;
+
+  --pas:   8px;
+  --pas-2: 16px;
+  --pas-3: 24px;
+  --pas-4: 40px;
+
+  --ombre: 0 1px 2px rgba(14, 42, 51, .06), 0 4px 16px rgba(14, 42, 51, .05);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.25; }
+h1 { font-size: 1.5rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.125rem; }
+h3 { font-size: 1rem; }
+p  { margin: 0 0 var(--pas-2); max-width: 68ch; }
+
+a { color: var(--profond); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--r-s);
+  background: none;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--profond);
+  outline-offset: 2px;
+}
+
+input, select {
+  font: inherit;
+  color: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--trait);
+  border-radius: var(--r-s);
+  background: var(--carte);
+  width: 100%;
+}
+
+.bouton-principal {
+  background: var(--profond);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--r-s);
+  font-weight: 700;
+  min-height: 44px;
+}
+.bouton-principal:disabled { background: var(--craie); cursor: not-allowed; }
+
+.bouton-discret {
+  border-color: var(--trait);
+  background: var(--carte);
+  padding: 10px 16px;
+  min-height: 44px;
+}
+
+.carte {
+  background: var(--carte);
+  border-radius: var(--r);
+  box-shadow: var(--ombre);
+}
+
+.secondaire { color: var(--craie); font-size: 0.875rem; }
+
+.alerte {
+  border-left: 4px solid var(--en-cours);
+  background: var(--en-cours-clair);
+  padding: var(--pas-2);
+  border-radius: var(--r-s);
+  margin-bottom: var(--pas-2);
+}
+
+.vide {
+  padding: var(--pas-4) var(--pas-2);
+  text-align: center;
+  color: var(--craie);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

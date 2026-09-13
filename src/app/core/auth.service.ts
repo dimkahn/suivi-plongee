@@ -1,0 +1,57 @@
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Observable, tap } from 'rxjs';
+import { Session } from './modeles';
+
+const ORDRE_ENCADREMENT = ['E1', 'E2', 'E3', 'E4'];
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
+
+  /** Le jeton reste en mémoire : ni localStorage ni sessionStorage. */
+  readonly session = signal<Session | null>(null);
+
+  readonly connecte = computed(() => this.session() !== null);
+  readonly roles = computed(() => this.session()?.roles ?? []);
+  readonly estMoniteur = computed(() => this.roles().includes('MONITEUR'));
+  readonly niveau = computed(() => this.session()?.niveauEncadrement ?? null);
+
+  get jeton(): string | null {
+    return this.session()?.jetonAcces ?? null;
+  }
+
+  connexion(email: string, motDePasse: string): Observable<Session> {
+    return this.http
+      .post<Session>('/api/auth/connexion', { email, motDePasse }, { withCredentials: true })
+      .pipe(tap(s => this.session.set(s)));
+  }
+
+  /** Reprend la session au chargement grâce au cookie de rafraîchissement. */
+  reprendre(): Observable<Session> {
+    return this.http
+      .post<Session>('/api/auth/rafraichir', {}, { withCredentials: true })
+      .pipe(tap(s => this.session.set(s)));
+  }
+
+  deconnexion(): void {
+    this.http.post('/api/auth/deconnexion', {}, { withCredentials: true }).subscribe({
+      complete: () => {
+        this.session.set(null);
+        this.router.navigate(['/connexion']);
+      }
+    });
+  }
+
+  /**
+   * Sert uniquement à expliquer pourquoi une action est indisponible.
+   * Le contrôle qui fait foi est celui du serveur.
+   */
+  peutValider(niveauRequis: string): boolean {
+    const mien = this.niveau();
+    if (!this.estMoniteur() || !mien) return false;
+    return ORDRE_ENCADREMENT.indexOf(mien) >= ORDRE_ENCADREMENT.indexOf(niveauRequis);
+  }
+}
