@@ -33,6 +33,12 @@ import { RouterLink } from '@angular/router';
           <span class="secondaire">Inscrire un élève dans une formation, changer de référent</span>
         </a>
       </li>
+      <li class="carte">
+        <a routerLink="/admin/referentiel">
+          <span class="nom">Référentiel MFT</span>
+          <span class="secondaire">Blocs et critères en vigueur par niveau (consultation)</span>
+        </a>
+      </li>
     </ul>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
