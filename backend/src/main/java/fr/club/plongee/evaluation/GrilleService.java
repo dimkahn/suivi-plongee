@@ -5,6 +5,7 @@ import fr.club.plongee.formation.Cursus;
 import fr.club.plongee.formation.CursusRepository;
 import fr.club.plongee.formation.Participation;
 import fr.club.plongee.formation.ParticipationRepository;
+import fr.club.plongee.formation.PhotoEleveRepository;
 import fr.club.plongee.formation.Seance;
 import fr.club.plongee.formation.SeanceRepository;
 import fr.club.plongee.referentiel.BlocCompetence;
@@ -32,7 +33,8 @@ public class GrilleService {
                           LocalDate dateValidation, String valideePar,
                           List<CritereVue> criteres) {}
 
-    public record GrilleVue(Long cursusId, String eleve, String niveau, String versionMft,
+    public record GrilleVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto,
+                            String niveau, String versionMft,
                             String saison, String statut, boolean milieuNaturelExclusif,
                             String niveauEncadrantValidation, int prerogativeProfondeur,
                             int seancesNage, int seancesBloc, int seancesPlongee,
@@ -55,16 +57,19 @@ public class GrilleService {
     private final ValidationCompetenceRepository validations;
     private final ParticipationRepository participations;
     private final SeanceRepository seances;
+    private final PhotoEleveRepository photos;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
                          ParticipationRepository participations,
-                         SeanceRepository seances) {
+                         SeanceRepository seances,
+                         PhotoEleveRepository photos) {
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
         this.participations = participations;
         this.seances = seances;
+        this.photos = photos;
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +103,9 @@ public class GrilleService {
                     criteres));
         }
 
-        return new GrilleVue(cursus.getId(), cursus.getEleve().nomComplet(),
+        Long eleveId = cursus.getEleve().getId();
+        return new GrilleVue(cursus.getId(), eleveId, cursus.getEleve().nomComplet(),
+                cursus.getEleve().isAutorisationImage() && photos.existsById(eleveId),
                 cursus.getReferentiel().getNiveau().name(),
                 cursus.getReferentiel().getVersionMft(),
                 cursus.getSaison().getLibelle(),

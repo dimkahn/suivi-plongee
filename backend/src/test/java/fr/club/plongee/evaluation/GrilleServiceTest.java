@@ -30,12 +30,13 @@ class GrilleServiceTest {
     @Mock ValidationCompetenceRepository validations;
     @Mock ParticipationRepository participations;
     @Mock SeanceRepository seances;
+    @Mock PhotoEleveRepository photos;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances);
+        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos);
     }
 
     @Test
@@ -67,6 +68,7 @@ class GrilleServiceTest {
         ref.setBlocs(List.of(bloc));
 
         Eleve eleve = new Eleve();
+        eleve.setId(7L);
         eleve.setNom("Plongeur");
         eleve.setPrenom("Un");
 
