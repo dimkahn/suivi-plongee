@@ -1,6 +1,7 @@
 package fr.club.plongee.formation;
 
 import jakarta.persistence.*;
+import org.springframework.data.domain.Persistable;
 
 import java.time.Instant;
 
@@ -9,10 +10,17 @@ import java.time.Instant;
  * doit jamais alourdir les lectures courantes d'un élève (jointures cursus,
  * roster...). N'existe que si une photo a été déposée ; le consentement
  * ({@code Eleve.autorisationImage}) est vérifié séparément avant tout envoi.
+ *
+ * <p>L'identifiant est repris de l'élève ({@code @MapsId}), jamais généré :
+ * sans {@link Persistable}, Spring Data voit un id déjà renseigné dès
+ * {@link #setEleve} et en déduit à tort que la ligne existe déjà, appelant
+ * {@code merge()} au lieu de {@code persist()} pour une photo neuve — ce qui
+ * fait échouer Hibernate sur l'association {@code @MapsId} (identifiant nul
+ * inattendu lors de la résolution de l'association).
  */
 @Entity
 @Table(name = "photo_eleve")
-public class PhotoEleve {
+public class PhotoEleve implements Persistable<Long> {
 
     @Id
     @Column(name = "eleve_id")
@@ -23,6 +31,9 @@ public class PhotoEleve {
     @JoinColumn(name = "eleve_id")
     private Eleve eleve;
 
+    @Transient
+    private boolean nouvelle = true;
+
     @Column(nullable = false, columnDefinition = "bytea")
     private byte[] contenu;
 
@@ -31,6 +42,22 @@ public class PhotoEleve {
 
     @Column(name = "mise_a_jour_le", nullable = false)
     private Instant miseAJourLe = Instant.now();
+
+    @Override
+    public Long getId() {
+        return eleveId;
+    }
+
+    @Override
+    public boolean isNew() {
+        return nouvelle;
+    }
+
+    @PostLoad
+    @PostPersist
+    void marquerExistante() {
+        nouvelle = false;
+    }
 
     public Long getEleveId() {
         return eleveId;
