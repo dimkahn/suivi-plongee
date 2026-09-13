@@ -69,6 +69,69 @@ export interface SeanceVue {
   profondeurMax: number | null;
 }
 
+export interface EvaluationVue {
+  id: number;
+  critereId: number;
+  statut: Statut;
+  commentaire: string | null;
+  dateEvaluation: string;
+  parQui: string;
+}
+
+export interface MoniteurVue {
+  id: number;
+  email: string;
+  nom: string;
+  prenom: string;
+  actif: boolean;
+  niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
+  numeroLicence: string | null;
+}
+
+export interface SeanceEnTete {
+  id: number;
+  date: string;
+  lieu: string | null;
+}
+
+export interface LigneRoster {
+  cursusId: number;
+  eleve: string;
+  niveau: 'N1' | 'N2' | 'N3';
+  moniteurReferent: string | null;
+  caciValide: boolean;
+  seancesBloc: number;
+  seancesNage: number;
+  /** Clé = id de séance ; valeur = atelier (NAGE/BLOC/…) ou statut (ABSENT/EXCUSE). */
+  presencesParSeance: Record<number, string>;
+}
+
+export interface RosterVue {
+  seances: SeanceEnTete[];
+  eleves: LigneRoster[];
+}
+
+export interface CelluleMatrice {
+  seanceId: number | null;
+  date: string;
+  statut: Statut;
+  parQui: string;
+}
+
+export interface LigneMatrice {
+  critereId: number;
+  blocCode: string;
+  savoirFaire: string;
+  historique: CelluleMatrice[];
+}
+
+export interface MatriceVue {
+  eleve: string;
+  niveau: 'N1' | 'N2' | 'N3';
+  seances: SeanceEnTete[];
+  lignes: LigneMatrice[];
+}
+
 export interface Controle {
   code: string;
   libelle: string;
