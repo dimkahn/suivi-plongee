@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -50,13 +50,19 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
       </button>
     </section>
 
+    <label for="filtre-nom">Rechercher un moniteur</label>
+    <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
+           [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun moniteur enregistré.</p></div>
+    } @else if (listeFiltree().length === 0) {
+      <div class="carte vide"><p>Aucun moniteur ne correspond à la recherche.</p></div>
     } @else {
       <ul>
-        @for (m of liste(); track m.id) {
+        @for (m of listeFiltree(); track m.id) {
           <li class="carte">
             <div class="ligne">
               <div class="identite">
@@ -112,6 +118,8 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
+    #filtre-nom { max-width: 320px; margin-bottom: var(--pas-2); }
+
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
@@ -143,6 +151,13 @@ export class MoniteursComponent {
   liste = signal<MoniteurVue[]>([]);
   chargement = signal(true);
   message = signal<string | null>(null);
+
+  filtreNom = signal('');
+  listeFiltree = computed(() => {
+    const recherche = this.filtreNom().trim().toLocaleLowerCase();
+    if (!recherche) return this.liste();
+    return this.liste().filter(m => `${m.prenom} ${m.nom}`.toLocaleLowerCase().includes(recherche));
+  });
 
   prenom = '';
   nom = '';

@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping("/api/cursus")
 public class CursusController {
 
-    public record CursusVue(Long id, String eleve, String niveau, String saison, String statut,
+    public record CursusVue(Long id, Long eleveId, String eleve, String niveau, String saison, String statut,
                             String moniteurReferent) {}
 
     /** Le référentiel n'est jamais choisi à la main : on prend la version active du niveau. */
@@ -122,7 +122,7 @@ public class CursusController {
     }
 
     private CursusVue vue(Cursus c) {
-        return new CursusVue(c.getId(), c.getEleve().nomComplet(),
+        return new CursusVue(c.getId(), c.getEleve().getId(), c.getEleve().nomComplet(),
                 c.getReferentiel().getNiveau().name(), c.getSaison().getLibelle(),
                 c.getStatut().name(),
                 c.getMoniteurReferent() == null ? null : c.getMoniteurReferent().nomComplet());
