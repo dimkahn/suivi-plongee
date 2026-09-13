@@ -2,12 +2,15 @@ package fr.club.plongee.formation;
 
 import fr.club.plongee.securite.Utilisateur;
 import jakarta.persistence.*;
+import org.hibernate.envers.Audited;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 
+/** Dossier élève : historisé via Envers (voir fr.club.plongee.audit), y compris les consentements. */
 @Entity
+@Audited
 public class Eleve {
 
     @Id
@@ -32,6 +35,13 @@ public class Eleve {
 
     @Column(nullable = false)
     private boolean autorisationLegale = false;
+
+    /**
+     * Droit à l'image : consentement distinct de autorisationLegale (qui ne
+     * couvre que la pratique). Une photo n'est jamais affichée sans lui.
+     */
+    @Column(nullable = false)
+    private boolean autorisationImage = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id")
@@ -105,6 +115,14 @@ public class Eleve {
 
     public void setAutorisationLegale(boolean autorisationLegale) {
         this.autorisationLegale = autorisationLegale;
+    }
+
+    public boolean isAutorisationImage() {
+        return autorisationImage;
+    }
+
+    public void setAutorisationImage(boolean autorisationImage) {
+        this.autorisationImage = autorisationImage;
     }
 
     public Utilisateur getUtilisateur() {

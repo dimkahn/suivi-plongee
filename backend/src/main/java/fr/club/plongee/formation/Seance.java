@@ -2,16 +2,20 @@ package fr.club.plongee.formation;
 
 import fr.club.plongee.securite.Utilisateur;
 import jakarta.persistence.*;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
 
+/** Modifiable et supprimable : historisée via Envers (voir fr.club.plongee.audit). */
 @Entity
+@Audited
 public class Seance {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "saison_id")
     private Saison saison;

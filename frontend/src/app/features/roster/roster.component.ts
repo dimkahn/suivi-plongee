@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { RosterVue } from '../../core/modeles';
@@ -8,6 +8,8 @@ const LIBELLES: Record<string, string> = {
   ABSENT: 'ABS', EXCUSE: 'Excusé', PRESENT: 'Présent'
 };
 
+type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
+
 @Component({
   selector: 'app-roster',
   imports: [RouterLink],
@@ -15,11 +17,27 @@ const LIBELLES: Record<string, string> = {
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
 
+    @if (roster(); as r) {
+      <div class="filtres" role="group" aria-label="Filtrer par niveau">
+        @for (choix of niveaux; track choix) {
+          <button type="button" class="bouton-discret"
+                  [class.actif]="niveauFiltre() === choix"
+                  [attr.aria-pressed]="niveauFiltre() === choix"
+                  (click)="niveauFiltre.set(choix)">
+            {{ choix === 'TOUS' ? 'Tous' : choix }}
+          </button>
+        }
+      </div>
+    }
+
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (roster(); as r) {
+      @if (elevesFiltres().length === 0) {
+        <div class="carte vide"><p>Aucun élève {{ niveauFiltre() === 'TOUS' ? '' : 'en ' + niveauFiltre() }} sur cette saison.</p></div>
+      } @else {
       <div class="tableau-scroll">
         <table>
           <thead>
@@ -35,7 +53,7 @@ const LIBELLES: Record<string, string> = {
             </tr>
           </thead>
           <tbody>
-            @for (e of r.eleves; track e.cursusId) {
+            @for (e of elevesFiltres(); track e.cursusId) {
               <tr>
                 <td class="figee">
                   <div class="identite-cellule">
@@ -59,11 +77,16 @@ const LIBELLES: Record<string, string> = {
           </tbody>
         </table>
       </div>
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
+    .filtres { display: flex; gap: var(--pas); margin-top: var(--pas-3); flex-wrap: wrap; }
+    .filtres .bouton-discret.actif {
+      background: var(--profond); color: #fff; border-color: var(--profond);
+    }
     .tableau-scroll { overflow-x: auto; margin-top: var(--pas-3); }
     table { border-collapse: collapse; white-space: nowrap; }
     th, td {
@@ -82,9 +105,19 @@ const LIBELLES: Record<string, string> = {
 export class RosterComponent {
   private api = inject(ApiService);
 
+  readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
+
   roster = signal<RosterVue | null>(null);
   chargement = signal(true);
   erreur = signal<string | null>(null);
+  niveauFiltre = signal<FiltreNiveau>('TOUS');
+
+  elevesFiltres = computed(() => {
+    const r = this.roster();
+    if (!r) return [];
+    const niveau = this.niveauFiltre();
+    return niveau === 'TOUS' ? r.eleves : r.eleves.filter(e => e.niveau === niveau);
+  });
 
   constructor() {
     this.api.roster().subscribe({

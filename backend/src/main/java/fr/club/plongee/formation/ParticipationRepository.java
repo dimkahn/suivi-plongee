@@ -12,6 +12,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     List<Participation> findByCursusId(Long cursusId);
 
     Optional<Participation> findByCursusIdAndSeanceId(Long cursusId, Long seanceId);
+    boolean existsBySeanceId(Long seanceId);
 
     /** Le « NB seances bloc » du tableur, calcule au lieu d'etre saisi. */
     @Query("""

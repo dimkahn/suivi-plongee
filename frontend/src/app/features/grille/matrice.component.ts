@@ -39,9 +39,12 @@ const LIBELLES: Record<string, string> = {
                   {{ ligne.savoirFaire }}
                 </td>
                 @for (s of m.seances; track s.id) {
-                  <td [class]="classe(cellulePour(ligne, s.id))"
-                      [title]="cellulePour(ligne, s.id) ? cellulePour(ligne, s.id)!.parQui : ''">
-                    {{ libelle(cellulePour(ligne, s.id)) }}
+                  @let cellule = cellulePour(ligne, s.id);
+                  <td [class]="classe(cellule)">
+                    <span class="statut">{{ libelle(cellule) }}</span>
+                    @if (cellule) {
+                      <span class="moniteur">{{ cellule.parQui }}</span>
+                    }
                   </td>
                 }
               </tr>
@@ -70,9 +73,17 @@ const LIBELLES: Record<string, string> = {
       display: inline-block; margin-right: 4px; padding: 0 6px; border-radius: var(--r-s);
       background: var(--profond); color: #fff; font-size: .75rem;
     }
-    .cellule.encours { background: var(--en-cours-clair); color: var(--en-cours); font-weight: 700; }
-    .cellule.acquis  { background: var(--acquis-clair);  color: var(--acquis);  font-weight: 700; }
-    .cellule.neant   { color: var(--craie); }
+    td.cellule { min-width: 90px; }
+    .statut { display: block; }
+    .moniteur {
+      display: block; margin-top: 2px; color: var(--craie); font-size: .75rem; font-weight: 400;
+      white-space: normal;
+    }
+    .cellule.encours { background: var(--en-cours-clair); }
+    .cellule.encours .statut { color: var(--en-cours); font-weight: 700; }
+    .cellule.acquis  { background: var(--acquis-clair); }
+    .cellule.acquis  .statut { color: var(--acquis); font-weight: 700; }
+    .cellule.neant   .statut { color: var(--craie); }
   `]
 })
 export class MatriceComponent {
@@ -110,7 +121,7 @@ export class MatriceComponent {
   }
 
   classe(cellule: MatriceVue['lignes'][number]['historique'][number] | null): string {
-    if (!cellule) return '';
+    if (!cellule) return 'cellule';
     const suffixe = cellule.statut === 'ACQUIS' ? 'acquis'
       : cellule.statut === 'EN_COURS' ? 'encours' : 'neant';
     return 'cellule ' + suffixe;

@@ -67,6 +67,9 @@ export interface SeanceVue {
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu: string | null;
   profondeurMax: number | null;
+  commentaire: string | null;
+  /** false dès que la séance porte des présences ou des évaluations : milieu et profondeur figés. */
+  modifiable: boolean;
 }
 
 export interface EvaluationVue {
@@ -130,6 +133,35 @@ export interface MatriceVue {
   niveau: 'N1' | 'N2' | 'N3';
   seances: SeanceEnTete[];
   lignes: LigneMatrice[];
+}
+
+export interface SaisonVue {
+  id: number;
+  libelle: string;
+  dateDebut: string;
+  dateFin: string;
+  ouverte: boolean;
+}
+
+export interface EleveVue {
+  id: number;
+  nom: string;
+  prenom: string;
+  dateNaissance: string | null;
+  numeroLicence: string | null;
+  certificatValideJusquAu: string | null;
+  autorisationLegale: boolean;
+  autorisationImage: boolean;
+  archive: boolean;
+}
+
+export interface LigneTrombinoscope {
+  eleveId: number;
+  cursusId: number;
+  eleve: string;
+  niveau: 'N1' | 'N2' | 'N3';
+  aPhoto: boolean;
+  autorisationImage: boolean;
 }
 
 export interface Controle {

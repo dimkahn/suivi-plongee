@@ -11,6 +11,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     java.util.Optional<Evaluation> findByReferenceClient(String referenceClient);
 
     boolean existsByMoniteurId(Long moniteurId);
+    boolean existsBySeanceId(Long seanceId);
 
     /**
      * Etat courant de la grille : la derniere evaluation saisie pour chaque critere.

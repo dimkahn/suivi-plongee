@@ -4,10 +4,13 @@ import fr.club.plongee.formation.Cursus;
 import fr.club.plongee.referentiel.BlocCompetence;
 import fr.club.plongee.securite.Utilisateur;
 import jakarta.persistence.*;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
 
+/** Historisée via Envers (voir fr.club.plongee.audit) : qui a validé quoi, et quand. */
 @Entity
+@Audited
 public class ValidationCompetence {
 
     @Id
@@ -18,6 +21,7 @@ public class ValidationCompetence {
     @JoinColumn(name = "cursus_id")
     private Cursus cursus;
 
+    @Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "bloc_id")
     private BlocCompetence bloc;

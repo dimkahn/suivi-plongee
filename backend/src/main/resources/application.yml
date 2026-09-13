@@ -12,6 +12,11 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      # Photos du trombinoscope : 5 Mo max, revalide côté serveur dans EleveController.
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 app:
   jwt:

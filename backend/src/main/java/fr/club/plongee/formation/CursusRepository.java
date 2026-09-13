@@ -35,4 +35,5 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
     List<Long> idsDeLEleve(@Param("utilisateurId") Long utilisateurId);
 
     boolean existsByMoniteurReferentId(Long moniteurReferentId);
+    boolean existsByEleveIdAndSaisonIdAndReferentielId(Long eleveId, Long saisonId, Long referentielId);
 }

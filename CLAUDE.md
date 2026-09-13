@@ -5,8 +5,12 @@ moniteurs bénévoles notent leurs élèves séance par séance, souvent depuis 
 téléphone au bord du bassin. Remplace un classeur Google Sheets avec un onglet
 par élève.
 
-Backend Java 21 / Spring Boot 3.3 (Maven), frontend Angular 18 standalone,
-PostgreSQL en production, H2 en développement. Migrations Flyway.
+Backend Java 25 / Spring Boot 4.1 (Maven), frontend Angular 22 standalone,
+PostgreSQL en production, H2 en développement. Migrations Flyway. Un
+`pom.xml` agrégateur à la racine permet `mvn install` depuis la racine
+(le module `frontend` enveloppe `npm ci && ng build` via
+frontend-maven-plugin) ; le déploiement reste deux services Docker séparés
+(`docker-compose.yml`).
 
 Le code, les commentaires, les noms de classes et les messages d'erreur sont
 **en français**. C'est délibéré : les utilisateurs et les futurs contributeurs
@@ -62,6 +66,18 @@ rejouée par `POST /api/synchronisation/evaluations`, qui répond élément par
 pas. Un refus différé remonte au moniteur dans un bandeau, il n'est jamais
 absorbé silencieusement.
 
+**L'historique des entités modifiables passe par Envers, pas par un journal
+maison.** `Utilisateur`, `Eleve`, `Seance`, `Cursus`, `ValidationCompetence`
+et `Delivrance` sont `@Audited` (voir `fr.club.plongee.audit`) : chaque
+UPDATE/DELETE crée une ligne dans sa table `*_aud`, rattachée à une ligne de
+`revision_audit` qui porte l'auteur (`EcouteurRevisionAudit`, lu du
+SecurityContext). Les tables déjà en ajout seul (`evaluation`...) n'ont pas
+besoin d'Envers, elles portent déjà leur propre historique. Auditer une
+nouvelle entité : ajouter `@Audited`, générer le schéma une fois avec
+`ddl-auto=create` sur une base jetable, reprendre le DDL dans une migration
+Flyway à la main (les types choisis par H2/Hibernate ne sont pas toujours
+ceux qu'on veut en Postgres).
+
 ## Conventions
 
 - Pas de `localStorage` ni de `sessionStorage` côté navigateur. Le jeton
@@ -87,16 +103,28 @@ Ne pas ajouter de champ de santé, de pièce jointe médicale ni de commentaire
 libre sur l'état de santé. `V100__donnees_demo.sql` ne contient que des noms
 fictifs et ne doit pas être chargé en production (profil `dev` uniquement).
 
+**Le droit à l'image est un consentement à part entière.** `eleve.autorisation_image`
+est distinct de `eleve.autorisation_legale` (qui ne couvre que la pratique).
+Une photo (`photo_eleve`, table séparée pour ne jamais alourdir les lectures
+courantes d'un élève) n'est ni acceptée en dépôt ni renvoyée par
+`EleveController` sans ce consentement explicite ; le retirer supprime la
+photo, pas seulement son affichage.
+
 ## Chantiers ouverts
 
 1. Import du classeur Google Sheets existant, pour démarrer la saison en cours
-   avec les données réelles.
-2. Écran d'administration : inscription des élèves, ouverture de saison,
-   import d'une révision du MFT.
+   avec les données réelles. Point d'attention : le tableur a un 4ᵉ statut
+   (`NA`, non acquis) que `StatutAcquisition` ne représente pas encore.
+2. Écran d'administration : inscription des élèves, ouverture de saison faits
+   (`/admin/eleves`, `/admin/saisons`, `/admin/cursus`) ; reste l'import d'une
+   révision du MFT.
 3. Relances automatiques : certificats médicaux qui expirent, RIFAP échus, et
    les 4 plongées en milieu naturel dues par un N1 certifié en piscine.
 4. Export PDF de la fiche de suivi d'un élève.
 5. Icônes PWA à fournir dans `frontend/public/icones/`.
+6. Envoi d'e-mail réel : `ServiceNotificationConsole` se contente de tracer le
+   lien de réinitialisation de mot de passe dans les logs (pas de serveur SMTP
+   configuré). À remplacer avant la mise en production.
 
 ## Avertissement
 

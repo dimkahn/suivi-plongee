@@ -1,6 +1,8 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
+import fr.club.plongee.evaluation.EvaluationRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
@@ -9,13 +11,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/seances")
 public class SeanceController {
 
     public record SeanceVue(Long id, LocalDate date, String milieu, String lieu,
-                            Integer profondeurMax) {}
+                            Integer profondeurMax, String commentaire, boolean modifiable) {}
 
     public record DemandeSeance(@NotNull LocalDate dateSeance, @NotNull Milieu milieu,
                                 String lieu, Integer profondeurMax, String commentaire) {}
@@ -27,21 +30,23 @@ public class SeanceController {
     private final SaisonRepository saisons;
     private final CursusRepository cursus;
     private final ParticipationRepository participations;
+    private final EvaluationRepository evaluations;
 
     public SeanceController(SeanceRepository seances, SaisonRepository saisons,
-                            CursusRepository cursus, ParticipationRepository participations) {
+                            CursusRepository cursus, ParticipationRepository participations,
+                            EvaluationRepository evaluations) {
         this.seances = seances;
         this.saisons = saisons;
         this.cursus = cursus;
         this.participations = participations;
+        this.evaluations = evaluations;
     }
 
     @GetMapping
     public List<SeanceVue> lister(@RequestParam(required = false) Long saisonId) {
         Long saison = saisonId != null ? saisonId : saisonCourante().getId();
         return seances.findBySaisonIdOrderByDateSeance(saison).stream()
-                .map(s -> new SeanceVue(s.getId(), s.getDateSeance(), s.getMilieu().name(),
-                        s.getLieu(), s.getProfondeurMax()))
+                .map(this::vue)
                 .toList();
     }
 
@@ -57,8 +62,51 @@ public class SeanceController {
         s.setProfondeurMax(demande.profondeurMax());
         s.setCommentaire(demande.commentaire());
         seances.save(s);
-        return new SeanceVue(s.getId(), s.getDateSeance(), s.getMilieu().name(),
-                s.getLieu(), s.getProfondeurMax());
+        return vue(s);
+    }
+
+    /**
+     * Modifie une séance. Une fois qu'elle porte des présences ou des
+     * évaluations, milieu et profondeur ne bougent plus : les règles du MFT
+     * déjà validées (milieu naturel exclusif, profondeur de formation...)
+     * dépendent de ces valeurs. Date, lieu et commentaire restent libres.
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public SeanceVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeSeance demande) {
+        Seance s = seances.findById(id)
+                .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
+
+        if (!estModifiableEnProfondeur(s) &&
+                (s.getMilieu() != demande.milieu()
+                        || !Objects.equals(s.getProfondeurMax(), demande.profondeurMax()))) {
+            throw new RegleMetierException(
+                    "Cette séance porte déjà des présences ou des évaluations : "
+                            + "le milieu et la profondeur ne peuvent plus être modifiés.");
+        }
+
+        s.setDateSeance(demande.dateSeance());
+        s.setMilieu(demande.milieu());
+        s.setLieu(demande.lieu());
+        s.setProfondeurMax(demande.profondeurMax());
+        s.setCommentaire(demande.commentaire());
+        seances.save(s);
+        return vue(s);
+    }
+
+    /** Suppression réservée à l'ADMIN : un geste rare, jamais fait sur une séance déjà utilisée. */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void supprimer(@PathVariable Long id) {
+        Seance s = seances.findById(id)
+                .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
+        if (!estModifiableEnProfondeur(s)) {
+            throw new RegleMetierException(
+                    "Cette séance porte des présences ou des évaluations : "
+                            + "elle ne peut plus être supprimée, pour garder l'historique.");
+        }
+        seances.delete(s);
     }
 
     /** Feuille de presence : remplace la grille de dates en colonnes du tableur. */
@@ -86,5 +134,14 @@ public class SeanceController {
     private Saison saisonCourante() {
         return saisons.findFirstByOuverteTrueOrderByDateDebutDesc()
                 .orElseThrow(() -> new RessourceIntrouvableException("Aucune saison ouverte"));
+    }
+
+    private boolean estModifiableEnProfondeur(Seance s) {
+        return !participations.existsBySeanceId(s.getId()) && !evaluations.existsBySeanceId(s.getId());
+    }
+
+    private SeanceVue vue(Seance s) {
+        return new SeanceVue(s.getId(), s.getDateSeance(), s.getMilieu().name(),
+                s.getLieu(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s));
     }
 }
