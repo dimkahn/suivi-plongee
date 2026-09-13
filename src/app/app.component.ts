@@ -5,9 +5,9 @@ import { FileAttenteService } from './core/file-attente.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 
 @Component({
-    selector: 'app-racine',
-    imports: [RouterOutlet, RouterLink, BandeauSyncComponent],
-    template: `
+  selector: 'app-racine',
+  imports: [RouterOutlet, RouterLink, BandeauSyncComponent],
+  template: `
     @if (pret()) {
       @if (auth.connecte()) {
         <header>
@@ -34,7 +34,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
       <p class="vide">Ouverture de la session…</p>
     }
   `,
-    styles: [`
+  styles: [`
     header {
       display: flex; align-items: center; justify-content: space-between;
       gap: var(--pas-2); flex-wrap: wrap;

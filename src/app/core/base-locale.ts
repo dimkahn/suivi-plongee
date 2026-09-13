@@ -66,7 +66,7 @@ export function lireTout<T>(magasin: string): Promise<T[]> {
 }
 
 export function lire<T>(magasin: string, cle: IDBValidKey): Promise<T | undefined> {
-  return transaction<T | undefined>(magasin, 'readonly', s => s.get(cle) as IDBRequest<T>);
+  return transaction<T | undefined>(magasin, 'readonly', s => s.get(cle) as IDBRequest<T | undefined>);
 }
 
 export function supprimer(magasin: string, cle: IDBValidKey): Promise<undefined> {
