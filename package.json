@@ -8,21 +8,21 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "^19.2.25",
-    "@angular/compiler": "^19.2.25",
-    "@angular/core": "^19.2.25",
-    "@angular/forms": "^19.2.25",
-    "@angular/platform-browser": "^19.2.25",
-    "@angular/router": "^19.2.25",
-    "@angular/service-worker": "^19.2.25",
+    "@angular/common": "^20.3.31",
+    "@angular/compiler": "^20.3.31",
+    "@angular/core": "^20.3.31",
+    "@angular/forms": "^20.3.31",
+    "@angular/platform-browser": "^20.3.31",
+    "@angular/router": "^20.3.31",
+    "@angular/service-worker": "^20.3.31",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^19.2.27",
-    "@angular/cli": "^19.2.27",
-    "@angular/compiler-cli": "^19.2.25",
-    "typescript": "~5.5.4"
+    "@angular-devkit/build-angular": "^20.3.37",
+    "@angular/cli": "^20.3.37",
+    "@angular/compiler-cli": "^20.3.31",
+    "typescript": "~5.9.3"
   }
 }
