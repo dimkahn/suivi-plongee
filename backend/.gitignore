@@ -1,0 +1,13 @@
+# Java / Maven
+target/
+*.class
+
+# Outils
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Secrets : jamais versionnés
+.env
+application-local.yml
