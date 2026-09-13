@@ -36,6 +36,18 @@ public class ReinitialisationMotDePasseService {
 
     @Transactional
     public void demander(Utilisateur utilisateur) {
+        String jeton = emettre(utilisateur);
+        notifications.envoyerLienReinitialisation(utilisateur, jeton);
+    }
+
+    /** Comme {@link #demander}, mais pour l'invitation d'un moniteur tout juste créé par un ADMIN. */
+    @Transactional
+    public void inviter(Utilisateur utilisateur) {
+        String jeton = emettre(utilisateur);
+        notifications.envoyerLienInvitation(utilisateur, jeton);
+    }
+
+    private String emettre(Utilisateur utilisateur) {
         byte[] brut = new byte[32];
         ALEA.nextBytes(brut);
         String jeton = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);
@@ -45,8 +57,7 @@ public class ReinitialisationMotDePasseService {
         r.setJetonHash(empreinte(jeton));
         r.setExpireLe(Instant.now().plus(DUREE_VALIDITE));
         reinitialisations.save(r);
-
-        notifications.envoyerLienReinitialisation(utilisateur, jeton);
+        return jeton;
     }
 
     /** Valide le jeton, le marque consomme, et renvoie l'utilisateur concerne. */

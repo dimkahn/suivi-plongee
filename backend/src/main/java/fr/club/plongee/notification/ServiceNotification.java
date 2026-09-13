@@ -12,4 +12,11 @@ public interface ServiceNotification {
 
     /** {@code jeton} est le jeton en clair : il n'est jamais persiste tel quel. */
     void envoyerLienReinitialisation(Utilisateur destinataire, String jeton);
+
+    /**
+     * Meme jeton, meme page cote front, mais un message d'accueil different :
+     * ce lien cree le mot de passe d'un compte tout juste ouvert par un ADMIN,
+     * il ne remplace pas un mot de passe oublie.
+     */
+    void envoyerLienInvitation(Utilisateur destinataire, String jeton);
 }

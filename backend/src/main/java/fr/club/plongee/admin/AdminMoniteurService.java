@@ -89,7 +89,7 @@ public class AdminMoniteurService {
         u.setMotDePasse(encodeur.encode(Base64.getUrlEncoder().encodeToString(brut)));
 
         utilisateurs.save(u);
-        reinitialisations.demander(u);
+        reinitialisations.inviter(u);
         return u;
     }
 
