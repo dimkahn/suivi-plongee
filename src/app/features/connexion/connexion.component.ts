@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
@@ -31,6 +31,7 @@ import { AuthService } from '../../core/auth.service';
       </div>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .accueil { min-height: 100dvh; display: grid; place-items: center; padding: var(--pas-3); }
     .panneau { width: 100%; max-width: 420px; padding: var(--pas-4) var(--pas-3); }
