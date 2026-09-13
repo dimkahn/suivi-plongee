@@ -13,6 +13,8 @@ out-tsc/
 .vscode/
 *.iml
 .DS_Store
+.claude/
+.~lock.*#
 
 # Secrets : jamais versionnés
 .env
