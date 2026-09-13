@@ -1,12 +1,12 @@
 import { Component, ViewChild, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 
 @Component({
   selector: 'app-racine',
-  imports: [RouterOutlet, RouterLink, BandeauSyncComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent],
   template: `
     @if (pret()) {
       @if (auth.connecte()) {
@@ -14,12 +14,12 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
           <a routerLink="/cursus" class="marque">Suivi des formations</a>
           <div class="identite">
             @if (auth.estMoniteur() || auth.estAdmin()) {
-              <a routerLink="/eleves" class="bouton-discret">Infos élèves</a>
-              <a routerLink="/trombinoscope" class="bouton-discret">Trombinoscope</a>
+              <a routerLink="/eleves" routerLinkActive="actif" class="bouton-discret">Infos élèves</a>
+              <a routerLink="/trombinoscope" routerLinkActive="actif" class="bouton-discret">Trombinoscope</a>
             }
             @if (auth.estAdmin()) {
-              <a routerLink="/seances" class="bouton-discret">Séances</a>
-              <a routerLink="/admin" class="bouton-discret">Administration</a>
+              <a routerLink="/seances" routerLinkActive="actif" class="bouton-discret">Séances</a>
+              <a routerLink="/admin" routerLinkActive="actif" class="bouton-discret">Administration</a>
             }
             @if (auth.estMoniteur()) {
               <button type="button" class="bouton-discret" (click)="bandeau?.precharger()">
@@ -55,6 +55,9 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
     .identite .bouton-discret {
       background: transparent; color: #fff; border-color: rgba(255,255,255,.4);
       text-decoration: none;
+    }
+    .identite .bouton-discret.actif {
+      background: rgba(255,255,255,.18); border-color: #fff; font-weight: 700;
     }
     .niveau {
       border: 1px solid rgba(255,255,255,.5); border-radius: var(--r-s);
