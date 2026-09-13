@@ -7,6 +7,8 @@ node_modules/
 dist/
 .angular/
 out-tsc/
+# Node/npm privés téléchargés par frontend-maven-plugin (mvn depuis la racine)
+.maven-frontend/
 
 # Outils
 .idea/

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>fr.club</groupId>
+  <artifactId>suivi-plongee-parent</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <name>suivi-plongee (agrégateur)</name>
+  <description>
+    Regroupe le frontend (Angular) et le backend (Spring Boot) pour un
+    `mvn install` unique depuis la racine. Le déploiement reste celui de
+    docker-compose.yml : deux services indépendants (voir backend/Dockerfile
+    et frontend/Dockerfile) ; ce pom ne fait que regrouper la compilation
+    locale, il ne change rien à la topologie de prod.
+  </description>
+
+  <!--
+    Le frontend d'abord : si un jour le backend doit embarquer les fichiers
+    statiques compilés, l'ordre du reacteur les aura déjà produits.
+  -->
+  <modules>
+    <module>frontend</module>
+    <module>backend</module>
+  </modules>
+</project>

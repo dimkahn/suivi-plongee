@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>fr.club</groupId>
+    <artifactId>suivi-plongee-parent</artifactId>
+    <version>1.0.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>suivi-plongee-frontend</artifactId>
+  <packaging>pom</packaging>
+  <name>suivi-plongee-frontend</name>
+  <description>
+    Enveloppe Maven autour du build Angular : installe un Node/npm privés
+    (indépendants de ceux du poste, ce qui évite les soucis de version comme
+    celui de la CLI Angular exigeant Node >= 22.22.3) et lance `npm ci` puis
+    `npm run build`. Le développement au quotidien continue de se faire avec
+    `npm start` (voir CLAUDE.md) ; ce pom sert la compilation depuis la
+    racine (`mvn install`), pas le serveur de dev.
+  </description>
+
+  <properties>
+    <!-- Le développement quotidien (npm start) n'est pas concerné : voir CLAUDE.md. -->
+    <frontend.node.version>v22.23.2</frontend.node.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>1.15.1</version>
+        <configuration>
+          <nodeVersion>${frontend.node.version}</nodeVersion>
+          <installDirectory>${project.basedir}/.maven-frontend</installDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <!-- Doit s'exécuter avant le "npm ci" ci-dessous : phase la plus tôt possible. -->
+            <id>install-node-and-npm</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>npm-install</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>ci</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-build</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
