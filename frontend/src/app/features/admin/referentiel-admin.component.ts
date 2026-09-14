@@ -51,12 +51,20 @@ import { ReferentielVue } from '../../core/modeles';
             @for (b of r.blocs; track b.id) {
               <li class="carte bloc">
                 <div class="entete-bloc">
-                  <span class="nom">{{ b.code }} · {{ b.intitule }}</span>
+                  <span class="nom">
+                    {{ b.code }} · {{ b.intitule }}
+                    @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
+                  </span>
                   <span class="secondaire">
                     {{ b.evaluationTransverse ? 'Évaluation transverse' : 'Évaluation par bloc' }}
                     @if (b.validerEnDernier) { · à valider en dernier }
                   </span>
                 </div>
+
+                @if (b.competenceAttendue) {
+                  <p class="competence-attendue">{{ b.competenceAttendue }}</p>
+                }
+
                 <ol>
                   @for (c of b.criteres; track c.id) {
                     <li>
@@ -67,6 +75,19 @@ import { ReferentielVue } from '../../core/modeles';
                     </li>
                   }
                 </ol>
+
+                @if (b.comportement || b.theorie) {
+                  <dl class="matiere">
+                    @if (b.comportement) { <dt>Comportement</dt><dd>{{ b.comportement }}</dd> }
+                    @if (b.theorie) { <dt>Théorie</dt><dd>{{ b.theorie }}</dd> }
+                  </dl>
+                }
+
+                @if (b.modalitesEvaluation) {
+                  <p class="modalites">
+                    <span class="secondaire">Modalités d'évaluation —</span> {{ b.modalitesEvaluation }}
+                  </p>
+                }
               </li>
             }
           </ul>
@@ -102,8 +123,22 @@ import { ReferentielVue } from '../../core/modeles';
     .bloc { padding: var(--pas-2); }
     .entete-bloc { display: flex; flex-direction: column; gap: 2px; margin-bottom: var(--pas); }
     .entete-bloc .nom { font-weight: 700; }
+    .regroupement {
+      display: inline-block; margin-left: var(--pas); padding: 0 8px; font-size: .8125rem;
+      font-weight: 400; border-radius: var(--r-s); border: 1px solid var(--profond); color: var(--profond);
+    }
     .bloc ol { margin: 0; padding-left: 1.25rem; display: grid; gap: 4px; }
     .savoir-faire { font-weight: 600; }
+
+    .competence-attendue { margin: 0 0 var(--pas); font-style: italic; color: var(--craie); }
+    .matiere {
+      margin: var(--pas) 0 0; padding-top: var(--pas);
+      border-top: 1px solid var(--trait);
+      display: grid; grid-template-columns: max-content 1fr; gap: 4px var(--pas-2);
+    }
+    .matiere dt { color: var(--craie); font-weight: 700; }
+    .matiere dd { margin: 0; }
+    .modalites { margin: var(--pas) 0 0; padding-top: var(--pas); border-top: 1px solid var(--trait); }
 
     @media (max-width: 600px) {
       dl { grid-template-columns: 1fr; }

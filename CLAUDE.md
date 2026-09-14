@@ -39,14 +39,42 @@ Comptes de démonstration dans le README, mot de passe `plongee2026`.
 
 ## Décisions structurantes — ne pas défaire sans raison
 
-**Le référentiel MFT est en base, pas en dur.** Les codes C1 à C9 sont communs
-aux trois niveaux mais leurs intitulés et leurs critères diffèrent d'un niveau
-à l'autre. Un `Referentiel` = un niveau + une version datée du MFT ; un
-`Cursus` y est figé à l'inscription pour qu'une révision fédérale ne
-s'applique pas rétroactivement. Le contenu est généré par
-`outils/generer_referentiel.py`, qui produit `V2__referentiel_mft.sql`.
-Pour modifier le référentiel : éditer le script Python, régénérer, ajouter une
-migration. Ne jamais éditer le SQL généré à la main.
+**Le référentiel MFT est en base, pas en dur.** Un `Referentiel` = un niveau +
+une version datée du MFT ; un `Cursus` y est figé à l'inscription pour qu'une
+révision fédérale ne s'applique pas rétroactivement. Le contenu est généré par
+`outils/generer_referentiel.py` (un tuple par bloc dans la liste `REFERENTIELS`,
+un `INSERT` par version dans une migration Flyway dédiée). Pour modifier le
+référentiel : éditer le script Python, régénérer (il réémet tout, y compris les
+versions déjà migrées — n'en extraire que la partie neuve pour la nouvelle
+migration), ajouter une migration. Ne jamais éditer le SQL généré à la main.
+Historiquement les codes de bloc `C1` à `C9` étaient communs aux trois
+niveaux (intitulés et critères différents par niveau) — **ce n'est plus
+garanti** : la révision PE20 (décembre 2025) du N1 les a abandonnés au profit
+de dix compétences nommées, structurées en Technique (des critères, comme
+avant) / Comportement / Théorie / Modalités d'évaluation (texte libre, porté
+par des colonnes nullable sur `bloc_competence` ajoutées en V7 — vide sur les
+blocs des révisions antérieures). Ne pas supposer que `code` a un sens
+partagé entre niveaux ou révisions : c'est un simple identifiant unique par
+référentiel.
+
+**Le N2 et le N3 se scindent maintenant en plusieurs qualifications.** Les
+révisions PA20|PE40 (N2, mai 2026, V8) et PA40|PE60 (N3, décembre 2025, V8)
+remplacent chacune un bloc unique de compétences par deux qualifications
+(PA20 « plongeur autonome à 20 m » + PE40 « plongeur encadré à 40 m » pour le
+N2 ; PA40 + PE60, plus des « compétences complémentaires N3 », pour le N3),
+chacune avec ses propres blocs, plus des blocs communs. Le brevet N2/N3 n'est
+délivré que quand les qualifications requises sont acquises. **Choix de
+modélisation délibéré :** un seul `Referentiel` par niveau, comme avant —
+pas un « niveau » à part entière par qualification, ce qui aurait touché
+`Cursus`, `HabilitationService`, `RegleDelivranceService` et les écrans
+d'admin. Chaque bloc porte juste une étiquette d'affichage dans la colonne
+`regroupement` (« Commun », « PA20 », « PE40 », « PA40 », « PE60 », « N3 »,
+ajoutée en V8) : il n'y a **aucun suivi séparé** de la progression par
+qualification, tout se valide sous un même cursus N2 ou N3. Si le club a
+besoin un jour de distinguer formellement « a le PA20 mais pas le PE40 »,
+c'est un vrai chantier de modélisation, pas une simple mise à jour du
+référentiel. PA60 (plongeur autonome à 60 m, sans DP, obtenu après le N3)
+n'est pas importé : hors périmètre du brevet N3 lui-même.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
@@ -125,11 +153,14 @@ photo, pas seulement son affichage.
    avec les données réelles. Point d'attention : le tableur a un 4ᵉ statut
    (`NA`, non acquis) que `StatutAcquisition` ne représente pas encore.
 2. Écran d'administration : inscription des élèves, ouverture de saison faits
-   (`/admin/eleves`, `/admin/saisons`, `/admin/cursus`) ; reste l'import d'une
-   révision du MFT.
+   (`/admin/eleves`, `/admin/saisons`, `/admin/cursus`), y compris modification
+   des dates d'une saison. Import d'une révision du MFT fait pour N1, N2 et N3
+   (V7, V8 — voir la note plus haut sur le N2/N3 scindés en qualifications) ;
+   PA60 non importé (hors périmètre du brevet N3, voir plus haut).
 3. Relances automatiques : certificats médicaux qui expirent, RIFAP échus, et
    les 4 plongées en milieu naturel dues par un N1 certifié en piscine.
-4. Export PDF de la fiche de suivi d'un élève.
+4. ~~Export PDF de la fiche de suivi d'un élève.~~ Fait (`GET
+   /api/cursus/{id}/fiche.pdf`, bouton dans la grille).
 5. Icônes PWA à fournir dans `frontend/public/icones/`.
 6. Envoi d'e-mail réel : `ServiceNotificationConsole` se contente de tracer le
    lien de réinitialisation de mot de passe dans les logs (pas de serveur SMTP

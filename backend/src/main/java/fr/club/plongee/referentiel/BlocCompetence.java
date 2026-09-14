@@ -34,6 +34,34 @@ public class BlocCompetence {
     @Column(nullable = false)
     private boolean validerEnDernier;
 
+    /**
+     * Texte libre porte par les revisions post-PE20 (decembre 2025) du MFT,
+     * qui ont abandonne les paires savoir-faire/critere de realisation au
+     * profit d'une structure Technique/Comportement/Theorie par competence.
+     * Nullable : les blocs des revisions anterieures n'ont pas cette matiere.
+     */
+    @Column(columnDefinition = "text")
+    private String competenceAttendue;
+
+    @Column(columnDefinition = "text")
+    private String comportement;
+
+    @Column(columnDefinition = "text")
+    private String theorie;
+
+    @Column(columnDefinition = "text")
+    private String modalitesEvaluation;
+
+    /**
+     * Etiquette d'affichage ("Commun", "PA20", "PE40"...) pour les niveaux
+     * qui se scindent en plusieurs qualifications (N2 = PA20 + PE40, N3 =
+     * PA40 + PE60 + competences complementaires) fusionnees en un seul
+     * referentiel plutot que suivies separement (voir CLAUDE.md). Nullable :
+     * sans objet pour un niveau qui ne se scinde pas.
+     */
+    @Column(length = 40)
+    private String regroupement;
+
     @OneToMany(mappedBy = "bloc", fetch = FetchType.LAZY)
     @OrderBy("ordre")
     private List<Critere> criteres = new ArrayList<>();
@@ -92,6 +120,46 @@ public class BlocCompetence {
 
     public void setValiderEnDernier(boolean validerEnDernier) {
         this.validerEnDernier = validerEnDernier;
+    }
+
+    public String getCompetenceAttendue() {
+        return competenceAttendue;
+    }
+
+    public void setCompetenceAttendue(String competenceAttendue) {
+        this.competenceAttendue = competenceAttendue;
+    }
+
+    public String getComportement() {
+        return comportement;
+    }
+
+    public void setComportement(String comportement) {
+        this.comportement = comportement;
+    }
+
+    public String getTheorie() {
+        return theorie;
+    }
+
+    public void setTheorie(String theorie) {
+        this.theorie = theorie;
+    }
+
+    public String getModalitesEvaluation() {
+        return modalitesEvaluation;
+    }
+
+    public void setModalitesEvaluation(String modalitesEvaluation) {
+        this.modalitesEvaluation = modalitesEvaluation;
+    }
+
+    public String getRegroupement() {
+        return regroupement;
+    }
+
+    public void setRegroupement(String regroupement) {
+        this.regroupement = regroupement;
     }
 
     public List<Critere> getCriteres() {

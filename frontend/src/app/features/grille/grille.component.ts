@@ -105,7 +105,11 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
         <section class="carte bloc">
           <header>
             <div>
-              <h2><span class="code">{{ bloc.code }}</span> {{ bloc.intitule }}</h2>
+              <h2>
+                <span class="code">{{ bloc.code }}</span>
+                @if (bloc.regroupement) { <span class="regroupement">{{ bloc.regroupement }}</span> }
+                {{ bloc.intitule }}
+              </h2>
               <p class="secondaire">
                 {{ bloc.acquis }} / {{ bloc.total }} acquis
                 @if (bloc.evaluationTransverse) {
@@ -251,6 +255,10 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     .code {
       display: inline-block; margin-right: var(--pas); padding: 0 8px;
       border-radius: var(--r-s); background: var(--profond); color: #fff;
+    }
+    .regroupement {
+      display: inline-block; margin-right: var(--pas); padding: 0 8px; font-size: .8125rem;
+      border-radius: var(--r-s); border: 1px solid var(--profond); color: var(--profond);
     }
     .valide { margin: 0; color: var(--acquis); font-weight: 700; font-size: .9375rem; }
 

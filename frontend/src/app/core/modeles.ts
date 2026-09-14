@@ -41,6 +41,8 @@ export interface BlocVue {
   valide: boolean;
   dateValidation: string | null;
   valideePar: string | null;
+  /** "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en plusieurs qualifications. */
+  regroupement: string | null;
   criteres: CritereVue[];
 }
 
@@ -188,6 +190,13 @@ export interface BlocReferentielVue {
   ordre: number;
   evaluationTransverse: boolean;
   validerEnDernier: boolean;
+  /** Revisions post-PE20 (decembre 2025) uniquement : null sur les blocs plus anciens. */
+  competenceAttendue: string | null;
+  comportement: string | null;
+  theorie: string | null;
+  modalitesEvaluation: string | null;
+  /** "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en plusieurs qualifications. */
+  regroupement: string | null;
   criteres: CritereReferentielVue[];
 }
 

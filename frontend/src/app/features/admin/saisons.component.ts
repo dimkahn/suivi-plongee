@@ -37,20 +37,38 @@ import { SaisonVue } from '../../core/modeles';
       <ul>
         @for (s of liste(); track s.id) {
           <li class="carte">
-            <div class="ligne">
-              <div class="identite">
-                <span class="nom">{{ s.libelle }}</span>
-                <span class="secondaire">Du {{ s.dateDebut }} au {{ s.dateFin }}</span>
+            @if (enEdition() === s.id) {
+              <label [for]="'libelle-' + s.id">Libellé</label>
+              <input [id]="'libelle-' + s.id" type="text" [(ngModel)]="brouillon.libelle">
+              <label [for]="'debut-' + s.id">Début</label>
+              <input [id]="'debut-' + s.id" type="date" [(ngModel)]="brouillon.dateDebut">
+              <label [for]="'fin-' + s.id">Fin</label>
+              <input [id]="'fin-' + s.id" type="date" [(ngModel)]="brouillon.dateFin">
+              <div class="actions">
+                <button type="button" class="bouton-principal" (click)="enregistrer(s)" [disabled]="envoi()">
+                  {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+                </button>
+                <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
               </div>
-              <span class="etat" [class.actif]="s.ouverte" [class.inactif]="!s.ouverte">
-                {{ s.ouverte ? 'Ouverte' : 'Fermée' }}
-              </span>
-            </div>
-            <div class="actions">
-              <button type="button" class="bouton-discret" (click)="changerOuverture(s)">
-                {{ s.ouverte ? 'Fermer' : 'Rouvrir' }}
-              </button>
-            </div>
+            } @else {
+              <div class="ligne">
+                <div class="identite">
+                  <span class="nom">{{ s.libelle }}</span>
+                  <span class="secondaire">Du {{ s.dateDebut }} au {{ s.dateFin }}</span>
+                </div>
+                <span class="etat" [class.actif]="s.ouverte" [class.inactif]="!s.ouverte">
+                  {{ s.ouverte ? 'Ouverte' : 'Fermée' }}
+                </span>
+              </div>
+              <div class="actions">
+                <button type="button" class="bouton-discret" (click)="commencerEdition(s)">
+                  Modifier les dates
+                </button>
+                <button type="button" class="bouton-discret" (click)="changerOuverture(s)">
+                  {{ s.ouverte ? 'Fermer' : 'Rouvrir' }}
+                </button>
+              </div>
+            }
           </li>
         }
       </ul>
@@ -86,6 +104,9 @@ export class SaisonsComponent {
   libelle = '';
   dateDebut = '';
   dateFin = '';
+
+  enEdition = signal<number | null>(null);
+  brouillon = { libelle: '', dateDebut: '', dateFin: '' };
 
   constructor() {
     void this.charger();
@@ -131,6 +152,36 @@ export class SaisonsComponent {
       next: maj => this.liste.set(this.liste().map(x => x.id === maj.id ? maj : x)),
       error: (e: HttpErrorResponse) =>
         this.message.set(e.error?.detail ?? "L'action n'a pas pu être enregistrée.")
+    });
+  }
+
+  commencerEdition(s: SaisonVue): void {
+    this.message.set(null);
+    this.brouillon = { libelle: s.libelle, dateDebut: s.dateDebut, dateFin: s.dateFin };
+    this.enEdition.set(s.id);
+  }
+
+  annulerEdition(): void {
+    this.enEdition.set(null);
+  }
+
+  enregistrer(s: SaisonVue): void {
+    if (!this.brouillon.libelle || !this.brouillon.dateDebut || !this.brouillon.dateFin) {
+      this.message.set('Libellé, début et fin sont obligatoires.');
+      return;
+    }
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.modifierSaison(s.id, this.brouillon).subscribe({
+      next: maj => {
+        this.envoi.set(false);
+        this.liste.set(this.liste().map(x => x.id === maj.id ? maj : x));
+        this.enEdition.set(null);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "La modification n'a pas pu être enregistrée.");
+      }
     });
   }
 }

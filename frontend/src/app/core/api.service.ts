@@ -212,6 +212,11 @@ export class ApiService {
     return this.http.post<SaisonVue>('/api/saisons', demande);
   }
 
+  /** Les dates sont purement informatives : modifiables sans restriction. */
+  modifierSaison(id: number, demande: { libelle: string; dateDebut: string; dateFin: string }): Observable<SaisonVue> {
+    return this.http.put<SaisonVue>(`/api/saisons/${id}`, demande);
+  }
+
   changerOuvertureSaison(id: number, ouverte: boolean): Observable<SaisonVue> {
     return this.http.put<SaisonVue>(`/api/saisons/${id}/ouverture`, { ouverte });
   }

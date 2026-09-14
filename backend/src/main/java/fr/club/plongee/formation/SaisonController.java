@@ -51,6 +51,19 @@ public class SaisonController {
         return vue(s);
     }
 
+    /** Les dates sont purement informatives (aucune règle métier ne s'y appuie) : modifiables sans restriction. */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SaisonVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeSaison demande) {
+        Saison s = saisons.findById(id)
+                .orElseThrow(() -> new RessourceIntrouvableException("Saison introuvable"));
+        s.setLibelle(demande.libelle());
+        s.setDateDebut(demande.dateDebut());
+        s.setDateFin(demande.dateFin());
+        saisons.save(s);
+        return vue(s);
+    }
+
     /** Une saison fermée ne bloque rien de rétroactif : elle sort seulement des saisons proposées par défaut. */
     @PutMapping("/{id}/ouverture")
     @PreAuthorize("hasRole('ADMIN')")
