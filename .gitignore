@@ -21,3 +21,6 @@ out-tsc/
 # Secrets : jamais versionnés
 .env
 application-local.yml
+
+# Fichier retiré de l'historique (données personnelles), à ne jamais recommitter
+Fichier Suivi PN1 2025-2026.xlsx
