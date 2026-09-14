@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { CursusVue, EleveVue, SaisonVue } from '../../core/modeles';
+import { AdhesionVue, CursusVue, EleveVue, SaisonVue } from '../../core/modeles';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 
@@ -81,7 +81,7 @@ function depuis(e: EleveVue): FormulaireEleve {
         <select id="filtre-statut" name="filtreStatut" [ngModel]="filtreStatut()"
                 (ngModelChange)="filtreStatut.set($event)">
           <option value="TOUS">Tous</option>
-          <option value="NON_INSCRIT">Non inscrit sur la saison</option>
+          <option value="NON_INSCRIT">Sans rattachement à la saison</option>
           @for (s of statuts; track s) { <option [value]="s">{{ s }}</option> }
         </select>
       </div>
@@ -132,6 +132,15 @@ function depuis(e: EleveVue): FormulaireEleve {
                     Autorisation légale {{ e.autorisationLegale ? 'recueillie' : 'manquante' }}
                     · Droit à l'image {{ e.autorisationImage ? 'recueilli' : 'non recueilli' }}
                   </span>
+                  @if (filtreSaisonId(); as saisonId) {
+                    <span class="secondaire">
+                      @if (adhesionDe(e); as a) {
+                        Adhésion sans formation pour {{ saisonLibelle(saisonId) }}
+                      } @else if (!aCursus(e)) {
+                        Pas de rattachement à {{ saisonLibelle(saisonId) }}
+                      }
+                    </span>
+                  }
                 </div>
               </div>
 
@@ -147,8 +156,42 @@ function depuis(e: EleveVue): FormulaireEleve {
                            (change)="deposerPhoto(e, $event)">
                   </label>
                 }
+                @if (filtreSaisonId() && !aCursus(e)) {
+                  @if (adhesionDe(e); as a) {
+                    <button type="button" class="bouton-discret" (click)="retirerDeLaSaison(a)">
+                      Retirer de la saison
+                    </button>
+                  } @else {
+                    <button type="button" class="bouton-discret" (click)="ajouterALaSaison(e)"
+                            [disabled]="envoiAdhesion() === e.id">
+                      {{ envoiAdhesion() === e.id ? 'Ajout…' : 'Ajouter à la saison (sans formation)' }}
+                    </button>
+                  }
+                }
+                <button type="button" class="bouton-discret" (click)="basculerHistorique(e)">
+                  {{ historiqueOuvert() === e.id ? 'Masquer l’historique' : 'Historique des saisons' }}
+                </button>
                 <button type="button" class="bouton-discret danger" (click)="archiver(e)">Archiver</button>
               </div>
+
+              @if (historiqueOuvert() === e.id) {
+                <div class="historique">
+                  @if (chargementHistorique()) {
+                    <p class="secondaire">Chargement…</p>
+                  } @else if ((historique() ?? []).length === 0) {
+                    <p class="secondaire">
+                      Aucune adhésion sans formation enregistrée pour cet élève (une formation en cours
+                      figure dans l'écran Inscriptions).
+                    </p>
+                  } @else {
+                    <ul class="saisons">
+                      @for (a of historique(); track a.id) {
+                        <li>{{ a.saison }} <span class="secondaire">— depuis le {{ a.adhereLe }}</span></li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
             }
           </li>
         }
@@ -182,6 +225,10 @@ function depuis(e: EleveVue): FormulaireEleve {
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .upload { cursor: pointer; }
     .danger { color: #B3261E; border-color: #B3261E; }
+    .historique {
+      margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
+    }
+    .saisons { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
   `]
 })
 export class ElevesComponent {
@@ -192,9 +239,15 @@ export class ElevesComponent {
   liste = signal<EleveVue[]>([]);
   saisons = signal<SaisonVue[]>([]);
   cursusDeLaSaison = signal<CursusVue[]>([]);
+  adhesionsDeLaSaison = signal<AdhesionVue[]>([]);
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
+  envoiAdhesion = signal<number | null>(null);
+
+  historiqueOuvert = signal<number | null>(null);
+  chargementHistorique = signal(false);
+  historique = signal<AdhesionVue[] | null>(null);
 
   filtreNom = signal('');
   filtreSaisonId = signal<number | null>(null);
@@ -213,14 +266,28 @@ export class ElevesComponent {
       liste.push(c);
       cursusParEleve.set(c.eleveId, liste);
     }
+    const adhesionsParEleve = new Map(this.adhesionsDeLaSaison().map(a => [a.eleveId, a]));
     return this.liste().filter(e => {
       if (recherche && !`${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche)) return false;
       if (statut === 'TOUS') return true;
       const cursus = cursusParEleve.get(e.id) ?? [];
-      if (statut === 'NON_INSCRIT') return cursus.length === 0;
+      // Sans formation cette saison : compte comme rattaché s'il a une adhésion.
+      if (statut === 'NON_INSCRIT') return cursus.length === 0 && !adhesionsParEleve.has(e.id);
       return cursus.some(c => c.statut === statut);
     });
   });
+
+  aCursus(e: EleveVue): boolean {
+    return this.cursusDeLaSaison().some(c => c.eleveId === e.id);
+  }
+
+  adhesionDe(e: EleveVue): AdhesionVue | null {
+    return this.adhesionsDeLaSaison().find(a => a.eleveId === e.id) ?? null;
+  }
+
+  saisonLibelle(saisonId: number): string {
+    return this.saisons().find(s => s.id === saisonId)?.libelle ?? '';
+  }
 
   formulaireCreation = signal<FormulaireEleve>(formulaireVide());
   edition = signal<number | null>(null);
@@ -251,10 +318,62 @@ export class ElevesComponent {
   async changerSaison(saisonId: number): Promise<void> {
     this.filtreSaisonId.set(saisonId);
     try {
-      this.cursusDeLaSaison.set(await firstValueFrom(this.api.cursusDeLaSaison(saisonId)));
+      const [cursus, adhesions] = await Promise.all([
+        firstValueFrom(this.api.cursusDeLaSaison(saisonId)),
+        firstValueFrom(this.api.adhesionsDeLaSaison(saisonId))
+      ]);
+      this.cursusDeLaSaison.set(cursus);
+      this.adhesionsDeLaSaison.set(adhesions);
     } catch {
       this.message.set("Impossible de charger les inscriptions de cette saison.");
     }
+  }
+
+  /** Élève déjà breveté qui continue de plonger sans ouvrir de nouvelle formation. */
+  ajouterALaSaison(e: EleveVue): void {
+    const saisonId = this.filtreSaisonId();
+    if (!saisonId) return;
+    this.envoiAdhesion.set(e.id);
+    this.message.set(null);
+    this.api.adherer({ eleveId: e.id, saisonId }).subscribe({
+      next: a => {
+        this.envoiAdhesion.set(null);
+        this.adhesionsDeLaSaison.set([...this.adhesionsDeLaSaison(), a]);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoiAdhesion.set(null);
+        this.message.set(err.error?.detail ?? "L'ajout à la saison n'a pas pu être enregistré.");
+      }
+    });
+  }
+
+  retirerDeLaSaison(a: AdhesionVue): void {
+    this.message.set(null);
+    this.api.retirerAdhesion(a.id).subscribe({
+      next: () => this.adhesionsDeLaSaison.set(this.adhesionsDeLaSaison().filter(x => x.id !== a.id)),
+      error: (err: HttpErrorResponse) =>
+        this.message.set(err.error?.detail ?? "Le retrait n'a pas pu être enregistré.")
+    });
+  }
+
+  basculerHistorique(e: EleveVue): void {
+    if (this.historiqueOuvert() === e.id) {
+      this.historiqueOuvert.set(null);
+      return;
+    }
+    this.historiqueOuvert.set(e.id);
+    this.chargementHistorique.set(true);
+    this.historique.set(null);
+    this.api.historiqueAdhesions(e.id).subscribe({
+      next: h => {
+        this.chargementHistorique.set(false);
+        this.historique.set(h);
+      },
+      error: () => {
+        this.chargementHistorique.set(false);
+        this.historique.set([]);
+      }
+    });
   }
 
   creer(): void {

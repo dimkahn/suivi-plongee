@@ -19,6 +19,20 @@ export interface CursusVue {
   moniteurReferent: string | null;
 }
 
+/**
+ * Appartenance d'un élève à une saison sans formation (pas de niveau, pas de
+ * référentiel) : pour un élève déjà breveté qui continue de plonger avec le
+ * club. À distinguer d'un CursusVue, qui porte toujours un niveau.
+ */
+export interface AdhesionVue {
+  id: number;
+  eleveId: number;
+  eleve: string;
+  saisonId: number;
+  saison: string;
+  adhereLe: string;
+}
+
 export interface CritereVue {
   id: number;
   ordre: number;
