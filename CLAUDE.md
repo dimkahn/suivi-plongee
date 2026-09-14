@@ -25,6 +25,15 @@ cd backend && mvn test                # tests d'intégration
 cd frontend && npm install && npm start
 ```
 
+Pour lancer les deux en une seule commande depuis la racine (un seul
+terminal ; le frontend est détaché en arrière-plan, son log est dans
+`frontend/frontend-dev.log`) :
+
+```bash
+mvn -N -Pdev antrun:run@dev          # démarre frontend + backend
+mvn -N -Pdev antrun:run@dev-stop     # arrête le frontend resté en tâche de fond
+```
+
 Le frontend proxifie `/api` vers `localhost:8080` (`proxy.conf.json`).
 Comptes de démonstration dans le README, mot de passe `plongee2026`.
 

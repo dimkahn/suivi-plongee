@@ -9,6 +9,9 @@ dist/
 out-tsc/
 # Node/npm privés téléchargés par frontend-maven-plugin (mvn depuis la racine)
 .maven-frontend/
+# `mvn -Pdev antrun:run@dev` : log et pid du frontend lancé en arrière-plan
+frontend/frontend-dev.log
+frontend/frontend-dev.pid
 
 # Outils
 .idea/
