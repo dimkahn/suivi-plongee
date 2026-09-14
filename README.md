@@ -43,6 +43,17 @@ npm install
 npm start                       # http://localhost:4200, proxy vers le backend
 ```
 
+### Les deux en même temps
+
+Pour éviter deux terminaux, une commande unique depuis la racine démarre le
+frontend en arrière-plan (log dans `frontend/frontend-dev.log`) puis le
+backend au premier plan (Ctrl+C l'arrête comme d'habitude) :
+
+```bash
+mvn -N -Pdev antrun:run@dev          # démarre frontend + backend
+mvn -N -Pdev antrun:run@dev-stop     # arrête le frontend resté en tâche de fond
+```
+
 ### Comptes de démonstration
 
 Mot de passe commun : `plongee2026`.

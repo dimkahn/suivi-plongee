@@ -26,4 +26,74 @@
     <module>frontend</module>
     <module>backend</module>
   </modules>
+
+  <profiles>
+    <!--
+      Lance les deux serveurs de développement (Angular + Spring Boot) depuis
+      un seul terminal : `mvn -N -Pdev antrun:run@dev`. Le `-N` est nécessaire
+      pour que Maven ne traite que ce pom agrégateur (le plugin n'est
+      volontairement pas hérité par frontend/ ni backend/, voir
+      `inherited=false` ci-dessous) sans quoi il tenterait de rejouer la même
+      cible dans chaque module.
+
+      Le frontend (`npm start`, bloquant) est détaché en tâche de fond via un
+      shell (sortie journalisée dans frontend/frontend-dev.log, pid dans
+      frontend/frontend-dev.pid) ; le backend (`mvn spring-boot:run`, lui
+      aussi bloquant) reste au premier plan pour recevoir le Ctrl+C usuel. Ce
+      profil ne remplace pas les commandes séparées documentées dans
+      CLAUDE.md, qui restent le repli si besoin de logs frontend au premier
+      plan. Arrêt propre du frontend : `mvn -N -Pdev antrun:run@dev-stop`.
+    -->
+    <profile>
+      <id>dev</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>3.1.0</version>
+            <inherited>false</inherited>
+            <executions>
+              <execution>
+                <id>dev</id>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo message="Démarrage du frontend (npm start) en arrière-plan..."/>
+                    <exec executable="sh" dir="${project.basedir}/frontend" failonerror="true">
+                      <arg value="-c"/>
+                      <arg value="npm start &gt; frontend-dev.log 2&gt;&amp;1 &amp; echo $! &gt; frontend-dev.pid"/>
+                    </exec>
+                    <echo message="Frontend lancé (voir frontend/frontend-dev.log). Démarrage du backend..."/>
+                    <exec executable="mvn" failonerror="true">
+                      <arg value="-f"/>
+                      <arg value="${project.basedir}/backend/pom.xml"/>
+                      <arg value="spring-boot:run"/>
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>dev-stop</id>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec executable="sh" dir="${project.basedir}/frontend" failonerror="false">
+                      <arg value="-c"/>
+                      <arg value="[ -f frontend-dev.pid ] &amp;&amp; kill $(cat frontend-dev.pid) 2&gt;/dev/null; rm -f frontend-dev.pid"/>
+                    </exec>
+                    <echo message="Frontend arrêté (s'il tournait encore)."/>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
