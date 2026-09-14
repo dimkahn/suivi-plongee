@@ -96,6 +96,18 @@ d'évolution, âge minimum, brevet prérequis, RIFAP pour le N3, C6 du N2 valid�
 en dernier. Ajouter une règle = ajouter une colonne au référentiel plutôt
 qu'une constante dans le code.
 
+**Un élève n'est pas forcément en formation.** Le seul lien élève-saison
+historique était `Cursus` (une formation N1/N2/N3 figée sur un référentiel).
+Pour un élève déjà breveté qui continue de plonger avec le club sans viser
+un nouveau niveau, `AdhesionSaison` (table `adhesion_saison`, contrôleur
+`/api/adhesions`) porte une appartenance légère à une saison : pas de
+référentiel, pas de suivi de séances/plongées (`Participation.cursus_id`
+reste obligatoire, volontairement pas touché — un élève en adhésion seule
+n'apparaît pas dans le roster de présence). Écran : `/admin/eleves`, filtre
+« Sans rattachement à la saison ». Si le club a un jour besoin de compter
+les présences d'un élève sans Cursus, c'est un vrai chantier sur
+`Participation`, pas une extension de `AdhesionSaison`.
+
 **Le hors ligne passe par une file, pas par un cache d'écriture.** Une
 notation est écrite dans IndexedDB avec une référence client (UUID), puis
 rejouée par `POST /api/synchronisation/evaluations`, qui répond élément par

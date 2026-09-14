@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
-  CursusVue, Eligibilite, EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue,
+  AdhesionVue, CursusVue, Eligibilite, EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue,
   MoniteurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
@@ -259,6 +259,28 @@ export class ApiService {
     moniteurReferentId: number | null; statut: string;
   }): Observable<CursusVue> {
     return this.http.put<CursusVue>(`/api/cursus/${id}`, demande);
+  }
+
+  // ----------------------------------------------------------------
+  //  Adhésion à une saison sans formation (élève déjà breveté qui continue
+  //  de plonger avec le club) : distincte d'un Cursus, réservée à l'ADMIN
+  //  en écriture, comme l'inscription à un cursus.
+  // ----------------------------------------------------------------
+
+  adhesionsDeLaSaison(saisonId: number): Observable<AdhesionVue[]> {
+    return this.http.get<AdhesionVue[]>('/api/adhesions', { params: { saisonId } });
+  }
+
+  historiqueAdhesions(eleveId: number): Observable<AdhesionVue[]> {
+    return this.http.get<AdhesionVue[]>('/api/adhesions', { params: { eleveId } });
+  }
+
+  adherer(demande: { eleveId: number; saisonId: number }): Observable<AdhesionVue> {
+    return this.http.post<AdhesionVue>('/api/adhesions', demande);
+  }
+
+  retirerAdhesion(id: number): Observable<unknown> {
+    return this.http.delete(`/api/adhesions/${id}`);
   }
 
   // ----------------------------------------------------------------

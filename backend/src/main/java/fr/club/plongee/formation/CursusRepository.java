@@ -36,4 +36,5 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
 
     boolean existsByMoniteurReferentId(Long moniteurReferentId);
     boolean existsByEleveIdAndSaisonIdAndReferentielId(Long eleveId, Long saisonId, Long referentielId);
+    boolean existsByEleveIdAndSaisonId(Long eleveId, Long saisonId);
 }
