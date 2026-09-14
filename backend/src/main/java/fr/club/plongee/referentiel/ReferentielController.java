@@ -14,6 +14,8 @@ public class ReferentielController {
 
     public record BlocVue(Long id, String code, String intitule, int ordre,
                           boolean evaluationTransverse, boolean validerEnDernier,
+                          String competenceAttendue, String comportement,
+                          String theorie, String modalitesEvaluation, String regroupement,
                           List<CritereVue> criteres) {}
 
     public record ReferentielVue(Long id, String niveau, String versionMft, String source,
@@ -50,6 +52,8 @@ public class ReferentielController {
         List<BlocVue> blocs = r.getBlocs().stream()
                 .map(b -> new BlocVue(b.getId(), b.getCode(), b.getIntitule(), b.getOrdre(),
                         b.isEvaluationTransverse(), b.isValiderEnDernier(),
+                        b.getCompetenceAttendue(), b.getComportement(),
+                        b.getTheorie(), b.getModalitesEvaluation(), b.getRegroupement(),
                         b.getCriteres().stream()
                                 .map(c -> new CritereVue(c.getId(), c.getOrdre(),
                                         c.getSavoirFaire(), c.getCritereRealisation()))

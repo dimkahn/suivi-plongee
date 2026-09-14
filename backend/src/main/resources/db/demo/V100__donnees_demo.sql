@@ -47,25 +47,25 @@ INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, s
 SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-09-22'
   FROM eleve e, saison s, referentiel r, utilisateur m
  WHERE e.numero_licence = 'A-01-000010' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N1' AND m.email = 'e2@club.fr';
+   AND r.niveau = 'N1' AND r.actif = TRUE AND m.email = 'e2@club.fr';
 
 INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
 SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-09-22'
   FROM eleve e, saison s, referentiel r, utilisateur m
  WHERE e.numero_licence = 'A-01-000011' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N1' AND m.email = 'e1@club.fr';
+   AND r.niveau = 'N1' AND r.actif = TRUE AND m.email = 'e1@club.fr';
 
 INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
 SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-09-22'
   FROM eleve e, saison s, referentiel r, utilisateur m
  WHERE e.numero_licence = 'A-01-000013' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N2' AND m.email = 'e3@club.fr';
+   AND r.niveau = 'N2' AND r.actif = TRUE AND m.email = 'e3@club.fr';
 
 INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
 SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-10-05'
   FROM eleve e, saison s, referentiel r, utilisateur m
  WHERE e.numero_licence = 'A-01-000012' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N3' AND m.email = 'presidente@club.fr';
+   AND r.niveau = 'N3' AND r.actif = TRUE AND m.email = 'presidente@club.fr';
 
 -- Seances : bassin le lundi, sorties en milieu naturel le week-end.
 INSERT INTO seance (saison_id, date_seance, milieu, lieu, profondeur_max)
@@ -96,7 +96,7 @@ SELECT c.id, cr.id, s.id, u.id, 'ACQUIS', DATE '2025-09-22', NULL
   FROM cursus c
   JOIN eleve e   ON e.id = c.eleve_id AND e.numero_licence = 'A-01-000010'
   JOIN referentiel r ON r.id = c.referentiel_id
-  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.code = 'C1'
+  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.code = 'B1'
   JOIN critere cr ON cr.bloc_id = b.id AND cr.ordre <= 3
   JOIN seance s  ON s.date_seance = DATE '2025-09-22'
   JOIN utilisateur u ON u.email = 'e2@club.fr';
@@ -106,7 +106,7 @@ SELECT c.id, cr.id, s.id, u.id, 'EN_COURS', DATE '2025-09-29', 'Vidage de masque
   FROM cursus c
   JOIN eleve e   ON e.id = c.eleve_id AND e.numero_licence = 'A-01-000010'
   JOIN referentiel r ON r.id = c.referentiel_id
-  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.code = 'C2'
-  JOIN critere cr ON cr.bloc_id = b.id AND cr.ordre = 5
+  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.code = 'B5'
+  JOIN critere cr ON cr.bloc_id = b.id AND cr.ordre = 3
   JOIN seance s  ON s.date_seance = DATE '2025-09-29'
   JOIN utilisateur u ON u.email = 'e2@club.fr';

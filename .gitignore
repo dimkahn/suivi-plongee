@@ -27,3 +27,10 @@ application-local.yml
 
 # Fichier retiré de l'historique (données personnelles), à ne jamais recommitter
 Fichier Suivi PN1 2025-2026.xlsx
+
+# Manuels de Formation Technique FFESSM (source de l'import du référentiel,
+# voir outils/generer_referentiel.py) : matériel fédéral, pas à committer.
+Plongeur Niveau *.pdf
+
+# Cache bytecode Python (outils/generer_referentiel.py)
+outils/__pycache__/
