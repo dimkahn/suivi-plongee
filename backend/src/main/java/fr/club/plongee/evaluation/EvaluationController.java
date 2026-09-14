@@ -4,7 +4,10 @@ import fr.club.plongee.delivrance.RegleDelivranceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import fr.club.plongee.securite.UtilisateurPrincipal;
+    import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +32,14 @@ public class EvaluationController {
     private final EvaluationService evaluations;
     private final GrilleService grilles;
     private final RegleDelivranceService regles;
+    private final FichePdfService fichePdfService;
 
     public EvaluationController(EvaluationService evaluations, GrilleService grilles,
-                                RegleDelivranceService regles) {
+                                RegleDelivranceService regles, FichePdfService fichePdfService) {
         this.evaluations = evaluations;
         this.grilles = grilles;
         this.regles = regles;
+        this.fichePdfService = fichePdfService;
     }
 
     /** Lecture : encadrants, administratifs, ou l'eleve pour son propre cursus. */
@@ -42,6 +47,16 @@ public class EvaluationController {
     @PreAuthorize("@habilitation.peutConsulter(#cursusId, authentication)")
     public GrilleService.GrilleVue grille(@PathVariable Long cursusId) {
         return grilles.grille(cursusId);
+    }
+
+    /** Même contenu que la grille, mis en page pour l'impression ou l'archivage. */
+    @GetMapping(value = "/fiche.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("@habilitation.peutConsulter(#cursusId, authentication)")
+    public ResponseEntity<byte[]> fichePdf(@PathVariable Long cursusId) {
+        FichePdfService.FichePdf fiche = fichePdfService.genererFiche(cursusId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fiche.nomFichier() + "\"")
+                .body(fiche.contenu());
     }
 
     /** Saisie : role MONITEUR, actif, et niveau d'encadrement suffisant pour ce brevet. */
