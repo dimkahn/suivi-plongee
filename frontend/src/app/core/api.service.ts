@@ -123,6 +123,11 @@ export class ApiService {
     return this.http.get<MatriceVue>(`/api/cursus/${cursusId}/matrice`);
   }
 
+  /** Fiche de suivi imprimable, même contenu que la grille. Nécessite le réseau. */
+  fichePdf(cursusId: number): Observable<Blob> {
+    return this.http.get(`/api/cursus/${cursusId}/fiche.pdf`, { responseType: 'blob' });
+  }
+
   /** Vue d'ensemble de la saison, réservée aux encadrants (roster « Infos Élèves »). */
   roster(saisonId?: number): Observable<RosterVue> {
     const params = saisonId ? { params: { saisonId } } : {};

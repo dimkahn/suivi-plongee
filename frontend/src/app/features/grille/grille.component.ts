@@ -63,6 +63,11 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
           <a [routerLink]="['/cursus', id(), 'matrice']" class="lien-matrice">
             Vue globale (toutes les séances)
           </a>
+          <button type="button" class="bouton-discret lien-pdf"
+                  [disabled]="!reseau.enLigne() || exportEnCours()"
+                  (click)="telechargerPdf(g)">
+            {{ exportEnCours() ? 'Génération du PDF…' : 'Exporter en PDF' }}
+          </button>
         </div>
       </div>
 
@@ -229,6 +234,8 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     .resume h1 { margin-bottom: 2px; }
     .score { margin: var(--pas) 0 0; font-weight: 700; }
     .lien-matrice { display: inline-block; margin-top: var(--pas); font-size: .875rem; }
+    .lien-pdf { display: block; margin-top: var(--pas); padding: 0; min-height: auto; background: none; border: none; color: var(--profond); font-size: .875rem; text-decoration: underline; }
+    .lien-pdf:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -308,6 +315,7 @@ export class GrilleComponent implements OnDestroy {
   erreurChargement = signal(false);
   ageDuCache = signal<string | null>(null);
   urlPhoto = signal<string | null>(null);
+  exportEnCours = signal(false);
 
   /** Historique des critères consultés, tenu par critereId. */
   historiqueOuverts = signal<Set<number>>(new Set());
@@ -467,6 +475,30 @@ export class GrilleComponent implements OnDestroy {
       return `Cette séance dépasse l'espace d'évolution autorisé en formation ${g.niveau}.`;
     }
     return null;
+  }
+
+  /**
+   * Récupère la fiche PDF (même contenu que la grille, mis en page pour
+   * l'impression) et déclenche son téléchargement. Nécessite le réseau : pas
+   * de génération PDF côté client, ni de mise en cache hors ligne.
+   */
+  telechargerPdf(g: { eleve: string }): void {
+    this.exportEnCours.set(true);
+    this.api.fichePdf(Number(this.id())).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = `fiche-${g.eleve}.pdf`;
+        lien.click();
+        URL.revokeObjectURL(url);
+        this.exportEnCours.set(false);
+      },
+      error: () => {
+        this.message.set('Le PDF n’a pas pu être généré.');
+        this.exportEnCours.set(false);
+      }
+    });
   }
 
   validerBloc(bloc: BlocAffiche): void {
