@@ -161,6 +161,10 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
     }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; margin-top: 0; }
+
+    @media (max-width: 600px) {
+      .ligne { flex-direction: column; }
+    }
   `]
 })
 export class CursusAdminComponent {

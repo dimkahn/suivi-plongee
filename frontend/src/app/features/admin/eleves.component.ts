@@ -229,6 +229,10 @@ function depuis(e: EleveVue): FormulaireEleve {
       margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
     }
     .saisons { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+
+    @media (max-width: 600px) {
+      .ligne { flex-direction: column; }
+    }
   `]
 })
 export class ElevesComponent {
