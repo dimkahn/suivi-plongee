@@ -76,7 +76,7 @@ class EvaluationServiceTest {
     private static BlocCompetence bloc(Referentiel referentiel, boolean transverse, boolean validerEnDernier) {
         BlocCompetence b = new BlocCompetence();
         b.setId(1L);
-        b.setCode("C1");
+        b.setIntitule("Bloc de test");
         b.setReferentiel(referentiel);
         b.setEvaluationTransverse(transverse);
         b.setValiderEnDernier(validerEnDernier);

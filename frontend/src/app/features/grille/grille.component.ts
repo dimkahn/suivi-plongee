@@ -101,15 +101,17 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
 
       @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-      @for (bloc of g.blocs; track bloc.id) {
+      @for (groupe of groupesAffiches(); track groupe.regroupement ?? '') {
+        @if (groupe.regroupement) {
+          <h2 class="titre-groupe">{{ groupe.regroupement }}</h2>
+        }
+        @for (bloc of groupe.blocs; track bloc.id) {
         <section class="carte bloc">
           <header>
             <div>
-              <h2>
-                <span class="code">{{ bloc.code }}</span>
-                @if (bloc.regroupement) { <span class="regroupement">{{ bloc.regroupement }}</span> }
+              <h3>
                 {{ bloc.intitule }}
-              </h2>
+              </h3>
               <p class="secondaire">
                 {{ bloc.acquis }} / {{ bloc.total }} acquis
                 @if (bloc.evaluationTransverse) {
@@ -132,7 +134,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                 <p class="secondaire">Validation possible au retour du réseau.</p>
               } @else {
                 <button type="button" class="bouton-principal" (click)="validerBloc(bloc)">
-                  Valider {{ bloc.code }}
+                  Valider la compétence
                 </button>
               }
             }
@@ -212,6 +214,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
             }
           </ul>
         </section>
+        }
       }
     } @else if (erreurChargement()) {
       <div class="carte vide">
@@ -252,14 +255,12 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       display: flex; justify-content: space-between; align-items: flex-start;
       gap: var(--pas-2); flex-wrap: wrap; margin-bottom: var(--pas-2);
     }
-    .code {
-      display: inline-block; margin-right: var(--pas); padding: 0 8px;
-      border-radius: var(--r-s); background: var(--profond); color: #fff;
+    .titre-groupe {
+      margin: var(--pas-3) 0 var(--pas); padding-bottom: 4px;
+      border-bottom: 2px solid var(--profond); color: var(--profond);
+      font-size: 1rem; text-transform: uppercase; letter-spacing: .02em;
     }
-    .regroupement {
-      display: inline-block; margin-right: var(--pas); padding: 0 8px; font-size: .8125rem;
-      border-radius: var(--r-s); border: 1px solid var(--profond); color: var(--profond);
-    }
+    .bloc header h3 { font-size: 1.0625rem; }
     .valide { margin: 0; color: var(--acquis); font-weight: 700; font-size: .9375rem; }
 
     ul { list-style: none; margin: 0; padding: 0; }
@@ -368,6 +369,22 @@ export class GrilleComponent implements OnDestroy {
     });
 
     return { ...g, blocs, criteresAcquis: acquisTotal };
+  });
+
+  /**
+   * Le backend livre deja les blocs groupes par regroupement (etiquette
+   * "Commun"/"PA20"/"PE40"...) : on se contente ici de les repartir en
+   * sections pour l'affichage, dans le meme ordre stable.
+   */
+  groupesAffiches = computed(() => {
+    const g = this.grilleAffichee();
+    if (!g) return [];
+    const parRegroupement = new Map<string | null, BlocAffiche[]>();
+    for (const bloc of g.blocs) {
+      if (!parRegroupement.has(bloc.regroupement)) parRegroupement.set(bloc.regroupement, []);
+      parRegroupement.get(bloc.regroupement)!.push(bloc);
+    }
+    return [...parRegroupement.entries()].map(([regroupement, blocs]) => ({ regroupement, blocs }));
   });
 
   progression = computed(() => {

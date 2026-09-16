@@ -62,7 +62,6 @@ class GrilleServiceTest {
 
         BlocCompetence bloc = new BlocCompetence();
         bloc.setId(1L);
-        bloc.setCode("C1");
         bloc.setIntitule("Competence 1");
         bloc.setCriteres(List.of(c1, c2));
         ref.setBlocs(List.of(bloc));
