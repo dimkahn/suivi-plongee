@@ -307,6 +307,15 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       .etat { flex: 1; }
       .barre-seance { flex-direction: column; align-items: stretch; }
     }
+
+    /* Sous 400px (iPhone SE et similaires), l'avatar + la jauge fixes
+       laissaient trop peu de place au nom et au score. */
+    @media (max-width: 400px) {
+      .entete { flex-wrap: wrap; }
+      .avatar { width: 56px; height: 56px; }
+      .jauge { width: 40px; height: 120px; }
+      .resume { flex: 1 1 100%; }
+    }
   `]
 })
 export class GrilleComponent implements OnDestroy {

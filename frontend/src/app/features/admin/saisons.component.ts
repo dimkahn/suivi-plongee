@@ -91,6 +91,10 @@ import { SaisonVue } from '../../core/modeles';
     .etat.actif { background: var(--acquis-clair); color: var(--acquis); }
     .etat.inactif { background: #EEF2F4; color: var(--craie); }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
+
+    @media (max-width: 600px) {
+      .ligne { flex-direction: column; }
+    }
   `]
 })
 export class SaisonsComponent {
