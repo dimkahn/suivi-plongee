@@ -96,7 +96,7 @@ SELECT c.id, cr.id, s.id, u.id, 'ACQUIS', DATE '2025-09-22', NULL
   FROM cursus c
   JOIN eleve e   ON e.id = c.eleve_id AND e.numero_licence = 'A-01-000010'
   JOIN referentiel r ON r.id = c.referentiel_id
-  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.code = 'B1'
+  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.ordre = 1
   JOIN critere cr ON cr.bloc_id = b.id AND cr.ordre <= 3
   JOIN seance s  ON s.date_seance = DATE '2025-09-22'
   JOIN utilisateur u ON u.email = 'e2@club.fr';
@@ -106,7 +106,7 @@ SELECT c.id, cr.id, s.id, u.id, 'EN_COURS', DATE '2025-09-29', 'Vidage de masque
   FROM cursus c
   JOIN eleve e   ON e.id = c.eleve_id AND e.numero_licence = 'A-01-000010'
   JOIN referentiel r ON r.id = c.referentiel_id
-  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.code = 'B5'
+  JOIN bloc_competence b ON b.referentiel_id = r.id AND b.ordre = 5
   JOIN critere cr ON cr.bloc_id = b.id AND cr.ordre = 3
   JOIN seance s  ON s.date_seance = DATE '2025-09-29'
   JOIN utilisateur u ON u.email = 'e2@club.fr';

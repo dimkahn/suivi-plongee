@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Assemble la grille de suivi d'un eleve : referentiel + etat courant + validations. */
@@ -27,7 +26,7 @@ public class GrilleService {
     public record CritereVue(Long id, int ordre, String savoirFaire, String critereRealisation,
                              String statut, String parQui, LocalDate le, String commentaire) {}
 
-    public record BlocVue(Long id, String code, String intitule,
+    public record BlocVue(Long id, String intitule,
                           boolean evaluationTransverse, boolean validerEnDernier,
                           int acquis, int total, boolean valide,
                           LocalDate dateValidation, String valideePar,
@@ -48,8 +47,8 @@ public class GrilleService {
 
     public record CelluleVue(Long seanceId, LocalDate date, String statut, String parQui) {}
 
-    public record LigneMatriceVue(Long critereId, String blocCode, String savoirFaire,
-                                  List<CelluleVue> historique) {}
+    public record LigneMatriceVue(Long critereId, String blocIntitule, String regroupement,
+                                  String savoirFaire, List<CelluleVue> historique) {}
 
     public record MatriceVue(String eleve, String niveau, List<SeanceEnTeteVue> seances,
                              List<LigneMatriceVue> lignes) {}
@@ -87,7 +86,7 @@ public class GrilleService {
         int total = 0;
         List<BlocVue> blocs = new java.util.ArrayList<>();
 
-        for (BlocCompetence bloc : cursus.getReferentiel().getBlocs()) {
+        for (BlocCompetence bloc : blocsGroupesParRegroupement(cursus.getReferentiel().getBlocs())) {
             List<CritereVue> criteres = bloc.getCriteres().stream()
                     .map(c -> critereVue(c, etat.get(c.getId())))
                     .toList();
@@ -97,7 +96,7 @@ public class GrilleService {
             total += criteres.size();
 
             ValidationCompetence v = valide.get(bloc.getId());
-            blocs.add(new BlocVue(bloc.getId(), bloc.getCode(), bloc.getIntitule(),
+            blocs.add(new BlocVue(bloc.getId(), bloc.getIntitule(),
                     bloc.isEvaluationTransverse(), bloc.isValiderEnDernier(),
                     acquis, criteres.size(), v != null,
                     v == null ? null : v.getDateValidation(),
@@ -122,16 +121,27 @@ public class GrilleService {
                 acquisTotal, total, blocs);
     }
 
+    /**
+     * Reordonne les blocs pour que ceux qui partagent le meme regroupement
+     * (etiquette "Commun"/"PA20"/"PE40"...) soient contigus, meme si le MFT
+     * les intercale (ex. un bloc theorique PA20 place apres les blocs PE40).
+     * Ordre stable : chaque regroupement apparait a la position de son premier
+     * bloc rencontre, l'ordre interne au groupe restant celui du referentiel.
+     */
+    private List<BlocCompetence> blocsGroupesParRegroupement(List<BlocCompetence> blocs) {
+        Map<String, List<BlocCompetence>> parRegroupement = new java.util.LinkedHashMap<>();
+        for (BlocCompetence bloc : blocs) {
+            parRegroupement.computeIfAbsent(bloc.getRegroupement(), k -> new ArrayList<>()).add(bloc);
+        }
+        return parRegroupement.values().stream().flatMap(List::stream).toList();
+    }
+
     private CritereVue critereVue(Critere c, Evaluation e) {
         return new CritereVue(c.getId(), c.getOrdre(), c.getSavoirFaire(), c.getCritereRealisation(),
                 e == null ? StatutAcquisition.NON_ABORDE.name() : e.getStatut().name(),
                 e == null ? null : e.getMoniteur().nomComplet(),
                 e == null ? null : e.getDateEvaluation(),
                 e == null ? null : e.getCommentaire());
-    }
-
-    public Set<String> codes(List<BlocVue> blocs) {
-        return blocs.stream().map(BlocVue::code).collect(Collectors.toSet());
     }
 
     /**
@@ -148,13 +158,14 @@ public class GrilleService {
                 .collect(Collectors.groupingBy(e -> e.getCritere().getId()));
 
         List<LigneMatriceVue> lignes = new ArrayList<>();
-        for (BlocCompetence bloc : cursus.getReferentiel().getBlocs()) {
+        for (BlocCompetence bloc : blocsGroupesParRegroupement(cursus.getReferentiel().getBlocs())) {
             for (Critere c : bloc.getCriteres()) {
                 List<CelluleVue> historique = parCritere.getOrDefault(c.getId(), List.of()).stream()
                         .map(e -> new CelluleVue(e.getSeance() == null ? null : e.getSeance().getId(),
                                 e.getDateEvaluation(), e.getStatut().name(), e.getMoniteur().nomComplet()))
                         .toList();
-                lignes.add(new LigneMatriceVue(c.getId(), bloc.getCode(), c.getSavoirFaire(), historique));
+                lignes.add(new LigneMatriceVue(c.getId(), bloc.getIntitule(), bloc.getRegroupement(),
+                        c.getSavoirFaire(), historique));
             }
         }
 

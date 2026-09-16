@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { MatriceVue } from '../../core/modeles';
@@ -32,14 +32,23 @@ const LIBELLES: Record<string, string> = {
             </tr>
           </thead>
           <tbody>
-            @for (ligne of m.lignes; track ligne.critereId) {
+            @for (item of lignesAffichees(); track item.ligne.critereId) {
+              @if (item.nouveauGroupe && item.ligne.regroupement) {
+                <tr class="groupe">
+                  <td [attr.colspan]="1 + m.seances.length">{{ item.ligne.regroupement }}</td>
+                </tr>
+              }
+              @if (item.nouveauBloc) {
+                <tr class="bloc-titre">
+                  <td [attr.colspan]="1 + m.seances.length">{{ item.ligne.blocIntitule }}</td>
+                </tr>
+              }
               <tr>
                 <td class="figee">
-                  <span class="code">{{ ligne.blocCode }}</span>
-                  {{ ligne.savoirFaire }}
+                  {{ item.ligne.savoirFaire }}
                 </td>
                 @for (s of m.seances; track s.id) {
-                  @let cellule = cellulePour(ligne, s.id);
+                  @let cellule = cellulePour(item.ligne, s.id);
                   <td [class]="classe(cellule)">
                     <span class="statut">{{ libelle(cellule) }}</span>
                     @if (cellule) {
@@ -69,9 +78,15 @@ const LIBELLES: Record<string, string> = {
     .figee { position: sticky; left: 0; min-width: 240px; white-space: normal; max-width: 32ch; }
     th.figee { background: var(--fond); }
     td.figee { background: var(--carte); }
-    .code {
-      display: inline-block; margin-right: 4px; padding: 0 6px; border-radius: var(--r-s);
-      background: var(--profond); color: #fff; font-size: .75rem;
+    tr.groupe td {
+      position: sticky; left: 0; background: var(--fond); color: var(--profond);
+      font-weight: 700; text-transform: uppercase; font-size: .8125rem; letter-spacing: .02em;
+      border-bottom: none;
+    }
+    tr.bloc-titre td {
+      position: sticky; left: 0; background: var(--carte); color: var(--craie);
+      font-weight: 700; font-size: .8125rem; border-bottom: 1px solid var(--trait);
+      padding-top: 12px;
     }
     td.cellule { min-width: 90px; }
     .statut { display: block; }
@@ -94,6 +109,25 @@ export class MatriceComponent {
   matrice = signal<MatriceVue | null>(null);
   chargement = signal(true);
   erreur = signal<string | null>(null);
+
+  /**
+   * Le backend livre deja les lignes groupees par regroupement (etiquette
+   * "Commun"/"PA20"/"PE40"...) : on repere juste ici ou inserer un titre de
+   * groupe, au premier changement de valeur.
+   */
+  lignesAffichees = computed(() => {
+    const m = this.matrice();
+    if (!m) return [];
+    let regroupementPrecedent: string | null | undefined;
+    let blocPrecedent: string | undefined;
+    return m.lignes.map(ligne => {
+      const nouveauGroupe = ligne.regroupement !== regroupementPrecedent;
+      const nouveauBloc = nouveauGroupe || ligne.blocIntitule !== blocPrecedent;
+      regroupementPrecedent = ligne.regroupement;
+      blocPrecedent = ligne.blocIntitule;
+      return { ligne, nouveauGroupe, nouveauBloc };
+    });
+  });
 
   constructor() {
     queueMicrotask(() => this.charger());

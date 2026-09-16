@@ -52,7 +52,7 @@ import { ReferentielVue } from '../../core/modeles';
               <li class="carte bloc">
                 <div class="entete-bloc">
                   <span class="nom">
-                    {{ b.code }} · {{ b.intitule }}
+                    {{ b.intitule }}
                     @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
                   </span>
                   <span class="secondaire">

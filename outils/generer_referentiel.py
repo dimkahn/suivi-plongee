@@ -11,18 +11,21 @@ si tu veux que tes moniteurs lisent le libellé officiel dans l'appli.
 Source : https://mft.readthedocs.io/fr/latest/ (CTN FFESSM)
 Usage   : python3 generer_referentiel.py > ../backend/src/main/resources/db/migration/V2__referentiel_mft.sql
 
-Chaque bloc est un tuple (code, intitule, transverse, en_dernier, criteres) ou,
-depuis la revision PE20 (decembre 2025) du N1 qui a abandonne les codes C1-C9
-au profit de competences nommees structurees en Technique/Comportement/
-Theorie/Modalites d'evaluation, un tuple a six elements dont le dernier est un
-dict optionnel {competence_attendue, comportement, theorie,
-modalites_evaluation, regroupement} porte par bloc_competence (colonnes
-ajoutees en V7 et V8). `regroupement` est un simple libelle d'affichage
-("Commun", "PA20", "PE40", ...) pour les niveaux qui, depuis mai/decembre
-2026, se scindent en plusieurs qualifications (N2 = PA20 + PE40, N3 = PA40 +
-PE60 + competences complementaires) fusionnees ici en un seul referentiel par
-niveau (pas de suivi separe par qualification, voir CLAUDE.md). Format
-volontairement variable pour ne pas retoucher les blocs deja migres.
+Chaque bloc est un tuple (intitule, transverse, en_dernier, criteres) ou un
+tuple a cinq elements dont le dernier est un dict optionnel
+{competence_attendue, comportement, theorie, modalites_evaluation,
+regroupement} porte par bloc_competence (colonnes ajoutees en V7 et V8).
+`regroupement` est un simple libelle d'affichage ("Commun", "PA20", "PE40",
+...) pour les niveaux qui, depuis mai/decembre 2026, se scindent en plusieurs
+qualifications (N2 = PA20 + PE40, N3 = PA40 + PE60 + competences
+complementaires) fusionnees ici en un seul referentiel par niveau (pas de
+suivi separe par qualification, voir CLAUDE.md).
+
+Il n'y a plus de notion de code de bloc (C1, B1, ...) : ces identifiants
+n'avaient jamais de sens partage entre niveaux ou revisions et n'etaient
+utilises nulle part pour une logique metier (voir le booleen
+`valider_en_dernier`, seul portant la regle "dernier bloc a valider"). Les
+blocs sont identifies par leur position (`ordre`) au sein du referentiel.
 """
 
 REFERENTIELS = [
@@ -40,7 +43,7 @@ REFERENTIELS = [
         "prof_formation": 20,
         "prerogative": 20,
         "blocs": [
-            ("C1", "Utiliser l'équipement de plongée", False, False, [
+            ("Utiliser l'équipement de plongée", False, False, [
                 ("S'équiper du matériel individuel.",
                  "Choisit un équipement et un lestage adaptés aux conditions et à la nature de la plongée."),
                 ("Gréer et dégréer l'ensemble bloc / gilet / détendeur.",
@@ -52,7 +55,7 @@ REFERENTIELS = [
                 ("Embarquer sur un navire support de plongée.",
                  "Porte et range son équipement sans risque pour lui-même et son entourage."),
             ]),
-            ("C2", "Évoluer en environnement aquatique et subaquatique", False, False, [
+            ("Évoluer en environnement aquatique et subaquatique", False, False, [
                 ("Se mettre à l'eau et remonter sur le support.",
                  "Utilise une technique adaptée au support et aux conditions ; prévient les incidents de cette phase."),
                 ("S'immerger.",
@@ -66,7 +69,7 @@ REFERENTIELS = [
                 ("S'équilibrer en surface et à toute profondeur.",
                  "Ajuste sa flottabilité au gilet et au poumon-ballast, en statique comme en dynamique."),
             ]),
-            ("C3", "Évoluer en palanquée guidée", False, False, [
+            ("Évoluer en palanquée guidée", False, False, [
                 ("Comprendre et respecter les consignes du GP.",
                  "Applique sans erreur les conditions d'évolution fixées ; interroge le GP en cas de doute."),
                 ("Surveiller son stock d'air.",
@@ -76,7 +79,7 @@ REFERENTIELS = [
                 ("Assurer sa remontée en palanquée.",
                  "Respecte la vitesse de remontée et les paliers éventuels, avec ou sans appui."),
             ]),
-            ("C6", "Participer à la sécurité en plongée", False, False, [
+            ("Participer à la sécurité en plongée", False, False, [
                 ("Connaître les risques de l'activité et leur prévention.",
                  "Cite pour lui-même les mesures de prévention et les procédures de sécurité courantes."),
                 ("Demander et recevoir l'aide du GP ou d'un équipier.",
@@ -86,7 +89,7 @@ REFERENTIELS = [
                 ("Prendre en charge un équipier en difficulté en attendant le GP.",
                  "Réagit au signe conventionnel, évite d'augmenter la profondeur, fournit air ou aide adaptée (simulation)."),
             ]),
-            ("C7", "Connaître et respecter l'environnement marin", False, False, [
+            ("Connaître et respecter l'environnement marin", False, False, [
                 ("Évoluer en limitant son impact sur le milieu.",
                  "Maîtrise flottabilité et palmage, évite tout contact avec la faune et la flore, ne nourrit ni ne harcèle."),
                 ("Développer sa capacité d'observation.",
@@ -96,7 +99,7 @@ REFERENTIELS = [
                 ("Reconnaître les principales espèces rencontrées.",
                  "Décrit et nomme les animaux couramment observés pendant la formation."),
             ]),
-            ("C8", "Connaissances en appui des compétences", True, False, [
+            ("Connaissances en appui des compétences", True, False, [
                 ("Équipement du plongeur : rôles, montage, entretien, hygiène.",
                  "S'équipe sans erreur, règle et teste le matériel, identifie et signale les dysfonctionnements."),
                 ("Procédures de désaturation.",
@@ -126,7 +129,7 @@ REFERENTIELS = [
         "prof_formation": 20,
         "prerogative": 20,
         "blocs": [
-            ("B1", "S'équiper et se déséquiper", False, False, [
+            ("S'équiper et se déséquiper", False, False, [
                 ("Gréage et dégréage",
                  "Gréage et dégréage de son équipement (bouteille, gilet stabilisateur et détendeur) sans erreur, "
                  "vérification de la pression de la bouteille avant utilisation ainsi que du bon fonctionnement du "
@@ -157,7 +160,7 @@ REFERENTIELS = [
                                         "Il est capable de s'équiper au sec comme dans l'eau de manière autonome. "
                                         "Il met en œuvre les précautions d'usage pour éviter les accidents.",
             }),
-            ("B2", "Se mettre à l'eau et sortir de l'eau", False, False, [
+            ("Se mettre à l'eau et sortir de l'eau", False, False, [
                 ("Saut droit",
                  "Maîtrise des techniques de mise à l'eau en scaphandre comme en plongée libre."),
                 ("Bascule arrière",
@@ -184,7 +187,7 @@ REFERENTIELS = [
                                         "artificiel doivent être les plus proches possible de la réalité "
                                         "(constitution de la palanquée, consignes du DP et mise en œuvre).",
             }),
-            ("B3", "Évoluer dans l'eau - S'immerger", False, False, [
+            ("Évoluer dans l'eau - S'immerger", False, False, [
                 ("Canard",
                  "Maîtrise des deux techniques du phoque et du canard en scaphandre et en plongée libre. "
                  "Utilisation d'un lestage adapté : recherche essentielle de l'équilibre à 3 m."),
@@ -202,7 +205,7 @@ REFERENTIELS = [
                                         "N1 doit être capable de s'immerger rapidement à la commande, en suivant "
                                         "les indications du GP.",
             }),
-            ("B4", "Évoluer dans l'eau - Se propulser", False, False, [
+            ("Évoluer dans l'eau - Se propulser", False, False, [
                 ("Palmage ventral en surface",
                  "Maîtrise des différentes techniques de palmage : palmage de surface (sustentation, ventral, "
                  "dorsal et costal), palmage en immersion, nage capelée. La qualité de réalisation et l'efficacité "
@@ -241,7 +244,7 @@ REFERENTIELS = [
                                         "surface dans de bonnes conditions physiques (absence d'essoufflement) "
                                         "doit être le seul critère de performance.",
             }),
-            ("B5", "Évoluer dans l'eau - Se ventiler", False, False, [
+            ("Évoluer dans l'eau - Se ventiler", False, False, [
                 ("Ventilation en immersion",
                  "Maîtrise et régulation de la ventilation en immersion (fréquence, amplitude et ventilation "
                  "normale dans le volume courant)."),
@@ -275,7 +278,7 @@ REFERENTIELS = [
                                         "variées et sans stress (pas de situation brutale de nature à générer de "
                                         "l'insécurité). L'évaluation se fait dans la zone de 0 à 6 m.",
             }),
-            ("B6", "Évoluer dans l'eau - S'équilibrer", False, False, [
+            ("Évoluer dans l'eau - S'équilibrer", False, False, [
                 ("Gestion du gilet de stabilisation",
                  "Maîtrise de la technique du poumon ballast et utilisation du gilet pour s'équilibrer : "
                  "utilisation de l'inflateur et des différentes purges. Maîtrise de la combinaison des deux "
@@ -298,7 +301,7 @@ REFERENTIELS = [
                                         "la performance du plongeur est contrôlée dans des situations statique "
                                         "et dynamique avec une variation de plus ou moins 1 mètre.",
             }),
-            ("B7", "Respecter le milieu et l'environnement", False, False, [
+            ("Respecter le milieu et l'environnement", False, False, [
                 ("Aisance aquatique",
                  "Réalisation de déplacements équilibrés, sans appui, avec un palmage et une stabilisation "
                  "maîtrisés."),
@@ -315,7 +318,7 @@ REFERENTIELS = [
                 "modalites_evaluation": "Au cours des plongées en milieu naturel, le comportement respectueux et "
                                         "responsable du plongeur est évalué.",
             }),
-            ("B8", "Communiquer", False, False, [
+            ("Communiquer", False, False, [
                 ("Exécution des signes conventionnels",
                  "Identification et réalisation de l'ensemble des signes conventionnels : OK, monter, descendre, "
                  "ça ne va pas, mi-pression, réserve, panne d'air, essoufflement, froid, fin de "
@@ -333,7 +336,7 @@ REFERENTIELS = [
                                         "la promptitude de la réalisation des gestes est attendue. Le plongeur "
                                         "doit être efficace dans sa communication.",
             }),
-            ("B9", "Évoluer en sécurité", False, False, [
+            ("Évoluer en sécurité", False, False, [
                 ("Application des procédures mises en œuvre par le GP",
                  "Application des procédures mises en œuvre par le GP. Familiarisation avec les procédures "
                  "usuelles mises en œuvre par le GP : réserve, froid. Familiarisation avec la mise en œuvre des "
@@ -359,7 +362,7 @@ REFERENTIELS = [
                                         "le GP, il l'accepte en gardant son calme. L'accoutumance doit reposer "
                                         "sur la répétition et la variété des situations d'évaluation.",
             }),
-            ("B10", "Retourner en surface", False, False, [
+            ("Retourner en surface", False, False, [
                 ("Maîtrise de la vitesse de remontée",
                  "Maîtrise de la vitesse de remontée en utilisant les palmes et le gilet (avec et sans repères "
                  "visuels)."),
@@ -395,7 +398,7 @@ REFERENTIELS = [
                                         "n'est recherché, la réalisation sans stress et en respectant une "
                                         "vitesse correcte de remontée est recherchée.",
             }),
-            ("B11", "Connaissances théoriques", True, False, [
+            ("Connaissances théoriques", True, False, [
                 ("Notions de physique",
                  "Principes de physique simples, flottabilité, variations de pression et de volume, influence "
                  "du milieu sur la perception des couleurs, des distances et des tailles. Influence du milieu "
@@ -449,7 +452,7 @@ REFERENTIELS = [
         "prof_formation": 40,
         "prerogative": 40,
         "blocs": [
-            ("C1", "S'équiper et se déséquiper - Se mettre à l'eau et en sortir", False, False, [
+            ("S'équiper et se déséquiper - Se mettre à l'eau et en sortir", False, False, [
                 ("Gréage et dégréage",
                  "Perfectionnement des techniques acquises au N1: choix du matériel adapté à la plongée, "
                  "montage sans erreur, réglages corrects en surface."),
@@ -477,7 +480,7 @@ REFERENTIELS = [
                                         "a le souci de la sécurité globale de la palanquée.",
                 "regroupement": "Commun",
             }),
-            ("C2", "S'immerger - Se propulser - Se ventiler", False, False, [
+            ("S'immerger - Se propulser - Se ventiler", False, False, [
                 ("Canard et phoque",
                  "Renforcement et perfectionnement des techniques d'immersion acquises, adaptées aux conditions "
                  "de la plongée et réalisées efficacement (rapidité et maintien de la cohésion de la "
@@ -515,7 +518,7 @@ REFERENTIELS = [
                                         "d'immersion durablement et sans difficulté.",
                 "regroupement": "Commun",
             }),
-            ("C3", "Respecter le milieu et l'environnement", False, False, [
+            ("Respecter le milieu et l'environnement", False, False, [
                 ("Aisance aquatique",
                  "Réalisation de déplacements équilibrés, sans appui, avec un palmage et une stabilisation "
                  "maitrisés."),
@@ -535,7 +538,7 @@ REFERENTIELS = [
                                         "espèces les plus fréquemment rencontrées.",
                 "regroupement": "Commun",
             }),
-            ("C4", "Être attentif au matériel de ses équipiers", False, False, [
+            ("Être attentif au matériel de ses équipiers", False, False, [
                 ("Mise en œuvre de son propre matériel",
                  "Adaptation du lestage à son équipement. Contrôle du bon fonctionnement de son matériel et "
                  "information à ses équipiers."),
@@ -562,7 +565,7 @@ REFERENTIELS = [
                                         "(détente et asservissement).",
                 "regroupement": "PA20",
             }),
-            ("C5", "Évoluer en autonomie", False, False, [
+            ("Évoluer en autonomie", False, False, [
                 ("Sécurité de la palanquée",
                  "Connaissance du fonctionnement de son instrument de désaturation, lecture des principaux "
                  "paramètres : durée et profondeurs, vitesse de remontée, durée de plongée sans palier, durée et "
@@ -603,7 +606,7 @@ REFERENTIELS = [
                                         "palier).",
                 "regroupement": "PA20",
             }),
-            ("C6", "Planifier la plongée en fonction des consignes du DP", False, False, [
+            ("Planifier la plongée en fonction des consignes du DP", False, False, [
                 ("Compréhension des directives du DP",
                  "Identification des consignes de durée et de profondeur, connaissance des conditions de fin de "
                  "plongée et des règles de désaturation imposées : pression du bloc en fin de plongée, paliers "
@@ -640,7 +643,7 @@ REFERENTIELS = [
                                         "suivre un court trajet prédéfini.",
                 "regroupement": "PA20",
             }),
-            ("C7", "Intervenir et porter assistance à un plongeur en difficulté", False, True, [
+            ("Intervenir et porter assistance à un plongeur en difficulté", False, True, [
                 ("Observation, compréhension et réaction face à un incident",
                  "Interprétation des signes conventionnels d'un équipier. Réaction aux manifestations "
                  "observables en l'absence de signe conventionnel (ventilation anormale, agitation, "
@@ -671,7 +674,7 @@ REFERENTIELS = [
                                         "de désaturation se fait à travers l'étude de cas pratiques.",
                 "regroupement": "PA20",
             }),
-            ("C8", "Se ventiler - S'équilibrer", False, False, [
+            ("Se ventiler - S'équilibrer", False, False, [
                 ("Ventilation en surface et en immersion",
                  "Maîtrise de toutes les techniques, quelle que soit la profondeur : passage embout tuba, "
                  "lâcher-reprise d'embout, expiration à la remontée. Adaptation de la ventilation et de la "
@@ -697,7 +700,7 @@ REFERENTIELS = [
                                         "masque dans des situations variées et sans stress à 20 m.",
                 "regroupement": "PE40",
             }),
-            ("C9", "Communiquer avec le guide de palanquée", False, False, [
+            ("Communiquer avec le guide de palanquée", False, False, [
                 ("Connaissance de tous les signes et codes",
                  "Connaissance de tous les signes, réactivation des acquis du code de communication et "
                  "acquisition des signes propres à la plongée profonde : narcose, consommation, paramètres de "
@@ -724,7 +727,7 @@ REFERENTIELS = [
                                         "les réactions rapides et adaptées.",
                 "regroupement": "PE40",
             }),
-            ("C10", "Retourner en surface", False, False, [
+            ("Retourner en surface", False, False, [
                 ("Gestion de la désaturation",
                  "Identification de tous les paramètres de son moyen de désaturation utiles à la gestion de la "
                  "plongée : profondeur, temps, durée sans palier, durée totale de remontée, paliers. "
@@ -757,7 +760,7 @@ REFERENTIELS = [
                                         "capable de restituer les paramètres de sa plongée au DP.",
                 "regroupement": "PE40",
             }),
-            ("C11", "Intervenir en relais sur un équipier en difficulté", False, True, [
+            ("Intervenir en relais sur un équipier en difficulté", False, True, [
                 ("Intervention en relais",
                  "Intervention en relais auprès d'un équipier. Maintien du niveau d'immersion et présentation "
                  "de son deuxième détendeur en cas de panne d'air, prise en charge de l'équipier jusqu'à "
@@ -782,7 +785,7 @@ REFERENTIELS = [
                                         "déplacement jusqu'au GP.",
                 "regroupement": "PE40",
             }),
-            ("C12", "Connaissances théoriques PA20", True, False, [
+            ("Connaissances théoriques PA20", True, False, [
                 ("Théorie de l'activité",
                  "Flottabilité, variations de pression et de volume. Incidence de la profondeur sur la "
                  "consommation et l'autonomie, prévention de la panne d'air, notion de marge de sécurité "
@@ -817,7 +820,7 @@ REFERENTIELS = [
                                         "maîtrisées. L'évaluation peut permettre de vérifier ce point.",
                 "regroupement": "PA20",
             }),
-            ("C13", "Connaissances théoriques PE40", True, False, [
+            ("Connaissances théoriques PE40", True, False, [
                 ("Théorie de l'activité",
                  "Flottabilité, variations de pression et de volume. Flottabilité et lestage, prise en compte de "
                  "l'augmentation de la profondeur d'évolution et impact sur l'équilibre. Consommation : "
@@ -861,7 +864,7 @@ REFERENTIELS = [
         "prof_formation": 40,
         "prerogative": 40,
         "blocs": [
-            ("C1", "Utiliser l'équipement de plongée", False, False, [
+            ("Utiliser l'équipement de plongée", False, False, [
                 ("S'équiper du matériel individuel.",
                  "Choisit équipement et lestage adaptés ; le lestage est déterminant en vue de la plongée à 40 m."),
                 ("Gréer et dégréer l'ensemble bloc / gilet / détendeur.",
@@ -873,7 +876,7 @@ REFERENTIELS = [
                 ("Embarquer sur un navire support de plongée.",
                  "Porte et range son équipement sans risque ni gêne pour les autres."),
             ]),
-            ("C2", "Évoluer en environnement aquatique et subaquatique", False, False, [
+            ("Évoluer en environnement aquatique et subaquatique", False, False, [
                 ("Se mettre à l'eau et remonter sur le support.",
                  "Utilise une technique adaptée au support et aux conditions ; prévient les incidents de cette phase."),
                 ("S'immerger.",
@@ -889,7 +892,7 @@ REFERENTIELS = [
                 ("Maîtriser la vitesse de descente et de remontée.",
                  "Combine un palmage minimal et une gestion progressive du gilet ; arrive au fond pratiquement équilibré."),
             ]),
-            ("C3", "Évoluer en palanquée guidée", False, False, [
+            ("Évoluer en palanquée guidée", False, False, [
                 ("Comprendre et respecter les consignes du GP.",
                  "Applique sans erreur les conditions d'évolution fixées ; comportement responsable dans la palanquée."),
                 ("Surveiller son stock d'air.",
@@ -897,7 +900,7 @@ REFERENTIELS = [
                 ("Se positionner selon les situations et les conditions.",
                  "Reste au contact, vérifie régulièrement la situation du GP et des équipiers."),
             ]),
-            ("C4", "Planifier et organiser la plongée en autonomie", False, False, [
+            ("Planifier et organiser la plongée en autonomie", False, False, [
                 ("Comprendre le site de plongée et les conditions environnementales.",
                  "Décrit la topographie et les conditions probables à partir du briefing du DP et de sa propre observation."),
                 ("Comprendre et respecter les directives du DP.",
@@ -907,14 +910,14 @@ REFERENTIELS = [
                 ("Décider du profil de plongée et des procédures, prévoir les variantes.",
                  "Convient du déroulement avec ses équipiers, choisit le protocole de décompression, vérifie l'autonomie en air."),
             ]),
-            ("C5", "Maîtriser, adapter l'évolution en immersion", False, False, [
+            ("Maîtriser, adapter l'évolution en immersion", False, False, [
                 ("Se diriger en utilisant le milieu et les instruments.",
                  "Mémorise la topographie, maîtrise son itinéraire et émerge à moins de 50 m du point prévu."),
                 ("Appliquer les bonnes pratiques d'évolution et les procédures définies.",
                  "Surveille ses équipiers, respecte vitesses et paliers, évite les profils à risque, "
                  "signale ses paliers au parachute, arrêt et tour d'horizon à 3 m."),
             ]),
-            ("C6", "Participer à la sécurité des équipiers", False, True, [
+            ("Participer à la sécurité des équipiers", False, True, [
                 ("Se rappeler les mesures de prévention des risques avant l'immersion.",
                  "Cite les procédures de sécurité, y compris remontée lente ou rapide et paliers interrompus."),
                 ("Identifier les comportements et circonstances susceptibles de générer une situation dangereuse.",
@@ -923,7 +926,7 @@ REFERENTIELS = [
                  "Fournit une source d'air (simulation), prend le contrôle de la remontée aux gilets, "
                  "sécurise en surface et participe à la sortie de l'eau."),
             ]),
-            ("C7", "Connaître et respecter l'environnement marin", False, False, [
+            ("Connaître et respecter l'environnement marin", False, False, [
                 ("Évoluer en limitant son impact sur le milieu.",
                  "Gère ses instruments source de perturbation et explore dans le respect du milieu, en l'absence de GP."),
                 ("Développer sa capacité d'observation.",
@@ -933,7 +936,7 @@ REFERENTIELS = [
                 ("Reconnaître les principaux groupes rencontrés.",
                  "Identifie des représentants des groupes les plus couramment rencontrés en formation."),
             ]),
-            ("C8", "Connaissances en appui des compétences", True, False, [
+            ("Connaissances en appui des compétences", True, False, [
                 ("Équipement du plongeur : rôles, montage, entretien, hygiène.",
                  "S'équipe sans erreur, règle et teste le matériel, sait décontaminer un détendeur."),
                 ("Réglementation relative à l'activité.",
@@ -970,7 +973,7 @@ REFERENTIELS = [
         "prof_formation": 60,
         "prerogative": 60,
         "blocs": [
-            ("C1", "Planifier la plongée", False, False, [
+            ("Planifier la plongée", False, False, [
                 ("Prise en compte des directives du DP",
                  "Intégration des consignes du DP dans la planification : respect strict des profondeurs et "
                  "temps de plongée, consignes pour les paliers et le retour en surface, informations sur le "
@@ -1007,7 +1010,7 @@ REFERENTIELS = [
                                         "zone d'évolution.",
                 "regroupement": "PA40",
             }),
-            ("C2", "Évoluer en autonomie (PA40)", False, False, [
+            ("Évoluer en autonomie (PA40)", False, False, [
                 ("Orientation",
                  "Perfectionnement des compétences, orientation sur des parcours variés en utilisant le milieu "
                  "(courant, relief, lumière, etc…), en identifiant des points remarquables et également en "
@@ -1052,7 +1055,7 @@ REFERENTIELS = [
                                         "induire des comportements adaptés.",
                 "regroupement": "PA40",
             }),
-            ("C3", "Intervenir et porter assistance à un plongeur en difficulté", False, False, [
+            ("Intervenir et porter assistance à un plongeur en difficulté", False, False, [
                 ("Observation, compréhension et réaction face à un incident",
                  "Interprétation des signes conventionnels. Réaction aux manifestations observables en "
                  "l'absence de signe conventionnel (ventilation anormale, agitation, perte de vigilance, "
@@ -1088,7 +1091,7 @@ REFERENTIELS = [
                                         "critère d'évaluation.",
                 "regroupement": "PA40",
             }),
-            ("C4", "S'adapter à la profondeur", False, False, [
+            ("S'adapter à la profondeur", False, False, [
                 ("Stabilisation",
                  "Adaptation de la maîtrise de la stabilisation par la prise en compte de l'augmentation de la "
                  "profondeur et de ses incidences. Utilisation combinée du gilet et du poumon ballast : "
@@ -1121,7 +1124,7 @@ REFERENTIELS = [
                                         "E4, permet la mise en œuvre des compétences de manière progressive.",
                 "regroupement": "PE60",
             }),
-            ("C5", "Organiser la plongée", False, False, [
+            ("Organiser la plongée", False, False, [
                 ("Choix du site",
                  "Prise d'informations météorologiques (vent, courant, houle, ...). Connaissance de la "
                  "topologie, analyse du site et de ses particularités (courant, vent, marée, possibilités de "
@@ -1152,7 +1155,7 @@ REFERENTIELS = [
                                         "principaux de la validation des compétences.",
                 "regroupement": "N3",
             }),
-            ("C6", "Évoluer en autonomie (0-60 m)", False, False, [
+            ("Évoluer en autonomie (0-60 m)", False, False, [
                 ("Orientation",
                  "Perfectionnement des compétences, orientation sur des parcours variés en utilisant le milieu "
                  "(courant, relief, lumière, etc…), en identifiant des points remarquables et également en "
@@ -1189,7 +1192,7 @@ REFERENTIELS = [
                                         "pratique de l'espace de 40 à 60 m.",
                 "regroupement": "N3",
             }),
-            ("C7", "Respecter le milieu et l'environnement", False, False, [
+            ("Respecter le milieu et l'environnement", False, False, [
                 ("Aisance aquatique",
                  "Perfectionnement des acquis du PA20 dans la réalisation de déplacements équilibrés, sans "
                  "appui, avec un palmage et une stabilisation maitrisés."),
@@ -1209,7 +1212,7 @@ REFERENTIELS = [
                                         "espèces les plus fréquemment rencontrées.",
                 "regroupement": "Commun",
             }),
-            ("C8", "Connaissances théoriques PA40 - N3", True, False, [
+            ("Connaissances théoriques PA40 - N3", True, False, [
                 ("Théorie de l'activité",
                  "Notions de physique en lien avec les prérogatives, calculs de consommation et d'autonomie en "
                  "gaz permettant de planifier la plongée (consommation en profondeur et au palier en "
@@ -1254,7 +1257,7 @@ REFERENTIELS = [
         "prof_formation": 60,
         "prerogative": 60,
         "blocs": [
-            ("C4", "Planifier et organiser la plongée", False, False, [
+            ("Planifier et organiser la plongée", False, False, [
                 ("Évaluer les caractéristiques du site et les conditions de plongée.",
                  "Comprend la topographie et les conditions à partir du DP et de sa propre analyse ; la partage avec ses équipiers."),
                 ("S'approprier et respecter les directives du DP.",
@@ -1264,14 +1267,14 @@ REFERENTIELS = [
                 ("Prévoir les phases de la plongée et les variantes utiles.",
                  "Élabore le profil prévu, définit le protocole de décompression, vérifie l'autonomie en air nécessaire."),
             ]),
-            ("C5", "Maîtriser, adapter l'évolution en immersion", False, False, [
+            ("Maîtriser, adapter l'évolution en immersion", False, False, [
                 ("Se diriger en utilisant le milieu et les instruments.",
                  "Maîtrise son itinéraire, sait où il se trouve à tout moment et retrouve le mouillage."),
                 ("Respecter des pratiques et des procédures d'évolution sécurisantes.",
                  "Surveille ses équipiers, respecte les paramètres du DP et les procédures de décompression, "
                  "évite les profils à risque, arrêt et tour d'horizon à 3 m."),
             ]),
-            ("C6", "Participer à la sécurité en plongée", False, False, [
+            ("Participer à la sécurité en plongée", False, False, [
                 ("Se préparer à prévenir les risques avant l'immersion.",
                  "Connaît les mesures de prévention et les procédures de sécurité à appliquer."),
                 ("Identifier les situations anormales et les demandes d'aide des équipiers.",
@@ -1280,7 +1283,7 @@ REFERENTIELS = [
                  "Maintient l'immersion si possible, apporte l'aide nécessaire, prend le contrôle de la remontée "
                  "aux gilets et sécurise en surface."),
             ]),
-            ("C7", "Connaître et respecter l'environnement marin", False, False, [
+            ("Connaître et respecter l'environnement marin", False, False, [
                 ("Évoluer en limitant son impact sur le milieu.",
                  "Gère ses instruments source de perturbation ; acquis du N2 à perfectionner."),
                 ("Développer sa capacité d'observation.",
@@ -1290,7 +1293,7 @@ REFERENTIELS = [
                 ("Identifier les grands groupes d'animaux et de végétaux.",
                  "Identifie, décrit et nomme des représentants des principaux groupes, par clés de détermination."),
             ]),
-            ("C8", "Connaissances en appui des compétences", True, False, [
+            ("Connaissances en appui des compétences", True, False, [
                 ("Équipement du plongeur : rôles, montage, entretien, hygiène.",
                  "S'équipe sans erreur, règle et teste le matériel, signale le matériel hors d'état."),
                 ("Réglementation relative à l'activité.",
@@ -1302,7 +1305,7 @@ REFERENTIELS = [
                 ("Outils et procédures de décompression, planification d'une plongée.",
                  "Tables et ordinateur, plongées consécutives et successives, remontées anormales, calcul de consommation."),
             ]),
-            ("C9", "Choisir un site de plongée", False, False, [
+            ("Choisir un site de plongée", False, False, [
                 ("Prendre en compte l'expérience des équipiers et le support surface.",
                  "Recueille ces informations, analyse le contexte et prévoit un site approprié."),
                 ("Recueillir les informations sur le site et sur le trajet.",
@@ -1356,15 +1359,15 @@ def main():
         out.append("")
 
         for ordre_bloc, bloc_data in enumerate(r["blocs"], start=1):
-            # 5-tuple (blocs historiques) ou 6-tuple avec un dict de texte
+            # 4-tuple (blocs historiques) ou 5-tuple avec un dict de texte
             # libre en plus (revisions post-PE20, voir docstring du module).
-            code, intitule, transverse, en_dernier, criteres = bloc_data[:5]
-            extra = bloc_data[5] if len(bloc_data) > 5 else {}
+            intitule, transverse, en_dernier, criteres = bloc_data[:4]
+            extra = bloc_data[4] if len(bloc_data) > 4 else {}
             out.append(
-                "INSERT INTO bloc_competence (referentiel_id, code, intitule, ordre, evaluation_transverse, "
+                "INSERT INTO bloc_competence (referentiel_id, intitule, ordre, evaluation_transverse, "
                 "valider_en_dernier, competence_attendue, comportement, theorie, modalites_evaluation, "
                 "regroupement)\n"
-                f"SELECT id, {q(code)}, {q(intitule)}, {ordre_bloc}, {q(transverse)}, {q(en_dernier)},\n"
+                f"SELECT id, {q(intitule)}, {ordre_bloc}, {q(transverse)}, {q(en_dernier)},\n"
                 f"       {q(extra.get('competence_attendue'))}, {q(extra.get('comportement'))},\n"
                 f"       {q(extra.get('theorie'))}, {q(extra.get('modalites_evaluation'))}, "
                 f"{q(extra.get('regroupement'))}\n"
@@ -1375,7 +1378,7 @@ def main():
                     "INSERT INTO critere (bloc_id, ordre, savoir_faire, critere_realisation)\n"
                     f"SELECT b.id, {ordre_crit}, {q(savoir_faire)}, {q(critere)}\n"
                     "  FROM bloc_competence b JOIN referentiel r ON r.id = b.referentiel_id\n"
-                    f" WHERE r.niveau = {q(r['niveau'])} AND r.version_mft = {q(r['version'])} AND b.code = {q(code)};"
+                    f" WHERE r.niveau = {q(r['niveau'])} AND r.version_mft = {q(r['version'])} AND b.ordre = {ordre_bloc};"
                 )
             out.append("")
 

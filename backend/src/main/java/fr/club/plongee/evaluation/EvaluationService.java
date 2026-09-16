@@ -77,7 +77,7 @@ public class EvaluationService {
         } else if (!critere.getBloc().isEvaluationTransverse()) {
             throw new RegleMetierException(
                     "Une seance doit etre indiquee pour la competence "
-                            + critere.getBloc().getCode() + ".");
+                            + critere.getBloc().getIntitule() + ".");
         }
 
         Utilisateur moniteur = utilisateurs.findById(auteur.id()).orElseThrow();
@@ -159,10 +159,10 @@ public class EvaluationService {
         long acquis = evaluations.compterAcquisDuBloc(cursusId, blocId);
         if (acquis < total) {
             throw new RegleMetierException("Il reste " + (total - acquis)
-                    + " critere(s) non acquis dans " + bloc.getCode() + ".");
+                    + " critere(s) non acquis dans " + bloc.getIntitule() + ".");
         }
 
-        // C6 du N2 : validee en fin de formation, donc apres tous les autres blocs.
+        // Bloc marque valider_en_dernier : validee en fin de formation, apres tous les autres blocs.
         if (bloc.isValiderEnDernier()) {
             List<Long> autres = cursus.getReferentiel().getBlocs().stream()
                     .map(BlocCompetence::getId)
@@ -172,7 +172,7 @@ public class EvaluationService {
                     .filter(v -> autres.contains(v.getBloc().getId()))
                     .count();
             if (dejaValides < autres.size()) {
-                throw new RegleMetierException(bloc.getCode()
+                throw new RegleMetierException(bloc.getIntitule()
                         + " doit etre validee en fin de formation, apres les autres competences.");
             }
         }

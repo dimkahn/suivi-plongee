@@ -23,12 +23,24 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
       <h2>Nouvelle inscription</h2>
 
       <label for="eleve">Élève</label>
-      <select id="eleve" name="eleve" [(ngModel)]="eleveId">
-        <option [ngValue]="null">Choisir…</option>
-        @for (e of eleves(); track e.id) {
-          <option [ngValue]="e.id">{{ e.prenom }} {{ e.nom }}</option>
+      <div class="combobox">
+        <input id="eleve" type="text" name="eleve" autocomplete="off"
+               role="combobox" aria-autocomplete="list" aria-controls="liste-eleves"
+               [attr.aria-expanded]="comboboxOuvert()" placeholder="Rechercher par nom ou prénom…"
+               [ngModel]="rechercheEleve()" (ngModelChange)="saisirEleve($event)"
+               (focus)="ouvrirCombobox()" (blur)="fermerComboboxDifferee()">
+        @if (comboboxOuvert()) {
+          <ul id="liste-eleves" role="listbox" class="options">
+            @for (e of elevesFiltres(); track e.id) {
+              <li role="option" [attr.aria-selected]="eleveId === e.id">
+                <button type="button" (mousedown)="choisirEleve(e)">{{ e.prenom }} {{ e.nom }}</button>
+              </li>
+            } @empty {
+              <li class="vide">Aucun élève ne correspond.</li>
+            }
+          </ul>
         }
-      </select>
+      </div>
 
       <label for="niveau">Niveau</label>
       <select id="niveau" name="niveau" [(ngModel)]="niveau">
@@ -121,6 +133,23 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
     #filtre-nom { max-width: 320px; }
 
+    .combobox { position: relative; max-width: 320px; }
+    .combobox input { width: 100%; }
+    .options {
+      position: absolute; z-index: 1; top: 100%; left: 0; right: 0; margin-top: 2px;
+      max-height: 240px; overflow-y: auto; background: var(--carte); border: 1px solid var(--trait);
+      border-radius: var(--r-s); box-shadow: 0 4px 12px rgba(0,0,0,.12);
+      display: block !important; gap: 0 !important;
+    }
+    .options li { padding: 0 !important; }
+    .options li[aria-selected="true"] button { font-weight: 700; background: var(--fond); }
+    .options button {
+      display: block; width: 100%; padding: var(--pas) var(--pas-2); min-height: 44px;
+      text-align: left; background: none; border: none; color: var(--encre);
+    }
+    .options button:hover, .options button:focus { background: var(--fond); }
+    .options .vide { padding: var(--pas) var(--pas-2) !important; color: var(--craie); font-size: .875rem; }
+
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
@@ -152,6 +181,14 @@ export class CursusAdminComponent {
     const recherche = this.filtreNom().trim().toLocaleLowerCase();
     if (!recherche) return this.liste();
     return this.liste().filter(c => c.eleve.toLocaleLowerCase().includes(recherche));
+  });
+
+  rechercheEleve = signal('');
+  comboboxOuvert = signal(false);
+  elevesFiltres = computed(() => {
+    const recherche = this.rechercheEleve().trim().toLocaleLowerCase();
+    if (!recherche) return this.eleves();
+    return this.eleves().filter(e => `${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche));
   });
 
   eleveId: number | null = null;
@@ -186,6 +223,28 @@ export class CursusAdminComponent {
     }
   }
 
+  /** Tant qu'aucune option n'a été cliquée, aucun élève n'est retenu pour l'inscription. */
+  saisirEleve(texte: string): void {
+    this.rechercheEleve.set(texte);
+    this.eleveId = null;
+    this.comboboxOuvert.set(true);
+  }
+
+  ouvrirCombobox(): void {
+    this.comboboxOuvert.set(true);
+  }
+
+  /** Différé pour laisser le clic sur une option se produire avant la fermeture. */
+  fermerComboboxDifferee(): void {
+    setTimeout(() => this.comboboxOuvert.set(false), 150);
+  }
+
+  choisirEleve(e: EleveVue): void {
+    this.eleveId = e.id;
+    this.rechercheEleve.set(`${e.prenom} ${e.nom}`);
+    this.comboboxOuvert.set(false);
+  }
+
   inscrire(): void {
     if (!this.eleveId || !this.saisonId) {
       this.message.set('Élève et saison sont obligatoires.');
@@ -203,6 +262,7 @@ export class CursusAdminComponent {
         this.eleveId = null;
         this.saisonId = null;
         this.moniteurReferentId = null;
+        this.rechercheEleve.set('');
       },
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);

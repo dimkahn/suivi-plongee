@@ -46,7 +46,6 @@ export interface CritereVue {
 
 export interface BlocVue {
   id: number;
-  code: string;
   intitule: string;
   evaluationTransverse: boolean;
   validerEnDernier: boolean;
@@ -142,7 +141,8 @@ export interface CelluleMatrice {
 
 export interface LigneMatrice {
   critereId: number;
-  blocCode: string;
+  blocIntitule: string;
+  regroupement: string | null;
   savoirFaire: string;
   historique: CelluleMatrice[];
 }
@@ -199,7 +199,6 @@ export interface CritereReferentielVue {
 
 export interface BlocReferentielVue {
   id: number;
-  code: string;
   intitule: string;
   ordre: number;
   evaluationTransverse: boolean;

@@ -16,21 +16,17 @@ public class BlocCompetence {
     @JoinColumn(name = "referentiel_id")
     private Referentiel referentiel;
 
-    /** C1 a C9 : codes communs aux trois niveaux, intitules et criteres differents. */
-    @Column(nullable = false, length = 4)
-    private String code;
-
     @Column(nullable = false)
     private String intitule;
 
     @Column(nullable = false)
     private int ordre;
 
-    /** C8 : connaissances verifiees au fil des autres competences, pas en seance dediee. */
+    /** Connaissances verifiees au fil des autres competences, pas en seance dediee. */
     @Column(nullable = false)
     private boolean evaluationTransverse;
 
-    /** C6 du N2 : ne peut etre validee qu'une fois les autres blocs acquis. */
+    /** Bloc qui ne peut etre valide qu'une fois les autres blocs acquis. */
     @Column(nullable = false)
     private boolean validerEnDernier;
 
@@ -80,14 +76,6 @@ public class BlocCompetence {
 
     public void setReferentiel(Referentiel referentiel) {
         this.referentiel = referentiel;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public String getIntitule() {
