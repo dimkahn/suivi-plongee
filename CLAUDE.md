@@ -110,10 +110,14 @@ que du confort d'affichage.
 
 **Les règles du MFT sont dans le serveur.** `EvaluationService` et
 `RegleDelivranceService` comparent des valeurs issues de la table
-`referentiel` : milieu naturel exclusif pour N2 et N3, profondeur maximale
-d'évolution, âge minimum, brevet prérequis, RIFAP pour le N3, C6 du N2 validée
-en dernier. Ajouter une règle = ajouter une colonne au référentiel plutôt
-qu'une constante dans le code.
+`referentiel` : milieu naturel exclusif pour N2 et N3, âge minimum, brevet
+prérequis, RIFAP pour le N3, C6 du N2 validée en dernier. Ajouter une règle =
+ajouter une colonne au référentiel plutôt qu'une constante dans le code.
+**Choix révisé (2026) :** la vérification de la profondeur maximale
+d'évolution (`referentiel.profondeur_max_formation` vs `seance.profondeur_max`)
+a été retirée de `EvaluationService.verifierSeance` — la colonne reste en
+base et éditable dans l'écran d'admin du référentiel, à titre indicatif, mais
+n'est plus opposée au moniteur qui note un critère.
 
 **Un élève n'est pas forcément en formation.** Le seul lien élève-saison
 historique était `Cursus` (une formation N1/N2/N3 figée sur un référentiel).
