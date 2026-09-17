@@ -1,12 +1,20 @@
 package fr.club.plongee.evaluation;
 
+import fr.club.plongee.evaluation.domain.Evaluation;
+import fr.club.plongee.evaluation.domain.StatutAcquisition;
+import fr.club.plongee.evaluation.domain.ValidationCompetence;
+import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
+import fr.club.plongee.evaluation.service.EvaluationService;
+import fr.club.plongee.evaluation.service.GrilleService;
 import fr.club.plongee.formation.*;
-import fr.club.plongee.referentiel.BlocCompetence;
-import fr.club.plongee.referentiel.Critere;
-import fr.club.plongee.referentiel.Niveau;
-import fr.club.plongee.referentiel.Referentiel;
-import fr.club.plongee.securite.NiveauEncadrement;
-import fr.club.plongee.securite.Utilisateur;
+import fr.club.plongee.formation.domain.*;
+import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.referentiel.domain.BlocCompetence;
+import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.Niveau;
+import fr.club.plongee.referentiel.domain.Referentiel;
+import fr.club.plongee.securite.domain.NiveauEncadrement;
+import fr.club.plongee.securite.domain.Utilisateur;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,14 +1,18 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.formation.domain.*;
+import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.formation.service.*;
+
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
-import fr.club.plongee.referentiel.Niveau;
-import fr.club.plongee.referentiel.Referentiel;
-import fr.club.plongee.referentiel.ReferentielRepository;
-import fr.club.plongee.securite.RoleNom;
-import fr.club.plongee.securite.Utilisateur;
+import fr.club.plongee.referentiel.domain.Niveau;
+import fr.club.plongee.referentiel.domain.Referentiel;
+import fr.club.plongee.referentiel.repository.ReferentielRepository;
+import fr.club.plongee.securite.domain.RoleNom;
+import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.UtilisateurPrincipal;
-import fr.club.plongee.securite.UtilisateurRepository;
+import fr.club.plongee.securite.repository.UtilisateurRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;

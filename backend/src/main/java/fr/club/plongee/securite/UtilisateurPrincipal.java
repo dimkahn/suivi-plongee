@@ -1,5 +1,8 @@
 package fr.club.plongee.securite;
 
+import fr.club.plongee.securite.domain.NiveauEncadrement;
+import fr.club.plongee.securite.domain.Utilisateur;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

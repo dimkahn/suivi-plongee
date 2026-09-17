@@ -1,6 +1,11 @@
 package fr.club.plongee.evaluation;
 
-import fr.club.plongee.delivrance.RegleDelivranceService;
+import fr.club.plongee.delivrance.service.RegleDelivranceService;
+import fr.club.plongee.evaluation.domain.Evaluation;
+import fr.club.plongee.evaluation.domain.StatutAcquisition;
+import fr.club.plongee.evaluation.service.EvaluationService;
+import fr.club.plongee.evaluation.service.FichePdfService;
+import fr.club.plongee.evaluation.service.GrilleService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import fr.club.plongee.securite.UtilisateurPrincipal;

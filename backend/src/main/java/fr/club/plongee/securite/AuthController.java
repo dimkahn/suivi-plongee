@@ -1,5 +1,9 @@
 package fr.club.plongee.securite;
 
+import fr.club.plongee.securite.domain.*;
+import fr.club.plongee.securite.repository.*;
+import fr.club.plongee.securite.service.*;
+
 import fr.club.plongee.commun.RegleMetierException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Email;

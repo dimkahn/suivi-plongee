@@ -1,6 +1,8 @@
 package fr.club.plongee.admin;
 
-import fr.club.plongee.securite.NiveauEncadrement;
+import fr.club.plongee.admin.service.AdminMoniteurService;
+
+import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -76,7 +78,7 @@ public class AdminMoniteurController {
         service.supprimer(id, auteur.id());
     }
 
-    private MoniteurVue vue(fr.club.plongee.securite.Utilisateur u) {
+    private MoniteurVue vue(fr.club.plongee.securite.domain.Utilisateur u) {
         return new MoniteurVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif(),
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
                 u.getNumeroLicence());

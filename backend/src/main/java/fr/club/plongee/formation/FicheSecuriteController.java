@@ -1,5 +1,9 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.formation.domain.*;
+import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.formation.service.*;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

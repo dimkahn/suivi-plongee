@@ -1,5 +1,9 @@
 package fr.club.plongee.securite;
 
+import fr.club.plongee.securite.domain.*;
+import fr.club.plongee.securite.repository.*;
+import fr.club.plongee.securite.service.*;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
