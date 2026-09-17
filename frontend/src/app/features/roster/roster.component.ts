@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { RosterVue } from '../../core/modeles';
@@ -12,7 +13,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink],
+  imports: [RouterLink, FormsModule],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
@@ -28,6 +29,10 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
           </button>
         }
       </div>
+
+      <label for="filtreNom" class="etiquette-recherche">Nom ou prénom</label>
+      <input id="filtreNom" type="text" class="recherche" placeholder="Rechercher un élève…"
+             [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
     }
 
     @if (chargement()) {
@@ -36,7 +41,12 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (roster(); as r) {
       @if (elevesFiltres().length === 0) {
-        <div class="carte vide"><p>Aucun élève {{ niveauFiltre() === 'TOUS' ? '' : 'en ' + niveauFiltre() }} sur cette saison.</p></div>
+        <div class="carte vide">
+          <p>
+            Aucun élève {{ niveauFiltre() === 'TOUS' ? '' : 'en ' + niveauFiltre() + ' ' }}
+            {{ filtreNom() ? 'ne correspond à « ' + filtreNom() + ' »' : 'sur cette saison' }}.
+          </p>
+        </div>
       } @else {
       <div class="tableau-scroll">
         <table>
@@ -87,6 +97,8 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
     .filtres .bouton-discret.actif {
       background: var(--profond); color: #fff; border-color: var(--profond);
     }
+    .etiquette-recherche { display: block; margin: var(--pas-2) 0 4px; font-weight: 700; font-size: .9375rem; }
+    .recherche { max-width: 320px; }
     .tableau-scroll { overflow-x: auto; margin-top: var(--pas-3); }
     table { border-collapse: collapse; white-space: nowrap; }
     th, td {
@@ -111,13 +123,21 @@ export class RosterComponent {
   chargement = signal(true);
   erreur = signal<string | null>(null);
   niveauFiltre = signal<FiltreNiveau>('TOUS');
+  filtreNom = signal('');
 
   elevesFiltres = computed(() => {
     const r = this.roster();
     if (!r) return [];
     const niveau = this.niveauFiltre();
-    return niveau === 'TOUS' ? r.eleves : r.eleves.filter(e => e.niveau === niveau);
+    const parNiveau = niveau === 'TOUS' ? r.eleves : r.eleves.filter(e => e.niveau === niveau);
+    const recherche = this.normaliser(this.filtreNom());
+    return recherche ? parNiveau.filter(e => this.normaliser(e.eleve).includes(recherche)) : parNiveau;
   });
+
+  /** Casse et accents ignorés : « Loic » retrouve « Loïc » sur un clavier qui ne les tape pas facilement. */
+  private normaliser(texte: string): string {
+    return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  }
 
   constructor() {
     this.api.roster().subscribe({
