@@ -139,10 +139,12 @@ public class FicheSecuritePdfService {
                   <td>%s</td>
                   <td>%s</td>
                   <td>%s</td>
+                  <td>%s</td>
                 </tr>
                 """.formatted(
                     echapper(m.getPrenom()), echapper(m.getNom()),
                     libelleFonction(m.getFonction()), echapper(m.getAptitude()),
+                    vide(m.getQualificationPreparee()),
                     echapper(m.getGaz()), echapper(m.getMoyenDesaturation())));
         }
         return """
@@ -153,7 +155,8 @@ public class FicheSecuritePdfService {
             <table>
               <thead>
                 <tr>
-                  <th>Plongeur</th><th>Fonction</th><th>Aptitude</th><th>Gaz</th><th>Désaturation</th>
+                  <th>Plongeur</th><th>Fonction</th><th>Aptitude</th><th>Qualification préparée</th>
+                  <th>Gaz</th><th>Désaturation</th>
                 </tr>
               </thead>
               <tbody>%s</tbody>
