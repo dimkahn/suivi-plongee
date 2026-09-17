@@ -40,13 +40,25 @@ Comptes de démonstration dans le README, mot de passe `plongee2026`.
 ## Décisions structurantes — ne pas défaire sans raison
 
 **Le référentiel MFT est en base, pas en dur.** Un `Referentiel` = un niveau +
-une version datée du MFT ; un `Cursus` y est figé à l'inscription pour qu'une
-révision fédérale ne s'applique pas rétroactivement. Le contenu est généré par
-`outils/generer_referentiel.py` (un tuple par bloc dans la liste `REFERENTIELS`,
-un `INSERT` par version dans une migration Flyway dédiée). Pour modifier le
-référentiel : éditer le script Python, régénérer (il réémet tout, y compris les
-versions déjà migrées — n'en extraire que la partie neuve pour la nouvelle
-migration), ajouter une migration. Ne jamais éditer le SQL généré à la main.
+une version datée du MFT ; un `Cursus` y est figé à l'inscription (la copie
+des valeurs utilisées par `EvaluationService`/`RegleDelivranceService` reste
+celle du moment de l'inscription, portée par le cursus lui-même). Le contenu
+initial de chaque révision fédérale a été importé via
+`outils/generer_referentiel.py` (un tuple par bloc dans la liste
+`REFERENTIELS`, un `INSERT` par version dans une migration Flyway dédiée) ;
+ce script reste la référence pour importer une **nouvelle** révision publiée
+par la fédération, avec une migration Flyway dédiée. **Choix révisé (2026) :**
+l'écran `/admin/referentiel` permet désormais d'éditer un référentiel, ses
+blocs et ses critères directement en base (`ReferentielController`,
+`hasRole('ADMIN')`), y compris ceux déjà utilisés par des cursus en cours —
+l'ancienne garantie « une révision fédérale ne s'applique jamais
+rétroactivement » n'est donc plus automatique pour ces corrections manuelles :
+c'est à l'admin de ne pas modifier un référentiel figé sur des cursus en
+cours si la rétroactivité n'est pas voulue. La suppression reste bloquée si
+la ligne est référencée par un cursus, un critère porte une évaluation, ou un
+bloc porte une validation. Ne jamais éditer le SQL déjà généré dans une
+migration passée à la main : cette liberté est réservée à l'écran d'admin,
+pas aux fichiers de migration.
 Historiquement les codes de bloc `C1` à `C9` étaient communs aux trois
 niveaux (intitulés et critères différents par niveau) — **ce n'est plus
 garanti** : la révision PE20 (décembre 2025) du N1 les a abandonnés au profit

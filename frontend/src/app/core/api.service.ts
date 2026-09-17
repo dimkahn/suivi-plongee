@@ -2,8 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
-  AdhesionVue, CursusVue, Eligibilite, EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue,
-  MoniteurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
+  AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
+  EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue, MoniteurVue, ReferentielVue, RosterVue,
+  SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -289,17 +290,63 @@ export class ApiService {
   }
 
   // ----------------------------------------------------------------
-  //  Référentiel MFT. Lecture seule côté appli : une révision se publie en
-  //  éditant outils/generer_referentiel.py puis une migration Flyway, jamais
-  //  depuis l'écran d'administration.
+  //  Référentiel MFT. Édition réservée à l'ADMIN, directement en base : une
+  //  modification s'applique immédiatement, y compris à des cursus déjà
+  //  ouverts sur ce référentiel (voir /admin/referentiel).
   // ----------------------------------------------------------------
 
   referentiels(): Observable<ReferentielVue[]> {
     return this.http.get<ReferentielVue[]>('/api/referentiels');
   }
 
+  /** Toutes les versions, actives ou non : pour l'écran d'administration. */
+  referentielsTous(): Observable<ReferentielVue[]> {
+    return this.http.get<ReferentielVue[]>('/api/referentiels/tous');
+  }
+
   referentiel(id: number): Observable<ReferentielVue> {
     return this.http.get<ReferentielVue>(`/api/referentiels/${id}`);
+  }
+
+  creerReferentiel(demande: DemandeReferentiel): Observable<ReferentielVue> {
+    return this.http.post<ReferentielVue>('/api/referentiels', demande);
+  }
+
+  modifierReferentiel(id: number, demande: DemandeReferentiel): Observable<ReferentielVue> {
+    return this.http.put<ReferentielVue>(`/api/referentiels/${id}`, demande);
+  }
+
+  supprimerReferentiel(id: number): Observable<unknown> {
+    return this.http.delete(`/api/referentiels/${id}`);
+  }
+
+  creerBlocReferentiel(referentielId: number, demande: DemandeBlocReferentiel) {
+    return this.http.post<ReferentielVue['blocs'][number]>(
+      `/api/referentiels/${referentielId}/blocs`, demande);
+  }
+
+  modifierBlocReferentiel(referentielId: number, blocId: number, demande: DemandeBlocReferentiel) {
+    return this.http.put<ReferentielVue['blocs'][number]>(
+      `/api/referentiels/${referentielId}/blocs/${blocId}`, demande);
+  }
+
+  supprimerBlocReferentiel(referentielId: number, blocId: number): Observable<unknown> {
+    return this.http.delete(`/api/referentiels/${referentielId}/blocs/${blocId}`);
+  }
+
+  creerCritereReferentiel(referentielId: number, blocId: number, demande: DemandeCritereReferentiel) {
+    return this.http.post<ReferentielVue['blocs'][number]['criteres'][number]>(
+      `/api/referentiels/${referentielId}/blocs/${blocId}/criteres`, demande);
+  }
+
+  modifierCritereReferentiel(referentielId: number, blocId: number, critereId: number,
+                             demande: DemandeCritereReferentiel) {
+    return this.http.put<ReferentielVue['blocs'][number]['criteres'][number]>(
+      `/api/referentiels/${referentielId}/blocs/${blocId}/criteres/${critereId}`, demande);
+  }
+
+  supprimerCritereReferentiel(referentielId: number, blocId: number, critereId: number): Observable<unknown> {
+    return this.http.delete(`/api/referentiels/${referentielId}/blocs/${blocId}/criteres/${critereId}`);
   }
 
   // ----------------------------------------------------------------
