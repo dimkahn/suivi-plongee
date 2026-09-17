@@ -234,9 +234,3 @@ INSERT INTO critere (bloc_id, ordre, savoir_faire, critere_realisation)
 SELECT b.id, 6, 'Milieu et environnement', 'Charte internationale du plongeur responsable, connaissances minimales du milieu subaquatique. Respect du milieu (palmage, stabilisation...).'
   FROM bloc_competence b JOIN referentiel r ON r.id = b.referentiel_id
  WHERE r.niveau = 'N1' AND r.version_mft = 'PE20 (2025-12)' AND b.code = 'B11';
-
--- L'ancien N1 (MFT 2016-11-15) ne s'applique plus a une nouvelle inscription :
--- il reste en base (les cursus deja ouverts y sont figes, cf. Cursus.referentiel_id)
--- mais versionCourante() ne le proposera plus, et il sort de la liste "actifs"
--- montree par l'ecran d'administration du referentiel.
-UPDATE referentiel SET actif = FALSE WHERE niveau = 'N1' AND version_mft = '2016-11-15';
