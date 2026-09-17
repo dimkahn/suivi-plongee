@@ -119,6 +119,13 @@ activé côté backend) :
 - Limite d'envoi Gmail standard : 500 messages/jour (2000/jour en Google
   Workspace), largement suffisant pour l'usage d'un club.
 
+### Nom de la structure (fiche de sécurité)
+
+La fiche de sécurité PDF d'une séance (article A322-72 du Code du sport)
+affiche en en-tête le nom de la structure. Variable d'environnement
+`CLUB_NOM` sur le service `backend`, valeur par défaut `Club de plongee` si
+laissée vide.
+
 ---
 
 ## Le référentiel

@@ -18,7 +18,8 @@ import java.util.Objects;
 public class SeanceController {
 
     public record SeanceVue(Long id, LocalDate date, String milieu, String lieu,
-                            Integer profondeurMax, String commentaire, boolean modifiable) {}
+                            Integer profondeurMax, String commentaire, boolean modifiable,
+                            boolean ficheSecurite) {}
 
     public record DemandeSeance(@NotNull LocalDate dateSeance, @NotNull Milieu milieu,
                                 String lieu, Integer profondeurMax, String commentaire) {}
@@ -31,15 +32,17 @@ public class SeanceController {
     private final CursusRepository cursus;
     private final ParticipationRepository participations;
     private final EvaluationRepository evaluations;
+    private final FicheSecuriteRepository fichesSecurite;
 
     public SeanceController(SeanceRepository seances, SaisonRepository saisons,
                             CursusRepository cursus, ParticipationRepository participations,
-                            EvaluationRepository evaluations) {
+                            EvaluationRepository evaluations, FicheSecuriteRepository fichesSecurite) {
         this.seances = seances;
         this.saisons = saisons;
         this.cursus = cursus;
         this.participations = participations;
         this.evaluations = evaluations;
+        this.fichesSecurite = fichesSecurite;
     }
 
     @GetMapping
@@ -142,6 +145,7 @@ public class SeanceController {
 
     private SeanceVue vue(Seance s) {
         return new SeanceVue(s.getId(), s.getDateSeance(), s.getMilieu().name(),
-                s.getLieu(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s));
+                s.getLieu(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s),
+                fichesSecurite.existsBySeanceId(s.getId()));
     }
 }

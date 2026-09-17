@@ -88,6 +88,8 @@ export interface SeanceVue {
   commentaire: string | null;
   /** false dès que la séance porte des présences ou des évaluations : milieu et profondeur figés. */
   modifiable: boolean;
+  /** Une fiche de sécurité (A322-72) a déjà été enregistrée pour cette séance. */
+  ficheSecurite: boolean;
 }
 
 export interface EvaluationVue {
@@ -273,4 +275,61 @@ export interface DemandeCritereReferentiel {
 export interface Eligibilite {
   eligible: boolean;
   controles: Controle[];
+}
+
+export interface MoniteurOptionVue {
+  id: number;
+  nomComplet: string;
+  niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
+}
+
+export type FonctionPalanquee = 'PLONGEUR' | 'GUIDE_PALANQUEE' | 'ENCADRANT';
+
+/** Seuls le gaz et le moyen de désaturation varient d'un plongeur à l'autre : le profil de plongée est celui de la palanquée. */
+export interface PlongeurVue {
+  nom: string;
+  prenom: string;
+  aptitude: string | null;
+  fonction: FonctionPalanquee;
+  gaz: string | null;
+  moyenDesaturation: string | null;
+  observations: string | null;
+}
+
+/**
+ * Une palanquée : profil prévu (saisi à l'établissement de la fiche) et
+ * profil réalisé (complété séparément, au retour de plongée — voir
+ * ApiService.enregistrerProfilRealise).
+ */
+export interface PalanqueeVue {
+  numero: number;
+  profondeurPrevue: number | null;
+  dureePrevue: number | null;
+  profondeurRealisee: number | null;
+  dureeRealisee: number | null;
+  paliers: string | null;
+  heureImmersion: string | null;
+  heureSortie: string | null;
+  membres: PlongeurVue[];
+}
+
+/**
+ * Fiche de sécurité d'une séance (A322-72). dp/dpId sont null tant qu'aucune
+ * fiche n'a été enregistrée : le backend renvoie alors une fiche "vide"
+ * plutôt qu'une 404, pour amorcer directement le formulaire de création.
+ */
+export interface FicheSecuriteVue {
+  id: number | null;
+  dpId: number | null;
+  dp: string | null;
+  meteo: string | null;
+  etatMer: string | null;
+  visibilite: string | null;
+  courant: string | null;
+  maree: string | null;
+  temperatureEau: string | null;
+  securiteSurface: string | null;
+  planSecours: string | null;
+  observations: string | null;
+  palanquees: PalanqueeVue[];
 }

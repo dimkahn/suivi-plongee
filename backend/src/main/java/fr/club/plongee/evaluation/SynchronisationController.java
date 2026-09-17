@@ -141,11 +141,12 @@ public class SynchronisationController {
 
         List<SeanceController.SeanceVue> vuesSeances = seances
                 .findBySaisonIdOrderByDateSeance(saison).stream()
-                // "modifiable" ne sert qu'à l'écran de gestion des séances, jamais consulté hors
-                // ligne : true par défaut, l'écran d'édition revérifie toujours en direct.
+                // "modifiable" et "ficheSecurite" ne servent qu'aux écrans de gestion des
+                // séances et des fiches de sécurité, jamais consultés hors ligne : true par
+                // défaut, ces écrans revérifient toujours en direct.
                 .map(s -> new SeanceController.SeanceVue(s.getId(), s.getDateSeance(),
                         s.getMilieu().name(), s.getLieu(), s.getProfondeurMax(),
-                        s.getCommentaire(), true))
+                        s.getCommentaire(), true, true))
                 .toList();
 
         List<ReferentielController.ReferentielVue> vuesReferentiels = referentiels

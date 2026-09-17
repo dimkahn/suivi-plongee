@@ -3,8 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
-  EleveVue, EvaluationVue, GrilleVue, LigneTrombinoscope, MatriceVue, MoniteurVue, ReferentielVue, RosterVue,
-  SaisonVue, SeanceVue, Statut
+  EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, LigneTrombinoscope, MatriceVue, MoniteurOptionVue,
+  MoniteurVue, PlongeurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -145,6 +145,66 @@ export class ApiService {
     return this.http.post(`/api/cursus/${cursusId}/evaluations`, {
       critereId, statut, seanceId, referenceClient
     });
+  }
+
+  // ----------------------------------------------------------------
+  //  Fiche de sécurité d'une séance (A322-72), réservée aux encadrants.
+  // ----------------------------------------------------------------
+
+  ficheSecurite(seanceId: number): Observable<FicheSecuriteVue> {
+    return this.http.get<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`);
+  }
+
+  /**
+   * Établissement de la fiche, avant la mise à l'eau : DP, conditions,
+   * composition des palanquées et profil prévu (profondeur/durée). Ne touche
+   * pas le profil réalisé, saisi séparément une fois de retour, voir
+   * `enregistrerProfilRealise`.
+   */
+  enregistrerFicheSecurite(seanceId: number, demande: {
+    dpId: number;
+    meteo?: string | null;
+    etatMer?: string | null;
+    visibilite?: string | null;
+    courant?: string | null;
+    maree?: string | null;
+    temperatureEau?: string | null;
+    securiteSurface?: string | null;
+    planSecours?: string | null;
+    observations?: string | null;
+    palanquees: {
+      numero: number;
+      profondeurPrevue: number | null;
+      dureePrevue: number | null;
+      membres: PlongeurVue[];
+    }[];
+  }): Observable<FicheSecuriteVue> {
+    return this.http.put<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`, demande);
+  }
+
+  /** Complément au retour de plongée : le profil réellement plongé, palanquée par palanquée. */
+  enregistrerProfilRealise(seanceId: number, profils: {
+    numero: number;
+    profondeurRealisee: number | null;
+    dureeRealisee: number | null;
+    paliers: string | null;
+    heureImmersion: string | null;
+    heureSortie: string | null;
+  }[]): Observable<FicheSecuriteVue> {
+    return this.http.put<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/realise`, profils);
+  }
+
+  supprimerFicheSecurite(seanceId: number): Observable<unknown> {
+    return this.http.delete(`/api/seances/${seanceId}/fiche-securite`);
+  }
+
+  ficheSecuritePdf(seanceId: number): Observable<Blob> {
+    return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`, { responseType: 'blob' });
+  }
+
+  /** Liste légère des moniteurs actifs, pour le choix du DP : accessible à tout encadrant. */
+  moniteursActifs(): Observable<MoniteurOptionVue[]> {
+    return this.http.get<MoniteurOptionVue[]>('/api/moniteurs');
   }
 
   // ----------------------------------------------------------------
