@@ -8,8 +8,9 @@
 ##    reverse proxy vers le frontend, dont nginx.conf relaie déjà /api vers
 ##    le backend en interne ;
 ##  - redémarrage automatique des conteneurs (restart: unless-stopped) ;
-##  - aucun secret par défaut : DB_PASSWORD, JWT_SECRET et DOMAINE doivent
-##    être définis dans un fichier .env (voir .env.example).
+##  - aucun secret par défaut : DB_PASSWORD, JWT_SECRET, DOMAINE et les
+##    identifiants SMTP doivent être définis dans un fichier .env (voir
+##    .env.example).
 
 services:
   db:
@@ -38,6 +39,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:?definir JWT_SECRET dans .env (openssl rand -base64 48)}
       CORS_ORIGINES: https://${DOMAINE:?definir DOMAINE dans .env}
       FRONTEND_URL: https://${DOMAINE:?definir DOMAINE dans .env}
+      SMTP_HOTE: ${SMTP_HOTE:?definir SMTP_HOTE dans .env (par exemple smtp.gmail.com)}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_UTILISATEUR: ${SMTP_UTILISATEUR:?definir SMTP_UTILISATEUR dans .env}
+      SMTP_MOT_DE_PASSE: ${SMTP_MOT_DE_PASSE:?definir SMTP_MOT_DE_PASSE dans .env (mot de passe d'application pour Gmail)}
+      MAIL_EXPEDITEUR: ${MAIL_EXPEDITEUR:-Club de plongee <no-reply@cppjvo.fr>}
     depends_on:
       db:
         condition: service_healthy
