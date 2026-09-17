@@ -124,4 +124,23 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      Essai d'image native GraalVM : mvn -Pnative -DskipTests native:compile
+      (avec JAVA_HOME pointant sur une GraalVM 25, meme version que la JVM
+      cible de ce projet).
+    -->
+    <profile>
+      <id>native</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
