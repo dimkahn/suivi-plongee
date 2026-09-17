@@ -385,11 +385,3 @@ SELECT b.id, 5, 'Milieu et environnement', 'Charte internationale du plongeur re
   FROM bloc_competence b JOIN referentiel r ON r.id = b.referentiel_id
  WHERE r.niveau = 'N3' AND r.version_mft = 'PA40 | PE60 (2025-12)' AND b.code = 'C8';
 
-
--- Les anciens N2 (2015-01-02) et N3 (2016-01-01) ne s'appliquent plus a une
--- nouvelle inscription : ils restent en base (les cursus deja ouverts y sont
--- figes, cf. Cursus.referentiel_id) mais versionCourante() ne les proposera
--- plus, et ils sortent de la liste "actifs" montree par l'ecran
--- d'administration du referentiel.
-UPDATE referentiel SET actif = FALSE WHERE niveau = 'N2' AND version_mft = '2015-01-02';
-UPDATE referentiel SET actif = FALSE WHERE niveau = 'N3' AND version_mft = '2016-01-01';

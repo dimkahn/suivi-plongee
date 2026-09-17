@@ -58,7 +58,14 @@ cours si la rétroactivité n'est pas voulue. La suppression reste bloquée si
 la ligne est référencée par un cursus, un critère porte une évaluation, ou un
 bloc porte une validation. Ne jamais éditer le SQL déjà généré dans une
 migration passée à la main : cette liberté est réservée à l'écran d'admin,
-pas aux fichiers de migration.
+pas aux fichiers de migration. **Exception ponctuelle (2026) :** les trois
+premières versions du MFT (N1 2016-11-15, N2 2015-01-02, N3 2016-01-01),
+générées par une version antérieure du script et intégralement désactivées
+depuis par V7/V8, ont été retirées de `V2__referentiel_mft.sql` (fichier
+supprimé) et de `REFERENTIELS` — possible uniquement parce qu'aucune base
+n'avait encore exécuté ces migrations. Ne plus jamais éditer une migration
+déjà appliquée quelque part : passer par une nouvelle migration ou par
+l'écran d'admin.
 Historiquement les codes de bloc `C1` à `C9` étaient communs aux trois
 niveaux (intitulés et critères différents par niveau) — **ce n'est plus
 garanti** : la révision PE20 (décembre 2025) du N1 les a abandonnés au profit
