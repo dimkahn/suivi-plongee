@@ -36,7 +36,7 @@ import { RouterLink } from '@angular/router';
       <li class="carte">
         <a routerLink="/admin/referentiel">
           <span class="nom">Référentiel MFT</span>
-          <span class="secondaire">Blocs et critères en vigueur par niveau (consultation)</span>
+          <span class="secondaire">Créer, modifier et supprimer versions, blocs et critères</span>
         </a>
       </li>
     </ul>
