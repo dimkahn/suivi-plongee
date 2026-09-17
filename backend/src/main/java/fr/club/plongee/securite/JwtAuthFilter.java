@@ -1,5 +1,9 @@
 package fr.club.plongee.securite;
 
+import fr.club.plongee.securite.domain.*;
+import fr.club.plongee.securite.repository.*;
+import fr.club.plongee.securite.service.*;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

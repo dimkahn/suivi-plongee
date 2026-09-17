@@ -1,8 +1,12 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.formation.domain.*;
+import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.formation.service.*;
+
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
-import fr.club.plongee.evaluation.EvaluationRepository;
+import fr.club.plongee.evaluation.repository.EvaluationRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;

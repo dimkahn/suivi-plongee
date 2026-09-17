@@ -2,10 +2,13 @@ package fr.club.plongee.formation;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
-import fr.club.plongee.securite.NiveauEncadrement;
-import fr.club.plongee.securite.RoleNom;
-import fr.club.plongee.securite.Utilisateur;
-import fr.club.plongee.securite.UtilisateurRepository;
+import fr.club.plongee.formation.domain.*;
+import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.formation.service.*;
+import fr.club.plongee.securite.domain.NiveauEncadrement;
+import fr.club.plongee.securite.domain.RoleNom;
+import fr.club.plongee.securite.domain.Utilisateur;
+import fr.club.plongee.securite.repository.UtilisateurRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
