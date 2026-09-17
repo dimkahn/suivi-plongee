@@ -163,10 +163,11 @@ public class SynchronisationController {
     /** Les regles dont le navigateur a besoin pour refuser une saisie avant l'envoi. */
     private ReferentielController.ReferentielVue referentielAllege(Referentiel r) {
         return new ReferentielController.ReferentielVue(r.getId(), r.getNiveau().name(),
-                r.getVersionMft(), r.getSource(), r.getAgeMinimum(),
+                r.getVersionMft(), r.getSource(), r.getDateApplication(), r.isActif(), r.getAgeMinimum(),
                 r.getNiveauPrerequis() == null ? null : r.getNiveauPrerequis().name(),
                 r.getQualificationRequise(), r.isMilieuNaturelExclusif(),
                 r.getNiveauEncadrantValidation().name(), r.getNiveauEncadrantDelivrance().name(),
+                r.getProfondeurMaxValidation(), r.getProfondeurMaxFormation(),
                 r.getPrerogativeProfondeur(), List.of());
     }
 }

@@ -12,6 +12,8 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 
     boolean existsByMoniteurId(Long moniteurId);
     boolean existsBySeanceId(Long seanceId);
+    boolean existsByCritereId(Long critereId);
+    boolean existsByCritere_BlocId(Long blocId);
 
     /**
      * Etat courant de la grille : la derniere evaluation saisie pour chaque critere.

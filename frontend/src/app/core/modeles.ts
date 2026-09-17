@@ -195,6 +195,7 @@ export interface CritereReferentielVue {
   ordre: number;
   savoirFaire: string;
   critereRealisation: string | null;
+  commentaire: string | null;
 }
 
 export interface BlocReferentielVue {
@@ -217,15 +218,56 @@ export interface ReferentielVue {
   id: number;
   niveau: 'N1' | 'N2' | 'N3';
   versionMft: string;
-  source: string;
+  source: string | null;
+  dateApplication: string;
+  actif: boolean;
   ageMinimum: number;
   niveauPrerequis: 'N1' | 'N2' | 'N3' | null;
   qualificationRequise: string | null;
   milieuNaturelExclusif: boolean;
   niveauEncadrantValidation: 'E1' | 'E2' | 'E3' | 'E4';
   niveauEncadrantDelivrance: 'E1' | 'E2' | 'E3' | 'E4';
+  profondeurMaxValidation: number;
+  profondeurMaxFormation: number;
   prerogativeProfondeur: number;
   blocs: BlocReferentielVue[];
+}
+
+/** Formulaire d'édition d'un référentiel : mêmes champs, sans id ni blocs (gérés séparément). */
+export interface DemandeReferentiel {
+  niveau: 'N1' | 'N2' | 'N3';
+  versionMft: string;
+  source: string | null;
+  dateApplication: string;
+  actif: boolean;
+  ageMinimum: number;
+  niveauPrerequis: 'N1' | 'N2' | 'N3' | null;
+  qualificationRequise: string | null;
+  milieuNaturelExclusif: boolean;
+  niveauEncadrantValidation: 'E1' | 'E2' | 'E3' | 'E4';
+  niveauEncadrantDelivrance: 'E1' | 'E2' | 'E3' | 'E4';
+  profondeurMaxValidation: number;
+  profondeurMaxFormation: number;
+  prerogativeProfondeur: number;
+}
+
+export interface DemandeBlocReferentiel {
+  intitule: string;
+  ordre: number;
+  evaluationTransverse: boolean;
+  validerEnDernier: boolean;
+  competenceAttendue: string | null;
+  comportement: string | null;
+  theorie: string | null;
+  modalitesEvaluation: string | null;
+  regroupement: string | null;
+}
+
+export interface DemandeCritereReferentiel {
+  ordre: number;
+  savoirFaire: string;
+  critereRealisation: string | null;
+  commentaire: string | null;
 }
 
 export interface Eligibilite {
