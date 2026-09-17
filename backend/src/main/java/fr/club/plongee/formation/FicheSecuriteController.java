@@ -35,7 +35,8 @@ import java.util.List;
 @RequestMapping("/api/seances/{seanceId}/fiche-securite")
 public class FicheSecuriteController {
 
-    public record DemandePlongeur(@NotBlank String nom, @NotBlank String prenom, String aptitude,
+    public record DemandePlongeur(Long eleveId, Long utilisateurId, @NotBlank String nom,
+                                  @NotBlank String prenom, String aptitude, String qualificationPreparee,
                                   FonctionPalanquee fonction, String gaz, String moyenDesaturation,
                                   String observations) {}
 
@@ -111,7 +112,8 @@ public class FicheSecuriteController {
     }
 
     private FicheSecuriteService.Plongeur plongeur(DemandePlongeur d) {
-        return new FicheSecuriteService.Plongeur(d.nom(), d.prenom(), d.aptitude(), d.fonction(),
+        return new FicheSecuriteService.Plongeur(d.eleveId(), d.utilisateurId(), d.nom(), d.prenom(),
+                d.aptitude(), d.qualificationPreparee(), d.fonction(),
                 d.gaz(), d.moyenDesaturation(), d.observations());
     }
 }

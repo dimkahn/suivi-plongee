@@ -285,15 +285,39 @@ export interface MoniteurOptionVue {
 
 export type FonctionPalanquee = 'PLONGEUR' | 'GUIDE_PALANQUEE' | 'ENCADRANT';
 
-/** Seuls le gaz et le moyen de désaturation varient d'un plongeur à l'autre : le profil de plongée est celui de la palanquée. */
+/**
+ * Seuls le gaz et le moyen de désaturation varient d'un plongeur à l'autre :
+ * le profil de plongée est celui de la palanquée. eleveId/utilisateurId sont
+ * facultatifs : ils ne servent qu'à pré-remplir aptitude/qualificationPreparee
+ * depuis le dossier d'un membre du club (voir PlongeurConnuVue) ; la fiche
+ * garde ensuite ces valeurs comme un instantané éditable, pas une liaison vive.
+ */
 export interface PlongeurVue {
+  eleveId: number | null;
+  utilisateurId: number | null;
   nom: string;
   prenom: string;
   aptitude: string | null;
+  qualificationPreparee: string | null;
   fonction: FonctionPalanquee;
   gaz: string | null;
   moyenDesaturation: string | null;
   observations: string | null;
+}
+
+/**
+ * Un élève ou un encadrant du club, pour le sélecteur d'un membre de
+ * palanquée : aptitude/qualificationPreparee viennent de son dossier
+ * (dernier brevet délivré et cursus en cours pour un élève, niveau
+ * d'encadrement pour un encadrant — jamais les deux à la fois).
+ */
+export interface PlongeurConnuVue {
+  eleveId: number | null;
+  utilisateurId: number | null;
+  nom: string;
+  prenom: string;
+  aptitude: string | null;
+  qualificationPreparee: string | null;
 }
 
 /**

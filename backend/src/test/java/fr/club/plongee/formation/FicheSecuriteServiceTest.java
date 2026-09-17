@@ -39,13 +39,14 @@ class FicheSecuriteServiceTest {
     @Mock FicheSecuriteRepository fiches;
     @Mock SeanceRepository seances;
     @Mock UtilisateurRepository utilisateurs;
+    @Mock EleveRepository eleves;
     @Mock FicheSecuritePdfService pdfService;
 
     FicheSecuriteService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new FicheSecuriteService(fiches, seances, utilisateurs, pdfService);
+        service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService);
     }
 
     private Utilisateur moniteur(long id, String prenom, String nom) {
@@ -69,8 +70,16 @@ class FicheSecuriteServiceTest {
     }
 
     private FicheSecuriteService.Plongeur plongeur(String prenom, String nom) {
-        return new FicheSecuriteService.Plongeur(nom, prenom, "N2", FonctionPalanquee.PLONGEUR,
-                "Air", "Table MN90", null);
+        return new FicheSecuriteService.Plongeur(null, null, nom, prenom, "N2", null,
+                FonctionPalanquee.PLONGEUR, "Air", "Table MN90", null);
+    }
+
+    private Eleve eleve(long id, String prenom, String nom) {
+        Eleve e = new Eleve();
+        e.setId(id);
+        e.setPrenom(prenom);
+        e.setNom(nom);
+        return e;
     }
 
     @Test
@@ -110,7 +119,7 @@ class FicheSecuriteServiceTest {
         when(fiches.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         FicheSecuriteService.Plongeur sansFonction = new FicheSecuriteService.Plongeur(
-                "Dulac", "Anis", null, null, null, null, null);
+                null, null, "Dulac", "Anis", null, null, null, null, null, null);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
                 null, null, null, null, null, null,
                 List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(sansFonction))));
@@ -118,6 +127,66 @@ class FicheSecuriteServiceTest {
         FicheSecuriteService.FicheSecuriteVue vue = service.enregistrer(1L, saisie);
 
         assertThat(vue.palanquees().get(0).membres().get(0).fonction()).isEqualTo("PLONGEUR");
+    }
+
+    @Test
+    @DisplayName("Un plongeur lié à un élève du club porte l'id de cet élève dans la vue")
+    void enregistrer_lieAUnEleveDuClub() {
+        when(seances.findById(1L)).thenReturn(Optional.of(seance(1L)));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur(10L, "Flora", "Vasseur")));
+        when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
+        when(fiches.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(eleves.findById(7L)).thenReturn(Optional.of(eleve(7L, "Anis", "Dulac")));
+
+        FicheSecuriteService.Plongeur lie = new FicheSecuriteService.Plongeur(7L, null,
+                "Dulac", "Anis", "N1", "N2", FonctionPalanquee.PLONGEUR, "Air", null, null);
+        FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
+                null, null, null, null, null, null,
+                List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(lie))));
+
+        FicheSecuriteService.FicheSecuriteVue vue = service.enregistrer(1L, saisie);
+
+        FicheSecuriteService.PlongeurVue membre = vue.palanquees().get(0).membres().get(0);
+        assertThat(membre.eleveId()).isEqualTo(7L);
+        assertThat(membre.utilisateurId()).isNull();
+        assertThat(membre.aptitude()).isEqualTo("N1");
+        assertThat(membre.qualificationPreparee()).isEqualTo("N2");
+    }
+
+    @Test
+    @DisplayName("Un plongeur lié à un élève introuvable est refusé")
+    void enregistrer_eleveLieIntrouvable() {
+        when(seances.findById(1L)).thenReturn(Optional.of(seance(1L)));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur(10L, "Flora", "Vasseur")));
+        when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
+        when(eleves.findById(99L)).thenReturn(Optional.empty());
+
+        FicheSecuriteService.Plongeur lie = new FicheSecuriteService.Plongeur(99L, null,
+                "Inconnu", "Un", null, null, null, null, null, null);
+        FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
+                null, null, null, null, null, null,
+                List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(lie))));
+
+        assertThatThrownBy(() -> service.enregistrer(1L, saisie))
+                .isInstanceOf(RessourceIntrouvableException.class);
+    }
+
+    @Test
+    @DisplayName("Un plongeur ne peut pas être à la fois lié à un élève et à un encadrant")
+    void enregistrer_refuseLienDouble() {
+        when(seances.findById(1L)).thenReturn(Optional.of(seance(1L)));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur(10L, "Flora", "Vasseur")));
+        when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
+
+        FicheSecuriteService.Plongeur ambigu = new FicheSecuriteService.Plongeur(7L, 10L,
+                "Dulac", "Anis", null, null, null, null, null, null);
+        FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
+                null, null, null, null, null, null,
+                List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(ambigu))));
+
+        assertThatThrownBy(() -> service.enregistrer(1L, saisie))
+                .isInstanceOf(RegleMetierException.class);
+        verify(fiches, never()).save(any());
     }
 
     @Test

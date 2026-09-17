@@ -4,12 +4,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { MoniteurOptionVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
+import { MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue, PlongeurVue, SeanceVue } from '../../core/modeles';
 
 function plongeurVide(): PlongeurVue {
   return {
-    nom: '', prenom: '', aptitude: null, fonction: 'PLONGEUR',
-    gaz: null, moyenDesaturation: null, observations: null
+    eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null,
+    fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
   };
 }
 
@@ -126,11 +126,36 @@ interface FormulaireEntete {
 
           @for (m of p.membres; track m; let iM = $index) {
             <div class="plongeur">
+              <label class="discrete">Plongeur du club (optionnel, pré-remplit aptitude et qualification)</label>
+              <select class="selecteur-connu" (change)="choisirPlongeurConnu(iP, iM, $event)">
+                <option value="">— Choisir dans le club —</option>
+                @if (elevesConnus().length > 0) {
+                  <optgroup label="Élèves">
+                    @for (c of elevesConnus(); track c.eleveId) {
+                      <option [value]="'ELEVE:' + c.eleveId">
+                        {{ c.prenom }} {{ c.nom }}{{ c.aptitude ? ' — ' + c.aptitude : '' }}
+                      </option>
+                    }
+                  </optgroup>
+                }
+                @if (encadrantsConnus().length > 0) {
+                  <optgroup label="Encadrants">
+                    @for (c of encadrantsConnus(); track c.utilisateurId) {
+                      <option [value]="'ENCADRANT:' + c.utilisateurId">
+                        {{ c.prenom }} {{ c.nom }}{{ c.aptitude ? ' — ' + c.aptitude : '' }}
+                      </option>
+                    }
+                  </optgroup>
+                }
+              </select>
+
               <div class="ligne-plongeur">
                 <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'prenom-' + iP + '-' + iM">
                 <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
                 <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
                        [name]="'aptitude-' + iP + '-' + iM">
+                <input type="text" placeholder="Qualification préparée (si en formation)"
+                       [(ngModel)]="m.qualificationPreparee" [name]="'qualif-' + iP + '-' + iM">
                 <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
                   <option value="PLONGEUR">Plongeur</option>
                   <option value="GUIDE_PALANQUEE">Guide de palanquée</option>
@@ -223,6 +248,8 @@ interface FormulaireEntete {
     .ligne-profil input { width: 100%; }
 
     .plongeur { border-top: 1px solid var(--trait); padding-top: var(--pas-2); margin-top: var(--pas-2); }
+    .discrete { font-weight: 400; font-size: .8125rem; color: var(--craie); margin: 0 0 4px; }
+    .selecteur-connu { max-width: 320px; margin-bottom: var(--pas); }
     .ligne-plongeur { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin-bottom: var(--pas); }
     .ligne-plongeur input[type="text"] { flex: 1 1 140px; }
 
@@ -250,6 +277,10 @@ export class FicheSecuriteComponent {
   entete = signal<FormulaireEntete | null>(null);
   palanquees = signal<PalanqueeVue[]>([]);
 
+  plongeursConnus = signal<PlongeurConnuVue[]>([]);
+  elevesConnus = computed(() => this.plongeursConnus().filter(c => c.eleveId !== null));
+  encadrantsConnus = computed(() => this.plongeursConnus().filter(c => c.utilisateurId !== null));
+
   rechercheRealise = signal('');
   /** Filtre la liste affichée à l'étape 2 sur le nom/prénom d'un plongeur, pour retrouver vite une palanquée. */
   palanqueesFiltrees = computed(() => {
@@ -265,13 +296,15 @@ export class FicheSecuriteComponent {
 
   private async charger(): Promise<void> {
     try {
-      const [seances, moniteurs, fiche] = await Promise.all([
+      const [seances, moniteurs, plongeursConnus, fiche] = await Promise.all([
         this.api.seances(),
         firstValueFrom(this.api.moniteursActifs()),
+        firstValueFrom(this.api.plongeursConnus()),
         firstValueFrom(this.api.ficheSecurite(this.seanceId))
       ]);
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
       this.moniteurs.set(moniteurs);
+      this.plongeursConnus.set(plongeursConnus);
       this.ficheId.set(fiche.id);
       this.entete.set({
         dpId: fiche.dpId, meteo: fiche.meteo, etatMer: fiche.etatMer, visibilite: fiche.visibilite,
@@ -307,6 +340,26 @@ export class FicheSecuriteComponent {
   retirerMembre(indexPalanquee: number, indexMembre: number): void {
     const liste = this.palanquees().map((p, i) =>
       i === indexPalanquee ? { ...p, membres: p.membres.filter((_, j) => j !== indexMembre) } : p);
+    this.palanquees.set(liste);
+  }
+
+  /** Pré-remplit nom/prénom/aptitude/qualification depuis le dossier du plongeur choisi, éditable ensuite. */
+  choisirPlongeurConnu(indexPalanquee: number, indexMembre: number, event: Event): void {
+    const valeur = (event.target as HTMLSelectElement).value;
+    if (!valeur) return;
+    const [type, idTexte] = valeur.split(':');
+    const id = Number(idTexte);
+    const candidat = this.plongeursConnus().find(c =>
+      (type === 'ELEVE' && c.eleveId === id) || (type === 'ENCADRANT' && c.utilisateurId === id));
+    if (!candidat) return;
+
+    const liste = this.palanquees().map((p, i) => i !== indexPalanquee ? p : {
+      ...p, membres: p.membres.map((m, j) => j !== indexMembre ? m : {
+        ...m, eleveId: candidat.eleveId, utilisateurId: candidat.utilisateurId,
+        nom: candidat.nom, prenom: candidat.prenom,
+        aptitude: candidat.aptitude, qualificationPreparee: candidat.qualificationPreparee
+      })
+    });
     this.palanquees.set(liste);
   }
 

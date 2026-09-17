@@ -4,7 +4,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, LigneTrombinoscope, MatriceVue, MoniteurOptionVue,
-  MoniteurVue, PlongeurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
+  MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -200,6 +200,11 @@ export class ApiService {
 
   ficheSecuritePdf(seanceId: number): Observable<Blob> {
     return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`, { responseType: 'blob' });
+  }
+
+  /** Roster des élèves et encadrants du club, pour pré-remplir un membre de palanquée. */
+  plongeursConnus(): Observable<PlongeurConnuVue[]> {
+    return this.http.get<PlongeurConnuVue[]>('/api/plongeurs-connus');
   }
 
   /** Liste légère des moniteurs actifs, pour le choix du DP : accessible à tout encadrant. */
