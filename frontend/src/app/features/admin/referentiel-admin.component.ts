@@ -63,10 +63,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
   imports: [FormsModule],
   template: `
     <h1>Référentiel MFT</h1>
-    <p class="secondaire">
-      Une modification s'applique immédiatement en base, y compris à des cursus déjà ouverts sur ce
-      référentiel : ce n'est plus le script <code>outils/generer_referentiel.py</code> qui fait foi.
-    </p>
+
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
