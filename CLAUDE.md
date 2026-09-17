@@ -174,9 +174,11 @@ photo, pas seulement son affichage.
 4. ~~Export PDF de la fiche de suivi d'un élève.~~ Fait (`GET
    /api/cursus/{id}/fiche.pdf`, bouton dans la grille).
 5. Icônes PWA à fournir dans `frontend/public/icones/`.
-6. Envoi d'e-mail réel : `ServiceNotificationConsole` se contente de tracer le
-   lien de réinitialisation de mot de passe dans les logs (pas de serveur SMTP
-   configuré). À remplacer avant la mise en production.
+6. ~~Envoi d'e-mail réel.~~ Fait (`ServiceNotificationEmail`, profil `!dev`,
+   `spring.mail.*` en profil `prod` dans `application.yml` — hôte/identifiants
+   par variables d'environnement `SMTP_HOTE`/`SMTP_UTILISATEUR`/
+   `SMTP_MOT_DE_PASSE`). `ServiceNotificationConsole` reste la seule
+   implémentation active en profil `dev` (pas de serveur SMTP local).
 
 ## Avertissement
 
