@@ -121,6 +121,17 @@ public class CursusController {
                 .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable")));
     }
 
+    /**
+     * Historique complet d'un élève, toutes saisons confondues : permet à un
+     * encadrant de retrouver les compétences acquises l'an dernier pour
+     * reprendre l'évaluation initiale en début de saison sans repartir de zéro.
+     */
+    @GetMapping("/eleve/{eleveId}")
+    @PreAuthorize("hasAnyRole('MONITEUR', 'ADMIN')")
+    public List<CursusVue> historiqueEleve(@PathVariable Long eleveId) {
+        return cursus.parEleve(eleveId).stream().map(this::vue).toList();
+    }
+
     private CursusVue vue(Cursus c) {
         return new CursusVue(c.getId(), c.getEleve().getId(), c.getEleve().nomComplet(),
                 c.getReferentiel().getNiveau().name(), c.getSaison().getLibelle(),

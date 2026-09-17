@@ -50,6 +50,11 @@ export class ApiService {
     return this.http.get<CursusVue[]>('/api/cursus', { params: { saisonId } });
   }
 
+  /** Toutes les saisons d'un élève : pour retrouver les compétences acquises l'an dernier. */
+  historiqueCursusEleve(eleveId: number): Observable<CursusVue[]> {
+    return this.http.get<CursusVue[]>(`/api/cursus/eleve/${eleveId}`);
+  }
+
   seances(): Promise<SeanceVue[]> {
     return this.lireOuRetomber('seances', () => this.http.get<SeanceVue[]>('/api/seances'));
   }
