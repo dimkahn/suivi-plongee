@@ -24,8 +24,15 @@ import java.util.stream.Collectors;
 @Service
 public class FicheSecuriteService {
 
-    /** Un plongeur, tel que soumis par le formulaire d'établissement : voir {@link MembrePalanquee}. */
-    public record Plongeur(String nom, String prenom, String aptitude, FonctionPalanquee fonction,
+    /**
+     * Un plongeur, tel que soumis par le formulaire d'établissement : voir
+     * {@link MembrePalanquee}. {@code eleveId}/{@code utilisateurId} sont
+     * facultatifs et mutuellement exclusifs — ils ne font que pré-remplir
+     * nom/prenom/aptitude/qualificationPreparee côté formulaire, la fiche
+     * garde ensuite ces valeurs comme un instantané, pas une jointure vive.
+     */
+    public record Plongeur(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
+                           String qualificationPreparee, FonctionPalanquee fonction,
                            String gaz, String moyenDesaturation, String observations) {}
 
     /** Une palanquée à l'établissement : numéro, profil prévu et sa liste de plongeurs. */
@@ -40,7 +47,8 @@ public class FicheSecuriteService {
     public record ProfilRealise(int numero, Integer profondeurRealisee, Integer dureeRealisee,
                                 String paliers, LocalTime heureImmersion, LocalTime heureSortie) {}
 
-    public record PlongeurVue(String nom, String prenom, String aptitude, String fonction,
+    public record PlongeurVue(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
+                              String qualificationPreparee, String fonction,
                               String gaz, String moyenDesaturation, String observations) {}
 
     public record PalanqueeVue(int numero, Integer profondeurPrevue, Integer dureePrevue,
@@ -60,13 +68,16 @@ public class FicheSecuriteService {
     private final FicheSecuriteRepository fiches;
     private final SeanceRepository seances;
     private final UtilisateurRepository utilisateurs;
+    private final EleveRepository eleves;
     private final FicheSecuritePdfService pdfService;
 
     public FicheSecuriteService(FicheSecuriteRepository fiches, SeanceRepository seances,
-                                UtilisateurRepository utilisateurs, FicheSecuritePdfService pdfService) {
+                                UtilisateurRepository utilisateurs, EleveRepository eleves,
+                                FicheSecuritePdfService pdfService) {
         this.fiches = fiches;
         this.seances = seances;
         this.utilisateurs = utilisateurs;
+        this.eleves = eleves;
         this.pdfService = pdfService;
     }
 
@@ -127,11 +138,24 @@ public class FicheSecuriteService {
 
             palanquee.getMembres().clear();
             for (Plongeur p : g.membres()) {
+                if (p.eleveId() != null && p.utilisateurId() != null) {
+                    throw new RegleMetierException(
+                            "Un plongeur ne peut pas être à la fois un élève et un encadrant du club.");
+                }
                 MembrePalanquee membre = new MembrePalanquee();
                 membre.setPalanquee(palanquee);
+                if (p.eleveId() != null) {
+                    membre.setEleve(eleves.findById(p.eleveId())
+                            .orElseThrow(() -> new RessourceIntrouvableException("Élève introuvable")));
+                }
+                if (p.utilisateurId() != null) {
+                    membre.setUtilisateur(utilisateurs.findById(p.utilisateurId())
+                            .orElseThrow(() -> new RessourceIntrouvableException("Encadrant introuvable")));
+                }
                 membre.setNom(p.nom());
                 membre.setPrenom(p.prenom());
                 membre.setAptitude(p.aptitude());
+                membre.setQualificationPreparee(p.qualificationPreparee());
                 membre.setFonction(p.fonction() == null ? FonctionPalanquee.PLONGEUR : p.fonction());
                 membre.setGaz(p.gaz());
                 membre.setMoyenDesaturation(p.moyenDesaturation());
@@ -206,7 +230,10 @@ public class FicheSecuriteService {
     }
 
     private PlongeurVue vue(MembrePalanquee m) {
-        return new PlongeurVue(m.getNom(), m.getPrenom(), m.getAptitude(), m.getFonction().name(),
-                m.getGaz(), m.getMoyenDesaturation(), m.getObservations());
+        return new PlongeurVue(
+                m.getEleve() == null ? null : m.getEleve().getId(),
+                m.getUtilisateur() == null ? null : m.getUtilisateur().getId(),
+                m.getNom(), m.getPrenom(), m.getAptitude(), m.getQualificationPreparee(),
+                m.getFonction().name(), m.getGaz(), m.getMoyenDesaturation(), m.getObservations());
     }
 }
