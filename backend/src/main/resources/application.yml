@@ -33,6 +33,9 @@ app:
     # Adresse affichee comme expediteur ; distincte de spring.mail.username,
     # qui est le compte SMTP utilise pour l'authentification.
     expediteur: ${MAIL_EXPEDITEUR:Club de plongee <no-reply@cppjvo.fr>}
+  club:
+    # Nom de la structure, en-tete obligatoire de la fiche de securite (A322-72).
+    nom: ${CLUB_NOM:Club de plongee}
 
 springdoc:
   swagger-ui:

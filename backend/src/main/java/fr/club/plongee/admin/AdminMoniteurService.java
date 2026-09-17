@@ -6,6 +6,7 @@ import fr.club.plongee.delivrance.DelivranceRepository;
 import fr.club.plongee.evaluation.EvaluationRepository;
 import fr.club.plongee.evaluation.ValidationCompetenceRepository;
 import fr.club.plongee.formation.CursusRepository;
+import fr.club.plongee.formation.FicheSecuriteRepository;
 import fr.club.plongee.formation.SeanceRepository;
 import fr.club.plongee.securite.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,6 +38,7 @@ public class AdminMoniteurService {
     private final DelivranceRepository delivrances;
     private final SeanceRepository seances;
     private final CursusRepository cursus;
+    private final FicheSecuriteRepository fichesSecurite;
 
     public AdminMoniteurService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                ReinitialisationMotDePasseService reinitialisations,
@@ -45,7 +47,8 @@ public class AdminMoniteurService {
                                ValidationCompetenceRepository validations,
                                DelivranceRepository delivrances,
                                SeanceRepository seances,
-                               CursusRepository cursus) {
+                               CursusRepository cursus,
+                               FicheSecuriteRepository fichesSecurite) {
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
@@ -55,6 +58,7 @@ public class AdminMoniteurService {
         this.delivrances = delivrances;
         this.seances = seances;
         this.cursus = cursus;
+        this.fichesSecurite = fichesSecurite;
     }
 
     @Transactional(readOnly = true)
@@ -126,10 +130,11 @@ public class AdminMoniteurService {
         }
         if (evaluations.existsByMoniteurId(id) || validations.existsByMoniteurId(id)
                 || delivrances.existsByDelivreParId(id) || cursus.existsByMoniteurReferentId(id)
-                || seances.existsByDpId(id)) {
+                || seances.existsByDpId(id) || fichesSecurite.existsByDpId(id)) {
             throw new RegleMetierException(
-                    "Ce moniteur a des évaluations, validations ou séances enregistrées : "
-                            + "désactivez son compte plutôt que de le supprimer, pour garder l'historique.");
+                    "Ce moniteur a des évaluations, validations, séances ou fiches de sécurité "
+                            + "enregistrées : désactivez son compte plutôt que de le supprimer, "
+                            + "pour garder l'historique.");
         }
         refreshTokens.revoquerTout(id);
         utilisateurs.delete(u);

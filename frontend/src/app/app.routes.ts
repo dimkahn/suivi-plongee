@@ -44,6 +44,18 @@ export const routes: Routes = [
       .then(m => m.SeancesComponent)
   },
   {
+    path: 'fiches-securite',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/fiche-securite/fiches-securite-liste.component')
+      .then(m => m.FichesSecuriteListeComponent)
+  },
+  {
+    path: 'fiches-securite/:id',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/fiche-securite/fiche-securite.component')
+      .then(m => m.FicheSecuriteComponent)
+  },
+  {
     path: 'admin',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/admin-accueil.component')
