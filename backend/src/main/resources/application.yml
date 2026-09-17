@@ -29,6 +29,10 @@ app:
   # Sert a construire les liens envoyes par courriel (reinitialisation de
   # mot de passe, invitation d'un moniteur).
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  mail:
+    # Adresse affichee comme expediteur ; distincte de spring.mail.username,
+    # qui est le compte SMTP utilise pour l'authentification.
+    expediteur: ${MAIL_EXPEDITEUR:Club de plongee <no-reply@cppjvo.fr>}
 
 springdoc:
   swagger-ui:
@@ -58,3 +62,14 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/plongee}
     username: ${DB_USER:plongee}
     password: ${DB_PASSWORD}
+  mail:
+    host: ${SMTP_HOTE}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_UTILISATEUR}
+    password: ${SMTP_MOT_DE_PASSE}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

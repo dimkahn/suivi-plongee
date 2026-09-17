@@ -4,14 +4,16 @@ import fr.club.plongee.securite.Utilisateur;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 /**
- * Implementation de secours : aucun serveur SMTP n'est configure, le lien est
- * simplement trace dans les logs du serveur. A remplacer par un envoi reel
- * (JavaMailSender ou prestataire transactionnel) avant la mise en production.
+ * Implementation de secours pour le developpement : aucun serveur SMTP n'y
+ * est configure, le lien est simplement trace dans les logs du serveur. En
+ * production, {@link ServiceNotificationEmail} envoie reellement le courriel.
  */
 @Service
+@Profile("dev")
 public class ServiceNotificationConsole implements ServiceNotification {
 
     private static final Logger log = LoggerFactory.getLogger(ServiceNotificationConsole.class);
