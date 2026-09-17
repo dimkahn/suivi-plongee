@@ -88,6 +88,37 @@ référentiel MFT est chargé. Pour retrouver les comptes de démonstration
 ci-dessus, continuer à lancer le backend en profil `dev` (`mvn
 spring-boot:run`) hors Docker.
 
+### Envoi d'e-mail (SMTP)
+
+En profil `dev`, aucun e-mail n'est réellement envoyé : `ServiceNotificationConsole`
+se contente de tracer le lien (réinitialisation de mot de passe, invitation d'un
+moniteur) dans les logs du backend.
+
+En profil `prod` (donc avec Docker), l'envoi est réel et se configure par
+variables d'environnement sur le service `backend` :
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `SMTP_HOTE` | Serveur SMTP | — (obligatoire) |
+| `SMTP_PORT` | Port SMTP | `587` |
+| `SMTP_UTILISATEUR` | Compte SMTP (authentification) | — (obligatoire) |
+| `SMTP_MOT_DE_PASSE` | Mot de passe du compte SMTP | — (obligatoire) |
+| `MAIL_EXPEDITEUR` | Adresse affichée comme expéditeur | `Club de plongee <no-reply@cppjvo.fr>` |
+
+**Avec Gmail** (`SMTP_HOTE=smtp.gmail.com`, port 587 par défaut, STARTTLS déjà
+activé côté backend) :
+
+- Le compte Google doit avoir la validation en deux étapes activée, et
+  `SMTP_UTILISATEUR`/`SMTP_MOT_DE_PASSE` doivent être l'adresse Gmail et un
+  **mot de passe d'application** dédié (16 caractères, généré dans les
+  paramètres du compte Google) — le mot de passe habituel du compte ne
+  fonctionne pas pour l'envoi SMTP.
+- `MAIL_EXPEDITEUR` doit correspondre à cette même adresse Gmail (ou à un
+  alias « Envoyer en tant que » configuré dessus) : Gmail ignore ou rejette
+  un expéditeur arbitraire qui ne correspond pas au compte authentifié.
+- Limite d'envoi Gmail standard : 500 messages/jour (2000/jour en Google
+  Workspace), largement suffisant pour l'usage d'un club.
+
 ---
 
 ## Le référentiel
