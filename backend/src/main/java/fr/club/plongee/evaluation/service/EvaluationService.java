@@ -117,7 +117,6 @@ public class EvaluationService {
     /**
      * Regles du MFT attachees a la seance :
      *  - N2 et N3 : competences a obtenir en milieu naturel, piscines et fosses exclues ;
-     *  - la profondeur de la seance doit rester dans l'espace d'evolution du niveau ;
      *  - la seance doit appartenir a la saison du cursus.
      */
     private void verifierSeance(Cursus cursus, BlocCompetence bloc, Seance seance) {
@@ -130,12 +129,6 @@ public class EvaluationService {
             throw new RegleMetierException(
                     "Les competences du " + ref.getNiveau() + " doivent etre obtenues en milieu naturel : "
                             + "les piscines et fosses sont exclues quelle qu'en soit la profondeur.");
-        }
-        if (seance.getProfondeurMax() != null
-                && seance.getProfondeurMax() > ref.getProfondeurMaxFormation()) {
-            throw new RegleMetierException(
-                    "Un eleve en formation " + ref.getNiveau() + " ne peut pas evoluer au-dela de "
-                            + ref.getProfondeurMaxFormation() + " m.");
         }
     }
 

@@ -38,8 +38,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Tests unitaires des regles du MFT portees par EvaluationService : coherence
- * du referentiel, contraintes de seance (milieu, profondeur, saison) et
- * conditions de validation d'un bloc de competences.
+ * du referentiel, contraintes de seance (milieu, saison) et conditions de
+ * validation d'un bloc de competences.
  */
 @ExtendWith(MockitoExtension.class)
 class EvaluationServiceTest {
@@ -217,27 +217,6 @@ class EvaluationServiceTest {
         assertThatThrownBy(() -> service.noter(100L, notation, moniteurPrincipal))
                 .isInstanceOf(RegleMetierException.class)
                 .hasMessageContaining("milieu naturel");
-    }
-
-    @Test
-    @DisplayName("La profondeur de la seance ne peut pas depasser l'espace d'evolution du niveau en formation")
-    void noter_profondeurMaxFormationDepassee() {
-        Referentiel ref = referentiel(false, 20);
-        Saison s = saison(1L);
-        Cursus c = cursus(ref, s, Cursus.Statut.EN_COURS);
-        Critere critere = critere(bloc(ref, false, false));
-        Seance seance = seance(s, Milieu.NATUREL, 25);
-
-        when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(c));
-        when(criteres.findById(5L)).thenReturn(Optional.of(critere));
-        when(seances.findById(7L)).thenReturn(Optional.of(seance));
-
-        var notation = new EvaluationService.Notation(5L, 7L, StatutAcquisition.ACQUIS, null,
-                LocalDate.now(), null);
-
-        assertThatThrownBy(() -> service.noter(100L, notation, moniteurPrincipal))
-                .isInstanceOf(RegleMetierException.class)
-                .hasMessageContaining("20 m");
     }
 
     @Test
