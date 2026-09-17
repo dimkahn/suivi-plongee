@@ -1,5 +1,5 @@
 import {
-  Component, OnDestroy, computed, inject, input, signal, ChangeDetectionStrategy
+  Component, OnDestroy, computed, effect, inject, input, signal, untracked, ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -9,7 +9,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileAttenteService } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
-import { BlocVue, CritereVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
+import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -68,6 +68,32 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                   (click)="telechargerPdf(g)">
             {{ exportEnCours() ? 'Génération du PDF…' : 'Exporter en PDF' }}
           </button>
+
+          @if (peutVoirHistoriqueSaisons()) {
+            <button type="button" class="bouton-discret lien-pdf" (click)="basculerHistoriqueSaisons()">
+              {{ historiqueSaisonsOuvert() ? 'Masquer les saisons précédentes' : 'Voir les saisons précédentes' }}
+            </button>
+            @if (historiqueSaisonsOuvert()) {
+              @if (chargementHistoriqueSaisons()) {
+                <p class="secondaire">Chargement…</p>
+              } @else {
+                @let autres = historiqueSaisons();
+                @if (autres.length === 0) {
+                  <p class="secondaire">Aucune autre saison enregistrée pour {{ g.eleve }}.</p>
+                } @else {
+                  <ul class="saisons-precedentes">
+                    @for (c of autres; track c.id) {
+                      <li>
+                        <a [routerLink]="['/cursus', c.id]">
+                          {{ c.niveau }} · {{ c.saison }} · {{ c.statut }}
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            }
+          }
         </div>
       </div>
 
@@ -243,6 +269,8 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     .lien-matrice { display: inline-block; margin-top: var(--pas); font-size: .875rem; }
     .lien-pdf { display: block; margin-top: var(--pas); padding: 0; min-height: auto; background: none; border: none; color: var(--profond); font-size: .875rem; text-decoration: underline; }
     .lien-pdf:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
+    .saisons-precedentes { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 4px; }
+    .saisons-precedentes a { font-size: .875rem; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -341,6 +369,11 @@ export class GrilleComponent implements OnDestroy {
   historiques = signal<Record<number, EvaluationVue[]>>({});
   brouillons = signal<Record<number, string>>({});
 
+  /** Cursus des saisons précédentes du même élève, pour reprendre l'évaluation initiale. */
+  historiqueSaisonsOuvert = signal(false);
+  chargementHistoriqueSaisons = signal(false);
+  historiqueSaisons = signal<CursusVue[]>([]);
+
   readonly etats = [
     { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },
     { valeur: 'EN_COURS'   as Statut, libelle: 'En cours',   classe: 'encours' },
@@ -406,6 +439,8 @@ export class GrilleComponent implements OnDestroy {
     return !!g && g.statut === 'EN_COURS' && this.auth.peutValider(g.niveauEncadrantValidation);
   });
 
+  peutVoirHistoriqueSaisons = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
+
   seancesUtilisables = computed(() => {
     const g = this.grille();
     if (!g) return [];
@@ -415,7 +450,35 @@ export class GrilleComponent implements OnDestroy {
   });
 
   constructor() {
-    queueMicrotask(() => void this.charger());
+    // Le lien « saisons précédentes » navigue vers une autre grille sur la
+    // même route (/cursus/:id) : Angular réutilise alors l'instance du
+    // composant, donc le rechargement doit suivre les changements de l'input
+    // plutôt que ne s'exécuter qu'une fois au montage.
+    effect(() => {
+      this.id();
+      untracked(() => {
+        this.reinitialiser();
+        void this.charger();
+      });
+    });
+  }
+
+  private reinitialiser(): void {
+    this.grille.set(null);
+    this.seanceId.set(null);
+    this.message.set(null);
+    this.erreurChargement.set(false);
+    this.ageDuCache.set(null);
+    const url = this.urlPhoto();
+    if (url) URL.revokeObjectURL(url);
+    this.urlPhoto.set(null);
+    this.historiqueOuverts.set(new Set());
+    this.chargementHistorique.set(new Set());
+    this.historiques.set({});
+    this.brouillons.set({});
+    this.historiqueSaisonsOuvert.set(false);
+    this.historiqueSaisons.set([]);
+    this.chargementHistoriqueSaisons.set(false);
   }
 
   private async charger(): Promise<void> {
@@ -509,6 +572,33 @@ export class GrilleComponent implements OnDestroy {
       return `Cette séance dépasse l'espace d'évolution autorisé en formation ${g.niveau}.`;
     }
     return null;
+  }
+
+  /**
+   * Cursus des autres saisons du même élève. Chargé une fois par ouverture ;
+   * la grille de destination est déjà en lecture seule d'elle-même dès que
+   * son statut n'est plus EN_COURS, donc aucun contrôle supplémentaire n'est
+   * nécessaire pour la consultation.
+   */
+  async basculerHistoriqueSaisons(): Promise<void> {
+    if (this.historiqueSaisonsOuvert()) {
+      this.historiqueSaisonsOuvert.set(false);
+      return;
+    }
+    this.historiqueSaisonsOuvert.set(true);
+    if (this.historiqueSaisons().length > 0) return;
+
+    const g = this.grille();
+    if (!g) return;
+    this.chargementHistoriqueSaisons.set(true);
+    try {
+      const liste = await firstValueFrom(this.api.historiqueCursusEleve(g.eleveId));
+      this.historiqueSaisons.set(liste.filter(c => c.id !== Number(this.id())));
+    } catch {
+      this.historiqueSaisons.set([]);
+    } finally {
+      this.chargementHistoriqueSaisons.set(false);
+    }
   }
 
   /**

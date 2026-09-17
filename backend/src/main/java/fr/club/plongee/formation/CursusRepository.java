@@ -34,7 +34,20 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
     @Query("select c.id from Cursus c where c.eleve.utilisateur.id = :utilisateurId")
     List<Long> idsDeLEleve(@Param("utilisateurId") Long utilisateurId);
 
+    /** Historique complet d'un élève, toutes saisons confondues, la plus récente d'abord. */
+    @Query("""
+           select c from Cursus c
+             join fetch c.eleve e
+             join fetch c.referentiel r
+             join fetch c.saison s
+             left join fetch c.moniteurReferent m
+            where c.eleve.id = :eleveId
+            order by s.dateDebut desc
+           """)
+    List<Cursus> parEleve(@Param("eleveId") Long eleveId);
+
     boolean existsByMoniteurReferentId(Long moniteurReferentId);
     boolean existsByEleveIdAndSaisonIdAndReferentielId(Long eleveId, Long saisonId, Long referentielId);
     boolean existsByEleveIdAndSaisonId(Long eleveId, Long saisonId);
+    boolean existsByReferentielId(Long referentielId);
 }
