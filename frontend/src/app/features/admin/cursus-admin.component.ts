@@ -70,9 +70,13 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
       </button>
     </section>
 
-    <label for="filtre-nom">Rechercher un élève</label>
-    <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
-           [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+    <section class="filtres">
+      <div>
+        <label for="filtre-nom">Rechercher un élève</label>
+        <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
+               [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+      </div>
+    </section>
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -131,7 +135,11 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
-    #filtre-nom { max-width: 320px; }
+
+    .filtres { display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); margin-bottom: var(--pas-3); }
+    .filtres > div { min-width: 220px; flex: 1 1 220px; max-width: 320px; }
+    .filtres label { margin: 0 0 4px; }
+    .filtres input { margin: 0; }
 
     .combobox { position: relative; max-width: 320px; }
     .combobox input { width: 100%; }
