@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { PalanqueeVue, SeanceVue } from '../../core/modeles';
+import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
 
 /**
  * Étape 2, à part de l'établissement (voir FicheSecuriteComponent) : le
@@ -54,6 +54,11 @@ import { PalanqueeVue, SeanceVue } from '../../core/modeles';
       @for (p of palanqueesFiltrees(); track p) {
         <section class="carte panneau">
           <h3>Palanquée {{ p.numero }}</h3>
+          <p class="membres">
+            @for (m of p.membres; track m; let last = $last) {
+              <span [class.correspondance]="estCorrespondance(m)">{{ m.prenom }} {{ m.nom }}</span>{{ last ? '' : ', ' }}
+            }
+          </p>
           <div class="ligne-profil">
             <label>Profondeur réalisée (m) <input type="number" min="0" [(ngModel)]="p.profondeurRealisee"
                    [name]="'preal-' + p.numero"></label>
@@ -85,6 +90,11 @@ import { PalanqueeVue, SeanceVue } from '../../core/modeles';
     .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
+    .membres { margin: 0 0 var(--pas-2); color: var(--craie); }
+    .correspondance {
+      background: #fff3b0; color: #1c2d33; border-radius: 3px; padding: 0 3px; font-weight: 700;
+    }
+
     .ligne-profil {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--pas);
       font-size: .8125rem; margin-bottom: var(--pas);
@@ -113,12 +123,10 @@ export class FicheSecuriteRealiseComponent {
   palanquees = signal<PalanqueeVue[]>([]);
 
   rechercheRealise = signal('');
-  /** Filtre la liste affichée sur le nom/prénom d'un plongeur, pour retrouver vite une palanquée. */
+  /** Ne garde que les palanquées ayant au moins un plongeur correspondant à la recherche. */
   palanqueesFiltrees = computed(() => {
-    const recherche = this.normaliser(this.rechercheRealise());
-    if (!recherche) return this.palanquees();
-    return this.palanquees().filter(p =>
-      p.membres.some(m => this.normaliser(m.nom).includes(recherche) || this.normaliser(m.prenom).includes(recherche)));
+    if (!this.rechercheRealise()) return this.palanquees();
+    return this.palanquees().filter(p => p.membres.some(m => this.estCorrespondance(m)));
   });
 
   constructor() {
@@ -159,6 +167,13 @@ export class FicheSecuriteRealiseComponent {
         this.message.set(e.error?.detail ?? "L'enregistrement des paramètres réalisés a échoué.");
       }
     });
+  }
+
+  /** Met en surbrillance un plongeur dont le nom ou prénom correspond à la recherche en cours. */
+  estCorrespondance(m: PlongeurVue): boolean {
+    const recherche = this.normaliser(this.rechercheRealise());
+    if (!recherche) return false;
+    return this.normaliser(m.nom).includes(recherche) || this.normaliser(m.prenom).includes(recherche);
   }
 
   /** Casse et accents ignorés : « Loic » retrouve « Loïc » sur un clavier qui ne les tape pas facilement. */

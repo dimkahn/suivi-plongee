@@ -1,11 +1,12 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { SeanceVue } from '../../core/modeles';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [RouterLink],
+  imports: [FormsModule, RouterLink],
   template: `
     <h1>Fiches de sécurité</h1>
     <p class="secondaire">
@@ -16,12 +17,30 @@ import { SeanceVue } from '../../core/modeles';
       juger si une fiche reste utile pour les autres.
     </p>
 
+    <section class="filtres">
+      <div>
+        <label for="filtre-date">Date</label>
+        <input id="filtre-date" type="date" name="filtreDate"
+               [ngModel]="filtreDate()" (ngModelChange)="filtreDate.set($event)">
+      </div>
+      <div>
+        <label for="filtre-lieu">Lieu</label>
+        <input id="filtre-lieu" type="search" name="filtreLieu" placeholder="Nom du site…"
+               [ngModel]="filtreLieu()" (ngModelChange)="filtreLieu.set($event)">
+      </div>
+      @if (filtreDate() || filtreLieu()) {
+        <button type="button" class="bouton-discret" (click)="reinitialiserFiltres()">Réinitialiser</button>
+      }
+    </section>
+
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
-    } @else if (seances().length === 0) {
+    } @else if (toutes().length === 0) {
       <div class="carte vide"><p>Aucune séance concernée sur cette saison.</p></div>
+    } @else if (seances().length === 0) {
+      <div class="carte vide"><p>Aucune fiche ne correspond aux filtres.</p></div>
     } @else {
       <ul>
         @for (s of seances(); track s.id) {
@@ -41,6 +60,11 @@ import { SeanceVue } from '../../core/modeles';
                 <a [routerLink]="['/fiches-securite', s.id]" class="bouton-discret">
                   {{ s.ficheSecurite ? 'Modifier la fiche' : 'Établir la fiche' }}
                 </a>
+                @if (s.ficheSecurite) {
+                  <a [routerLink]="['/fiches-securite', s.id, 'realise']" class="bouton-discret">
+                    Compléter au retour de plongée
+                  </a>
+                }
               </div>
             </div>
           </li>
@@ -51,12 +75,21 @@ import { SeanceVue } from '../../core/modeles';
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
+
+    .filtres {
+      display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); align-items: flex-end;
+      margin: var(--pas-2) 0;
+    }
+    .filtres > div { min-width: 200px; flex: 1 1 200px; }
+    .filtres label { display: block; margin: 0 0 4px; font-weight: 700; font-size: .9375rem; }
+    .filtres input { margin: 0; width: 100%; }
+
     ul { list-style: none; margin: var(--pas-3) 0 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
-    .actions { display: flex; align-items: center; gap: var(--pas-2); }
+    .actions { display: flex; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
     .etiquette {
       font-size: .8125rem; font-weight: 700; color: var(--profond);
       border: 1px solid var(--profond); border-radius: var(--r-s); padding: 2px 8px;
@@ -70,10 +103,18 @@ export class FichesSecuriteListeComponent {
   chargement = signal(true);
   erreur = signal<string | null>(null);
 
-  seances = computed(() =>
-    this.toutes()
+  filtreDate = signal('');
+  filtreLieu = signal('');
+
+  seances = computed(() => {
+    const date = this.filtreDate();
+    const lieu = this.normaliser(this.filtreLieu());
+    return this.toutes()
       .filter(s => s.milieu === 'NATUREL' || (s.profondeurMax ?? 0) > 6)
-      .sort((a, b) => b.date.localeCompare(a.date)));
+      .filter(s => !date || s.date === date)
+      .filter(s => !lieu || this.normaliser(s.lieu ?? '').includes(lieu))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  });
 
   constructor() {
     void this.charger();
@@ -87,5 +128,15 @@ export class FichesSecuriteListeComponent {
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  reinitialiserFiltres(): void {
+    this.filtreDate.set('');
+    this.filtreLieu.set('');
+  }
+
+  /** Casse et accents ignorés : « Blaisy » retrouve « Carrière de Blaisy » sans accent sur un clavier qui ne le tape pas facilement. */
+  private normaliser(texte: string): string {
+    return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
   }
 }

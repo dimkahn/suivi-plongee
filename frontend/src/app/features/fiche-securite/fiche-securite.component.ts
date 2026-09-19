@@ -150,7 +150,7 @@ interface FormulaireEntete {
                   placeholder="Incident, remontée anormale, plongée successive…"></textarea>
       </section>
 
-      <section class="carte panneau">
+      <section class="carte panneau panneau-groupe">
         <h3>Groupe de plongeurs (réutilisable pour un séjour)</h3>
         <p class="secondaire">
           Composez une fois la liste des plongeurs d'un séjour, puis glissez-les
@@ -274,6 +274,8 @@ interface FormulaireEntete {
     h1 { margin: var(--pas-3) 0 0; }
     .titre-etape { margin: var(--pas-3) 0 0; }
     .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
+    /* Reste visible en tête d'écran pendant le défilement des palanquées, pour pouvoir y glisser un plongeur à tout moment. */
+    .panneau-groupe { position: sticky; top: 0; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,.08); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     textarea { resize: vertical; }
 
