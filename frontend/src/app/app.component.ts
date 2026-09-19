@@ -129,7 +129,7 @@ export class AppComponent {
 
   @ViewChild(BandeauSyncComponent) bandeau?: BandeauSyncComponent;
 
-  pret = signal(false);
+  pret = this.auth.sessionResolue;
   menuOuvert = signal(false);
 
   constructor() {
@@ -138,10 +138,7 @@ export class AppComponent {
     // rafraîchissement du jeton échoue.
     void this.file.demarrer();
 
-    this.auth.reprendre().subscribe({
-      next: () => this.pret.set(true),
-      error: () => this.pret.set(true)
-    });
+    this.auth.initialiser();
   }
 
   fermerMenu(): void {

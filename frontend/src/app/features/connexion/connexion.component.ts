@@ -1,6 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -81,6 +81,7 @@ import { AuthService } from '../../core/auth.service';
 export class ConnexionComponent {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   email = '';
   motDePasse = '';
@@ -98,7 +99,10 @@ export class ConnexionComponent {
     this.envoi.set(true);
     this.erreur.set(null);
     this.auth.connexion(this.email, this.motDePasse).subscribe({
-      next: () => this.router.navigate(['/cursus']),
+      next: () => {
+        const retour = this.route.snapshot.queryParamMap.get('retour');
+        this.router.navigateByUrl(retour ?? '/cursus');
+      },
       error: () => {
         this.envoi.set(false);
         this.erreur.set('E-mail ou mot de passe incorrect.');

@@ -18,7 +18,7 @@ export const authInterceptor: HttpInterceptorFn = (requete, suivant) => {
       const surAuth = requete.url.includes('/api/auth/');
       if (erreur.status === 401 && !surAuth) {
         auth.session.set(null);
-        router.navigate(['/connexion']);
+        router.navigate(['/connexion'], { queryParams: { retour: router.url } });
       }
       return throwError(() => erreur);
     })
