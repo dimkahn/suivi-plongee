@@ -47,7 +47,9 @@ import { SeanceVue } from '../../core/modeles';
           <li class="carte">
             <div class="ligne">
               <div class="identite">
-                <span class="nom">{{ s.date }}{{ s.lieu ? ' — ' + s.lieu : '' }}</span>
+                <span class="nom">
+                  {{ s.date }}{{ aPlusieursCeJour(s) ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
+                </span>
                 <span class="secondaire">
                   {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
                   {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
@@ -113,11 +115,24 @@ export class FichesSecuriteListeComponent {
       .filter(s => s.milieu === 'NATUREL' || (s.profondeurMax ?? 0) > 6)
       .filter(s => !date || s.date === date)
       .filter(s => !lieu || this.normaliser(s.lieu ?? '').includes(lieu))
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => b.date.localeCompare(a.date) || a.ordre - b.ordre);
+  });
+
+  /** Nombre de séances listées à chaque date, pour numéroter les plongées d'une journée à plusieurs séances. */
+  private comptesParDate = computed(() => {
+    const compte = new Map<string, number>();
+    for (const s of this.seances()) {
+      compte.set(s.date, (compte.get(s.date) ?? 0) + 1);
+    }
+    return compte;
   });
 
   constructor() {
     void this.charger();
+  }
+
+  aPlusieursCeJour(s: SeanceVue): boolean {
+    return (this.comptesParDate().get(s.date) ?? 0) > 1;
   }
 
   private async charger(): Promise<void> {

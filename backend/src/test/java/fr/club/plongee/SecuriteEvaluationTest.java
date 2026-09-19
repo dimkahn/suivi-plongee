@@ -39,14 +39,17 @@ class SecuriteEvaluationTest {
         return "Bearer " + json.readTree(reponse).get("jetonAcces").asText();
     }
 
+    /** EN_COURS explicitement : le jeu de demonstration porte aussi un N1 deja DELIVRE (Camille), pas notable. */
     private long cursusDuNiveau(String niveau) throws Exception {
         String reponse = mvc.perform(get("/api/cursus").header("Authorization", jeton("e3@club.fr")))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         for (JsonNode c : json.readTree(reponse)) {
-            if (niveau.equals(c.get("niveau").asText())) return c.get("id").asLong();
+            if (niveau.equals(c.get("niveau").asText()) && "EN_COURS".equals(c.get("statut").asText())) {
+                return c.get("id").asLong();
+            }
         }
-        throw new IllegalStateException("Aucun cursus " + niveau + " dans le jeu de demonstration");
+        throw new IllegalStateException("Aucun cursus " + niveau + " EN_COURS dans le jeu de demonstration");
     }
 
     private long premierCritere(long cursusId, String lecteur) throws Exception {

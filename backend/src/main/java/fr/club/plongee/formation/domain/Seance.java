@@ -29,6 +29,15 @@ public class Seance {
 
     private String lieu;
 
+    /**
+     * Rang de la séance dans sa journée (1, 2, 3…), pour distinguer plusieurs
+     * séances à la même date (ex. bassin le matin et l'après-midi, ou deux
+     * rotations de plongée le même jour) et pour numéroter la plongée sur la
+     * fiche de sécurité imprimée (« Plongée n° »).
+     */
+    @Column(nullable = false)
+    private Integer ordre = 1;
+
     private Integer profondeurMax;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -76,6 +85,14 @@ public class Seance {
 
     public void setLieu(String lieu) {
         this.lieu = lieu;
+    }
+
+    public Integer getOrdre() {
+        return ordre;
+    }
+
+    public void setOrdre(Integer ordre) {
+        this.ordre = ordre;
     }
 
     public Integer getProfondeurMax() {

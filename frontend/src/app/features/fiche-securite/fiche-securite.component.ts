@@ -11,8 +11,8 @@ import {
 
 function plongeurVide(): PlongeurVue {
   return {
-    eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null,
-    fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
+    eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, aptitudeDonneeParDp: null,
+    qualificationPreparee: null, fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
   };
 }
 
@@ -173,6 +173,7 @@ interface FormulaireEntete {
               Supprimer ce groupe
             </button>
           }
+          <a routerLink="/groupes" class="bouton-discret">Gérer les groupes →</a>
         </div>
 
         @if (creationGroupeOuverte()) {
@@ -235,6 +236,8 @@ interface FormulaireEntete {
                   <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
                   <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
                          [name]="'aptitude-' + iP + '-' + iM">
+                  <input type="text" placeholder="Aptitude donnée par le DP" [(ngModel)]="m.aptitudeDonneeParDp"
+                         [name]="'aptitude-dp-' + iP + '-' + iM">
                   <input type="text" placeholder="Qualification préparée (si en formation)"
                          [(ngModel)]="m.qualificationPreparee" [name]="'qualif-' + iP + '-' + iM">
                   <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
@@ -446,7 +449,7 @@ export class FicheSecuriteComponent {
       const source = event.item.data as MembreGroupeVue;
       const nouveau: PlongeurVue = {
         eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
-        aptitude: source.aptitude, qualificationPreparee: source.qualificationPreparee,
+        aptitude: source.aptitude, aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
         fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
       };
       const liste = this.palanquees().map((p, i) => {

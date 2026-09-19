@@ -174,7 +174,7 @@ public class GrilleService {
             }
         }
 
-        List<Seance> seancesSaison = seances.findBySaisonIdOrderByDateSeance(cursus.getSaison().getId());
+        List<Seance> seancesSaison = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(cursus.getSaison().getId());
         List<SeanceEnTeteVue> entetes = seancesSaison.stream()
                 .map(s -> new SeanceEnTeteVue(s.getId(), s.getDateSeance(), s.getLieu()))
                 .toList();

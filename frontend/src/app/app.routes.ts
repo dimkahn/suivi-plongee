@@ -62,6 +62,12 @@ export const routes: Routes = [
       .then(m => m.FicheSecuriteRealiseComponent)
   },
   {
+    path: 'groupes',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/groupes/groupes.component')
+      .then(m => m.GroupesComponent)
+  },
+  {
     path: 'admin',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/admin-accueil.component')

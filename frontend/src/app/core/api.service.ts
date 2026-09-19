@@ -13,6 +13,7 @@ interface Entree<T> { cle: string; valeur: T; majLe: number; }
 
 interface DemandeSeance {
   dateSeance: string;
+  ordre?: number;
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu?: string | null;
   profondeurMax?: number | null;

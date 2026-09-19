@@ -29,6 +29,9 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
               <a routerLink="/fiches-securite" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Fiches de sécurité
               </a>
+              <a routerLink="/groupes" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Groupes
+              </a>
             }
             @if (auth.estAdmin()) {
               <a routerLink="/seances" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">

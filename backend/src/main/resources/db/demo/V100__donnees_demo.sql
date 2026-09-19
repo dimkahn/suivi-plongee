@@ -110,3 +110,103 @@ SELECT c.id, cr.id, s.id, u.id, 'EN_COURS', DATE '2025-09-29', 'Vidage de masque
   JOIN critere cr ON cr.bloc_id = b.id AND cr.ordre = 3
   JOIN seance s  ON s.date_seance = DATE '2025-09-29'
   JOIN utilisateur u ON u.email = 'e2@club.fr';
+
+-- Camille obtient son N1 : premier brevet delivre via le vrai circuit (cursus
+-- DELIVRE + ligne delivrance), pas juste une qualification pre-existante comme
+-- Mateo/Sonia ci-dessus. Ses presences sont toutes en piscine, donc il lui
+-- reste les 4 plongees en milieu naturel dues dans l'annee (voir chantier n.3).
+UPDATE cursus SET statut = 'DELIVRE'
+ WHERE id = (SELECT c.id FROM cursus c
+              JOIN eleve e ON e.id = c.eleve_id AND e.numero_licence = 'A-01-000010');
+
+INSERT INTO delivrance (cursus_id, delivre_par_id, date_delivrance, numero_brevet,
+                         plongees_milieu_naturel_a_faire, echeance_plongees)
+SELECT c.id, u.id, DATE '2025-10-01', 'FFESSM-2025-0142', 4, DATE '2026-10-01'
+  FROM cursus c
+  JOIN eleve e ON e.id = c.eleve_id AND e.numero_licence = 'A-01-000010'
+  JOIN utilisateur u ON u.email = 'e3@club.fr';
+
+INSERT INTO qualification (eleve_id, type, date_obtention)
+SELECT id, 'N1', DATE '2025-10-01' FROM eleve WHERE numero_licence = 'A-01-000010';
+
+-- Fiches de securite des deux sorties en milieu naturel a la Carriere de Blaisy.
+INSERT INTO fiche_securite (seance_id, dp_id, meteo, etat_mer, visibilite, courant, maree, temperature_eau,
+                             securite_surface, plan_secours)
+SELECT s.id, u.id, 'Ensoleille, vent faible', 'Plan d''eau calme', '8 m', 'Nul', NULL, '14 degres',
+       'Un surveillant de securite surface avec bouee torpille, VHF canal 16 en secours',
+       'Numero du SAMU (15) et du CROSS affiches au point de rassemblement ; DAE dans le local club'
+  FROM seance s, utilisateur u
+ WHERE s.date_seance = DATE '2025-10-11' AND u.email = 'presidente@club.fr';
+
+INSERT INTO palanquee (fiche_securite_id, numero, profondeur_prevue, duree_prevue,
+                        profondeur_realisee, duree_realisee, paliers, heure_immersion, heure_sortie)
+SELECT f.id, 1, 20, 30, 18, 28, 'Aucun', TIME '10:00', TIME '10:28'
+  FROM fiche_securite f JOIN seance s ON s.id = f.seance_id
+ WHERE s.date_seance = DATE '2025-10-11';
+INSERT INTO palanquee (fiche_securite_id, numero, profondeur_prevue, duree_prevue,
+                        profondeur_realisee, duree_realisee, paliers, heure_immersion, heure_sortie)
+SELECT f.id, 2, 12, 35, 11, 33, 'Aucun', TIME '10:05', TIME '10:38'
+  FROM fiche_securite f JOIN seance s ON s.id = f.seance_id
+ WHERE s.date_seance = DATE '2025-10-11';
+
+-- Palanquee 1 : Mateo (N1, prepare le N2) guide par Sonia (N2, prepare le N3), sous la responsabilite d'un E3.
+INSERT INTO membre_palanquee (palanquee_id, eleve_id, nom, prenom, aptitude, qualification_preparee, fonction)
+SELECT p.id, e.id, e.nom, e.prenom, 'N1', 'N2', 'PLONGEUR'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN eleve e ON e.numero_licence = 'A-01-000013'
+ WHERE s.date_seance = DATE '2025-10-11' AND p.numero = 1;
+INSERT INTO membre_palanquee (palanquee_id, eleve_id, nom, prenom, aptitude, qualification_preparee, fonction)
+SELECT p.id, e.id, e.nom, e.prenom, 'N2', 'N3', 'GUIDE_PALANQUEE'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN eleve e ON e.numero_licence = 'A-01-000012'
+ WHERE s.date_seance = DATE '2025-10-11' AND p.numero = 1;
+INSERT INTO membre_palanquee (palanquee_id, utilisateur_id, nom, prenom, aptitude, fonction)
+SELECT p.id, u.id, u.nom, u.prenom, 'E3', 'ENCADRANT'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN utilisateur u ON u.email = 'e3@club.fr'
+ WHERE s.date_seance = DATE '2025-10-11' AND p.numero = 1;
+
+-- Palanquee 2 : Camille, fraichement N1, sur sa premiere plongee en milieu naturel, encadree par un E2.
+INSERT INTO membre_palanquee (palanquee_id, eleve_id, nom, prenom, aptitude, fonction, observations)
+SELECT p.id, e.id, e.nom, e.prenom, 'N1', 'PLONGEUR', 'Premiere plongee en milieu naturel apres delivrance du N1.'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN eleve e ON e.numero_licence = 'A-01-000010'
+ WHERE s.date_seance = DATE '2025-10-11' AND p.numero = 2;
+INSERT INTO membre_palanquee (palanquee_id, utilisateur_id, nom, prenom, aptitude, fonction)
+SELECT p.id, u.id, u.nom, u.prenom, 'E2', 'ENCADRANT'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN utilisateur u ON u.email = 'e2@club.fr'
+ WHERE s.date_seance = DATE '2025-10-11' AND p.numero = 2;
+
+INSERT INTO fiche_securite (seance_id, dp_id, meteo, etat_mer, visibilite, courant, maree, temperature_eau,
+                             securite_surface, plan_secours)
+SELECT s.id, u.id, 'Couvert, quelques averses', 'Plan d''eau calme', '6 m', 'Nul', NULL, '13 degres',
+       'Un surveillant de securite surface avec bouee torpille, VHF canal 16 en secours',
+       'Numero du SAMU (15) et du CROSS affiches au point de rassemblement ; DAE dans le local club'
+  FROM seance s, utilisateur u
+ WHERE s.date_seance = DATE '2025-10-12' AND u.email = 'e3@club.fr';
+
+-- Sonia prepare le N3 : plongee a 35 m encadree par un E3 (prerogative PE40 du N2).
+INSERT INTO palanquee (fiche_securite_id, numero, profondeur_prevue, duree_prevue,
+                        profondeur_realisee, duree_realisee, paliers, heure_immersion, heure_sortie)
+SELECT f.id, 1, 35, 25, 33, 24, '3 min a 3 m', TIME '14:00', TIME '14:24'
+  FROM fiche_securite f JOIN seance s ON s.id = f.seance_id
+ WHERE s.date_seance = DATE '2025-10-12';
+
+INSERT INTO membre_palanquee (palanquee_id, eleve_id, nom, prenom, aptitude, qualification_preparee, fonction)
+SELECT p.id, e.id, e.nom, e.prenom, 'N2', 'N3', 'PLONGEUR'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN eleve e ON e.numero_licence = 'A-01-000012'
+ WHERE s.date_seance = DATE '2025-10-12' AND p.numero = 1;
+INSERT INTO membre_palanquee (palanquee_id, utilisateur_id, nom, prenom, aptitude, fonction)
+SELECT p.id, u.id, u.nom, u.prenom, 'E3', 'ENCADRANT'
+  FROM palanquee p
+  JOIN fiche_securite f ON f.id = p.fiche_securite_id JOIN seance s ON s.id = f.seance_id
+  JOIN utilisateur u ON u.email = 'e3@club.fr'
+ WHERE s.date_seance = DATE '2025-10-12' AND p.numero = 1;

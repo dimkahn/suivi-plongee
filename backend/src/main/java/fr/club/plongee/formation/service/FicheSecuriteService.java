@@ -35,7 +35,7 @@ public class FicheSecuriteService {
      * garde ensuite ces valeurs comme un instantané, pas une jointure vive.
      */
     public record Plongeur(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
-                           String qualificationPreparee, FonctionPalanquee fonction,
+                           String aptitudeDonneeParDp, String qualificationPreparee, FonctionPalanquee fonction,
                            String gaz, String moyenDesaturation, String observations) {}
 
     /** Une palanquée à l'établissement : numéro, profil prévu et sa liste de plongeurs. */
@@ -51,7 +51,7 @@ public class FicheSecuriteService {
                                 String paliers, LocalTime heureImmersion, LocalTime heureSortie) {}
 
     public record PlongeurVue(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
-                              String qualificationPreparee, String fonction,
+                              String aptitudeDonneeParDp, String qualificationPreparee, String fonction,
                               String gaz, String moyenDesaturation, String observations) {}
 
     public record PalanqueeVue(int numero, Integer profondeurPrevue, Integer dureePrevue,
@@ -160,6 +160,7 @@ public class FicheSecuriteService {
                 membre.setNom(p.nom());
                 membre.setPrenom(p.prenom());
                 membre.setAptitude(p.aptitude());
+                membre.setAptitudeDonneeParDp(p.aptitudeDonneeParDp());
                 membre.setQualificationPreparee(p.qualificationPreparee());
                 membre.setFonction(p.fonction() == null ? FonctionPalanquee.PLONGEUR : p.fonction());
                 membre.setGaz(p.gaz());
@@ -246,7 +247,7 @@ public class FicheSecuriteService {
         return new PlongeurVue(
                 m.getEleve() == null ? null : m.getEleve().getId(),
                 m.getUtilisateur() == null ? null : m.getUtilisateur().getId(),
-                m.getNom(), m.getPrenom(), m.getAptitude(), m.getQualificationPreparee(),
+                m.getNom(), m.getPrenom(), m.getAptitude(), m.getAptitudeDonneeParDp(), m.getQualificationPreparee(),
                 m.getFonction().name(), m.getGaz(), m.getMoyenDesaturation(), m.getObservations());
     }
 }

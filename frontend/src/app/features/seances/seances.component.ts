@@ -6,6 +6,7 @@ import { SeanceVue } from '../../core/modeles';
 
 interface FormulaireSeance {
   dateSeance: string;
+  ordre: number;
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu: string;
   profondeurMax: number | null;
@@ -13,7 +14,7 @@ interface FormulaireSeance {
 }
 
 function formulaireVide(): FormulaireSeance {
-  return { dateSeance: '', milieu: 'ARTIFICIEL', lieu: '', profondeurMax: null, commentaire: '' };
+  return { dateSeance: '', ordre: 1, milieu: 'ARTIFICIEL', lieu: '', profondeurMax: null, commentaire: '' };
 }
 
 @Component({
@@ -34,6 +35,9 @@ function formulaireVide(): FormulaireSeance {
       @if (formulaireCreation(); as f) {
         <label for="date">Date</label>
         <input id="date" type="date" name="date" [(ngModel)]="f.dateSeance">
+
+        <label for="ordre">N° de plongée dans la journée</label>
+        <input id="ordre" type="number" name="ordre" min="1" [(ngModel)]="f.ordre">
 
         <label for="milieu">Milieu</label>
         <select id="milieu" name="milieu" [(ngModel)]="f.milieu">
@@ -71,6 +75,9 @@ function formulaireVide(): FormulaireSeance {
                 <label [for]="'date-' + s.id">Date</label>
                 <input [id]="'date-' + s.id" type="date" name="date" [(ngModel)]="f.dateSeance">
 
+                <label [for]="'ordre-' + s.id">N° de plongée dans la journée</label>
+                <input [id]="'ordre-' + s.id" type="number" min="1" name="ordre" [(ngModel)]="f.ordre">
+
                 <label [for]="'milieu-' + s.id">Milieu</label>
                 <select [id]="'milieu-' + s.id" name="milieu" [(ngModel)]="f.milieu" [disabled]="!s.modifiable">
                   <option value="ARTIFICIEL">Piscine / fosse (artificiel)</option>
@@ -106,7 +113,7 @@ function formulaireVide(): FormulaireSeance {
             } @else {
               <div class="ligne">
                 <div class="identite">
-                  <span class="nom">{{ s.date }}{{ s.lieu ? ' — ' + s.lieu : '' }}</span>
+                  <span class="nom">{{ s.date }}{{ s.ordre > 1 ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}</span>
                   <span class="secondaire">
                     {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
                     {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
@@ -191,6 +198,7 @@ export class SeancesComponent {
     this.message.set(null);
     this.api.creerSeance({
       dateSeance: f.dateSeance,
+      ordre: f.ordre,
       milieu: f.milieu,
       lieu: f.lieu || null,
       profondeurMax: f.profondeurMax,
@@ -198,7 +206,8 @@ export class SeancesComponent {
     }).subscribe({
       next: s => {
         this.envoi.set(false);
-        this.liste.set([...this.liste(), s].sort((a, b) => a.date.localeCompare(b.date)));
+        this.liste.set([...this.liste(), s]
+          .sort((a, b) => a.date.localeCompare(b.date) || a.ordre - b.ordre));
         this.formulaireCreation.set(formulaireVide());
       },
       error: (e: HttpErrorResponse) => {
@@ -212,7 +221,7 @@ export class SeancesComponent {
     this.message.set(null);
     this.edition.set(s.id);
     this.formulaireEdition.set({
-      dateSeance: s.date, milieu: s.milieu, lieu: s.lieu ?? '',
+      dateSeance: s.date, ordre: s.ordre, milieu: s.milieu, lieu: s.lieu ?? '',
       profondeurMax: s.profondeurMax, commentaire: s.commentaire ?? ''
     });
   }
@@ -229,6 +238,7 @@ export class SeancesComponent {
     this.message.set(null);
     this.api.modifierSeance(s.id, {
       dateSeance: f.dateSeance,
+      ordre: f.ordre,
       milieu: f.milieu,
       lieu: f.lieu || null,
       profondeurMax: f.profondeurMax,
@@ -236,7 +246,8 @@ export class SeancesComponent {
     }).subscribe({
       next: maj => {
         this.envoi.set(false);
-        this.liste.set(this.liste().map(x => x.id === maj.id ? maj : x));
+        this.liste.set(this.liste().map(x => x.id === maj.id ? maj : x)
+          .sort((a, b) => a.date.localeCompare(b.date) || a.ordre - b.ordre));
         this.annulerEdition();
       },
       error: (e: HttpErrorResponse) => {

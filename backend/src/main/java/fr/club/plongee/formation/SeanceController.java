@@ -21,11 +21,11 @@ import java.util.Objects;
 @RequestMapping("/api/seances")
 public class SeanceController {
 
-    public record SeanceVue(Long id, LocalDate date, String milieu, String lieu,
+    public record SeanceVue(Long id, LocalDate date, Integer ordre, String milieu, String lieu,
                             Integer profondeurMax, String commentaire, boolean modifiable,
                             boolean ficheSecurite) {}
 
-    public record DemandeSeance(@NotNull LocalDate dateSeance, @NotNull Milieu milieu,
+    public record DemandeSeance(@NotNull LocalDate dateSeance, Integer ordre, @NotNull Milieu milieu,
                                 String lieu, Integer profondeurMax, String commentaire) {}
 
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
@@ -52,7 +52,7 @@ public class SeanceController {
     @GetMapping
     public List<SeanceVue> lister(@RequestParam(required = false) Long saisonId) {
         Long saison = saisonId != null ? saisonId : saisonCourante().getId();
-        return seances.findBySaisonIdOrderByDateSeance(saison).stream()
+        return seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
                 .map(this::vue)
                 .toList();
     }
@@ -64,6 +64,7 @@ public class SeanceController {
         Seance s = new Seance();
         s.setSaison(saisonCourante());
         s.setDateSeance(demande.dateSeance());
+        s.setOrdre(demande.ordre() != null ? demande.ordre() : 1);
         s.setMilieu(demande.milieu());
         s.setLieu(demande.lieu());
         s.setProfondeurMax(demande.profondeurMax());
@@ -93,6 +94,7 @@ public class SeanceController {
         }
 
         s.setDateSeance(demande.dateSeance());
+        s.setOrdre(demande.ordre() != null ? demande.ordre() : 1);
         s.setMilieu(demande.milieu());
         s.setLieu(demande.lieu());
         s.setProfondeurMax(demande.profondeurMax());
@@ -148,7 +150,7 @@ public class SeanceController {
     }
 
     private SeanceVue vue(Seance s) {
-        return new SeanceVue(s.getId(), s.getDateSeance(), s.getMilieu().name(),
+        return new SeanceVue(s.getId(), s.getDateSeance(), s.getOrdre(), s.getMilieu().name(),
                 s.getLieu(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s),
                 fichesSecurite.existsBySeanceId(s.getId()));
     }
