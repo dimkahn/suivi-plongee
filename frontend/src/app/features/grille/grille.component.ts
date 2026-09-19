@@ -99,8 +99,13 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
 
       @if (!peutSaisir()) {
         <div class="alerte">
-          La saisie des compétences {{ g.niveau }} est réservée aux encadrants
-          {{ g.niveauEncadrantValidation }} et au-delà. Vous pouvez consulter la grille.
+          @if (g.statut !== 'EN_COURS') {
+            Ce cursus n'est plus en cours ({{ g.statut === 'DELIVRE' ? 'brevet délivré' : g.statut }}) :
+            la grille est en lecture seule, aucune saisie n'est plus possible.
+          } @else {
+            La saisie des compétences {{ g.niveau }} est réservée aux encadrants
+            {{ g.niveauEncadrantValidation }} et au-delà. Vous pouvez consulter la grille.
+          }
         </div>
       }
 
@@ -567,9 +572,6 @@ export class GrilleComponent implements OnDestroy {
 
     if (g.milieuNaturelExclusif && seance.milieu !== 'NATUREL') {
       return `Les compétences du ${g.niveau} ne peuvent pas être validées en milieu artificiel.`;
-    }
-    if (seance.profondeurMax !== null && seance.profondeurMax > g.prerogativeProfondeur) {
-      return `Cette séance dépasse l'espace d'évolution autorisé en formation ${g.niveau}.`;
     }
     return null;
   }

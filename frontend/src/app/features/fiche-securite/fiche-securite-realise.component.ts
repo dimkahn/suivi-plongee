@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -43,16 +43,27 @@ import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
         directeur de plongée, les conditions ou la composition des palanquées.
       </p>
 
-      <label for="rechercheRealise">Retrouver une palanquée par un de ses plongeurs</label>
-      <input id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
-             [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
+      <div class="ligne-outils">
+        <div>
+          <label for="rechercheRealise">Retrouver une palanquée par un de ses plongeurs</label>
+          <input id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
+                 [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
+        </div>
+        <div>
+          <label for="seuilAlerte">Alerter (min) avant l'heure de sortie prévue</label>
+          <input id="seuilAlerte" type="number" min="1" class="champ-seuil"
+                 [ngModel]="seuilAlerteMinutes()" (ngModelChange)="seuilAlerteMinutes.set($event)">
+        </div>
+      </div>
 
       @if (palanqueesFiltrees().length === 0) {
         <p class="vide">Aucune palanquée ne correspond à « {{ rechercheRealise() }} ».</p>
       }
 
       @for (p of palanqueesFiltrees(); track p) {
-        <section class="carte panneau">
+        <section class="carte panneau"
+                 [class.palanquee-attention]="statutPalanquee(p) === 'attention'"
+                 [class.palanquee-urgence]="statutPalanquee(p) === 'urgence'">
           <h3>Palanquée {{ p.numero }}</h3>
           <p class="membres">
             @for (m of p.membres; track m; let last = $last) {
@@ -63,14 +74,35 @@ import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
             Prévu : {{ p.profondeurPrevue ? p.profondeurPrevue + ' m' : '—' }}
             / {{ p.dureePrevue ? p.dureePrevue + ' min' : '—' }}
           </p>
+          @if (statutPalanquee(p) === 'attention') {
+            <p class="alerte-texte attention">⚠ Sortie prévue dans moins de {{ seuilAlerteMinutes() }} min.</p>
+          } @else if (statutPalanquee(p) === 'urgence') {
+            <p class="alerte-texte urgence">⛔ Durée prévue dépassée, sortie non renseignée.</p>
+          }
+
+          <div class="ligne-chrono">
+            <button type="button" class="bouton-principal" [disabled]="envoiRealise()"
+                    (click)="marquerHeure(p, 'heureImmersion')">
+              ▶ Marquer l'immersion{{ p.heureImmersion ? ' (' + p.heureImmersion + ')' : '' }}
+            </button>
+            <button type="button" class="bouton-principal" [disabled]="envoiRealise()"
+                    (click)="marquerHeure(p, 'heureSortie')">
+              ■ Marquer la sortie{{ p.heureSortie ? ' (' + p.heureSortie + ')' : '' }}
+            </button>
+          </div>
+
           <div class="ligne-profil">
             <label>Profondeur réalisée (m) <input type="number" min="0" [(ngModel)]="p.profondeurRealisee"
                    [name]="'preal-' + p.numero"></label>
             <label>Durée réalisée (min) <input type="number" min="0" [(ngModel)]="p.dureeRealisee"
                    [name]="'dreal-' + p.numero"></label>
             <label>Paliers <input type="text" [(ngModel)]="p.paliers" [name]="'pal-' + p.numero"></label>
-            <label>Immersion <input type="time" [(ngModel)]="p.heureImmersion" [name]="'hi-' + p.numero"></label>
-            <label>Sortie <input type="time" [(ngModel)]="p.heureSortie" [name]="'hs-' + p.numero"></label>
+            <label>Immersion (correction manuelle)
+              <input type="time" [(ngModel)]="p.heureImmersion" [name]="'hi-' + p.numero">
+            </label>
+            <label>Sortie (correction manuelle)
+              <input type="time" [(ngModel)]="p.heureSortie" [name]="'hs-' + p.numero">
+            </label>
           </div>
         </section>
       }
@@ -107,15 +139,34 @@ import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
     .ligne-profil label { margin: 0; font-weight: 400; }
     .ligne-profil input { width: 100%; }
 
-    .actions-bas { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas-3) 0; }
+    /* Actions principales, bien visibles au-dessus des champs de correction manuelle. */
+    .ligne-chrono { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin-bottom: var(--pas-2); }
+    .ligne-chrono button { flex: 1 1 220px; min-height: 44px; }
+
+    .ligne-outils { display: flex; gap: var(--pas-3); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--pas-2); }
     #rechercheRealise { max-width: 320px; }
+    .champ-seuil { max-width: 80px; }
+
+    .palanquee-attention { border: 2px solid #B98A00; background: #FFF8E5; }
+    .palanquee-urgence { border: 2px solid #B3261E; background: #FDECEB; }
+    .alerte-texte { margin: 0 0 var(--pas-2); font-weight: 700; font-size: .875rem; }
+    .alerte-texte.attention { color: #8a5a00; }
+    .alerte-texte.urgence { color: #B3261E; }
+
+    .actions-bas { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas-3) 0; }
   `]
 })
 export class FicheSecuriteRealiseComponent {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   seanceId = Number(this.route.snapshot.paramMap.get('id'));
+
+  /** Seuil d'alerte avant l'heure de sortie prévue, paramétrable à l'écran (non persisté). */
+  seuilAlerteMinutes = signal(5);
+  /** Horloge rafraîchie régulièrement pour recalculer les alertes des palanquées encore à l'eau. */
+  private maintenant = signal(new Date());
 
   seance = signal<SeanceVue | null>(null);
   chargement = signal(true);
@@ -136,6 +187,10 @@ export class FicheSecuriteRealiseComponent {
 
   constructor() {
     void this.charger();
+    // Vérification en continu (chaque seconde) pour un changement de couleur
+    // sans attendre un rechargement ou une action de l'utilisateur.
+    const intervalle = setInterval(() => this.maintenant.set(new Date()), 1_000);
+    this.destroyRef.onDestroy(() => clearInterval(intervalle));
   }
 
   private async charger(): Promise<void> {
@@ -172,6 +227,43 @@ export class FicheSecuriteRealiseComponent {
         this.message.set(e.error?.detail ?? "L'enregistrement des paramètres réalisés a échoué.");
       }
     });
+  }
+
+  /** Renseigne l'heure courante sur la palanquée et enregistre aussitôt, sans attendre le bouton global. */
+  marquerHeure(p: PalanqueeVue, champ: 'heureImmersion' | 'heureSortie'): void {
+    const maintenant = new Date();
+    const hh = String(maintenant.getHours()).padStart(2, '0');
+    const mm = String(maintenant.getMinutes()).padStart(2, '0');
+    p[champ] = `${hh}:${mm}`;
+    this.enregistrerRealise();
+  }
+
+  /**
+   * Statut de vigilance d'une palanquée encore à l'eau, recalculé à chaque
+   * battement de l'horloge (voir le constructeur) : `attention` à l'approche
+   * de l'heure de sortie prévue, `urgence` une fois cette heure dépassée sans
+   * heure de sortie renseignée. Sans objet une fois l'heure de sortie saisie.
+   *
+   * L'heure d'immersion est rapportée à la date du jour (celle de l'horloge
+   * en direct), pas à la date de la séance : cette surveillance ne concerne
+   * qu'une plongée en cours, indépendamment de la date enregistrée sur la
+   * fiche (utile en particulier en test, où la séance peut être datée d'un
+   * autre jour que celui où on saisit réellement l'heure d'immersion).
+   */
+  statutPalanquee(p: PalanqueeVue): 'attention' | 'urgence' | null {
+    if (!p.heureImmersion || p.heureSortie || !p.dureePrevue) return null;
+
+    const maintenant = this.maintenant();
+    const [heures, minutes] = p.heureImmersion.split(':').map(Number);
+    const immersion = new Date(maintenant);
+    immersion.setHours(heures, minutes, 0, 0);
+
+    const sortiePrevue = new Date(immersion.getTime() + p.dureePrevue * 60_000);
+    const seuil = new Date(sortiePrevue.getTime() - this.seuilAlerteMinutes() * 60_000);
+
+    if (maintenant >= sortiePrevue) return 'urgence';
+    if (maintenant >= seuil) return 'attention';
+    return null;
   }
 
   /** Met en surbrillance un plongeur dont le nom ou prénom correspond à la recherche en cours. */

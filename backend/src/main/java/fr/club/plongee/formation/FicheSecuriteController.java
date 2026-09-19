@@ -40,7 +40,8 @@ import java.util.List;
 public class FicheSecuriteController {
 
     public record DemandePlongeur(Long eleveId, Long utilisateurId, @NotBlank String nom,
-                                  @NotBlank String prenom, String aptitude, String qualificationPreparee,
+                                  @NotBlank String prenom, String aptitude, String aptitudeDonneeParDp,
+                                  String qualificationPreparee,
                                   FonctionPalanquee fonction, String gaz, String moyenDesaturation,
                                   String observations) {}
 
@@ -127,7 +128,7 @@ public class FicheSecuriteController {
 
     private FicheSecuriteService.Plongeur plongeur(DemandePlongeur d) {
         return new FicheSecuriteService.Plongeur(d.eleveId(), d.utilisateurId(), d.nom(), d.prenom(),
-                d.aptitude(), d.qualificationPreparee(), d.fonction(),
+                d.aptitude(), d.aptitudeDonneeParDp(), d.qualificationPreparee(), d.fonction(),
                 d.gaz(), d.moyenDesaturation(), d.observations());
     }
 }

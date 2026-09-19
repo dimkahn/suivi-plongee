@@ -82,6 +82,8 @@ export interface GrilleVue {
 export interface SeanceVue {
   id: number;
   date: string;
+  /** Rang de la séance dans sa journée (1, 2, 3…) : plusieurs séances peuvent partager la même date. */
+  ordre: number;
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu: string | null;
   profondeurMax: number | null;
@@ -300,6 +302,8 @@ export interface PlongeurVue {
   nom: string;
   prenom: string;
   aptitude: string | null;
+  /** Prérogative accordée par le DP pour cette sortie précise, distincte de `aptitude` (le niveau détenu). */
+  aptitudeDonneeParDp: string | null;
   qualificationPreparee: string | null;
   fonction: FonctionPalanquee;
   gaz: string | null;

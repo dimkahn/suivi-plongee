@@ -57,22 +57,24 @@ public class FicheSecuritePdfService {
 
         StringBuilder colonnesPalanquees = new StringBuilder();
         for (int numero : grille.numerosColonnes()) {
-            colonnesPalanquees.append("<th>Palanquée %d</th>".formatted(numero));
+            colonnesPalanquees.append(
+                    "<th class=\"rotee\"><span class=\"libelle-rotee\">Palanquée %d</span></th>".formatted(numero));
         }
 
         StringBuilder lignesMembres = new StringBuilder();
         int ligne = 1;
         for (MembrePalanquee m : grille.membres()) {
             String classeLigne = grille.estEncadrant(m) ? " class=\"encadrant\"" : "";
-            lignesMembres.append("<tr%s><td class=\"numero\">%d</td><td>%s</td><td>%s</td><td>%s</td>"
-                    .formatted(classeLigne, ligne++, echapper(m.getNom()), echapper(m.getPrenom()), niveau(m)));
+            lignesMembres.append("<tr%s><td class=\"numero\">%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>"
+                    .formatted(classeLigne, ligne++, echapper(m.getNom()), echapper(m.getPrenom()), niveau(m),
+                            vide(m.getAptitudeDonneeParDp())));
             for (int numero : grille.numerosColonnes()) {
                 lignesMembres.append(grille.appartient(numero, m) ? "<td class=\"croix\">X</td>" : "<td></td>");
             }
             lignesMembres.append("<td>%s</td></tr>".formatted(vide(m.getObservations())));
         }
         for (; ligne <= grille.nbLignesAffichees(); ligne++) {
-            lignesMembres.append("<tr><td class=\"numero\">%d</td><td></td><td></td><td></td>%s<td></td></tr>"
+            lignesMembres.append("<tr><td class=\"numero\">%d</td><td></td><td></td><td></td><td></td>%s<td></td></tr>"
                     .formatted(ligne, "<td></td>".repeat(grille.numerosColonnes().size())));
         }
 
@@ -96,6 +98,15 @@ public class FicheSecuritePdfService {
                 }
                 th { background: #e7eef0; }
                 td.numero, th.numero { width: 16pt; }
+                /* En-têtes tournés à 45° : les colonnes "Palanquée N" et similaires n'ont
+                   besoin que de leur largeur de contenu (une croix), pas de la largeur du
+                   libellé — la rotation permet de les garder étroites. */
+                th.rotee { height: 46pt; vertical-align: bottom; padding: 0 0 2pt; white-space: nowrap; }
+                th.rotee .libelle-rotee {
+                  display: inline-block; transform: rotate(-45deg); transform-origin: left bottom;
+                  white-space: nowrap;
+                }
+                th.rotee .libelle-rotee.aptitude { font-size: 6pt; }
                 td:nth-child(2), td:nth-child(3) { text-align: left; }
                 td.croix { font-weight: bold; }
                 tr.encadrant td { background: #ffe680; }
@@ -109,7 +120,7 @@ public class FicheSecuritePdfService {
                 <div class="bloc">
                   <p>Date : %s</p>
                   <p>Lieu : %s</p>
-                  <p>Plongée n° : ____</p>
+                  <p>Plongée n° : %s</p>
                 </div>
                 <div class="bloc titre">
                   <p class="club">%s</p>
@@ -124,9 +135,11 @@ public class FicheSecuritePdfService {
               <table>
                 <thead>
                   <tr>
-                    <th class="numero">N°</th><th>Nom</th><th>Prénom</th><th>Niveau</th>
+                    <th class="numero">N°</th><th>Nom</th><th>Prénom</th>
+                    <th class="rotee"><span class="libelle-rotee">Niveau</span></th>
+                    <th class="rotee"><span class="libelle-rotee aptitude">Aptitude donnée<br>par le DP</span></th>
                     %s
-                    <th>Observations</th>
+                    <th class="rotee"><span class="libelle-rotee">Observations</span></th>
                   </tr>
                 </thead>
                 <tbody>%s</tbody>
@@ -140,6 +153,7 @@ public class FicheSecuritePdfService {
             """.formatted(
                 s.getDateSeance().format(DATE),
                 echapper(s.getLieu()),
+                s.getOrdre(),
                 echapper(nomClub),
                 echapper(f.getDp().nomComplet()),
                 conditionsResumees(f),
@@ -171,7 +185,7 @@ public class FicheSecuritePdfService {
     }
 
     private String lignesRecapitulatives(FicheSecuriteGrille grille) {
-        int nbColonnesFixes = 4; // N°, Nom, Prénom, Niveau
+        int nbColonnesFixes = 5; // N°, Nom, Prénom, Niveau, Aptitude donnée par le DP
         return ligneRecap("Prof prévue", grille, nbColonnesFixes, p -> profondeur(p.getProfondeurPrevue()))
                 + ligneRecap("Durée prévue", grille, nbColonnesFixes, p -> duree(p.getDureePrevue()))
                 + ligneRecap("Heure de départ", grille, nbColonnesFixes, p -> heure(p.getHeureImmersion()))

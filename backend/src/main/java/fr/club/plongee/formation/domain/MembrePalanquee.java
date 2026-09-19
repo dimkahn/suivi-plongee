@@ -46,6 +46,14 @@ public class MembrePalanquee {
     /** Niveau en cours de formation (N1/N2/N3) si le plongeur lié est un élève avec un cursus EN_COURS. */
     private String qualificationPreparee;
 
+    /**
+     * Prérogative que le directeur de plongée accorde pour cette sortie
+     * précise, distincte du niveau/brevet détenu ({@code aptitude}) : le DP
+     * peut restreindre (ou, à l'inverse, encadrer plus largement) selon les
+     * conditions du jour ou son appréciation du plongeur.
+     */
+    private String aptitudeDonneeParDp;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private FonctionPalanquee fonction = FonctionPalanquee.PLONGEUR;
@@ -118,6 +126,14 @@ public class MembrePalanquee {
 
     public void setQualificationPreparee(String qualificationPreparee) {
         this.qualificationPreparee = qualificationPreparee;
+    }
+
+    public String getAptitudeDonneeParDp() {
+        return aptitudeDonneeParDp;
+    }
+
+    public void setAptitudeDonneeParDp(String aptitudeDonneeParDp) {
+        this.aptitudeDonneeParDp = aptitudeDonneeParDp;
     }
 
     public FonctionPalanquee getFonction() {

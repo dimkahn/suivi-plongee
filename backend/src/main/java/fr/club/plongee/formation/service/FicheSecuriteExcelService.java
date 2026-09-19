@@ -45,6 +45,8 @@ public class FicheSecuriteExcelService {
             Sheet feuille = classeur.createSheet("Fiche de sécurité");
 
             CellStyle styleEntete = styleEntete(classeur);
+            CellStyle styleEnteteRotee = styleEnteteRotee(classeur);
+            CellStyle styleEnteteRoteeAptitude = styleEnteteRoteeAptitude(classeur);
             CellStyle styleGras = styleGras(classeur);
             CellStyle styleCroix = styleCroix(classeur);
             CellStyle styleEncadrant = styleEncadrant(classeur);
@@ -54,19 +56,22 @@ public class FicheSecuriteExcelService {
             ligne = ecrireEntete(feuille, ligne, f, s);
             ligne++; // ligne vide de séparation
 
-            int nbColonnesFixes = 4; // N°, Nom, Prénom, Niveau
+            int nbColonnesFixes = 5; // N°, Nom, Prénom, Niveau, Aptitude donnée par le DP
             int nbColonnes = nbColonnesFixes + grille.numerosColonnes().size() + 1; // + Observations
 
             Row entetes = feuille.createRow(ligne++);
-            String[] colonnesFixes = {"N°", "Nom", "Prénom", "Niveau"};
+            entetes.setHeightInPoints(46); // laisse la place aux libellés tournés à 45°
+            String[] colonnesFixes = {"N°", "Nom", "Prénom"};
             for (int i = 0; i < colonnesFixes.length; i++) {
                 cellule(entetes, i, colonnesFixes[i], styleEntete);
             }
+            cellule(entetes, 3, "Niveau", styleEnteteRotee);
+            cellule(entetes, 4, "Aptitude donnée\npar le DP", styleEnteteRoteeAptitude);
             int colonne = nbColonnesFixes;
             for (int numero : grille.numerosColonnes()) {
-                cellule(entetes, colonne++, "Palanquée " + numero, styleEntete);
+                cellule(entetes, colonne++, "Palanquée " + numero, styleEnteteRotee);
             }
-            cellule(entetes, colonne, "Observations", styleEntete);
+            cellule(entetes, colonne, "Observations", styleEnteteRotee);
 
             int numeroLigne = 1;
             for (MembrePalanquee m : grille.membres()) {
@@ -76,6 +81,7 @@ public class FicheSecuriteExcelService {
                 cellule(row, 1, m.getNom(), encadrant ? styleEncadrant : null);
                 cellule(row, 2, m.getPrenom(), encadrant ? styleEncadrant : null);
                 cellule(row, 3, niveau(m), encadrant ? styleEncadrant : null);
+                cellule(row, 4, m.getAptitudeDonneeParDp(), encadrant ? styleEncadrant : null);
                 int c = nbColonnesFixes;
                 for (int numero : grille.numerosColonnes()) {
                     cellule(row, c++, grille.appartient(numero, m) ? "X" : "",
@@ -118,7 +124,7 @@ public class FicheSecuriteExcelService {
         cellule(feuille.createRow(ligne++), 0, "FICHE DE SÉCURITÉ", null);
         cellule(feuille.createRow(ligne++), 0, "Date : " + s.getDateSeance().format(DATE), null);
         cellule(feuille.createRow(ligne++), 0, "Lieu : " + (s.getLieu() == null ? "" : s.getLieu()), null);
-        cellule(feuille.createRow(ligne++), 0, "Plongée n° : ", null);
+        cellule(feuille.createRow(ligne++), 0, "Plongée n° : " + s.getOrdre(), null);
         cellule(feuille.createRow(ligne++), 0, "Directeur de plongée : " + f.getDp().nomComplet(), null);
         return ligne;
     }
@@ -165,6 +171,40 @@ public class FicheSecuriteExcelService {
         style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
         style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         style.setBorderBottom(BorderStyle.THIN);
+        return style;
+    }
+
+    /**
+     * En-tête tourné à 45° (Niveau, Aptitude donnée par le DP, Palanquée N,
+     * Observations) : ces colonnes n'ont besoin que de leur largeur de
+     * contenu, pas de celle du libellé — la rotation garde les colonnes
+     * étroites, comme dans l'export PDF.
+     */
+    private CellStyle styleEnteteRotee(Workbook classeur) {
+        CellStyle style = styleEntete(classeur);
+        style.setRotation((short) 45);
+        style.setVerticalAlignment(VerticalAlignment.BOTTOM);
+        return style;
+    }
+
+    /**
+     * Variante de {@link #styleEnteteRotee} pour "Aptitude donnée par le DP" :
+     * libellé plus long que les autres en-têtes tournés, réparti sur deux
+     * lignes avec une police plus petite pour rester lisible sans élargir la
+     * colonne.
+     */
+    private CellStyle styleEnteteRoteeAptitude(Workbook classeur) {
+        CellStyle style = classeur.createCellStyle();
+        Font police = classeur.createFont();
+        police.setBold(true);
+        police.setFontHeightInPoints((short) 8);
+        style.setFont(police);
+        style.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setRotation((short) 45);
+        style.setVerticalAlignment(VerticalAlignment.BOTTOM);
+        style.setWrapText(true);
         return style;
     }
 

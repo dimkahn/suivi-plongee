@@ -40,13 +40,16 @@ class SynchronisationTest {
         return "Bearer " + json.readTree(reponse).get("jetonAcces").asText();
     }
 
+    /** EN_COURS explicitement : le jeu de demonstration porte aussi un N1 deja DELIVRE (Camille), pas notable. */
     private long cursusDuNiveau(String niveau, String auth) throws Exception {
         String reponse = mvc.perform(get("/api/cursus").header("Authorization", auth))
                 .andReturn().getResponse().getContentAsString();
         for (JsonNode c : json.readTree(reponse)) {
-            if (niveau.equals(c.get("niveau").asText())) return c.get("id").asLong();
+            if (niveau.equals(c.get("niveau").asText()) && "EN_COURS".equals(c.get("statut").asText())) {
+                return c.get("id").asLong();
+            }
         }
-        throw new IllegalStateException("Aucun cursus " + niveau);
+        throw new IllegalStateException("Aucun cursus " + niveau + " EN_COURS");
     }
 
     private long critere(long cursusId, int bloc, int index, String auth) throws Exception {

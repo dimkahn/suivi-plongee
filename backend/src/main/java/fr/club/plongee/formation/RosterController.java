@@ -69,7 +69,7 @@ public class RosterController {
                     presences);
         }).toList();
 
-        List<SeanceEnTete> entetes = seances.findBySaisonIdOrderByDateSeance(saison).stream()
+        List<SeanceEnTete> entetes = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
                 .map(s -> new SeanceEnTete(s.getId(), s.getDateSeance(), s.getLieu()))
                 .toList();
 
