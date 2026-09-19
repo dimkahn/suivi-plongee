@@ -115,6 +115,16 @@ public class FicheSecuriteController {
                 .body(pdf.contenu());
     }
 
+    @GetMapping(value = "/fiche.xlsx",
+            produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public ResponseEntity<byte[]> ficheExcel(@PathVariable Long seanceId) {
+        FicheSecuriteExcelService.FicheExcel excel = service.genererExcel(seanceId);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + excel.nomFichier() + "\"")
+                .body(excel.contenu());
+    }
+
     private FicheSecuriteService.Plongeur plongeur(DemandePlongeur d) {
         return new FicheSecuriteService.Plongeur(d.eleveId(), d.utilisateurId(), d.nom(), d.prenom(),
                 d.aptitude(), d.qualificationPreparee(), d.fonction(),
