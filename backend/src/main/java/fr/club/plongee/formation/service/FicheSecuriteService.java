@@ -73,15 +73,17 @@ public class FicheSecuriteService {
     private final UtilisateurRepository utilisateurs;
     private final EleveRepository eleves;
     private final FicheSecuritePdfService pdfService;
+    private final FicheSecuriteExcelService excelService;
 
     public FicheSecuriteService(FicheSecuriteRepository fiches, SeanceRepository seances,
                                 UtilisateurRepository utilisateurs, EleveRepository eleves,
-                                FicheSecuritePdfService pdfService) {
+                                FicheSecuritePdfService pdfService, FicheSecuriteExcelService excelService) {
         this.fiches = fiches;
         this.seances = seances;
         this.utilisateurs = utilisateurs;
         this.eleves = eleves;
         this.pdfService = pdfService;
+        this.excelService = excelService;
     }
 
     @Transactional(readOnly = true)
@@ -212,6 +214,14 @@ public class FicheSecuriteService {
         FicheSecurite fiche = fiches.findBySeanceId(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Cette séance n'a pas encore de fiche de sécurité"));
         return pdfService.generer(fiche);
+    }
+
+    /** Même contrat que {@link #genererPdf} : le rendu doit rester dans la transaction. */
+    @Transactional(readOnly = true)
+    public FicheSecuriteExcelService.FicheExcel genererExcel(Long seanceId) {
+        FicheSecurite fiche = fiches.findBySeanceId(seanceId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Cette séance n'a pas encore de fiche de sécurité"));
+        return excelService.generer(fiche);
     }
 
     private FicheSecuriteVue vue(FicheSecurite f) {

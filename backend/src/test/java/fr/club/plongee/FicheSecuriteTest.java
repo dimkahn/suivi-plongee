@@ -282,6 +282,32 @@ class FicheSecuriteTest {
     }
 
     @Test
+    @DisplayName("L'export Excel fonctionne de bout en bout, hors de toute transaction ouverte")
+    void excelNeCasseJamaisHorsTransaction() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e2@club.fr");
+        long seance = creerSeance(admin);
+        long dpId = moniteurId(admin, "e2@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
+                .andExpect(status().isOk());
+
+        byte[] excel = mvc.perform(get("/api/seances/" + seance + "/fiche-securite/fiche.xlsx")
+                        .header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(header().exists("Content-Disposition"))
+                .andReturn().getResponse().getContentAsByteArray();
+
+        assertThat(excel).isNotEmpty();
+        // Signature ZIP : un .xlsx est une archive ZIP (PK\x03\x04).
+        assertThat(excel[0]).isEqualTo((byte) 'P');
+        assertThat(excel[1]).isEqualTo((byte) 'K');
+    }
+
+    @Test
     @DisplayName("L'export PDF est refusé tant qu'aucune fiche n'est établie")
     void pdfSansFicheRefuse() throws Exception {
         String admin = jeton("presidente@club.fr");

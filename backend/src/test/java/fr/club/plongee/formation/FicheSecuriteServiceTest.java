@@ -44,12 +44,13 @@ class FicheSecuriteServiceTest {
     @Mock UtilisateurRepository utilisateurs;
     @Mock EleveRepository eleves;
     @Mock FicheSecuritePdfService pdfService;
+    @Mock FicheSecuriteExcelService excelService;
 
     FicheSecuriteService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService);
+        service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService, excelService);
     }
 
     private Utilisateur moniteur(long id, String prenom, String nom) {
