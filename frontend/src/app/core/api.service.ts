@@ -3,8 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
-  EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, LigneTrombinoscope, MatriceVue, MoniteurOptionVue,
-  MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue, SaisonVue, SeanceVue, Statut
+  EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, MatriceVue,
+  MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
+  SaisonVue, SeanceVue, Statut
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -24,6 +25,7 @@ interface DemandeEleve {
   dateNaissance?: string | null;
   numeroLicence?: string | null;
   certificatValideJusquAu?: string | null;
+  dernierNiveau?: string | null;
   autorisationLegale: boolean;
 }
 
@@ -202,9 +204,32 @@ export class ApiService {
     return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`, { responseType: 'blob' });
   }
 
+  ficheSecuriteExcel(seanceId: number): Observable<Blob> {
+    return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.xlsx`, { responseType: 'blob' });
+  }
+
   /** Roster des élèves et encadrants du club, pour pré-remplir un membre de palanquée. */
   plongeursConnus(): Observable<PlongeurConnuVue[]> {
     return this.http.get<PlongeurConnuVue[]>('/api/plongeurs-connus');
+  }
+
+  /** Groupes nommés et réutilisables de plongeurs, typiquement composés pour un séjour. */
+  groupesPlongeurs(saisonId: number): Observable<GroupePlongeursVue[]> {
+    return this.http.get<GroupePlongeursVue[]>('/api/groupes-plongeurs', { params: { saisonId } });
+  }
+
+  creerGroupePlongeurs(demande: { nom: string; saisonId: number; membres: MembreGroupeVue[] }):
+      Observable<GroupePlongeursVue> {
+    return this.http.post<GroupePlongeursVue>('/api/groupes-plongeurs', demande);
+  }
+
+  modifierGroupePlongeurs(id: number, demande: { nom: string; saisonId: number; membres: MembreGroupeVue[] }):
+      Observable<GroupePlongeursVue> {
+    return this.http.put<GroupePlongeursVue>(`/api/groupes-plongeurs/${id}`, demande);
+  }
+
+  supprimerGroupePlongeurs(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/groupes-plongeurs/${id}`);
   }
 
   /** Liste légère des moniteurs actifs, pour le choix du DP : accessible à tout encadrant. */
