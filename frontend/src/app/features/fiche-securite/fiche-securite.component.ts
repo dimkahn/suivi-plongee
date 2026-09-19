@@ -48,6 +48,13 @@ function profondeurMaxPourAptitude(aptitude: string | null): number | null {
   return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
 }
 
+/** Identifie un plongeur par son eleveId/utilisateurId, ou à défaut par son nom/prénom. */
+function cleIdentite(p: { eleveId: number | null; utilisateurId: number | null; nom: string; prenom: string }): string {
+  if (p.eleveId !== null) return 'E' + p.eleveId;
+  if (p.utilisateurId !== null) return 'U' + p.utilisateurId;
+  return 'N' + p.nom + '|' + p.prenom;
+}
+
 interface FormulaireEntete {
   dpId: number | null;
   meteo: string | null;
@@ -180,15 +187,18 @@ interface FormulaireEntete {
         }
 
         @if (groupeSelectionne(); as g) {
-          <div cdkDropList id="pool" [cdkDropListData]="g.membres" [cdkDropListConnectedTo]="idsPalanquees()"
+          <div cdkDropList id="pool" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
                class="pool-plongeurs">
-            @for (m of g.membres; track m) {
+            @for (m of poolDisponible(); track m) {
               <div class="jeton-plongeur" cdkDrag [cdkDragData]="m">
                 {{ m.prenom }} {{ m.nom }}{{ m.aptitude ? ' — ' + m.aptitude : '' }}
               </div>
             }
-            @if (g.membres.length === 0) {
-              <p class="vide">Ce groupe n'a aucun plongeur.</p>
+            @if (poolDisponible().length === 0) {
+              <p class="vide">
+                {{ g.membres.length === 0 ? "Ce groupe n'a aucun plongeur."
+                                          : 'Tous les plongeurs de ce groupe sont déjà répartis dans une palanquée.' }}
+              </p>
             }
           </div>
         }
@@ -252,51 +262,11 @@ interface FormulaireEntete {
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
         </button>
         @if (dejaEnregistree()) {
-          <button type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
-            {{ exportEnCours() ? 'Génération…' : 'Télécharger le PDF' }}
-          </button>
-          <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
-            {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
-          </button>
+          <a class="bouton-discret" [routerLink]="['/fiches-securite', seanceId, 'realise']">
+            Compléter au retour de plongée →
+          </a>
         }
       </div>
-
-      @if (dejaEnregistree()) {
-        <h2 class="titre-etape">2. Compléter au retour de plongée</h2>
-        <p class="secondaire">
-          Le profil réellement plongé par chaque palanquée. Sans effet sur le
-          directeur de plongée, les conditions ou la composition des palanquées.
-        </p>
-
-        <label for="rechercheRealise">Retrouver une palanquée par un de ses plongeurs</label>
-        <input id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
-               [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
-
-        @if (palanqueesFiltrees().length === 0) {
-          <p class="vide">Aucune palanquée ne correspond à « {{ rechercheRealise() }} ».</p>
-        }
-
-        @for (p of palanqueesFiltrees(); track p) {
-          <section class="carte panneau">
-            <h3>Palanquée {{ p.numero }}</h3>
-            <div class="ligne-profil">
-              <label>Profondeur réalisée (m) <input type="number" min="0" [(ngModel)]="p.profondeurRealisee"
-                     [name]="'preal-' + p.numero"></label>
-              <label>Durée réalisée (min) <input type="number" min="0" [(ngModel)]="p.dureeRealisee"
-                     [name]="'dreal-' + p.numero"></label>
-              <label>Paliers <input type="text" [(ngModel)]="p.paliers" [name]="'pal-' + p.numero"></label>
-              <label>Immersion <input type="time" [(ngModel)]="p.heureImmersion" [name]="'hi-' + p.numero"></label>
-              <label>Sortie <input type="time" [(ngModel)]="p.heureSortie" [name]="'hs-' + p.numero"></label>
-            </div>
-          </section>
-        }
-
-        <div class="actions-bas">
-          <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
-            {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
-          </button>
-        </div>
-      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -360,9 +330,6 @@ export class FicheSecuriteComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
-  envoiRealise = signal(false);
-  exportEnCours = signal(false);
-  exportExcelEnCours = signal(false);
   dejaEnregistree = computed(() => this.ficheId() !== null);
 
   ficheId = signal<number | null>(null);
@@ -379,18 +346,17 @@ export class FicheSecuriteComponent {
   nomNouveauGroupe = signal('');
   envoiGroupe = signal(false);
 
+  /** Les membres du groupe déjà répartis dans une palanquée de cette fiche ne se glissent plus depuis le pool. */
+  poolDisponible = computed(() => {
+    const groupe = this.groupeSelectionne();
+    if (!groupe) return [];
+    const dejaPlaces = new Set(this.palanquees().flatMap(p => p.membres.map(cleIdentite)));
+    return groupe.membres.filter(m => !dejaPlaces.has(cleIdentite(m)));
+  });
+
   /** Un id de dropList CDK par palanquée, pour connecter le pool du groupe et permettre le glisser-déposer entre elles. */
   idsPalanquees = computed(() => this.palanquees().map(p => 'palanquee-' + p.numero));
   tousLesIds = computed(() => ['pool', ...this.idsPalanquees()]);
-
-  rechercheRealise = signal('');
-  /** Filtre la liste affichée à l'étape 2 sur le nom/prénom d'un plongeur, pour retrouver vite une palanquée. */
-  palanqueesFiltrees = computed(() => {
-    const recherche = this.normaliser(this.rechercheRealise());
-    if (!recherche) return this.palanquees();
-    return this.palanquees().filter(p =>
-      p.membres.some(m => this.normaliser(m.nom).includes(recherche) || this.normaliser(m.prenom).includes(recherche)));
-  });
 
   constructor() {
     void this.charger();
@@ -502,9 +468,7 @@ export class FicheSecuriteComponent {
     for (const p of this.palanquees()) {
       for (const m of p.membres) {
         if (!m.nom && !m.prenom) continue;
-        const cle = m.eleveId !== null ? `E${m.eleveId}` : m.utilisateurId !== null ? `U${m.utilisateurId}`
-          : `N${m.nom}|${m.prenom}`;
-        membres.set(cle, {
+        membres.set(cleIdentite(m), {
           eleveId: m.eleveId, utilisateurId: m.utilisateurId, nom: m.nom, prenom: m.prenom,
           aptitude: m.aptitude, qualificationPreparee: m.qualificationPreparee
         });
@@ -621,66 +585,4 @@ export class FicheSecuriteComponent {
     });
   }
 
-  /** Complément au retour de plongée : le profil réellement plongé, palanquée par palanquée. */
-  enregistrerRealise(): void {
-    this.envoiRealise.set(true);
-    this.message.set(null);
-    this.api.enregistrerProfilRealise(this.seanceId, this.palanquees().map(p => ({
-      numero: p.numero, profondeurRealisee: p.profondeurRealisee, dureeRealisee: p.dureeRealisee,
-      paliers: p.paliers, heureImmersion: p.heureImmersion, heureSortie: p.heureSortie
-    }))).subscribe({
-      next: fiche => {
-        this.envoiRealise.set(false);
-        this.palanquees.set(fiche.palanquees);
-        this.message.set('Paramètres réalisés enregistrés.');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.envoiRealise.set(false);
-        this.message.set(e.error?.detail ?? "L'enregistrement des paramètres réalisés a échoué.");
-      }
-    });
-  }
-
-  /** Casse et accents ignorés : « Loic » retrouve « Loïc » sur un clavier qui ne les tape pas facilement. */
-  private normaliser(texte: string): string {
-    return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-  }
-
-  telechargerPdf(): void {
-    this.exportEnCours.set(true);
-    this.api.ficheSecuritePdf(this.seanceId).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob);
-        const lien = document.createElement('a');
-        lien.href = url;
-        lien.download = `fiche-securite-${this.seance()?.date ?? this.seanceId}.pdf`;
-        lien.click();
-        URL.revokeObjectURL(url);
-        this.exportEnCours.set(false);
-      },
-      error: () => {
-        this.message.set('Le PDF n’a pas pu être généré.');
-        this.exportEnCours.set(false);
-      }
-    });
-  }
-
-  telechargerExcel(): void {
-    this.exportExcelEnCours.set(true);
-    this.api.ficheSecuriteExcel(this.seanceId).subscribe({
-      next: blob => {
-        const url = URL.createObjectURL(blob);
-        const lien = document.createElement('a');
-        lien.href = url;
-        lien.download = `fiche-securite-${this.seance()?.date ?? this.seanceId}.xlsx`;
-        lien.click();
-        URL.revokeObjectURL(url);
-        this.exportExcelEnCours.set(false);
-      },
-      error: () => {
-        this.message.set('Le fichier Excel n’a pas pu être généré.');
-        this.exportExcelEnCours.set(false);
-      }
-    });
-  }
 }
