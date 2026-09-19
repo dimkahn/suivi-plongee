@@ -15,9 +15,11 @@ import java.util.List;
 /**
  * Roster des plongeurs connus du club, pour pré-remplir aptitude et
  * qualification préparée d'un membre de palanquée (voir MembrePalanquee) :
- * élèves (aptitude = dernier brevet délivré, qualification préparée = niveau
- * du cursus en cours s'il y en a un) et encadrants actifs (aptitude = niveau
- * d'encadrement, pas de qualification préparée — hors périmètre ici).
+ * élèves (aptitude = dernier brevet délivré dans l'app, ou à défaut
+ * Eleve.dernierNiveau — déclaratif, pour un brevet obtenu ailleurs ou avant
+ * l'outil ; qualification préparée = niveau du cursus en cours s'il y en a
+ * un) et encadrants actifs (aptitude = niveau d'encadrement, pas de
+ * qualification préparée — hors périmètre ici).
  */
 @Service
 public class PlongeurConnuService {
@@ -46,7 +48,7 @@ public class PlongeurConnuService {
                     .filter(c -> c.getStatut() == Cursus.Statut.DELIVRE)
                     .findFirst()
                     .map(c -> c.getReferentiel().getNiveau().name())
-                    .orElse(null);
+                    .orElse(e.getDernierNiveau());
             String qualificationPreparee = historique.stream()
                     .filter(c -> c.getStatut() == Cursus.Statut.EN_COURS)
                     .findFirst()
