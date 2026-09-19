@@ -137,7 +137,7 @@ public class FicheSecuritePdfService {
                   <tr>
                     <th class="numero">N°</th><th>Nom</th><th>Prénom</th>
                     <th class="rotee"><span class="libelle-rotee">Niveau</span></th>
-                    <th class="rotee"><span class="libelle-rotee aptitude">Aptitude donnée<br>par le DP</span></th>
+                    <th class="rotee"><span class="libelle-rotee aptitude">Aptitude donnée<br/>par le DP</span></th>
                     %s
                     <th class="rotee"><span class="libelle-rotee">Observations</span></th>
                   </tr>
