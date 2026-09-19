@@ -13,19 +13,20 @@ interface FormulaireEleve {
   dateNaissance: string;
   numeroLicence: string;
   certificatValideJusquAu: string;
+  dernierNiveau: string;
   autorisationLegale: boolean;
 }
 
 function formulaireVide(): FormulaireEleve {
   return { nom: '', prenom: '', dateNaissance: '', numeroLicence: '',
-           certificatValideJusquAu: '', autorisationLegale: false };
+           certificatValideJusquAu: '', dernierNiveau: '', autorisationLegale: false };
 }
 
 function depuis(e: EleveVue): FormulaireEleve {
   return {
     nom: e.nom, prenom: e.prenom, dateNaissance: e.dateNaissance ?? '',
     numeroLicence: e.numeroLicence ?? '', certificatValideJusquAu: e.certificatValideJusquAu ?? '',
-    autorisationLegale: e.autorisationLegale
+    dernierNiveau: e.dernierNiveau ?? '', autorisationLegale: e.autorisationLegale
   };
 }
 
@@ -51,6 +52,9 @@ function depuis(e: EleveVue): FormulaireEleve {
         <input id="licence" type="text" name="licence" [(ngModel)]="f.numeroLicence" placeholder="Facultatif">
         <label for="caci">CACI valide jusqu'au</label>
         <input id="caci" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
+        <label for="niveau">Dernier niveau de plongée</label>
+        <input id="niveau" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
+               placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
         <label class="case">
           <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
           Autorisation du responsable légal recueillie
@@ -109,6 +113,9 @@ function depuis(e: EleveVue): FormulaireEleve {
                 <input [id]="'licence-' + e.id" type="text" name="licence" [(ngModel)]="f.numeroLicence">
                 <label [for]="'caci-' + e.id">CACI valide jusqu'au</label>
                 <input [id]="'caci-' + e.id" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
+                <label [for]="'niveau-' + e.id">Dernier niveau de plongée</label>
+                <input [id]="'niveau-' + e.id" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
+                       placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
                 <label class="case">
                   <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
                   Autorisation du responsable légal recueillie
@@ -391,7 +398,7 @@ export class ElevesComponent {
     this.api.creerEleve({
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
       numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
-      autorisationLegale: f.autorisationLegale
+      dernierNiveau: f.dernierNiveau || null, autorisationLegale: f.autorisationLegale
     }).subscribe({
       next: e => {
         this.envoi.set(false);
@@ -423,7 +430,7 @@ export class ElevesComponent {
     this.api.modifierEleve(e.id, {
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
       numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
-      autorisationLegale: f.autorisationLegale
+      dernierNiveau: f.dernierNiveau || null, autorisationLegale: f.autorisationLegale
     }).subscribe({
       next: maj => {
         this.envoi.set(false);

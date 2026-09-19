@@ -34,11 +34,11 @@ public class EleveController {
     private static final long TAILLE_MAX_OCTETS = 5L * 1024 * 1024;
 
     public record EleveVue(Long id, String nom, String prenom, LocalDate dateNaissance,
-                           String numeroLicence, LocalDate certificatValideJusquAu,
+                           String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
                            boolean autorisationLegale, boolean autorisationImage, boolean archive) {}
 
     public record DemandeEleve(@NotBlank String nom, @NotBlank String prenom, LocalDate dateNaissance,
-                               String numeroLicence, LocalDate certificatValideJusquAu,
+                               String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
                                boolean autorisationLegale) {}
 
     public record DemandeAutorisationImage(@NotNull Boolean autorisationImage) {}
@@ -101,12 +101,13 @@ public class EleveController {
         e.setDateNaissance(demande.dateNaissance());
         e.setNumeroLicence(demande.numeroLicence());
         e.setCertificatValideJusquAu(demande.certificatValideJusquAu());
+        e.setDernierNiveau(demande.dernierNiveau());
         e.setAutorisationLegale(demande.autorisationLegale());
     }
 
     private EleveVue vue(Eleve e) {
         return new EleveVue(e.getId(), e.getNom(), e.getPrenom(), e.getDateNaissance(),
-                e.getNumeroLicence(), e.getCertificatValideJusquAu(),
+                e.getNumeroLicence(), e.getCertificatValideJusquAu(), e.getDernierNiveau(),
                 e.isAutorisationLegale(), e.isAutorisationImage(), e.getArchiveLe() != null);
     }
 

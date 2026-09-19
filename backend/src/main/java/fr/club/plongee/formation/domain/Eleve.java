@@ -33,6 +33,16 @@ public class Eleve {
      */
     private LocalDate certificatValideJusquAu;
 
+    /**
+     * Dernier niveau de plongée connu (ex. « N2 »), déclaratif : sert à
+     * pré-remplir l'aptitude d'un membre de palanquée ou d'un groupe de
+     * plongeurs (voir PlongeurConnuService) quand l'élève n'a pas encore de
+     * {@link Cursus} DELIVRE dans l'application — typiquement un brevet
+     * obtenu avant l'usage de l'outil ou dans un autre club. N'est jamais
+     * recalculé depuis un cursus délivré ici : celui-ci reste prioritaire.
+     */
+    private String dernierNiveau;
+
     @Column(nullable = false)
     private boolean autorisationLegale = false;
 
@@ -107,6 +117,14 @@ public class Eleve {
 
     public void setCertificatValideJusquAu(LocalDate certificatValideJusquAu) {
         this.certificatValideJusquAu = certificatValideJusquAu;
+    }
+
+    public String getDernierNiveau() {
+        return dernierNiveau;
+    }
+
+    public void setDernierNiveau(String dernierNiveau) {
+        this.dernierNiveau = dernierNiveau;
     }
 
     public boolean isAutorisationLegale() {
