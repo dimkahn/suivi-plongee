@@ -59,6 +59,10 @@ import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
               <span [class.correspondance]="estCorrespondance(m)">{{ m.prenom }} {{ m.nom }}</span>{{ last ? '' : ', ' }}
             }
           </p>
+          <p class="prevu">
+            Prévu : {{ p.profondeurPrevue ? p.profondeurPrevue + ' m' : '—' }}
+            / {{ p.dureePrevue ? p.dureePrevue + ' min' : '—' }}
+          </p>
           <div class="ligne-profil">
             <label>Profondeur réalisée (m) <input type="number" min="0" [(ngModel)]="p.profondeurRealisee"
                    [name]="'preal-' + p.numero"></label>
@@ -91,6 +95,7 @@ import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
     .membres { margin: 0 0 var(--pas-2); color: var(--craie); }
+    .prevu { margin: 0 0 var(--pas-2); font-size: .8125rem; color: var(--craie); font-weight: 700; }
     .correspondance {
       background: #fff3b0; color: #1c2d33; border-radius: 3px; padding: 0 3px; font-weight: 700;
     }
