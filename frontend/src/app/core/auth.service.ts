@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, finalize, tap } from 'rxjs';
 import { Session } from './modeles';
 
 const ORDRE_ENCADREMENT = ['E1', 'E2', 'E3', 'E4'];
@@ -13,6 +13,15 @@ export class AuthService {
 
   /** Le jeton reste en mémoire : ni localStorage ni sessionStorage. */
   readonly session = signal<Session | null>(null);
+
+  /**
+   * Passe à `true` une fois {@link reprendre} terminé (succès ou échec), au
+   * chargement de l'application. Les gardes de route doivent attendre ce
+   * signal avant de statuer sur `connecte()` : sans ça, la navigation
+   * initiale peut s'exécuter avant la réponse de `/api/auth/rafraichir` et
+   * rediriger à tort vers /connexion alors que la session est valide.
+   */
+  readonly sessionResolue = signal(false);
 
   readonly connecte = computed(() => this.session() !== null);
   readonly roles = computed(() => this.session()?.roles ?? []);
@@ -35,6 +44,13 @@ export class AuthService {
     return this.http
       .post<Session>('/api/auth/rafraichir', {}, { withCredentials: true })
       .pipe(tap(s => this.session.set(s)));
+  }
+
+  /** À appeler une fois au démarrage de l'application : voir {@link sessionResolue}. */
+  initialiser(): void {
+    this.reprendre()
+      .pipe(finalize(() => this.sessionResolue.set(true)))
+      .subscribe({ error: () => {} });
   }
 
   /** Toujours la même réponse au moniteur, que le compte existe ou non. */
