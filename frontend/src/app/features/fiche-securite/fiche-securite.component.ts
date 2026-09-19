@@ -20,7 +20,7 @@ function palanqueeVide(numero: number): PalanqueeVue {
   return {
     numero, profondeurPrevue: null, dureePrevue: null,
     profondeurRealisee: null, dureeRealisee: null, paliers: null,
-    heureImmersion: null, heureSortie: null, membres: [plongeurVide()]
+    heureImmersion: null, heureSortie: null, membres: []
   };
 }
 
@@ -219,7 +219,11 @@ interface FormulaireEntete {
           </div>
 
           <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListData]="p.membres"
+               class="zone-membres" [class.zone-membres-vide]="p.membres.length === 0"
                [cdkDropListConnectedTo]="tousLesIds()" (cdkDropListDropped)="onDropPalanquee($event, iP)">
+            @if (p.membres.length === 0) {
+              <p class="vide">Glissez un plongeur ici, ou cliquez sur « + Plongeur ».</p>
+            }
             @for (m of p.membres; track m; let iM = $index) {
               <div class="plongeur" cdkDrag>
                 <label class="discrete">Plongeur du club (optionnel, pré-remplit aptitude et qualification)</label>
@@ -312,6 +316,12 @@ interface FormulaireEntete {
       display: flex; flex-wrap: wrap; gap: var(--pas); min-height: 44px;
       padding: var(--pas); border: 1px dashed var(--trait); border-radius: var(--r-s);
     }
+    /* Toujours une zone visible et suffisamment grande pour y déposer un plongeur, même sans aucun membre. */
+    .zone-membres-vide {
+      min-height: 60px; display: flex; align-items: center; justify-content: center;
+      border: 1px dashed var(--trait); border-radius: var(--r-s); margin-top: var(--pas);
+    }
+    .zone-membres-vide .vide { margin: 0; }
     .jeton-plongeur {
       padding: var(--pas) var(--pas-2); border-radius: 999px; background: var(--brume, #eef4f5);
       border: 1px solid var(--trait); cursor: grab; font-size: .875rem; user-select: none;
