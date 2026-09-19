@@ -2,9 +2,12 @@ import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue, PlongeurVue, SeanceVue } from '../../core/modeles';
+import {
+  GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue, PlongeurVue, SeanceVue
+} from '../../core/modeles';
 
 function plongeurVide(): PlongeurVue {
   return {
@@ -19,6 +22,30 @@ function palanqueeVide(numero: number): PalanqueeVue {
     profondeurRealisee: null, dureeRealisee: null, paliers: null,
     heureImmersion: null, heureSortie: null, membres: [plongeurVide()]
   };
+}
+
+/**
+ * Profondeur max (en m) des prérogatives FFESSM courantes, pour repérer une
+ * palanquée dont la profondeur prévue dépasse l'aptitude d'un de ses
+ * membres. Simple avertissement d'affichage, pas une règle bloquante (voir
+ * la note du projet sur le retrait de la vérification stricte côté serveur) :
+ * le DP reste seul juge, l'aptitude est un texte libre pas toujours normalisé.
+ */
+const PROFONDEUR_MAX_PAR_APTITUDE: Record<string, number> = {
+  E1: 20, N1: 20, PA20: 20,
+  E2: 40, N2: 40, PE40: 40, PA40: 40,
+  N3: 60, PE60: 60
+  // E3, E4 : pas de limite (formateurs).
+};
+
+/** Cherche les codes connus dans le texte libre de l'aptitude et retient le plus profond. */
+function profondeurMaxPourAptitude(aptitude: string | null): number | null {
+  if (!aptitude) return null;
+  const codes = aptitude.toUpperCase().match(/E[1-4]|PA20|PE40|PA40|PE60|N[1-3]/g);
+  if (!codes) return null;
+  if (codes.includes('E3') || codes.includes('E4')) return null;
+  const profondeurs = codes.map(c => PROFONDEUR_MAX_PAR_APTITUDE[c]).filter((p): p is number => p !== undefined);
+  return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
 }
 
 interface FormulaireEntete {
@@ -36,9 +63,15 @@ interface FormulaireEntete {
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DragDropModule],
   template: `
     <a routerLink="/fiches-securite" class="bouton-discret">← Fiches de sécurité</a>
+
+    <datalist id="plongeurs-club">
+      @for (c of plongeursConnus(); track libellePlongeurConnu(c)) {
+        <option [value]="libellePlongeurConnu(c)"></option>
+      }
+    </datalist>
 
     @if (seance(); as s) {
       <h1>Fiche de sécurité — {{ s.date }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
@@ -110,6 +143,57 @@ interface FormulaireEntete {
                   placeholder="Incident, remontée anormale, plongée successive…"></textarea>
       </section>
 
+      <section class="carte panneau">
+        <h3>Groupe de plongeurs (réutilisable pour un séjour)</h3>
+        <p class="secondaire">
+          Composez une fois la liste des plongeurs d'un séjour, puis glissez-les
+          dans les palanquées ci-dessous à chaque nouvelle fiche, sans ressaisie.
+        </p>
+
+        <div class="ligne-groupe">
+          <select [ngModel]="groupeSelectionneId()" (ngModelChange)="groupeSelectionneId.set($event)"
+                  name="groupeSelectionne">
+            <option [ngValue]="null">— Aucun groupe —</option>
+            @for (g of groupes(); track g.id) {
+              <option [ngValue]="g.id">{{ g.nom }} ({{ g.membres.length }})</option>
+            }
+          </select>
+          <button type="button" class="bouton-discret" (click)="creationGroupeOuverte.set(!creationGroupeOuverte())">
+            + Nouveau groupe
+          </button>
+          @if (groupeSelectionneId()) {
+            <button type="button" class="bouton-discret danger" (click)="supprimerGroupeCourant()">
+              Supprimer ce groupe
+            </button>
+          }
+        </div>
+
+        @if (creationGroupeOuverte()) {
+          <div class="ligne-groupe">
+            <input type="text" placeholder="Nom du groupe (ex. Séjour Égypte mai 2026)"
+                   [ngModel]="nomNouveauGroupe()" (ngModelChange)="nomNouveauGroupe.set($event)" name="nomGroupe">
+            <button type="button" class="bouton-principal" [disabled]="envoiGroupe()" (click)="creerGroupe()">
+              Créer à partir des plongeurs de cette fiche
+            </button>
+            <button type="button" class="bouton-discret" (click)="creationGroupeOuverte.set(false)">Annuler</button>
+          </div>
+        }
+
+        @if (groupeSelectionne(); as g) {
+          <div cdkDropList id="pool" [cdkDropListData]="g.membres" [cdkDropListConnectedTo]="idsPalanquees()"
+               class="pool-plongeurs">
+            @for (m of g.membres; track m) {
+              <div class="jeton-plongeur" cdkDrag [cdkDragData]="m">
+                {{ m.prenom }} {{ m.nom }}{{ m.aptitude ? ' — ' + m.aptitude : '' }}
+              </div>
+            }
+            @if (g.membres.length === 0) {
+              <p class="vide">Ce groupe n'a aucun plongeur.</p>
+            }
+          </div>
+        }
+      </section>
+
       @for (p of palanquees(); track p; let iP = $index) {
         <section class="carte panneau">
           <div class="ligne-titre">
@@ -124,51 +208,38 @@ interface FormulaireEntete {
                    [name]="'dp-' + iP"></label>
           </div>
 
-          @for (m of p.membres; track m; let iM = $index) {
-            <div class="plongeur">
-              <label class="discrete">Plongeur du club (optionnel, pré-remplit aptitude et qualification)</label>
-              <select class="selecteur-connu" (change)="choisirPlongeurConnu(iP, iM, $event)">
-                <option value="">— Choisir dans le club —</option>
-                @if (elevesConnus().length > 0) {
-                  <optgroup label="Élèves">
-                    @for (c of elevesConnus(); track c.eleveId) {
-                      <option [value]="'ELEVE:' + c.eleveId">
-                        {{ c.prenom }} {{ c.nom }}{{ c.aptitude ? ' — ' + c.aptitude : '' }}
-                      </option>
-                    }
-                  </optgroup>
-                }
-                @if (encadrantsConnus().length > 0) {
-                  <optgroup label="Encadrants">
-                    @for (c of encadrantsConnus(); track c.utilisateurId) {
-                      <option [value]="'ENCADRANT:' + c.utilisateurId">
-                        {{ c.prenom }} {{ c.nom }}{{ c.aptitude ? ' — ' + c.aptitude : '' }}
-                      </option>
-                    }
-                  </optgroup>
-                }
-              </select>
+          <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListData]="p.membres"
+               [cdkDropListConnectedTo]="tousLesIds()" (cdkDropListDropped)="onDropPalanquee($event, iP)">
+            @for (m of p.membres; track m; let iM = $index) {
+              <div class="plongeur" cdkDrag>
+                <label class="discrete">Plongeur du club (optionnel, pré-remplit aptitude et qualification)</label>
+                <input type="text" class="selecteur-connu" placeholder="Rechercher un nom…" list="plongeurs-club"
+                       (change)="choisirPlongeurConnu(iP, iM, $event)">
 
-              <div class="ligne-plongeur">
-                <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'prenom-' + iP + '-' + iM">
-                <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
-                <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
-                       [name]="'aptitude-' + iP + '-' + iM">
-                <input type="text" placeholder="Qualification préparée (si en formation)"
-                       [(ngModel)]="m.qualificationPreparee" [name]="'qualif-' + iP + '-' + iM">
-                <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
-                  <option value="PLONGEUR">Plongeur</option>
-                  <option value="GUIDE_PALANQUEE">Guide de palanquée</option>
-                  <option value="ENCADRANT">Encadrant</option>
-                </select>
-                <input type="text" placeholder="Gaz (ex. Air, Nitrox 32…)" [(ngModel)]="m.gaz"
-                       [name]="'gaz-' + iP + '-' + iM">
-                <input type="text" placeholder="Désaturation" [(ngModel)]="m.moyenDesaturation"
-                       [name]="'desat-' + iP + '-' + iM">
-                <button type="button" class="bouton-discret danger" (click)="retirerMembre(iP, iM)">✕</button>
+                <div class="ligne-plongeur">
+                  <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'prenom-' + iP + '-' + iM">
+                  <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
+                  <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
+                         [name]="'aptitude-' + iP + '-' + iM">
+                  <input type="text" placeholder="Qualification préparée (si en formation)"
+                         [(ngModel)]="m.qualificationPreparee" [name]="'qualif-' + iP + '-' + iM">
+                  <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
+                    <option value="PLONGEUR">Plongeur</option>
+                    <option value="GUIDE_PALANQUEE">Guide de palanquée</option>
+                    <option value="ENCADRANT">Encadrant</option>
+                  </select>
+                  <input type="text" placeholder="Gaz (ex. Air, Nitrox 32…)" [(ngModel)]="m.gaz"
+                         [name]="'gaz-' + iP + '-' + iM">
+                  <input type="text" placeholder="Désaturation" [(ngModel)]="m.moyenDesaturation"
+                         [name]="'desat-' + iP + '-' + iM">
+                  <button type="button" class="bouton-discret danger" (click)="retirerMembre(iP, iM)">✕</button>
+                </div>
+                @if (alerteProfondeur(p, m); as alerte) {
+                  <p class="alerte-profondeur">⚠ {{ alerte }}</p>
+                }
               </div>
-            </div>
-          }
+            }
+          </div>
 
           <button type="button" class="bouton-discret" (click)="ajouterMembre(iP)">+ Plongeur</button>
         </section>
@@ -183,6 +254,9 @@ interface FormulaireEntete {
         @if (dejaEnregistree()) {
           <button type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
             {{ exportEnCours() ? 'Génération…' : 'Télécharger le PDF' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
+            {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
           </button>
         }
       </div>
@@ -254,8 +328,25 @@ interface FormulaireEntete {
     .ligne-plongeur input[type="text"] { flex: 1 1 140px; }
 
     .danger { color: #B3261E; border-color: #B3261E; }
+    .alerte-profondeur { margin: -4px 0 var(--pas); font-size: .8125rem; color: #8a5a00; }
     .actions-bas { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas-3) 0; }
     #rechercheRealise { max-width: 320px; }
+
+    .ligne-groupe { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin-bottom: var(--pas-2); }
+    .ligne-groupe select { max-width: 280px; }
+    .ligne-groupe input[type="text"] { flex: 1 1 240px; }
+
+    .pool-plongeurs {
+      display: flex; flex-wrap: wrap; gap: var(--pas); min-height: 44px;
+      padding: var(--pas); border: 1px dashed var(--trait); border-radius: var(--r-s);
+    }
+    .jeton-plongeur {
+      padding: var(--pas) var(--pas-2); border-radius: 999px; background: var(--brume, #eef4f5);
+      border: 1px solid var(--trait); cursor: grab; font-size: .875rem; user-select: none;
+    }
+    .cdk-drag-preview { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+    .cdk-drag-placeholder { opacity: 0.3; }
+    .cdk-drop-list-dragging .plongeur:not(.cdk-drag-placeholder) { transition: transform 200ms ease; }
   `]
 })
 export class FicheSecuriteComponent {
@@ -271,6 +362,7 @@ export class FicheSecuriteComponent {
   envoi = signal(false);
   envoiRealise = signal(false);
   exportEnCours = signal(false);
+  exportExcelEnCours = signal(false);
   dejaEnregistree = computed(() => this.ficheId() !== null);
 
   ficheId = signal<number | null>(null);
@@ -278,8 +370,18 @@ export class FicheSecuriteComponent {
   palanquees = signal<PalanqueeVue[]>([]);
 
   plongeursConnus = signal<PlongeurConnuVue[]>([]);
-  elevesConnus = computed(() => this.plongeursConnus().filter(c => c.eleveId !== null));
-  encadrantsConnus = computed(() => this.plongeursConnus().filter(c => c.utilisateurId !== null));
+
+  saisonId = signal<number | null>(null);
+  groupes = signal<GroupePlongeursVue[]>([]);
+  groupeSelectionneId = signal<number | null>(null);
+  groupeSelectionne = computed(() => this.groupes().find(g => g.id === this.groupeSelectionneId()) ?? null);
+  creationGroupeOuverte = signal(false);
+  nomNouveauGroupe = signal('');
+  envoiGroupe = signal(false);
+
+  /** Un id de dropList CDK par palanquée, pour connecter le pool du groupe et permettre le glisser-déposer entre elles. */
+  idsPalanquees = computed(() => this.palanquees().map(p => 'palanquee-' + p.numero));
+  tousLesIds = computed(() => ['pool', ...this.idsPalanquees()]);
 
   rechercheRealise = signal('');
   /** Filtre la liste affichée à l'étape 2 sur le nom/prénom d'un plongeur, pour retrouver vite une palanquée. */
@@ -296,11 +398,12 @@ export class FicheSecuriteComponent {
 
   private async charger(): Promise<void> {
     try {
-      const [seances, moniteurs, plongeursConnus, fiche] = await Promise.all([
+      const [seances, moniteurs, plongeursConnus, fiche, saisons] = await Promise.all([
         this.api.seances(),
         firstValueFrom(this.api.moniteursActifs()),
         firstValueFrom(this.api.plongeursConnus()),
-        firstValueFrom(this.api.ficheSecurite(this.seanceId))
+        firstValueFrom(this.api.ficheSecurite(this.seanceId)),
+        firstValueFrom(this.api.saisons())
       ]);
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
       this.moniteurs.set(moniteurs);
@@ -313,6 +416,12 @@ export class FicheSecuriteComponent {
         observations: fiche.observations
       });
       this.palanquees.set(fiche.palanquees.length > 0 ? fiche.palanquees : [palanqueeVide(1)]);
+
+      const saisonOuverte = saisons.find(s => s.ouverte);
+      if (saisonOuverte) {
+        this.saisonId.set(saisonOuverte.id);
+        this.groupes.set(await firstValueFrom(this.api.groupesPlongeurs(saisonOuverte.id)));
+      }
     } catch {
       this.message.set('Impossible de charger la fiche de sécurité.');
     } finally {
@@ -343,14 +452,130 @@ export class FicheSecuriteComponent {
     this.palanquees.set(liste);
   }
 
+  /**
+   * Dépose dans une palanquée : soit une copie d'un membre du pool (le groupe
+   * reste intact, réutilisable sur d'autres fiches), soit un déplacement ou
+   * réordonnancement entre palanquées de plongeurs déjà saisis sur cette fiche.
+   */
+  onDropPalanquee(event: CdkDragDrop<PlongeurVue[]>, indexPalanquee: number): void {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      this.palanquees.set([...this.palanquees()]);
+      return;
+    }
+
+    if (event.previousContainer.id === 'pool') {
+      const source = event.item.data as MembreGroupeVue;
+      const nouveau: PlongeurVue = {
+        eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
+        aptitude: source.aptitude, qualificationPreparee: source.qualificationPreparee,
+        fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
+      };
+      const liste = this.palanquees().map((p, i) => {
+        if (i !== indexPalanquee) return p;
+        const membres = [...p.membres];
+        membres.splice(event.currentIndex, 0, nouveau);
+        return { ...p, membres };
+      });
+      this.palanquees.set(liste);
+      return;
+    }
+
+    transferArrayItem(event.previousContainer.data as PlongeurVue[], event.container.data as PlongeurVue[],
+      event.previousIndex, event.currentIndex);
+    this.palanquees.set([...this.palanquees()]);
+  }
+
+  /** Capture les plongeurs actuellement saisis sur cette fiche comme groupe nommé, réutilisable ensuite. */
+  creerGroupe(): void {
+    const saisonId = this.saisonId();
+    if (!saisonId) {
+      this.message.set('Aucune saison ouverte : impossible de créer un groupe.');
+      return;
+    }
+    if (!this.nomNouveauGroupe().trim()) {
+      this.message.set('Le nom du groupe est obligatoire.');
+      return;
+    }
+
+    const membres = new Map<string, MembreGroupeVue>();
+    for (const p of this.palanquees()) {
+      for (const m of p.membres) {
+        if (!m.nom && !m.prenom) continue;
+        const cle = m.eleveId !== null ? `E${m.eleveId}` : m.utilisateurId !== null ? `U${m.utilisateurId}`
+          : `N${m.nom}|${m.prenom}`;
+        membres.set(cle, {
+          eleveId: m.eleveId, utilisateurId: m.utilisateurId, nom: m.nom, prenom: m.prenom,
+          aptitude: m.aptitude, qualificationPreparee: m.qualificationPreparee
+        });
+      }
+    }
+
+    this.envoiGroupe.set(true);
+    this.api.creerGroupePlongeurs({ nom: this.nomNouveauGroupe(), saisonId, membres: [...membres.values()] })
+      .subscribe({
+        next: groupe => {
+          this.envoiGroupe.set(false);
+          this.groupes.set([...this.groupes(), groupe]);
+          this.groupeSelectionneId.set(groupe.id);
+          this.creationGroupeOuverte.set(false);
+          this.nomNouveauGroupe.set('');
+          this.message.set('Groupe créé.');
+        },
+        error: (e: HttpErrorResponse) => {
+          this.envoiGroupe.set(false);
+          this.message.set(e.error?.detail ?? "La création du groupe a échoué.");
+        }
+      });
+  }
+
+  supprimerGroupeCourant(): void {
+    const id = this.groupeSelectionneId();
+    if (!id) return;
+    if (!confirm('Supprimer ce groupe de plongeurs ? Les fiches déjà établies ne sont pas modifiées.')) return;
+    this.api.supprimerGroupePlongeurs(id).subscribe({
+      next: () => {
+        this.groupes.set(this.groupes().filter(g => g.id !== id));
+        this.groupeSelectionneId.set(null);
+      },
+      error: () => this.message.set('La suppression du groupe a échoué.')
+    });
+  }
+
+  /**
+   * Avertissement d'affichage seulement (voir la note au-dessus de
+   * PROFONDEUR_MAX_PAR_APTITUDE) : signale qu'un plongeur n'a pas
+   * l'aptitude requise pour la profondeur prévue de sa palanquée.
+   */
+  alerteProfondeur(p: PalanqueeVue, m: PlongeurVue): string | null {
+    if (!p.profondeurPrevue) return null;
+    const max = profondeurMaxPourAptitude(m.aptitude);
+    if (max === null || p.profondeurPrevue <= max) return null;
+    return `${m.aptitude} limite ${max} m, palanquée prévue à ${p.profondeurPrevue} m.`;
+  }
+
+  /**
+   * Libellé affiché dans la combobox (liste native `<datalist>`, filtrable au
+   * clavier — plus praticable qu'un <select> une fois le club bien fourni).
+   * L'identifiant entre parenthèses est retrouvé par choisirPlongeurConnu :
+   * un simple appariement sur le texte affiché serait ambigu en cas
+   * d'homonymie.
+   */
+  libellePlongeurConnu(c: PlongeurConnuVue): string {
+    const type = c.eleveId !== null ? 'ELEVE:' + c.eleveId : 'ENCADRANT:' + c.utilisateurId;
+    return `${c.prenom} ${c.nom}${c.aptitude ? ' — ' + c.aptitude : ''} (${type})`;
+  }
+
   /** Pré-remplit nom/prénom/aptitude/qualification depuis le dossier du plongeur choisi, éditable ensuite. */
   choisirPlongeurConnu(indexPalanquee: number, indexMembre: number, event: Event): void {
-    const valeur = (event.target as HTMLSelectElement).value;
-    if (!valeur) return;
-    const [type, idTexte] = valeur.split(':');
+    const champ = event.target as HTMLInputElement;
+    const correspondance = champ.value.match(/\((ELEVE|ENCADRANT):(\d+)\)\s*$/);
+    if (!correspondance) return;
+    const [, type, idTexte] = correspondance;
     const id = Number(idTexte);
     const candidat = this.plongeursConnus().find(c =>
       (type === 'ELEVE' && c.eleveId === id) || (type === 'ENCADRANT' && c.utilisateurId === id));
+    champ.value = '';
     if (!candidat) return;
 
     const liste = this.palanquees().map((p, i) => i !== indexPalanquee ? p : {
@@ -436,6 +661,25 @@ export class FicheSecuriteComponent {
       error: () => {
         this.message.set('Le PDF n’a pas pu être généré.');
         this.exportEnCours.set(false);
+      }
+    });
+  }
+
+  telechargerExcel(): void {
+    this.exportExcelEnCours.set(true);
+    this.api.ficheSecuriteExcel(this.seanceId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = `fiche-securite-${this.seance()?.date ?? this.seanceId}.xlsx`;
+        lien.click();
+        URL.revokeObjectURL(url);
+        this.exportExcelEnCours.set(false);
+      },
+      error: () => {
+        this.message.set('Le fichier Excel n’a pas pu être généré.');
+        this.exportExcelEnCours.set(false);
       }
     });
   }

@@ -171,6 +171,8 @@ export interface EleveVue {
   dateNaissance: string | null;
   numeroLicence: string | null;
   certificatValideJusquAu: string | null;
+  /** Déclaratif : brevet obtenu avant l'outil ou dans un autre club, sans cursus DELIVRE dans l'app. */
+  dernierNiveau: string | null;
   autorisationLegale: boolean;
   autorisationImage: boolean;
   archive: boolean;
@@ -356,4 +358,26 @@ export interface FicheSecuriteVue {
   planSecours: string | null;
   observations: string | null;
   palanquees: PalanqueeVue[];
+}
+
+/** Un plongeur au sein d'un GroupePlongeursVue : même logique d'instantané éditable que PlongeurConnuVue. */
+export interface MembreGroupeVue {
+  eleveId: number | null;
+  utilisateurId: number | null;
+  nom: string;
+  prenom: string;
+  aptitude: string | null;
+  qualificationPreparee: string | null;
+}
+
+/**
+ * Groupe nommé et réutilisable de plongeurs (typiquement composé pour un
+ * séjour), glissé-déposé ensuite dans les palanquées de plusieurs fiches de
+ * sécurité successives — voir fiche-securite.component.ts.
+ */
+export interface GroupePlongeursVue {
+  id: number;
+  nom: string;
+  saisonId: number;
+  membres: MembreGroupeVue[];
 }
