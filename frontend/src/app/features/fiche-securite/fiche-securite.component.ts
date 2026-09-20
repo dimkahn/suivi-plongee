@@ -249,6 +249,8 @@ interface FormulaireEntete {
                          [name]="'gaz-' + iP + '-' + iM">
                   <input type="text" placeholder="Désaturation" [(ngModel)]="m.moyenDesaturation"
                          [name]="'desat-' + iP + '-' + iM">
+                  <input type="text" placeholder="Observations" [(ngModel)]="m.observations"
+                         [name]="'observations-' + iP + '-' + iM">
                   <button type="button" class="bouton-discret danger" (click)="retirerMembre(iP, iM)">✕</button>
                 </div>
                 @if (alerteProfondeur(p, m); as alerte) {
