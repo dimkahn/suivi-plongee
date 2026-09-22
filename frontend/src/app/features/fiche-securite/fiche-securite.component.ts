@@ -196,8 +196,11 @@ interface FormulaireEntete {
               <button type="button" class="jeton-plongeur" cdkDrag [cdkDragData]="m"
                       [cdkDragStartDelay]="delaiGlisser"
                       [class.selectionne]="membreAPlacer() === m" [attr.aria-pressed]="membreAPlacer() === m"
+                      [attr.aria-label]="m.prenom + ' ' + m.nom + (m.aptitude ? ', ' + m.aptitude : '')"
                       (click)="selectionnerPourPlacer(m)">
-                {{ m.prenom }} {{ m.nom }}{{ m.aptitude ? ' — ' + m.aptitude : '' }}
+                <span class="nom-long">{{ m.prenom }} {{ m.nom }}</span>
+                <span class="nom-court">{{ m.prenom }} {{ initiale(m.nom) }}</span>
+                @if (m.aptitude) { <span class="niveau-jeton">{{ m.aptitude }}</span> }
               </button>
             }
             @if (poolDisponible().length === 0) {
@@ -358,6 +361,11 @@ interface FormulaireEntete {
       border: 1px dashed var(--trait); border-radius: var(--r-s); margin-top: var(--pas);
     }
     .zone-membres-vide .vide { margin: 0; }
+    .jeton-plongeur { display: inline-flex; align-items: center; gap: 6px; }
+    .nom-court { display: none; }
+    .niveau-jeton { font-weight: 700; color: var(--profond); }
+    .jeton-plongeur.selectionne .niveau-jeton { color: #fff; }
+
     .jeton-plongeur.selectionne {
       background: var(--profond); border-color: var(--profond); color: #fff; font-weight: 700;
     }
@@ -376,6 +384,29 @@ interface FormulaireEntete {
       border: 1px solid var(--trait); cursor: grab; font-size: .875rem; user-select: none;
       min-height: 44px; color: var(--encre); font-weight: 400;
     }
+    /*
+     * Téléphone : puces compactes, trois par ligne (nom de famille réduit à son
+     * initiale, niveau en dessous), en gardant 44 px de haut pour le doigt.
+     */
+    @media (max-width: 600px) {
+      .panneau-groupe { padding: var(--pas-2); }
+      .pool-plongeurs {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: 6px; padding: 6px;
+      }
+      .jeton-plongeur {
+        flex-direction: column; justify-content: center; gap: 0;
+        padding: 2px 6px; border-radius: var(--r-s); line-height: 1.15; min-width: 0;
+      }
+      .nom-long { display: none; }
+      .nom-court {
+        display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-size: .8125rem;
+      }
+      .niveau-jeton { font-size: .75rem; }
+      .pool-plongeurs .vide { grid-column: 1 / -1; }
+    }
+
     .cdk-drag-preview { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
     .cdk-drag-placeholder { opacity: 0.3; }
     .cdk-drop-list-dragging .plongeur:not(.cdk-drag-placeholder) { transition: transform 200ms ease; }
@@ -490,6 +521,12 @@ export class FicheSecuriteComponent {
 
   /** Plongeur du groupe touché, en attente du choix de sa palanquée (alternative au glisser-déposer). */
   membreAPlacer = signal<MembreGroupeVue | null>(null);
+
+  /** « LACUES » → « L. » : assez pour distinguer deux prénoms identiques sur une petite puce. */
+  initiale(nom: string): string {
+    const n = (nom ?? '').trim();
+    return n ? n[0].toUpperCase() + '.' : '';
+  }
 
   selectionnerPourPlacer(m: MembreGroupeVue): void {
     this.membreAPlacer.set(this.membreAPlacer() === m ? null : m);
