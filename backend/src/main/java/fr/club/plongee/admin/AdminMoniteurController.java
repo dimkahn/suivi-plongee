@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -26,17 +27,18 @@ import java.util.List;
 public class AdminMoniteurController {
 
     public record MoniteurVue(Long id, String email, String nom, String prenom, boolean actif,
-                              String niveauEncadrement, String numeroLicence) {}
+                              String niveauEncadrement, String numeroLicence,
+                              LocalDate certificatValideJusquAu) {}
 
     public record DemandeCreationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                           @NotBlank String prenom,
                                           @NotNull NiveauEncadrement niveauEncadrement,
-                                          String numeroLicence) {}
+                                          String numeroLicence, LocalDate certificatValideJusquAu) {}
 
     public record DemandeModificationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                               @NotBlank String prenom,
                                               @NotNull NiveauEncadrement niveauEncadrement,
-                                              String numeroLicence) {}
+                                              String numeroLicence, LocalDate certificatValideJusquAu) {}
 
     public record DemandeActivation(@NotNull Boolean actif) {}
 
@@ -59,14 +61,14 @@ public class AdminMoniteurController {
     @PreAuthorize("hasRole('ADMIN')")
     public MoniteurVue creer(@Valid @RequestBody DemandeCreationMoniteur demande) {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
-                demande.niveauEncadrement(), demande.numeroLicence()));
+                demande.niveauEncadrement(), demande.numeroLicence(), demande.certificatValideJusquAu()));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public MoniteurVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeModificationMoniteur demande) {
         return vue(service.modifier(id, demande.email(), demande.nom(), demande.prenom(),
-                demande.niveauEncadrement(), demande.numeroLicence()));
+                demande.niveauEncadrement(), demande.numeroLicence(), demande.certificatValideJusquAu()));
     }
 
     @PutMapping("/{id}/activation")
@@ -93,6 +95,6 @@ public class AdminMoniteurController {
     private MoniteurVue vue(fr.club.plongee.securite.domain.Utilisateur u) {
         return new MoniteurVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif(),
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
-                u.getNumeroLicence());
+                u.getNumeroLicence(), u.getCertificatValideJusquAu());
     }
 }

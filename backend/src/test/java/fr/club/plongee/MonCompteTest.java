@@ -174,4 +174,40 @@ class MonCompteTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.niveauEncadrement").value("E3"));
     }
+
+    @Test
+    @DisplayName("L'admin saisit la fin de validite du CACI ; le moniteur la voit sans pouvoir la changer")
+    void caciEncadrant() throws Exception {
+        String email = nouveauMoniteur();
+        String admin = jeton("presidente@club.fr", "plongee2026");
+        String liste = mvc.perform(get("/api/admin/moniteurs").header("Authorization", admin))
+                .andReturn().getResponse().getContentAsString();
+        long id = -1;
+        for (JsonNode m : json.readTree(liste)) {
+            if (email.equals(m.get("email").asText())) {
+                id = m.get("id").asLong();
+                assertThat(m.get("certificatValideJusquAu").isNull()).isTrue();
+            }
+        }
+
+        mvc.perform(put("/api/admin/moniteurs/" + id).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"email":"%s","nom":"Test","prenom":"Moniteur","niveauEncadrement":"E1",
+                                  "certificatValideJusquAu":"2027-06-30"}""".formatted(email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.certificatValideJusquAu").value("2027-06-30"));
+
+        String moi = jeton(email, MOT_DE_PASSE);
+        mvc.perform(get("/api/auth/moi").header("Authorization", moi))
+                .andExpect(jsonPath("$.certificatValideJusquAu").value("2027-06-30"));
+
+        // Le moniteur ne peut pas modifier sa date lui-meme : le champ est ignore.
+        mvc.perform(put("/api/auth/moi").header("Authorization", moi)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"nom":"Test","prenom":"Moniteur","certificatValideJusquAu":"2099-01-01"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.certificatValideJusquAu").value("2027-06-30"));
+    }
 }

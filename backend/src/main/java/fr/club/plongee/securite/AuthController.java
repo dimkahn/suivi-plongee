@@ -26,6 +26,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
@@ -40,7 +41,8 @@ public class AuthController {
 
     public record Session(String jetonAcces, long expireDansSecondes, String nomComplet,
                           String email, List<String> roles, String niveauEncadrement,
-                          String nom, String prenom, String numeroLicence) {}
+                          String nom, String prenom, String numeroLicence,
+                          LocalDate certificatValideJusquAu) {}
 
     public record DemandeMotDePasseOublie(@NotBlank @Email String email) {}
 
@@ -206,7 +208,8 @@ public class AuthController {
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
                 u.getNom(),
                 u.getPrenom(),
-                u.getNumeroLicence());
+                u.getNumeroLicence(),
+                u.getCertificatValideJusquAu());
     }
 
     /**

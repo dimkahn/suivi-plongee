@@ -267,6 +267,7 @@ export class ApiService {
     prenom: string;
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
     numeroLicence?: string | null;
+    certificatValideJusquAu?: string | null;
   }): Observable<MoniteurVue> {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
@@ -278,6 +279,7 @@ export class ApiService {
     prenom: string;
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
     numeroLicence: string | null;
+    certificatValideJusquAu: string | null;
   }): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
   }

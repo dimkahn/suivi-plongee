@@ -2,6 +2,7 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../core/auth.service';
+import { etatCaci, libelleCaci } from '../../core/caci';
 
 type Section = 'identite' | 'email' | 'motDePasse';
 
@@ -21,6 +22,11 @@ type Section = 'identite' | 'email' | 'motDePasse';
         adressez-vous à un administrateur du club.
       </p>
     }
+
+    <p [class]="'caci caci-' + etatCaci(auth.session()?.certificatValideJusquAu)">
+      {{ libelleCaci(auth.session()?.certificatValideJusquAu) }}
+      <span class="secondaire">— date saisie par un administrateur, à qui remettre un nouveau certificat.</span>
+    </p>
 
     <section class="carte panneau">
       <h2>Identité</h2>
@@ -89,6 +95,11 @@ type Section = 'identite' | 'email' | 'motDePasse';
     .panneau h2 { margin-bottom: var(--pas); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
+    .caci { font-weight: 700; }
+    .caci .secondaire { font-weight: 400; }
+    .caci-valide { color: var(--acquis); }
+    .caci-bientot { color: var(--en-cours); }
+    .caci-expire, .caci-absent { color: #B3261E; }
     .succes {
       background: var(--acquis-clair); color: var(--acquis); border-radius: var(--r-s);
       padding: var(--pas-2); font-weight: 700;
@@ -97,6 +108,8 @@ type Section = 'identite' | 'email' | 'motDePasse';
 })
 export class MonCompteComponent {
   auth = inject(AuthService);
+  readonly etatCaci = etatCaci;
+  readonly libelleCaci = libelleCaci;
 
   prenom = this.auth.session()?.prenom ?? '';
   nom = this.auth.session()?.nom ?? '';
