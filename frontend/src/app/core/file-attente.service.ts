@@ -52,6 +52,10 @@ export class FileAttenteService {
   readonly derniereSync = signal<number | null>(null);
 
   private demarree = false;
+  /** Envoi en cours, partagé par tous les appelants de {@link vider}. */
+  private envoiEnCours: Promise<void> | null = null;
+  /** Une saisie est arrivée pendant un envoi : la renvoyer sans attendre le réveil suivant. */
+  private relancer = false;
 
   async demarrer(): Promise<void> {
     if (this.demarree) return;
@@ -92,8 +96,38 @@ export class FileAttenteService {
     return this.enAttente().filter(s => s.cursusId === cursusId);
   }
 
+  /**
+   * Attend que cette saisie ait quitté la file (acceptée ou refusée par le
+   * serveur). Renvoie false si elle y est encore : hors ligne ou serveur
+   * injoignable, elle partira plus tard, sans que l'écran ait à l'attendre.
+   */
+  async attendreEnvoi(referenceClient: string): Promise<boolean> {
+    const enFile = () => this.enAttente().some(s => s.referenceClient === referenceClient);
+    // Au plus : l'envoi déjà en cours, puis celui qui contient notre saisie.
+    for (let essai = 0; essai < 3 && enFile() && navigator.onLine; essai++) {
+      await this.vider();
+    }
+    return !enFile();
+  }
+
   async vider(): Promise<void> {
-    if (this.synchronisation()) return;
+    if (this.envoiEnCours) {
+      this.relancer = true;
+      return this.envoiEnCours;
+    }
+    this.envoiEnCours = this.envoyer();
+    try {
+      await this.envoiEnCours;
+    } finally {
+      this.envoiEnCours = null;
+    }
+    if (this.relancer) {
+      this.relancer = false;
+      if (navigator.onLine) await this.vider();
+    }
+  }
+
+  private async envoyer(): Promise<void> {
     const file = [...this.enAttente()].sort((a, b) => a.creeLe - b.creeLe);
     if (file.length === 0) return;
 

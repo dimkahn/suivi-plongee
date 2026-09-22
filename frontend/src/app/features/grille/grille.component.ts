@@ -15,6 +15,8 @@ import { DateFrPipe, dateFr } from '../../core/date-fr';
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
   enAttente: boolean;
+  /** Saisie en cours d'envoi au serveur (en ligne) : on affiche un indicateur. */
+  enregistrement: boolean;
 }
 
 interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
@@ -180,8 +182,13 @@ function normaliser(texte: string): string {
               } @else if (!reseau.enLigne()) {
                 <p class="secondaire">Validation possible au retour du réseau.</p>
               } @else {
-                <button type="button" class="bouton-principal" (click)="validerBloc(bloc)">
-                  Valider la compétence
+                <button type="button" class="bouton-principal" (click)="validerBloc(bloc)"
+                        [disabled]="validationEnCours() !== null">
+                  @if (validationEnCours() === bloc.id) {
+                    <span class="chargeur" aria-hidden="true"></span>Validation…
+                  } @else {
+                    Valider la compétence
+                  }
                 </button>
               }
             }
@@ -196,7 +203,11 @@ function normaliser(texte: string): string {
                     @if (critere.critereRealisation) {
                       <span class="secondaire">{{ critere.critereRealisation }}</span>
                     }
-                    @if (critere.enAttente) {
+                    @if (critere.enregistrement) {
+                      <span class="enregistrement" role="status">
+                        <span class="chargeur" aria-hidden="true"></span>Enregistrement…
+                      </span>
+                    } @else if (critere.enAttente) {
                       <span class="attente">En attente d'envoi</span>
                     } @else if (critere.parQui) {
                       <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le | dateFr }}</span>
@@ -209,7 +220,7 @@ function normaliser(texte: string): string {
                               [class]="'etat ' + choix.classe"
                               [class.actif]="critere.statut === choix.valeur"
                               [class.differe]="critere.enAttente && critere.statut === choix.valeur"
-                              [disabled]="!peutSaisir() || bloc.valide"
+                              [disabled]="!peutSaisir() || bloc.valide || critere.enregistrement"
                               [attr.aria-pressed]="critere.statut === choix.valeur"
                               (click)="noter(bloc, critere, choix.valeur)">
                         {{ choix.libelle }}
@@ -336,6 +347,18 @@ function normaliser(texte: string): string {
     .libelle { display: flex; flex-direction: column; gap: 2px; max-width: 62ch; }
     .trace { font-style: italic; }
     .attente { color: var(--en-cours); font-size: .875rem; font-weight: 700; }
+    .enregistrement {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--profond); font-size: .875rem; font-weight: 700;
+    }
+    .chargeur {
+      display: inline-block; flex: none; width: 1em; height: 1em; margin-right: 6px; vertical-align: -2px;
+      border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+      animation: tourner .8s linear infinite;
+    }
+    .enregistrement .chargeur { margin-right: 0; }
+    @keyframes tourner { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .chargeur { animation-duration: 2.4s; } }
 
     .etats { display: flex; gap: 4px; flex: none; }
     .etat {
@@ -400,6 +423,9 @@ export class GrilleComponent implements OnDestroy {
   ageDuCache = signal<string | null>(null);
   urlPhoto = signal<string | null>(null);
   exportEnCours = signal(false);
+  /** Critères en cours d'enregistrement : id du critère → saisie envoyée. */
+  enregistrements = signal<Map<number, { statut: Statut; reference: string }>>(new Map());
+  validationEnCours = signal<number | null>(null);
 
   /** Historique des critères consultés, tenu par critereId. */
   historiqueOuverts = signal<Set<number>>(new Set());
@@ -429,14 +455,19 @@ export class GrilleComponent implements OnDestroy {
 
     const attentes = new Map(
       this.file.pourCursus(Number(this.id())).map(s => [s.critereId, s]));
+    const enregistrements = this.enregistrements();
 
     let acquisTotal = 0;
     const blocs: BlocAffiche[] = g.blocs.map(bloc => {
       const criteres: CritereAffiche[] = bloc.criteres.map(c => {
+        const enCours = enregistrements.get(c.id);
         const differee = attentes.get(c.id);
+        // Pendant l'envoi puis le rechargement, on garde le statut choisi :
+        // sinon l'ancien réapparaîtrait entre la fin de l'envoi et la grille à jour.
+        if (enCours) return { ...c, statut: enCours.statut, enAttente: false, enregistrement: true };
         return differee
-          ? { ...c, statut: differee.statut, enAttente: true, le: differee.dateEvaluation }
-          : { ...c, enAttente: false };
+          ? { ...c, statut: differee.statut, enAttente: true, enregistrement: false, le: differee.dateEvaluation }
+          : { ...c, enAttente: false, enregistrement: false };
       });
       const acquis = criteres.filter(c => c.statut === 'ACQUIS').length;
       acquisTotal += acquis;
@@ -444,7 +475,8 @@ export class GrilleComponent implements OnDestroy {
         ...bloc,
         criteres,
         acquis,
-        attentes: criteres.filter(c => c.enAttente).length
+        // Une saisie en cours d'envoi compte comme en attente : pas de validation du bloc avant.
+        attentes: criteres.filter(c => c.enAttente || c.enregistrement).length
       };
     });
 
@@ -526,6 +558,8 @@ export class GrilleComponent implements OnDestroy {
   private reinitialiser(): void {
     this.grille.set(null);
     this.seanceId.set(null);
+    this.enregistrements.set(new Map());
+    this.validationEnCours.set(null);
     this.rechercheSeance.set('');
     this.comboboxSeanceOuvert.set(false);
     this.message.set(null);
@@ -620,7 +654,7 @@ export class GrilleComponent implements OnDestroy {
     }
 
     this.message.set(null);
-    await this.file.empiler({
+    const saisie = await this.file.empiler({
       cursusId: Number(this.id()),
       critereId: critere.id,
       seanceId: seance ? seance.id : null,
@@ -629,11 +663,26 @@ export class GrilleComponent implements OnDestroy {
       dateEvaluation: seance ? seance.date : new Date().toISOString().slice(0, 10)
     });
 
-    // La grille du serveur sera rafraîchie au prochain chargement ; en
-    // attendant, la superposition des saisies en file suffit à l'affichage.
-    if (this.reseau.enLigne()) {
-      setTimeout(() => void this.charger(), 1500);
+    // Hors ligne : rien à attendre, le badge « En attente d'envoi » suffit.
+    if (!this.reseau.enLigne()) return;
+
+    // En ligne : indicateur jusqu'à ce que la grille du serveur soit à jour.
+    this.marquerEnregistrement(critere.id, { statut, reference: saisie.referenceClient });
+    try {
+      if (await this.file.attendreEnvoi(saisie.referenceClient)) await this.charger();
+    } finally {
+      // Seulement si aucune saisie plus récente n'a pris le relais sur ce critère.
+      if (this.enregistrements().get(critere.id)?.reference === saisie.referenceClient) {
+        this.marquerEnregistrement(critere.id, null);
+      }
     }
+  }
+
+  private marquerEnregistrement(critereId: number, valeur: { statut: Statut; reference: string } | null): void {
+    const suivante = new Map(this.enregistrements());
+    if (valeur) suivante.set(critereId, valeur);
+    else suivante.delete(critereId);
+    this.enregistrements.set(suivante);
   }
 
   private verifierLocalement(seance: SeanceVue | null): string | null {
@@ -698,10 +747,17 @@ export class GrilleComponent implements OnDestroy {
   }
 
   validerBloc(bloc: BlocAffiche): void {
+    this.validationEnCours.set(bloc.id);
     this.api.validerCompetence(Number(this.id()), bloc.id).subscribe({
-      next: () => { this.message.set(null); void this.charger(); },
-      error: (e: HttpErrorResponse) =>
-        this.message.set(e.error?.detail ?? 'La validation n’a pas pu être enregistrée.')
+      next: async () => {
+        this.message.set(null);
+        await this.charger();
+        this.validationEnCours.set(null);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.validationEnCours.set(null);
+        this.message.set(e.error?.detail ?? 'La validation n’a pas pu être enregistrée.');
+      }
     });
   }
 
