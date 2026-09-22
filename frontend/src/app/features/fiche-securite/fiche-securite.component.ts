@@ -154,8 +154,9 @@ interface FormulaireEntete {
       <section class="carte panneau panneau-groupe">
         <h3>Groupe de plongeurs (réutilisable pour un séjour)</h3>
         <p class="secondaire">
-          Composez une fois la liste des plongeurs d'un séjour, puis glissez-les
-          dans les palanquées ci-dessous à chaque nouvelle fiche, sans ressaisie.
+          Composez une fois la liste des plongeurs d'un séjour, puis placez-les dans les
+          palanquées ci-dessous à chaque nouvelle fiche, sans ressaisie : touchez un plongeur
+          puis choisissez sa palanquée, ou glissez-le (appui long sur téléphone).
         </p>
 
         <div class="ligne-groupe">
@@ -192,9 +193,12 @@ interface FormulaireEntete {
           <div cdkDropList id="pool" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
                class="pool-plongeurs">
             @for (m of poolDisponible(); track m) {
-              <div class="jeton-plongeur" cdkDrag [cdkDragData]="m">
+              <button type="button" class="jeton-plongeur" cdkDrag [cdkDragData]="m"
+                      [cdkDragStartDelay]="delaiGlisser"
+                      [class.selectionne]="membreAPlacer() === m" [attr.aria-pressed]="membreAPlacer() === m"
+                      (click)="selectionnerPourPlacer(m)">
                 {{ m.prenom }} {{ m.nom }}{{ m.aptitude ? ' — ' + m.aptitude : '' }}
-              </div>
+              </button>
             }
             @if (poolDisponible().length === 0) {
               <p class="vide">
@@ -227,7 +231,7 @@ interface FormulaireEntete {
               <p class="vide">Glissez un plongeur ici, ou cliquez sur « + Plongeur ».</p>
             }
             @for (m of p.membres; track m; let iM = $index) {
-              <div class="plongeur" cdkDrag>
+              <div class="plongeur" cdkDrag [cdkDragStartDelay]="delaiGlisser">
                 <label class="discrete">Plongeur du club (optionnel, pré-remplit aptitude et qualification)</label>
                 <input type="text" class="selecteur-connu" placeholder="Rechercher un nom…" list="plongeurs-club"
                        (change)="choisirPlongeurConnu(iP, iM, $event)">
@@ -267,6 +271,23 @@ interface FormulaireEntete {
 
       <button type="button" class="bouton-discret" (click)="ajouterPalanquee()">+ Palanquée</button>
 
+      @if (membreAPlacer(); as m) {
+        <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
+          <p><strong>{{ m.prenom }} {{ m.nom }}</strong> → quelle palanquée ?</p>
+          <div class="choix-palanquees">
+            @for (p of palanquees(); track p; let iP = $index) {
+              <button type="button" class="bouton-principal" (click)="placer(m, iP)">
+                Palanquée {{ p.numero }} ({{ p.membres.length }})
+              </button>
+            }
+            <button type="button" class="bouton-discret" (click)="placerDansNouvellePalanquee(m)">
+              + Nouvelle palanquée
+            </button>
+            <button type="button" class="bouton-discret" (click)="membreAPlacer.set(null)">Annuler</button>
+          </div>
+        </div>
+      }
+
       <div class="actions-bas">
         <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
@@ -284,8 +305,17 @@ interface FormulaireEntete {
     h1 { margin: var(--pas-3) 0 0; }
     .titre-etape { margin: var(--pas-3) 0 0; }
     .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
-    /* Reste visible en tête d'écran pendant le défilement des palanquées, pour pouvoir y glisser un plongeur à tout moment. */
-    .panneau-groupe { position: sticky; top: 0; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,.08); }
+    /*
+     * Sur grand écran, le groupe reste visible en tête pendant le défilement des
+     * palanquées, pour y glisser un plongeur à tout moment ; sa liste est bornée
+     * en hauteur pour ne jamais masquer les palanquées. Sur téléphone, il
+     * défile normalement (il serait plus haut que l'écran) : on place un
+     * plongeur en le touchant puis en choisissant sa palanquée.
+     */
+    @media (min-width: 721px) and (min-height: 600px) {
+      .panneau-groupe { position: sticky; top: 0; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,.08); }
+      .panneau-groupe .pool-plongeurs { max-height: 30vh; overflow-y: auto; }
+    }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     textarea { resize: vertical; }
 
@@ -328,9 +358,23 @@ interface FormulaireEntete {
       border: 1px dashed var(--trait); border-radius: var(--r-s); margin-top: var(--pas);
     }
     .zone-membres-vide .vide { margin: 0; }
+    .jeton-plongeur.selectionne {
+      background: var(--profond); border-color: var(--profond); color: #fff; font-weight: 700;
+    }
+    .barre-placement {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      max-height: 45vh; overflow-y: auto;
+      padding: var(--pas-2) var(--pas-3) calc(var(--pas-2) + env(safe-area-inset-bottom, 0px));
+      background: var(--carte); border-top: 1px solid var(--trait);
+      box-shadow: 0 -6px 16px rgba(0,0,0,.15);
+    }
+    .barre-placement p { margin: 0 0 var(--pas); }
+    .choix-palanquees { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .choix-palanquees .bouton-principal { width: auto; margin: 0; }
     .jeton-plongeur {
       padding: var(--pas) var(--pas-2); border-radius: 999px; background: var(--brume, #eef4f5);
       border: 1px solid var(--trait); cursor: grab; font-size: .875rem; user-select: none;
+      min-height: 44px; color: var(--encre); font-weight: 400;
     }
     .cdk-drag-preview { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
     .cdk-drag-placeholder { opacity: 0.3; }
@@ -441,6 +485,43 @@ export class FicheSecuriteComponent {
    * reste intact, réutilisable sur d'autres fiches), soit un déplacement ou
    * réordonnancement entre palanquées de plongeurs déjà saisis sur cette fiche.
    */
+  /** Au doigt, le glisser ne démarre qu'après un appui long : un simple balayage fait défiler la page. */
+  readonly delaiGlisser = { touch: 400, mouse: 0 };
+
+  /** Plongeur du groupe touché, en attente du choix de sa palanquée (alternative au glisser-déposer). */
+  membreAPlacer = signal<MembreGroupeVue | null>(null);
+
+  selectionnerPourPlacer(m: MembreGroupeVue): void {
+    this.membreAPlacer.set(this.membreAPlacer() === m ? null : m);
+  }
+
+  placer(m: MembreGroupeVue, indexPalanquee: number): void {
+    const palanquee = this.palanquees()[indexPalanquee];
+    this.ajouterDepuisGroupe(m, indexPalanquee, palanquee.membres.length);
+    this.membreAPlacer.set(null);
+  }
+
+  placerDansNouvellePalanquee(m: MembreGroupeVue): void {
+    this.ajouterPalanquee();
+    this.placer(m, this.palanquees().length - 1);
+  }
+
+  /** Copie un membre du groupe dans une palanquée : le groupe reste intact, réutilisable sur d'autres fiches. */
+  private ajouterDepuisGroupe(source: MembreGroupeVue, indexPalanquee: number, position: number): void {
+    const nouveau: PlongeurVue = {
+      eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
+      aptitude: source.aptitude, aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
+      fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
+    };
+    const liste = this.palanquees().map((p, i) => {
+      if (i !== indexPalanquee) return p;
+      const membres = [...p.membres];
+      membres.splice(position, 0, nouveau);
+      return { ...p, membres };
+    });
+    this.palanquees.set(liste);
+  }
+
   onDropPalanquee(event: CdkDragDrop<PlongeurVue[]>, indexPalanquee: number): void {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -449,19 +530,8 @@ export class FicheSecuriteComponent {
     }
 
     if (event.previousContainer.id === 'pool') {
-      const source = event.item.data as MembreGroupeVue;
-      const nouveau: PlongeurVue = {
-        eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
-        aptitude: source.aptitude, aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
-        fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
-      };
-      const liste = this.palanquees().map((p, i) => {
-        if (i !== indexPalanquee) return p;
-        const membres = [...p.membres];
-        membres.splice(event.currentIndex, 0, nouveau);
-        return { ...p, membres };
-      });
-      this.palanquees.set(liste);
+      this.ajouterDepuisGroupe(event.item.data as MembreGroupeVue, indexPalanquee, event.currentIndex);
+      this.membreAPlacer.set(null);
       return;
     }
 
