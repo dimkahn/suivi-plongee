@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CursusVue, EleveVue, SaisonVue } from '../../core/modeles';
+import { DateFrPipe } from '../../core/date-fr';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 
@@ -36,7 +37,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
 @Component({
   selector: 'app-eleves',
-  imports: [FormsModule],
+  imports: [FormsModule, DateFrPipe],
   template: `
     <h1>Élèves</h1>
     <p class="secondaire">Dossier, autorisation de pratiquer, droit à l'image et photo.</p>
@@ -137,7 +138,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   <span class="nom">{{ e.prenom }} {{ e.nom }}</span>
                   <span class="secondaire">
                     {{ e.numeroLicence ? 'Licence ' + e.numeroLicence : 'Sans licence' }}
-                    · CACI {{ e.certificatValideJusquAu ?? 'non renseigné' }}
+                    · CACI {{ e.certificatValideJusquAu ? (e.certificatValideJusquAu | dateFr) : 'non renseigné' }}
                   </span>
                   <span class="secondaire">
                     Autorisation légale {{ e.autorisationLegale ? 'recueillie' : 'manquante' }}
@@ -197,7 +198,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   } @else {
                     <ul class="saisons">
                       @for (a of historique(); track a.id) {
-                        <li>{{ a.saison }} <span class="secondaire">— depuis le {{ a.adhereLe }}</span></li>
+                        <li>{{ a.saison }} <span class="secondaire">— depuis le {{ a.adhereLe | dateFr }}</span></li>
                       }
                     </ul>
                   }

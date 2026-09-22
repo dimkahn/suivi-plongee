@@ -3,10 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { SeanceVue } from '../../core/modeles';
+import { DateFrPipe } from '../../core/date-fr';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DateFrPipe],
   template: `
     <h1>Fiches de sécurité</h1>
     <p class="secondaire">
@@ -48,7 +49,7 @@ import { SeanceVue } from '../../core/modeles';
             <div class="ligne">
               <div class="identite">
                 <span class="nom">
-                  {{ s.date }}{{ aPlusieursCeJour(s) ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
+                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
                 </span>
                 <span class="secondaire">
                   {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}

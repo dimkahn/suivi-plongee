@@ -2,6 +2,7 @@ import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@a
 import { ApiService } from '../../core/api.service';
 import { FileAttenteService, SaisieRefusee } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
+import { DateFrPipe } from '../../core/date-fr';
 
 /**
  * Trois informations, par ordre d'urgence décroissante :
@@ -14,6 +15,7 @@ import { ReseauService } from '../../core/reseau.service';
  */
 @Component({
   selector: 'app-bandeau-sync',
+  imports: [DateFrPipe],
   standalone: true,
   template: `
     @if (file.refus().length > 0) {
@@ -24,7 +26,7 @@ import { ReseauService } from '../../core/reseau.service';
             @for (r of file.refus(); track r.referenceClient) {
               <li>
                 <span>{{ r.raison }}</span>
-                <span class="secondaire">Saisie du {{ r.dateEvaluation }}</span>
+                <span class="secondaire">Saisie du {{ r.dateEvaluation | dateFr }}</span>
                 <button type="button" class="lien" (click)="ecarter(r)">Écarter</button>
               </li>
             }

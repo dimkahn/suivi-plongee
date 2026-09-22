@@ -10,6 +10,7 @@ import { AuthService } from '../../core/auth.service';
 import { FileAttenteService } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
 import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
+import { DateFrPipe, dateFr } from '../../core/date-fr';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -25,16 +26,10 @@ function normaliser(texte: string): string {
   return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 }
 
-/** 2026-10-12 → 12/10/2026 */
-function dateFr(iso: string): string {
-  const [a, m, j] = iso.split('-');
-  return `${j}/${m}/${a}`;
-}
-
 @Component({
   selector: 'app-grille',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DateFrPipe],
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -176,7 +171,7 @@ function dateFr(iso: string): string {
             </div>
 
             @if (bloc.valide) {
-              <p class="valide">Validée le {{ bloc.dateValidation }} par {{ bloc.valideePar }}</p>
+              <p class="valide">Validée le {{ bloc.dateValidation | dateFr }} par {{ bloc.valideePar }}</p>
             } @else if (peutSaisir() && bloc.acquis === bloc.total) {
               @if (bloc.attentes > 0) {
                 <p class="secondaire">
@@ -204,7 +199,7 @@ function dateFr(iso: string): string {
                     @if (critere.enAttente) {
                       <span class="attente">En attente d'envoi</span>
                     } @else if (critere.parQui) {
-                      <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le }}</span>
+                      <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le | dateFr }}</span>
                     }
                   </div>
 
@@ -240,7 +235,7 @@ function dateFr(iso: string): string {
                         @for (entree of entrees; track entree.id) {
                           <div class="entree-historique">
                             <span class="secondaire">
-                              {{ entree.dateEvaluation }} · {{ entree.parQui }} · {{ libelleStatut(entree.statut) }}
+                              {{ entree.dateEvaluation | dateFr }} · {{ entree.parQui }} · {{ libelleStatut(entree.statut) }}
                             </span>
                             @if (entree.commentaire) { <p>{{ entree.commentaire }}</p> }
                           </div>

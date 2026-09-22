@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DateFrPipe } from '../../core/date-fr';
 import {
   BlocReferentielVue, CritereReferentielVue, DemandeBlocReferentiel, DemandeCritereReferentiel,
   DemandeReferentiel, ReferentielVue
@@ -60,7 +61,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
 
 @Component({
   selector: 'app-referentiel-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, DateFrPipe],
   template: `
     <h1>Référentiel MFT</h1>
 
@@ -85,7 +86,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                 (ngModelChange)="selectionnerVersion($event)">
           @for (r of versionsDuNiveau(); track r.id) {
             <option [ngValue]="r.id">
-              MFT {{ r.versionMft }} · {{ r.dateApplication }}{{ r.actif ? '' : ' (inactif)' }}
+              MFT {{ r.versionMft }} · {{ r.dateApplication | dateFr }}{{ r.actif ? '' : ' (inactif)' }}
             </option>
           }
         </select>

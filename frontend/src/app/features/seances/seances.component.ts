@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
 import { SeanceVue } from '../../core/modeles';
+import { DateFrPipe, dateFr } from '../../core/date-fr';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -19,7 +20,7 @@ function formulaireVide(): FormulaireSeance {
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule],
+  imports: [FormsModule, DateFrPipe],
   template: `
     <h1>Séances</h1>
     <p class="secondaire">
@@ -113,7 +114,7 @@ function formulaireVide(): FormulaireSeance {
             } @else {
               <div class="ligne">
                 <div class="identite">
-                  <span class="nom">{{ s.date }}{{ s.ordre > 1 ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}</span>
+                  <span class="nom">{{ s.date | dateFr }}{{ s.ordre > 1 ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}</span>
                   <span class="secondaire">
                     {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
                     {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
@@ -258,7 +259,7 @@ export class SeancesComponent {
   }
 
   supprimer(s: SeanceVue): void {
-    if (!confirm(`Supprimer la séance du ${s.date} ?`)) return;
+    if (!confirm(`Supprimer la séance du ${dateFr(s.date)} ?`)) return;
     this.message.set(null);
     this.api.supprimerSeance(s.id).subscribe({
       next: () => this.liste.set(this.liste().filter(x => x.id !== s.id)),

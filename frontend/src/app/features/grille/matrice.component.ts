@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal, ChangeDetectionStrategy } f
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { MatriceVue } from '../../core/modeles';
+import { DateFrPipe } from '../../core/date-fr';
 
 const LIBELLES: Record<string, string> = {
   NON_ABORDE: 'NA', EN_COURS: 'ECA', ACQUIS: 'A'
@@ -9,7 +10,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-matrice',
-  imports: [RouterLink],
+  imports: [RouterLink, DateFrPipe],
   template: `
     <a [routerLink]="['/cursus', id()]" class="retour">&larr; Retour à la grille</a>
 
@@ -27,7 +28,7 @@ const LIBELLES: Record<string, string> = {
             <tr>
               <th class="figee">Critère</th>
               @for (s of m.seances; track s.id) {
-                <th>{{ s.date }}</th>
+                <th>{{ s.date | dateFr }}</th>
               }
             </tr>
           </thead>
