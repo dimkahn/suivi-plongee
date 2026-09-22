@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
@@ -12,6 +12,10 @@ interface FormulaireSeance {
   lieu: string;
   profondeurMax: number | null;
   commentaire: string;
+}
+
+function normaliser(texte: string): string {
+  return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 }
 
 function formulaireVide(): FormulaireSeance {
@@ -63,13 +67,20 @@ function formulaireVide(): FormulaireSeance {
       }
     </section>
 
+    <label for="recherche-seance">Rechercher une séance</label>
+    <input id="recherche-seance" type="search" name="rechercheSeance"
+           placeholder="Date (12/10, 12/10/2026, 2026-10), lieu, milieu ou commentaire"
+           [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
+
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucune séance sur cette saison.</p></div>
+    } @else if (listeFiltree().length === 0) {
+      <div class="carte vide"><p>Aucune séance ne correspond à la recherche.</p></div>
     } @else {
       <ul>
-        @for (s of liste(); track s.id) {
+        @for (s of listeFiltree(); track s.id) {
           <li class="carte">
             @if (edition() === s.id) {
               @if (formulaireEdition(); as f) {
@@ -147,6 +158,8 @@ function formulaireVide(): FormulaireSeance {
     textarea { resize: vertical; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
+    #recherche-seance { max-width: 420px; margin-bottom: var(--pas-2); }
+
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
@@ -168,6 +181,18 @@ export class SeancesComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
+
+  recherche = signal('');
+
+  /** Un seul champ : date (ISO ou JJ/MM/AAAA), lieu, milieu ou commentaire, sans accents ni casse. */
+  listeFiltree = computed(() => {
+    const recherche = normaliser(this.recherche());
+    if (!recherche) return this.liste();
+    return this.liste().filter(s =>
+      [s.date, dateFr(s.date), s.lieu ?? '', s.commentaire ?? '',
+       s.milieu === 'NATUREL' ? 'milieu naturel' : 'milieu artificiel piscine fosse']
+        .some(champ => normaliser(champ).includes(recherche)));
+  });
 
   formulaireCreation = signal<FormulaireSeance>(formulaireVide());
 
