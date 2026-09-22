@@ -5,6 +5,7 @@ import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -37,6 +38,12 @@ public class Utilisateur {
     private NiveauEncadrement niveauEncadrement;
 
     private String numeroLicence;
+
+    /**
+     * Fin de validite du CACI de l'encadrant. Donnee de sante : on ne stocke
+     * que cette date, jamais le certificat medical lui-meme.
+     */
+    private LocalDate certificatValideJusquAu;
 
     @Column(nullable = false)
     private Instant creeLe = Instant.now();
@@ -119,6 +126,18 @@ public class Utilisateur {
 
     public void setNumeroLicence(String numeroLicence) {
         this.numeroLicence = numeroLicence;
+    }
+
+    public boolean certificatValideAu(LocalDate date) {
+        return certificatValideJusquAu != null && !certificatValideJusquAu.isBefore(date);
+    }
+
+    public LocalDate getCertificatValideJusquAu() {
+        return certificatValideJusquAu;
+    }
+
+    public void setCertificatValideJusquAu(LocalDate certificatValideJusquAu) {
+        this.certificatValideJusquAu = certificatValideJusquAu;
     }
 
     public Instant getCreeLe() {

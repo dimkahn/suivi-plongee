@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
@@ -76,7 +77,8 @@ public class AdminMoniteurService {
      */
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
-                             NiveauEncadrement niveauEncadrement, String numeroLicence) {
+                             NiveauEncadrement niveauEncadrement, String numeroLicence,
+                             LocalDate certificatValideJusquAu) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
             throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
         }
@@ -87,6 +89,7 @@ public class AdminMoniteurService {
         u.setPrenom(prenom);
         u.setNiveauEncadrement(niveauEncadrement);
         u.setNumeroLicence(numeroLicence);
+        u.setCertificatValideJusquAu(certificatValideJusquAu);
         u.setActif(true);
         u.setRoles(EnumSet.of(RoleNom.MONITEUR));
 
@@ -108,7 +111,8 @@ public class AdminMoniteurService {
      */
     @Transactional
     public Utilisateur modifier(Long id, String email, String nom, String prenom,
-                                NiveauEncadrement niveauEncadrement, String numeroLicence) {
+                                NiveauEncadrement niveauEncadrement, String numeroLicence,
+                                LocalDate certificatValideJusquAu) {
         Utilisateur u = moniteur(id);
         String nouvelEmail = email.trim();
         boolean emailChange = !nouvelEmail.equalsIgnoreCase(u.getEmail());
@@ -120,6 +124,7 @@ public class AdminMoniteurService {
         u.setPrenom(prenom.trim());
         u.setNiveauEncadrement(niveauEncadrement);
         u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
+        u.setCertificatValideJusquAu(certificatValideJusquAu);
         utilisateurs.save(u);
         if (emailChange) refreshTokens.revoquerTout(id);
         return u;

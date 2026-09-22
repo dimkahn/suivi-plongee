@@ -10,6 +10,8 @@ export interface Session {
   nom: string;
   prenom: string;
   numeroLicence: string | null;
+  /** Fin de validité du CACI de l'encadrant (saisie par un admin). */
+  certificatValideJusquAu: string | null;
 }
 
 export interface CursusVue {
@@ -114,6 +116,7 @@ export interface MoniteurVue {
   actif: boolean;
   niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
   numeroLicence: string | null;
+  certificatValideJusquAu: string | null;
 }
 
 export interface SeanceEnTete {

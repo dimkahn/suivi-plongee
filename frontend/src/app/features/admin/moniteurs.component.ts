@@ -4,8 +4,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { MoniteurVue } from '../../core/modeles';
+import { EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 
 type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
+
+function aVerifier(m: MoniteurVue): boolean {
+  return etatCaci(m.certificatValideJusquAu) !== 'valide';
+}
 
 @Component({
   selector: 'app-moniteurs',
@@ -46,14 +51,34 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
       <label for="licence">N° de licence</label>
       <input id="licence" type="text" name="licence" [(ngModel)]="numeroLicence" placeholder="Facultatif">
 
+      <label for="caci">CACI valide jusqu'au</label>
+      <input id="caci" type="date" name="caci" [(ngModel)]="certificatValideJusquAu">
+
       <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
         {{ envoiCreation() ? 'Création…' : 'Ajouter le moniteur' }}
       </button>
     </section>
 
-    <label for="filtre-nom">Rechercher un moniteur</label>
-    <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
-           [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+    <div class="filtres">
+      <div>
+        <label for="filtre-nom">Rechercher un moniteur</label>
+        <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
+               [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
+      </div>
+      <div>
+        <label for="filtre-caci">CACI</label>
+        <select id="filtre-caci" name="filtreCaci" [ngModel]="filtreCaci()" (ngModelChange)="filtreCaci.set($event)">
+          <option value="TOUS">Tous</option>
+          <option value="A_VERIFIER">À vérifier (expiré, bientôt échu ou non renseigné)</option>
+        </select>
+      </div>
+    </div>
+
+    @if (aVerifier() > 0) {
+      <p class="alerte" role="status">
+        {{ aVerifier() }} moniteur(s) actif(s) avec un CACI expiré, bientôt échu ou non renseigné.
+      </p>
+    }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -71,6 +96,9 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
                 <span class="secondaire">{{ m.email }}</span>
                 <span class="secondaire">
                   {{ m.niveauEncadrement }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
+                </span>
+                <span [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)">
+                  {{ libelleCaci(m.certificatValideJusquAu) }}
                 </span>
               </div>
               <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
@@ -116,6 +144,10 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
                 <input [id]="'licence-' + m.id" type="text" name="editionLicence"
                        [(ngModel)]="edition.numeroLicence" placeholder="Facultatif">
 
+                <label [for]="'caci-' + m.id">CACI valide jusqu'au</label>
+                <input [id]="'caci-' + m.id" type="date" name="editionCaci"
+                       [(ngModel)]="edition.certificatValideJusquAu">
+
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="modifier(m)"
                           [disabled]="envoiEdition()">
@@ -157,7 +189,18 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
-    #filtre-nom { max-width: 320px; margin-bottom: var(--pas-2); }
+    .filtres {
+      display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); align-items: flex-end;
+      margin-bottom: var(--pas-2);
+    }
+    .filtres > div { min-width: 220px; flex: 0 1 320px; }
+    .filtres label { margin: 0 0 4px; }
+    .filtres input, .filtres select { margin: 0; }
+
+    .caci { font-size: .875rem; font-weight: 700; }
+    .caci-valide { color: var(--acquis); }
+    .caci-bientot { color: var(--en-cours); }
+    .caci-expire, .caci-absent { color: #B3261E; }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -191,22 +234,32 @@ export class MoniteursComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
 
+  readonly etatCaci = etatCaci;
+  readonly libelleCaci = libelleCaci;
+
   filtreNom = signal('');
+  filtreCaci = signal<'TOUS' | 'A_VERIFIER'>('TOUS');
   listeFiltree = computed(() => {
     const recherche = this.filtreNom().trim().toLocaleLowerCase();
-    if (!recherche) return this.liste();
-    return this.liste().filter(m => `${m.prenom} ${m.nom}`.toLocaleLowerCase().includes(recherche));
+    return this.liste().filter(m =>
+      (!recherche || `${m.prenom} ${m.nom}`.toLocaleLowerCase().includes(recherche))
+      && (this.filtreCaci() === 'TOUS' || aVerifier(m)));
   });
+
+  /** Seuls les comptes actifs comptent : un moniteur désactivé n'encadre plus. */
+  aVerifier = computed(() => this.liste().filter(m => m.actif && aVerifier(m)).length);
 
   prenom = '';
   nom = '';
   email = '';
   niveauEncadrement: NiveauEncadrement = 'E1';
   numeroLicence = '';
+  certificatValideJusquAu = '';
   envoiCreation = signal(false);
 
   moniteurEdite = signal<number | null>(null);
-  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, numeroLicence: '' };
+  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, numeroLicence: '',
+              certificatValideJusquAu: '' };
   envoiEdition = signal(false);
 
   moniteurMotDePasse = signal<number | null>(null);
@@ -240,7 +293,8 @@ export class MoniteursComponent {
       nom: this.nom,
       prenom: this.prenom,
       niveauEncadrement: this.niveauEncadrement,
-      numeroLicence: this.numeroLicence || null
+      numeroLicence: this.numeroLicence || null,
+      certificatValideJusquAu: this.certificatValideJusquAu || null
     }).subscribe({
       next: m => {
         this.envoiCreation.set(false);
@@ -249,6 +303,7 @@ export class MoniteursComponent {
         this.nom = '';
         this.email = '';
         this.numeroLicence = '';
+        this.certificatValideJusquAu = '';
         this.message.set(`${m.prenom} ${m.nom} a été ajouté·e ; un lien pour définir son mot de passe lui a été envoyé.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -278,7 +333,8 @@ export class MoniteursComponent {
       nom: m.nom,
       email: m.email,
       niveauEncadrement: m.niveauEncadrement ?? 'E1',
-      numeroLicence: m.numeroLicence ?? ''
+      numeroLicence: m.numeroLicence ?? '',
+      certificatValideJusquAu: m.certificatValideJusquAu ?? ''
     };
     this.moniteurEdite.set(m.id);
   }
@@ -291,7 +347,9 @@ export class MoniteursComponent {
     }
     this.envoiEdition.set(true);
     this.message.set(null);
-    this.api.modifierMoniteur(m.id, { ...e, numeroLicence: e.numeroLicence || null }).subscribe({
+    this.api.modifierMoniteur(m.id, {
+      ...e, numeroLicence: e.numeroLicence || null, certificatValideJusquAu: e.certificatValideJusquAu || null
+    }).subscribe({
       next: maj => {
         this.envoiEdition.set(false);
         this.moniteurEdite.set(null);
