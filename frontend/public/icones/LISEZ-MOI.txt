@@ -1,1 +1,12 @@
-Placer ici icone-192.png et icone-512.png (logo du club).
+Icônes générées depuis le logo du club (logo-cppjvo.png) : le cercle est
+découpé sur fond transparent, le fond papier d'origine est retiré.
+
+  icone-192.png, icone-512.png   PWA, « any » : logo rond, fond transparent
+  icone-maskable-512.png         PWA, « maskable » : fond #0C3547, logo dans
+                                 la zone sûre (Android découpe en cercle/carré)
+  apple-touch-icon.png           iOS (180 px, fond blanc : iOS noircit la transparence)
+  ../favicon.ico                 16, 32 et 48 px
+  ../logo-club.png               bandeau et page de connexion (160 px)
+
+Pour un nouveau logo : refaire le découpage (centre et rayon du cercle) et
+régénérer toutes les tailles d'un coup.
