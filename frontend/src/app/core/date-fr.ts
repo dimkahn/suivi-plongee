@@ -11,6 +11,12 @@ export function dateFr(iso: string | null | undefined): string {
   return j && m && a ? `${j}/${m}/${a}` : iso;
 }
 
+/** Date du jour au format ISO (AAAA-MM-JJ), en heure locale de l'appareil (pas en UTC). */
+export function dateDuJour(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 @Pipe({ name: 'dateFr' })
 export class DateFrPipe implements PipeTransform {
   transform(iso: string | null | undefined): string {

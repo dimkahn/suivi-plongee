@@ -125,6 +125,7 @@ public class SeanceController {
                                      @Valid @RequestBody List<DemandePresence> demandes) {
         Seance seance = seances.findById(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
+        seance.verifierQueLaSeanceAEuLieu("enregistrer les présences");
         for (DemandePresence d : demandes) {
             Cursus c = cursus.findById(d.cursusId())
                     .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));

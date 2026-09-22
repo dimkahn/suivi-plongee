@@ -1,5 +1,6 @@
 package fr.club.plongee.evaluation.service;
 
+import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.domain.Evaluation;
@@ -87,6 +88,11 @@ public class EvaluationService {
                             + critere.getBloc().getIntitule() + ".");
         }
 
+        // Compétence transverse sans séance : c'est alors la date saisie qui ne doit pas être future.
+        if (notation.dateEvaluation() != null && notation.dateEvaluation().isAfter(Calendrier.aujourdhui())) {
+            throw new RegleMetierException("Une évaluation ne peut pas être datée dans le futur.");
+        }
+
         Utilisateur moniteur = utilisateurs.findById(auteur.id()).orElseThrow();
 
         Evaluation e = new Evaluation();
@@ -121,6 +127,8 @@ public class EvaluationService {
      */
     private void verifierSeance(Cursus cursus, BlocCompetence bloc, Seance seance) {
         Referentiel ref = cursus.getReferentiel();
+
+        seance.verifierQueLaSeanceAEuLieu("noter une compétence");
 
         if (!seance.getSaison().getId().equals(cursus.getSaison().getId())) {
             throw new RegleMetierException("Cette seance n'appartient pas a la saison du cursus.");

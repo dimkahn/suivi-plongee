@@ -1,5 +1,7 @@
 package fr.club.plongee.formation.domain;
 
+import fr.club.plongee.commun.Calendrier;
+import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 import org.hibernate.envers.Audited;
@@ -61,6 +63,23 @@ public class Seance {
 
     public void setSaison(Saison saison) {
         this.saison = saison;
+    }
+
+    /**
+     * Une séance à venir se prépare (création, fiche de sécurité prévue) mais
+     * ne se remplit pas : ni évaluation, ni présence, ni profil réalisé.
+     */
+    public boolean estAVenir() {
+        return dateSeance.isAfter(Calendrier.aujourdhui());
+    }
+
+    /** Refuse de remplir une séance à venir ; {@code quoi} complète le message (« noter une compétence »). */
+    public void verifierQueLaSeanceAEuLieu(String quoi) {
+        if (estAVenir()) {
+            throw new RegleMetierException(
+                    "La séance du " + dateSeance.format(Calendrier.DATE_FR)
+                            + " n'a pas encore eu lieu : impossible d'y " + quoi + ".");
+        }
     }
 
     public LocalDate getDateSeance() {

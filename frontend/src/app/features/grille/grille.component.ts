@@ -10,7 +10,7 @@ import { AuthService } from '../../core/auth.service';
 import { FileAttenteService } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
 import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
-import { DateFrPipe, dateFr } from '../../core/date-fr';
+import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -511,12 +511,17 @@ export class GrilleComponent implements OnDestroy {
 
   peutVoirHistoriqueSaisons = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
 
+  /**
+   * Séances sur lesquelles on peut noter : déjà passées (ou du jour) — le
+   * serveur refuse une séance à venir — et en milieu naturel si le niveau l'exige.
+   */
   seancesUtilisables = computed(() => {
     const g = this.grille();
     if (!g) return [];
-    return g.milieuNaturelExclusif
-      ? this.seances().filter(s => s.milieu === 'NATUREL')
-      : this.seances();
+    const aujourdhui = dateDuJour();
+    return this.seances()
+      .filter(s => s.date <= aujourdhui)
+      .filter(s => !g.milieuNaturelExclusif || s.milieu === 'NATUREL');
   });
 
   rechercheSeance = signal('');
@@ -660,7 +665,7 @@ export class GrilleComponent implements OnDestroy {
       seanceId: seance ? seance.id : null,
       statut,
       commentaire: null,
-      dateEvaluation: seance ? seance.date : new Date().toISOString().slice(0, 10)
+      dateEvaluation: seance ? seance.date : dateDuJour()
     });
 
     // Hors ligne : rien à attendre, le badge « En attente d'envoi » suffit.
@@ -829,7 +834,7 @@ export class GrilleComponent implements OnDestroy {
       seanceId: seance ? seance.id : null,
       statut: critere.statut,
       commentaire: texte,
-      dateEvaluation: seance ? seance.date : new Date().toISOString().slice(0, 10)
+      dateEvaluation: seance ? seance.date : dateDuJour()
     });
 
     const restants = { ...this.brouillons() };
