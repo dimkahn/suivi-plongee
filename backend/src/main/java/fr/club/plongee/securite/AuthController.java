@@ -34,7 +34,9 @@ import java.util.List;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    public record DemandeConnexion(@NotBlank @Email String email, @NotBlank String motDePasse) {}
+    /** seSouvenir absent (ancienne version de l'appli en cache) : comportement historique, persistant. */
+    public record DemandeConnexion(@NotBlank @Email String email, @NotBlank String motDePasse,
+                                   Boolean seSouvenir) {}
 
     public record Session(String jetonAcces, long expireDansSecondes, String nomComplet,
                           String email, List<String> roles, String niveauEncadrement,
@@ -63,13 +65,15 @@ public class AuthController {
     private final ReinitialisationMotDePasseService reinitialisations;
     private final MonCompteService monCompte;
     private final Duration dureeRefresh;
+    private final Duration dureeSession;
 
     public AuthController(AuthenticationManager authManager, DetailsUtilisateurService detailsService,
                           UtilisateurRepository utilisateurs, RefreshTokenRepository refreshTokens,
                           JwtService jwtService, PasswordEncoder encodeur,
                           ReinitialisationMotDePasseService reinitialisations,
                           MonCompteService monCompte,
-                          @Value("${app.jwt.duree-refresh-jours}") long jours) {
+                          @Value("${app.jwt.duree-refresh-jours}") long jours,
+                          @Value("${app.jwt.duree-session-heures}") long heuresSession) {
         this.authManager = authManager;
         this.detailsService = detailsService;
         this.utilisateurs = utilisateurs;
@@ -79,6 +83,7 @@ public class AuthController {
         this.reinitialisations = reinitialisations;
         this.monCompte = monCompte;
         this.dureeRefresh = Duration.ofDays(jours);
+        this.dureeSession = Duration.ofHours(heuresSession);
     }
 
     @PostMapping("/connexion")
@@ -87,7 +92,7 @@ public class AuthController {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(demande.email(), demande.motDePasse()));
         Utilisateur u = utilisateurs.findByEmailIgnoreCase(demande.email()).orElseThrow();
-        poserCookieRefresh(u, reponse);
+        poserCookieRefresh(u, !Boolean.FALSE.equals(demande.seSouvenir()), reponse);
         return session(UtilisateurPrincipal.de(u), u);
     }
 
@@ -103,7 +108,7 @@ public class AuthController {
         // rotation : le jeton presente est revoque et remplace
         enregistre.setRevoque(true);
         Utilisateur u = enregistre.getUtilisateur();
-        poserCookieRefresh(u, reponse);
+        poserCookieRefresh(u, enregistre.isPersistant(), reponse);
         return session(UtilisateurPrincipal.de(u), u);
     }
 
@@ -145,15 +150,21 @@ public class AuthController {
         return session(UtilisateurPrincipal.de(u), u);
     }
 
-    /** Les sessions ouvertes ailleurs sont fermees ; celle de cet appareil est rouverte. */
+    /**
+     * Les sessions ouvertes ailleurs sont fermees ; celle de cet appareil est
+     * rouverte, avec le meme choix « se souvenir de moi » qu'avant.
+     */
     @PutMapping("/moi/mot-de-passe")
     @Transactional
     public Session changerMotDePasse(@AuthenticationPrincipal UtilisateurPrincipal principal,
                                      @Valid @RequestBody DemandeChangementMotDePasse demande,
+                                     @CookieValue(name = COOKIE_REFRESH, required = false) String jeton,
                                      HttpServletResponse reponse) {
+        boolean persistant = jeton == null || refreshTokens.findByEmpreinteAndRevoqueFalse(empreinte(jeton))
+                .map(RefreshToken::isPersistant).orElse(true);
         Utilisateur u = monCompte.changerMotDePasse(principal.id(), demande.motDePasseActuel(),
                 demande.nouveauMotDePasse());
-        poserCookieRefresh(u, reponse);
+        poserCookieRefresh(u, persistant, reponse);
         return session(UtilisateurPrincipal.de(u), u);
     }
 
@@ -198,7 +209,11 @@ public class AuthController {
                 u.getNumeroLicence());
     }
 
-    private void poserCookieRefresh(Utilisateur u, HttpServletResponse reponse) {
+    /**
+     * Persistant : cookie avec Max-Age, qui survit a la fermeture du navigateur.
+     * Sinon : cookie de session (sans Max-Age) et expiration courte en base.
+     */
+    private void poserCookieRefresh(Utilisateur u, boolean persistant, HttpServletResponse reponse) {
         byte[] brut = new byte[48];
         ALEA.nextBytes(brut);
         String jeton = Base64.getUrlEncoder().withoutPadding().encodeToString(brut);
@@ -206,20 +221,22 @@ public class AuthController {
         RefreshToken t = new RefreshToken();
         t.setUtilisateur(u);
         t.setEmpreinte(empreinte(jeton));
-        t.setExpireLe(Instant.now().plus(dureeRefresh));
+        t.setPersistant(persistant);
+        t.setExpireLe(Instant.now().plus(persistant ? dureeRefresh : dureeSession));
         refreshTokens.save(t);
 
-        reponse.addHeader("Set-Cookie", cookie(jeton, dureeRefresh).toString());
+        reponse.addHeader("Set-Cookie", cookie(jeton, persistant ? dureeRefresh : null).toString());
     }
 
+    /** duree null : cookie de session, efface par le navigateur a sa fermeture. */
     private ResponseCookie cookie(String valeur, Duration duree) {
-        return ResponseCookie.from(COOKIE_REFRESH, valeur)
+        ResponseCookie.ResponseCookieBuilder cookie = ResponseCookie.from(COOKIE_REFRESH, valeur)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("Strict")
-                .path("/api/auth")
-                .maxAge(duree)
-                .build();
+                .path("/api/auth");
+        if (duree != null) cookie.maxAge(duree);
+        return cookie.build();
     }
 
     private static String empreinte(String jeton) {
