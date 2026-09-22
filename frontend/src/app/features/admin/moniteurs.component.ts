@@ -13,7 +13,8 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
   template: `
     <h1>Moniteurs</h1>
     <p class="secondaire">
-      Ajout, activation, mot de passe : les gestes réservés aux administrateurs.
+      Ajout, modification, activation, mot de passe : les gestes réservés aux administrateurs.
+      Le niveau d'encadrement ne se change qu'ici.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -78,6 +79,9 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
             </div>
 
             <div class="actions">
+              <button type="button" class="bouton-discret" (click)="basculerEdition(m)">
+                Modifier
+              </button>
               <button type="button" class="bouton-discret" (click)="changerActivation(m)">
                 {{ m.actif ? 'Désactiver' : 'Activer' }}
               </button>
@@ -88,6 +92,41 @@ type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
                 Supprimer
               </button>
             </div>
+
+            @if (moniteurEdite() === m.id) {
+              <div class="mot-de-passe">
+                <label [for]="'prenom-' + m.id">Prénom</label>
+                <input [id]="'prenom-' + m.id" type="text" name="editionPrenom" [(ngModel)]="edition.prenom">
+
+                <label [for]="'nom-' + m.id">Nom</label>
+                <input [id]="'nom-' + m.id" type="text" name="editionNom" [(ngModel)]="edition.nom">
+
+                <label [for]="'email-' + m.id">E-mail</label>
+                <input [id]="'email-' + m.id" type="email" name="editionEmail" [(ngModel)]="edition.email">
+
+                <label [for]="'niveau-' + m.id">Niveau d'encadrement</label>
+                <select [id]="'niveau-' + m.id" name="editionNiveau" [(ngModel)]="edition.niveauEncadrement">
+                  <option value="E1">E1</option>
+                  <option value="E2">E2</option>
+                  <option value="E3">E3</option>
+                  <option value="E4">E4</option>
+                </select>
+
+                <label [for]="'licence-' + m.id">N° de licence</label>
+                <input [id]="'licence-' + m.id" type="text" name="editionLicence"
+                       [(ngModel)]="edition.numeroLicence" placeholder="Facultatif">
+
+                <div class="actions">
+                  <button type="button" class="bouton-principal" (click)="modifier(m)"
+                          [disabled]="envoiEdition()">
+                    {{ envoiEdition() ? 'Enregistrement…' : 'Enregistrer' }}
+                  </button>
+                  <button type="button" class="bouton-discret" (click)="basculerEdition(m)">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            }
 
             @if (moniteurMotDePasse() === m.id) {
               <div class="mot-de-passe">
@@ -166,6 +205,10 @@ export class MoniteursComponent {
   numeroLicence = '';
   envoiCreation = signal(false);
 
+  moniteurEdite = signal<number | null>(null);
+  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, numeroLicence: '' };
+  envoiEdition = signal(false);
+
   moniteurMotDePasse = signal<number | null>(null);
   nouveauMotDePasse = '';
   envoiMotDePasse = signal(false);
@@ -224,7 +267,48 @@ export class MoniteursComponent {
     });
   }
 
+  basculerEdition(m: MoniteurVue): void {
+    if (this.moniteurEdite() === m.id) {
+      this.moniteurEdite.set(null);
+      return;
+    }
+    this.moniteurMotDePasse.set(null);
+    this.edition = {
+      prenom: m.prenom,
+      nom: m.nom,
+      email: m.email,
+      niveauEncadrement: m.niveauEncadrement ?? 'E1',
+      numeroLicence: m.numeroLicence ?? ''
+    };
+    this.moniteurEdite.set(m.id);
+  }
+
+  modifier(m: MoniteurVue): void {
+    const e = this.edition;
+    if (!e.prenom.trim() || !e.nom.trim() || !e.email.trim()) {
+      this.message.set('Prénom, nom et e-mail sont obligatoires.');
+      return;
+    }
+    this.envoiEdition.set(true);
+    this.message.set(null);
+    this.api.modifierMoniteur(m.id, { ...e, numeroLicence: e.numeroLicence || null }).subscribe({
+      next: maj => {
+        this.envoiEdition.set(false);
+        this.moniteurEdite.set(null);
+        this.remplacer(maj);
+        this.message.set(maj.email.toLowerCase() !== m.email.toLowerCase()
+          ? `${maj.prenom} ${maj.nom} a été modifié·e ; il ou elle devra se reconnecter avec ${maj.email}.`
+          : `${maj.prenom} ${maj.nom} a été modifié·e.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoiEdition.set(false);
+        this.message.set(err.error?.detail ?? "La modification n'a pas pu être enregistrée.");
+      }
+    });
+  }
+
   basculerMotDePasse(id: number): void {
+    this.moniteurEdite.set(null);
     this.moniteurMotDePasse.set(this.moniteurMotDePasse() === id ? null : id);
     this.nouveauMotDePasse = '';
   }

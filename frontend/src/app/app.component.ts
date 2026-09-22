@@ -46,10 +46,11 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
                 Préparer hors ligne
               </button>
             }
-            <span class="qui">
+            <a routerLink="/mon-compte" routerLinkActive="actif" class="qui" (click)="fermerMenu()"
+               title="Mon compte : nom, e-mail, mot de passe">
               {{ auth.session()?.nomComplet }}
               @if (auth.niveau(); as n) { <span class="niveau">{{ n }}</span> }
-            </span>
+            </a>
             <button type="button" class="bouton-discret" (click)="deconnecter(); fermerMenu()">
               Se déconnecter
             </button>
@@ -99,7 +100,12 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
     .identite .bouton-discret.actif {
       background: rgba(255,255,255,.18); border-color: #fff; font-weight: 700;
     }
-    .qui { display: flex; align-items: center; gap: var(--pas); }
+    .qui {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px;
+      color: #fff; text-decoration: underline; text-decoration-color: rgba(255,255,255,.4);
+      text-underline-offset: 4px;
+    }
+    .qui.actif { font-weight: 700; text-decoration-color: #fff; }
     .niveau {
       border: 1px solid rgba(255,255,255,.5); border-radius: var(--r-s);
       padding: 2px 8px; font-weight: 700; font-size: .8125rem;

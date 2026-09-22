@@ -7,6 +7,9 @@ export interface Session {
   email: string;
   roles: string[];
   niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
+  nom: string;
+  prenom: string;
+  numeroLicence: string | null;
 }
 
 export interface CursusVue {

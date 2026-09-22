@@ -37,15 +37,22 @@ public class AuthController {
     public record DemandeConnexion(@NotBlank @Email String email, @NotBlank String motDePasse) {}
 
     public record Session(String jetonAcces, long expireDansSecondes, String nomComplet,
-                          String email, List<String> roles, String niveauEncadrement) {}
+                          String email, List<String> roles, String niveauEncadrement,
+                          String nom, String prenom, String numeroLicence) {}
 
     public record DemandeMotDePasseOublie(@NotBlank @Email String email) {}
 
     public record DemandeReinitialisation(@NotBlank String jeton, @NotBlank String nouveauMotDePasse) {}
 
+    public record DemandeIdentite(@NotBlank String nom, @NotBlank String prenom, String numeroLicence) {}
+
+    public record DemandeChangementEmail(@NotBlank @Email String nouvelEmail, @NotBlank String motDePasseActuel) {}
+
+    public record DemandeChangementMotDePasse(@NotBlank String motDePasseActuel, @NotBlank String nouveauMotDePasse) {}
+
     private static final String COOKIE_REFRESH = "refresh";
     private static final SecureRandom ALEA = new SecureRandom();
-    private static final int LONGUEUR_MIN_MOT_DE_PASSE = 10;
+    private static final int LONGUEUR_MIN_MOT_DE_PASSE = MonCompteService.LONGUEUR_MIN_MOT_DE_PASSE;
 
     private final AuthenticationManager authManager;
     private final DetailsUtilisateurService detailsService;
@@ -54,12 +61,14 @@ public class AuthController {
     private final JwtService jwtService;
     private final PasswordEncoder encodeur;
     private final ReinitialisationMotDePasseService reinitialisations;
+    private final MonCompteService monCompte;
     private final Duration dureeRefresh;
 
     public AuthController(AuthenticationManager authManager, DetailsUtilisateurService detailsService,
                           UtilisateurRepository utilisateurs, RefreshTokenRepository refreshTokens,
                           JwtService jwtService, PasswordEncoder encodeur,
                           ReinitialisationMotDePasseService reinitialisations,
+                          MonCompteService monCompte,
                           @Value("${app.jwt.duree-refresh-jours}") long jours) {
         this.authManager = authManager;
         this.detailsService = detailsService;
@@ -68,6 +77,7 @@ public class AuthController {
         this.jwtService = jwtService;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
+        this.monCompte = monCompte;
         this.dureeRefresh = Duration.ofDays(jours);
     }
 
@@ -112,6 +122,41 @@ public class AuthController {
         return session(principal, u);
     }
 
+    /*
+     * Modification de son propre compte. Chaque reponse renvoie une session
+     * a jour : le nom affiche change, et le jeton d'acces porte l'e-mail en
+     * sujet, donc l'ancien ne vaut plus rien apres un changement d'e-mail.
+     * Le niveau d'encadrement n'est pas modifiable ici (reserve a l'ADMIN).
+     */
+
+    @PutMapping("/moi")
+    public Session modifierIdentite(@AuthenticationPrincipal UtilisateurPrincipal principal,
+                                    @Valid @RequestBody DemandeIdentite demande) {
+        Utilisateur u = monCompte.modifierIdentite(principal.id(), demande.nom(), demande.prenom(),
+                demande.numeroLicence());
+        return session(UtilisateurPrincipal.de(u), u);
+    }
+
+    @PutMapping("/moi/email")
+    public Session changerEmail(@AuthenticationPrincipal UtilisateurPrincipal principal,
+                                @Valid @RequestBody DemandeChangementEmail demande) {
+        Utilisateur u = monCompte.changerEmail(principal.id(), demande.nouvelEmail(),
+                demande.motDePasseActuel());
+        return session(UtilisateurPrincipal.de(u), u);
+    }
+
+    /** Les sessions ouvertes ailleurs sont fermees ; celle de cet appareil est rouverte. */
+    @PutMapping("/moi/mot-de-passe")
+    @Transactional
+    public Session changerMotDePasse(@AuthenticationPrincipal UtilisateurPrincipal principal,
+                                     @Valid @RequestBody DemandeChangementMotDePasse demande,
+                                     HttpServletResponse reponse) {
+        Utilisateur u = monCompte.changerMotDePasse(principal.id(), demande.motDePasseActuel(),
+                demande.nouveauMotDePasse());
+        poserCookieRefresh(u, reponse);
+        return session(UtilisateurPrincipal.de(u), u);
+    }
+
     /**
      * Toujours la meme reponse, que le compte existe ou non, actif ou pas :
      * on ne revele jamais si un e-mail est enregistre.
@@ -147,7 +192,10 @@ public class AuthController {
                 u.nomComplet(),
                 u.getEmail(),
                 u.getRoles().stream().map(Enum::name).toList(),
-                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name());
+                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
+                u.getNom(),
+                u.getPrenom(),
+                u.getNumeroLicence());
     }
 
     private void poserCookieRefresh(Utilisateur u, HttpServletResponse reponse) {

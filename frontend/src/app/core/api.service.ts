@@ -256,6 +256,17 @@ export class ApiService {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
 
+  /** Seul endroit où le niveau d'encadrement d'un moniteur peut changer. */
+  modifierMoniteur(id: number, demande: {
+    email: string;
+    nom: string;
+    prenom: string;
+    niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
+    numeroLicence: string | null;
+  }): Observable<MoniteurVue> {
+    return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
+  }
+
   changerActivationMoniteur(id: number, actif: boolean): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}/activation`, { actif });
   }

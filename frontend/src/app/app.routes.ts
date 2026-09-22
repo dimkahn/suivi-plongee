@@ -32,6 +32,12 @@ export const routes: Routes = [
       .then(m => m.MatriceComponent)
   },
   {
+    path: 'mon-compte',
+    canActivate: [gardeConnecte],
+    loadComponent: () => import('./features/compte/mon-compte.component')
+      .then(m => m.MonCompteComponent)
+  },
+  {
     path: 'eleves',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/roster/roster.component')

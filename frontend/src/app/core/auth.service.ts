@@ -62,6 +62,30 @@ export class AuthService {
     return this.http.post('/api/auth/reinitialiser-mot-de-passe', { jeton, nouveauMotDePasse });
   }
 
+  /*
+   * Modification de son propre compte. Le serveur renvoie une session neuve
+   * (nouveau jeton : l'ancien porte l'e-mail d'avant) qui remplace la
+   * courante. Le niveau d'encadrement ne se modifie pas ici.
+   */
+
+  modifierIdentite(demande: { nom: string; prenom: string; numeroLicence: string | null }): Observable<Session> {
+    return this.http.put<Session>('/api/auth/moi', demande).pipe(tap(s => this.session.set(s)));
+  }
+
+  changerEmail(nouvelEmail: string, motDePasseActuel: string): Observable<Session> {
+    return this.http
+      .put<Session>('/api/auth/moi/email', { nouvelEmail, motDePasseActuel })
+      .pipe(tap(s => this.session.set(s)));
+  }
+
+  /** Ferme les sessions ouvertes sur les autres appareils ; celle-ci est rouverte (nouveau cookie). */
+  changerMotDePasse(motDePasseActuel: string, nouveauMotDePasse: string): Observable<Session> {
+    return this.http
+      .put<Session>('/api/auth/moi/mot-de-passe', { motDePasseActuel, nouveauMotDePasse },
+        { withCredentials: true })
+      .pipe(tap(s => this.session.set(s)));
+  }
+
   deconnexion(): void {
     this.http.post('/api/auth/deconnexion', {}, { withCredentials: true }).subscribe({
       complete: () => {

@@ -33,6 +33,11 @@ public class AdminMoniteurController {
                                           @NotNull NiveauEncadrement niveauEncadrement,
                                           String numeroLicence) {}
 
+    public record DemandeModificationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
+                                              @NotBlank String prenom,
+                                              @NotNull NiveauEncadrement niveauEncadrement,
+                                              String numeroLicence) {}
+
     public record DemandeActivation(@NotNull Boolean actif) {}
 
     public record DemandeMotDePasse(@NotBlank String nouveauMotDePasse) {}
@@ -54,6 +59,13 @@ public class AdminMoniteurController {
     @PreAuthorize("hasRole('ADMIN')")
     public MoniteurVue creer(@Valid @RequestBody DemandeCreationMoniteur demande) {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
+                demande.niveauEncadrement(), demande.numeroLicence()));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public MoniteurVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeModificationMoniteur demande) {
+        return vue(service.modifier(id, demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.numeroLicence()));
     }
 
