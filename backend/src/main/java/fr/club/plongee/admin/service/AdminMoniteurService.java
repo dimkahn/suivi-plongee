@@ -100,6 +100,31 @@ public class AdminMoniteurService {
         return u;
     }
 
+    /**
+     * Seul endroit ou le niveau d'encadrement change : le moniteur peut
+     * corriger son identite et son e-mail lui-meme, pas s'habiliter.
+     * Un changement d'e-mail ferme les sessions du moniteur (le jeton
+     * d'acces porte l'e-mail) : il se reconnecte avec la nouvelle adresse.
+     */
+    @Transactional
+    public Utilisateur modifier(Long id, String email, String nom, String prenom,
+                                NiveauEncadrement niveauEncadrement, String numeroLicence) {
+        Utilisateur u = moniteur(id);
+        String nouvelEmail = email.trim();
+        boolean emailChange = !nouvelEmail.equalsIgnoreCase(u.getEmail());
+        if (emailChange && utilisateurs.existsByEmailIgnoreCase(nouvelEmail)) {
+            throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
+        }
+        u.setEmail(nouvelEmail);
+        u.setNom(nom.trim());
+        u.setPrenom(prenom.trim());
+        u.setNiveauEncadrement(niveauEncadrement);
+        u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
+        utilisateurs.save(u);
+        if (emailChange) refreshTokens.revoquerTout(id);
+        return u;
+    }
+
     @Transactional
     public Utilisateur changerActivation(Long id, Long auteurId, boolean actif) {
         Utilisateur u = moniteur(id);

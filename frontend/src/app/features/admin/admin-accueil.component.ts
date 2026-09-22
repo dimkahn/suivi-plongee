@@ -12,7 +12,7 @@ import { RouterLink } from '@angular/router';
       <li class="carte">
         <a routerLink="/admin/moniteurs">
           <span class="nom">Moniteurs</span>
-          <span class="secondaire">Comptes des encadrants : ajout, activation, mot de passe</span>
+          <span class="secondaire">Comptes des encadrants : ajout, modification, niveau, activation, mot de passe</span>
         </a>
       </li>
       <li class="carte">
