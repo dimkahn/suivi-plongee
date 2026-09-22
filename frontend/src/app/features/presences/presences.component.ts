@@ -1,0 +1,351 @@
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { ApiService } from '../../core/api.service';
+import { ReseauService } from '../../core/reseau.service';
+import { dateDuJour, dateFr } from '../../core/date-fr';
+import { Atelier, LignePresence, SeanceVue, StatutPresence } from '../../core/modeles';
+
+type Niveau = 'TOUS' | 'N1' | 'N2' | 'N3';
+
+/** Un bouton de la ligne : présent avec un atelier, ou absent/excusé. */
+interface Choix {
+  cle: string;
+  libelle: string;
+  statut: StatutPresence;
+  atelier: Atelier | null;
+  classe: string;
+}
+
+const CHOIX: Choix[] = [
+  { cle: 'NAGE', libelle: 'Nage', statut: 'PRESENT', atelier: 'NAGE', classe: 'present' },
+  { cle: 'BLOC', libelle: 'Bloc', statut: 'PRESENT', atelier: 'BLOC', classe: 'present' },
+  { cle: 'THEORIE', libelle: 'Théorie', statut: 'PRESENT', atelier: 'THEORIE', classe: 'present' },
+  { cle: 'PLONGEE', libelle: 'Plongée', statut: 'PRESENT', atelier: 'PLONGEE', classe: 'present' },
+  { cle: 'ABSENT', libelle: 'Absent', statut: 'ABSENT', atelier: null, classe: 'absent' },
+  { cle: 'EXCUSE', libelle: 'Excusé', statut: 'EXCUSE', atelier: null, classe: 'absent' }
+];
+
+function cleDe(l: LignePresence): string | null {
+  if (!l.statut) return null;
+  return l.statut === 'PRESENT' ? (l.atelier ?? 'PRESENT') : l.statut;
+}
+
+function normaliser(texte: string): string {
+  return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+}
+
+/**
+ * Feuille de présence d'une séance : ce que chaque élève a fait (nage, bloc,
+ * théorie, plongée) ou son absence. Remplace la grille de dates en colonnes
+ * du tableur ; les compteurs « séances bloc / nage » de Infos élèves en
+ * découlent. Enregistrement immédiat à chaque toucher, réseau requis.
+ */
+@Component({
+  selector: 'app-presences',
+  imports: [FormsModule],
+  template: `
+    <h1>Présences</h1>
+    <p class="secondaire">
+      Pour chaque élève, touchez ce qu'il a fait pendant la séance. Chaque choix est enregistré
+      tout de suite ; toucher de nouveau le choix actif l'efface.
+    </p>
+
+    @if (!reseau.enLigne()) {
+      <div class="alerte" role="status">La feuille de présence nécessite le réseau.</div>
+    }
+    @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+
+    <label for="seance">Séance</label>
+    <div class="combobox">
+      <input id="seance" type="text" autocomplete="off"
+             role="combobox" aria-autocomplete="list" aria-controls="liste-seances"
+             [attr.aria-expanded]="comboboxOuvert()"
+             placeholder="Rechercher par date (12/10, 2026-10) ou lieu…"
+             [value]="rechercheSeance()" (input)="saisirSeance($event)"
+             (focus)="comboboxOuvert.set(true)" (blur)="fermerComboboxDifferee()">
+      @if (comboboxOuvert()) {
+        <ul id="liste-seances" role="listbox" class="options">
+          @for (s of seancesFiltrees(); track s.id) {
+            <li role="option" [attr.aria-selected]="seanceId() === s.id">
+              <button type="button" (mousedown)="choisirSeance(s)">{{ libelleSeance(s) }}</button>
+            </li>
+          } @empty {
+            <li class="vide">Aucune séance passée ne correspond.</li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (seanceId()) {
+      <div class="filtres">
+        <div class="niveaux" role="group" aria-label="Filtrer par niveau">
+          @for (n of niveaux; track n) {
+            <button type="button" class="bouton-discret" [class.actif]="niveau() === n"
+                    [attr.aria-pressed]="niveau() === n" (click)="niveau.set(n)">
+              {{ n === 'TOUS' ? 'Tous' : n }}
+            </button>
+          }
+        </div>
+        <input type="search" class="recherche" aria-label="Rechercher un élève"
+               placeholder="Rechercher un élève…"
+               [ngModel]="rechercheEleve()" (ngModelChange)="rechercheEleve.set($event)">
+      </div>
+
+      @if (chargement()) {
+        <p class="vide">Chargement…</p>
+      } @else if (lignes().length === 0) {
+        <div class="carte vide"><p>Aucun élève inscrit sur la saison de cette séance.</p></div>
+      } @else {
+        <p class="bilan" role="status">
+          {{ bilan().presents }} présent(s) · {{ bilan().absents }} absent(s) ou excusé(s)
+          · {{ bilan().nonRenseignes }} non renseigné(s)
+        </p>
+
+        @if (lignesFiltrees().length === 0) {
+          <div class="carte vide"><p>Aucun élève ne correspond aux filtres.</p></div>
+        }
+        <ul class="eleves">
+          @for (l of lignesFiltrees(); track l.cursusId) {
+            <li class="carte">
+              <div class="identite">
+                <span class="nom">{{ l.eleve }}</span>
+                <span class="niveau">{{ l.niveau }}</span>
+                @if (enregistrements().has(l.cursusId)) {
+                  <span class="enregistrement" role="status">
+                    <span class="chargeur" aria-hidden="true"></span>Enregistrement…
+                  </span>
+                } @else if (!l.statut) {
+                  <span class="secondaire">Non renseigné</span>
+                } @else if (l.statut === 'PRESENT' && !l.atelier) {
+                  <span class="secondaire">Présent, atelier non précisé</span>
+                }
+              </div>
+              <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
+                @for (c of choix; track c.cle) {
+                  <button type="button" [class]="'etat ' + c.classe"
+                          [class.actif]="cleDe(l) === c.cle"
+                          [attr.aria-pressed]="cleDe(l) === c.cle"
+                          [disabled]="!reseau.enLigne() || enregistrements().has(l.cursusId)"
+                          (click)="choisir(l, c)">
+                    {{ c.libelle }}
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    }
+  `,
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styles: [`
+    h1 { margin-bottom: var(--pas); }
+    label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
+
+    .combobox { position: relative; max-width: 420px; }
+    .combobox input { width: 100%; margin: 0; }
+    .options {
+      position: absolute; z-index: 2; top: 100%; left: 0; right: 0; margin: 2px 0 0; padding: 0;
+      list-style: none; max-height: 280px; overflow-y: auto;
+      background: var(--carte); border: 1px solid var(--trait);
+      border-radius: var(--r-s); box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    }
+    .options li[aria-selected="true"] button { font-weight: 700; background: var(--fond); }
+    .options button {
+      display: block; width: 100%; padding: var(--pas) var(--pas-2); min-height: 44px;
+      text-align: left; background: none; border: none; border-radius: 0; color: var(--encre);
+    }
+    .options button:hover, .options button:focus { background: var(--fond); }
+    .options .vide { padding: var(--pas) var(--pas-2); color: var(--craie); font-size: .875rem; }
+
+    .filtres {
+      display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
+      margin: var(--pas-3) 0 var(--pas-2);
+    }
+    .niveaux { display: flex; gap: var(--pas); flex-wrap: wrap; }
+    .niveaux .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .recherche { max-width: 320px; margin: 0; }
+
+    .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
+
+    .eleves { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    .eleves li {
+      padding: var(--pas-2); display: flex; justify-content: space-between; align-items: center;
+      gap: var(--pas-2); flex-wrap: wrap;
+    }
+    .identite { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
+    .nom { font-weight: 700; }
+    .niveau {
+      border: 1px solid var(--trait); border-radius: var(--r-s); padding: 0 8px;
+      font-size: .8125rem; font-weight: 700; color: var(--craie);
+    }
+
+    .choix { display: flex; gap: 4px; flex-wrap: wrap; }
+    .etat {
+      min-height: 44px; min-width: 72px; padding: 8px 12px;
+      border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte);
+      color: var(--encre); font-weight: 600;
+    }
+    .etat.present.actif { background: var(--acquis); border-color: var(--acquis); color: #fff; }
+    .etat.absent.actif { background: var(--craie); border-color: var(--craie); color: #fff; }
+    .etat:disabled { opacity: .6; cursor: not-allowed; }
+
+    .enregistrement {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--profond); font-size: .875rem; font-weight: 700;
+    }
+    .chargeur {
+      display: inline-block; width: 1em; height: 1em;
+      border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+      animation: tourner .8s linear infinite;
+    }
+    @keyframes tourner { to { transform: rotate(360deg); } }
+
+    /* Sur téléphone : trois boutons par ligne, pleine largeur. */
+    @media (max-width: 600px) {
+      .choix { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+      .etat { min-width: 0; }
+      .recherche { max-width: none; }
+    }
+  `]
+})
+export class PresencesComponent {
+  private api = inject(ApiService);
+  reseau = inject(ReseauService);
+
+  readonly choix = CHOIX;
+  readonly niveaux: Niveau[] = ['TOUS', 'N1', 'N2', 'N3'];
+  readonly cleDe = cleDe;
+
+  seances = signal<SeanceVue[]>([]);
+  seanceId = signal<number | null>(null);
+  rechercheSeance = signal('');
+  comboboxOuvert = signal(false);
+
+  lignes = signal<LignePresence[]>([]);
+  chargement = signal(false);
+  message = signal<string | null>(null);
+  enregistrements = signal<Set<number>>(new Set());
+
+  niveau = signal<Niveau>('TOUS');
+  rechercheEleve = signal('');
+
+  /** On ne remplit pas une séance à venir : le serveur la refuserait. */
+  seancesPassees = computed(() => {
+    const aujourdhui = dateDuJour();
+    return this.seances().filter(s => s.date <= aujourdhui);
+  });
+
+  seancesFiltrees = computed(() => {
+    const recherche = normaliser(this.rechercheSeance());
+    // Les plus récentes d'abord : c'est presque toujours celle du jour qu'on cherche.
+    const seances = [...this.seancesPassees()].reverse();
+    if (!recherche) return seances;
+    return seances.filter(s =>
+      [s.date, dateFr(s.date), s.lieu ?? ''].some(champ => normaliser(champ).includes(recherche)));
+  });
+
+  lignesFiltrees = computed(() => {
+    const niveau = this.niveau();
+    const recherche = normaliser(this.rechercheEleve());
+    return this.lignes().filter(l =>
+      (niveau === 'TOUS' || l.niveau === niveau)
+      && (!recherche || normaliser(l.eleve).includes(recherche)));
+  });
+
+  bilan = computed(() => {
+    const lignes = this.lignes();
+    return {
+      presents: lignes.filter(l => l.statut === 'PRESENT').length,
+      absents: lignes.filter(l => l.statut === 'ABSENT' || l.statut === 'EXCUSE').length,
+      nonRenseignes: lignes.filter(l => !l.statut).length
+    };
+  });
+
+  constructor() {
+    void this.charger();
+  }
+
+  private async charger(): Promise<void> {
+    try {
+      this.seances.set(await this.api.seances());
+      // Par défaut : la dernière séance passée ou du jour.
+      const derniere = this.seancesPassees().at(-1);
+      if (derniere) this.choisirSeance(derniere);
+    } catch {
+      this.message.set('Impossible de charger les séances.');
+    }
+  }
+
+  libelleSeance(s: SeanceVue): string {
+    const memeJour = this.seances().filter(x => x.date === s.date).length > 1;
+    return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${s.lieu ?? 'lieu non précisé'}`;
+  }
+
+  saisirSeance(evenement: Event): void {
+    this.rechercheSeance.set((evenement.target as HTMLInputElement).value);
+    this.comboboxOuvert.set(true);
+  }
+
+  /** Différé pour laisser le clic sur une option se produire avant la fermeture. */
+  fermerComboboxDifferee(): void {
+    setTimeout(() => this.comboboxOuvert.set(false), 150);
+  }
+
+  choisirSeance(s: SeanceVue): void {
+    this.seanceId.set(s.id);
+    this.rechercheSeance.set(this.libelleSeance(s));
+    this.comboboxOuvert.set(false);
+    void this.chargerFeuille(s.id);
+  }
+
+  private async chargerFeuille(seanceId: number): Promise<void> {
+    this.chargement.set(true);
+    this.message.set(null);
+    try {
+      const feuille = await firstValueFrom(this.api.feuillePresence(seanceId));
+      // Une autre séance a pu être choisie pendant le chargement.
+      if (this.seanceId() === seanceId) this.lignes.set(feuille.eleves);
+    } catch (e) {
+      this.lignes.set([]);
+      this.message.set((e as HttpErrorResponse).error?.detail ?? 'Impossible de charger la feuille de présence.');
+    } finally {
+      this.chargement.set(false);
+    }
+  }
+
+  /** Enregistre le choix ; toucher de nouveau le choix actif l'efface. */
+  async choisir(ligne: LignePresence, c: Choix): Promise<void> {
+    const seanceId = this.seanceId();
+    if (!seanceId) return;
+    const effacer = cleDe(ligne) === c.cle;
+    const avant = { statut: ligne.statut, atelier: ligne.atelier };
+
+    this.remplacer(ligne.cursusId, effacer ? { statut: null, atelier: null } : { statut: c.statut, atelier: c.atelier });
+    this.marquer(ligne.cursusId, true);
+    this.message.set(null);
+    try {
+      await firstValueFrom(effacer
+        ? this.api.effacerPresence(seanceId, ligne.cursusId)
+        : this.api.enregistrerPresence(seanceId, ligne.cursusId, c.statut, c.atelier));
+    } catch (e) {
+      this.remplacer(ligne.cursusId, avant);
+      this.message.set((e as HttpErrorResponse).error?.detail
+        ?? `La présence de ${ligne.eleve} n'a pas pu être enregistrée.`);
+    } finally {
+      this.marquer(ligne.cursusId, false);
+    }
+  }
+
+  private remplacer(cursusId: number, valeur: Pick<LignePresence, 'statut' | 'atelier'>): void {
+    this.lignes.set(this.lignes().map(l => l.cursusId === cursusId ? { ...l, ...valeur } : l));
+  }
+
+  private marquer(cursusId: number, enCours: boolean): void {
+    const suivant = new Set(this.enregistrements());
+    if (enCours) suivant.add(cursusId); else suivant.delete(cursusId);
+    this.enregistrements.set(suivant);
+  }
+}

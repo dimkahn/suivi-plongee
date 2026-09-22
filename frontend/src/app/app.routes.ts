@@ -44,6 +44,12 @@ export const routes: Routes = [
       .then(m => m.RosterComponent)
   },
   {
+    path: 'presences',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/presences/presences.component')
+      .then(m => m.PresencesComponent)
+  },
+  {
     path: 'seances',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/seances/seances.component')

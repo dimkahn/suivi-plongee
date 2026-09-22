@@ -5,7 +5,7 @@ import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
-  SaisonVue, SeanceVue, Statut
+  SaisonVue, SeanceVue, Statut, Atelier, FeuillePresence, StatutPresence
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -61,6 +61,21 @@ export class ApiService {
 
   seances(): Promise<SeanceVue[]> {
     return this.lireOuRetomber('seances', () => this.http.get<SeanceVue[]>('/api/seances'));
+  }
+
+  /** Feuille de présence d'une séance : tous les élèves inscrits sur sa saison. Nécessite le réseau. */
+  feuillePresence(seanceId: number): Observable<FeuillePresence> {
+    return this.http.get<FeuillePresence>(`/api/seances/${seanceId}/presences`);
+  }
+
+  enregistrerPresence(seanceId: number, cursusId: number, statut: StatutPresence,
+                      atelier: Atelier | null): Observable<unknown> {
+    return this.http.put(`/api/seances/${seanceId}/presences`, [{ cursusId, statut, atelier }]);
+  }
+
+  /** L'élève redevient « non renseigné » pour cette séance. */
+  effacerPresence(seanceId: number, cursusId: number): Observable<unknown> {
+    return this.http.delete(`/api/seances/${seanceId}/presences/${cursusId}`);
   }
 
   /** Création/modification réservées aux ADMIN et MONITEUR côté serveur ; nécessitent le réseau. */

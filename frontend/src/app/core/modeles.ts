@@ -388,3 +388,20 @@ export interface GroupePlongeursVue {
   saisonId: number;
   membres: MembreGroupeVue[];
 }
+
+export type StatutPresence = 'PRESENT' | 'ABSENT' | 'EXCUSE';
+export type Atelier = 'NAGE' | 'BLOC' | 'THEORIE' | 'PLONGEE';
+
+/** Une ligne de la feuille de présence ; statut null : rien de saisi pour cette séance. */
+export interface LignePresence {
+  cursusId: number;
+  eleve: string;
+  niveau: 'N1' | 'N2' | 'N3';
+  statut: StatutPresence | null;
+  atelier: Atelier | null;
+}
+
+export interface FeuillePresence {
+  seance: SeanceVue;
+  eleves: LignePresence[];
+}

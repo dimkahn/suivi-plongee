@@ -4,6 +4,7 @@ import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.formation.service.*;
 
+import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -52,7 +53,7 @@ public class RosterController {
                     .orElseThrow(() -> new RessourceIntrouvableException("Aucune saison ouverte"))
                     .getId();
 
-        LocalDate aujourdhui = LocalDate.now();
+        LocalDate aujourdhui = Calendrier.aujourdhui();
 
         List<LigneEleve> lignes = cursus.parSaison(saison).stream().map(c -> {
             Map<Long, String> presences = participations.findByCursusId(c.getId()).stream()

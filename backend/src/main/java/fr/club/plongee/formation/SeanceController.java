@@ -11,11 +11,15 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/seances")
@@ -30,6 +34,11 @@ public class SeanceController {
 
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
                                   Participation.Atelier atelier, String commentaire) {}
+
+    /** Une ligne de la feuille de présence ; statut/atelier null : rien de saisi pour cette séance. */
+    public record LignePresence(Long cursusId, String eleve, String niveau, String statut, String atelier) {}
+
+    public record FeuillePresence(SeanceVue seance, List<LignePresence> eleves) {}
 
     private final SeanceRepository seances;
     private final SaisonRepository saisons;
@@ -118,27 +127,71 @@ public class SeanceController {
         seances.delete(s);
     }
 
+    /**
+     * Feuille de presence d'une seance : tous les eleves inscrits sur sa saison,
+     * avec ce qui a deja ete saisi. Un cursus abandonne n'apparait que s'il
+     * porte deja une presence pour cette seance.
+     */
+    @GetMapping("/{seanceId}/presences")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @Transactional(readOnly = true)
+    public FeuillePresence feuillePresence(@PathVariable Long seanceId) {
+        Seance seance = seance(seanceId);
+        Map<Long, Participation> saisies = participations.findBySeanceId(seanceId).stream()
+                .collect(Collectors.toMap(p -> p.getCursus().getId(), Function.identity(), (a, b) -> a));
+        List<LignePresence> lignes = cursus.parSaison(seance.getSaison().getId()).stream()
+                .filter(c -> c.getStatut() != Cursus.Statut.ABANDON || saisies.containsKey(c.getId()))
+                .map(c -> {
+                    Participation p = saisies.get(c.getId());
+                    return new LignePresence(c.getId(), c.getEleve().nomComplet(),
+                            c.getReferentiel().getNiveau().name(),
+                            p == null ? null : p.getStatut().name(),
+                            p == null || p.getAtelier() == null ? null : p.getAtelier().name());
+                })
+                .toList();
+        return new FeuillePresence(vue(seance), lignes);
+    }
+
     /** Feuille de presence : remplace la grille de dates en colonnes du tableur. */
     @PutMapping("/{seanceId}/presences")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @Transactional
     public void enregistrerPresences(@PathVariable Long seanceId,
                                      @Valid @RequestBody List<DemandePresence> demandes) {
-        Seance seance = seances.findById(seanceId)
-                .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
+        Seance seance = seance(seanceId);
         seance.verifierQueLaSeanceAEuLieu("enregistrer les présences");
         for (DemandePresence d : demandes) {
             Cursus c = cursus.findById(d.cursusId())
                     .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
+            if (!c.getSaison().getId().equals(seance.getSaison().getId())) {
+                throw new RegleMetierException(
+                        "Cet élève n'est pas inscrit sur la saison de cette séance.");
+            }
             Participation p = participations
                     .findByCursusIdAndSeanceId(d.cursusId(), seanceId)
                     .orElseGet(Participation::new);
             p.setCursus(c);
             p.setSeance(seance);
             p.setStatut(d.statut());
-            p.setAtelier(d.atelier());
+            // L'atelier ne se dit que d'un eleve present : un absent n'a fait ni nage ni bloc.
+            p.setAtelier(d.statut() == Participation.Statut.PRESENT ? d.atelier() : null);
             p.setCommentaire(d.commentaire());
             participations.save(p);
         }
+    }
+
+    /** Efface une presence saisie par erreur : l'eleve redevient « non renseigne » pour cette seance. */
+    @DeleteMapping("/{seanceId}/presences/{cursusId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @Transactional
+    public void effacerPresence(@PathVariable Long seanceId, @PathVariable Long cursusId) {
+        participations.findByCursusIdAndSeanceId(cursusId, seanceId).ifPresent(participations::delete);
+    }
+
+    private Seance seance(Long id) {
+        return seances.findById(id)
+                .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
     }
 
     private Saison saisonCourante() {
