@@ -182,6 +182,7 @@ public class FicheSecuriteService {
         FicheSecurite fiche = fiches.findBySeanceId(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException(
                         "Cette séance n'a pas encore de fiche de sécurité établie"));
+        fiche.getSeance().verifierQueLaSeanceAEuLieu("saisir le profil réalisé");
 
         Map<Integer, Palanquee> parNumero = fiche.getPalanquees().stream()
                 .collect(Collectors.toMap(Palanquee::getNumero, Function.identity()));
