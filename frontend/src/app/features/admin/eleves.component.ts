@@ -30,6 +30,10 @@ function depuis(e: EleveVue): FormulaireEleve {
   };
 }
 
+function trier(eleves: EleveVue[]): EleveVue[] {
+  return eleves.sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom));
+}
+
 @Component({
   selector: 'app-eleves',
   imports: [FormsModule],
@@ -204,6 +208,43 @@ function depuis(e: EleveVue): FormulaireEleve {
         }
       </ul>
     }
+
+    <section class="archives">
+      <button type="button" class="bouton-discret" (click)="basculerArchives()">
+        {{ archivesOuvertes() ? 'Masquer les élèves archivés' : 'Afficher les élèves archivés' }}
+      </button>
+
+      @if (archivesOuvertes()) {
+        @if (archives() === null) {
+          <p class="secondaire">Chargement…</p>
+        } @else if (archives()!.length === 0) {
+          <div class="carte vide"><p>Aucun élève archivé.</p></div>
+        } @else {
+          <p class="secondaire">
+            La suppression est définitive : elle efface aussi les formations, évaluations,
+            compétences validées et brevets délivrés de l'élève. Les fiches de sécurité
+            gardent son nom.
+          </p>
+          <ul>
+            @for (e of archives(); track e.id) {
+              <li class="carte">
+                <span class="nom">{{ e.prenom }} {{ e.nom }}</span>
+                <span class="secondaire">
+                  {{ e.numeroLicence ? 'Licence ' + e.numeroLicence : '' }}
+                </span>
+                <div class="actions">
+                  <button type="button" class="bouton-discret" (click)="desarchiver(e)">Désarchiver</button>
+                  <button type="button" class="bouton-discret danger" (click)="supprimer(e)"
+                          [disabled]="suppressionEnCours() === e.id">
+                    {{ suppressionEnCours() === e.id ? 'Suppression…' : 'Supprimer définitivement' }}
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </section>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -235,6 +276,8 @@ function depuis(e: EleveVue): FormulaireEleve {
     .historique {
       margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
     }
+    .archives { margin-top: var(--pas-4); display: grid; gap: var(--pas-2); }
+    .archives > .bouton-discret { justify-self: start; }
     .saisons { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 
     @media (max-width: 600px) {
@@ -255,6 +298,10 @@ export class ElevesComponent {
   message = signal<string | null>(null);
   envoi = signal(false);
   envoiAdhesion = signal<number | null>(null);
+
+  archivesOuvertes = signal(false);
+  archives = signal<EleveVue[] | null>(null);
+  suppressionEnCours = signal<number | null>(null);
 
   historiqueOuvert = signal<number | null>(null);
   chargementHistorique = signal(false);
@@ -467,9 +514,58 @@ export class ElevesComponent {
   archiver(e: EleveVue): void {
     if (!confirm(`Archiver ${e.prenom} ${e.nom} ? Il·elle disparaîtra des listes actives.`)) return;
     this.api.archiverEleve(e.id).subscribe({
-      next: () => this.liste.set(this.liste().filter(x => x.id !== e.id)),
+      next: maj => {
+        this.liste.set(this.liste().filter(x => x.id !== e.id));
+        const archives = this.archives();
+        if (archives) this.archives.set(trier([...archives, maj]));
+      },
       error: (err: HttpErrorResponse) =>
         this.message.set(err.error?.detail ?? "L'archivage n'a pas pu être enregistré.")
+    });
+  }
+
+  basculerArchives(): void {
+    const ouvrir = !this.archivesOuvertes();
+    this.archivesOuvertes.set(ouvrir);
+    if (!ouvrir || this.archives() !== null) return;
+    this.api.elevesArchives().subscribe({
+      next: a => this.archives.set(a),
+      error: () => {
+        this.archives.set([]);
+        this.message.set('Impossible de charger les élèves archivés.');
+      }
+    });
+  }
+
+  desarchiver(e: EleveVue): void {
+    this.message.set(null);
+    this.api.desarchiverEleve(e.id).subscribe({
+      next: maj => {
+        this.archives.set((this.archives() ?? []).filter(x => x.id !== e.id));
+        this.liste.set(trier([...this.liste(), maj]));
+      },
+      error: (err: HttpErrorResponse) =>
+        this.message.set(err.error?.detail ?? "Le désarchivage n'a pas pu être enregistré.")
+    });
+  }
+
+  supprimer(e: EleveVue): void {
+    if (!confirm(
+      `Supprimer définitivement ${e.prenom} ${e.nom} ?\n\n` +
+      `Ses formations, évaluations, compétences validées, brevets délivrés, présences et photo ` +
+      `seront effacés. Cette action est irréversible.`)) return;
+    this.suppressionEnCours.set(e.id);
+    this.message.set(null);
+    this.api.supprimerEleve(e.id).subscribe({
+      next: () => {
+        this.suppressionEnCours.set(null);
+        this.archives.set((this.archives() ?? []).filter(x => x.id !== e.id));
+        this.message.set(`${e.prenom} ${e.nom} a été supprimé·e définitivement.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.suppressionEnCours.set(null);
+        this.message.set(err.error?.detail ?? "La suppression n'a pas pu être effectuée.");
+      }
     });
   }
 
