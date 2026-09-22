@@ -33,9 +33,10 @@ export class AuthService {
     return this.session()?.jetonAcces ?? null;
   }
 
-  connexion(email: string, motDePasse: string): Observable<Session> {
+  /** seSouvenir : la session survit à la fermeture du navigateur (sinon elle s'arrête avec lui). */
+  connexion(email: string, motDePasse: string, seSouvenir: boolean): Observable<Session> {
     return this.http
-      .post<Session>('/api/auth/connexion', { email, motDePasse }, { withCredentials: true })
+      .post<Session>('/api/auth/connexion', { email, motDePasse, seSouvenir }, { withCredentials: true })
       .pipe(tap(s => this.session.set(s)));
   }
 

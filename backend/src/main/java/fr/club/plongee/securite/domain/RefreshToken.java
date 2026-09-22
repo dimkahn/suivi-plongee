@@ -25,6 +25,10 @@ public class RefreshToken {
     @Column(nullable = false)
     private boolean revoque = false;
 
+    /** « Se souvenir de moi » : conservé à la rotation du jeton. */
+    @Column(nullable = false)
+    private boolean persistant = true;
+
     public Long getId() {
         return id;
     }
@@ -63,5 +67,13 @@ public class RefreshToken {
 
     public void setRevoque(boolean revoque) {
         this.revoque = revoque;
+    }
+
+    public boolean isPersistant() {
+        return persistant;
+    }
+
+    public void setPersistant(boolean persistant) {
+        this.persistant = persistant;
     }
 }

@@ -28,6 +28,14 @@ import { AuthService } from '../../core/auth.service';
           <input id="mdp" type="password" name="mdp" autocomplete="current-password"
                  [(ngModel)]="motDePasse" (keyup.enter)="connecter()">
 
+          <label class="case">
+            <input type="checkbox" name="seSouvenir" [(ngModel)]="seSouvenir">
+            Se souvenir de moi
+          </label>
+          <p class="aide">
+            Décochez sur un appareil partagé : la session s'arrêtera à la fermeture du navigateur.
+          </p>
+
           <button type="button" class="bouton-principal" (click)="connecter()" [disabled]="envoi()">
             {{ envoi() ? 'Connexion…' : 'Se connecter' }}
           </button>
@@ -70,6 +78,12 @@ import { AuthService } from '../../core/auth.service';
     .logo { display: block; width: 120px; height: 120px; margin: 0 auto var(--pas-3); }
     h1 { margin-bottom: var(--pas); font-size: 1.375rem; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
+    .case {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px;
+      margin-bottom: 0; font-weight: 400; cursor: pointer;
+    }
+    .case input { width: 24px; height: 24px; margin: 0; flex: none; }
+    .aide { margin: 0; color: var(--craie); font-size: .8125rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
     .lien-oubli {
       display: block; width: 100%; margin-top: var(--pas-2); padding: 0; min-height: auto;
@@ -88,6 +102,8 @@ export class ConnexionComponent {
 
   email = '';
   motDePasse = '';
+  /** Coché par défaut : l'appli sert surtout sur le téléphone personnel du moniteur. */
+  seSouvenir = true;
   envoi = signal(false);
   erreur = signal<string | null>(null);
 
@@ -101,7 +117,7 @@ export class ConnexionComponent {
     }
     this.envoi.set(true);
     this.erreur.set(null);
-    this.auth.connexion(this.email, this.motDePasse).subscribe({
+    this.auth.connexion(this.email, this.motDePasse, this.seSouvenir).subscribe({
       next: () => {
         const retour = this.route.snapshot.queryParamMap.get('retour');
         this.router.navigateByUrl(retour ?? '/cursus');
