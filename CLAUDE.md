@@ -196,7 +196,8 @@ photo, pas seulement son affichage.
    les 4 plongées en milieu naturel dues par un N1 certifié en piscine.
 4. ~~Export PDF de la fiche de suivi d'un élève.~~ Fait (`GET
    /api/cursus/{id}/fiche.pdf`, bouton dans la grille).
-5. Icônes PWA à fournir dans `frontend/public/icones/`.
+5. ~~Icônes PWA à fournir dans `frontend/public/icones/`.~~ Fait, depuis le
+   logo du club (voir `frontend/public/icones/LISEZ-MOI.txt`).
 6. ~~Envoi d'e-mail réel.~~ Fait (`ServiceNotificationEmail`, profil `!dev`,
    `spring.mail.*` en profil `prod` dans `application.yml` — hôte/identifiants
    par variables d'environnement `SMTP_HOTE`/`SMTP_UTILISATEUR`/

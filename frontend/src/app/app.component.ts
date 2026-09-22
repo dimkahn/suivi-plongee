@@ -11,7 +11,10 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
     @if (pret()) {
       @if (auth.connecte()) {
         <header>
-          <a routerLink="/cursus" class="marque" (click)="fermerMenu()">Suivi des formations</a>
+          <a routerLink="/cursus" class="marque" (click)="fermerMenu()">
+            <img src="logo-club.png" alt="" width="44" height="44">
+            <span>Suivi des formations</span>
+          </a>
 
           <button type="button" class="bouton-menu" (click)="menuOuvert.set(!menuOuvert())"
                   [attr.aria-expanded]="menuOuvert()" aria-controls="menu-principal" aria-label="Menu">
@@ -73,7 +76,11 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
       padding: var(--pas-2) var(--pas-3);
       background: linear-gradient(135deg, var(--profond-fonce), var(--profond)); color: #fff;
     }
-    .marque { color: #fff; text-decoration: none; font-weight: 700; }
+    .marque {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px;
+      color: #fff; text-decoration: none; font-weight: 700;
+    }
+    .marque img { flex: none; width: 44px; height: 44px; }
 
     .bouton-menu {
       display: none; width: 44px; height: 44px; padding: 0; flex: none;

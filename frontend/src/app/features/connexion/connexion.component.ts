@@ -9,6 +9,8 @@ import { AuthService } from '../../core/auth.service';
   template: `
     <div class="accueil">
       <div class="carte panneau">
+        <img class="logo" src="logo-club.png"
+             alt="Club de plongée de la Police et de la Justice du Val-d'Oise" width="120" height="120">
         <h1>Suivi des formations de plongée</h1>
         <p class="secondaire">
           Les compétences N1, N2 et N3 du MFT, saisies au bord du bassin
@@ -65,6 +67,7 @@ import { AuthService } from '../../core/auth.service';
   styles: [`
     .accueil { min-height: 100dvh; display: grid; place-items: center; padding: var(--pas-3); }
     .panneau { width: 100%; max-width: 420px; padding: var(--pas-4) var(--pas-3); }
+    .logo { display: block; width: 120px; height: 120px; margin: 0 auto var(--pas-3); }
     h1 { margin-bottom: var(--pas); font-size: 1.375rem; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
