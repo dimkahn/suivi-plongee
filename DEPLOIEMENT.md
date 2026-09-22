@@ -161,3 +161,63 @@ synchronisation vers son propre poste suffit pour un club).
 ```bash
 docker compose -f docker-compose.prod.yml logs -f backend
 ```
+
+## Changer de machine
+
+Toutes les données vivent dans la base PostgreSQL, photos des élèves
+comprises (table `photo_eleve`) : il n'y a aucun fichier à copier à côté.
+Deux choses suffisent à tout retrouver sur une nouvelle VM : **un dump de
+la base** et **le fichier `.env`**.
+
+Prévenir les moniteurs : aucune saisie ne doit être faite sur l'ancienne
+machine entre le dump et la bascule, sinon elle est perdue. Les notations
+saisies hors ligne restent dans la file du téléphone et partiront vers le
+nouveau serveur, à condition que le nom de domaine ne change pas.
+
+**1. Sur l'ancienne machine, exporter la base :**
+
+```bash
+cd suivi-plongee
+docker compose -f docker-compose.prod.yml exec -T db \
+  pg_dump -U plongee --clean --if-exists plongee | gzip > plongee-transfert.sql.gz
+zcat plongee-transfert.sql.gz | head    # vérifier que le fichier n'est pas vide
+```
+
+**2. Copier le dump et le `.env` vers la nouvelle machine** (`scp`, clé
+USB...) :
+
+```bash
+scp plongee-transfert.sql.gz .env utilisateur@nouvelle-machine:~/
+```
+
+Le `.env` n'est pas dans git et contient des secrets (`DB_PASSWORD`,
+`JWT_SECRET`, identifiants SMTP) : ne pas le faire transiter par e-mail ni
+par un service de partage public. Garder le même `JWT_SECRET` évite que tout
+le monde doive se reconnecter.
+
+**3. Sur la nouvelle machine**, installer Docker (étape 4), cloner le dépôt,
+y placer `.env` et le dump, puis **démarrer la base seule** avant
+d'importer : si le backend démarre en premier, Flyway crée un schéma vide.
+
+```bash
+git clone <adresse-du-depot> suivi-plongee && cd suivi-plongee
+mv ~/.env ~/plongee-transfert.sql.gz .
+
+docker compose -f docker-compose.prod.yml up -d db
+gunzip -c plongee-transfert.sql.gz | \
+  docker compose -f docker-compose.prod.yml exec -T db psql -U plongee -d plongee
+
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Au démarrage, Flyway retrouve dans la base importée les migrations déjà
+appliquées et n'exécute que les nouvelles, s'il y en a.
+
+**4. Faire pointer le domaine** vers l'adresse IP de la nouvelle VM (étape 3)
+et ouvrir les ports 80 et 443 (étape 2). Caddy obtient un nouveau certificat
+tout seul. Si le domaine change, mettre à jour `DOMAINE` dans `.env` : les
+moniteurs devront alors ouvrir la nouvelle adresse sur leur téléphone, et
+les notations hors ligne encore en attente sur l'ancienne ne suivront pas.
+
+**5. Vérifier** en se connectant avec un compte existant (évaluations,
+photos, fiches de sécurité) avant d'éteindre l'ancienne machine.
