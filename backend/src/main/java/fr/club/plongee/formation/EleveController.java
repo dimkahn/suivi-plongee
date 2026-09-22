@@ -45,13 +45,19 @@ public class EleveController {
 
     private final EleveRepository eleves;
     private final PhotoEleveRepository photos;
+    private final SuppressionEleveService suppression;
 
-    public EleveController(EleveRepository eleves, PhotoEleveRepository photos) {
+    public EleveController(EleveRepository eleves, PhotoEleveRepository photos,
+                           SuppressionEleveService suppression) {
         this.eleves = eleves;
         this.photos = photos;
+        this.suppression = suppression;
     }
 
-    /** Un élève ne disparaît jamais de la base : archivé, il sort seulement des listes actives. */
+    /**
+     * Archivé, un élève sort seulement des listes actives. Il ne disparaît de
+     * la base que sur suppression explicite par un ADMIN (voir {@link #supprimer}).
+     */
     @GetMapping
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public List<EleveVue> lister() {
@@ -93,6 +99,20 @@ public class EleveController {
         e.setArchiveLe(null);
         eleves.save(e);
         return vue(e);
+    }
+
+    @GetMapping("/archives")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<EleveVue> listerArchives() {
+        return eleves.findByArchiveLeIsNotNullOrderByNomAscPrenomAsc().stream().map(this::vue).toList();
+    }
+
+    /** Irréversible : efface l'élève et tout son historique. Refusé s'il n'est pas archivé. */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void supprimer(@PathVariable Long id) {
+        suppression.supprimer(id);
     }
 
     private void appliquer(Eleve e, DemandeEleve demande) {

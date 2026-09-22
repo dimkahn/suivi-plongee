@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface EleveRepository extends JpaRepository<Eleve, Long> {
     List<Eleve> findByArchiveLeIsNullOrderByNomAscPrenomAsc();
+    List<Eleve> findByArchiveLeIsNotNullOrderByNomAscPrenomAsc();
 }

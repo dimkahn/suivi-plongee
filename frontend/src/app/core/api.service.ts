@@ -353,6 +353,15 @@ export class ApiService {
     return this.http.delete<EleveVue>(`/api/eleves/${id}/archivage`);
   }
 
+  elevesArchives(): Observable<EleveVue[]> {
+    return this.http.get<EleveVue[]>('/api/eleves/archives');
+  }
+
+  /** Irréversible : efface l'élève archivé et tout son historique (cursus, évaluations, brevets). */
+  supprimerEleve(id: number): Observable<unknown> {
+    return this.http.delete(`/api/eleves/${id}`);
+  }
+
   // ----------------------------------------------------------------
   //  Inscription d'un élève dans une formation (cursus), réservée à l'ADMIN.
   // ----------------------------------------------------------------
