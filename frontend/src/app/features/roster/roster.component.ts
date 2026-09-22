@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { RosterVue } from '../../core/modeles';
+import { DateFrPipe } from '../../core/date-fr';
 
 const LIBELLES: Record<string, string> = {
   NAGE: 'Nage', BLOC: 'Bloc', THEORIE: 'Théorie', PLONGEE: 'Plongée',
@@ -13,7 +14,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, DateFrPipe],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
@@ -58,7 +59,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
               <th>Bloc</th>
               <th>Nage</th>
               @for (s of r.seances; track s.id) {
-                <th>{{ s.date }}</th>
+                <th>{{ s.date | dateFr }}</th>
               }
             </tr>
           </thead>

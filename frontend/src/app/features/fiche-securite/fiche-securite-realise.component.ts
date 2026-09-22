@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
+import { DateFrPipe } from '../../core/date-fr';
 
 /**
  * Étape 2, à part de l'établissement (voir FicheSecuriteComponent) : le
@@ -16,12 +17,12 @@ import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
  */
 @Component({
   selector: 'app-fiche-securite-realise',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DateFrPipe],
   template: `
     <a [routerLink]="['/fiches-securite', seanceId]" class="bouton-discret">← Établissement de la fiche</a>
 
     @if (seance(); as s) {
-      <h1>Compléter la fiche — {{ s.date }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
+      <h1>Compléter la fiche — {{ s.date | dateFr }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
       <p class="secondaire">
         {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
         {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m max' : '' }}

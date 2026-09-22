@@ -4,10 +4,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { SaisonVue } from '../../core/modeles';
+import { DateFrPipe } from '../../core/date-fr';
 
 @Component({
   selector: 'app-saisons',
-  imports: [FormsModule],
+  imports: [FormsModule, DateFrPipe],
   template: `
     <h1>Saisons</h1>
     <p class="secondaire">
@@ -54,7 +55,7 @@ import { SaisonVue } from '../../core/modeles';
               <div class="ligne">
                 <div class="identite">
                   <span class="nom">{{ s.libelle }}</span>
-                  <span class="secondaire">Du {{ s.dateDebut }} au {{ s.dateFin }}</span>
+                  <span class="secondaire">Du {{ s.dateDebut | dateFr }} au {{ s.dateFin | dateFr }}</span>
                 </div>
                 <span class="etat" [class.actif]="s.ouverte" [class.inactif]="!s.ouverte">
                   {{ s.ouverte ? 'Ouverte' : 'Fermée' }}

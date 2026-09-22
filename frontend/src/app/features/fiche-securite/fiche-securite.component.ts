@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { DateFrPipe } from '../../core/date-fr';
 import {
   GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue, PlongeurVue, SeanceVue
 } from '../../core/modeles';
@@ -70,7 +71,7 @@ interface FormulaireEntete {
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [FormsModule, RouterLink, DragDropModule],
+  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe],
   template: `
     <a routerLink="/fiches-securite" class="bouton-discret">← Fiches de sécurité</a>
 
@@ -81,7 +82,7 @@ interface FormulaireEntete {
     </datalist>
 
     @if (seance(); as s) {
-      <h1>Fiche de sécurité — {{ s.date }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
+      <h1>Fiche de sécurité — {{ s.date | dateFr }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
       <p class="secondaire">
         {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
         {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m max' : '' }}
