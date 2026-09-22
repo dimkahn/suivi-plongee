@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
 
     List<Participation> findByCursusId(Long cursusId);
+    List<Participation> findBySeanceId(Long seanceId);
 
     Optional<Participation> findByCursusIdAndSeanceId(Long cursusId, Long seanceId);
     boolean existsBySeanceId(Long seanceId);

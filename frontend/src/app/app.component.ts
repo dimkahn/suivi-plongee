@@ -23,6 +23,9 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
 
           <nav id="menu-principal" class="identite" [class.ouvert]="menuOuvert()">
             @if (auth.estMoniteur() || auth.estAdmin()) {
+              <a routerLink="/presences" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Présences
+              </a>
               <a routerLink="/eleves" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Infos élèves
               </a>
