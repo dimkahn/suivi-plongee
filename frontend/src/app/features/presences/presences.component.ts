@@ -18,13 +18,12 @@ interface Choix {
   classe: string;
 }
 
+/** Plongée et Excusé ne sont plus proposés ; une saisie ancienne de ce type reste affichée. */
 const CHOIX: Choix[] = [
   { cle: 'NAGE', libelle: 'Nage', statut: 'PRESENT', atelier: 'NAGE', classe: 'present' },
   { cle: 'BLOC', libelle: 'Bloc', statut: 'PRESENT', atelier: 'BLOC', classe: 'present' },
   { cle: 'THEORIE', libelle: 'Théorie', statut: 'PRESENT', atelier: 'THEORIE', classe: 'present' },
-  { cle: 'PLONGEE', libelle: 'Plongée', statut: 'PRESENT', atelier: 'PLONGEE', classe: 'present' },
-  { cle: 'ABSENT', libelle: 'Absent', statut: 'ABSENT', atelier: null, classe: 'absent' },
-  { cle: 'EXCUSE', libelle: 'Excusé', statut: 'EXCUSE', atelier: null, classe: 'absent' }
+  { cle: 'ABSENT', libelle: 'Absent', statut: 'ABSENT', atelier: null, classe: 'absent' }
 ];
 
 function cleDe(l: LignePresence): string | null {
@@ -99,7 +98,7 @@ function normaliser(texte: string): string {
         <div class="carte vide"><p>Aucun élève inscrit sur la saison de cette séance.</p></div>
       } @else {
         <p class="bilan" role="status">
-          {{ bilan().presents }} présent(s) · {{ bilan().absents }} absent(s) ou excusé(s)
+          {{ bilan().presents }} présent(s) · {{ bilan().absents }} absent(s)
           · {{ bilan().nonRenseignes }} non renseigné(s)
         </p>
 
@@ -118,8 +117,8 @@ function normaliser(texte: string): string {
                   </span>
                 } @else if (!l.statut) {
                   <span class="secondaire">Non renseigné</span>
-                } @else if (l.statut === 'PRESENT' && !l.atelier) {
-                  <span class="secondaire">Présent, atelier non précisé</span>
+                } @else if (!choixConnu(l)) {
+                  <span class="secondaire">{{ libelleAncien(l) }}</span>
                 }
               </div>
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
@@ -205,7 +204,7 @@ function normaliser(texte: string): string {
 
     /* Sur téléphone : trois boutons par ligne, pleine largeur. */
     @media (max-width: 600px) {
-      .choix { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+      .choix { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
       .etat { min-width: 0; }
       .recherche { max-width: none; }
     }
@@ -218,6 +217,18 @@ export class PresencesComponent {
   readonly choix = CHOIX;
   readonly niveaux: Niveau[] = ['TOUS', 'N1', 'N2', 'N3'];
   readonly cleDe = cleDe;
+
+  /** La saisie correspond-elle à un bouton affiché ? Sinon (plongée, excusé...), on l'indique en texte. */
+  choixConnu(l: LignePresence): boolean {
+    const cle = cleDe(l);
+    return cle === null || CHOIX.some(c => c.cle === cle);
+  }
+
+  libelleAncien(l: LignePresence): string {
+    if (l.statut === 'EXCUSE') return 'Excusé';
+    if (l.atelier === 'PLONGEE') return 'Présent, plongée';
+    return 'Présent, atelier non précisé';
+  }
 
   seances = signal<SeanceVue[]>([]);
   seanceId = signal<number | null>(null);
