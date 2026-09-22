@@ -21,6 +21,16 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
   attentes: number;
 }
 
+function normaliser(texte: string): string {
+  return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+}
+
+/** 2026-10-12 → 12/10/2026 */
+function dateFr(iso: string): string {
+  const [a, m, j] = iso.split('-');
+  return `${j}/${m}/${a}`;
+}
+
 @Component({
   selector: 'app-grille',
   standalone: true,
@@ -119,14 +129,25 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       @if (peutSaisir()) {
         <div class="barre-seance">
           <label for="seance">Séance évaluée</label>
-          <select id="seance" [value]="seanceId() ?? ''" (change)="choisirSeance($event)">
-            <option value="">Choisir une séance…</option>
-            @for (s of seancesUtilisables(); track s.id) {
-              <option [value]="s.id">
-                {{ s.date }} — {{ s.lieu }}{{ s.profondeurMax ? ' (' + s.profondeurMax + ' m)' : '' }}
-              </option>
+          <div class="combobox">
+            <input id="seance" type="text" autocomplete="off"
+                   role="combobox" aria-autocomplete="list" aria-controls="liste-seances"
+                   [attr.aria-expanded]="comboboxSeanceOuvert()"
+                   placeholder="Rechercher par date (12/10, 2026-10-12) ou lieu…"
+                   [value]="rechercheSeance()" (input)="saisirSeance($event)"
+                   (focus)="comboboxSeanceOuvert.set(true)" (blur)="fermerComboboxSeanceDifferee()">
+            @if (comboboxSeanceOuvert()) {
+              <ul id="liste-seances" role="listbox" class="options">
+                @for (s of seancesFiltrees(); track s.id) {
+                  <li role="option" [attr.aria-selected]="seanceId() === s.id">
+                    <button type="button" (mousedown)="choisirSeance(s)">{{ libelleSeance(s) }}</button>
+                  </li>
+                } @empty {
+                  <li class="vide">Aucune séance ne correspond.</li>
+                }
+              </ul>
             }
-          </select>
+          </div>
         </div>
       }
 
@@ -283,6 +304,22 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     }
     .barre-seance label { font-weight: 700; white-space: nowrap; }
 
+    .combobox { position: relative; flex: 1; max-width: 420px; }
+    .combobox input { width: 100%; margin: 0; }
+    .options {
+      position: absolute; z-index: 2; top: 100%; left: 0; right: 0; margin: 2px 0 0; padding: 0;
+      list-style: none; max-height: 280px; overflow-y: auto;
+      background: var(--carte); border: 1px solid var(--trait);
+      border-radius: var(--r-s); box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    }
+    .options li[aria-selected="true"] button { font-weight: 700; background: var(--fond); }
+    .options button {
+      display: block; width: 100%; padding: var(--pas) var(--pas-2); min-height: 44px;
+      text-align: left; background: none; border: none; border-radius: 0; color: var(--encre);
+    }
+    .options button:hover, .options button:focus { background: var(--fond); }
+    .options .vide { padding: var(--pas) var(--pas-2); color: var(--craie); font-size: .875rem; }
+
     .bloc { margin-top: var(--pas-3); padding: var(--pas-3); }
     .bloc header {
       display: flex; justify-content: space-between; align-items: flex-start;
@@ -339,6 +376,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       .etats { justify-content: stretch; }
       .etat { flex: 1; }
       .barre-seance { flex-direction: column; align-items: stretch; }
+      .combobox { max-width: none; }
     }
 
     /* Sous 400px (iPhone SE et similaires), l'avatar + la jauge fixes
@@ -454,6 +492,28 @@ export class GrilleComponent implements OnDestroy {
       : this.seances();
   });
 
+  rechercheSeance = signal('');
+  comboboxSeanceOuvert = signal(false);
+
+  /**
+   * Un seul champ pour la date ou le lieu : « 12/10 », « 12/10/2026 »,
+   * « 2026-10 » ou « Hendaye » trouvent la même séance. Les accents et la
+   * casse sont ignorés.
+   */
+  seancesFiltrees = computed(() => {
+    const recherche = normaliser(this.rechercheSeance());
+    const seances = this.seancesUtilisables();
+    if (!recherche) return seances;
+    return seances.filter(s =>
+      [s.date, dateFr(s.date), s.lieu ?? ''].some(champ => normaliser(champ).includes(recherche)));
+  });
+
+  libelleSeance(s: SeanceVue): string {
+    const memeJour = this.seances().filter(x => x.date === s.date).length > 1;
+    return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${s.lieu ?? 'lieu non précisé'}`
+      + (s.profondeurMax ? ` (${s.profondeurMax} m)` : '');
+  }
+
   constructor() {
     // Le lien « saisons précédentes » navigue vers une autre grille sur la
     // même route (/cursus/:id) : Angular réutilise alors l'instance du
@@ -471,6 +531,8 @@ export class GrilleComponent implements OnDestroy {
   private reinitialiser(): void {
     this.grille.set(null);
     this.seanceId.set(null);
+    this.rechercheSeance.set('');
+    this.comboboxSeanceOuvert.set(false);
     this.message.set(null);
     this.erreurChargement.set(false);
     this.ageDuCache.set(null);
@@ -521,9 +583,22 @@ export class GrilleComponent implements OnDestroy {
     this.ageDuCache.set(date ? new Date(date).toLocaleString('fr-FR') : null);
   }
 
-  choisirSeance(evenement: Event): void {
-    const valeur = (evenement.target as HTMLSelectElement).value;
-    this.seanceId.set(valeur ? Number(valeur) : null);
+  /** Retaper dans le champ désélectionne la séance : on ne note pas sur une séance devinée. */
+  saisirSeance(evenement: Event): void {
+    this.rechercheSeance.set((evenement.target as HTMLInputElement).value);
+    this.seanceId.set(null);
+    this.comboboxSeanceOuvert.set(true);
+  }
+
+  choisirSeance(s: SeanceVue): void {
+    this.seanceId.set(s.id);
+    this.rechercheSeance.set(this.libelleSeance(s));
+    this.comboboxSeanceOuvert.set(false);
+  }
+
+  /** Différé pour laisser le clic sur une option se produire avant la fermeture. */
+  fermerComboboxSeanceDifferee(): void {
+    setTimeout(() => this.comboboxSeanceOuvert.set(false), 150);
   }
 
   /**
