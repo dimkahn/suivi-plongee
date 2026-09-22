@@ -99,8 +99,9 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
       background: var(--profond); color: #fff; border-color: var(--profond);
     }
     .etiquette-recherche { display: block; margin: var(--pas-2) 0 4px; font-weight: 700; font-size: .9375rem; }
-    .recherche { max-width: 320px; }
-    .tableau-scroll { overflow-x: auto; margin-top: var(--pas-3); }
+    /* Espacement porté par le champ : il vaut pour le tableau comme pour le message « aucun élève ». */
+    .recherche { max-width: 320px; margin-bottom: var(--pas-3); }
+    .tableau-scroll { overflow-x: auto; }
     table { border-collapse: collapse; white-space: nowrap; }
     th, td {
       padding: 8px 12px; border-bottom: 1px solid var(--trait); text-align: left; font-size: .875rem;
