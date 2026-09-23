@@ -398,10 +398,13 @@ export type Atelier = 'NAGE' | 'BLOC' | 'THEORIE' | 'PLONGEE';
 /** Une ligne de la feuille de présence ; statut null : rien de saisi pour cette séance. */
 export interface LignePresence {
   cursusId: number;
+  eleveId: number;
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
   statut: StatutPresence | null;
   atelier: Atelier | null;
+  aPhoto: boolean;
+  autorisationImage: boolean;
 }
 
 export interface FeuillePresence {
