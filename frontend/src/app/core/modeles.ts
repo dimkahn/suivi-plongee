@@ -69,6 +69,10 @@ export interface GrilleVue {
   eleveId: number;
   eleve: string;
   aPhoto: boolean;
+  email: string | null;
+  telephone: string | null;
+  contactUrgenceNom: string | null;
+  contactUrgenceTelephone: string | null;
   niveau: 'N1' | 'N2' | 'N3';
   versionMft: string;
   saison: string;
@@ -181,6 +185,10 @@ export interface EleveVue {
   certificatValideJusquAu: string | null;
   /** Déclaratif : brevet obtenu avant l'outil ou dans un autre club, sans cursus DELIVRE dans l'app. */
   dernierNiveau: string | null;
+  email: string | null;
+  telephone: string | null;
+  contactUrgenceNom: string | null;
+  contactUrgenceTelephone: string | null;
   autorisationLegale: boolean;
   autorisationImage: boolean;
   archive: boolean;

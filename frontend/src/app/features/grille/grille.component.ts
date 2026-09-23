@@ -101,6 +101,25 @@ function normaliser(texte: string): string {
               }
             }
           }
+
+          <button type="button" class="bouton-discret lien-pdf" (click)="infosSupplementairesOuvertes.set(!infosSupplementairesOuvertes())">
+            {{ infosSupplementairesOuvertes() ? 'Masquer les informations supplémentaires' : 'Informations supplémentaires' }}
+          </button>
+          @if (infosSupplementairesOuvertes()) {
+            <dl class="infos-supplementaires">
+              <dt>E-mail</dt><dd>{{ g.email || 'non renseigné' }}</dd>
+              <dt>Téléphone</dt><dd>{{ g.telephone || 'non renseigné' }}</dd>
+              <dt>Contact d'urgence</dt>
+              <dd>
+                @if (g.contactUrgenceNom || g.contactUrgenceTelephone) {
+                  {{ g.contactUrgenceNom || 'nom non renseigné' }}
+                  @if (g.contactUrgenceTelephone) { — {{ g.contactUrgenceTelephone }} }
+                } @else {
+                  non renseigné
+                }
+              </dd>
+            </dl>
+          }
         </div>
       </div>
 
@@ -303,6 +322,12 @@ function normaliser(texte: string): string {
     .lien-pdf:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
     .saisons-precedentes { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 4px; }
     .saisons-precedentes a { font-size: .875rem; }
+    .infos-supplementaires {
+      margin: var(--pas) 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px var(--pas);
+      font-size: .875rem;
+    }
+    .infos-supplementaires dt { font-weight: 700; color: var(--craie); }
+    .infos-supplementaires dd { margin: 0; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -437,6 +462,9 @@ export class GrilleComponent implements OnDestroy {
   historiqueSaisonsOuvert = signal(false);
   chargementHistoriqueSaisons = signal(false);
   historiqueSaisons = signal<CursusVue[]>([]);
+
+  /** E-mail, téléphone, contact d'urgence : masqués par défaut, hors du premier coup d'œil. */
+  infosSupplementairesOuvertes = signal(false);
 
   readonly etats = [
     { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },

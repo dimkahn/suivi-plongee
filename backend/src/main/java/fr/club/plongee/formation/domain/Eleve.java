@@ -43,6 +43,15 @@ public class Eleve {
      */
     private String dernierNiveau;
 
+    private String email;
+
+    private String telephone;
+
+    /** Personne à prévenir en cas d'urgence : nom et téléphone, jamais un contact médical. */
+    private String contactUrgenceNom;
+
+    private String contactUrgenceTelephone;
+
     @Column(nullable = false)
     private boolean autorisationLegale = false;
 
@@ -125,6 +134,38 @@ public class Eleve {
 
     public void setDernierNiveau(String dernierNiveau) {
         this.dernierNiveau = dernierNiveau;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getTelephone() {
+        return telephone;
+    }
+
+    public void setTelephone(String telephone) {
+        this.telephone = telephone;
+    }
+
+    public String getContactUrgenceNom() {
+        return contactUrgenceNom;
+    }
+
+    public void setContactUrgenceNom(String contactUrgenceNom) {
+        this.contactUrgenceNom = contactUrgenceNom;
+    }
+
+    public String getContactUrgenceTelephone() {
+        return contactUrgenceTelephone;
+    }
+
+    public void setContactUrgenceTelephone(String contactUrgenceTelephone) {
+        this.contactUrgenceTelephone = contactUrgenceTelephone;
     }
 
     public boolean isAutorisationLegale() {

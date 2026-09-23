@@ -40,6 +40,8 @@ public class GrilleService {
                           List<CritereVue> criteres) {}
 
     public record GrilleVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto,
+                            String email, String telephone, String contactUrgenceNom,
+                            String contactUrgenceTelephone,
                             String niveau, String versionMft,
                             String saison, String statut, boolean milieuNaturelExclusif,
                             String niveauEncadrantValidation, int prerogativeProfondeur,
@@ -113,6 +115,8 @@ public class GrilleService {
         Long eleveId = cursus.getEleve().getId();
         return new GrilleVue(cursus.getId(), eleveId, cursus.getEleve().nomComplet(),
                 cursus.getEleve().isAutorisationImage() && photos.existsById(eleveId),
+                cursus.getEleve().getEmail(), cursus.getEleve().getTelephone(),
+                cursus.getEleve().getContactUrgenceNom(), cursus.getEleve().getContactUrgenceTelephone(),
                 cursus.getReferentiel().getNiveau().name(),
                 cursus.getReferentiel().getVersionMft(),
                 cursus.getSaison().getLibelle(),

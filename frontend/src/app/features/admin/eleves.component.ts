@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, effect, inject, signal, computed, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -8,6 +8,24 @@ import { DateFrPipe } from '../../core/date-fr';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 
+/** Cadre carré présenté à l'écran pendant le recadrage (px). */
+const TAILLE_APERCU = 280;
+/** Résolution de la photo enregistrée (px, carré) : cohérent avec l'affichage en 120x120 ailleurs. */
+const TAILLE_SORTIE = 480;
+/** La photo d'un élève ne doit jamais dépasser ce poids une fois compressée. */
+const POIDS_MAX_OCTETS = 300 * 1024;
+
+interface EtatRecadrage {
+  eleve: EleveVue;
+  image: HTMLImageElement;
+  url: string;
+  /** Échelle qui fait tenir le plus petit côté de l'image dans le cadre, à zoom 1. */
+  echelleBase: number;
+  zoom: number;
+  decalageX: number;
+  decalageY: number;
+}
+
 interface FormulaireEleve {
   nom: string;
   prenom: string;
@@ -15,19 +33,26 @@ interface FormulaireEleve {
   numeroLicence: string;
   certificatValideJusquAu: string;
   dernierNiveau: string;
+  email: string;
+  telephone: string;
+  contactUrgenceNom: string;
+  contactUrgenceTelephone: string;
   autorisationLegale: boolean;
 }
 
 function formulaireVide(): FormulaireEleve {
   return { nom: '', prenom: '', dateNaissance: '', numeroLicence: '',
-           certificatValideJusquAu: '', dernierNiveau: '', autorisationLegale: false };
+           certificatValideJusquAu: '', dernierNiveau: '', email: '', telephone: '',
+           contactUrgenceNom: '', contactUrgenceTelephone: '', autorisationLegale: false };
 }
 
 function depuis(e: EleveVue): FormulaireEleve {
   return {
     nom: e.nom, prenom: e.prenom, dateNaissance: e.dateNaissance ?? '',
     numeroLicence: e.numeroLicence ?? '', certificatValideJusquAu: e.certificatValideJusquAu ?? '',
-    dernierNiveau: e.dernierNiveau ?? '', autorisationLegale: e.autorisationLegale
+    dernierNiveau: e.dernierNiveau ?? '', email: e.email ?? '', telephone: e.telephone ?? '',
+    contactUrgenceNom: e.contactUrgenceNom ?? '', contactUrgenceTelephone: e.contactUrgenceTelephone ?? '',
+    autorisationLegale: e.autorisationLegale
   };
 }
 
@@ -60,6 +85,16 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         <label for="niveau">Dernier niveau de plongée</label>
         <input id="niveau" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
                placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" name="email" [(ngModel)]="f.email" placeholder="Facultatif">
+        <label for="telephone">Téléphone</label>
+        <input id="telephone" type="tel" name="telephone" [(ngModel)]="f.telephone" placeholder="Facultatif">
+        <label for="contactUrgenceNom">Contact d'urgence — nom</label>
+        <input id="contactUrgenceNom" type="text" name="contactUrgenceNom" [(ngModel)]="f.contactUrgenceNom"
+               placeholder="Facultatif">
+        <label for="contactUrgenceTelephone">Contact d'urgence — téléphone</label>
+        <input id="contactUrgenceTelephone" type="tel" name="contactUrgenceTelephone"
+               [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
         <label class="case">
           <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
           Autorisation du responsable légal recueillie
@@ -121,6 +156,18 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                 <label [for]="'niveau-' + e.id">Dernier niveau de plongée</label>
                 <input [id]="'niveau-' + e.id" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
                        placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
+                <label [for]="'email-' + e.id">E-mail</label>
+                <input [id]="'email-' + e.id" type="email" name="email" [(ngModel)]="f.email"
+                       placeholder="Facultatif">
+                <label [for]="'telephone-' + e.id">Téléphone</label>
+                <input [id]="'telephone-' + e.id" type="tel" name="telephone" [(ngModel)]="f.telephone"
+                       placeholder="Facultatif">
+                <label [for]="'contactUrgenceNom-' + e.id">Contact d'urgence — nom</label>
+                <input [id]="'contactUrgenceNom-' + e.id" type="text" name="contactUrgenceNom"
+                       [(ngModel)]="f.contactUrgenceNom" placeholder="Facultatif">
+                <label [for]="'contactUrgenceTelephone-' + e.id">Contact d'urgence — téléphone</label>
+                <input [id]="'contactUrgenceTelephone-' + e.id" type="tel" name="contactUrgenceTelephone"
+                       [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
                 <label class="case">
                   <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
                   Autorisation du responsable légal recueillie
@@ -165,7 +212,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   <label class="bouton-discret upload">
                     Déposer une photo
                     <input type="file" accept="image/jpeg,image/png" hidden
-                           (change)="deposerPhoto(e, $event)">
+                           (change)="choisirPhoto(e, $event)">
                   </label>
                 }
                 @if (filtreSaisonId() && !aCursus(e)) {
@@ -246,6 +293,31 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         }
       }
     </section>
+
+    @if (recadrage(); as r) {
+      <div class="voile" role="presentation">
+        <div class="dialogue-recadrage" role="dialog" aria-label="Recadrer la photo">
+          <h2>Recadrer la photo de {{ r.eleve.prenom }} {{ r.eleve.nom }}</h2>
+          <p class="secondaire">Glissez l'image pour la repositionner, ajustez le zoom si besoin.</p>
+          <canvas #canvasRecadrage [width]="tailleApercu" [height]="tailleApercu" class="cadre-recadrage"
+                  (pointerdown)="commencerGlissement($event)" (pointermove)="glisser($event)"
+                  (pointerup)="finGlissement()" (pointerleave)="finGlissement()"></canvas>
+          <label for="zoomRecadrage">Zoom</label>
+          <input id="zoomRecadrage" type="range" min="1" max="3" step="0.02" [ngModel]="r.zoom"
+                 name="zoomRecadrage" (ngModelChange)="changerZoom($event)">
+          <div class="actions">
+            <button type="button" class="bouton-principal" [disabled]="recadrageEnCours()"
+                    (click)="validerRecadrage()">
+              {{ recadrageEnCours() ? 'Enregistrement…' : 'Valider' }}
+            </button>
+            <button type="button" class="bouton-discret" [disabled]="recadrageEnCours()"
+                    (click)="annulerRecadrage()">
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -284,12 +356,35 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     @media (max-width: 600px) {
       .ligne { flex-direction: column; }
     }
+
+    .voile {
+      position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
+      padding: var(--pas-2); background: rgba(0,0,0,.55);
+    }
+    .dialogue-recadrage {
+      width: 100%; max-width: 340px; padding: var(--pas-3); border-radius: var(--r-s);
+      background: var(--carte); display: flex; flex-direction: column; align-items: center;
+    }
+    .dialogue-recadrage h2 { align-self: flex-start; }
+    .dialogue-recadrage label { align-self: flex-start; }
+    .dialogue-recadrage input[type="range"] { width: 100%; margin: 0 0 var(--pas); }
+    .cadre-recadrage {
+      touch-action: none; cursor: grab; border-radius: 50%; background: var(--fond);
+      box-shadow: 0 0 0 1px var(--trait);
+    }
+    .dialogue-recadrage .actions { width: 100%; justify-content: flex-end; }
   `]
 })
 export class ElevesComponent {
   private api = inject(ApiService);
 
   readonly statuts = STATUTS;
+  readonly tailleApercu = TAILLE_APERCU;
+
+  recadrage = signal<EtatRecadrage | null>(null);
+  recadrageEnCours = signal(false);
+  private canvasRecadrage = viewChild<ElementRef<HTMLCanvasElement>>('canvasRecadrage');
+  private origineGlissement: { x: number; y: number; decalageX: number; decalageY: number } | null = null;
 
   liste = signal<EleveVue[]>([]);
   saisons = signal<SaisonVue[]>([]);
@@ -354,6 +449,17 @@ export class ElevesComponent {
 
   constructor() {
     void this.charger();
+
+    // Redessine l'aperçu à chaque déplacement/zoom, et dès que le canvas apparaît dans le DOM.
+    effect(() => {
+      const r = this.recadrage();
+      const canvas = this.canvasRecadrage()?.nativeElement;
+      if (!r || !canvas) return;
+      const ctx = canvas.getContext('2d')!;
+      ctx.clearRect(0, 0, TAILLE_APERCU, TAILLE_APERCU);
+      const echelle = r.echelleBase * r.zoom;
+      ctx.drawImage(r.image, r.decalageX, r.decalageY, r.image.width * echelle, r.image.height * echelle);
+    });
   }
 
   private async charger(): Promise<void> {
@@ -446,7 +552,9 @@ export class ElevesComponent {
     this.api.creerEleve({
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
       numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
-      dernierNiveau: f.dernierNiveau || null, autorisationLegale: f.autorisationLegale
+      dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
+      contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
+      autorisationLegale: f.autorisationLegale
     }).subscribe({
       next: e => {
         this.envoi.set(false);
@@ -478,7 +586,9 @@ export class ElevesComponent {
     this.api.modifierEleve(e.id, {
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
       numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
-      dernierNiveau: f.dernierNiveau || null, autorisationLegale: f.autorisationLegale
+      dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
+      contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
+      autorisationLegale: f.autorisationLegale
     }).subscribe({
       next: maj => {
         this.envoi.set(false);
@@ -501,14 +611,131 @@ export class ElevesComponent {
     });
   }
 
-  deposerPhoto(e: EleveVue, evenement: Event): void {
-    const fichier = (evenement.target as HTMLInputElement).files?.[0];
+  /** Ouvre le recadrage : la photo n'est envoyée qu'une fois validée (voir {@link validerRecadrage}). */
+  choisirPhoto(e: EleveVue, evenement: Event): void {
+    const entree = evenement.target as HTMLInputElement;
+    const fichier = entree.files?.[0];
+    entree.value = ''; // permet de rechoisir le même fichier plus tard
     if (!fichier) return;
     this.message.set(null);
-    this.api.deposerPhotoEleve(e.id, fichier).subscribe({
-      next: () => this.message.set(`Photo enregistrée pour ${e.prenom} ${e.nom}.`),
-      error: (err: HttpErrorResponse) =>
-        this.message.set(err.error?.detail ?? "La photo n'a pas pu être déposée.")
+
+    const url = URL.createObjectURL(fichier);
+    const image = new Image();
+    image.onload = () => {
+      const echelleBase = TAILLE_APERCU / Math.min(image.width, image.height);
+      this.recadrage.set({
+        eleve: e, image, url, echelleBase, zoom: 1,
+        decalageX: (TAILLE_APERCU - image.width * echelleBase) / 2,
+        decalageY: (TAILLE_APERCU - image.height * echelleBase) / 2
+      });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      this.message.set("Cette image n'a pas pu être lue.");
+    };
+    image.src = url;
+  }
+
+  commencerGlissement(evenement: PointerEvent): void {
+    const r = this.recadrage();
+    if (!r) return;
+    (evenement.target as HTMLElement).setPointerCapture(evenement.pointerId);
+    this.origineGlissement = { x: evenement.clientX, y: evenement.clientY,
+                               decalageX: r.decalageX, decalageY: r.decalageY };
+  }
+
+  glisser(evenement: PointerEvent): void {
+    const r = this.recadrage();
+    if (!r || !this.origineGlissement) return;
+    const o = this.origineGlissement;
+    const suivant = { ...r, decalageX: o.decalageX + (evenement.clientX - o.x),
+                      decalageY: o.decalageY + (evenement.clientY - o.y) };
+    this.clamperDecalage(suivant);
+    this.recadrage.set(suivant);
+  }
+
+  finGlissement(): void {
+    this.origineGlissement = null;
+  }
+
+  /** Le point regardé au centre du cadre reste stable pendant le zoom. */
+  changerZoom(zoom: number): void {
+    const r = this.recadrage();
+    if (!r) return;
+    const centre = TAILLE_APERCU / 2;
+    const rapport = (r.echelleBase * zoom) / (r.echelleBase * r.zoom);
+    const suivant = {
+      ...r, zoom,
+      decalageX: centre - (centre - r.decalageX) * rapport,
+      decalageY: centre - (centre - r.decalageY) * rapport
+    };
+    this.clamperDecalage(suivant);
+    this.recadrage.set(suivant);
+  }
+
+  /** L'image doit toujours couvrir tout le cadre : jamais de bord vide. */
+  private clamperDecalage(r: EtatRecadrage): void {
+    const echelle = r.echelleBase * r.zoom;
+    r.decalageX = Math.min(0, Math.max(TAILLE_APERCU - r.image.width * echelle, r.decalageX));
+    r.decalageY = Math.min(0, Math.max(TAILLE_APERCU - r.image.height * echelle, r.decalageY));
+  }
+
+  annulerRecadrage(): void {
+    const r = this.recadrage();
+    if (r) URL.revokeObjectURL(r.url);
+    this.recadrage.set(null);
+  }
+
+  async validerRecadrage(): Promise<void> {
+    const r = this.recadrage();
+    if (!r) return;
+    this.recadrageEnCours.set(true);
+    try {
+      const fichier = await this.produireFichier(r);
+      await firstValueFrom(this.api.deposerPhotoEleve(r.eleve.id, fichier));
+      this.message.set(`Photo enregistrée pour ${r.eleve.prenom} ${r.eleve.nom}.`);
+      URL.revokeObjectURL(r.url);
+      this.recadrage.set(null);
+    } catch (err) {
+      this.message.set((err as HttpErrorResponse).error?.detail ?? "La photo n'a pas pu être déposée.");
+    } finally {
+      this.recadrageEnCours.set(false);
+    }
+  }
+
+  /** Découpe le cadre choisi en une image carrée, puis la compresse sous {@link POIDS_MAX_OCTETS}. */
+  private async produireFichier(r: EtatRecadrage): Promise<File> {
+    const rapport = TAILLE_SORTIE / TAILLE_APERCU;
+    const echelle = r.echelleBase * r.zoom * rapport;
+    let sortie = document.createElement('canvas');
+    sortie.width = TAILLE_SORTIE;
+    sortie.height = TAILLE_SORTIE;
+    sortie.getContext('2d')!.drawImage(r.image, r.decalageX * rapport, r.decalageY * rapport,
+        r.image.width * echelle, r.image.height * echelle);
+
+    let qualite = 0.9;
+    let blob = await this.versBlob(sortie, qualite);
+    while (blob.size > POIDS_MAX_OCTETS && qualite > 0.4) {
+      qualite -= 0.1;
+      blob = await this.versBlob(sortie, qualite);
+    }
+    // La qualité seule ne suffit pas toujours : on réduit alors la résolution.
+    let taille = TAILLE_SORTIE;
+    while (blob.size > POIDS_MAX_OCTETS && taille > 160) {
+      taille = Math.round(taille * 0.85);
+      const reduit = document.createElement('canvas');
+      reduit.width = taille;
+      reduit.height = taille;
+      reduit.getContext('2d')!.drawImage(sortie, 0, 0, taille, taille);
+      sortie = reduit;
+      blob = await this.versBlob(sortie, 0.8);
+    }
+    return new File([blob], `eleve-${r.eleve.id}.jpg`, { type: 'image/jpeg' });
+  }
+
+  private versBlob(canvas: HTMLCanvasElement, qualite: number): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Échec de la compression')), 'image/jpeg', qualite);
     });
   }
 
