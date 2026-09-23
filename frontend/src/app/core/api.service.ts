@@ -27,6 +27,10 @@ interface DemandeEleve {
   numeroLicence?: string | null;
   certificatValideJusquAu?: string | null;
   dernierNiveau?: string | null;
+  email?: string | null;
+  telephone?: string | null;
+  contactUrgenceNom?: string | null;
+  contactUrgenceTelephone?: string | null;
   autorisationLegale: boolean;
 }
 

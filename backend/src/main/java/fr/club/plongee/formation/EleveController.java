@@ -35,10 +35,14 @@ public class EleveController {
 
     public record EleveVue(Long id, String nom, String prenom, LocalDate dateNaissance,
                            String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
+                           String email, String telephone, String contactUrgenceNom,
+                           String contactUrgenceTelephone,
                            boolean autorisationLegale, boolean autorisationImage, boolean archive) {}
 
     public record DemandeEleve(@NotBlank String nom, @NotBlank String prenom, LocalDate dateNaissance,
                                String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
+                               String email, String telephone, String contactUrgenceNom,
+                               String contactUrgenceTelephone,
                                boolean autorisationLegale) {}
 
     public record DemandeAutorisationImage(@NotNull Boolean autorisationImage) {}
@@ -122,12 +126,17 @@ public class EleveController {
         e.setNumeroLicence(demande.numeroLicence());
         e.setCertificatValideJusquAu(demande.certificatValideJusquAu());
         e.setDernierNiveau(demande.dernierNiveau());
+        e.setEmail(demande.email());
+        e.setTelephone(demande.telephone());
+        e.setContactUrgenceNom(demande.contactUrgenceNom());
+        e.setContactUrgenceTelephone(demande.contactUrgenceTelephone());
         e.setAutorisationLegale(demande.autorisationLegale());
     }
 
     private EleveVue vue(Eleve e) {
         return new EleveVue(e.getId(), e.getNom(), e.getPrenom(), e.getDateNaissance(),
                 e.getNumeroLicence(), e.getCertificatValideJusquAu(), e.getDernierNiveau(),
+                e.getEmail(), e.getTelephone(), e.getContactUrgenceNom(), e.getContactUrgenceTelephone(),
                 e.isAutorisationLegale(), e.isAutorisationImage(), e.getArchiveLe() != null);
     }
 
