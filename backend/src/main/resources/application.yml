@@ -24,7 +24,7 @@ app:
     secret: ${JWT_SECRET:Y2hhbmdlLW1lLWVuLXByb2R1Y3Rpb24tY2xlLWRlLTQ4LW9jdGV0cy1taW5pbXVt}
     duree-acces-minutes: 30
     # « Se souvenir de moi » coché : cookie persistant, renouvelé à chaque usage.
-    duree-refresh-jours: 14
+    duree-refresh-jours: 90
     # Case décochée : cookie de session (effacé à la fermeture du navigateur),
     # borné aussi côté serveur, certains navigateurs restaurant ces cookies.
     duree-session-heures: 12

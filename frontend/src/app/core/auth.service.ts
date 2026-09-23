@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, finalize, tap } from 'rxjs';
+import { Observable, finalize, shareReplay, tap } from 'rxjs';
 import { Session } from './modeles';
 
 const ORDRE_ENCADREMENT = ['E1', 'E2', 'E3', 'E4'];
@@ -52,6 +52,25 @@ export class AuthService {
     this.reprendre()
       .pipe(finalize(() => this.sessionResolue.set(true)))
       .subscribe({ error: () => {} });
+  }
+
+  private rafraichissementEnCours: Observable<Session> | null = null;
+
+  /**
+   * Un seul appel réseau même si plusieurs requêtes essuient un 401 en même
+   * temps (jeton d'accès expiré après 30 min) : {@link auth.interceptor}
+   * s'en sert pour rejouer la requête plutôt que de déconnecter l'utilisateur,
+   * tant que le cookie de rafraîchissement (jusqu'à 3 mois si « se souvenir
+   * de moi ») est encore valide.
+   */
+  rafraichirPartage(): Observable<Session> {
+    if (!this.rafraichissementEnCours) {
+      this.rafraichissementEnCours = this.reprendre().pipe(
+        finalize(() => this.rafraichissementEnCours = null),
+        shareReplay(1)
+      );
+    }
+    return this.rafraichissementEnCours;
   }
 
   /** Toujours la même réponse au moniteur, que le compte existe ou non. */
