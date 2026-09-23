@@ -36,7 +36,8 @@ public class SeanceController {
                                   Participation.Atelier atelier, String commentaire) {}
 
     /** Une ligne de la feuille de présence ; statut/atelier null : rien de saisi pour cette séance. */
-    public record LignePresence(Long cursusId, String eleve, String niveau, String statut, String atelier) {}
+    public record LignePresence(Long cursusId, Long eleveId, String eleve, String niveau, String statut,
+                                String atelier, boolean aPhoto, boolean autorisationImage) {}
 
     public record FeuillePresence(SeanceVue seance, List<LignePresence> eleves) {}
 
@@ -46,16 +47,19 @@ public class SeanceController {
     private final ParticipationRepository participations;
     private final EvaluationRepository evaluations;
     private final FicheSecuriteRepository fichesSecurite;
+    private final PhotoEleveRepository photos;
 
     public SeanceController(SeanceRepository seances, SaisonRepository saisons,
                             CursusRepository cursus, ParticipationRepository participations,
-                            EvaluationRepository evaluations, FicheSecuriteRepository fichesSecurite) {
+                            EvaluationRepository evaluations, FicheSecuriteRepository fichesSecurite,
+                            PhotoEleveRepository photos) {
         this.seances = seances;
         this.saisons = saisons;
         this.cursus = cursus;
         this.participations = participations;
         this.evaluations = evaluations;
         this.fichesSecurite = fichesSecurite;
+        this.photos = photos;
     }
 
     @GetMapping
@@ -143,10 +147,13 @@ public class SeanceController {
                 .filter(c -> c.getStatut() != Cursus.Statut.ABANDON || saisies.containsKey(c.getId()))
                 .map(c -> {
                     Participation p = saisies.get(c.getId());
-                    return new LignePresence(c.getId(), c.getEleve().nomComplet(),
+                    Eleve e = c.getEleve();
+                    return new LignePresence(c.getId(), e.getId(), e.nomComplet(),
                             c.getReferentiel().getNiveau().name(),
                             p == null ? null : p.getStatut().name(),
-                            p == null || p.getAtelier() == null ? null : p.getAtelier().name());
+                            p == null || p.getAtelier() == null ? null : p.getAtelier().name(),
+                            e.isAutorisationImage() && photos.existsById(e.getId()),
+                            e.isAutorisationImage());
                 })
                 .toList();
         return new FeuillePresence(vue(seance), lignes);

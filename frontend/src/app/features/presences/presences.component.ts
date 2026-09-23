@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -40,6 +40,11 @@ function normaliser(texte: string): string {
  * théorie, plongée) ou son absence. Remplace la grille de dates en colonnes
  * du tableur ; les compteurs « séances bloc / nage » de Infos élèves en
  * découlent. Enregistrement immédiat à chaque toucher, réseau requis.
+ *
+ * Sur téléphone, les boutons de choix ne tiennent pas sur chaque carte sans
+ * forcer une seule carte par ligne : on les remplace par une barre en bas
+ * d'écran, ouverte en touchant la carte, ce qui laisse plusieurs élèves par
+ * ligne (voir le média-query 600px plus bas).
  */
 @Component({
   selector: 'app-presences',
@@ -108,19 +113,28 @@ function normaliser(texte: string): string {
         <ul class="eleves">
           @for (l of lignesFiltrees(); track l.cursusId) {
             <li class="carte">
-              <div class="identite">
-                <span class="nom">{{ l.eleve }}</span>
-                <span class="niveau">{{ l.niveau }}</span>
-                @if (enregistrements().has(l.cursusId)) {
-                  <span class="enregistrement" role="status">
-                    <span class="chargeur" aria-hidden="true"></span>Enregistrement…
-                  </span>
-                } @else if (!l.statut) {
-                  <span class="secondaire">Non renseigné</span>
-                } @else if (!choixConnu(l)) {
-                  <span class="secondaire">{{ libelleAncien(l) }}</span>
+              <button type="button" class="zone-identite" (click)="ouvrirChoixMobile(l)">
+                @if (urlPhoto(l.eleveId); as url) {
+                  <img class="avatar" [src]="url" [alt]="l.eleve" width="48" height="48">
+                } @else {
+                  <div class="avatar silhouette" [attr.aria-label]="l.eleve">{{ initiales(l.eleve) }}</div>
                 }
-              </div>
+                <span class="identite">
+                  <span class="nom">{{ l.eleve }}</span>
+                  <span class="niveau">{{ l.niveau }}</span>
+                  @if (enregistrements().has(l.cursusId)) {
+                    <span class="enregistrement" role="status">
+                      <span class="chargeur" aria-hidden="true"></span>Enregistrement…
+                    </span>
+                  } @else if (choixActuel(l); as ca) {
+                    <span class="etat-mini" [class]="ca.classe">{{ ca.libelle }}</span>
+                  } @else if (!l.statut) {
+                    <span class="secondaire">Non renseigné</span>
+                  } @else {
+                    <span class="secondaire">{{ libelleAncien(l) }}</span>
+                  }
+                </span>
+              </button>
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
                 @for (c of choix; track c.cle) {
                   <button type="button" [class]="'etat ' + c.classe"
@@ -135,6 +149,21 @@ function normaliser(texte: string): string {
             </li>
           }
         </ul>
+
+        @if (ligneSelectionnee(); as l) {
+          <div class="barre-choix" role="dialog" [attr.aria-label]="'Présence de ' + l.eleve">
+            <p><strong>{{ l.eleve }}</strong> — qu'a-t-il fait ?</p>
+            <div class="choix-rapide">
+              @for (c of choix; track c.cle) {
+                <button type="button" [class]="'etat ' + c.classe" [class.actif]="cleDe(l) === c.cle"
+                        [disabled]="!reseau.enLigne()" (click)="choisirEtFermer(l, c)">
+                  {{ c.libelle }}
+                </button>
+              }
+              <button type="button" class="bouton-discret" (click)="ligneSelectionnee.set(null)">Annuler</button>
+            </div>
+          </div>
+        }
       }
     }
   `,
@@ -169,16 +198,36 @@ function normaliser(texte: string): string {
 
     .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
 
-    .eleves { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    /* Plusieurs élèves par ligne dès que la largeur le permet. */
+    .eleves {
+      list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
     .eleves li {
       padding: var(--pas-2); display: flex; justify-content: space-between; align-items: center;
       gap: var(--pas-2); flex-wrap: wrap;
     }
-    .identite { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
+    .zone-identite {
+      display: flex; align-items: center; gap: var(--pas); flex: 1 1 auto; min-width: 0;
+      padding: 0; text-align: left; background: none; border: none;
+    }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--fond);
+      flex-shrink: 0;
+    }
+    .avatar.silhouette {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-titres), sans-serif; font-weight: 700; font-size: .8125rem; color: var(--craie);
+    }
+    .identite { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; min-width: 0; }
     .nom { font-weight: 700; }
     .niveau {
       border: 1px solid var(--trait); border-radius: var(--r-s); padding: 0 8px;
       font-size: .8125rem; font-weight: 700; color: var(--craie);
+    }
+    .etat-mini {
+      display: none; /* superflu sur grand écran : les boutons montrent déjà l'état actif */
+      font-size: .8125rem; font-weight: 700; padding: 0 8px; border-radius: var(--r-s);
     }
 
     .choix { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -187,8 +236,8 @@ function normaliser(texte: string): string {
       border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte);
       color: var(--encre); font-weight: 600;
     }
-    .etat.present.actif { background: var(--acquis); border-color: var(--acquis); color: #fff; }
-    .etat.absent.actif { background: var(--craie); border-color: var(--craie); color: #fff; }
+    .etat.present.actif, .etat-mini.present { background: var(--acquis); border-color: var(--acquis); color: #fff; }
+    .etat.absent.actif, .etat-mini.absent { background: var(--craie); border-color: var(--craie); color: #fff; }
     .etat:disabled { opacity: .6; cursor: not-allowed; }
 
     .enregistrement {
@@ -202,15 +251,35 @@ function normaliser(texte: string): string {
     }
     @keyframes tourner { to { transform: rotate(360deg); } }
 
-    /* Sur téléphone : trois boutons par ligne, pleine largeur. */
+    .barre-choix {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      padding: var(--pas-2) var(--pas-3) calc(var(--pas-2) + env(safe-area-inset-bottom, 0px));
+      background: var(--carte); border-top: 1px solid var(--trait);
+      box-shadow: 0 -6px 16px rgba(0,0,0,.15);
+    }
+    .barre-choix p { margin: 0 0 var(--pas); }
+    .choix-rapide { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .choix-rapide .etat { flex: 1 1 72px; }
+
+    /*
+     * Sur téléphone : la carte devient compacte (avatar + nom + état), sans
+     * les boutons de choix qui ne tiendraient pas à plusieurs par ligne.
+     * Toucher la carte ouvre la barre de choix en bas d'écran à la place.
+     */
     @media (max-width: 600px) {
-      .choix { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
-      .etat { min-width: 0; }
+      .eleves { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
+      .eleves li { flex-direction: column; padding: var(--pas); gap: 4px; }
+      .zone-identite { flex-direction: column; text-align: center; gap: 4px; }
+      .avatar { width: 56px; height: 56px; }
+      .avatar.silhouette { font-size: 1.125rem; }
+      .identite { flex-direction: column; gap: 2px; }
+      .etat-mini { display: inline-block; }
+      .choix { display: none; }
       .recherche { max-width: none; }
     }
   `]
 })
-export class PresencesComponent {
+export class PresencesComponent implements OnDestroy {
   private api = inject(ApiService);
   reseau = inject(ReseauService);
 
@@ -222,6 +291,12 @@ export class PresencesComponent {
   choixConnu(l: LignePresence): boolean {
     const cle = cleDe(l);
     return cle === null || CHOIX.some(c => c.cle === cle);
+  }
+
+  choixActuel(l: LignePresence): Choix | null {
+    if (!this.choixConnu(l)) return null;
+    const cle = cleDe(l);
+    return CHOIX.find(c => c.cle === cle) ?? null;
   }
 
   libelleAncien(l: LignePresence): string {
@@ -242,6 +317,11 @@ export class PresencesComponent {
 
   niveau = signal<Niveau>('TOUS');
   rechercheEleve = signal('');
+
+  /** Élève dont la carte a été touchée sur téléphone : barre de choix ouverte en bas d'écran. */
+  ligneSelectionnee = signal<LignePresence | null>(null);
+
+  private urlsPhotos = signal<Map<number, string>>(new Map());
 
   /** On ne remplit pas une séance à venir : le serveur la refuserait. */
   seancesPassees = computed(() => {
@@ -318,13 +398,54 @@ export class PresencesComponent {
     try {
       const feuille = await firstValueFrom(this.api.feuillePresence(seanceId));
       // Une autre séance a pu être choisie pendant le chargement.
-      if (this.seanceId() === seanceId) this.lignes.set(feuille.eleves);
+      if (this.seanceId() === seanceId) {
+        this.lignes.set(feuille.eleves);
+        this.chargerPhotosManquantes(feuille.eleves);
+      }
     } catch (e) {
       this.lignes.set([]);
       this.message.set((e as HttpErrorResponse).error?.detail ?? 'Impossible de charger la feuille de présence.');
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  private chargerPhotosManquantes(lignes: LignePresence[]): void {
+    const deja = this.urlsPhotos();
+    for (const l of lignes) {
+      if (l.aPhoto && !deja.has(l.eleveId)) this.chargerPhoto(l.eleveId);
+    }
+  }
+
+  private chargerPhoto(eleveId: number): void {
+    this.api.photoEleve(eleveId).subscribe({
+      next: blob => {
+        const copie = new Map(this.urlsPhotos());
+        copie.set(eleveId, URL.createObjectURL(blob));
+        this.urlsPhotos.set(copie);
+      },
+      error: () => { /* pas de photo consultable : la silhouette reste affichée */ }
+    });
+  }
+
+  urlPhoto(eleveId: number): string | null {
+    return this.urlsPhotos().get(eleveId) ?? null;
+  }
+
+  initiales(nom: string): string {
+    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  /** Sur téléphone (voir le média-query 600px), la carte n'affiche plus les boutons : la toucher ouvre la barre du bas. */
+  ouvrirChoixMobile(l: LignePresence): void {
+    if (window.innerWidth > 600) return;
+    if (!this.reseau.enLigne() || this.enregistrements().has(l.cursusId)) return;
+    this.ligneSelectionnee.set(l);
+  }
+
+  async choisirEtFermer(ligne: LignePresence, c: Choix): Promise<void> {
+    this.ligneSelectionnee.set(null);
+    await this.choisir(ligne, c);
   }
 
   /** Enregistre le choix ; toucher de nouveau le choix actif l'efface. */
@@ -358,5 +479,9 @@ export class PresencesComponent {
     const suivant = new Set(this.enregistrements());
     if (enCours) suivant.add(cursusId); else suivant.delete(cursusId);
     this.enregistrements.set(suivant);
+  }
+
+  ngOnDestroy(): void {
+    for (const url of this.urlsPhotos().values()) URL.revokeObjectURL(url);
   }
 }
