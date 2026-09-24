@@ -60,7 +60,13 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
               <th>Bloc</th>
               <th>Nage</th>
               @for (s of r.seances; track s.id) {
-                <th>{{ s.date | dateFr }}</th>
+                <th class="entete-seance">
+                  <span class="date-seance">{{ s.date | dateFr }}</span>
+                  @if (s.lieu) { <span class="lieu-seance">{{ s.lieu }}</span> }
+                  <span class="milieu-seance" [class.naturel]="s.milieu === 'NATUREL'">
+                    {{ s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine' }}
+                  </span>
+                </th>
               }
             </tr>
           </thead>
@@ -114,7 +120,17 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
     th, td {
       padding: 8px 12px; border-bottom: 1px solid var(--trait); text-align: left; font-size: .875rem;
     }
-    thead th { color: var(--craie); font-weight: 700; }
+    thead th { color: var(--craie); font-weight: 700; vertical-align: bottom; }
+    /* Date, lieu et milieu empilés ; le lieu passe à la ligne plutôt que
+       d'élargir la colonne. Mêmes couleurs de milieu que le calendrier. */
+    .entete-seance { white-space: normal; min-width: 88px; max-width: 120px; }
+    .date-seance { display: block; color: var(--encre); }
+    .lieu-seance { display: block; font-weight: 400; font-size: .75rem; overflow-wrap: anywhere; }
+    .milieu-seance {
+      display: inline-block; margin-top: 2px; padding: 1px 6px; border-radius: 4px;
+      background: var(--accent-clair); color: var(--encre); font-size: .6875rem; font-weight: 700;
+    }
+    .milieu-seance.naturel { background: var(--profond); color: #fff; }
     .figee { position: sticky; left: 0; min-width: 200px; }
     /* Toute la cellule est cliquable, pas seulement le nom : le lien porte le
        remplissage de la cellule. */

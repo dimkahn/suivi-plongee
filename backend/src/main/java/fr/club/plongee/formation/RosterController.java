@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/roster")
 public class RosterController {
 
-    public record SeanceEnTete(Long id, LocalDate date, String lieu) {}
+    public record SeanceEnTete(Long id, LocalDate date, String lieu, String milieu) {}
 
     /** {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève. */
     public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau, String moniteurReferent,
@@ -77,7 +77,7 @@ public class RosterController {
         }).toList();
 
         List<SeanceEnTete> entetes = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
-                .map(s -> new SeanceEnTete(s.getId(), s.getDateSeance(), s.getLieu()))
+                .map(s -> new SeanceEnTete(s.getId(), s.getDateSeance(), s.getLieu(), s.getMilieu().name()))
                 .toList();
 
         return new RosterVue(entetes, lignes);
