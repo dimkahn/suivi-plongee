@@ -26,9 +26,10 @@ public class RosterController {
 
     public record SeanceEnTete(Long id, LocalDate date, String lieu) {}
 
-    public record LigneEleve(Long cursusId, String eleve, String niveau, String moniteurReferent,
+    /** {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève. */
+    public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau, String moniteurReferent,
                              boolean caciValide, long seancesBloc, long seancesNage,
-                             Map<Long, String> presencesParSeance) {}
+                             Map<Long, String> presencesParSeance, boolean aPhoto) {}
 
     public record RosterVue(List<SeanceEnTete> seances, List<LigneEleve> eleves) {}
 
@@ -36,13 +37,16 @@ public class RosterController {
     private final SaisonRepository saisons;
     private final SeanceRepository seances;
     private final ParticipationRepository participations;
+    private final PhotoEleveRepository photos;
 
     public RosterController(CursusRepository cursus, SaisonRepository saisons,
-                            SeanceRepository seances, ParticipationRepository participations) {
+                            SeanceRepository seances, ParticipationRepository participations,
+                            PhotoEleveRepository photos) {
         this.cursus = cursus;
         this.saisons = saisons;
         this.seances = seances;
         this.participations = participations;
+        this.photos = photos;
     }
 
     @GetMapping
@@ -61,13 +65,15 @@ public class RosterController {
                             p -> p.getSeance().getId(),
                             this::libelle,
                             (a, b) -> a));
-            return new LigneEleve(c.getId(), c.getEleve().nomComplet(),
+            Eleve e = c.getEleve();
+            return new LigneEleve(c.getId(), e.getId(), e.nomComplet(),
                     c.getReferentiel().getNiveau().name(),
                     c.getMoniteurReferent() == null ? null : c.getMoniteurReferent().nomComplet(),
                     c.getEleve().certificatValideAu(aujourdhui),
                     participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),
                     participations.compterAtelier(c.getId(), Participation.Atelier.NAGE),
-                    presences);
+                    presences,
+                    e.isAutorisationImage() && photos.existsById(e.getId()));
         }).toList();
 
         List<SeanceEnTete> entetes = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()

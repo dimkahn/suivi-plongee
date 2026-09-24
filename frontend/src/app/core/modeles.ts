@@ -134,6 +134,7 @@ export interface SeanceEnTete {
 
 export interface LigneRoster {
   cursusId: number;
+  eleveId: number;
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
   moniteurReferent: string | null;
@@ -142,6 +143,7 @@ export interface LigneRoster {
   seancesNage: number;
   /** Clé = id de séance ; valeur = atelier (NAGE/BLOC/…) ou statut (ABSENT/EXCUSE). */
   presencesParSeance: Record<number, string>;
+  aPhoto: boolean;
 }
 
 export interface RosterVue {
