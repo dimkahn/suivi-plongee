@@ -2,6 +2,7 @@ import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
+import { couleurCaci, libelleCaci } from '../../core/caci';
 import { ApiService } from '../../core/api.service';
 import { RosterVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
@@ -89,7 +90,10 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
                   </a>
                 </td>
                 <td>{{ libellePreparation(e.niveau) }}</td>
-                <td [class.alerte-cellule]="!e.caciValide">{{ e.caciValide ? 'OK' : '⚠' }}</td>
+                @let couleur = couleurCaci(e.caciFinValidite);
+                <td [class]="couleur ? 'caci-' + couleur : 'alerte-cellule'" [title]="libelleCaci(e.caciFinValidite)">
+                  {{ couleur ? 'OK' : '⚠' }}
+                </td>
                 <td>{{ e.seancesBloc }}</td>
                 <td>{{ e.seancesNage }}</td>
                 @for (s of r.seances; track s.id) {
@@ -152,10 +156,16 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
     .identite-cellule { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
     .identite-cellule .nom { font-weight: 700; color: var(--profond); text-decoration: underline; }
     .alerte-cellule { color: #B3261E; font-weight: 700; }
+    /* Échéance du CACI : plus d'un mois, moins d'un mois, moins de 15 jours. */
+    .caci-vert { color: var(--acquis); font-weight: 700; }
+    .caci-orange { color: var(--en-cours); font-weight: 700; }
+    .caci-rouge { color: #B3261E; font-weight: 700; }
     .absence { color: var(--craie); }
   `]
 })
 export class RosterComponent implements OnDestroy {
+  readonly couleurCaci = couleurCaci;
+  readonly libelleCaci = libelleCaci;
   private api = inject(ApiService);
 
   readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
