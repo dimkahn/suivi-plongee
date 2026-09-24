@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { RosterVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
@@ -26,7 +27,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
                   [class.actif]="niveauFiltre() === choix"
                   [attr.aria-pressed]="niveauFiltre() === choix"
                   (click)="niveauFiltre.set(choix)">
-            {{ choix === 'TOUS' ? 'Tous' : choix }}
+            {{ choix === 'TOUS' ? 'Tous' : libellePreparation(choix) }}
           </button>
         }
       </div>
@@ -120,6 +121,7 @@ export class RosterComponent {
   private api = inject(ApiService);
 
   readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
+  readonly libellePreparation = libellePreparation;
 
   roster = signal<RosterVue | null>(null);
   chargement = signal(true);

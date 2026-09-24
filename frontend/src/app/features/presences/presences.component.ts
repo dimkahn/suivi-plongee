@@ -2,6 +2,7 @@ import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
@@ -88,7 +89,7 @@ function normaliser(texte: string): string {
           @for (n of niveaux; track n) {
             <button type="button" class="bouton-discret" [class.actif]="niveau() === n"
                     [attr.aria-pressed]="niveau() === n" (click)="niveau.set(n)">
-              {{ n === 'TOUS' ? 'Tous' : n }}
+              {{ n === 'TOUS' ? 'Tous' : libellePreparation(n) }}
             </button>
           }
         </div>
@@ -291,6 +292,7 @@ export class PresencesComponent implements OnDestroy {
 
   readonly choix = CHOIX;
   readonly niveaux: Niveau[] = ['TOUS', 'N1', 'N2', 'N3'];
+  readonly libellePreparation = libellePreparation;
   readonly cleDe = cleDe;
 
   /** La saisie correspond-elle à un bouton affiché ? Sinon (plongée, excusé...), on l'indique en texte. */
