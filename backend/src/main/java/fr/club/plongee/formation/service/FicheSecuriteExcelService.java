@@ -6,6 +6,7 @@ import fr.club.plongee.formation.domain.Palanquee;
 import fr.club.plongee.formation.domain.Seance;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,9 +33,11 @@ public class FicheSecuriteExcelService {
     public record FicheExcel(byte[] contenu, String nomFichier) {}
 
     private final String nomClub;
+    private final LogoClub logo;
 
-    public FicheSecuriteExcelService(@Value("${app.club.nom}") String nomClub) {
+    public FicheSecuriteExcelService(@Value("${app.club.nom}") String nomClub, LogoClub logo) {
         this.nomClub = nomClub;
+        this.logo = logo;
     }
 
     public FicheExcel generer(FicheSecurite f) {
@@ -110,6 +113,14 @@ public class FicheSecuriteExcelService {
             for (int i = 0; i < nbColonnes; i++) {
                 feuille.autoSizeColumn(i);
             }
+            placerLogo(classeur, feuille, nbColonnesFixes);
+
+            // Même format que le PDF : A4 paysage, toute la largeur sur une page.
+            feuille.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
+            feuille.getPrintSetup().setLandscape(true);
+            feuille.setFitToPage(true);
+            feuille.getPrintSetup().setFitWidth((short) 1);
+            feuille.getPrintSetup().setFitHeight((short) 0);
 
             ByteArrayOutputStream sortie = new ByteArrayOutputStream();
             classeur.write(sortie);
@@ -119,7 +130,66 @@ public class FicheSecuriteExcelService {
         }
     }
 
+    /** Côté du logo carré, en pixels : à peu près la hauteur des six lignes d'en-tête. */
+    private static final int TAILLE_LOGO_PX = 90;
+    private static final int EMU_PAR_PIXEL = 9525;
+
+    /**
+     * Logo juste à droite de l'en-tête texte, au-dessus des premières
+     * palanquées. Ancré sur des cellules : on cherche la cellule où tombe
+     * son coin inférieur droit d'après les largeurs et hauteurs réelles
+     * (Picture.resize() laissait une hauteur nulle). Appelé après
+     * l'ajustement des largeurs de colonnes.
+     */
+    private void placerLogo(Workbook classeur, Sheet feuille, int premiereColonne) {
+        int indexImage = classeur.addPicture(logo.png(), Workbook.PICTURE_TYPE_PNG);
+        ClientAnchor ancre = classeur.getCreationHelper().createClientAnchor();
+        ancre.setAnchorType(ClientAnchor.AnchorType.MOVE_DONT_RESIZE);
+        ancre.setCol1(premiereColonne);
+        ancre.setRow1(0);
+
+        int colonne = premiereColonne;
+        int reste = TAILLE_LOGO_PX;
+        while (reste > Math.round(feuille.getColumnWidthInPixels(colonne))) {
+            reste -= Math.round(feuille.getColumnWidthInPixels(colonne));
+            colonne++;
+        }
+        ancre.setCol2(colonne);
+        ancre.setDx2(reste * EMU_PAR_PIXEL);
+
+        int ligne = 0;
+        reste = TAILLE_LOGO_PX;
+        while (reste > hauteurLigneEnPixels(feuille, ligne)) {
+            reste -= hauteurLigneEnPixels(feuille, ligne);
+            ligne++;
+        }
+        ancre.setRow2(ligne);
+        ancre.setDy2(reste * EMU_PAR_PIXEL);
+
+        feuille.createDrawingPatriarch().createPicture(ancre, indexImage);
+    }
+
+    private int hauteurLigneEnPixels(Sheet feuille, int index) {
+        Row row = feuille.getRow(index);
+        float points = row == null ? feuille.getDefaultRowHeightInPoints() : row.getHeightInPoints();
+        return Math.round(points * 96 / 72);
+    }
+
+    /**
+     * Chaque ligne d'en-tête est fusionnée sur les 5 colonnes fixes (N° à
+     * Aptitude) : sans cela, l'ajustement automatique élargissait la colonne
+     * N° à la longueur du texte le plus long.
+     */
     private int ecrireEntete(Sheet feuille, int ligne, FicheSecurite f, Seance s) {
+        int debut = ligne;
+        ligne = ecrireLignesEntete(feuille, ligne, f, s);
+        for (int r = debut; r < ligne; r++) {
+            feuille.addMergedRegion(new CellRangeAddress(r, r, 0, 4));
+        }
+        return ligne;
+    }
+
+    private int ecrireLignesEntete(Sheet feuille, int ligne, FicheSecurite f, Seance s) {
         cellule(feuille.createRow(ligne++), 0, nomClub, null);
         cellule(feuille.createRow(ligne++), 0, "FICHE DE SÉCURITÉ", null);
         cellule(feuille.createRow(ligne++), 0, "Date : " + s.getDateSeance().format(DATE), null);
@@ -134,6 +204,8 @@ public class FicheSecuriteExcelService {
                            Function<Palanquee, String> valeur) {
         Row row = feuille.createRow(ligne);
         cellule(row, 0, libelle, styleGras);
+        // Libellé fusionné sur les colonnes fixes, comme l'en-tête : il n'élargit pas la colonne N°.
+        feuille.addMergedRegion(new CellRangeAddress(ligne, ligne, 0, nbColonnesFixes - 1));
         int c = nbColonnesFixes;
         for (int numero : grille.numerosColonnes()) {
             Palanquee p = grille.palanquee(numero);
