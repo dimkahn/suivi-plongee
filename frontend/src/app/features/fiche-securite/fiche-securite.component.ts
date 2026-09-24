@@ -5,9 +5,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { DateFrPipe } from '../../core/date-fr';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
+import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import {
-  GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue, PlongeurVue, SeanceVue
+  FicheSecuriteVue, GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
+  PlongeurVue, SeanceVue
 } from '../../core/modeles';
 
 function plongeurVide(): PlongeurVue {
@@ -414,6 +416,7 @@ interface FormulaireEntete {
 })
 export class FicheSecuriteComponent {
   private api = inject(ApiService);
+  private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
 
   seanceId = Number(this.route.snapshot.paramMap.get('id'));
@@ -423,7 +426,10 @@ export class FicheSecuriteComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
-  dejaEnregistree = computed(() => this.ficheId() !== null);
+  /** Enregistrée sur le serveur, ou sur l'appareil en attente du réseau. */
+  dejaEnregistree = computed(() => this.ficheId() !== null || this.enAttente());
+  /** Une version de la fiche attend le réseau sur cet appareil. */
+  enAttente = signal(false);
 
   ficheId = signal<number | null>(null);
   entete = signal<FormulaireEntete | null>(null);
@@ -457,13 +463,16 @@ export class FicheSecuriteComponent {
 
   private async charger(): Promise<void> {
     try {
-      const [seances, moniteurs, plongeursConnus, fiche, saisons] = await Promise.all([
+      // Chaque lecture retombe sur le cache hors ligne (voir « Préparer hors ligne »).
+      const [seances, moniteurs, plongeursConnus, ficheLue, saisons] = await Promise.all([
         this.api.seances(),
-        firstValueFrom(this.api.moniteursActifs()),
-        firstValueFrom(this.api.plongeursConnus()),
-        firstValueFrom(this.api.ficheSecurite(this.seanceId)),
-        firstValueFrom(this.api.saisons())
+        this.api.moniteursActifs(),
+        this.api.plongeursConnus(),
+        this.api.ficheSecurite(this.seanceId),
+        this.api.saisonsHorsLigne()
       ]);
+      const { fiche, enAttente } = this.file.ficheAJour(this.seanceId, ficheLue, moniteurs);
+      this.enAttente.set(enAttente);
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
       this.moniteurs.set(moniteurs);
       this.plongeursConnus.set(plongeursConnus);
@@ -479,10 +488,13 @@ export class FicheSecuriteComponent {
       const saisonOuverte = saisons.find(s => s.ouverte);
       if (saisonOuverte) {
         this.saisonId.set(saisonOuverte.id);
-        this.groupes.set(await firstValueFrom(this.api.groupesPlongeurs(saisonOuverte.id)));
+        this.groupes.set(await this.api.groupesPlongeurs(saisonOuverte.id).catch(() => []));
       }
     } catch {
-      this.message.set('Impossible de charger la fiche de sécurité.');
+      this.message.set(navigator.onLine
+        ? 'Impossible de charger la fiche de sécurité.'
+        : "Cette fiche n'est pas disponible hors ligne. Utilisez « Préparer hors ligne » avec du réseau, "
+          + "avant de partir sur site, pour l'embarquer.");
     } finally {
       this.chargement.set(false);
     }
@@ -678,7 +690,11 @@ export class FicheSecuriteComponent {
   }
 
   /** Établissement : DP, conditions, composition des palanquées et profil prévu. */
-  enregistrer(): void {
+  /**
+   * Hors ligne (ou serveur injoignable), la fiche est gardée sur l'appareil
+   * et part au retour du réseau : on peut composer les palanquées sur site.
+   */
+  async enregistrer(): Promise<void> {
     const f = this.entete();
     if (!f?.dpId) {
       this.message.set('Le directeur de plongée est obligatoire.');
@@ -686,28 +702,37 @@ export class FicheSecuriteComponent {
     }
     this.envoi.set(true);
     this.message.set(null);
-    this.api.enregistrerFicheSecurite(this.seanceId, {
-      dpId: f.dpId,
-      meteo: f.meteo, etatMer: f.etatMer, visibilite: f.visibilite,
-      courant: f.courant, maree: f.maree, temperatureEau: f.temperatureEau,
-      securiteSurface: f.securiteSurface, planSecours: f.planSecours,
-      observations: f.observations,
-      palanquees: this.palanquees().map(p => ({
-        numero: p.numero, profondeurPrevue: p.profondeurPrevue, dureePrevue: p.dureePrevue,
-        membres: p.membres
-      }))
-    }).subscribe({
-      next: fiche => {
-        this.envoi.set(false);
-        this.ficheId.set(fiche.id);
-        this.palanquees.set(fiche.palanquees);
+    try {
+      const issue = await this.file.enregistrer<FicheSecuriteVue>({
+        type: 'fiche', seanceId: this.seanceId, demande: {
+          dpId: f.dpId,
+          meteo: f.meteo, etatMer: f.etatMer, visibilite: f.visibilite,
+          courant: f.courant, maree: f.maree, temperatureEau: f.temperatureEau,
+          securiteSurface: f.securiteSurface, planSecours: f.planSecours,
+          observations: f.observations,
+          palanquees: this.palanquees().map(p => ({
+            numero: p.numero, profondeurPrevue: p.profondeurPrevue, dureePrevue: p.dureePrevue,
+            membres: p.membres
+          }))
+        }
+      }, 'Fiche de sécurité', this.seance()?.date ?? dateDuJour());
+
+      if (issue.etat === 'envoyee') {
+        this.ficheId.set(issue.reponse.id);
+        this.palanquees.set(issue.reponse.palanquees);
+        this.enAttente.set(this.file.pourSeance(this.seanceId, 'realise').length > 0);
         this.message.set('Fiche enregistrée.');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.envoi.set(false);
-        this.message.set(e.error?.detail ?? "L'enregistrement de la fiche a échoué.");
+      } else if (issue.etat === 'en-attente') {
+        this.enAttente.set(true);
+        this.message.set("Hors ligne : fiche gardée sur l'appareil. Elle partira au retour du réseau.");
+      } else {
+        this.message.set(issue.raison);
       }
-    });
+    } catch {
+      this.message.set("L'enregistrement de la fiche a échoué.");
+    } finally {
+      this.envoi.set(false);
+    }
   }
 
 }

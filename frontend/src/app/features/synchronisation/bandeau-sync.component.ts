@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService } from '../../core/api.service';
 import { FileAttenteService, SaisieRefusee } from '../../core/file-attente.service';
+import { EcritureRefusee, FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import { DateFrPipe } from '../../core/date-fr';
 
@@ -18,10 +19,10 @@ import { DateFrPipe } from '../../core/date-fr';
   imports: [DateFrPipe],
   standalone: true,
   template: `
-    @if (file.refus().length > 0) {
+    @if (nombreRefus() > 0) {
       <div class="bandeau refus" role="alert">
         <div class="texte">
-          <strong>{{ file.refus().length }} saisie(s) refusée(s) par le serveur.</strong>
+          <strong>{{ nombreRefus() }} saisie(s) refusée(s) par le serveur.</strong>
           <ul>
             @for (r of file.refus(); track r.referenceClient) {
               <li>
@@ -30,19 +31,26 @@ import { DateFrPipe } from '../../core/date-fr';
                 <button type="button" class="lien" (click)="ecarter(r)">Écarter</button>
               </li>
             }
+            @for (r of ecritures.refus(); track r.cle) {
+              <li>
+                <span>{{ r.raison }}</span>
+                <span class="secondaire">{{ r.libelle }}, séance du {{ r.dateSeance | dateFr }}</span>
+                <button type="button" class="lien" (click)="ecarterEcriture(r)">Écarter</button>
+              </li>
+            }
           </ul>
         </div>
       </div>
     }
 
-    @if (file.enAttente().length > 0) {
+    @if (nombreEnAttente() > 0) {
       <div class="bandeau attente" role="status">
         <span>
-          {{ file.enAttente().length }} saisie(s) en attente d'envoi.
-          @if (file.synchronisation()) { Envoi en cours… }
+          {{ nombreEnAttente() }} saisie(s) en attente d'envoi.
+          @if (enSynchronisation()) { Envoi en cours… }
           @else if (!reseau.enLigne()) { Elles partiront au retour du réseau. }
         </span>
-        @if (reseau.enLigne() && !file.synchronisation()) {
+        @if (reseau.enLigne() && !enSynchronisation()) {
           <button type="button" class="lien" (click)="synchroniser()">Envoyer maintenant</button>
         }
       </div>
@@ -77,15 +85,24 @@ import { DateFrPipe } from '../../core/date-fr';
 })
 export class BandeauSyncComponent {
   file = inject(FileAttenteService);
+  ecritures = inject(FileEcrituresService);
   reseau = inject(ReseauService);
   private api = inject(ApiService);
 
   message = signal<string | null>(null);
 
-  readonly total = computed(() => this.file.enAttente().length + this.file.refus().length);
+  /** Notations, présences et fiches de sécurité confondues : pour le moniteur, ce sont toutes des saisies. */
+  readonly nombreEnAttente = computed(() => this.file.enAttente().length + this.ecritures.enAttente().length);
+  readonly nombreRefus = computed(() => this.file.refus().length + this.ecritures.refus().length);
+  readonly enSynchronisation = computed(() => this.file.synchronisation() || this.ecritures.synchronisation());
 
   synchroniser(): void {
     void this.file.vider();
+    void this.ecritures.vider();
+  }
+
+  ecarterEcriture(refus: EcritureRefusee): void {
+    void this.ecritures.ecarterRefus(refus.cle);
   }
 
   ecarter(refus: SaisieRefusee): void {
@@ -95,8 +112,9 @@ export class BandeauSyncComponent {
   async precharger(): Promise<void> {
     this.message.set('Préparation du mode hors ligne…');
     try {
-      const nombre = await this.api.precharger();
-      this.message.set(`${nombre} grille(s) disponibles hors ligne.`);
+      const { grilles, feuilles, fiches } = await this.api.precharger();
+      this.message.set(`Disponibles hors ligne : ${grilles} grille(s), ${feuilles} feuille(s) de présence, `
+        + `${fiches} fiche(s) de sécurité.`);
     } catch {
       this.message.set('Le préchargement a échoué. Réessayez avec du réseau.');
     }

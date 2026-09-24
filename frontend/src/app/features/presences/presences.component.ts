@@ -5,12 +5,13 @@ import { firstValueFrom } from 'rxjs';
 import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
 import { Atelier, LignePresence, SeanceVue, StatutPresence } from '../../core/modeles';
 
 type Niveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
-/** Un bouton de la ligne : présent avec un atelier, ou absent/excusé. */
+/** Un bouton de la ligne : l'atelier fait par un élève présent. */
 interface Choix {
   cle: string;
   libelle: string;
@@ -19,12 +20,14 @@ interface Choix {
   classe: string;
 }
 
-/** Plongée et Excusé ne sont plus proposés ; une saisie ancienne de ce type reste affichée. */
+/**
+ * Pas de bouton « Absent » : un élève sans choix est absent. Plongée, Excusé et
+ * Absent ne sont plus proposés ; une saisie ancienne de ce type reste affichée.
+ */
 const CHOIX: Choix[] = [
   { cle: 'NAGE', libelle: 'Nage', statut: 'PRESENT', atelier: 'NAGE', classe: 'present' },
   { cle: 'BLOC', libelle: 'Bloc', statut: 'PRESENT', atelier: 'BLOC', classe: 'present' },
-  { cle: 'THEORIE', libelle: 'Théorie', statut: 'PRESENT', atelier: 'THEORIE', classe: 'present' },
-  { cle: 'ABSENT', libelle: 'Absent', statut: 'ABSENT', atelier: null, classe: 'absent' }
+  { cle: 'THEORIE', libelle: 'Théorie', statut: 'PRESENT', atelier: 'THEORIE', classe: 'present' }
 ];
 
 function cleDe(l: LignePresence): string | null {
@@ -38,9 +41,11 @@ function normaliser(texte: string): string {
 
 /**
  * Feuille de présence d'une séance : ce que chaque élève a fait (nage, bloc,
- * théorie, plongée) ou son absence. Remplace la grille de dates en colonnes
- * du tableur ; les compteurs « séances bloc / nage » de Infos élèves en
- * découlent. Enregistrement immédiat à chaque toucher, réseau requis.
+ * théorie) ; sans choix, il est absent. Remplace la grille de dates en
+ * colonnes du tableur ; les compteurs « séances bloc / nage » de Infos élèves
+ * en découlent. Enregistrement immédiat à chaque toucher ; hors ligne, le
+ * choix est gardé sur l'appareil ({@link FileEcrituresService}) et part au
+ * retour du réseau.
  *
  * Sur téléphone, les boutons de choix ne tiennent pas sur chaque carte sans
  * forcer une seule carte par ligne : on les remplace par une barre en bas
@@ -53,12 +58,14 @@ function normaliser(texte: string): string {
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
-      Pour chaque élève, touchez ce qu'il a fait pendant la séance. Chaque choix est enregistré
-      tout de suite ; toucher de nouveau le choix actif l'efface.
+      Pour chaque élève présent, touchez ce qu'il a fait pendant la séance ; un élève sans choix est
+      absent. Chaque choix est enregistré tout de suite ; toucher de nouveau le choix actif l'efface.
     </p>
 
     @if (!reseau.enLigne()) {
-      <div class="alerte" role="status">La feuille de présence nécessite le réseau.</div>
+      <div class="alerte" role="status">
+        Hors ligne : vos choix sont gardés sur l'appareil et partiront au retour du réseau.
+      </div>
     }
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
@@ -105,7 +112,7 @@ function normaliser(texte: string): string {
       } @else {
         <p class="bilan" role="status">
           {{ bilan().presents }} présent(s) · {{ bilan().absents }} absent(s)
-          · {{ bilan().nonRenseignes }} non renseigné(s)
+          @if (bilan().enAttente > 0) { · {{ bilan().enAttente }} en attente d'envoi }
         </p>
 
         @if (lignesFiltrees().length === 0) {
@@ -128,9 +135,9 @@ function normaliser(texte: string): string {
                       <span class="chargeur" aria-hidden="true"></span>Enregistrement…
                     </span>
                   } @else if (choixActuel(l); as ca) {
-                    <span class="etat-mini" [class]="ca.classe">{{ ca.libelle }}</span>
+                    <span class="etat-mini" [class]="ca.classe" [class.differe]="enAttente().has(l.cursusId)">{{ ca.libelle }}</span>
                   } @else if (!l.statut) {
-                    <span class="secondaire">Non renseigné</span>
+                    <span class="secondaire">Absent</span>
                   } @else {
                     <span class="secondaire">{{ libelleAncien(l) }}</span>
                   }
@@ -140,8 +147,9 @@ function normaliser(texte: string): string {
                 @for (c of choix; track c.cle) {
                   <button type="button" [class]="'etat ' + c.classe"
                           [class.actif]="cleDe(l) === c.cle"
+                          [class.differe]="cleDe(l) === c.cle && enAttente().has(l.cursusId)"
                           [attr.aria-pressed]="cleDe(l) === c.cle"
-                          [disabled]="!reseau.enLigne() || enregistrements().has(l.cursusId)"
+                          [disabled]="enregistrements().has(l.cursusId)"
                           (click)="choisir(l, c)">
                     {{ c.libelle }}
                   </button>
@@ -157,7 +165,7 @@ function normaliser(texte: string): string {
             <div class="choix-rapide">
               @for (c of choix; track c.cle) {
                 <button type="button" [class]="'etat ' + c.classe" [class.actif]="cleDe(l) === c.cle"
-                        [disabled]="!reseau.enLigne()" (click)="choisirEtFermer(l, c)">
+                        (click)="choisirEtFermer(l, c)">
                   {{ c.libelle }}
                 </button>
               }
@@ -236,7 +244,7 @@ function normaliser(texte: string): string {
     }
 
     /* Les quatre choix sur une seule ligne, à largeur égale, sous l'identité. */
-    .choix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .choix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
     .choix .etat { min-width: 0; padding: 8px 4px; }
     .etat {
       min-height: 44px; min-width: 72px; padding: 8px 12px;
@@ -244,7 +252,8 @@ function normaliser(texte: string): string {
       color: var(--encre); font-weight: 600;
     }
     .etat.present.actif, .etat-mini.present { background: var(--acquis); border-color: var(--acquis); color: #fff; }
-    .etat.absent.actif, .etat-mini.absent { background: var(--craie); border-color: var(--craie); color: #fff; }
+    /* Le pointillé dit « gardé sur l'appareil, pas encore chez le serveur », comme dans la grille. */
+    .etat.differe, .etat-mini.differe { border: 1px dashed #fff; outline: 2px dashed var(--acquis); outline-offset: 1px; }
     .etat:disabled { opacity: .6; cursor: not-allowed; }
 
     .enregistrement {
@@ -289,6 +298,13 @@ function normaliser(texte: string): string {
 export class PresencesComponent implements OnDestroy {
   private api = inject(ApiService);
   reseau = inject(ReseauService);
+  private file = inject(FileEcrituresService);
+
+  /** Élèves de la séance affichée dont le dernier choix n'est pas encore parti. */
+  enAttente = computed(() => {
+    const seanceId = this.seanceId();
+    return new Set(seanceId ? this.file.pourSeance(seanceId, 'presence').map(p => p.cursusId) : []);
+  });
 
   readonly choix = CHOIX;
   readonly niveaux: Niveau[] = ['TOUS', 'N1', 'N2', 'N3'];
@@ -308,6 +324,7 @@ export class PresencesComponent implements OnDestroy {
   }
 
   libelleAncien(l: LignePresence): string {
+    if (l.statut === 'ABSENT') return 'Absent';
     if (l.statut === 'EXCUSE') return 'Excusé';
     if (l.atelier === 'PLONGEE') return 'Présent, plongée';
     return 'Présent, atelier non précisé';
@@ -358,8 +375,8 @@ export class PresencesComponent implements OnDestroy {
     const lignes = this.lignes();
     return {
       presents: lignes.filter(l => l.statut === 'PRESENT').length,
-      absents: lignes.filter(l => l.statut === 'ABSENT' || l.statut === 'EXCUSE').length,
-      nonRenseignes: lignes.filter(l => !l.statut).length
+      absents: lignes.filter(l => l.statut !== 'PRESENT').length,
+      enAttente: this.enAttente().size
     };
   });
 
@@ -404,15 +421,24 @@ export class PresencesComponent implements OnDestroy {
     this.chargement.set(true);
     this.message.set(null);
     try {
-      const feuille = await firstValueFrom(this.api.feuillePresence(seanceId));
+      const feuille = await this.api.feuillePresence(seanceId);
       // Une autre séance a pu être choisie pendant le chargement.
       if (this.seanceId() === seanceId) {
-        this.lignes.set(feuille.eleves);
-        this.chargerPhotosManquantes(feuille.eleves);
+        // Les choix pas encore partis priment sur ce que le serveur (ou le cache) connaît.
+        const enAttente = new Map(this.file.pourSeance(seanceId, 'presence').map(p => [p.cursusId, p]));
+        const lignes = feuille.eleves.map(l => {
+          const p = enAttente.get(l.cursusId);
+          return p ? { ...l, statut: p.statut, atelier: p.atelier } : l;
+        });
+        this.lignes.set(lignes);
+        this.chargerPhotosManquantes(lignes);
       }
     } catch (e) {
       this.lignes.set([]);
-      this.message.set((e as HttpErrorResponse).error?.detail ?? 'Impossible de charger la feuille de présence.');
+      this.message.set(!this.reseau.enLigne()
+        ? "Cette feuille n'est pas disponible hors ligne. Utilisez « Préparer hors ligne » avec du réseau, "
+          + 'avant de partir, pour l\'embarquer.'
+        : (e as HttpErrorResponse).error?.detail ?? 'Impossible de charger la feuille de présence.');
     } finally {
       this.chargement.set(false);
     }
@@ -447,7 +473,7 @@ export class PresencesComponent implements OnDestroy {
   /** Sur téléphone (voir le média-query 600px), la carte n'affiche plus les boutons : la toucher ouvre la barre du bas. */
   ouvrirChoixMobile(l: LignePresence): void {
     if (window.innerWidth > 600) return;
-    if (!this.reseau.enLigne() || this.enregistrements().has(l.cursusId)) return;
+    if (this.enregistrements().has(l.cursusId)) return;
     this.ligneSelectionnee.set(l);
   }
 
@@ -463,17 +489,23 @@ export class PresencesComponent implements OnDestroy {
     const effacer = cleDe(ligne) === c.cle;
     const avant = { statut: ligne.statut, atelier: ligne.atelier };
 
-    this.remplacer(ligne.cursusId, effacer ? { statut: null, atelier: null } : { statut: c.statut, atelier: c.atelier });
+    const apres = effacer ? { statut: null, atelier: null } : { statut: c.statut, atelier: c.atelier };
+    this.remplacer(ligne.cursusId, apres);
     this.marquer(ligne.cursusId, true);
     this.message.set(null);
     try {
-      await firstValueFrom(effacer
-        ? this.api.effacerPresence(seanceId, ligne.cursusId)
-        : this.api.enregistrerPresence(seanceId, ligne.cursusId, c.statut, c.atelier));
-    } catch (e) {
+      const seance = this.seances().find(s => s.id === seanceId);
+      const issue = await this.file.enregistrer(
+        { type: 'presence', seanceId, cursusId: ligne.cursusId, ...apres },
+        `Présence de ${ligne.eleve}`, seance?.date ?? dateDuJour());
+      if (issue.etat === 'refusee') {
+        this.remplacer(ligne.cursusId, avant);
+        this.message.set(issue.raison);
+      }
+    } catch {
+      // Écriture sur l'appareil impossible (stockage plein, navigation privée…).
       this.remplacer(ligne.cursusId, avant);
-      this.message.set((e as HttpErrorResponse).error?.detail
-        ?? `La présence de ${ligne.eleve} n'a pas pu être enregistrée.`);
+      this.message.set(`La présence de ${ligne.eleve} n'a pas pu être enregistrée.`);
     } finally {
       this.marquer(ligne.cursusId, false);
     }
