@@ -21,6 +21,28 @@ function normaliser(texte: string): string {
   return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 }
 
+interface FormulaireSejour {
+  lieu: string;
+  site: string;
+  milieu: 'ARTIFICIEL' | 'NATUREL';
+  dateDebut: string;
+  dateFin: string;
+  plongeesParJour: number;
+  profondeurMax: number | null;
+  infos: string[];
+}
+
+function sejourVide(): FormulaireSejour {
+  return { lieu: '', site: '', milieu: 'NATUREL', dateDebut: '', dateFin: '', plongeesParJour: 2,
+           profondeurMax: null, infos: [''] };
+}
+
+/** Jours du séjour, bornes comprises ; 0 si les dates manquent ou sont inversées. */
+function nbJours(debut: string, fin: string): number {
+  if (!debut || !fin || fin < debut) return 0;
+  return Math.round((Date.parse(fin) - Date.parse(debut)) / 86_400_000) + 1;
+}
+
 function formulaireVide(): FormulaireSeance {
   return { dateSeance: '', ordre: 1, milieu: 'ARTIFICIEL', lieu: '', site: '', profondeurMax: null, commentaire: '' };
 }
@@ -38,6 +60,7 @@ function formulaireVide(): FormulaireSeance {
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
+    <div class="panneaux">
     <section class="carte panneau" id="nouvelle-seance">
       <h2>Nouvelle séance</h2>
       @if (formulaireCreation(); as f) {
@@ -72,6 +95,86 @@ function formulaireVide(): FormulaireSeance {
         </button>
       }
     </section>
+
+    <section class="carte panneau" id="sejour">
+      <h2>Séjour de plongée</h2>
+      <p class="secondaire">
+        Crée d'un coup les séances d'un séjour : une par jour et par plongée.
+        Chaque info complémentaire (bateau, groupe…) ajoute une série :
+        deux infos doublent le nombre de séances.
+      </p>
+      @if (formulaireSejour(); as f) {
+        <label for="sejour-lieu">Lieu</label>
+        <input id="sejour-lieu" type="text" name="sejourLieu" [(ngModel)]="f.lieu" placeholder="Port, carrière, lac…">
+
+        <label for="sejour-site">Site de plongée</label>
+        <input id="sejour-site" type="text" name="sejourSite" [(ngModel)]="f.site" placeholder="Facultatif">
+
+        <label for="sejour-milieu">Milieu</label>
+        <select id="sejour-milieu" name="sejourMilieu" [(ngModel)]="f.milieu">
+          <option value="NATUREL">Mer / lac / carrière (naturel)</option>
+          <option value="ARTIFICIEL">Piscine / fosse (artificiel)</option>
+        </select>
+
+        <div class="deux-colonnes">
+          <div>
+            <label for="sejour-debut">Du</label>
+            <input id="sejour-debut" type="date" name="sejourDebut" [(ngModel)]="f.dateDebut">
+          </div>
+          <div>
+            <label for="sejour-fin">Au</label>
+            <input id="sejour-fin" type="date" name="sejourFin" [(ngModel)]="f.dateFin" [min]="f.dateDebut">
+          </div>
+        </div>
+
+        <div class="deux-colonnes">
+          <div>
+            <label for="sejour-plongees">Plongées par jour</label>
+            <select id="sejour-plongees" name="sejourPlongees" [(ngModel)]="f.plongeesParJour">
+              @for (n of [1, 2, 3, 4, 5, 6]; track n) { <option [ngValue]="n">{{ n }}</option> }
+            </select>
+          </div>
+          <div>
+            <label for="sejour-profondeur">Profondeur max (m)</label>
+            <input id="sejour-profondeur" type="number" name="sejourProfondeur" min="0"
+                   [(ngModel)]="f.profondeurMax" placeholder="Facultatif">
+          </div>
+        </div>
+
+        <fieldset class="infos">
+          <legend>Infos complémentaires</legend>
+          @for (info of f.infos; track $index) {
+            <div class="ligne-info">
+              <input type="text" [name]="'sejourInfo' + $index" [attr.aria-label]="'Info complémentaire ' + ($index + 1)"
+                     [(ngModel)]="f.infos[$index]" placeholder="Bateau, groupe… (facultatif)">
+              @if (f.infos.length > 1) {
+                <button type="button" class="bouton-discret" (click)="retirerInfo($index)"
+                        [attr.aria-label]="'Retirer l’info ' + ($index + 1)">Retirer</button>
+              }
+            </div>
+          }
+          @if (f.infos.length < 10) {
+            <button type="button" class="bouton-discret" (click)="ajouterInfo()">+ Ajouter une info</button>
+          }
+        </fieldset>
+
+        @let a = apercuSejour();
+        <p class="apercu" role="status">
+          @if (a.total > 0) {
+            {{ a.jours }} jour(s) × {{ a.plongees }} plongée(s){{ a.infos > 1 ? ' × ' + a.infos + ' infos' : '' }}
+            = <strong>{{ a.total }} séance(s)</strong>
+          } @else {
+            Choisissez les dates du séjour.
+          }
+        </p>
+
+        <button type="button" class="bouton-principal" (click)="creerSejour()"
+                [disabled]="envoi() || a.total === 0">
+          {{ envoi() ? 'Création…' : a.total > 0 ? 'Créer les ' + a.total + ' séances' : 'Créer les séances' }}
+        </button>
+      }
+    </section>
+    </div>
 
     <div class="onglets" role="group" aria-label="Affichage des séances">
       <button type="button" class="bouton-discret" [class.actif]="vue() === 'LISTE'"
@@ -163,7 +266,7 @@ function formulaireVide(): FormulaireSeance {
             } @else {
               <div class="ligne">
                 <div class="identite">
-                  <span class="nom">{{ s.date | dateFr }}{{ s.ordre > 1 ? ' (n° ' + s.ordre + ')' : '' }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</span>
+                  <span class="nom">{{ s.date | dateFr }}{{ ' (n° ' + s.ordre + ')' }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</span>
                   <span class="secondaire">
                     {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
                     {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
@@ -190,7 +293,14 @@ function formulaireVide(): FormulaireSeance {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
+    .panneaux { display: flex; flex-wrap: wrap; gap: var(--pas-3); align-items: flex-start; margin: var(--pas-3) 0; }
+    .panneau { flex: 1 1 360px; max-width: 480px; padding: var(--pas-3); }
+    .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pas-2); }
+    .infos { border: none; margin: var(--pas-2) 0 0; padding: 0; }
+    .infos legend { font-weight: 700; font-size: .9375rem; margin-bottom: var(--pas); padding: 0; }
+    .ligne-info { display: flex; gap: var(--pas); margin-bottom: var(--pas); }
+    .ligne-info input { flex: 1; margin: 0; }
+    .apercu { margin: var(--pas-2) 0 0; }
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     textarea { resize: vertical; }
@@ -252,6 +362,7 @@ export class SeancesComponent {
   });
 
   formulaireCreation = signal<FormulaireSeance>(formulaireVide());
+  formulaireSejour = signal<FormulaireSejour>(sejourVide());
 
   edition = signal<number | null>(null);
   formulaireEdition = signal<FormulaireSeance | null>(null);
@@ -275,6 +386,52 @@ export class SeancesComponent {
   preparerCreation(date: string): void {
     this.formulaireCreation.set({ ...formulaireVide(), dateSeance: date });
     document.getElementById('nouvelle-seance')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  /** Recalculé à chaque rendu : le formulaire est un objet muté par ngModel, pas un signal. */
+  apercuSejour(): { jours: number; plongees: number; infos: number; total: number } {
+    const f = this.formulaireSejour();
+    const jours = nbJours(f.dateDebut, f.dateFin);
+    const infos = Math.max(1, f.infos.filter(i => i.trim()).length);
+    return { jours, plongees: f.plongeesParJour, infos, total: jours * f.plongeesParJour * infos };
+  }
+
+  ajouterInfo(): void {
+    this.formulaireSejour().infos.push('');
+  }
+
+  retirerInfo(index: number): void {
+    this.formulaireSejour().infos.splice(index, 1);
+  }
+
+  creerSejour(): void {
+    const f = this.formulaireSejour();
+    const total = this.apercuSejour().total;
+    if (!confirm(`Créer ${total} séance(s) du ${dateFr(f.dateDebut)} au ${dateFr(f.dateFin)} ?`)) return;
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.creerSerieSeances({
+      dateDebut: f.dateDebut,
+      dateFin: f.dateFin,
+      plongeesParJour: f.plongeesParJour,
+      milieu: f.milieu,
+      lieu: f.lieu || null,
+      site: f.site || null,
+      profondeurMax: f.profondeurMax,
+      infos: f.infos
+    }).subscribe({
+      next: creees => {
+        this.envoi.set(false);
+        this.liste.set([...this.liste(), ...creees]
+          .sort((a, b) => a.date.localeCompare(b.date) || a.ordre - b.ordre));
+        this.formulaireSejour.set(sejourVide());
+        this.message.set(`${creees.length} séance(s) créée(s) pour le séjour.`);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "La création des séances du séjour a échoué.");
+      }
+    });
   }
 
   creer(): void {
