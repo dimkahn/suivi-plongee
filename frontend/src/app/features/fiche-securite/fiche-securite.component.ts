@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
+import { lieuEtSite } from '../../core/seance-lieu';
 import {
   FicheSecuriteVue, GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
   PlongeurVue, SeanceVue
@@ -84,7 +85,7 @@ interface FormulaireEntete {
     </datalist>
 
     @if (seance(); as s) {
-      <h1>Fiche de sécurité — {{ s.date | dateFr }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
+      <h1>Fiche de sécurité — {{ s.date | dateFr }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</h1>
       <p class="secondaire">
         {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
         {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m max' : '' }}
@@ -415,6 +416,7 @@ interface FormulaireEntete {
   `]
 })
 export class FicheSecuriteComponent {
+  readonly lieuEtSite = lieuEtSite;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);

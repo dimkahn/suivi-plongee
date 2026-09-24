@@ -6,6 +6,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
+import { correspondLieuSiteInfo, lieuEtSite } from '../../core/seance-lieu';
 
 type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
@@ -33,8 +34,8 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
         </button>
       </div>
       <div>
-        <label for="filtre-lieu">Lieu</label>
-        <input id="filtre-lieu" type="search" name="filtreLieu" placeholder="Nom du site…"
+        <label for="filtre-lieu">Lieu, site ou info</label>
+        <input id="filtre-lieu" type="search" name="filtreLieu" placeholder="Carrière, épave, remarque…"
                [ngModel]="filtreLieu()" (ngModelChange)="filtreLieu.set($event)">
       </div>
       <div>
@@ -88,7 +89,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
             <div class="ligne">
               <div class="identite">
                 <span class="nom">
-                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) || tri() === 'NUMERO' ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
+                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) || tri() === 'NUMERO' ? ' (n° ' + s.ordre + ')' : '' }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}
                 </span>
                 <span class="secondaire">
                   {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
@@ -141,6 +142,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
   `]
 })
 export class FichesSecuriteListeComponent {
+  readonly lieuEtSite = lieuEtSite;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
 
@@ -164,11 +166,11 @@ export class FichesSecuriteListeComponent {
 
   seances = computed(() => {
     const date = this.filtreDate();
-    const lieu = this.normaliser(this.filtreLieu());
+    const lieu = this.filtreLieu();
     const tri = this.tri();
     return this.concernees()
       .filter(s => !date || s.date === date)
-      .filter(s => !lieu || this.normaliser(s.lieu ?? '').includes(lieu))
+      .filter(s => correspondLieuSiteInfo(s, lieu))
       .sort((a, b) => {
         if (tri === 'DATE_ANCIENNE') return a.date.localeCompare(b.date) || a.ordre - b.ordre;
         // Par n° de plongée : toutes les 1res plongées, puis les 2es… la plus récente d'abord à n° égal.
@@ -239,8 +241,4 @@ export class FichesSecuriteListeComponent {
     this.filtreLieu.set('');
   }
 
-  /** Casse et accents ignorés : « Blaisy » retrouve « Carrière de Blaisy » sans accent sur un clavier qui ne le tape pas facilement. */
-  private normaliser(texte: string): string {
-    return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-  }
 }

@@ -31,6 +31,9 @@ public class Seance {
 
     private String lieu;
 
+    /** Point de plongée précis au sein du lieu (épave, tombant…), facultatif. */
+    private String site;
+
     /**
      * Rang de la séance dans sa journée (1, 2, 3…), pour distinguer plusieurs
      * séances à la même date (ex. bassin le matin et l'après-midi, ou deux
@@ -104,6 +107,14 @@ public class Seance {
 
     public void setLieu(String lieu) {
         this.lieu = lieu;
+    }
+
+    public String getSite() {
+        return site;
+    }
+
+    public void setSite(String site) {
+        this.site = site;
     }
 
     public Integer getOrdre() {

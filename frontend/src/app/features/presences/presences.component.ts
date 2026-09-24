@@ -9,6 +9,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
 import { Atelier, LignePresence, SeanceVue, StatutPresence } from '../../core/modeles';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
+import { lieuEtSite } from '../../core/seance-lieu';
 
 type Niveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
@@ -398,7 +399,7 @@ export class PresencesComponent implements OnDestroy {
 
   libelleSeance(s: SeanceVue): string {
     const memeJour = this.seances().filter(x => x.date === s.date).length > 1;
-    return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${s.lieu ?? 'lieu non précisé'}`;
+    return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${lieuEtSite(s) || 'lieu non précisé'}`;
   }
 
   ouvrirDialogueSeance(): void {

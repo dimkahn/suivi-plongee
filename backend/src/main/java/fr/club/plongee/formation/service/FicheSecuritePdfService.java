@@ -132,7 +132,7 @@ public class FicheSecuritePdfService {
               <div class="entete">
                 <div class="bloc">
                   <p>Date : %s</p>
-                  <p>Lieu : %s</p>
+                  <p>Lieu : %s%s</p>
                   <p>Plongée n° : %s</p>
                 </div>
                 <div class="bloc titre">
@@ -171,6 +171,7 @@ public class FicheSecuritePdfService {
             """.formatted(
                 s.getDateSeance().format(DATE),
                 echapper(s.getLieu()),
+                s.getSite() == null || s.getSite().isBlank() ? "" : " — site : " + echapper(s.getSite()),
                 s.getOrdre(),
                 logo.dataUri(),
                 echapper(nomClub),

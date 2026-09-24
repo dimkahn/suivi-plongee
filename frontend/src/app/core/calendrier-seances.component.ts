@@ -53,7 +53,7 @@ function premierDuMois(date: string): Date {
           <span class="numero">{{ jour.numero }}</span>
           @for (s of jour.seances; track s.id) {
             <span class="pastille" [class.naturel]="s.milieu === 'NATUREL'" [class.choisie]="s.id === seanceMarquee()">
-              <span class="libelle-pastille">{{ s.lieu || (s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine') }}</span>
+              <span class="libelle-pastille">{{ s.lieu || s.site || (s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine') }}</span>
             </span>
           }
         </button>

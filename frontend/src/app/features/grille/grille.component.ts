@@ -13,6 +13,7 @@ import { ReseauService } from '../../core/reseau.service';
 import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
+import { lieuEtSite } from '../../core/seance-lieu';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -649,7 +650,7 @@ export class GrilleComponent implements OnDestroy {
 
   libelleSeance(s: SeanceVue): string {
     const memeJour = this.seances().filter(x => x.date === s.date).length > 1;
-    return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${s.lieu ?? 'lieu non précisé'}`
+    return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${lieuEtSite(s) || 'lieu non précisé'}`
       + (s.profondeurMax ? ` (${s.profondeurMax} m)` : '');
   }
 

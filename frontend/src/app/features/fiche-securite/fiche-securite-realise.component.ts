@@ -5,6 +5,7 @@ import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
+import { lieuEtSite } from '../../core/seance-lieu';
 
 /**
  * Étape 2, à part de l'établissement (voir FicheSecuriteComponent) : le
@@ -21,7 +22,7 @@ import { DateFrPipe, dateDuJour } from '../../core/date-fr';
     <a [routerLink]="['/fiches-securite', seanceId]" class="bouton-discret">← Établissement de la fiche</a>
 
     @if (seance(); as s) {
-      <h1>Compléter la fiche — {{ s.date | dateFr }}{{ s.lieu ? ' — ' + s.lieu : '' }}</h1>
+      <h1>Compléter la fiche — {{ s.date | dateFr }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</h1>
       <p class="secondaire">
         {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
         {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m max' : '' }}
@@ -157,6 +158,7 @@ import { DateFrPipe, dateDuJour } from '../../core/date-fr';
   `]
 })
 export class FicheSecuriteRealiseComponent {
+  readonly lieuEtSite = lieuEtSite;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
