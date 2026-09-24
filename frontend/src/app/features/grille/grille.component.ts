@@ -1,5 +1,6 @@
 import {
-  Component, OnDestroy, computed, effect, inject, input, signal, untracked, ChangeDetectionStrategy
+  Component, ElementRef, OnDestroy, computed, effect, inject, input, signal, untracked, viewChild,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -11,6 +12,7 @@ import { FileAttenteService } from '../../core/file-attente.service';
 import { ReseauService } from '../../core/reseau.service';
 import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
+import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -24,14 +26,10 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
   attentes: number;
 }
 
-function normaliser(texte: string): string {
-  return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
-}
-
 @Component({
   selector: 'app-grille',
   standalone: true,
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent],
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -149,27 +147,53 @@ function normaliser(texte: string): string {
       @if (peutSaisir()) {
         <div class="barre-seance">
           <label for="seance">Séance évaluée</label>
-          <div class="combobox">
-            <input id="seance" type="text" autocomplete="off"
-                   role="combobox" aria-autocomplete="list" aria-controls="liste-seances"
-                   [attr.aria-expanded]="comboboxSeanceOuvert()"
-                   placeholder="Rechercher par date (12/10, 2026-10-12) ou lieu…"
-                   [value]="rechercheSeance()" (input)="saisirSeance($event)"
-                   (focus)="comboboxSeanceOuvert.set(true)" (blur)="fermerComboboxSeanceDifferee()">
-            @if (comboboxSeanceOuvert()) {
-              <ul id="liste-seances" role="listbox" class="options">
-                @for (s of seancesFiltrees(); track s.id) {
-                  <li role="option" [attr.aria-selected]="seanceId() === s.id">
-                    <button type="button" (mousedown)="choisirSeance(s)">{{ libelleSeance(s) }}</button>
+          <button id="seance" type="button" class="choix-seance" aria-haspopup="dialog"
+                  (click)="ouvrirDialogueSeance()">
+            <span aria-hidden="true">📅</span>
+            <span class="libelle-choix">{{ seanceChoisie() ? libelleSeance(seanceChoisie()!) : 'Aucune séance (date du jour)' }}</span>
+            <span class="changer">Changer</span>
+          </button>
+        </div>
+      }
+
+      <dialog #dialogueSeance class="dialogue-seance" aria-labelledby="titre-dialogue-seance"
+              (close)="dialogueSeanceOuvert.set(false)">
+        @if (dialogueSeanceOuvert()) {
+          <div class="entete-dialogue">
+            <h2 id="titre-dialogue-seance">Séance évaluée</h2>
+            <button type="button" class="bouton-discret" (click)="fermerDialogueSeance()">Fermer</button>
+          </div>
+          <app-calendrier-seances [seances]="seancesUtilisables()" [jourMax]="aujourdhui"
+                                  [seanceMarquee]="seanceId()"
+                                  [jourSelectionne]="jourDialogue()"
+                                  (jourSelectionneChange)="toucherJour($event)" />
+          @if (jourDialogue(); as j) {
+            @let duJour = seancesDuJour(j);
+            @if (duJour.length === 0) {
+              <p class="secondaire aucune">
+                Aucune séance ce jour-là{{ g.milieuNaturelExclusif ? ' en milieu naturel' : '' }}.
+              </p>
+            } @else {
+              <ul class="seances-du-jour">
+                @for (s of duJour; track s.id) {
+                  <li>
+                    <button type="button" class="bouton-discret" [class.actif]="s.id === seanceId()"
+                            (click)="choisirDepuisDialogue(s)">
+                      {{ libelleSeance(s) }}
+                      <span class="milieu">{{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
+                    </button>
                   </li>
-                } @empty {
-                  <li class="vide">Aucune séance ne correspond.</li>
                 }
               </ul>
             }
-          </div>
-        </div>
-      }
+          }
+          @if (seanceId()) {
+            <button type="button" class="bouton-discret sans-seance" (click)="retirerSeance()">
+              Noter sans séance (date du jour)
+            </button>
+          }
+        }
+      </dialog>
 
       @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
@@ -365,21 +389,27 @@ function normaliser(texte: string): string {
     }
     .barre-seance label { font-weight: 700; white-space: nowrap; }
 
-    .combobox { position: relative; flex: 1; max-width: 420px; }
-    .combobox input { width: 100%; margin: 0; }
-    .options {
-      position: absolute; z-index: 2; top: 100%; left: 0; right: 0; margin: 2px 0 0; padding: 0;
-      list-style: none; max-height: 280px; overflow-y: auto;
-      background: var(--carte); border: 1px solid var(--trait);
-      border-radius: var(--r-s); box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    .choix-seance {
+      display: flex; align-items: center; gap: var(--pas); flex: 1; max-width: 420px; min-height: 44px;
+      padding: var(--pas) var(--pas-2); background: var(--carte); color: var(--encre);
+      border: 1px solid var(--trait); border-radius: var(--r-s); font: inherit; text-align: left; cursor: pointer;
     }
-    .options li[aria-selected="true"] button { font-weight: 700; background: var(--fond); }
-    .options button {
-      display: block; width: 100%; padding: var(--pas) var(--pas-2); min-height: 44px;
-      text-align: left; background: none; border: none; border-radius: 0; color: var(--encre);
+    .libelle-choix { flex: 1; min-width: 0; font-weight: 700; }
+    .changer { color: var(--profond); font-size: .875rem; text-decoration: underline; }
+
+    .dialogue-seance {
+      width: min(640px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: var(--pas-2);
+      border: none; border-radius: var(--r); box-shadow: var(--ombre); background: var(--carte); color: var(--encre);
     }
-    .options button:hover, .options button:focus { background: var(--fond); }
-    .options .vide { padding: var(--pas) var(--pas-2); color: var(--craie); font-size: .875rem; }
+    .dialogue-seance::backdrop { background: rgba(15, 23, 42, .5); }
+    .entete-dialogue { display: flex; align-items: center; justify-content: space-between; gap: var(--pas); margin-bottom: var(--pas); }
+    .entete-dialogue h2 { margin: 0; }
+    .aucune { text-align: center; margin: var(--pas-2) 0 0; }
+    .seances-du-jour { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas); }
+    .seances-du-jour button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; }
+    .seances-du-jour button.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .seances-du-jour .milieu { font-size: .8125rem; font-weight: 400; }
+    .sans-seance { display: block; margin: var(--pas-2) auto 0; }
 
     .bloc { margin-top: var(--pas-3); padding: var(--pas-3); }
     .bloc header {
@@ -467,7 +497,7 @@ function normaliser(texte: string): string {
       .etats { justify-content: stretch; }
       .etat { flex: 1; }
       .barre-seance { flex-direction: column; align-items: stretch; }
-      .combobox { max-width: none; }
+      .choix-seance { max-width: none; }
       /* Libellé au-dessus de la valeur : les deux colonnes ne tiennent pas. */
       .infos-supplementaires { grid-template-columns: 1fr; gap: 0; }
       .infos-supplementaires dd + dt { margin-top: var(--pas); }
@@ -627,21 +657,13 @@ export class GrilleComponent implements OnDestroy {
       .filter(s => !g.milieuNaturelExclusif || s.milieu === 'NATUREL');
   });
 
-  rechercheSeance = signal('');
-  comboboxSeanceOuvert = signal(false);
+  seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
 
-  /**
-   * Un seul champ pour la date ou le lieu : « 12/10 », « 12/10/2026 »,
-   * « 2026-10 » ou « Hendaye » trouvent la même séance. Les accents et la
-   * casse sont ignorés.
-   */
-  seancesFiltrees = computed(() => {
-    const recherche = normaliser(this.rechercheSeance());
-    const seances = this.seancesUtilisables();
-    if (!recherche) return seances;
-    return seances.filter(s =>
-      [s.date, dateFr(s.date), s.lieu ?? ''].some(champ => normaliser(champ).includes(recherche)));
-  });
+  readonly aujourdhui = dateDuJour();
+  private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
+  dialogueSeanceOuvert = signal(false);
+  /** Jour touché dans le calendrier du dialogue. */
+  jourDialogue = signal<string | null>(null);
 
   libelleSeance(s: SeanceVue): string {
     const memeJour = this.seances().filter(x => x.date === s.date).length > 1;
@@ -668,8 +690,7 @@ export class GrilleComponent implements OnDestroy {
     this.seanceId.set(null);
     this.enregistrements.set(new Map());
     this.validationEnCours.set(null);
-    this.rechercheSeance.set('');
-    this.comboboxSeanceOuvert.set(false);
+    this.dialogueSeanceOuvert.set(false);
     this.message.set(null);
     this.erreurChargement.set(false);
     this.ageDuCache.set(null);
@@ -720,22 +741,36 @@ export class GrilleComponent implements OnDestroy {
     this.ageDuCache.set(date ? new Date(date).toLocaleString('fr-FR') : null);
   }
 
-  /** Retaper dans le champ désélectionne la séance : on ne note pas sur une séance devinée. */
-  saisirSeance(evenement: Event): void {
-    this.rechercheSeance.set((evenement.target as HTMLInputElement).value);
-    this.seanceId.set(null);
-    this.comboboxSeanceOuvert.set(true);
+  ouvrirDialogueSeance(): void {
+    // Le calendrier s'ouvre sur le mois de la séance choisie, sinon sur le mois courant.
+    this.jourDialogue.set(this.seanceChoisie()?.date ?? this.aujourdhui);
+    this.dialogueSeanceOuvert.set(true);
+    this.dialogueSeance().nativeElement.showModal();
   }
 
-  choisirSeance(s: SeanceVue): void {
+  fermerDialogueSeance(): void {
+    this.dialogueSeance().nativeElement.close();
+  }
+
+  seancesDuJour(jour: string): SeanceVue[] {
+    return this.seancesUtilisables().filter(s => s.date === jour);
+  }
+
+  /** Un seul choix possible ce jour-là : on le prend tout de suite, sans second toucher. */
+  toucherJour(jour: string | null): void {
+    this.jourDialogue.set(jour);
+    const duJour = jour ? this.seancesDuJour(jour) : [];
+    if (duJour.length === 1) this.choisirDepuisDialogue(duJour[0]);
+  }
+
+  choisirDepuisDialogue(s: SeanceVue): void {
     this.seanceId.set(s.id);
-    this.rechercheSeance.set(this.libelleSeance(s));
-    this.comboboxSeanceOuvert.set(false);
+    this.fermerDialogueSeance();
   }
 
-  /** Différé pour laisser le clic sur une option se produire avant la fermeture. */
-  fermerComboboxSeanceDifferee(): void {
-    setTimeout(() => this.comboboxSeanceOuvert.set(false), 150);
+  retirerSeance(): void {
+    this.seanceId.set(null);
+    this.fermerDialogueSeance();
   }
 
   /**
