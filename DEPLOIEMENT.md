@@ -137,9 +137,97 @@ lien manuellement et le transmettre au moniteur :
 docker compose -f docker-compose.prod.yml logs backend | grep "invitation\|reinitialisation"
 ```
 
+## Déploiement automatique (GitHub Actions)
+
+Une fois le serveur installé (étapes 1 à 6), chaque **tag `v…` posé sur un
+commit de `master`** part tout seul en production
+(`.github/workflows/deploiement.yml`) :
+
+1. vérification que le commit tagué est bien sur `master` ;
+2. tests d'intégration du backend (`mvn test`) : s'ils échouent, rien ne part ;
+3. construction des images backend et frontend (x86 et ARM) et publication
+   sur `ghcr.io/dimkahn/suivi-plongee-backend` / `-frontend` ;
+4. connexion SSH au serveur, puis `outils/deployer.sh` : **sauvegarde de la
+   base** dans `sauvegardes/` (les 10 dernières sont gardées), téléchargement
+   des images, redémarrage, et attente que `/actuator/health` réponde. Si le
+   backend ne répond pas dans les 5 minutes, le workflow échoue en rouge et
+   affiche les derniers journaux.
+
+La VM ne compile plus rien : une petite VM de 1 Go suffit.
+
+### Mise en place (une seule fois)
+
+**Sur ton poste**, créer une clé SSH réservée au déploiement (sans phrase de
+passe, elle ne sert qu'à ça) :
+
+```bash
+ssh-keygen -t ed25519 -f cle-deploiement -N "" -C "deploiement github"
+ssh-copy-id -i cle-deploiement.pub ubuntu@<IP_PUBLIQUE>
+ssh-keyscan -t ed25519 <IP_PUBLIQUE>    # empreinte du serveur, pour le secret ci-dessous
+```
+
+Sur la VM, le dépôt doit être cloné dans `~/suivi-plongee` (étape 5), avec
+son `.env`, et l'utilisateur doit être dans le groupe `docker`.
+
+**Sur GitHub**, dans *Settings → Secrets and variables → Actions* :
+
+| Secret | Valeur |
+|---|---|
+| `SSH_HOTE` | IP publique ou nom de domaine de la VM |
+| `SSH_UTILISATEUR` | `ubuntu` (ou l'utilisateur de la VM) |
+| `SSH_CLE_PRIVEE` | contenu **entier** du fichier `cle-deploiement` (clé privée) |
+| `SSH_EMPREINTE_HOTE` | la ligne affichée par `ssh-keyscan` |
+
+Variable facultative (onglet *Variables*) : `DOSSIER_SERVEUR` si le dépôt
+n'est pas dans `~/suivi-plongee` sur la VM.
+
+Créer aussi un environnement `production` (*Settings → Environments*). On
+peut y cocher *Required reviewers* pour valider chaque mise en production à
+la main avant l'étape SSH.
+
+Supprimer ensuite `cle-deploiement` de ton poste (elle vit dans GitHub).
+
+### Livrer une version
+
+```bash
+git checkout master && git pull
+git tag v2026.09.1          # année.mois.numéro, par exemple
+git push origin v2026.09.1
+```
+
+Suivre l'avancement dans l'onglet *Actions* du dépôt (compter une dizaine de
+minutes, surtout la première fois). Éviter de livrer pendant une séance :
+l'application est coupée une ou deux minutes au redémarrage (les notations
+hors ligne attendent dans la file du téléphone et repartent ensuite).
+
+### Revenir en arrière
+
+*Actions → Déploiement → Run workflow*, et saisir le tag précédent : il est
+reconstruit et redéployé de la même façon.
+
+Attention : si la version annulée contenait une **migration Flyway**,
+l'ancienne version tourne sur le schéma déjà migré, ce qui convient pour un
+ajout de colonne ou de table mais pas toujours. En cas de doute, restaurer la
+sauvegarde prise juste avant le déploiement fautif, **backend arrêté** :
+
+```bash
+cd ~/suivi-plongee
+docker compose -f docker-compose.prod.yml stop backend
+ls sauvegardes/                              # avant-<tag>-<date>.sql.gz
+docker compose -f docker-compose.prod.yml exec -T db \
+  psql -U plongee -d plongee -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+gunzip -c sauvegardes/avant-v2026.09.2-2026-09-30-2130.sql.gz | \
+  docker compose -f docker-compose.prod.yml exec -T db psql -U plongee -d plongee
+```
+
+puis relancer le déploiement du tag précédent (ci-dessus). Les saisies
+faites entre ce déploiement et la restauration sont perdues.
+
 ## Maintenir en conditions
 
-**Mettre à jour** après un nouveau commit :
+**Mettre à jour** : voir « Déploiement automatique » ci-dessus. Sans GitHub
+Actions, la mise à jour à la main reste possible (le serveur compile alors
+lui-même, ce qui peut manquer de mémoire sur une VM de 1 Go) :
 
 ```bash
 git pull

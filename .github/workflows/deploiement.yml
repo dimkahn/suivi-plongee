@@ -1,0 +1,141 @@
+# Mise en production à chaque tag vX... posé sur un commit de master :
+#   git tag v2026.09.1 && git push origin v2026.09.1
+#
+# 1. vérifie que le commit tagué est bien sur master ;
+# 2. lance les tests d'intégration du backend ;
+# 3. construit les images backend et frontend (x86 et ARM, pour une VM
+#    Oracle AMD comme Ampere) et les publie sur ghcr.io ;
+# 4. se connecte au serveur en SSH et lance outils/deployer.sh (sauvegarde
+#    de la base, téléchargement des images, redémarrage, contrôle de santé).
+#
+# Secrets et variables à définir dans GitHub (Settings → Secrets and
+# variables → Actions), voir DEPLOIEMENT.md, « Déploiement automatique ».
+# Le bouton « Run workflow » redéploie un tag existant (retour en arrière).
+
+name: Déploiement
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag à (re)déployer, par exemple v2026.09.1
+        required: true
+
+# Jamais deux mises en production en même temps ; une en cours n'est pas interrompue.
+concurrency:
+  group: deploiement
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  verification:
+    name: Tag sur master
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+      - name: Le commit tagué appartient à master
+        run: |
+          # Le tag est recopié dans une commande SSH : on n'accepte que des caractères sûrs.
+          if [[ ! "$TAG" =~ ^v[0-9A-Za-z._-]+$ ]]; then
+            echo "::error::Tag « $TAG » refusé : attendu v suivi de chiffres, lettres, points ou tirets."
+            exit 1
+          fi
+          git fetch origin master
+          if ! git merge-base --is-ancestor "$(git rev-parse HEAD)" origin/master; then
+            echo "::error::Le tag $TAG ne pointe pas sur un commit de master : pas de mise en production."
+            exit 1
+          fi
+
+  tests:
+    name: Tests backend
+    needs: verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: mvn test
+        working-directory: backend
+        run: mvn -B test
+
+  images:
+    name: Image ${{ matrix.service }}
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.TAG }}
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/dimkahn/suivi-plongee-${{ matrix.service }}:${{ env.TAG }}
+            ghcr.io/dimkahn/suivi-plongee-${{ matrix.service }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/dimkahn/suivi-plongee
+            org.opencontainers.image.version=${{ env.TAG }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploiement:
+    name: Mise en production
+    needs: images
+    runs-on: ubuntu-latest
+    # L'environnement « production » permet, si on le souhaite, d'exiger une
+    # validation manuelle avant cette étape (Settings → Environments).
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Clé SSH
+        env:
+          CLE: ${{ secrets.SSH_CLE_PRIVEE }}
+          EMPREINTE: ${{ secrets.SSH_EMPREINTE_HOTE }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$CLE" > ~/.ssh/id_deploiement
+          chmod 600 ~/.ssh/id_deploiement
+          printf '%s\n' "$EMPREINTE" > ~/.ssh/known_hosts
+
+      - name: Déploiement sur le serveur
+        env:
+          HOTE: ${{ secrets.SSH_HOTE }}
+          UTILISATEUR: ${{ secrets.SSH_UTILISATEUR }}
+          DOSSIER: ${{ vars.DOSSIER_SERVEUR || 'suivi-plongee' }}
+          JETON: ${{ secrets.GITHUB_TOKEN }}
+          ACTEUR: ${{ github.actor }}
+        run: |
+          serveur() { ssh -i ~/.ssh/id_deploiement -o BatchMode=yes "$UTILISATEUR@$HOTE" "$@"; }
+          # Jeton valable le temps du job seulement : rien de durable sur le serveur.
+          printf '%s' "$JETON" | serveur docker login ghcr.io -u "$ACTEUR" --password-stdin
+          trap 'serveur docker logout ghcr.io || true' EXIT
+          serveur "cd '$DOSSIER' && git fetch --tags --force origin && git checkout --detach '$TAG' && ./outils/deployer.sh '$TAG'"

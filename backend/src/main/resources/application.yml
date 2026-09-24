@@ -41,6 +41,19 @@ app:
     # Nom de la structure, en-tete obligatoire de la fiche de securite (A322-72).
     nom: ${CLUB_NOM:Club de plongee}
 
+# Seul /actuator/health est exposé (autorisé sans jeton dans SecurityConfig),
+# pour le contrôle de santé du déploiement. Le serveur SMTP n'y est pas
+# vérifié : une messagerie momentanément injoignable ne doit pas faire
+# échouer une mise en production.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    mail:
+      enabled: false
+
 springdoc:
   swagger-ui:
     path: /api-docs
