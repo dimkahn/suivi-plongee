@@ -136,7 +136,13 @@ notation est écrite dans IndexedDB avec une référence client (UUID), puis
 rejouée par `POST /api/synchronisation/evaluations`, qui répond élément par
 élément. La référence est unique en base : rejouer une saisie ne la duplique
 pas. Un refus différé remonte au moniteur dans un bandeau, il n'est jamais
-absorbé silencieusement.
+absorbé silencieusement. Les écritures qui remplacent un état (présence,
+fiche de sécurité, profil réalisé) passent par une seconde file,
+`FileEcrituresService` : elles sont idempotentes côté serveur, donc on ne
+garde que la dernière version par cible, envoyées dans l'ordre de leur
+première saisie (une fiche avant son profil réalisé). « Préparer hors
+ligne » embarque aussi les feuilles de présence et fiches de sécurité des
+séances à ±30 jours, les moniteurs, plongeurs connus et groupes.
 
 **L'historique des entités modifiables passe par Envers, pas par un journal
 maison.** `Utilisateur`, `Eleve`, `Seance`, `Cursus`, `ValidationCompetence`

@@ -9,11 +9,17 @@
  */
 
 const NOM_BASE = 'suivi-plongee';
-const VERSION = 1;
+const VERSION = 3;
 
 export const MAGASIN_ATTENTE = 'attente';
 export const MAGASIN_REFUS = 'refus';
 export const MAGASIN_CACHE = 'cache';
+/**
+ * Écritures d'état faites hors ligne (présence, fiche de sécurité, profil
+ * réalisé) : une entrée par cible, la dernière version l'emporte.
+ */
+export const MAGASIN_ECRITURES = 'ecritures';
+export const MAGASIN_REFUS_ECRITURES = 'refusEcritures';
 
 let ouverture: Promise<IDBDatabase> | null = null;
 
@@ -34,6 +40,17 @@ function base(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(MAGASIN_CACHE)) {
         db.createObjectStore(MAGASIN_CACHE, { keyPath: 'cle' });
+      }
+      // Version 3 : écritures d'état hors ligne. La version 2, jamais publiée,
+      // portait des magasins propres aux présences : on les retire s'ils existent.
+      for (const ancien of ['presences', 'refusPresences']) {
+        if (db.objectStoreNames.contains(ancien)) db.deleteObjectStore(ancien);
+      }
+      if (!db.objectStoreNames.contains(MAGASIN_ECRITURES)) {
+        db.createObjectStore(MAGASIN_ECRITURES, { keyPath: 'cle' });
+      }
+      if (!db.objectStoreNames.contains(MAGASIN_REFUS_ECRITURES)) {
+        db.createObjectStore(MAGASIN_REFUS_ECRITURES, { keyPath: 'cle' });
       }
     };
 

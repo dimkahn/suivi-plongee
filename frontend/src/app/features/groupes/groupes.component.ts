@@ -180,7 +180,7 @@ export class GroupesComponent {
     try {
       const [saisons, plongeursConnus] = await Promise.all([
         firstValueFrom(this.api.saisons()),
-        firstValueFrom(this.api.plongeursConnus())
+        this.api.plongeursConnus()
       ]);
       this.saisons.set(saisons);
       this.plongeursConnus.set(plongeursConnus);
@@ -200,7 +200,7 @@ export class GroupesComponent {
   private async chargerGroupes(saisonId: number): Promise<void> {
     this.chargement.set(true);
     try {
-      this.liste.set(await firstValueFrom(this.api.groupesPlongeurs(saisonId)));
+      this.liste.set(await this.api.groupesPlongeurs(saisonId));
     } catch {
       this.message.set('Impossible de charger les groupes.');
     } finally {

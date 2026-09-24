@@ -5,11 +5,21 @@ import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
-  SaisonVue, SeanceVue, Statut, Atelier, FeuillePresence, StatutPresence
+  SaisonVue, SeanceVue, Statut, FeuillePresence
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
+
+/** Feuilles de présence et fiches de sécurité embarquées hors ligne : séances à moins de tant de jours d'aujourd'hui. */
+const JOURS_FEUILLES_HORS_LIGNE = 30;
+
+function ecartEnJours(dateIso: string): number {
+  const [a, m, j] = dateIso.split('-').map(Number);
+  const aujourdhui = new Date();
+  const debut = Date.UTC(aujourdhui.getFullYear(), aujourdhui.getMonth(), aujourdhui.getDate());
+  return (Date.UTC(a, m - 1, j) - debut) / 86_400_000;
+}
 
 interface DemandeSeance {
   dateSeance: string;
@@ -67,19 +77,13 @@ export class ApiService {
     return this.lireOuRetomber('seances', () => this.http.get<SeanceVue[]>('/api/seances'));
   }
 
-  /** Feuille de présence d'une séance : tous les élèves inscrits sur sa saison. Nécessite le réseau. */
-  feuillePresence(seanceId: number): Observable<FeuillePresence> {
-    return this.http.get<FeuillePresence>(`/api/seances/${seanceId}/presences`);
-  }
-
-  enregistrerPresence(seanceId: number, cursusId: number, statut: StatutPresence,
-                      atelier: Atelier | null): Observable<unknown> {
-    return this.http.put(`/api/seances/${seanceId}/presences`, [{ cursusId, statut, atelier }]);
-  }
-
-  /** L'élève redevient « non renseigné » pour cette séance. */
-  effacerPresence(seanceId: number, cursusId: number): Observable<unknown> {
-    return this.http.delete(`/api/seances/${seanceId}/presences/${cursusId}`);
+  /**
+   * Feuille de présence d'une séance : tous les élèves inscrits sur sa saison.
+   * Les écritures passent par FileEcrituresService, qui les garde hors ligne.
+   */
+  feuillePresence(seanceId: number): Promise<FeuillePresence> {
+    return this.lireOuRetomber(`presences:${seanceId}`,
+      () => this.http.get<FeuillePresence>(`/api/seances/${seanceId}/presences`));
   }
 
   /** Création/modification réservées aux ADMIN et MONITEUR côté serveur ; nécessitent le réseau. */
@@ -107,7 +111,7 @@ export class ApiService {
    * déclencher pendant qu'on a encore du réseau, avant de partir en bord de
    * bassin ou sur le bateau.
    */
-  async precharger(): Promise<number> {
+  async precharger(): Promise<{ grilles: number; feuilles: number; fiches: number }> {
     const paquet = await firstValueFrom(
       this.http.get<Paquet>('/api/synchronisation/paquet'));
 
@@ -116,7 +120,25 @@ export class ApiService {
     for (const g of paquet.grilles) {
       await this.deposer(`grille:${g.cursusId}`, g);
     }
-    return paquet.grilles.length;
+
+    // De quoi composer les palanquées sur site : DP possibles, plongeurs
+    // connus, groupes de la saison ouverte. Un échec ici n'empêche pas le reste.
+    await this.tenter(() => this.moniteursActifs());
+    await this.tenter(() => this.plongeursConnus());
+    const saisons = await this.tenter(() => this.saisonsHorsLigne());
+    const ouverte = saisons?.find(s => s.ouverte);
+    if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
+
+    // Feuilles de présence et fiches de sécurité des séances proches : celle
+    // du jour, celles qu'on rattrape, et celles préparées d'avance.
+    let feuilles = 0;
+    let fiches = 0;
+    for (const s of paquet.seances) {
+      if (Math.abs(ecartEnJours(s.date)) > JOURS_FEUILLES_HORS_LIGNE) continue;
+      if (await this.tenter(() => this.feuillePresence(s.id))) feuilles++;
+      if (await this.tenter(() => this.ficheSecurite(s.id))) fiches++;
+    }
+    return { grilles: paquet.grilles.length, feuilles, fiches };
   }
 
   async dateDuCache(cle: string): Promise<number | null> {
@@ -173,47 +195,14 @@ export class ApiService {
   //  Fiche de sécurité d'une séance (A322-72), réservée aux encadrants.
   // ----------------------------------------------------------------
 
-  ficheSecurite(seanceId: number): Observable<FicheSecuriteVue> {
-    return this.http.get<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`);
-  }
-
   /**
-   * Établissement de la fiche, avant la mise à l'eau : DP, conditions,
-   * composition des palanquées et profil prévu (profondeur/durée). Ne touche
-   * pas le profil réalisé, saisi séparément une fois de retour, voir
-   * `enregistrerProfilRealise`.
+   * Réseau d'abord, cache en repli : la fiche se consulte et se complète sur
+   * site sans réseau. Les écritures (établissement, profil réalisé) passent
+   * par FileEcrituresService, qui les garde hors ligne.
    */
-  enregistrerFicheSecurite(seanceId: number, demande: {
-    dpId: number;
-    meteo?: string | null;
-    etatMer?: string | null;
-    visibilite?: string | null;
-    courant?: string | null;
-    maree?: string | null;
-    temperatureEau?: string | null;
-    securiteSurface?: string | null;
-    planSecours?: string | null;
-    observations?: string | null;
-    palanquees: {
-      numero: number;
-      profondeurPrevue: number | null;
-      dureePrevue: number | null;
-      membres: PlongeurVue[];
-    }[];
-  }): Observable<FicheSecuriteVue> {
-    return this.http.put<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`, demande);
-  }
-
-  /** Complément au retour de plongée : le profil réellement plongé, palanquée par palanquée. */
-  enregistrerProfilRealise(seanceId: number, profils: {
-    numero: number;
-    profondeurRealisee: number | null;
-    dureeRealisee: number | null;
-    paliers: string | null;
-    heureImmersion: string | null;
-    heureSortie: string | null;
-  }[]): Observable<FicheSecuriteVue> {
-    return this.http.put<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/realise`, profils);
+  ficheSecurite(seanceId: number): Promise<FicheSecuriteVue> {
+    return this.lireOuRetomber(`fiche:${seanceId}`,
+      () => this.http.get<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`));
   }
 
   supprimerFicheSecurite(seanceId: number): Observable<unknown> {
@@ -229,13 +218,14 @@ export class ApiService {
   }
 
   /** Roster des élèves et encadrants du club, pour pré-remplir un membre de palanquée. */
-  plongeursConnus(): Observable<PlongeurConnuVue[]> {
-    return this.http.get<PlongeurConnuVue[]>('/api/plongeurs-connus');
+  plongeursConnus(): Promise<PlongeurConnuVue[]> {
+    return this.lireOuRetomber('plongeursConnus', () => this.http.get<PlongeurConnuVue[]>('/api/plongeurs-connus'));
   }
 
   /** Groupes nommés et réutilisables de plongeurs, typiquement composés pour un séjour. */
-  groupesPlongeurs(saisonId: number): Observable<GroupePlongeursVue[]> {
-    return this.http.get<GroupePlongeursVue[]>('/api/groupes-plongeurs', { params: { saisonId } });
+  groupesPlongeurs(saisonId: number): Promise<GroupePlongeursVue[]> {
+    return this.lireOuRetomber(`groupes:${saisonId}`,
+      () => this.http.get<GroupePlongeursVue[]>('/api/groupes-plongeurs', { params: { saisonId } }));
   }
 
   creerGroupePlongeurs(demande: { nom: string; saisonId: number; membres: MembreGroupeVue[] }):
@@ -253,8 +243,8 @@ export class ApiService {
   }
 
   /** Liste légère des moniteurs actifs, pour le choix du DP : accessible à tout encadrant. */
-  moniteursActifs(): Observable<MoniteurOptionVue[]> {
-    return this.http.get<MoniteurOptionVue[]>('/api/moniteurs');
+  moniteursActifs(): Promise<MoniteurOptionVue[]> {
+    return this.lireOuRetomber('moniteurs', () => this.http.get<MoniteurOptionVue[]>('/api/moniteurs'));
   }
 
   // ----------------------------------------------------------------
@@ -373,6 +363,11 @@ export class ApiService {
 
   saisons(): Observable<SaisonVue[]> {
     return this.http.get<SaisonVue[]>('/api/saisons');
+  }
+
+  /** Mêmes saisons, avec repli sur le cache : pour les écrans utilisés sur site (fiche de sécurité). */
+  saisonsHorsLigne(): Promise<SaisonVue[]> {
+    return this.lireOuRetomber('saisons', () => this.saisons());
   }
 
   creerSaison(demande: { libelle: string; dateDebut: string; dateFin: string }): Observable<SaisonVue> {
@@ -520,6 +515,15 @@ export class ApiService {
   }
 
   // ----------------------------------------------------------------
+
+  /** Lecture facultative du préchargement : indisponible (droits, suppression), on passe à la suite. */
+  private async tenter<T>(lecture: () => Promise<T>): Promise<T | null> {
+    try {
+      return await lecture();
+    } catch {
+      return null;
+    }
+  }
 
   private async lireOuRetomber<T>(cle: string, appel: () => Observable<T>): Promise<T> {
     try {

@@ -2,6 +2,7 @@ import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@a
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { SeanceVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 
@@ -57,13 +58,13 @@ import { DateFrPipe } from '../../core/date-fr';
                 </span>
               </div>
               <div class="actions">
-                @if (s.ficheSecurite) {
+                @if (aUneFiche(s)) {
                   <span class="etiquette">Fiche enregistrée</span>
                 }
                 <a [routerLink]="['/fiches-securite', s.id]" class="bouton-discret">
-                  {{ s.ficheSecurite ? 'Modifier la fiche' : 'Établir la fiche' }}
+                  {{ aUneFiche(s) ? 'Modifier la fiche' : 'Établir la fiche' }}
                 </a>
-                @if (s.ficheSecurite) {
+                @if (aUneFiche(s)) {
                   <a [routerLink]="['/fiches-securite', s.id, 'realise']" class="bouton-discret">
                     Compléter au retour de plongée
                   </a>
@@ -101,6 +102,12 @@ import { DateFrPipe } from '../../core/date-fr';
 })
 export class FichesSecuriteListeComponent {
   private api = inject(ApiService);
+  private file = inject(FileEcrituresService);
+
+  /** Une fiche établie hors ligne, pas encore partie, compte déjà. */
+  aUneFiche(s: SeanceVue): boolean {
+    return s.ficheSecurite || this.file.pourSeance(s.id, 'fiche').length > 0;
+  }
 
   toutes = signal<SeanceVue[]>([]);
   chargement = signal(true);

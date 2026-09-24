@@ -2,6 +2,7 @@ import { Component, ViewChild, inject, signal, ChangeDetectionStrategy } from '@
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
+import { FileEcrituresService } from './core/file-ecritures.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 
 @Component({
@@ -145,6 +146,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
 export class AppComponent {
   auth = inject(AuthService);
   private file = inject(FileAttenteService);
+  private ecritures = inject(FileEcrituresService);
 
   @ViewChild(BandeauSyncComponent) bandeau?: BandeauSyncComponent;
 
@@ -156,6 +158,7 @@ export class AppComponent {
     // depuis la session précédente, et il faut les compter même si le
     // rafraîchissement du jeton échoue.
     void this.file.demarrer();
+    void this.ecritures.demarrer();
 
     this.auth.initialiser();
   }
@@ -166,7 +169,7 @@ export class AppComponent {
 
   /** On prévient plutôt que de perdre silencieusement des saisies. */
   deconnecter(): void {
-    const attente = this.file.enAttente().length;
+    const attente = this.file.enAttente().length + this.ecritures.enAttente().length;
     if (attente > 0) {
       const suite = confirm(
         `${attente} saisie(s) ne sont pas encore envoyées. ` +

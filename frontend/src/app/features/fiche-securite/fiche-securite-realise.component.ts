@@ -1,11 +1,10 @@
 import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
-import { DateFrPipe } from '../../core/date-fr';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
+import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
+import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 
 /**
  * Étape 2, à part de l'établissement (voir FicheSecuriteComponent) : le
@@ -159,6 +158,7 @@ import { DateFrPipe } from '../../core/date-fr';
 })
 export class FicheSecuriteRealiseComponent {
   private api = inject(ApiService);
+  private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
 
@@ -196,38 +196,51 @@ export class FicheSecuriteRealiseComponent {
 
   private async charger(): Promise<void> {
     try {
-      const [seances, fiche] = await Promise.all([
+      // Retombe sur le cache hors ligne ; les saisies pas encore parties priment.
+      const [seances, ficheLue] = await Promise.all([
         this.api.seances(),
-        firstValueFrom(this.api.ficheSecurite(this.seanceId))
+        this.api.ficheSecurite(this.seanceId)
       ]);
+      const { fiche, etablie } = this.file.ficheAJour(this.seanceId, ficheLue);
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
-      this.ficheEtablie.set(fiche.id !== null);
+      this.ficheEtablie.set(etablie);
       this.palanquees.set(fiche.palanquees);
     } catch {
-      this.message.set('Impossible de charger la fiche de sécurité.');
+      this.message.set(navigator.onLine
+        ? 'Impossible de charger la fiche de sécurité.'
+        : "Cette fiche n'est pas disponible hors ligne. Utilisez « Préparer hors ligne » avec du réseau, "
+          + "avant de partir sur site, pour l'embarquer.");
     } finally {
       this.chargement.set(false);
     }
   }
 
   /** Complément au retour de plongée : le profil réellement plongé, palanquée par palanquée. */
-  enregistrerRealise(): void {
+  /** Hors ligne, gardé sur l'appareil et envoyé au retour du réseau, après la fiche si elle attend aussi. */
+  async enregistrerRealise(): Promise<void> {
     this.envoiRealise.set(true);
     this.message.set(null);
-    this.api.enregistrerProfilRealise(this.seanceId, this.palanquees().map(p => ({
-      numero: p.numero, profondeurRealisee: p.profondeurRealisee, dureeRealisee: p.dureeRealisee,
-      paliers: p.paliers, heureImmersion: p.heureImmersion, heureSortie: p.heureSortie
-    }))).subscribe({
-      next: fiche => {
-        this.envoiRealise.set(false);
-        this.palanquees.set(fiche.palanquees);
+    try {
+      const issue = await this.file.enregistrer<FicheSecuriteVue>({
+        type: 'realise', seanceId: this.seanceId, profils: this.palanquees().map(p => ({
+          numero: p.numero, profondeurRealisee: p.profondeurRealisee, dureeRealisee: p.dureeRealisee,
+          paliers: p.paliers, heureImmersion: p.heureImmersion, heureSortie: p.heureSortie
+        }))
+      }, 'Profil réalisé', this.seance()?.date ?? dateDuJour());
+
+      if (issue.etat === 'envoyee') {
+        this.palanquees.set(issue.reponse.palanquees);
         this.message.set('Paramètres réalisés enregistrés.');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.envoiRealise.set(false);
-        this.message.set(e.error?.detail ?? "L'enregistrement des paramètres réalisés a échoué.");
+      } else if (issue.etat === 'en-attente') {
+        this.message.set("Hors ligne : gardé sur l'appareil. Envoi au retour du réseau.");
+      } else {
+        this.message.set(issue.raison);
       }
-    });
+    } catch {
+      this.message.set("L'enregistrement des paramètres réalisés a échoué.");
+    } finally {
+      this.envoiRealise.set(false);
+    }
   }
 
   /** Renseigne l'heure courante sur la palanquée et enregistre aussitôt, sans attendre le bouton global. */
