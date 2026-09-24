@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
-  EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, MatriceVue,
+  EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, Atelier, FeuillePresence, StatutPresence
 } from './modeles';
@@ -272,11 +272,12 @@ export class ApiService {
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
     numeroLicence?: string | null;
     certificatValideJusquAu?: string | null;
+    admin?: boolean;
   }): Observable<MoniteurVue> {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
 
-  /** Seul endroit où le niveau d'encadrement d'un moniteur peut changer. */
+  /** Seul endroit où le niveau d'encadrement et le rôle ADMIN d'un moniteur peuvent changer. */
   modifierMoniteur(id: number, demande: {
     email: string;
     nom: string;
@@ -284,6 +285,7 @@ export class ApiService {
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
     numeroLicence: string | null;
     certificatValideJusquAu: string | null;
+    admin: boolean;
   }): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
   }
@@ -300,6 +302,16 @@ export class ApiService {
     return this.http.delete(`/api/admin/moniteurs/${id}`);
   }
 
+  changerAutorisationImageMoniteur(id: number, autorisationImage: boolean): Observable<MoniteurVue> {
+    return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}/autorisation-image`, { autorisationImage });
+  }
+
+  deposerPhotoMoniteur(id: number, fichier: File): Observable<unknown> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post(`/api/admin/moniteurs/${id}/photo`, donnees);
+  }
+
   // ----------------------------------------------------------------
   //  Trombinoscope. Une photo n'est jamais affichée sans le consentement
   //  autorisationImage (distinct de l'autorisation de pratiquer).
@@ -311,6 +323,15 @@ export class ApiService {
   }
 
   /** À convertir en URL d'objet côté composant : l'auth passe par un en-tête, pas par un cookie. */
+  /** Moniteurs actifs, accessible à tout encadrant. */
+  trombinoscopeMoniteurs(): Observable<LigneTrombinoscopeMoniteur[]> {
+    return this.http.get<LigneTrombinoscopeMoniteur[]>('/api/moniteurs/trombinoscope');
+  }
+
+  photoMoniteur(id: number): Observable<Blob> {
+    return this.http.get(`/api/moniteurs/${id}/photo`, { responseType: 'blob' });
+  }
+
   photoEleve(eleveId: number): Observable<Blob> {
     return this.http.get(`/api/eleves/${eleveId}/photo`, { responseType: 'blob' });
   }

@@ -180,7 +180,10 @@ est distinct de `eleve.autorisation_legale` (qui ne couvre que la pratique).
 Une photo (`photo_eleve`, table séparée pour ne jamais alourdir les lectures
 courantes d'un élève) n'est ni acceptée en dépôt ni renvoyée par
 `EleveController` sans ce consentement explicite ; le retirer supprime la
-photo, pas seulement son affichage.
+photo, pas seulement son affichage. Même règle pour le trombinoscope des moniteurs :
+`utilisateur.autorisation_image` + table `photo_utilisateur` (dépôt par un
+ADMIN via `/api/admin/moniteurs/{id}/photo`, lecture via
+`/api/moniteurs/{id}/photo`).
 
 ## Chantiers ouverts
 

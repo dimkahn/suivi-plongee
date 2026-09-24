@@ -121,6 +121,9 @@ export interface MoniteurVue {
   niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
   numeroLicence: string | null;
   certificatValideJusquAu: string | null;
+  admin: boolean;
+  autorisationImage: boolean;
+  aPhoto: boolean;
 }
 
 export interface SeanceEnTete {
@@ -199,6 +202,14 @@ export interface LigneTrombinoscope {
   cursusId: number;
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
+  aPhoto: boolean;
+  autorisationImage: boolean;
+}
+
+export interface LigneTrombinoscopeMoniteur {
+  id: number;
+  nomComplet: string;
+  niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
   aPhoto: boolean;
   autorisationImage: boolean;
 }

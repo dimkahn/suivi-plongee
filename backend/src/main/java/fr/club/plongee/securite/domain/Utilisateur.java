@@ -45,6 +45,13 @@ public class Utilisateur {
      */
     private LocalDate certificatValideJusquAu;
 
+    /**
+     * Droit à l'image pour le trombinoscope des moniteurs, recueilli par un
+     * ADMIN : sans lui, aucune photo n'est acceptée ni renvoyée.
+     */
+    @Column(nullable = false)
+    private boolean autorisationImage;
+
     @Column(nullable = false)
     private Instant creeLe = Instant.now();
 
@@ -138,6 +145,14 @@ public class Utilisateur {
 
     public void setCertificatValideJusquAu(LocalDate certificatValideJusquAu) {
         this.certificatValideJusquAu = certificatValideJusquAu;
+    }
+
+    public boolean isAutorisationImage() {
+        return autorisationImage;
+    }
+
+    public void setAutorisationImage(boolean autorisationImage) {
+        this.autorisationImage = autorisationImage;
     }
 
     public Instant getCreeLe() {
