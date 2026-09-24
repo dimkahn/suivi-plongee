@@ -36,12 +36,12 @@ const LIBELLES: Record<string, string> = {
             @for (item of lignesAffichees(); track item.ligne.critereId) {
               @if (item.nouveauGroupe && item.ligne.regroupement) {
                 <tr class="groupe">
-                  <td [attr.colspan]="1 + m.seances.length">{{ item.ligne.regroupement }}</td>
+                  <td [attr.colspan]="1 + m.seances.length"><span class="titre-fige">{{ item.ligne.regroupement }}</span></td>
                 </tr>
               }
               @if (item.nouveauBloc) {
                 <tr class="bloc-titre">
-                  <td [attr.colspan]="1 + m.seances.length">{{ item.ligne.blocIntitule }}</td>
+                  <td [attr.colspan]="1 + m.seances.length"><span class="titre-fige">{{ item.ligne.blocIntitule }}</span></td>
                 </tr>
               }
               <tr>
@@ -79,13 +79,17 @@ const LIBELLES: Record<string, string> = {
     .figee { position: sticky; left: 0; min-width: 240px; white-space: normal; max-width: 32ch; }
     th.figee { background: var(--fond); }
     td.figee { background: var(--carte); }
+    /* Une cellule fusionnée sur toute la ligne est aussi large que le
+       tableau : « sticky » sur la cellule elle-même n'a aucun effet et le
+       titre défilait hors de l'écran. On fige le texte à l'intérieur. */
+    .titre-fige { position: sticky; left: 12px; display: inline-block; }
     tr.groupe td {
-      position: sticky; left: 0; background: var(--fond); color: var(--profond);
+      background: var(--fond); color: var(--profond);
       font-weight: 700; text-transform: uppercase; font-size: .8125rem; letter-spacing: .02em;
       border-bottom: none;
     }
     tr.bloc-titre td {
-      position: sticky; left: 0; background: var(--carte); color: var(--craie);
+      background: var(--carte); color: var(--craie);
       font-weight: 700; font-size: .8125rem; border-bottom: 1px solid var(--trait);
       padding-top: 12px;
     }
@@ -100,6 +104,14 @@ const LIBELLES: Record<string, string> = {
     .cellule.acquis  { background: var(--acquis-clair); }
     .cellule.acquis  .statut { color: var(--acquis); font-weight: 700; }
     .cellule.neant   .statut { color: var(--craie); }
+
+    /* Sur téléphone, 240px de colonne figée ne laissaient presque plus de
+       place aux séances. */
+    @media (max-width: 720px) {
+      .figee { min-width: 0; width: 45vw; max-width: 45vw; }
+      th, td { padding: 8px; }
+      .titre-fige { left: 8px; max-width: calc(100vw - 48px); white-space: normal; }
+    }
   `]
 })
 export class MatriceComponent {
