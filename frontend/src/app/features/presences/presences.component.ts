@@ -200,26 +200,6 @@ function normaliser(texte: string): string {
     h1 { margin-bottom: var(--pas); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
-    .choix-seance {
-      display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 420px; min-height: 44px;
-      padding: var(--pas) var(--pas-2); background: var(--carte); color: var(--encre);
-      border: 1px solid var(--trait); border-radius: var(--r-s); font: inherit; text-align: left; cursor: pointer;
-    }
-    .libelle-choix { flex: 1; min-width: 0; font-weight: 700; }
-    .changer { color: var(--profond); font-size: .875rem; text-decoration: underline; }
-
-    .dialogue-seance {
-      width: min(640px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: var(--pas-2);
-      border: none; border-radius: var(--r); box-shadow: var(--ombre); background: var(--carte); color: var(--encre);
-    }
-    .dialogue-seance::backdrop { background: rgba(15, 23, 42, .5); }
-    .entete-dialogue { display: flex; align-items: center; justify-content: space-between; gap: var(--pas); margin-bottom: var(--pas); }
-    .entete-dialogue h2 { margin: 0; }
-    .aucune { text-align: center; margin: var(--pas-2) 0 0; }
-    .seances-du-jour { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas); }
-    .seances-du-jour button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; }
-    .seances-du-jour button.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
-    .seances-du-jour .milieu { font-size: .8125rem; font-weight: 400; }
 
     .filtres {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
