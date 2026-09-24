@@ -62,9 +62,14 @@
                 <configuration>
                   <target>
                     <echo message="Démarrage du frontend (npm start) en arrière-plan..."/>
+                    <!-- Arrête d'abord un frontend resté d'un lancement précédent
+                         (sinon conflit sur le port 4200), puis lance npm dans son
+                         propre groupe de processus (setsid) : le pid enregistré est
+                         celui du groupe, ce qui permet à dev-stop d'arrêter aussi
+                         ng serve, lancé par npm. -->
                     <exec executable="sh" dir="${project.basedir}/frontend" failonerror="true">
                       <arg value="-c"/>
-                      <arg value="npm start &gt; frontend-dev.log 2&gt;&amp;1 &amp; echo $! &gt; frontend-dev.pid"/>
+                      <arg value="[ -f frontend-dev.pid ] &amp;&amp; kill -- -$(cat frontend-dev.pid) 2&gt;/dev/null; rm -f frontend-dev.pid; setsid npm start &gt; frontend-dev.log 2&gt;&amp;1 &lt; /dev/null &amp; echo $! &gt; frontend-dev.pid"/>
                     </exec>
                     <echo message="Frontend lancé (voir frontend/frontend-dev.log). Démarrage du backend..."/>
                     <exec executable="mvn" failonerror="true">
@@ -84,7 +89,7 @@
                   <target>
                     <exec executable="sh" dir="${project.basedir}/frontend" failonerror="false">
                       <arg value="-c"/>
-                      <arg value="[ -f frontend-dev.pid ] &amp;&amp; kill $(cat frontend-dev.pid) 2&gt;/dev/null; rm -f frontend-dev.pid"/>
+                      <arg value="[ -f frontend-dev.pid ] &amp;&amp; kill -- -$(cat frontend-dev.pid) 2&gt;/dev/null; rm -f frontend-dev.pid"/>
                     </exec>
                     <echo message="Frontend arrêté (s'il tournait encore)."/>
                   </target>
