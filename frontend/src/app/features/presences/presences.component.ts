@@ -115,7 +115,7 @@ function normaliser(texte: string): string {
             <li class="carte">
               <button type="button" class="zone-identite" (click)="ouvrirChoixMobile(l)">
                 @if (urlPhoto(l.eleveId); as url) {
-                  <img class="avatar" [src]="url" [alt]="l.eleve" width="48" height="48">
+                  <img class="avatar" [src]="url" [alt]="l.eleve" width="56" height="56">
                 } @else {
                   <div class="avatar silhouette" [attr.aria-label]="l.eleve">{{ initiales(l.eleve) }}</div>
                 }
@@ -201,23 +201,27 @@ function normaliser(texte: string): string {
     /* Plusieurs élèves par ligne dès que la largeur le permet. */
     .eleves {
       list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     }
     .eleves li {
       padding: var(--pas-2); display: flex; justify-content: space-between; align-items: center;
       gap: var(--pas-2); flex-wrap: wrap;
+    }
+    /* Grand écran : identité en haut, les quatre choix alignés dessous. */
+    @media (min-width: 601px) {
+      .eleves li { flex-direction: column; align-items: stretch; }
     }
     .zone-identite {
       display: flex; align-items: center; gap: var(--pas); flex: 1 1 auto; min-width: 0;
       padding: 0; text-align: left; background: none; border: none;
     }
     .avatar {
-      width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--fond);
+      width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--fond);
       flex-shrink: 0;
     }
     .avatar.silhouette {
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-weight: 700; font-size: .8125rem; color: var(--craie);
+      font-family: var(--font-titres), sans-serif; font-weight: 700; font-size: 1.125rem; color: var(--craie);
     }
     .identite { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; min-width: 0; }
     .nom { font-weight: 700; }
@@ -230,7 +234,9 @@ function normaliser(texte: string): string {
       font-size: .8125rem; font-weight: 700; padding: 0 8px; border-radius: var(--r-s);
     }
 
-    .choix { display: flex; gap: 4px; flex-wrap: wrap; }
+    /* Les quatre choix sur une seule ligne, à largeur égale, sous l'identité. */
+    .choix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .choix .etat { min-width: 0; padding: 8px 4px; }
     .etat {
       min-height: 44px; min-width: 72px; padding: 8px 12px;
       border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte);
