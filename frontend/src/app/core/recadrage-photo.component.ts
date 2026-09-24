@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, effect, input, output, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, OnDestroy, effect, input, output, signal, untracked, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 /** Cadre carré présenté à l'écran pendant le recadrage (px). */
@@ -92,7 +92,12 @@ export class RecadragePhotoComponent implements OnDestroy {
   private origineGlissement: { x: number; y: number; decalageX: number; decalageY: number } | null = null;
 
   constructor() {
-    effect(() => this.charger(this.fichier()));
+    // untracked : charger() lit et écrit recadrage ; sans cela, chaque image chargée relancerait
+    // l'effet, qui la rechargerait aussitôt (boucle sans fin, dialogue inutilisable).
+    effect(() => {
+      const fichier = this.fichier();
+      untracked(() => this.charger(fichier));
+    });
 
     // Redessine l'aperçu à chaque déplacement/zoom, et dès que le canvas apparaît dans le DOM.
     effect(() => {
