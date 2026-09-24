@@ -1,14 +1,17 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { SeanceVue } from '../../core/modeles';
-import { DateFrPipe } from '../../core/date-fr';
+import { DateFrPipe, dateDuJour } from '../../core/date-fr';
+import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
+
+type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent],
   template: `
     <h1>Fiches de sécurité</h1>
     <p class="secondaire">
@@ -22,18 +25,53 @@ import { DateFrPipe } from '../../core/date-fr';
     <section class="filtres">
       <div>
         <label for="filtre-date">Date</label>
-        <input id="filtre-date" type="date" name="filtreDate"
-               [ngModel]="filtreDate()" (ngModelChange)="filtreDate.set($event)">
+        <button id="filtre-date" type="button" class="choix-seance" aria-haspopup="dialog"
+                (click)="ouvrirDialogueDate()">
+          <span aria-hidden="true">📅</span>
+          <span class="libelle-choix">{{ filtreDate() ? (filtreDate() | dateFr) : 'Toutes les dates' }}</span>
+          <span class="changer">Changer</span>
+        </button>
       </div>
       <div>
         <label for="filtre-lieu">Lieu</label>
         <input id="filtre-lieu" type="search" name="filtreLieu" placeholder="Nom du site…"
                [ngModel]="filtreLieu()" (ngModelChange)="filtreLieu.set($event)">
       </div>
+      <div>
+        <label for="tri">Classer par</label>
+        <select id="tri" name="tri" [ngModel]="tri()" (ngModelChange)="tri.set($event)">
+          <option value="DATE_RECENTE">Date, la plus récente d'abord</option>
+          <option value="DATE_ANCIENNE">Date, la plus ancienne d'abord</option>
+          <option value="NUMERO">N° de plongée dans la journée</option>
+        </select>
+      </div>
       @if (filtreDate() || filtreLieu()) {
         <button type="button" class="bouton-discret" (click)="reinitialiserFiltres()">Réinitialiser</button>
       }
     </section>
+
+    <dialog #dialogueDate class="dialogue-seance" aria-labelledby="titre-dialogue-date"
+            (close)="dialogueOuvert.set(false)">
+      @if (dialogueOuvert()) {
+        <div class="entete-dialogue">
+          <h2 id="titre-dialogue-date">Choisir la date</h2>
+          <button type="button" class="bouton-discret" (click)="fermerDialogueDate()">Fermer</button>
+        </div>
+        <app-calendrier-seances [seances]="concernees()"
+                                [jourSelectionne]="jourDialogue()"
+                                (jourSelectionneChange)="toucherJour($event)" />
+        @if (jourDialogue(); as j) {
+          @if (!aDesSeances(j)) {
+            <p class="secondaire aucune">Aucune séance concernée ce jour-là.</p>
+          }
+        }
+        @if (filtreDate()) {
+          <button type="button" class="bouton-discret toutes-dates" (click)="choisirDate('')">
+            Toutes les dates
+          </button>
+        }
+      }
+    </dialog>
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -50,7 +88,7 @@ import { DateFrPipe } from '../../core/date-fr';
             <div class="ligne">
               <div class="identite">
                 <span class="nom">
-                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
+                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) || tri() === 'NUMERO' ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
                 </span>
                 <span class="secondaire">
                   {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
@@ -86,7 +124,9 @@ import { DateFrPipe } from '../../core/date-fr';
     }
     .filtres > div { min-width: 200px; flex: 1 1 200px; }
     .filtres label { display: block; margin: 0 0 4px; font-weight: 700; font-size: .9375rem; }
-    .filtres input { margin: 0; width: 100%; }
+    .filtres input, .filtres select { margin: 0; width: 100%; }
+    .filtres .choix-seance { max-width: none; }
+    .toutes-dates { display: block; margin: var(--pas-2) auto 0; }
 
     ul { list-style: none; margin: var(--pas-3) 0 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -116,15 +156,31 @@ export class FichesSecuriteListeComponent {
   filtreDate = signal('');
   filtreLieu = signal('');
 
+  tri = signal<Tri>('DATE_RECENTE');
+
+  /** Séances qui appellent une fiche : milieu naturel ou plus de 6 m (A322-98). */
+  concernees = computed(() =>
+    this.toutes().filter(s => s.milieu === 'NATUREL' || (s.profondeurMax ?? 0) > 6));
+
   seances = computed(() => {
     const date = this.filtreDate();
     const lieu = this.normaliser(this.filtreLieu());
-    return this.toutes()
-      .filter(s => s.milieu === 'NATUREL' || (s.profondeurMax ?? 0) > 6)
+    const tri = this.tri();
+    return this.concernees()
       .filter(s => !date || s.date === date)
       .filter(s => !lieu || this.normaliser(s.lieu ?? '').includes(lieu))
-      .sort((a, b) => b.date.localeCompare(a.date) || a.ordre - b.ordre);
+      .sort((a, b) => {
+        if (tri === 'DATE_ANCIENNE') return a.date.localeCompare(b.date) || a.ordre - b.ordre;
+        // Par n° de plongée : toutes les 1res plongées, puis les 2es… la plus récente d'abord à n° égal.
+        if (tri === 'NUMERO') return a.ordre - b.ordre || b.date.localeCompare(a.date);
+        return b.date.localeCompare(a.date) || a.ordre - b.ordre;
+      });
   });
+
+  private dialogueDate = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueDate');
+  dialogueOuvert = signal(false);
+  /** Jour touché dans le calendrier du dialogue. */
+  jourDialogue = signal<string | null>(null);
 
   /** Nombre de séances listées à chaque date, pour numéroter les plongées d'une journée à plusieurs séances. */
   private comptesParDate = computed(() => {
@@ -151,6 +207,31 @@ export class FichesSecuriteListeComponent {
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  ouvrirDialogueDate(): void {
+    this.jourDialogue.set(this.filtreDate() || dateDuJour());
+    this.dialogueOuvert.set(true);
+    this.dialogueDate().nativeElement.showModal();
+  }
+
+  fermerDialogueDate(): void {
+    this.dialogueDate().nativeElement.close();
+  }
+
+  aDesSeances(jour: string): boolean {
+    return this.concernees().some(s => s.date === jour);
+  }
+
+  /** Un jour avec au moins une séance concernée devient le filtre ; sinon on reste dans le calendrier. */
+  toucherJour(jour: string | null): void {
+    this.jourDialogue.set(jour);
+    if (jour && this.aDesSeances(jour)) this.choisirDate(jour);
+  }
+
+  choisirDate(jour: string): void {
+    this.filtreDate.set(jour);
+    this.fermerDialogueDate();
   }
 
   reinitialiserFiltres(): void {

@@ -124,6 +124,32 @@ input, select, textarea {
   color: var(--craie);
 }
 
+/* Choix d'une séance dans un calendrier (core/calendrier-seances.component.ts) :
+   bouton qui ouvre le dialogue, et le dialogue lui-même. Partagé par les
+   Présences, la fiche de suivi et les fiches de sécurité. */
+.choix-seance {
+  display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 420px; min-height: 44px;
+  padding: var(--pas) var(--pas-2); background: var(--carte); color: var(--encre);
+  border: 1px solid var(--trait); border-radius: var(--r-s); font: inherit; text-align: left; cursor: pointer;
+}
+.choix-seance .libelle-choix { flex: 1; min-width: 0; font-weight: 700; }
+.choix-seance .changer { color: var(--profond); font-size: .875rem; text-decoration: underline; }
+
+.dialogue-seance {
+  width: min(640px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: var(--pas-2);
+  border: none; border-radius: var(--r); box-shadow: var(--ombre); background: var(--carte); color: var(--encre);
+}
+.dialogue-seance::backdrop { background: rgba(15, 23, 42, .5); }
+.dialogue-seance .entete-dialogue {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--pas); margin-bottom: var(--pas);
+}
+.dialogue-seance .entete-dialogue h2 { margin: 0; }
+.dialogue-seance .aucune { text-align: center; margin: var(--pas-2) 0 0; }
+.dialogue-seance .seances-du-jour { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas); }
+.dialogue-seance .seances-du-jour button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; }
+.dialogue-seance .seances-du-jour button.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+.dialogue-seance .seances-du-jour .milieu { font-size: .8125rem; font-weight: 400; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
