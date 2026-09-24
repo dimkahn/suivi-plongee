@@ -161,6 +161,15 @@ nouvelle entité : ajouter `@Audited`, générer le schéma une fois avec
 Flyway à la main (les types choisis par H2/Hibernate ne sont pas toujours
 ceux qu'on veut en Postgres).
 
+**Les vacances scolaires viennent de la source officielle, pas d'une copie.**
+La génération d'une saison (`/seances/generer`, `GenerationSaisonService`)
+lit les vacances de la zone choisie dans le jeu de données « Calendrier
+scolaire » de data.education.gouv.fr (`CalendrierScolaireOfficiel`) au
+moment de l'aperçu : le serveur doit pouvoir joindre internet. Source
+injoignable = refus explicite, jamais de dates devinées. Les jours fériés,
+eux, sont calculés (`JoursFeries`, Pâques par l'algorithme de Meeus). Les
+tests remplacent la source par une fausse (`GenerationSaisonTest`).
+
 ## Conventions
 
 - Pas de `localStorage` ni de `sessionStorage` côté navigateur. Le jeton

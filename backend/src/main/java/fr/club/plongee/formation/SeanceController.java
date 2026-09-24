@@ -1,5 +1,6 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.formation.calendrier.GenerationSaisonService;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.formation.service.*;
@@ -48,6 +49,14 @@ public class SeanceController {
                                       @NotNull Milieu milieu, String lieu, String site, Integer profondeurMax,
                                       @Size(max = 10) List<String> infos) {}
 
+    public record SeancePrevueVue(LocalDate date, int ordre, String milieu, String lieu, String site,
+                                  Integer profondeurMax, String commentaire) {}
+
+    public record ExclusionVue(String motif, LocalDate debut, LocalDate fin, int seancesRetirees) {}
+
+    public record GenerationSaisonVue(String saison, boolean saisonOuverte, int nbSeances, int seancesExistantes,
+                                      List<SeancePrevueVue> seances, List<ExclusionVue> exclusions) {}
+
     /** Au-delà, c'est plus probablement une erreur de saisie qu'un séjour. */
     private static final int DUREE_MAX_SEJOUR_JOURS = 31;
 
@@ -67,11 +76,12 @@ public class SeanceController {
     private final EvaluationRepository evaluations;
     private final FicheSecuriteRepository fichesSecurite;
     private final PhotoEleveRepository photos;
+    private final GenerationSaisonService generationSaison;
 
     public SeanceController(SeanceRepository seances, SaisonRepository saisons,
                             CursusRepository cursus, ParticipationRepository participations,
                             EvaluationRepository evaluations, FicheSecuriteRepository fichesSecurite,
-                            PhotoEleveRepository photos) {
+                            PhotoEleveRepository photos, GenerationSaisonService generationSaison) {
         this.seances = seances;
         this.saisons = saisons;
         this.cursus = cursus;
@@ -79,6 +89,7 @@ public class SeanceController {
         this.evaluations = evaluations;
         this.fichesSecurite = fichesSecurite;
         this.photos = photos;
+        this.generationSaison = generationSaison;
     }
 
     @GetMapping
@@ -159,6 +170,34 @@ public class SeanceController {
         }
         seances.saveAll(creees);
         return creees.stream().map(this::vue).toList();
+    }
+
+    /**
+     * Aperçu d'une saison générée (une séance chaque jour de la semaine choisi) : les
+     * séances qui seraient créées et ce qui en a été retiré (vacances de la
+     * zone, jours fériés). Rien n'est enregistré.
+     */
+    @PostMapping("/generation/apercu")
+    @PreAuthorize("hasRole('ADMIN')")
+    public GenerationSaisonVue apercuGeneration(@Valid @RequestBody GenerationSaisonService.Demande demande) {
+        return vue(generationSaison.planifier(demande), demande);
+    }
+
+    /** Même calcul que l'aperçu, puis création de toutes les séances en une transaction. */
+    @PostMapping("/generation")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public GenerationSaisonVue generer(@Valid @RequestBody GenerationSaisonService.Demande demande) {
+        return vue(generationSaison.generer(demande), demande);
+    }
+
+    private GenerationSaisonVue vue(GenerationSaisonService.Plan plan, GenerationSaisonService.Demande d) {
+        return new GenerationSaisonVue(plan.saison().getLibelle(), plan.saison().isOuverte(), plan.seances().size(),
+                plan.seancesExistantes(),
+                plan.seances().stream().map(p -> new SeancePrevueVue(p.date(), p.ordre(),
+                        d.milieu().name(), d.lieu(), d.site(), d.profondeurMax(), d.info())).toList(),
+                plan.exclusions().stream().map(e -> new ExclusionVue(e.motif(), e.debut(), e.fin(),
+                        e.seancesRetirees())).toList());
     }
 
     /**

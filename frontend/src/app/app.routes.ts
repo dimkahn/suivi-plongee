@@ -58,6 +58,12 @@ export const routes: Routes = [
       .then(m => m.SeancesComponent)
   },
   {
+    path: 'seances/generer',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/seances/generation-saison.component')
+      .then(m => m.GenerationSaisonComponent)
+  },
+  {
     path: 'fiches-securite',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/fiche-securite/fiches-securite-liste.component')

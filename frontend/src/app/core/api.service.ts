@@ -5,7 +5,7 @@ import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
-  SaisonVue, SeanceVue, Statut, FeuillePresence
+  SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -106,6 +106,15 @@ export class ApiService {
   /** Séjour : une séance par jour × plongée du jour × info complémentaire, créées en une fois. */
   creerSerieSeances(demande: DemandeSerieSeances): Observable<SeanceVue[]> {
     return this.http.post<SeanceVue[]>('/api/seances/serie', demande);
+  }
+
+  /** Séances d'une saison à partir de créneaux hebdomadaires : aperçu seul, rien n'est enregistré. ADMIN. */
+  apercuGenerationSaison(demande: DemandeGenerationSaison): Observable<GenerationSaisonVue> {
+    return this.http.post<GenerationSaisonVue>('/api/seances/generation/apercu', demande);
+  }
+
+  genererSaison(demande: DemandeGenerationSaison): Observable<GenerationSaisonVue> {
+    return this.http.post<GenerationSaisonVue>('/api/seances/generation', demande);
   }
 
   modifierSeance(id: number, demande: DemandeSeance): Observable<SeanceVue> {
