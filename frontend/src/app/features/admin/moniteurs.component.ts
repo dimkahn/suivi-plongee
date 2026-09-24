@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
+import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { MoniteurVue } from '../../core/modeles';
 import { EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 
@@ -14,12 +16,12 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule],
+  imports: [FormsModule, RecadragePhotoComponent],
   template: `
     <h1>Moniteurs</h1>
     <p class="secondaire">
-      Ajout, modification, activation, mot de passe : les gestes réservés aux administrateurs.
-      Le niveau d'encadrement ne se change qu'ici.
+      Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
+      administrateurs. Le niveau d'encadrement et le rôle d'administrateur ne se changent qu'ici.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -53,6 +55,11 @@ function aVerifier(m: MoniteurVue): boolean {
 
       <label for="caci">CACI valide jusqu'au</label>
       <input id="caci" type="date" name="caci" [(ngModel)]="certificatValideJusquAu">
+
+      <label class="case">
+        <input type="checkbox" name="admin" [(ngModel)]="admin">
+        Administrateur (gestion des moniteurs, élèves, saisons, référentiel)
+      </label>
 
       <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
         {{ envoiCreation() ? 'Création…' : 'Ajouter le moniteur' }}
@@ -96,14 +103,18 @@ function aVerifier(m: MoniteurVue): boolean {
                 <span class="secondaire">{{ m.email }}</span>
                 <span class="secondaire">
                   {{ m.niveauEncadrement }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
+                  · Droit à l'image {{ m.autorisationImage ? (m.aPhoto ? 'recueilli, photo déposée' : 'recueilli') : 'non recueilli' }}
                 </span>
                 <span [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)">
                   {{ libelleCaci(m.certificatValideJusquAu) }}
                 </span>
               </div>
-              <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
-                {{ m.actif ? 'Actif' : 'Désactivé' }}
-              </span>
+              <div class="badges">
+                @if (m.admin) { <span class="etat admin">Admin</span> }
+                <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
+                  {{ m.actif ? 'Actif' : 'Désactivé' }}
+                </span>
+              </div>
             </div>
 
             <div class="actions">
@@ -116,6 +127,15 @@ function aVerifier(m: MoniteurVue): boolean {
               <button type="button" class="bouton-discret" (click)="basculerMotDePasse(m.id)">
                 Changer le mot de passe
               </button>
+              <button type="button" class="bouton-discret" (click)="changerAutorisationImage(m)">
+                {{ m.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
+              </button>
+              @if (m.autorisationImage) {
+                <label class="bouton-discret upload">
+                  {{ m.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
+                  <input type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto(m, $event)">
+                </label>
+              }
               <button type="button" class="bouton-discret danger" (click)="supprimer(m)">
                 Supprimer
               </button>
@@ -147,6 +167,17 @@ function aVerifier(m: MoniteurVue): boolean {
                 <label [for]="'caci-' + m.id">CACI valide jusqu'au</label>
                 <input [id]="'caci-' + m.id" type="date" name="editionCaci"
                        [(ngModel)]="edition.certificatValideJusquAu">
+
+                <label class="case">
+                  <input type="checkbox" name="editionAdmin" [(ngModel)]="edition.admin"
+                         [disabled]="estMoi(m) && m.admin">
+                  Administrateur
+                </label>
+                @if (estMoi(m) && m.admin) {
+                  <p class="secondaire">
+                    Vous ne pouvez pas vous retirer vous-même ce rôle : demandez-le à un autre administrateur.
+                  </p>
+                }
 
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="modifier(m)"
@@ -180,6 +211,12 @@ function aVerifier(m: MoniteurVue): boolean {
         }
       </ul>
     }
+
+    @if (recadrage(); as r) {
+      <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.moniteur.prenom + ' ' + r.moniteur.nom"
+                           [enCours]="recadrageEnCours()" (valide)="deposerPhoto($event)"
+                           (annule)="recadrage.set(null)" (illisible)="imageIllisible()" />
+    }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -187,6 +224,9 @@ function aVerifier(m: MoniteurVue): boolean {
     .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
+    .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; }
+    .case input { width: auto; }
+    .upload { cursor: pointer; margin: 0; font-size: inherit; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     .filtres {
@@ -212,6 +252,8 @@ function aVerifier(m: MoniteurVue): boolean {
     }
     .etat.actif { background: var(--acquis-clair); color: var(--acquis); }
     .etat.inactif { background: #EEF2F4; color: var(--craie); }
+    .etat.admin { background: var(--profond); color: #fff; }
+    .badges { display: flex; gap: var(--pas); flex: none; }
 
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .danger { color: #B3261E; border-color: #B3261E; }
@@ -229,6 +271,7 @@ function aVerifier(m: MoniteurVue): boolean {
 })
 export class MoniteursComponent {
   private api = inject(ApiService);
+  private auth = inject(AuthService);
 
   liste = signal<MoniteurVue[]>([]);
   chargement = signal(true);
@@ -255,16 +298,20 @@ export class MoniteursComponent {
   niveauEncadrement: NiveauEncadrement = 'E1';
   numeroLicence = '';
   certificatValideJusquAu = '';
+  admin = false;
   envoiCreation = signal(false);
 
   moniteurEdite = signal<number | null>(null);
   edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, numeroLicence: '',
-              certificatValideJusquAu: '' };
+              certificatValideJusquAu: '', admin: false };
   envoiEdition = signal(false);
 
   moniteurMotDePasse = signal<number | null>(null);
   nouveauMotDePasse = '';
   envoiMotDePasse = signal(false);
+
+  recadrage = signal<{ moniteur: MoniteurVue; fichier: File } | null>(null);
+  recadrageEnCours = signal(false);
 
   constructor() {
     void this.charger();
@@ -294,7 +341,8 @@ export class MoniteursComponent {
       prenom: this.prenom,
       niveauEncadrement: this.niveauEncadrement,
       numeroLicence: this.numeroLicence || null,
-      certificatValideJusquAu: this.certificatValideJusquAu || null
+      certificatValideJusquAu: this.certificatValideJusquAu || null,
+      admin: this.admin
     }).subscribe({
       next: m => {
         this.envoiCreation.set(false);
@@ -304,6 +352,7 @@ export class MoniteursComponent {
         this.email = '';
         this.numeroLicence = '';
         this.certificatValideJusquAu = '';
+        this.admin = false;
         this.message.set(`${m.prenom} ${m.nom} a été ajouté·e ; un lien pour définir son mot de passe lui a été envoyé.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -334,7 +383,8 @@ export class MoniteursComponent {
       email: m.email,
       niveauEncadrement: m.niveauEncadrement ?? 'E1',
       numeroLicence: m.numeroLicence ?? '',
-      certificatValideJusquAu: m.certificatValideJusquAu ?? ''
+      certificatValideJusquAu: m.certificatValideJusquAu ?? '',
+      admin: m.admin
     };
     this.moniteurEdite.set(m.id);
   }
@@ -388,6 +438,54 @@ export class MoniteursComponent {
         this.message.set(e.error?.detail ?? "Le mot de passe n'a pas pu être mis à jour.");
       }
     });
+  }
+
+  /** Le serveur refuse aussi qu'un administrateur se retire lui-même ce rôle ; ceci n'est que du confort. */
+  estMoi(m: MoniteurVue): boolean {
+    return m.email.toLowerCase() === this.auth.session()?.email.toLowerCase();
+  }
+
+  changerAutorisationImage(m: MoniteurVue): void {
+    if (m.autorisationImage && m.aPhoto
+        && !confirm(`Retirer le droit à l'image de ${m.prenom} ${m.nom} ? Sa photo sera supprimée.`)) return;
+    this.message.set(null);
+    this.api.changerAutorisationImageMoniteur(m.id, !m.autorisationImage).subscribe({
+      next: maj => this.remplacer(maj),
+      error: (e: HttpErrorResponse) =>
+        this.message.set(e.error?.detail ?? "L'action n'a pas pu être enregistrée.")
+    });
+  }
+
+  /** Ouvre le recadrage : la photo n'est envoyée qu'une fois validée (voir {@link deposerPhoto}). */
+  choisirPhoto(m: MoniteurVue, evenement: Event): void {
+    const entree = evenement.target as HTMLInputElement;
+    const fichier = entree.files?.[0];
+    entree.value = ''; // permet de rechoisir le même fichier plus tard
+    if (!fichier) return;
+    this.message.set(null);
+    this.recadrage.set({ moniteur: m, fichier });
+  }
+
+  imageIllisible(): void {
+    this.recadrage.set(null);
+    this.message.set("Cette image n'a pas pu être lue.");
+  }
+
+  async deposerPhoto(fichier: File): Promise<void> {
+    const r = this.recadrage();
+    if (!r) return;
+    this.recadrageEnCours.set(true);
+    try {
+      await firstValueFrom(this.api.deposerPhotoMoniteur(r.moniteur.id, fichier));
+      const actuel = this.liste().find(x => x.id === r.moniteur.id) ?? r.moniteur;
+      this.remplacer({ ...actuel, aPhoto: true });
+      this.message.set(`Photo enregistrée pour ${r.moniteur.prenom} ${r.moniteur.nom}.`);
+      this.recadrage.set(null);
+    } catch (err) {
+      this.message.set((err as HttpErrorResponse).error?.detail ?? "La photo n'a pas pu être déposée.");
+    } finally {
+      this.recadrageEnCours.set(false);
+    }
   }
 
   supprimer(m: MoniteurVue): void {

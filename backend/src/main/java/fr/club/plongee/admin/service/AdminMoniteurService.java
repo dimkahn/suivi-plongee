@@ -17,14 +17,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Gestion des comptes moniteurs par un ADMIN : creation, activation,
- * desactivation, changement de mot de passe, suppression. L'authentification
+ * desactivation, role ADMIN, changement de mot de passe, droit a l'image
+ * et photo, suppression. L'authentification
  * elle-meme (connexion, mot de passe oublie) reste dans {@code securite}.
  */
 @Service
@@ -32,6 +35,8 @@ public class AdminMoniteurService {
 
     private static final int LONGUEUR_MIN_MOT_DE_PASSE = 10;
     private static final SecureRandom ALEA = new SecureRandom();
+    private static final Set<String> TYPES_PHOTO = Set.of("image/jpeg", "image/png");
+    private static final long TAILLE_MAX_PHOTO_OCTETS = 5L * 1024 * 1024;
 
     private final UtilisateurRepository utilisateurs;
     private final PasswordEncoder encodeur;
@@ -43,6 +48,7 @@ public class AdminMoniteurService {
     private final SeanceRepository seances;
     private final CursusRepository cursus;
     private final FicheSecuriteRepository fichesSecurite;
+    private final PhotoUtilisateurRepository photos;
 
     public AdminMoniteurService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                ReinitialisationMotDePasseService reinitialisations,
@@ -52,7 +58,8 @@ public class AdminMoniteurService {
                                DelivranceRepository delivrances,
                                SeanceRepository seances,
                                CursusRepository cursus,
-                               FicheSecuriteRepository fichesSecurite) {
+                               FicheSecuriteRepository fichesSecurite,
+                               PhotoUtilisateurRepository photos) {
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
@@ -63,6 +70,7 @@ public class AdminMoniteurService {
         this.seances = seances;
         this.cursus = cursus;
         this.fichesSecurite = fichesSecurite;
+        this.photos = photos;
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +86,7 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
                              NiveauEncadrement niveauEncadrement, String numeroLicence,
-                             LocalDate certificatValideJusquAu) {
+                             LocalDate certificatValideJusquAu, boolean admin) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
             throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
         }
@@ -91,7 +99,7 @@ public class AdminMoniteurService {
         u.setNumeroLicence(numeroLicence);
         u.setCertificatValideJusquAu(certificatValideJusquAu);
         u.setActif(true);
-        u.setRoles(EnumSet.of(RoleNom.MONITEUR));
+        u.setRoles(admin ? EnumSet.of(RoleNom.MONITEUR, RoleNom.ADMIN) : EnumSet.of(RoleNom.MONITEUR));
 
         byte[] brut = new byte[32];
         ALEA.nextBytes(brut);
@@ -108,12 +116,23 @@ public class AdminMoniteurService {
      * corriger son identite et son e-mail lui-meme, pas s'habiliter.
      * Un changement d'e-mail ferme les sessions du moniteur (le jeton
      * d'acces porte l'e-mail) : il se reconnecte avec la nouvelle adresse.
+     *
+     * <p>Le role ADMIN se donne et se retire aussi ici ({@code admin} nul :
+     * inchange). Un ADMIN ne peut pas
+     * se le retirer lui-meme : le club garde ainsi toujours au moins un
+     * administrateur. Les roles sont relus en base a chaque requete
+     * ({@code JwtAuthFilter}) : le changement s'applique immediatement cote
+     * serveur ; l'ecran du moniteur concerne suit a son prochain
+     * rafraichissement de jeton.
      */
     @Transactional
-    public Utilisateur modifier(Long id, String email, String nom, String prenom,
+    public Utilisateur modifier(Long id, Long auteurId, String email, String nom, String prenom,
                                 NiveauEncadrement niveauEncadrement, String numeroLicence,
-                                LocalDate certificatValideJusquAu) {
+                                LocalDate certificatValideJusquAu, Boolean admin) {
         Utilisateur u = moniteur(id);
+        if (Boolean.FALSE.equals(admin) && u.getId().equals(auteurId) && u.getRoles().contains(RoleNom.ADMIN)) {
+            throw new RegleMetierException("Vous ne pouvez pas vous retirer vous-même le rôle administrateur.");
+        }
         String nouvelEmail = email.trim();
         boolean emailChange = !nouvelEmail.equalsIgnoreCase(u.getEmail());
         if (emailChange && utilisateurs.existsByEmailIgnoreCase(nouvelEmail)) {
@@ -125,6 +144,8 @@ public class AdminMoniteurService {
         u.setNiveauEncadrement(niveauEncadrement);
         u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
         u.setCertificatValideJusquAu(certificatValideJusquAu);
+        if (Boolean.TRUE.equals(admin)) u.getRoles().add(RoleNom.ADMIN);
+        else if (Boolean.FALSE.equals(admin)) u.getRoles().remove(RoleNom.ADMIN);
         utilisateurs.save(u);
         if (emailChange) refreshTokens.revoquerTout(id);
         return u;
@@ -170,7 +191,49 @@ public class AdminMoniteurService {
                             + "pour garder l'historique.");
         }
         refreshTokens.revoquerTout(id);
+        if (photos.existsById(id)) photos.deleteById(id);
         utilisateurs.delete(u);
+    }
+
+    /** Un retrait de consentement supprime la photo elle-meme, pas seulement son affichage. */
+    @Transactional
+    public Utilisateur changerAutorisationImage(Long id, boolean autorisation) {
+        Utilisateur u = moniteur(id);
+        u.setAutorisationImage(autorisation);
+        utilisateurs.save(u);
+        if (!autorisation && photos.existsById(id)) photos.deleteById(id);
+        return u;
+    }
+
+    @Transactional
+    public void deposerPhoto(Long id, byte[] contenu, String type) {
+        Utilisateur u = moniteur(id);
+        if (!u.isAutorisationImage()) {
+            throw new RegleMetierException(
+                    "Le droit à l'image n'a pas été recueilli pour ce moniteur : "
+                            + "cochez d'abord l'autorisation avant de déposer une photo.");
+        }
+        if (contenu == null || contenu.length == 0) {
+            throw new RegleMetierException("Le fichier est vide.");
+        }
+        if (contenu.length > TAILLE_MAX_PHOTO_OCTETS) {
+            throw new RegleMetierException("La photo dépasse la taille maximale de 5 Mo.");
+        }
+        if (type == null || !TYPES_PHOTO.contains(type)) {
+            throw new RegleMetierException("Seules les photos JPEG ou PNG sont acceptées.");
+        }
+        PhotoUtilisateur photo = photos.findById(id).orElseGet(PhotoUtilisateur::new);
+        photo.setUtilisateur(u);
+        photo.setContenu(contenu);
+        photo.setTypeContenu(type);
+        photo.setMiseAJourLe(Instant.now());
+        photos.save(photo);
+    }
+
+    @Transactional
+    public void supprimerPhoto(Long id) {
+        moniteur(id);
+        if (photos.existsById(id)) photos.deleteById(id);
     }
 
     private Utilisateur moniteur(Long id) {
