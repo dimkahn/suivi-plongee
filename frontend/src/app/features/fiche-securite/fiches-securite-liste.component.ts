@@ -6,7 +6,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
-import { correspondLieuSiteInfo, lieuEtSite } from '../../core/seance-lieu';
+import { correspondLieuSiteInfo } from '../../core/seance-lieu';
 
 type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
@@ -89,12 +89,18 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
             <div class="ligne">
               <div class="identite">
                 <span class="nom">
-                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) || tri() === 'NUMERO' ? ' (n° ' + s.ordre + ')' : '' }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}
+                  {{ s.date | dateFr }}{{ aPlusieursCeJour(s) || tri() === 'NUMERO' ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}
                 </span>
+                @if (s.site) {
+                  <span class="site"><span class="etiquette-champ">Site :</span> {{ s.site }}</span>
+                }
                 <span class="secondaire">
                   {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
                   {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
                 </span>
+                @if (s.commentaire) {
+                  <span class="info"><span class="etiquette-champ">Info complémentaire :</span> {{ s.commentaire }}</span>
+                }
               </div>
               <div class="actions">
                 @if (aUneFiche(s)) {
@@ -134,6 +140,9 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
     .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
+    .site, .info { font-size: .9375rem; overflow-wrap: anywhere; }
+    .info { white-space: pre-line; }
+    .etiquette-champ { font-weight: 700; color: var(--craie); }
     .actions { display: flex; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
     .etiquette {
       font-size: .8125rem; font-weight: 700; color: var(--profond);
@@ -142,7 +151,6 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
   `]
 })
 export class FichesSecuriteListeComponent {
-  readonly lieuEtSite = lieuEtSite;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
 
