@@ -2,7 +2,9 @@ import { Routes } from '@angular/router';
 import { gardeAdmin, gardeConnecte, gardeEncadrant } from './core/gardes';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'cursus' },
+  // Page d'accueil : Infos élèves. Un compte sans rôle d'encadrant en est
+  // renvoyé vers /cursus par gardeEncadrant.
+  { path: '', pathMatch: 'full', redirectTo: 'eleves' },
   {
     path: 'connexion',
     loadComponent: () => import('./features/connexion/connexion.component')
@@ -121,5 +123,5 @@ export const routes: Routes = [
     loadComponent: () => import('./features/roster/trombinoscope.component')
       .then(m => m.TrombinoscopeComponent)
   },
-  { path: '**', redirectTo: 'cursus' }
+  { path: '**', redirectTo: '' }
 ];
