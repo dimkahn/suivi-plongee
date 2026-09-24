@@ -60,14 +60,14 @@ public class FicheSecuritePdfService {
         StringBuilder colonnesPalanquees = new StringBuilder();
         for (int numero : grille.numerosColonnes()) {
             colonnesPalanquees.append(
-                    "<th class=\"rotee\"><span class=\"libelle-rotee\">Palanquée %d</span></th>".formatted(numero));
+                    "<th class=\"rotee palanquee\"><span class=\"libelle-rotee\">Palanquée %d</span></th>".formatted(numero));
         }
 
         StringBuilder lignesMembres = new StringBuilder();
         int ligne = 1;
         for (MembrePalanquee m : grille.membres()) {
             String classeLigne = grille.estEncadrant(m) ? " class=\"encadrant\"" : "";
-            lignesMembres.append("<tr%s><td class=\"numero\">%d</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>"
+            lignesMembres.append("<tr%s><td class=\"numero\">%d</td><td>%s</td><td>%s</td><td class=\"niveau\">%s</td><td>%s</td>"
                     .formatted(classeLigne, ligne++, echapper(m.getNom()), echapper(m.getPrenom()), niveau(m),
                             vide(m.getAptitudeDonneeParDp())));
             for (int numero : grille.numerosColonnes()) {
@@ -86,19 +86,29 @@ public class FicheSecuritePdfService {
             <head>
               <meta charset="UTF-8"/>
               <style>
-                @page { size: A4 landscape; margin: 1.2cm; }
+                @page { size: A4 landscape; margin: 1cm; }
                 body { font-family: Helvetica, Arial, sans-serif; font-size: 9pt; color: #1c2d33; }
                 .entete { display: table; width: 100%%; margin-bottom: 8pt; }
                 .entete .bloc { display: table-cell; vertical-align: top; }
                 .entete .titre { text-align: center; }
                 .entete .titre h1 { font-size: 15pt; margin: 0; }
                 .entete .titre .club { font-weight: bold; font-size: 11pt; }
-                .entete .titre .logo { height: 44pt; width: 44pt; }
+                /* Logo à gauche du nom du club et du titre, pas au-dessus : chaque
+                   point de hauteur compte pour tenir sur une page A4 paysage. */
+                .marque { display: inline-table; }
+                .marque .logo-cellule, .marque .texte-cellule { display: table-cell; vertical-align: middle; }
+                .marque .logo-cellule { padding-right: 8pt; }
+                .marque .logo { height: 40pt; width: 40pt; }
                 .entete p { margin: 2pt 0; }
                 table { width: 100%%; border-collapse: collapse; }
                 th, td {
-                  border: 1px solid #1c2d33; padding: 3pt 5pt; text-align: center; font-size: 8pt;
+                  border: 1px solid #1c2d33; padding: 2pt 4pt; text-align: center; font-size: 8pt;
                 }
+                /* Une ligne par plongeur : niveau sans retour à la ligne, colonnes de
+                   palanquées au plus juste (une croix ou « 10:42 »), le reste de la
+                   largeur va aux observations. */
+                td.niveau { white-space: nowrap; }
+                th.palanquee { width: 30pt; }
                 th { background: #e7eef0; }
                 td.numero, th.numero { width: 16pt; }
                 /* En-têtes tournés à 45° : les colonnes "Palanquée N" et similaires n'ont
@@ -126,9 +136,13 @@ public class FicheSecuritePdfService {
                   <p>Plongée n° : %s</p>
                 </div>
                 <div class="bloc titre">
-                  <img class="logo" src="%s" alt=""/>
-                  <p class="club">%s</p>
-                  <h1>FICHE DE SÉCURITÉ</h1>
+                  <div class="marque">
+                    <div class="logo-cellule"><img class="logo" src="%s" alt=""/></div>
+                    <div class="texte-cellule">
+                      <p class="club">%s</p>
+                      <h1>FICHE DE SÉCURITÉ</h1>
+                    </div>
+                  </div>
                 </div>
                 <div class="bloc">
                   <p>Directeur de plongée :</p>
@@ -170,7 +184,7 @@ public class FicheSecuritePdfService {
     private String niveau(MembrePalanquee m) {
         String aptitude = vide(m.getAptitude());
         String qualification = m.getQualificationPreparee() == null || m.getQualificationPreparee().isBlank()
-                ? "" : "<br/>" + echapper(m.getQualificationPreparee());
+                ? "" : " / " + echapper(m.getQualificationPreparee());
         return aptitude + qualification;
     }
 
