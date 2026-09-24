@@ -725,8 +725,9 @@ export class GrilleComponent implements OnDestroy {
   }
 
   ouvrirDialogueSeance(): void {
-    // Le calendrier s'ouvre sur le mois de la séance choisie, sinon sur le mois courant.
-    this.jourDialogue.set(this.seanceChoisie()?.date ?? this.aujourdhui);
+    // Le calendrier s'ouvre sur le mois de la séance choisie, sinon sur celui de
+    // la dernière séance utilisable (saison terminée : pas un mois vide).
+    this.jourDialogue.set(this.seanceChoisie()?.date ?? this.seancesUtilisables().at(-1)?.date ?? this.aujourdhui);
     this.dialogueSeanceOuvert.set(true);
     this.dialogueSeance().nativeElement.showModal();
   }
