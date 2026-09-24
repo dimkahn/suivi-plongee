@@ -88,7 +88,7 @@ type Population = 'ELEVES' | 'MONITEURS';
               </div>
             }
             <span class="nom">{{ l.eleve }}</span>
-            <span class="secondaire">{{ l.niveau }}</span>
+            <span class="secondaire">{{ libellePreparation(l.niveau) }}</span>
             @if (!l.autorisationImage) {
               <span class="secondaire">Droit à l'image non recueilli</span>
             }

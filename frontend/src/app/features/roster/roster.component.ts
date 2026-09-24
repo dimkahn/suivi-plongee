@@ -75,7 +75,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
                     }
                   </div>
                 </td>
-                <td>{{ e.niveau }}</td>
+                <td>{{ libellePreparation(e.niveau) }}</td>
                 <td [class.alerte-cellule]="!e.caciValide">{{ e.caciValide ? 'OK' : '⚠' }}</td>
                 <td>{{ e.seancesBloc }}</td>
                 <td>{{ e.seancesNage }}</td>

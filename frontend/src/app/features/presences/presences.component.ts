@@ -122,7 +122,7 @@ function normaliser(texte: string): string {
                 }
                 <span class="identite">
                   <span class="nom">{{ l.eleve }}</span>
-                  <span class="niveau">{{ l.niveau }}</span>
+                  <span class="niveau">{{ libellePreparation(l.niveau) }}</span>
                   @if (enregistrements().has(l.cursusId)) {
                     <span class="enregistrement" role="status">
                       <span class="chargeur" aria-hidden="true"></span>Enregistrement…
