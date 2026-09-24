@@ -102,6 +102,10 @@ function normaliser(texte: string): string {
             }
           }
 
+          <button type="button" class="bouton-discret bascule-blocs" (click)="basculerTousLesBlocs(g.blocs)">
+            {{ blocsOuverts().size > 0 ? 'Tout refermer' : 'Tout ouvrir' }}
+          </button>
+
           <button type="button" class="bouton-discret lien-pdf" (click)="infosSupplementairesOuvertes.set(!infosSupplementairesOuvertes())">
             {{ infosSupplementairesOuvertes() ? 'Masquer les informations supplémentaires' : 'Informations supplémentaires' }}
           </button>
@@ -174,13 +178,16 @@ function normaliser(texte: string): string {
           <h2 class="titre-groupe">{{ groupe.regroupement }}</h2>
         }
         @for (bloc of groupe.blocs; track bloc.id) {
-        <section class="carte bloc">
+        <section class="carte bloc" [class.ouvert]="blocsOuverts().has(bloc.id)">
           <header>
-            <div>
-              <h3>
-                {{ bloc.intitule }}
-              </h3>
-              <p class="secondaire">
+            <h3 class="titre-bloc">
+            <button type="button" class="bascule-bloc" (click)="basculerBloc(bloc.id)"
+                    [attr.aria-expanded]="blocsOuverts().has(bloc.id)"
+                    [attr.aria-controls]="'criteres-' + bloc.id">
+              <span class="chevron" aria-hidden="true">{{ blocsOuverts().has(bloc.id) ? '▾' : '▸' }}</span>
+              <span class="texte-bloc">
+              <span class="intitule">{{ bloc.intitule }}</span>
+              <span class="secondaire detail">
                 {{ bloc.acquis }} / {{ bloc.total }} acquis
                 @if (bloc.evaluationTransverse) {
                   · vérifiée au fil des autres compétences, sans séance dédiée
@@ -188,8 +195,10 @@ function normaliser(texte: string): string {
                 @if (bloc.validerEnDernier) {
                   · à valider en fin de formation
                 }
-              </p>
-            </div>
+              </span>
+              </span>
+            </button>
+            </h3>
 
             @if (bloc.valide) {
               <p class="valide">Validée le {{ bloc.dateValidation | dateFr }} par {{ bloc.valideePar }}</p>
@@ -213,7 +222,8 @@ function normaliser(texte: string): string {
             }
           </header>
 
-          <ul>
+          @if (blocsOuverts().has(bloc.id)) {
+          <ul [id]="'criteres-' + bloc.id">
             @for (critere of bloc.criteres; track critere.id) {
               <li>
                 <div class="ligne">
@@ -230,6 +240,9 @@ function normaliser(texte: string): string {
                       <span class="attente">En attente d'envoi</span>
                     } @else if (critere.parQui) {
                       <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le | dateFr }}</span>
+                    }
+                    @if (critere.commentaire) {
+                      <span class="dernier-commentaire">« {{ critere.commentaire }} »</span>
                     }
                   </div>
 
@@ -248,10 +261,35 @@ function normaliser(texte: string): string {
                   </div>
                 </div>
 
-                <button type="button" class="lien-historique"
-                        (click)="basculerHistorique(critere.id)">
-                  {{ historiqueOuverts().has(critere.id) ? 'Masquer l’historique' : 'Voir l’historique' }}
-                </button>
+                <div class="liens-critere">
+                  @if (peutSaisir() && !bloc.valide) {
+                    <button type="button" class="lien-historique"
+                            [attr.aria-expanded]="commentairesOuverts().has(critere.id)"
+                            (click)="basculerCommentaire(critere.id)">
+                      {{ commentairesOuverts().has(critere.id) ? 'Annuler le commentaire' : 'Commenter' }}
+                    </button>
+                  }
+                  <button type="button" class="lien-historique"
+                          (click)="basculerHistorique(critere.id)">
+                    {{ historiqueOuverts().has(critere.id) ? 'Masquer l’historique' : 'Voir l’historique' }}
+                  </button>
+                </div>
+
+                @if (commentairesOuverts().has(critere.id) && peutSaisir() && !bloc.valide) {
+                  <div class="ajout-commentaire">
+                    <label class="secondaire" [for]="'commentaire-' + critere.id">
+                      Ce qui a été travaillé, ce qui reste à revoir…
+                    </label>
+                    <textarea [id]="'commentaire-' + critere.id" rows="2"
+                              [ngModel]="brouillons()[critere.id] ?? ''"
+                              (ngModelChange)="modifierBrouillon(critere.id, $event)"></textarea>
+                    <button type="button" class="bouton-principal"
+                            [disabled]="!(brouillons()[critere.id] ?? '').trim()"
+                            (click)="commenter(bloc, critere)">
+                      Enregistrer le commentaire
+                    </button>
+                  </div>
+                }
 
                 @if (historiqueOuverts().has(critere.id)) {
                   <div class="historique">
@@ -273,23 +311,12 @@ function normaliser(texte: string): string {
                       }
                     }
 
-                    @if (peutSaisir() && !bloc.valide) {
-                      <div class="ajout-commentaire">
-                        <textarea rows="2" placeholder="Ajouter un commentaire pour ce critère…"
-                                  [ngModel]="brouillons()[critere.id] ?? ''"
-                                  (ngModelChange)="modifierBrouillon(critere.id, $event)"></textarea>
-                        <button type="button" class="bouton-discret"
-                                [disabled]="!(brouillons()[critere.id] ?? '').trim()"
-                                (click)="commenter(bloc, critere)">
-                          Ajouter le commentaire
-                        </button>
-                      </div>
-                    }
                   </div>
                 }
               </li>
             }
           </ul>
+          }
         </section>
         }
       }
@@ -354,8 +381,20 @@ function normaliser(texte: string): string {
     .bloc { margin-top: var(--pas-3); padding: var(--pas-3); }
     .bloc header {
       display: flex; justify-content: space-between; align-items: flex-start;
-      gap: var(--pas-2); flex-wrap: wrap; margin-bottom: var(--pas-2);
+      gap: var(--pas-2); flex-wrap: wrap;
     }
+    .bloc.ouvert header { margin-bottom: var(--pas-2); }
+    /* Tout le titre du bloc est la cible tactile qui l'ouvre ou le referme. */
+    .titre-bloc { flex: 1 1 260px; margin: 0; font-size: 1.0625rem; }
+    .bascule-bloc {
+      display: flex; align-items: flex-start; gap: var(--pas); width: 100%; min-height: 44px;
+      padding: 0; background: none; border: none; text-align: left; color: inherit; cursor: pointer;
+      font: inherit;
+    }
+    .texte-bloc { display: flex; flex-direction: column; gap: 2px; }
+    .detail { font-family: var(--font-texte); font-size: .875rem; font-weight: 400; }
+    .chevron { flex: none; width: 1em; color: var(--profond); font-size: 1.125rem; line-height: 1.5; }
+    .bascule-blocs { display: block; margin-top: var(--pas); }
     .titre-groupe {
       margin: var(--pas-3) 0 var(--pas); padding-bottom: 4px;
       border-bottom: 2px solid var(--profond); color: var(--profond);
@@ -398,10 +437,12 @@ function normaliser(texte: string): string {
     /* Le pointillé dit « enregistré ici, pas encore chez le serveur ». */
     .etat.differe { border-style: dashed; }
 
+    .liens-critere { display: flex; gap: var(--pas-3); flex-wrap: wrap; }
     .lien-historique {
-      margin-top: 4px; padding: 0; min-height: auto; background: none; border: none;
+      padding: 0; min-height: 44px; background: none; border: none;
       color: var(--profond); font-size: .8125rem; text-decoration: underline;
     }
+    .dernier-commentaire { font-size: .875rem; color: var(--encre); font-style: italic; }
 
     .historique {
       margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s);
@@ -409,9 +450,13 @@ function normaliser(texte: string): string {
     }
     .entree-historique { font-size: .875rem; }
     .entree-historique p { margin: 2px 0 0; max-width: none; }
-    .ajout-commentaire { display: flex; flex-direction: column; gap: var(--pas); }
+    .ajout-commentaire {
+      display: flex; flex-direction: column; gap: var(--pas);
+      margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
+    }
+    .ajout-commentaire label { margin: 0; }
     .ajout-commentaire textarea { resize: vertical; }
-    .ajout-commentaire button { align-self: flex-start; }
+    .ajout-commentaire button { align-self: flex-start; width: auto; }
 
     @media (max-width: 720px) {
       .entete { flex-direction: row; padding: var(--pas-2); }
@@ -454,9 +499,33 @@ export class GrilleComponent implements OnDestroy {
 
   /** Historique des critères consultés, tenu par critereId. */
   historiqueOuverts = signal<Set<number>>(new Set());
+
+  /** Blocs dépliés : tous repliés à l'ouverture de la fiche, pour la parcourir d'un coup d'œil. */
+  blocsOuverts = signal<Set<number>>(new Set());
+
+  basculerBloc(blocId: number): void {
+    const ouverts = new Set(this.blocsOuverts());
+    if (ouverts.has(blocId)) ouverts.delete(blocId);
+    else ouverts.add(blocId);
+    this.blocsOuverts.set(ouverts);
+  }
+
+  /** Un seul bouton : referme tout dès qu'un bloc est ouvert, sinon ouvre tout. */
+  basculerTousLesBlocs(blocs: { id: number }[]): void {
+    this.blocsOuverts.set(this.blocsOuverts().size > 0 ? new Set() : new Set(blocs.map(b => b.id)));
+  }
   chargementHistorique = signal<Set<number>>(new Set());
   historiques = signal<Record<number, EvaluationVue[]>>({});
   brouillons = signal<Record<number, string>>({});
+  /** Critères dont la zone « Commenter » est dépliée, indépendamment de l'historique. */
+  commentairesOuverts = signal<Set<number>>(new Set());
+
+  basculerCommentaire(critereId: number): void {
+    const ouverts = new Set(this.commentairesOuverts());
+    if (ouverts.has(critereId)) ouverts.delete(critereId);
+    else ouverts.add(critereId);
+    this.commentairesOuverts.set(ouverts);
+  }
 
   /** Cursus des saisons précédentes du même élève, pour reprendre l'évaluation initiale. */
   historiqueSaisonsOuvert = signal(false);
@@ -868,6 +937,9 @@ export class GrilleComponent implements OnDestroy {
     const restants = { ...this.brouillons() };
     delete restants[critere.id];
     this.brouillons.set(restants);
+    const ouverts = new Set(this.commentairesOuverts());
+    ouverts.delete(critere.id);
+    this.commentairesOuverts.set(ouverts);
 
     // Le commentaire vient d'être ajouté hors ligne ou en ligne : l'historique
     // affiché ne le montrera qu'une fois rechargé depuis le serveur.
