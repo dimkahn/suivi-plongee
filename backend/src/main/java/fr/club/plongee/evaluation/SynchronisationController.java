@@ -153,7 +153,7 @@ public class SynchronisationController {
                 // séances et des fiches de sécurité, jamais consultés hors ligne : true par
                 // défaut, ces écrans revérifient toujours en direct.
                 .map(s -> new SeanceController.SeanceVue(s.getId(), s.getDateSeance(), s.getOrdre(),
-                        s.getMilieu().name(), s.getLieu(), s.getProfondeurMax(),
+                        s.getMilieu().name(), s.getLieu(), s.getSite(), s.getProfondeurMax(),
                         s.getCommentaire(), true, true))
                 .toList();
 

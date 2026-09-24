@@ -26,6 +26,7 @@ interface DemandeSeance {
   ordre?: number;
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu?: string | null;
+  site?: string | null;
   profondeurMax?: number | null;
   commentaire?: string | null;
 }

@@ -193,7 +193,8 @@ public class FicheSecuriteExcelService {
         cellule(feuille.createRow(ligne++), 0, nomClub, null);
         cellule(feuille.createRow(ligne++), 0, "FICHE DE SÉCURITÉ", null);
         cellule(feuille.createRow(ligne++), 0, "Date : " + s.getDateSeance().format(DATE), null);
-        cellule(feuille.createRow(ligne++), 0, "Lieu : " + (s.getLieu() == null ? "" : s.getLieu()), null);
+        cellule(feuille.createRow(ligne++), 0, "Lieu : " + (s.getLieu() == null ? "" : s.getLieu())
+                + (s.getSite() == null || s.getSite().isBlank() ? "" : " — site : " + s.getSite()), null);
         cellule(feuille.createRow(ligne++), 0, "Plongée n° : " + s.getOrdre(), null);
         cellule(feuille.createRow(ligne++), 0, "Directeur de plongée : " + f.getDp().nomComplet(), null);
         return ligne;

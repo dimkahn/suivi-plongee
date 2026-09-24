@@ -5,12 +5,14 @@ import { ApiService } from '../../core/api.service';
 import { SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
+import { lieuEtSite } from '../../core/seance-lieu';
 
 interface FormulaireSeance {
   dateSeance: string;
   ordre: number;
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu: string;
+  site: string;
   profondeurMax: number | null;
   commentaire: string;
 }
@@ -20,7 +22,7 @@ function normaliser(texte: string): string {
 }
 
 function formulaireVide(): FormulaireSeance {
-  return { dateSeance: '', ordre: 1, milieu: 'ARTIFICIEL', lieu: '', profondeurMax: null, commentaire: '' };
+  return { dateSeance: '', ordre: 1, milieu: 'ARTIFICIEL', lieu: '', site: '', profondeurMax: null, commentaire: '' };
 }
 
 @Component({
@@ -52,13 +54,16 @@ function formulaireVide(): FormulaireSeance {
         </select>
 
         <label for="lieu">Lieu</label>
-        <input id="lieu" type="text" name="lieu" [(ngModel)]="f.lieu" placeholder="Facultatif">
+        <input id="lieu" type="text" name="lieu" [(ngModel)]="f.lieu" placeholder="Carrière, port, piscine… (facultatif)">
+
+        <label for="site">Site de plongée</label>
+        <input id="site" type="text" name="site" [(ngModel)]="f.site" placeholder="Épave, tombant… (facultatif)">
 
         <label for="profondeur">Profondeur max (m)</label>
         <input id="profondeur" type="number" name="profondeur" min="0"
                [(ngModel)]="f.profondeurMax" placeholder="Facultatif">
 
-        <label for="commentaire">Commentaire</label>
+        <label for="commentaire">Info complémentaire</label>
         <textarea id="commentaire" name="commentaire" rows="2"
                   [(ngModel)]="f.commentaire" placeholder="Facultatif"></textarea>
 
@@ -82,7 +87,7 @@ function formulaireVide(): FormulaireSeance {
     @if (vue() === 'LISTE') {
       <label for="recherche-seance">Rechercher une séance</label>
       <input id="recherche-seance" type="search" name="rechercheSeance"
-             placeholder="Date (12/10, 12/10/2026, 2026-10), lieu, milieu ou commentaire"
+             placeholder="Date (12/10, 2026-10), lieu, site, milieu ou info complémentaire"
              [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
     } @else {
       <section class="carte calendrier" aria-label="Calendrier des séances">
@@ -129,11 +134,14 @@ function formulaireVide(): FormulaireSeance {
                 <label [for]="'lieu-' + s.id">Lieu</label>
                 <input [id]="'lieu-' + s.id" type="text" name="lieu" [(ngModel)]="f.lieu">
 
+                <label [for]="'site-' + s.id">Site de plongée</label>
+                <input [id]="'site-' + s.id" type="text" name="site" [(ngModel)]="f.site">
+
                 <label [for]="'profondeur-' + s.id">Profondeur max (m)</label>
                 <input [id]="'profondeur-' + s.id" type="number" min="0" name="profondeur"
                        [(ngModel)]="f.profondeurMax" [disabled]="!s.modifiable">
 
-                <label [for]="'commentaire-' + s.id">Commentaire</label>
+                <label [for]="'commentaire-' + s.id">Info complémentaire</label>
                 <textarea [id]="'commentaire-' + s.id" name="commentaire" rows="2"
                           [(ngModel)]="f.commentaire"></textarea>
 
@@ -155,7 +163,7 @@ function formulaireVide(): FormulaireSeance {
             } @else {
               <div class="ligne">
                 <div class="identite">
-                  <span class="nom">{{ s.date | dateFr }}{{ s.ordre > 1 ? ' (n° ' + s.ordre + ')' : '' }}{{ s.lieu ? ' — ' + s.lieu : '' }}</span>
+                  <span class="nom">{{ s.date | dateFr }}{{ s.ordre > 1 ? ' (n° ' + s.ordre + ')' : '' }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</span>
                   <span class="secondaire">
                     {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
                     {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
@@ -221,6 +229,8 @@ export class SeancesComponent {
 
   recherche = signal('');
 
+  readonly lieuEtSite = lieuEtSite;
+
   vue = signal<'LISTE' | 'CALENDRIER'>('LISTE');
   jourSelectionne = signal<string | null>(dateDuJour());
 
@@ -231,12 +241,12 @@ export class SeancesComponent {
     return this.liste().filter(s => s.date === jour);
   });
 
-  /** Un seul champ : date (ISO ou JJ/MM/AAAA), lieu, milieu ou commentaire, sans accents ni casse. */
+  /** Un seul champ : date (ISO ou JJ/MM/AAAA), lieu, site, milieu ou info complémentaire, sans accents ni casse. */
   listeFiltree = computed(() => {
     const recherche = normaliser(this.recherche());
     if (!recherche) return this.liste();
     return this.liste().filter(s =>
-      [s.date, dateFr(s.date), s.lieu ?? '', s.commentaire ?? '',
+      [s.date, dateFr(s.date), s.lieu ?? '', s.site ?? '', s.commentaire ?? '',
        s.milieu === 'NATUREL' ? 'milieu naturel' : 'milieu artificiel piscine fosse']
         .some(champ => normaliser(champ).includes(recherche)));
   });
@@ -280,6 +290,7 @@ export class SeancesComponent {
       ordre: f.ordre,
       milieu: f.milieu,
       lieu: f.lieu || null,
+      site: f.site || null,
       profondeurMax: f.profondeurMax,
       commentaire: f.commentaire || null
     }).subscribe({
@@ -300,7 +311,7 @@ export class SeancesComponent {
     this.message.set(null);
     this.edition.set(s.id);
     this.formulaireEdition.set({
-      dateSeance: s.date, ordre: s.ordre, milieu: s.milieu, lieu: s.lieu ?? '',
+      dateSeance: s.date, ordre: s.ordre, milieu: s.milieu, lieu: s.lieu ?? '', site: s.site ?? '',
       profondeurMax: s.profondeurMax, commentaire: s.commentaire ?? ''
     });
   }
@@ -320,6 +331,7 @@ export class SeancesComponent {
       ordre: f.ordre,
       milieu: f.milieu,
       lieu: f.lieu || null,
+      site: f.site || null,
       profondeurMax: f.profondeurMax,
       commentaire: f.commentaire || null
     }).subscribe({

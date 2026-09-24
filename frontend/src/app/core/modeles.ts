@@ -95,7 +95,10 @@ export interface SeanceVue {
   ordre: number;
   milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu: string | null;
+  /** Point de plongée précis au sein du lieu (épave, tombant…). */
+  site: string | null;
   profondeurMax: number | null;
+  /** Affiché « Info complémentaire ». */
   commentaire: string | null;
   /** false dès que la séance porte des présences ou des évaluations : milieu et profondeur figés. */
   modifiable: boolean;

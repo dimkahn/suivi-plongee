@@ -25,12 +25,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/seances")
 public class SeanceController {
 
-    public record SeanceVue(Long id, LocalDate date, Integer ordre, String milieu, String lieu,
+    public record SeanceVue(Long id, LocalDate date, Integer ordre, String milieu, String lieu, String site,
                             Integer profondeurMax, String commentaire, boolean modifiable,
                             boolean ficheSecurite) {}
 
     public record DemandeSeance(@NotNull LocalDate dateSeance, Integer ordre, @NotNull Milieu milieu,
-                                String lieu, Integer profondeurMax, String commentaire) {}
+                                String lieu, String site, Integer profondeurMax, String commentaire) {}
 
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
                                   Participation.Atelier atelier, String commentaire) {}
@@ -80,6 +80,7 @@ public class SeanceController {
         s.setOrdre(demande.ordre() != null ? demande.ordre() : 1);
         s.setMilieu(demande.milieu());
         s.setLieu(demande.lieu());
+        s.setSite(demande.site());
         s.setProfondeurMax(demande.profondeurMax());
         s.setCommentaire(demande.commentaire());
         seances.save(s);
@@ -90,7 +91,7 @@ public class SeanceController {
      * Modifie une séance. Une fois qu'elle porte des présences ou des
      * évaluations, milieu et profondeur ne bougent plus : les règles du MFT
      * déjà validées (milieu naturel exclusif, profondeur de formation...)
-     * dépendent de ces valeurs. Date, lieu et commentaire restent libres.
+     * dépendent de ces valeurs. Date, lieu, site et commentaire restent libres.
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
@@ -110,6 +111,7 @@ public class SeanceController {
         s.setOrdre(demande.ordre() != null ? demande.ordre() : 1);
         s.setMilieu(demande.milieu());
         s.setLieu(demande.lieu());
+        s.setSite(demande.site());
         s.setProfondeurMax(demande.profondeurMax());
         s.setCommentaire(demande.commentaire());
         seances.save(s);
@@ -212,7 +214,7 @@ public class SeanceController {
 
     private SeanceVue vue(Seance s) {
         return new SeanceVue(s.getId(), s.getDateSeance(), s.getOrdre(), s.getMilieu().name(),
-                s.getLieu(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s),
+                s.getLieu(), s.getSite(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s),
                 fichesSecurite.existsBySeanceId(s.getId()));
     }
 }
