@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
 import { SeanceVue } from '../../core/modeles';
@@ -49,7 +50,7 @@ function formulaireVide(): FormulaireSeance {
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule, DateFrPipe, CalendrierSeancesComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent],
   template: `
     <h1>Séances</h1>
     <p class="secondaire">
@@ -57,6 +58,9 @@ function formulaireVide(): FormulaireSeance {
       notations. Milieu et profondeur se figent dès qu'une présence ou une
       évaluation y est rattachée.
     </p>
+    <a routerLink="/seances/generer" class="bouton-discret lien-generation">
+      Générer toutes les séances d'une saison…
+    </a>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
@@ -293,6 +297,7 @@ function formulaireVide(): FormulaireSeance {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
+    .lien-generation { display: inline-flex; align-items: center; margin-top: var(--pas-2); text-decoration: none; }
     .panneaux { display: flex; flex-wrap: wrap; gap: var(--pas-3); align-items: flex-start; margin: var(--pas-3) 0; }
     .panneau { flex: 1 1 360px; max-width: 480px; padding: var(--pas-3); }
     .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pas-2); }

@@ -179,6 +179,34 @@ export interface MatriceVue {
   lignes: LigneMatrice[];
 }
 
+export type JourSemaine = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+
+/** Une même séance chaque jour de la semaine choisi, sur la période. */
+export interface DemandeGenerationSaison {
+  dateDebut: string;
+  dateFin: string;
+  jours: JourSemaine[];
+  milieu: 'ARTIFICIEL' | 'NATUREL';
+  lieu: string;
+  site: string;
+  profondeurMax: number | null;
+  info: string;
+  /** A, B ou C ; vide : les vacances ne sont pas retirées. */
+  zoneVacances: string;
+  exclureFeries: boolean;
+}
+
+export interface GenerationSaisonVue {
+  saison: string;
+  saisonOuverte: boolean;
+  nbSeances: number;
+  /** Séances déjà présentes sur la période : les nouvelles s'y ajouteraient. */
+  seancesExistantes: number;
+  seances: { date: string; ordre: number; milieu: 'ARTIFICIEL' | 'NATUREL'; lieu: string | null;
+             site: string | null; profondeurMax: number | null; commentaire: string | null }[];
+  exclusions: { motif: string; debut: string; fin: string; seancesRetirees: number }[];
+}
+
 export interface SaisonVue {
   id: number;
   libelle: string;
