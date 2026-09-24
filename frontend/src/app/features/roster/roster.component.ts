@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
@@ -68,11 +68,18 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
             @for (e of elevesFiltres(); track e.cursusId) {
               <tr>
                 <td class="figee">
-                  <div class="identite-cellule">
-                    <a [routerLink]="['/cursus', e.cursusId]">{{ e.eleve }}</a>
-                    @if (e.moniteurReferent) {
-                      <span class="secondaire">{{ e.moniteurReferent }}</span>
+                  <div class="eleve-cellule">
+                    @if (urlPhoto(e.eleveId); as url) {
+                      <img class="avatar" [src]="url" [alt]="e.eleve" width="40" height="40">
+                    } @else {
+                      <div class="avatar silhouette" aria-hidden="true">{{ initiales(e.eleve) }}</div>
                     }
+                    <div class="identite-cellule">
+                      <a [routerLink]="['/cursus', e.cursusId]">{{ e.eleve }}</a>
+                      @if (e.moniteurReferent) {
+                        <span class="secondaire">{{ e.moniteurReferent }}</span>
+                      }
+                    </div>
                   </div>
                 </td>
                 <td>{{ libellePreparation(e.niveau) }}</td>
@@ -108,7 +115,15 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
       padding: 8px 12px; border-bottom: 1px solid var(--trait); text-align: left; font-size: .875rem;
     }
     thead th { color: var(--craie); font-weight: 700; }
-    .figee { position: sticky; left: 0; min-width: 160px; }
+    .figee { position: sticky; left: 0; min-width: 200px; }
+    .eleve-cellule { display: flex; align-items: center; gap: var(--pas); }
+    .avatar {
+      flex: none; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--fond);
+    }
+    .silhouette {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-titres), sans-serif; font-size: .8125rem; font-weight: 700; color: var(--craie);
+    }
     th.figee { background: var(--fond); }
     td.figee { background: var(--carte); }
     .identite-cellule { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
@@ -117,7 +132,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
     .absence { color: var(--craie); }
   `]
 })
-export class RosterComponent {
+export class RosterComponent implements OnDestroy {
   private api = inject(ApiService);
 
   readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
@@ -145,12 +160,47 @@ export class RosterComponent {
 
   constructor() {
     this.api.roster().subscribe({
-      next: r => { this.roster.set(r); this.chargement.set(false); },
+      next: r => {
+        this.roster.set(r);
+        this.chargement.set(false);
+        for (const e of r.eleves) {
+          if (e.aPhoto) this.chargerPhoto(e.eleveId);
+        }
+      },
       error: () => {
         this.erreur.set("Impossible de charger la vue d'ensemble.");
         this.chargement.set(false);
       }
     });
+  }
+
+  /** Un élève inscrit à deux formations la même saison n'a qu'une photo : on ne la charge qu'une fois. */
+  private urlsPhotos = signal<Map<number, string>>(new Map());
+  private photosDemandees = new Set<number>();
+
+  private chargerPhoto(eleveId: number): void {
+    if (this.photosDemandees.has(eleveId)) return;
+    this.photosDemandees.add(eleveId);
+    this.api.photoEleve(eleveId).subscribe({
+      next: blob => {
+        const copie = new Map(this.urlsPhotos());
+        copie.set(eleveId, URL.createObjectURL(blob));
+        this.urlsPhotos.set(copie);
+      },
+      error: () => { /* pas de photo consultable : les initiales restent affichées */ }
+    });
+  }
+
+  urlPhoto(eleveId: number): string | null {
+    return this.urlsPhotos().get(eleveId) ?? null;
+  }
+
+  initiales(nom: string): string {
+    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
+  }
+
+  ngOnDestroy(): void {
+    for (const url of this.urlsPhotos().values()) URL.revokeObjectURL(url);
   }
 
   libelle(code: string | undefined): string {
