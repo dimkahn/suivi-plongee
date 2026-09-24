@@ -8,13 +8,19 @@ import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.repository.EvaluationRepository;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +37,19 @@ public class SeanceController {
 
     public record DemandeSeance(@NotNull LocalDate dateSeance, Integer ordre, @NotNull Milieu milieu,
                                 String lieu, String site, Integer profondeurMax, String commentaire) {}
+
+    /**
+     * Séjour de plongée : une séance par jour, par plongée du jour et par
+     * info complémentaire (deux infos, par exemple deux bateaux ou deux
+     * groupes, doublent le nombre de séances).
+     */
+    public record DemandeSerieSeances(@NotNull LocalDate dateDebut, @NotNull LocalDate dateFin,
+                                      @NotNull @Min(1) @Max(6) Integer plongeesParJour,
+                                      @NotNull Milieu milieu, String lieu, String site, Integer profondeurMax,
+                                      @Size(max = 10) List<String> infos) {}
+
+    /** Au-delà, c'est plus probablement une erreur de saisie qu'un séjour. */
+    private static final int DUREE_MAX_SEJOUR_JOURS = 31;
 
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
                                   Participation.Atelier atelier, String commentaire) {}
@@ -85,6 +104,61 @@ public class SeanceController {
         s.setCommentaire(demande.commentaire());
         seances.save(s);
         return vue(s);
+    }
+
+    /**
+     * Crée d'un coup toutes les séances d'un séjour, dans une seule
+     * transaction : tout ou rien. Si des séances existent déjà un de ces
+     * jours, les n° de plongée continuent après elles plutôt que de les
+     * doublonner. Les séances d'une même plongée (une par info
+     * complémentaire) partagent le même n°.
+     */
+    @PostMapping("/serie")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @Transactional
+    public List<SeanceVue> creerSerie(@Valid @RequestBody DemandeSerieSeances demande) {
+        if (demande.dateFin().isBefore(demande.dateDebut())) {
+            throw new RegleMetierException("La date de fin du séjour doit être le même jour ou après la date de début.");
+        }
+        long nbJours = ChronoUnit.DAYS.between(demande.dateDebut(), demande.dateFin()) + 1;
+        if (nbJours > DUREE_MAX_SEJOUR_JOURS) {
+            throw new RegleMetierException(
+                    "Un séjour ne peut pas dépasser " + DUREE_MAX_SEJOUR_JOURS + " jours : vérifiez les dates.");
+        }
+
+        List<String> infos = demande.infos() == null ? List.of() : demande.infos().stream()
+                .filter(i -> i != null && !i.isBlank())
+                .map(String::trim)
+                .toList();
+        List<String> variantes = infos.isEmpty() ? java.util.Collections.singletonList(null) : infos;
+
+        Saison saison = saisonCourante();
+        Map<LocalDate, Integer> dernierOrdre = new HashMap<>();
+        for (Seance existante : seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison.getId())) {
+            dernierOrdre.merge(existante.getDateSeance(), existante.getOrdre(), Math::max);
+        }
+
+        List<Seance> creees = new ArrayList<>();
+        for (LocalDate jour = demande.dateDebut(); !jour.isAfter(demande.dateFin()); jour = jour.plusDays(1)) {
+            int decalage = dernierOrdre.getOrDefault(jour, 0);
+            for (int plongee = 1; plongee <= demande.plongeesParJour(); plongee++) {
+                for (String info : variantes) {
+                    Seance s = new Seance();
+                    s.setSaison(saison);
+                    s.setDateSeance(jour);
+                    s.setOrdre(decalage + plongee);
+                    s.setMilieu(demande.milieu());
+                    s.setLieu(demande.lieu());
+                    s.setSite(demande.site());
+                    s.setProfondeurMax(demande.profondeurMax());
+                    s.setCommentaire(info);
+                    creees.add(s);
+                }
+            }
+        }
+        seances.saveAll(creees);
+        return creees.stream().map(this::vue).toList();
     }
 
     /**

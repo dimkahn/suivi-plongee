@@ -31,6 +31,17 @@ interface DemandeSeance {
   commentaire?: string | null;
 }
 
+interface DemandeSerieSeances {
+  dateDebut: string;
+  dateFin: string;
+  plongeesParJour: number;
+  milieu: 'ARTIFICIEL' | 'NATUREL';
+  lieu: string | null;
+  site: string | null;
+  profondeurMax: number | null;
+  infos: string[];
+}
+
 interface DemandeEleve {
   nom: string;
   prenom: string;
@@ -90,6 +101,11 @@ export class ApiService {
   /** Création/modification réservées aux ADMIN et MONITEUR côté serveur ; nécessitent le réseau. */
   creerSeance(demande: DemandeSeance): Observable<SeanceVue> {
     return this.http.post<SeanceVue>('/api/seances', demande);
+  }
+
+  /** Séjour : une séance par jour × plongée du jour × info complémentaire, créées en une fois. */
+  creerSerieSeances(demande: DemandeSerieSeances): Observable<SeanceVue[]> {
+    return this.http.post<SeanceVue[]>('/api/seances/serie', demande);
   }
 
   modifierSeance(id: number, demande: DemandeSeance): Observable<SeanceVue> {
