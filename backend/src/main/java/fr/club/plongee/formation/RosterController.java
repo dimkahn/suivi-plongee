@@ -26,9 +26,12 @@ public class RosterController {
 
     public record SeanceEnTete(Long id, LocalDate date, String lieu, String milieu) {}
 
-    /** {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève. */
+    /**
+     * {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève.
+     * {@code caciFinValidite} : date seule (jamais le certificat), pour colorer l'échéance à l'écran.
+     */
     public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau, String moniteurReferent,
-                             boolean caciValide, long seancesBloc, long seancesNage,
+                             boolean caciValide, LocalDate caciFinValidite, long seancesBloc, long seancesNage,
                              Map<Long, String> presencesParSeance, boolean aPhoto) {}
 
     public record RosterVue(List<SeanceEnTete> seances, List<LigneEleve> eleves) {}
@@ -70,6 +73,7 @@ public class RosterController {
                     c.getReferentiel().getNiveau().name(),
                     c.getMoniteurReferent() == null ? null : c.getMoniteurReferent().nomComplet(),
                     c.getEleve().certificatValideAu(aujourdhui),
+                    e.getCertificatValideJusquAu(),
                     participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),
                     participations.compterAtelier(c.getId(), Participation.Atelier.NAGE),
                     presences,

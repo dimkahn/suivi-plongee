@@ -143,6 +143,8 @@ export interface LigneRoster {
   niveau: 'N1' | 'N2' | 'N3';
   moniteurReferent: string | null;
   caciValide: boolean;
+  /** Fin de validité du certificat médical (AAAA-MM-JJ), null si non renseignée. */
+  caciFinValidite: string | null;
   seancesBloc: number;
   seancesNage: number;
   /** Clé = id de séance ; valeur = atelier (NAGE/BLOC/…) ou statut (ABSENT/EXCUSE). */

@@ -19,6 +19,24 @@ export function etatCaci(finValidite: string | null | undefined): EtatCaci {
   return finValidite <= limiteIso ? 'bientot' : 'valide';
 }
 
+/** En deçà, l'échéance est imminente (rouge) ; entre ce seuil et {@link JOURS_AVANT_ECHEANCE}, orange. */
+export const JOURS_URGENCE = 15;
+
+export type CouleurCaci = 'vert' | 'orange' | 'rouge';
+
+/**
+ * Couleur d'un CACI encore valide selon le temps restant : plus d'un mois
+ * vert, moins d'un mois orange, moins de 15 jours rouge. null s'il est
+ * expiré ou non renseigné (l'écran affiche alors un avertissement).
+ */
+export function couleurCaci(finValidite: string | null | undefined): CouleurCaci | null {
+  const etat = etatCaci(finValidite);
+  if (etat === 'absent' || etat === 'expire') return null;
+  const jours = Math.round((Date.parse(finValidite!) - Date.parse(dateDuJour())) / 86_400_000);
+  if (jours < JOURS_URGENCE) return 'rouge';
+  return jours <= JOURS_AVANT_ECHEANCE ? 'orange' : 'vert';
+}
+
 export function libelleCaci(finValidite: string | null | undefined): string {
   switch (etatCaci(finValidite)) {
     case 'absent': return 'CACI non renseigné';
