@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
 import { SeanceVue } from '../../core/modeles';
-import { DateFrPipe, dateFr } from '../../core/date-fr';
+import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
+import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -18,27 +19,13 @@ function normaliser(texte: string): string {
   return texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 }
 
-/** Date locale au format AAAA-MM-JJ, sans passer par l'UTC (sinon décalage d'un jour). */
-function iso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-interface JourCalendrier {
-  date: string;
-  numero: number;
-  horsMois: boolean;
-  seances: SeanceVue[];
-}
-
-const JOURS_SEMAINE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-
 function formulaireVide(): FormulaireSeance {
   return { dateSeance: '', ordre: 1, milieu: 'ARTIFICIEL', lieu: '', profondeurMax: null, commentaire: '' };
 }
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule, DateFrPipe],
+  imports: [FormsModule, DateFrPipe, CalendrierSeancesComponent],
   template: `
     <h1>Séances</h1>
     <p class="secondaire">
@@ -99,38 +86,7 @@ function formulaireVide(): FormulaireSeance {
              [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
     } @else {
       <section class="carte calendrier" aria-label="Calendrier des séances">
-        <div class="navigation-mois">
-          <button type="button" class="bouton-discret" (click)="changerMois(-1)" aria-label="Mois précédent">‹</button>
-          <h2>{{ libelleMois() }}</h2>
-          <button type="button" class="bouton-discret" (click)="changerMois(1)" aria-label="Mois suivant">›</button>
-        </div>
-        <button type="button" class="bouton-discret aujourd-hui" (click)="allerAujourdhui()">Aujourd'hui</button>
-
-        <div class="grille-mois">
-          @for (j of joursSemaine; track j) {
-            <span class="jour-semaine" aria-hidden="true">{{ j }}</span>
-          }
-          @for (jour of joursDuMois(); track jour.date) {
-            <button type="button" class="jour"
-                    [class.hors-mois]="jour.horsMois"
-                    [class.aujourdhui]="jour.date === aujourdhui"
-                    [class.selectionne]="jour.date === jourSelectionne()"
-                    [attr.aria-pressed]="jour.date === jourSelectionne()"
-                    [attr.aria-label]="(jour.date | dateFr) + (jour.seances.length ? ', ' + jour.seances.length + ' séance(s)' : '')"
-                    (click)="jourSelectionne.set(jour.date)">
-              <span class="numero">{{ jour.numero }}</span>
-              @for (s of jour.seances; track s.id) {
-                <span class="pastille" [class.naturel]="s.milieu === 'NATUREL'">
-                  <span class="libelle-pastille">{{ s.lieu || (s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine') }}</span>
-                </span>
-              }
-            </button>
-          }
-        </div>
-        <p class="legende secondaire">
-          <span class="pastille"></span> Piscine / fosse
-          <span class="pastille naturel"></span> Milieu naturel
-        </p>
+        <app-calendrier-seances [seances]="liste()" [(jourSelectionne)]="jourSelectionne" />
       </section>
 
       @if (jourSelectionne(); as j) {
@@ -247,44 +203,11 @@ function formulaireVide(): FormulaireSeance {
     .onglets .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
 
     .calendrier { padding: var(--pas-2); margin-bottom: var(--pas-3); max-width: 900px; }
-    .navigation-mois { display: flex; align-items: center; justify-content: space-between; gap: var(--pas); }
-    .navigation-mois h2 { margin: 0; text-transform: capitalize; text-align: center; }
-    .navigation-mois .bouton-discret { min-width: 44px; font-size: 1.25rem; }
-    .aujourd-hui { display: block; margin: var(--pas) auto var(--pas-2); }
-
-    .grille-mois { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
-    .jour-semaine { text-align: center; font-size: .75rem; font-weight: 700; color: var(--craie); padding-bottom: 4px; }
-    .jour {
-      display: flex; flex-direction: column; align-items: stretch; gap: 2px;
-      min-height: 72px; min-width: 0; padding: 4px; margin: 0;
-      background: var(--carte); border: 1px solid var(--trait); border-radius: var(--r-s);
-      color: var(--encre); font: inherit; text-align: left; cursor: pointer;
-    }
-    .jour.hors-mois { background: var(--fond); color: var(--craie); }
-    .jour.aujourdhui .numero { background: var(--accent); color: #fff; border-radius: 50%; }
-    .jour.selectionne { border: 2px solid var(--profond); padding: 3px; }
-    .numero { align-self: flex-start; min-width: 22px; text-align: center; font-size: .8125rem; font-weight: 700; line-height: 22px; }
-    .pastille {
-      display: block; min-width: 0; padding: 1px 4px; border-radius: 4px;
-      background: var(--accent-clair); color: var(--encre); font-size: .6875rem; line-height: 1.3;
-    }
-    .pastille.naturel { background: var(--profond); color: #fff; }
-    .libelle-pastille { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .legende { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: var(--pas-2) 0 0; font-size: .8125rem; }
-    .legende .pastille { display: inline-block; width: 14px; height: 14px; padding: 0; }
-    .legende .pastille.naturel { margin-left: var(--pas-2); }
     .titre-jour { margin: 0 0 var(--pas-2); }
 
     @media (max-width: 600px) {
       .ligne { flex-direction: column; }
-      /* Trop étroit pour lire un lieu : une pastille colorée par séance suffit,
-         le détail s'affiche sous le calendrier au toucher du jour. */
       .calendrier { padding: var(--pas); }
-      .jour { min-height: 52px; padding: 2px; flex-direction: row; flex-wrap: wrap; align-content: flex-start; }
-      .jour.selectionne { padding: 1px; }
-      .numero { flex: 1 1 100%; }
-      .jour .pastille { width: 10px; height: 10px; padding: 0; border-radius: 50%; }
-      .jour .libelle-pastille { display: none; }
     }
   `]
 })
@@ -299,49 +222,13 @@ export class SeancesComponent {
   recherche = signal('');
 
   vue = signal<'LISTE' | 'CALENDRIER'>('LISTE');
-  readonly joursSemaine = JOURS_SEMAINE;
-  readonly aujourdhui = iso(new Date());
-  /** Premier jour du mois affiché dans le calendrier. */
-  moisAffiche = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  jourSelectionne = signal<string | null>(this.aujourdhui);
-
-  libelleMois = computed(() =>
-    this.moisAffiche().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }));
-
-  private seancesParDate = computed(() => {
-    const index = new Map<string, SeanceVue[]>();
-    for (const s of this.liste()) {
-      const jour = index.get(s.date);
-      if (jour) jour.push(s); else index.set(s.date, [s]);
-    }
-    return index;
-  });
-
-  /** Semaines complètes du lundi au dimanche couvrant le mois affiché. */
-  joursDuMois = computed<JourCalendrier[]>(() => {
-    const debut = this.moisAffiche();
-    const mois = debut.getMonth();
-    const curseur = new Date(debut);
-    curseur.setDate(1 - (debut.getDay() + 6) % 7);
-    const jours: JourCalendrier[] = [];
-    do {
-      for (let i = 0; i < 7; i++) {
-        const date = iso(curseur);
-        jours.push({
-          date, numero: curseur.getDate(), horsMois: curseur.getMonth() !== mois,
-          seances: this.seancesParDate().get(date) ?? []
-        });
-        curseur.setDate(curseur.getDate() + 1);
-      }
-    } while (curseur.getMonth() === mois);
-    return jours;
-  });
+  jourSelectionne = signal<string | null>(dateDuJour());
 
   /** En liste : le résultat de la recherche ; en calendrier : les séances du jour touché. */
   seancesAffichees = computed(() => {
     if (this.vue() === 'LISTE') return this.listeFiltree();
     const jour = this.jourSelectionne();
-    return jour ? this.seancesParDate().get(jour) ?? [] : [];
+    return this.liste().filter(s => s.date === jour);
   });
 
   /** Un seul champ : date (ISO ou JJ/MM/AAAA), lieu, milieu ou commentaire, sans accents ni casse. */
@@ -372,17 +259,6 @@ export class SeancesComponent {
     } finally {
       this.chargement.set(false);
     }
-  }
-
-  changerMois(delta: number): void {
-    const m = this.moisAffiche();
-    this.moisAffiche.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
-  }
-
-  allerAujourdhui(): void {
-    const t = new Date();
-    this.moisAffiche.set(new Date(t.getFullYear(), t.getMonth(), 1));
-    this.jourSelectionne.set(this.aujourdhui);
   }
 
   /** Pré-remplit la date du formulaire de création et le fait défiler à l'écran. */

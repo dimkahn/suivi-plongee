@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, OnDestroy, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -8,6 +8,7 @@ import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
 import { Atelier, LignePresence, SeanceVue, StatutPresence } from '../../core/modeles';
+import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 
 type Niveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
@@ -54,7 +55,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule],
+  imports: [FormsModule, CalendrierSeancesComponent],
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
@@ -70,25 +71,43 @@ function normaliser(texte: string): string {
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     <label for="seance">Séance</label>
-    <div class="combobox">
-      <input id="seance" type="text" autocomplete="off"
-             role="combobox" aria-autocomplete="list" aria-controls="liste-seances"
-             [attr.aria-expanded]="comboboxOuvert()"
-             placeholder="Rechercher par date (12/10, 2026-10) ou lieu…"
-             [value]="rechercheSeance()" (input)="saisirSeance($event)"
-             (focus)="comboboxOuvert.set(true)" (blur)="fermerComboboxDifferee()">
-      @if (comboboxOuvert()) {
-        <ul id="liste-seances" role="listbox" class="options">
-          @for (s of seancesFiltrees(); track s.id) {
-            <li role="option" [attr.aria-selected]="seanceId() === s.id">
-              <button type="button" (mousedown)="choisirSeance(s)">{{ libelleSeance(s) }}</button>
-            </li>
-          } @empty {
-            <li class="vide">Aucune séance passée ne correspond.</li>
+    <button id="seance" type="button" class="choix-seance" aria-haspopup="dialog" (click)="ouvrirDialogueSeance()">
+      <span class="icone-calendrier" aria-hidden="true">📅</span>
+      <span class="libelle-choix">{{ seanceChoisie() ? libelleSeance(seanceChoisie()!) : 'Choisir une séance' }}</span>
+      <span class="changer">Changer</span>
+    </button>
+
+    <dialog #dialogueSeance class="dialogue-seance" aria-labelledby="titre-dialogue-seance"
+            (close)="dialogueSeanceOuvert.set(false)">
+      @if (dialogueSeanceOuvert()) {
+        <div class="entete-dialogue">
+          <h2 id="titre-dialogue-seance">Choisir la séance</h2>
+          <button type="button" class="bouton-discret" (click)="fermerDialogueSeance()">Fermer</button>
+        </div>
+        <app-calendrier-seances [seances]="seances()" [jourMax]="aujourdhui"
+                                [seanceMarquee]="seanceId()"
+                                [jourSelectionne]="jourDialogue()"
+                                (jourSelectionneChange)="toucherJour($event)" />
+        @if (jourDialogue(); as j) {
+          @let duJour = seancesDuJour(j);
+          @if (duJour.length === 0) {
+            <p class="secondaire aucune">Aucune séance ce jour-là.</p>
+          } @else {
+            <ul class="seances-du-jour">
+              @for (s of duJour; track s.id) {
+                <li>
+                  <button type="button" class="bouton-discret" [class.actif]="s.id === seanceId()"
+                          (click)="choisirDepuisDialogue(s)">
+                    {{ libelleSeance(s) }}
+                    <span class="milieu">{{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
           }
-        </ul>
+        }
       }
-    </div>
+    </dialog>
 
     @if (seanceId()) {
       <div class="filtres">
@@ -181,21 +200,26 @@ function normaliser(texte: string): string {
     h1 { margin-bottom: var(--pas); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
-    .combobox { position: relative; max-width: 420px; }
-    .combobox input { width: 100%; margin: 0; }
-    .options {
-      position: absolute; z-index: 2; top: 100%; left: 0; right: 0; margin: 2px 0 0; padding: 0;
-      list-style: none; max-height: 280px; overflow-y: auto;
-      background: var(--carte); border: 1px solid var(--trait);
-      border-radius: var(--r-s); box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    .choix-seance {
+      display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 420px; min-height: 44px;
+      padding: var(--pas) var(--pas-2); background: var(--carte); color: var(--encre);
+      border: 1px solid var(--trait); border-radius: var(--r-s); font: inherit; text-align: left; cursor: pointer;
     }
-    .options li[aria-selected="true"] button { font-weight: 700; background: var(--fond); }
-    .options button {
-      display: block; width: 100%; padding: var(--pas) var(--pas-2); min-height: 44px;
-      text-align: left; background: none; border: none; border-radius: 0; color: var(--encre);
+    .libelle-choix { flex: 1; min-width: 0; font-weight: 700; }
+    .changer { color: var(--profond); font-size: .875rem; text-decoration: underline; }
+
+    .dialogue-seance {
+      width: min(640px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: var(--pas-2);
+      border: none; border-radius: var(--r); box-shadow: var(--ombre); background: var(--carte); color: var(--encre);
     }
-    .options button:hover, .options button:focus { background: var(--fond); }
-    .options .vide { padding: var(--pas) var(--pas-2); color: var(--craie); font-size: .875rem; }
+    .dialogue-seance::backdrop { background: rgba(15, 23, 42, .5); }
+    .entete-dialogue { display: flex; align-items: center; justify-content: space-between; gap: var(--pas); margin-bottom: var(--pas); }
+    .entete-dialogue h2 { margin: 0; }
+    .aucune { text-align: center; margin: var(--pas-2) 0 0; }
+    .seances-du-jour { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas); }
+    .seances-du-jour button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; }
+    .seances-du-jour button.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .seances-du-jour .milieu { font-size: .8125rem; font-weight: 400; }
 
     .filtres {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
@@ -332,8 +356,6 @@ export class PresencesComponent implements OnDestroy {
 
   seances = signal<SeanceVue[]>([]);
   seanceId = signal<number | null>(null);
-  rechercheSeance = signal('');
-  comboboxOuvert = signal(false);
 
   lignes = signal<LignePresence[]>([]);
   chargement = signal(false);
@@ -354,14 +376,13 @@ export class PresencesComponent implements OnDestroy {
     return this.seances().filter(s => s.date <= aujourdhui);
   });
 
-  seancesFiltrees = computed(() => {
-    const recherche = normaliser(this.rechercheSeance());
-    // Les plus récentes d'abord : c'est presque toujours celle du jour qu'on cherche.
-    const seances = [...this.seancesPassees()].reverse();
-    if (!recherche) return seances;
-    return seances.filter(s =>
-      [s.date, dateFr(s.date), s.lieu ?? ''].some(champ => normaliser(champ).includes(recherche)));
-  });
+  seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
+
+  readonly aujourdhui = dateDuJour();
+  private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
+  dialogueSeanceOuvert = signal(false);
+  /** Jour touché dans le calendrier du dialogue. */
+  jourDialogue = signal<string | null>(null);
 
   lignesFiltrees = computed(() => {
     const niveau = this.niveau();
@@ -400,20 +421,36 @@ export class PresencesComponent implements OnDestroy {
     return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${s.lieu ?? 'lieu non précisé'}`;
   }
 
-  saisirSeance(evenement: Event): void {
-    this.rechercheSeance.set((evenement.target as HTMLInputElement).value);
-    this.comboboxOuvert.set(true);
+  ouvrirDialogueSeance(): void {
+    // Le calendrier s'ouvre sur le mois de la séance en cours.
+    this.jourDialogue.set(this.seanceChoisie()?.date ?? this.aujourdhui);
+    this.dialogueSeanceOuvert.set(true);
+    this.dialogueSeance().nativeElement.showModal();
   }
 
-  /** Différé pour laisser le clic sur une option se produire avant la fermeture. */
-  fermerComboboxDifferee(): void {
-    setTimeout(() => this.comboboxOuvert.set(false), 150);
+  fermerDialogueSeance(): void {
+    this.dialogueSeance().nativeElement.close();
+  }
+
+  seancesDuJour(jour: string): SeanceVue[] {
+    return this.seancesPassees().filter(s => s.date === jour);
+  }
+
+  /** Un seul choix possible ce jour-là : on le prend tout de suite, sans second toucher. */
+  toucherJour(jour: string | null): void {
+    this.jourDialogue.set(jour);
+    const duJour = jour ? this.seancesDuJour(jour) : [];
+    if (duJour.length === 1) this.choisirDepuisDialogue(duJour[0]);
+  }
+
+  choisirDepuisDialogue(s: SeanceVue): void {
+    this.choisirSeance(s);
+    this.fermerDialogueSeance();
   }
 
   choisirSeance(s: SeanceVue): void {
+    if (this.seanceId() === s.id) return;
     this.seanceId.set(s.id);
-    this.rechercheSeance.set(this.libelleSeance(s));
-    this.comboboxOuvert.set(false);
     void this.chargerFeuille(s.id);
   }
 
