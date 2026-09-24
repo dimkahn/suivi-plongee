@@ -342,6 +342,9 @@ function normaliser(texte: string): string {
     }
     .jauge { width: 64px; height: 168px; flex: none; }
     .jauge rect:nth-child(2) { transition: height .35s ease-out; }
+    /* min-width: 0 : sans cela, un e-mail long empêche le résumé de
+       rétrécir et le fait déborder de la carte sur téléphone. */
+    .resume { flex: 1; min-width: 0; }
     .resume h1 { margin-bottom: 2px; }
     .score { margin: var(--pas) 0 0; font-weight: 700; }
     .lien-matrice { display: inline-block; margin-top: var(--pas); font-size: .875rem; }
@@ -354,7 +357,7 @@ function normaliser(texte: string): string {
       font-size: .875rem;
     }
     .infos-supplementaires dt { font-weight: 700; color: var(--craie); }
-    .infos-supplementaires dd { margin: 0; }
+    .infos-supplementaires dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -465,6 +468,9 @@ function normaliser(texte: string): string {
       .etat { flex: 1; }
       .barre-seance { flex-direction: column; align-items: stretch; }
       .combobox { max-width: none; }
+      /* Libellé au-dessus de la valeur : les deux colonnes ne tiennent pas. */
+      .infos-supplementaires { grid-template-columns: 1fr; gap: 0; }
+      .infos-supplementaires dd + dt { margin-top: var(--pas); }
     }
 
     /* Sous 400px (iPhone SE et similaires), l'avatar + la jauge fixes
