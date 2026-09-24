@@ -130,6 +130,7 @@ export interface SeanceEnTete {
   id: number;
   date: string;
   lieu: string | null;
+  milieu: 'ARTIFICIEL' | 'NATUREL';
 }
 
 export interface LigneRoster {
