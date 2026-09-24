@@ -1,6 +1,7 @@
 import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { LigneTrombinoscope, LigneTrombinoscopeMoniteur } from '../../core/modeles';
 
@@ -31,7 +32,7 @@ type Population = 'ELEVES' | 'MONITEURS';
         @for (choix of niveaux; track choix) {
           <button type="button" class="bouton-discret" [class.actif]="niveauFiltre() === choix"
                   [attr.aria-pressed]="niveauFiltre() === choix" (click)="niveauFiltre.set(choix)">
-            {{ choix === 'TOUS' ? 'Tous' : choix }}
+            {{ choix === 'TOUS' ? 'Tous' : libellePreparation(choix) }}
           </button>
         }
       </div>
@@ -127,6 +128,7 @@ export class TrombinoscopeComponent implements OnDestroy {
   private api = inject(ApiService);
 
   readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
+  readonly libellePreparation = libellePreparation;
 
   lignes = signal<LigneTrombinoscope[]>([]);
   chargement = signal(true);
