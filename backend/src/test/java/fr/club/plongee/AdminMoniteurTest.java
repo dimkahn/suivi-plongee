@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -155,5 +156,40 @@ class AdminMoniteurTest {
                 .andExpect(jsonPath("$.aPhoto").value(false));
         mvc.perform(get("/api/moniteurs/" + id + "/photo").header("Authorization", encadrant))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Un moniteur depose et retire lui-meme sa photo, ce qui vaut consentement puis retrait")
+    void maPhoto() throws Exception {
+        String admin = admin();
+        JsonNode m = nouveauMoniteur(admin);
+        long id = m.get("id").asLong();
+        String lui = jeton(m.get("email").asText(), MOT_DE_PASSE);
+        MockMultipartFile photo = new MockMultipartFile("fichier", "moi.jpg", "image/jpeg", new byte[] {1, 2, 3});
+
+        mvc.perform(get("/api/auth/moi/photo").header("Authorization", lui))
+                .andExpect(status().isNotFound());
+        mvc.perform(multipart("/api/auth/moi/photo").file(photo).header("Authorization", lui))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/auth/moi/photo").header("Authorization", lui))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/moniteurs/" + id + "/photo").header("Authorization", admin))
+                .andExpect(status().isOk());
+
+        mvc.perform(delete("/api/auth/moi/photo").header("Authorization", lui))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/moniteurs/" + id + "/photo").header("Authorization", admin))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/admin/moniteurs").header("Authorization", admin))
+                .andExpect(jsonPath("$[?(@.id == " + id + ")].autorisationImage").value(false));
+    }
+
+    @Test
+    @DisplayName("Un eleve ne peut pas deposer de photo par Mon compte")
+    void pasDePhotoPourUnEleve() throws Exception {
+        String eleve = jeton("eleve@club.fr", "plongee2026");
+        MockMultipartFile photo = new MockMultipartFile("fichier", "moi.jpg", "image/jpeg", new byte[] {1, 2, 3});
+        mvc.perform(multipart("/api/auth/moi/photo").file(photo).header("Authorization", eleve))
+                .andExpect(status().isForbidden());
     }
 }
