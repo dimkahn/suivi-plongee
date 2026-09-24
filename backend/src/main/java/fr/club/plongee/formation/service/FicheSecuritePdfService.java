@@ -27,9 +27,11 @@ public class FicheSecuritePdfService {
 
     /** Nom de la structure, en-tête obligatoire de la fiche (A322-72) : la fiche est un document de l'établissement. */
     private final String nomClub;
+    private final LogoClub logo;
 
-    public FicheSecuritePdfService(@Value("${app.club.nom}") String nomClub) {
+    public FicheSecuritePdfService(@Value("${app.club.nom}") String nomClub, LogoClub logo) {
         this.nomClub = nomClub;
+        this.logo = logo;
     }
 
     public FichePdf generer(FicheSecurite fiche) {
@@ -90,7 +92,8 @@ public class FicheSecuritePdfService {
                 .entete .bloc { display: table-cell; vertical-align: top; }
                 .entete .titre { text-align: center; }
                 .entete .titre h1 { font-size: 15pt; margin: 0; }
-                .entete .titre .club { font-weight: bold; }
+                .entete .titre .club { font-weight: bold; font-size: 11pt; }
+                .entete .titre .logo { height: 44pt; width: 44pt; }
                 .entete p { margin: 2pt 0; }
                 table { width: 100%%; border-collapse: collapse; }
                 th, td {
@@ -123,6 +126,7 @@ public class FicheSecuritePdfService {
                   <p>Plongée n° : %s</p>
                 </div>
                 <div class="bloc titre">
+                  <img class="logo" src="%s" alt=""/>
                   <p class="club">%s</p>
                   <h1>FICHE DE SÉCURITÉ</h1>
                 </div>
@@ -154,6 +158,7 @@ public class FicheSecuritePdfService {
                 s.getDateSeance().format(DATE),
                 echapper(s.getLieu()),
                 s.getOrdre(),
+                logo.dataUri(),
                 echapper(nomClub),
                 echapper(f.getDp().nomComplet()),
                 conditionsResumees(f),
