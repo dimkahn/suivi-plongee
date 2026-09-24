@@ -68,19 +68,19 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
             @for (e of elevesFiltres(); track e.cursusId) {
               <tr>
                 <td class="figee">
-                  <div class="eleve-cellule">
+                  <a class="eleve-cellule" [routerLink]="['/cursus', e.cursusId]">
                     @if (urlPhoto(e.eleveId); as url) {
                       <img class="avatar" [src]="url" [alt]="e.eleve" width="40" height="40">
                     } @else {
                       <div class="avatar silhouette" aria-hidden="true">{{ initiales(e.eleve) }}</div>
                     }
                     <div class="identite-cellule">
-                      <a [routerLink]="['/cursus', e.cursusId]">{{ e.eleve }}</a>
+                      <span class="nom">{{ e.eleve }}</span>
                       @if (e.moniteurReferent) {
                         <span class="secondaire">{{ e.moniteurReferent }}</span>
                       }
                     </div>
-                  </div>
+                  </a>
                 </td>
                 <td>{{ libellePreparation(e.niveau) }}</td>
                 <td [class.alerte-cellule]="!e.caciValide">{{ e.caciValide ? 'OK' : '⚠' }}</td>
@@ -116,7 +116,14 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
     }
     thead th { color: var(--craie); font-weight: 700; }
     .figee { position: sticky; left: 0; min-width: 200px; }
-    .eleve-cellule { display: flex; align-items: center; gap: var(--pas); }
+    /* Toute la cellule est cliquable, pas seulement le nom : le lien porte le
+       remplissage de la cellule. */
+    td.figee { padding: 0; }
+    .eleve-cellule {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px; padding: 8px 12px;
+      color: inherit; text-decoration: none;
+    }
+    .eleve-cellule:hover, .eleve-cellule:focus-visible { background: var(--fond); }
     .avatar {
       flex: none; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--fond);
     }
@@ -127,7 +134,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
     th.figee { background: var(--fond); }
     td.figee { background: var(--carte); }
     .identite-cellule { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
-    .identite-cellule a { font-weight: 700; }
+    .identite-cellule .nom { font-weight: 700; color: var(--profond); text-decoration: underline; }
     .alerte-cellule { color: #B3261E; font-weight: 700; }
     .absence { color: var(--craie); }
   `]
