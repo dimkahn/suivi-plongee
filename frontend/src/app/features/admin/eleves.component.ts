@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CursusVue, EleveVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
+import { etatCaci, libelleCaci } from '../../core/caci';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
@@ -112,7 +113,21 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           @for (s of statuts; track s) { <option [value]="s">{{ s }}</option> }
         </select>
       </div>
+      <div>
+        <label for="filtre-caci">CACI</label>
+        <select id="filtre-caci" name="filtreCaci" [ngModel]="filtreCaci()" (ngModelChange)="filtreCaci.set($event)">
+          <option value="TOUS">Tous</option>
+          <option value="A_VERIFIER">À vérifier (expiré, bientôt échu ou non renseigné)</option>
+        </select>
+      </div>
     </section>
+
+    @if (aVerifier() > 0) {
+      <p class="alerte" role="status">
+        {{ aVerifier() }} élève(s) de la saison {{ saisonLibelle(filtreSaisonId()!) }} avec un CACI expiré,
+        bientôt échu ou non renseigné.
+      </p>
+    }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -168,7 +183,9 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   <span class="nom">{{ e.prenom }} {{ e.nom }}</span>
                   <span class="secondaire">
                     {{ e.numeroLicence ? 'Licence ' + e.numeroLicence : 'Sans licence' }}
-                    · CACI {{ e.certificatValideJusquAu ? (e.certificatValideJusquAu | dateFr) : 'non renseigné' }}
+                  </span>
+                  <span [class]="'caci caci-' + etatCaci(e.certificatValideJusquAu)">
+                    {{ libelleCaci(e.certificatValideJusquAu) }}
                   </span>
                   <span class="secondaire">
                     Autorisation légale {{ e.autorisationLegale ? 'recueillie' : 'manquante' }}
@@ -301,6 +318,11 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .filtres label { margin: 0 0 4px; }
     .filtres input, .filtres select { margin: 0; }
 
+    .caci { font-size: .875rem; font-weight: 700; }
+    .caci-valide { color: var(--acquis); }
+    .caci-bientot { color: var(--en-cours); }
+    .caci-expire, .caci-absent { color: #B3261E; }
+
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
@@ -351,6 +373,22 @@ export class ElevesComponent {
   filtreNom = signal('');
   filtreSaisonId = signal<number | null>(null);
   filtreStatut = signal('TOUS');
+  filtreCaci = signal<'TOUS' | 'A_VERIFIER'>('TOUS');
+
+  readonly etatCaci = etatCaci;
+  readonly libelleCaci = libelleCaci;
+
+  /**
+   * Seuls les élèves rattachés à la saison choisie (formation ou adhésion)
+   * comptent : un ancien élève qui ne plonge plus n'a pas à renouveler son CACI.
+   */
+  aVerifier = computed(() => {
+    if (!this.filtreSaisonId()) return 0;
+    const rattaches = new Set([...this.cursusDeLaSaison().map(c => c.eleveId),
+                               ...this.adhesionsDeLaSaison().map(a => a.eleveId)]);
+    return this.liste().filter(e => rattaches.has(e.id)
+      && etatCaci(e.certificatValideJusquAu) !== 'valide').length;
+  });
 
   /**
    * Un élève ne porte pas de saison ni de statut en propre : on croise avec ses
@@ -368,6 +406,7 @@ export class ElevesComponent {
     const adhesionsParEleve = new Map(this.adhesionsDeLaSaison().map(a => [a.eleveId, a]));
     return this.liste().filter(e => {
       if (recherche && !`${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche)) return false;
+      if (this.filtreCaci() === 'A_VERIFIER' && etatCaci(e.certificatValideJusquAu) === 'valide') return false;
       if (statut === 'TOUS') return true;
       const cursus = cursusParEleve.get(e.id) ?? [];
       // Sans formation cette saison : compte comme rattaché s'il a une adhésion.
