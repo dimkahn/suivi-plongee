@@ -34,6 +34,11 @@ mvn -N -Pdev antrun:run@dev          # démarre frontend + backend
 mvn -N -Pdev antrun:run@dev-stop     # arrête le frontend resté en tâche de fond
 ```
 
+Mise en production : un tag `v…` sur un commit de `master` déclenche
+`.github/workflows/deploiement.yml` (tests, images multi-architecture sur
+ghcr.io, puis `outils/deployer.sh` en SSH, qui sauvegarde la base avant de
+redémarrer). Voir `DEPLOIEMENT.md`, « Déploiement automatique ».
+
 Le frontend proxifie `/api` vers `localhost:8080` (`proxy.conf.json`).
 Comptes de démonstration dans le README, mot de passe `plongee2026`.
 

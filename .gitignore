@@ -34,3 +34,4 @@ Plongeur Niveau *.pdf
 
 # Cache bytecode Python (outils/generer_referentiel.py)
 outils/__pycache__/
+sauvegardes/

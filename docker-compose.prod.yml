@@ -8,6 +8,10 @@
 ##    reverse proxy vers le frontend, dont nginx.conf relaie déjà /api vers
 ##    le backend en interne ;
 ##  - redémarrage automatique des conteneurs (restart: unless-stopped) ;
+##  - images construites et publiées par GitHub Actions à chaque tag (voir
+##    .github/workflows/deploiement.yml et outils/deployer.sh) ; VERSION
+##    choisit le tag, « latest » par défaut. `up -d --build` reconstruit
+##    encore sur place si besoin ;
 ##  - aucun secret par défaut : DB_PASSWORD, JWT_SECRET, DOMAINE et les
 ##    identifiants SMTP doivent être définis dans un fichier .env (voir
 ##    .env.example).
@@ -29,6 +33,7 @@ services:
       retries: 10
 
   backend:
+    image: ghcr.io/dimkahn/suivi-plongee-backend:${VERSION:-latest}
     build: ./backend
     restart: unless-stopped
     environment:
@@ -50,6 +55,7 @@ services:
         condition: service_healthy
 
   frontend:
+    image: ghcr.io/dimkahn/suivi-plongee-frontend:${VERSION:-latest}
     build: ./frontend
     restart: unless-stopped
     depends_on:

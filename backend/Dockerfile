@@ -1,5 +1,7 @@
-# Étape de build : compile le jar avec Maven
-FROM maven:3.9-eclipse-temurin-25 AS build
+# Étape de build : compile le jar avec Maven.
+# Toujours sur le processeur de la machine qui construit ($BUILDPLATFORM) :
+# le résultat n'en dépend pas, seule l'image finale est multi-architecture.
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
