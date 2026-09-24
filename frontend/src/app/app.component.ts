@@ -12,7 +12,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
     @if (pret()) {
       @if (auth.connecte()) {
         <header>
-          <a routerLink="/cursus" class="marque" (click)="fermerMenu()">
+          <a routerLink="/" class="marque" (click)="fermerMenu()">
             <img src="logo-club.png" alt="" width="44" height="44">
             <span>Suivi des formations</span>
           </a>
@@ -24,11 +24,11 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
 
           <nav id="menu-principal" class="identite" [class.ouvert]="menuOuvert()">
             @if (auth.estMoniteur() || auth.estAdmin()) {
-              <a routerLink="/presences" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
-                Présences
-              </a>
               <a routerLink="/eleves" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Infos élèves
+              </a>
+              <a routerLink="/presences" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Présences
               </a>
               <a routerLink="/trombinoscope" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Trombinoscope

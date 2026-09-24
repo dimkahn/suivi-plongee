@@ -120,7 +120,7 @@ export class ConnexionComponent {
     this.auth.connexion(this.email, this.motDePasse, this.seSouvenir).subscribe({
       next: () => {
         const retour = this.route.snapshot.queryParamMap.get('retour');
-        this.router.navigateByUrl(retour ?? '/cursus');
+        this.router.navigateByUrl(retour ?? '/');
       },
       error: () => {
         this.envoi.set(false);
