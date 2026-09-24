@@ -1,19 +1,23 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { etatCaci, libelleCaci } from '../../core/caci';
 
-type Section = 'identite' | 'email' | 'motDePasse';
+type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
 
 /**
- * Le moniteur modifie lui-même son identité, son e-mail et son mot de passe.
+ * Le moniteur modifie lui-même son identité, son e-mail, son mot de passe et
+ * sa photo du trombinoscope.
  * Le niveau d'encadrement est affiché mais reste réservé à l'administrateur :
  * c'est lui qui détermine quels niveaux on a le droit de noter.
  */
 @Component({
   selector: 'app-mon-compte',
-  imports: [FormsModule],
+  imports: [FormsModule, RecadragePhotoComponent],
   template: `
     <h1>Mon compte</h1>
     @if (auth.niveau(); as n) {
@@ -27,6 +31,43 @@ type Section = 'identite' | 'email' | 'motDePasse';
       {{ libelleCaci(auth.session()?.certificatValideJusquAu) }}
       <span class="secondaire">— date saisie par un administrateur, à qui remettre un nouveau certificat.</span>
     </p>
+
+    @if (auth.estMoniteur()) {
+      <section class="carte panneau">
+        <h2>Ma photo</h2>
+        <p class="secondaire">
+          Elle apparaît dans le trombinoscope des moniteurs, visible des encadrants du club.
+          En la déposant, vous acceptez cet affichage ; vous pouvez la retirer à tout moment.
+        </p>
+        @if (messages().photo; as m) { <div [class]="m.ok ? 'succes' : 'alerte'" role="status">{{ m.texte }}</div> }
+
+        <div class="photo">
+          @if (urlPhoto(); as url) {
+            <img class="avatar" [src]="url" alt="Ma photo" width="120" height="120">
+          } @else {
+            <div class="avatar silhouette" aria-label="Pas de photo">{{ initiales() }}</div>
+          }
+          <div class="actions-photo">
+            <label class="bouton-discret upload">
+              {{ urlPhoto() ? 'Changer ma photo' : 'Déposer ma photo' }}
+              <input type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto($event)">
+            </label>
+            @if (urlPhoto()) {
+              <button type="button" class="bouton-discret danger" (click)="retirerPhoto()"
+                      [disabled]="envoi() === 'photo'">
+                Retirer ma photo
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (fichierARecadrer(); as f) {
+      <app-recadrage-photo [fichier]="f" titre="Recadrer ma photo" [enCours]="envoi() === 'photo'"
+                           (valide)="deposerPhoto($event)" (annule)="fichierARecadrer.set(null)"
+                           (illisible)="imageIllisible()" />
+    }
 
     <section class="carte panneau">
       <h2>Identité</h2>
@@ -100,14 +141,26 @@ type Section = 'identite' | 'email' | 'motDePasse';
     .caci-valide { color: var(--acquis); }
     .caci-bientot { color: var(--en-cours); }
     .caci-expire, .caci-absent { color: #B3261E; }
+    .photo { display: flex; align-items: center; gap: var(--pas-3); flex-wrap: wrap; }
+    .avatar {
+      width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background: var(--fond); flex: none;
+    }
+    .silhouette {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-titres), sans-serif; font-size: 2rem; font-weight: 700; color: var(--craie);
+    }
+    .actions-photo { display: flex; flex-direction: column; gap: var(--pas); }
+    .upload { margin: 0; cursor: pointer; font-size: inherit; }
+    .danger { color: #B3261E; border-color: #B3261E; }
     .succes {
       background: var(--acquis-clair); color: var(--acquis); border-radius: var(--r-s);
       padding: var(--pas-2); font-weight: 700;
     }
   `]
 })
-export class MonCompteComponent {
+export class MonCompteComponent implements OnDestroy {
   auth = inject(AuthService);
+  private api = inject(ApiService);
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
 
@@ -122,8 +175,82 @@ export class MonCompteComponent {
   nouveauMotDePasse = '';
   confirmation = '';
 
+  urlPhoto = signal<string | null>(null);
+  fichierARecadrer = signal<File | null>(null);
+
   envoi = signal<Section | null>(null);
   messages = signal<Partial<Record<Section, { ok: boolean; texte: string }>>>({});
+
+  constructor() {
+    if (this.auth.estMoniteur()) this.chargerPhoto();
+  }
+
+  initiales(): string {
+    const s = this.auth.session();
+    return ((s?.prenom?.[0] ?? '') + (s?.nom?.[0] ?? '')).toUpperCase();
+  }
+
+  private chargerPhoto(): void {
+    this.api.maPhoto().subscribe({
+      next: blob => this.remplacerPhoto(URL.createObjectURL(blob)),
+      error: () => this.remplacerPhoto(null) // 404 : pas encore de photo
+    });
+  }
+
+  private remplacerPhoto(url: string | null): void {
+    const ancienne = this.urlPhoto();
+    if (ancienne) URL.revokeObjectURL(ancienne);
+    this.urlPhoto.set(url);
+  }
+
+  /** Ouvre le recadrage : la photo n'est envoyée qu'une fois validée (voir {@link deposerPhoto}). */
+  choisirPhoto(evenement: Event): void {
+    const entree = evenement.target as HTMLInputElement;
+    const fichier = entree.files?.[0];
+    entree.value = ''; // permet de rechoisir le même fichier plus tard
+    if (!fichier) return;
+    this.message('photo', true, null);
+    this.fichierARecadrer.set(fichier);
+  }
+
+  imageIllisible(): void {
+    this.fichierARecadrer.set(null);
+    this.message('photo', false, "Cette image n'a pas pu être lue.");
+  }
+
+  async deposerPhoto(fichier: File): Promise<void> {
+    this.envoi.set('photo');
+    try {
+      await firstValueFrom(this.api.deposerMaPhoto(fichier));
+      this.remplacerPhoto(URL.createObjectURL(fichier));
+      this.fichierARecadrer.set(null);
+      this.message('photo', true, 'Photo enregistrée.');
+    } catch (err) {
+      this.message('photo', false, (err as HttpErrorResponse).error?.detail ?? "La photo n'a pas pu être déposée.");
+    } finally {
+      this.envoi.set(null);
+    }
+  }
+
+  retirerPhoto(): void {
+    if (!confirm('Retirer votre photo du trombinoscope ?')) return;
+    this.envoi.set('photo');
+    this.api.retirerMaPhoto().subscribe({
+      next: () => {
+        this.envoi.set(null);
+        this.remplacerPhoto(null);
+        this.message('photo', true, 'Photo retirée.');
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(null);
+        this.message('photo', false, e.error?.detail ?? "La photo n'a pas pu être retirée.");
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.remplacerPhoto(null);
+  }
 
   enregistrerIdentite(): void {
     if (!this.prenom.trim() || !this.nom.trim()) {

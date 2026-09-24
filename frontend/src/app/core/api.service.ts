@@ -328,6 +328,23 @@ export class ApiService {
     return this.http.get<LigneTrombinoscopeMoniteur[]>('/api/moniteurs/trombinoscope');
   }
 
+  /** Photo du moniteur connecté, déposée par lui-même depuis « Mon compte ». */
+  maPhoto(): Observable<Blob> {
+    return this.http.get('/api/auth/moi/photo', { responseType: 'blob' });
+  }
+
+  /** Déposer sa propre photo vaut consentement au droit à l'image. */
+  deposerMaPhoto(fichier: File): Observable<unknown> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post('/api/auth/moi/photo', donnees);
+  }
+
+  /** Retire la photo et le consentement au droit à l'image. */
+  retirerMaPhoto(): Observable<unknown> {
+    return this.http.delete('/api/auth/moi/photo');
+  }
+
   photoMoniteur(id: number): Observable<Blob> {
     return this.http.get(`/api/moniteurs/${id}/photo`, { responseType: 'blob' });
   }

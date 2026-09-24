@@ -182,8 +182,9 @@ courantes d'un élève) n'est ni acceptée en dépôt ni renvoyée par
 `EleveController` sans ce consentement explicite ; le retirer supprime la
 photo, pas seulement son affichage. Même règle pour le trombinoscope des moniteurs :
 `utilisateur.autorisation_image` + table `photo_utilisateur` (dépôt par un
-ADMIN via `/api/admin/moniteurs/{id}/photo`, lecture via
-`/api/moniteurs/{id}/photo`).
+ADMIN via `/api/admin/moniteurs/{id}/photo`, ou par le moniteur lui-même via
+`/api/auth/moi/photo` depuis « Mon compte » — ce dépôt vaut consentement, le
+retrait le retire ; lecture via `/api/moniteurs/{id}/photo`).
 
 ## Chantiers ouverts
 

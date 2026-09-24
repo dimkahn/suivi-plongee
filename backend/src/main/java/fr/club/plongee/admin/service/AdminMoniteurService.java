@@ -17,12 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Gestion des comptes moniteurs par un ADMIN : creation, activation,
@@ -35,8 +33,6 @@ public class AdminMoniteurService {
 
     private static final int LONGUEUR_MIN_MOT_DE_PASSE = 10;
     private static final SecureRandom ALEA = new SecureRandom();
-    private static final Set<String> TYPES_PHOTO = Set.of("image/jpeg", "image/png");
-    private static final long TAILLE_MAX_PHOTO_OCTETS = 5L * 1024 * 1024;
 
     private final UtilisateurRepository utilisateurs;
     private final PasswordEncoder encodeur;
@@ -48,7 +44,7 @@ public class AdminMoniteurService {
     private final SeanceRepository seances;
     private final CursusRepository cursus;
     private final FicheSecuriteRepository fichesSecurite;
-    private final PhotoUtilisateurRepository photos;
+    private final PhotoMoniteurService photoService;
 
     public AdminMoniteurService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                ReinitialisationMotDePasseService reinitialisations,
@@ -59,7 +55,7 @@ public class AdminMoniteurService {
                                SeanceRepository seances,
                                CursusRepository cursus,
                                FicheSecuriteRepository fichesSecurite,
-                               PhotoUtilisateurRepository photos) {
+                               PhotoMoniteurService photoService) {
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
@@ -70,7 +66,7 @@ public class AdminMoniteurService {
         this.seances = seances;
         this.cursus = cursus;
         this.fichesSecurite = fichesSecurite;
-        this.photos = photos;
+        this.photoService = photoService;
     }
 
     @Transactional(readOnly = true)
@@ -191,49 +187,26 @@ public class AdminMoniteurService {
                             + "pour garder l'historique.");
         }
         refreshTokens.revoquerTout(id);
-        if (photos.existsById(id)) photos.deleteById(id);
+        photoService.supprimer(id);
         utilisateurs.delete(u);
     }
 
-    /** Un retrait de consentement supprime la photo elle-meme, pas seulement son affichage. */
     @Transactional
     public Utilisateur changerAutorisationImage(Long id, boolean autorisation) {
         Utilisateur u = moniteur(id);
-        u.setAutorisationImage(autorisation);
-        utilisateurs.save(u);
-        if (!autorisation && photos.existsById(id)) photos.deleteById(id);
+        photoService.changerAutorisationImage(u, autorisation);
         return u;
     }
 
     @Transactional
     public void deposerPhoto(Long id, byte[] contenu, String type) {
-        Utilisateur u = moniteur(id);
-        if (!u.isAutorisationImage()) {
-            throw new RegleMetierException(
-                    "Le droit à l'image n'a pas été recueilli pour ce moniteur : "
-                            + "cochez d'abord l'autorisation avant de déposer une photo.");
-        }
-        if (contenu == null || contenu.length == 0) {
-            throw new RegleMetierException("Le fichier est vide.");
-        }
-        if (contenu.length > TAILLE_MAX_PHOTO_OCTETS) {
-            throw new RegleMetierException("La photo dépasse la taille maximale de 5 Mo.");
-        }
-        if (type == null || !TYPES_PHOTO.contains(type)) {
-            throw new RegleMetierException("Seules les photos JPEG ou PNG sont acceptées.");
-        }
-        PhotoUtilisateur photo = photos.findById(id).orElseGet(PhotoUtilisateur::new);
-        photo.setUtilisateur(u);
-        photo.setContenu(contenu);
-        photo.setTypeContenu(type);
-        photo.setMiseAJourLe(Instant.now());
-        photos.save(photo);
+        photoService.deposer(moniteur(id), contenu, type);
     }
 
     @Transactional
     public void supprimerPhoto(Long id) {
         moniteur(id);
-        if (photos.existsById(id)) photos.deleteById(id);
+        photoService.supprimer(id);
     }
 
     private Utilisateur moniteur(Long id) {
