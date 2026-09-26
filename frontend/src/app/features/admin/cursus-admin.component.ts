@@ -3,9 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { CursusVue, EleveVue, MoniteurVue, SaisonVue } from '../../core/modeles';
+import { CandidatInscription, CursusVue, MoniteurVue, SaisonVue } from '../../core/modeles';
+import { normaliser } from '../../core/seance-lieu';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
+const LIBELLES_STATUT: Record<string, string> = {
+  EN_COURS: 'En cours', VALIDE: 'Validé', DELIVRE: 'Brevet délivré',
+  SUSPENDU: 'Suspendu', ABANDON: 'Abandon'
+};
 
 @Component({
   selector: 'app-cursus-admin',
@@ -22,18 +27,44 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
     <section class="carte panneau">
       <h2>Nouvelle inscription</h2>
 
+      <label for="saison">Saison</label>
+      <select id="saison" name="saison" [ngModel]="saisonId()" (ngModelChange)="choisirSaison($event)">
+        <option [ngValue]="null">Choisir…</option>
+        @for (s of saisons(); track s.id) {
+          <option [ngValue]="s.id">{{ s.libelle }}{{ s.ouverte ? '' : ' (fermée)' }}</option>
+        }
+      </select>
+
       <label for="eleve">Élève</label>
       <div class="combobox">
         <input id="eleve" type="text" name="eleve" autocomplete="off"
                role="combobox" aria-autocomplete="list" aria-controls="liste-eleves"
-               [attr.aria-expanded]="comboboxOuvert()" placeholder="Rechercher par nom ou prénom…"
+               [attr.aria-expanded]="comboboxOuvert()"
+               [attr.aria-activedescendant]="optionActive() ? 'option-eleve-' + optionActive()!.eleveId : null"
+               [disabled]="saisonId() === null"
+               [placeholder]="aideRecherche()"
                [ngModel]="rechercheEleve()" (ngModelChange)="saisirEleve($event)"
-               (focus)="ouvrirCombobox()" (blur)="fermerComboboxDifferee()">
+               (focus)="ouvrirCombobox()" (blur)="fermerComboboxDifferee()" (keydown)="clavierCombobox($event)">
         @if (comboboxOuvert()) {
-          <ul id="liste-eleves" role="listbox" class="options">
-            @for (e of elevesFiltres(); track e.id) {
-              <li role="option" [attr.aria-selected]="eleveId === e.id">
-                <button type="button" (mousedown)="choisirEleve(e)">{{ e.prenom }} {{ e.nom }}</button>
+          <ul id="liste-eleves" role="listbox" class="options" aria-label="Élèves">
+            @for (c of candidatsFiltres(); track c.eleveId; let i = $index) {
+              <li role="option" [id]="'option-eleve-' + c.eleveId"
+                  [attr.aria-selected]="candidatChoisi()?.eleveId === c.eleveId"
+                  [class.active]="indexActif() === i">
+                <button type="button" tabindex="-1" (mousedown)="choisirEleve(c)">
+                  <span class="option-nom">{{ c.prenom }} {{ c.nom }}</span>
+                  <span class="option-detail">
+                    <span class="badge-niveau" [class.debutant]="!c.niveauActuel">{{ niveauCourt(c) }}</span>
+                    @if (c.saisonsPrecedentes === 0) {
+                      <span class="badge-nouveau">1re saison</span>
+                    } @else {
+                      <span>{{ anciennete(c) }}</span>
+                    }
+                    @if (c.inscriptionsSaison.length > 0) {
+                      <span class="deja">déjà inscrit : {{ c.inscriptionsSaison.join(', ') }}</span>
+                    }
+                  </span>
+                </button>
               </li>
             } @empty {
               <li class="vide">Aucun élève ne correspond.</li>
@@ -42,18 +73,39 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
         }
       </div>
 
-      <label for="niveau">Niveau</label>
-      <select id="niveau" name="niveau" [(ngModel)]="niveau">
-        <option value="N1">N1</option>
-        <option value="N2">N2</option>
-        <option value="N3">N3</option>
-      </select>
+      @if (candidatChoisi(); as c) {
+        <dl class="resume-eleve" aria-live="polite">
+          <dt>Niveau actuel</dt>
+          <dd>
+            {{ c.niveauActuel ?? 'Aucun brevet connu' }}
+            @if (c.niveauDeclare) { <span class="secondaire">— déclaré sur la fiche élève</span> }
+            @if (!c.niveauActuel) {
+              <span class="secondaire">— à renseigner dans « Élèves » s'il a un brevet obtenu ailleurs</span>
+            }
+          </dd>
+          <dt>Au club</dt>
+          <dd>
+            @if (c.saisonsPrecedentes === 0) {
+              <span class="badge-nouveau">Première saison</span>
+            } @else {
+              {{ anciennete(c) }} · dernière : {{ c.derniereSaison }}
+            }
+          </dd>
+          @if (c.inscriptionsSaison.length > 0 || c.adhesionSaison) {
+            <dt>Cette saison</dt>
+            <dd>
+              @if (c.inscriptionsSaison.length > 0) { Déjà inscrit en {{ c.inscriptionsSaison.join(', ') }}. }
+              @if (c.adhesionSaison) { Adhérent sans formation. }
+            </dd>
+          }
+        </dl>
+        <p class="secondaire motif">{{ c.motifProposition }}</p>
+      }
 
-      <label for="saison">Saison</label>
-      <select id="saison" name="saison" [(ngModel)]="saisonId">
-        <option [ngValue]="null">Choisir…</option>
-        @for (s of saisons(); track s.id) {
-          <option [ngValue]="s.id">{{ s.libelle }}</option>
+      <label for="niveau">Niveau préparé</label>
+      <select id="niveau" name="niveau" [(ngModel)]="niveau">
+        @for (n of niveaux; track n) {
+          <option [value]="n">{{ n }}{{ candidatChoisi()?.niveauPropose === n ? ' (proposé)' : '' }}</option>
         }
       </select>
 
@@ -92,7 +144,7 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
               @if (formulaireEdition(); as f) {
                 <label [for]="'statut-' + c.id">Statut</label>
                 <select [id]="'statut-' + c.id" name="statut" [(ngModel)]="f.statut">
-                  @for (s of statuts; track s) { <option [value]="s">{{ s }}</option> }
+                  @for (s of statuts; track s) { <option [value]="s">{{ libelleStatut(s) }}</option> }
                 </select>
                 <label [for]="'referent-' + c.id">Moniteur référent</label>
                 <select [id]="'referent-' + c.id" name="referent" [(ngModel)]="f.moniteurReferentId">
@@ -117,7 +169,7 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
                     {{ c.moniteurReferent ?? 'sans référent' }}
                   </span>
                 </div>
-                <span class="etat">{{ c.statut }}</span>
+                <span class="etat">{{ libelleStatut(c.statut) }}</span>
               </div>
               <div class="actions">
                 <button type="button" class="bouton-discret" (click)="commencerEdition(c)">Modifier</button>
@@ -156,6 +208,26 @@ const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as cons
       text-align: left; background: none; border: none; color: var(--encre);
     }
     .options button:hover, .options button:focus { background: var(--fond); }
+    .options li.active button { background: var(--fond); outline: 2px solid var(--profond); outline-offset: -2px; }
+    .option-nom { display: block; }
+    .option-detail { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-size: .8125rem; color: var(--craie); }
+    .badge-niveau {
+      padding: 0 6px; border-radius: var(--r-s); background: var(--profond); color: #fff; font-weight: 700;
+    }
+    .badge-niveau.debutant { background: #EEF2F4; color: var(--craie); }
+    .badge-nouveau {
+      padding: 0 6px; border-radius: var(--r-s); background: var(--acquis-clair); color: var(--acquis);
+      font-weight: 700; font-size: .8125rem;
+    }
+    .deja { color: var(--en-cours); font-weight: 700; }
+    .resume-eleve {
+      display: grid; grid-template-columns: max-content 1fr; gap: 4px var(--pas-2);
+      margin: var(--pas-2) 0 0; padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
+      font-size: .9375rem;
+    }
+    .resume-eleve dt { color: var(--craie); }
+    .resume-eleve dd { margin: 0; font-weight: 700; }
+    .motif { margin: var(--pas) 0 0; }
     .options .vide { padding: var(--pas) var(--pas-2) !important; color: var(--craie); font-size: .875rem; }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
@@ -181,7 +253,6 @@ export class CursusAdminComponent {
   readonly statuts = STATUTS;
 
   liste = signal<CursusVue[]>([]);
-  eleves = signal<EleveVue[]>([]);
   saisons = signal<SaisonVue[]>([]);
   moniteurs = signal<MoniteurVue[]>([]);
   chargement = signal(true);
@@ -195,17 +266,27 @@ export class CursusAdminComponent {
     return this.liste().filter(c => c.eleve.toLocaleLowerCase().includes(recherche));
   });
 
+  readonly niveaux = ['N1', 'N2', 'N3'] as const;
+
+  /** Élèves proposés, vus depuis la saison choisie (niveau actuel, ancienneté, niveau suggéré). */
+  candidats = signal<CandidatInscription[]>([]);
   rechercheEleve = signal('');
   comboboxOuvert = signal(false);
-  elevesFiltres = computed(() => {
-    const recherche = this.rechercheEleve().trim().toLocaleLowerCase();
-    if (!recherche) return this.eleves();
-    return this.eleves().filter(e => `${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche));
+  /** Option mise en surbrillance au clavier ; -1 : aucune. */
+  indexActif = signal(-1);
+  candidatsFiltres = computed(() => {
+    const recherche = normaliser(this.rechercheEleve());
+    if (!recherche) return this.candidats();
+    return this.candidats().filter(c => normaliser(`${c.prenom} ${c.nom}`).includes(recherche)
+      || normaliser(`${c.nom} ${c.prenom}`).includes(recherche));
   });
+  aideRecherche = computed(() => this.saisonId() === null
+    ? "Choisissez d'abord la saison" : 'Rechercher par nom ou prénom…');
+  optionActive = computed(() => this.candidatsFiltres()[this.indexActif()] ?? null);
 
-  eleveId: number | null = null;
+  candidatChoisi = signal<CandidatInscription | null>(null);
+  saisonId = signal<number | null>(null);
   niveau: 'N1' | 'N2' | 'N3' = 'N1';
-  saisonId: number | null = null;
   moniteurReferentId: number | null = null;
 
   edition = signal<number | null>(null);
@@ -218,16 +299,17 @@ export class CursusAdminComponent {
   private async charger(): Promise<void> {
     this.chargement.set(true);
     try {
-      const [cursus, eleves, saisons, moniteurs] = await Promise.all([
+      const [cursus, saisons, moniteurs] = await Promise.all([
         this.api.cursus(),
-        firstValueFrom(this.api.eleves()),
         firstValueFrom(this.api.saisons()),
         firstValueFrom(this.api.moniteurs())
       ]);
       this.liste.set(cursus);
-      this.eleves.set(eleves);
       this.saisons.set(saisons);
       this.moniteurs.set(moniteurs);
+      // Saison ouverte la plus récente par défaut : c'est presque toujours celle qu'on inscrit.
+      const ouverte = saisons.find(s => s.ouverte);
+      if (ouverte) this.choisirSaison(ouverte.id);
     } catch {
       this.message.set("Impossible de charger les données d'inscription.");
     } finally {
@@ -235,11 +317,25 @@ export class CursusAdminComponent {
     }
   }
 
-  /** Tant qu'aucune option n'a été cliquée, aucun élève n'est retenu pour l'inscription. */
+  /** Changer de saison change le regard porté sur chaque élève : on recharge et on repart de zéro. */
+  choisirSaison(id: number | null): void {
+    this.saisonId.set(id);
+    this.candidatChoisi.set(null);
+    this.rechercheEleve.set('');
+    this.candidats.set([]);
+    if (id === null) return;
+    this.api.candidatsInscription(id).subscribe({
+      next: c => { if (this.saisonId() === id) this.candidats.set(c); },
+      error: () => this.message.set('Impossible de charger les élèves pour cette saison.')
+    });
+  }
+
+  /** Tant qu'aucune option n'a été choisie, aucun élève n'est retenu pour l'inscription. */
   saisirEleve(texte: string): void {
     this.rechercheEleve.set(texte);
-    this.eleveId = null;
+    this.candidatChoisi.set(null);
     this.comboboxOuvert.set(true);
+    this.indexActif.set(texte.trim() ? 0 : -1);
   }
 
   ouvrirCombobox(): void {
@@ -251,30 +347,67 @@ export class CursusAdminComponent {
     setTimeout(() => this.comboboxOuvert.set(false), 150);
   }
 
-  choisirEleve(e: EleveVue): void {
-    this.eleveId = e.id;
-    this.rechercheEleve.set(`${e.prenom} ${e.nom}`);
+  /** Flèches pour parcourir, Entrée pour choisir, Échap pour refermer. */
+  clavierCombobox(ev: KeyboardEvent): void {
+    const nb = this.candidatsFiltres().length;
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      this.comboboxOuvert.set(true);
+      if (nb === 0) return;
+      const pas = ev.key === 'ArrowDown' ? 1 : -1;
+      this.indexActif.set((this.indexActif() + pas + nb) % nb);
+      document.getElementById(`option-eleve-${this.optionActive()?.eleveId}`)?.scrollIntoView({ block: 'nearest' });
+    } else if (ev.key === 'Enter') {
+      const c = this.optionActive();
+      if (this.comboboxOuvert() && c) {
+        ev.preventDefault();
+        this.choisirEleve(c);
+      }
+    } else if (ev.key === 'Escape') {
+      this.comboboxOuvert.set(false);
+    }
+  }
+
+  choisirEleve(c: CandidatInscription): void {
+    this.candidatChoisi.set(c);
+    this.rechercheEleve.set(`${c.prenom} ${c.nom}`);
     this.comboboxOuvert.set(false);
+    this.indexActif.set(-1);
+    if (c.niveauPropose) this.niveau = c.niveauPropose;
+  }
+
+  niveauCourt(c: CandidatInscription): string {
+    return c.niveauActuel ? c.niveauActuel + (c.niveauDeclare ? ' (déclaré)' : '') : 'Aucun brevet';
+  }
+
+  /** « 2e saison » : la saison choisie plus celles d'avant. */
+  anciennete(c: CandidatInscription): string {
+    return `${c.saisonsPrecedentes + 1}e saison au club`;
+  }
+
+  libelleStatut(statut: string): string {
+    return LIBELLES_STATUT[statut] ?? statut;
   }
 
   inscrire(): void {
-    if (!this.eleveId || !this.saisonId) {
-      this.message.set('Élève et saison sont obligatoires.');
+    const c = this.candidatChoisi();
+    const saisonId = this.saisonId();
+    if (!c || !saisonId) {
+      this.message.set('Choisissez la saison puis un élève dans la liste.');
       return;
     }
     this.envoi.set(true);
     this.message.set(null);
     this.api.inscrireCursus({
-      eleveId: this.eleveId, saisonId: this.saisonId, niveau: this.niveau,
+      eleveId: c.eleveId, saisonId, niveau: this.niveau,
       moniteurReferentId: this.moniteurReferentId
     }).subscribe({
-      next: c => {
+      next: cursus => {
         this.envoi.set(false);
-        this.liste.set([c, ...this.liste()]);
-        this.eleveId = null;
-        this.saisonId = null;
+        this.liste.set([cursus, ...this.liste()]);
         this.moniteurReferentId = null;
-        this.rechercheEleve.set('');
+        // Recharge les candidats : l'élève affiche désormais son inscription de la saison.
+        this.choisirSaison(saisonId);
       },
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);

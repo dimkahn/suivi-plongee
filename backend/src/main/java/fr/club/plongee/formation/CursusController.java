@@ -41,14 +41,27 @@ public class CursusController {
     private final EleveRepository eleves;
     private final ReferentielRepository referentiels;
     private final UtilisateurRepository utilisateurs;
+    private final CandidatsInscriptionService candidats;
 
     public CursusController(CursusRepository cursus, SaisonRepository saisons, EleveRepository eleves,
-                            ReferentielRepository referentiels, UtilisateurRepository utilisateurs) {
+                            ReferentielRepository referentiels, UtilisateurRepository utilisateurs,
+                            CandidatsInscriptionService candidats) {
         this.cursus = cursus;
         this.saisons = saisons;
         this.eleves = eleves;
         this.referentiels = referentiels;
         this.utilisateurs = utilisateurs;
+        this.candidats = candidats;
+    }
+
+    /**
+     * Élèves à proposer dans le formulaire d'inscription, avec niveau actuel,
+     * ancienneté au club et niveau suggéré. Sans saison : la saison ouverte.
+     */
+    @GetMapping("/candidats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<CandidatsInscriptionService.CandidatVue> candidats(@RequestParam(required = false) Long saisonId) {
+        return candidats.candidats(saisonId);
     }
 
     /** Inscription d'un élève dans une formation : réservée à l'ADMIN. */

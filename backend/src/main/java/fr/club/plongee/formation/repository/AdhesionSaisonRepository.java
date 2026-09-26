@@ -27,6 +27,13 @@ public interface AdhesionSaisonRepository extends JpaRepository<AdhesionSaison, 
            """)
     List<AdhesionSaison> parEleve(@Param("eleveId") Long eleveId);
 
+    @Query("""
+           select a from AdhesionSaison a
+             join fetch a.eleve e
+             join fetch a.saison s
+           """)
+    List<AdhesionSaison> toutesAvecEleveEtSaison();
+
     Optional<AdhesionSaison> findByEleveIdAndSaisonId(Long eleveId, Long saisonId);
 
     boolean existsByEleveIdAndSaisonId(Long eleveId, Long saisonId);
