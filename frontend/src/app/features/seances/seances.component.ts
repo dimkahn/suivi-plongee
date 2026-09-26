@@ -3,10 +3,11 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
-import { SeanceVue } from '../../core/modeles';
+import { ProgressionVue, SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -50,7 +51,7 @@ function formulaireVide(): FormulaireSeance {
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, ProgrammeSeanceComponent],
   template: `
     <h1>Séances</h1>
     <p class="secondaire">
@@ -276,6 +277,7 @@ function formulaireVide(): FormulaireSeance {
                     {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m' : '' }}
                   </span>
                   @if (s.commentaire) { <span class="secondaire">{{ s.commentaire }}</span> }
+                  <app-programme-seance [progressions]="progressions()" [date]="s.date" [compact]="true"/>
                 </div>
                 <div class="actions">
                   <button type="button" class="bouton-discret" (click)="commencerEdition(s)">
@@ -338,6 +340,8 @@ export class SeancesComponent {
   private api = inject(ApiService);
 
   liste = signal<SeanceVue[]>([]);
+  /** Progressions suivies par la saison : la période du mois s'affiche sous chaque séance. */
+  progressions = signal<ProgressionVue[]>([]);
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
@@ -380,6 +384,8 @@ export class SeancesComponent {
     this.chargement.set(true);
     try {
       this.liste.set(await this.api.seances());
+      // Facultatif : sans progression rattachée à la saison, rien ne s'affiche.
+      this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
     } catch {
       this.message.set('Impossible de charger les séances.');
     } finally {

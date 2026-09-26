@@ -7,14 +7,11 @@ import {
   BlocReferentielVue, DemandePeriodeProgression, DemandeProgression, ProgressionResume, ProgressionVue,
   ReferentielVue
 } from '../../core/modeles';
+import { MOIS_SAISON, nomMois, plageMois } from '../../core/progression';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
 
-const NOMS_MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août',
-  'septembre', 'octobre', 'novembre', 'décembre'];
-/** Ordre d'une saison du club : de la rentrée à l'été. */
-const MOIS_SAISON = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
 
 /** Une période en cours d'édition ; `cle` suit la ligne quand on la déplace. */
 interface PeriodeEditee extends DemandePeriodeProgression {
@@ -313,13 +310,8 @@ export class ProgressionsAdminComponent {
     void this.charger();
   }
 
-  nomMois(m: number): string {
-    return NOMS_MOIS[m - 1];
-  }
-
-  plage(debut: number, fin: number): string {
-    return debut === fin ? this.nomMois(debut) : `${this.nomMois(debut)} – ${this.nomMois(fin)}`;
-  }
+  readonly nomMois = nomMois;
+  readonly plage = plageMois;
 
   private async charger(idASelectionner?: number): Promise<void> {
     this.chargement.set(true);
