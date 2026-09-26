@@ -5,7 +5,8 @@ import {
   AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
-  SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue
+  SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
+  DemandeProgression, ProgressionResume, ProgressionVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -538,6 +539,36 @@ export class ApiService {
 
   supprimerCritereReferentiel(referentielId: number, blocId: number, critereId: number): Observable<unknown> {
     return this.http.delete(`/api/referentiels/${referentielId}/blocs/${blocId}/criteres/${critereId}`);
+  }
+
+  // ----------------------------------------------------------------
+  //  Progressions types (voir /admin/progressions). Lecture pour tout
+  //  encadrant, écriture réservée à l'ADMIN. Une progression s'enregistre
+  //  d'un bloc, avec toutes ses périodes.
+  // ----------------------------------------------------------------
+
+  progressions(): Observable<ProgressionResume[]> {
+    return this.http.get<ProgressionResume[]>('/api/progressions');
+  }
+
+  progression(id: number): Observable<ProgressionVue> {
+    return this.http.get<ProgressionVue>(`/api/progressions/${id}`);
+  }
+
+  creerProgression(demande: DemandeProgression): Observable<ProgressionVue> {
+    return this.http.post<ProgressionVue>('/api/progressions', demande);
+  }
+
+  modifierProgression(id: number, demande: DemandeProgression): Observable<ProgressionVue> {
+    return this.http.put<ProgressionVue>(`/api/progressions/${id}`, demande);
+  }
+
+  copierProgression(id: number): Observable<ProgressionVue> {
+    return this.http.post<ProgressionVue>(`/api/progressions/${id}/copie`, {});
+  }
+
+  supprimerProgression(id: number): Observable<unknown> {
+    return this.http.delete(`/api/progressions/${id}`);
   }
 
   // ----------------------------------------------------------------

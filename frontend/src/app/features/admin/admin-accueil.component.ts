@@ -39,6 +39,12 @@ import { RouterLink } from '@angular/router';
           <span class="secondaire">Créer, modifier et supprimer versions, blocs et critères</span>
         </a>
       </li>
+      <li class="carte">
+        <a routerLink="/admin/progressions">
+          <span class="nom">Progressions types</span>
+          <span class="secondaire">L'année de chaque niveau découpée en périodes, avec les blocs travaillés</span>
+        </a>
+      </li>
     </ul>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,

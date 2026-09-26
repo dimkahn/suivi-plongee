@@ -124,6 +124,12 @@ export const routes: Routes = [
       .then(m => m.ReferentielAdminComponent)
   },
   {
+    path: 'admin/progressions',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/progressions-admin.component')
+      .then(m => m.ProgressionsAdminComponent)
+  },
+  {
     path: 'trombinoscope',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/roster/trombinoscope.component')

@@ -471,3 +471,63 @@ export interface FeuillePresence {
   seance: SeanceVue;
   eleves: LignePresence[];
 }
+
+// ----------------------------------------------------------------
+//  Progressions types : l'année d'un niveau découpée en périodes (mois).
+// ----------------------------------------------------------------
+
+export interface BlocResume {
+  id: number;
+  ordre: number;
+  intitule: string;
+}
+
+export interface PeriodeProgressionVue {
+  id: number;
+  rang: number;
+  intitule: string;
+  /** 1 = janvier ... 12 = décembre ; une période peut enjamber le changement d'année. */
+  moisDebut: number;
+  moisFin: number;
+  milieu: 'ARTIFICIEL' | 'NATUREL' | null;
+  note: string | null;
+  blocs: BlocResume[];
+}
+
+export interface ProgressionResume {
+  id: number;
+  nom: string;
+  referentielId: number;
+  niveau: 'N1' | 'N2' | 'N3';
+  versionMft: string;
+  nombrePeriodes: number;
+}
+
+export interface ProgressionVue {
+  id: number;
+  nom: string;
+  description: string | null;
+  referentielId: number;
+  niveau: 'N1' | 'N2' | 'N3';
+  versionMft: string;
+  periodes: PeriodeProgressionVue[];
+}
+
+/** id null : nouvelle période. L'ordre de la liste donne le rang. */
+export interface DemandePeriodeProgression {
+  id: number | null;
+  intitule: string;
+  moisDebut: number;
+  moisFin: number;
+  milieu: 'ARTIFICIEL' | 'NATUREL' | null;
+  note: string | null;
+  blocIds: number[];
+}
+
+/** referentielId n'est lu qu'à la création. */
+export interface DemandeProgression {
+  referentielId: number | null;
+  nom: string;
+  description: string | null;
+  periodes: DemandePeriodeProgression[];
+}

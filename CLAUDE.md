@@ -100,6 +100,20 @@ c'est un vrai chantier de modélisation, pas une simple mise à jour du
 référentiel. PA60 (plongeur autonome à 60 m, sans DP, obtenu après le N3)
 n'est pas importé : hors périmètre du brevet N3 lui-même.
 
+**Une progression type découpe l'année par périodes de mois, pas par séance.**
+`ProgressionType` (paquet `fr.club.plongee.progression`, écran
+`/admin/progressions`) est rattachée à une version du référentiel, pas au
+niveau, et porte des `PeriodeProgression` : une plage de mois (1-12, qui
+peut enjamber le changement d'année), un milieu facultatif et les blocs
+travaillés. En mois et non en dates, pour resservir d'une saison à l'autre.
+Choix du club (2026) : un découpage séance par séance a été écarté comme trop
+lourd à tenir. Un bloc peut figurer dans plusieurs périodes. V22 installe
+une proposition par niveau (N1 PE20, N2 PA20|PE40, N3 PA40|PE60), à adapter
+depuis l'écran. Suites prévues : afficher la période en cours sur les
+séances, signaler dans la grille les blocs au programme, et un bloc « en
+retard » quand la dernière période qui le contient est passée sans qu'il
+soit acquis.
+
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas
