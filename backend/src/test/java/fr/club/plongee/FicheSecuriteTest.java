@@ -135,7 +135,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         String reponse = mvc.perform(put("/api/seances/" + seance + "/fiche-securite")
                         .header("Authorization", moniteur)
@@ -144,7 +144,7 @@ class FicheSecuriteTest {
                 .andReturn().getResponse().getContentAsString();
 
         JsonNode vue = json.readTree(reponse);
-        assertThat(vue.get("dp").asText()).isEqualTo("Flora Vasseur");
+        assertThat(vue.get("dp").asText()).isEqualTo("Gwendoline Marchand");
         assertThat(vue.get("meteo").asText()).isEqualTo("Beau");
         JsonNode palanquee = vue.get("palanquees").get(0);
         assertThat(palanquee.get("numero").asInt()).isEqualTo(1);
@@ -153,6 +153,19 @@ class FicheSecuriteTest {
         assertThat(membres).hasSize(2);
         assertThat(membres.get(0).get("fonction").asText()).isEqualTo("GUIDE_PALANQUEE");
         assertThat(membres.get(1).get("gaz").asText()).isEqualTo("Nitrox 32");
+    }
+
+    @Test
+    @DisplayName("En milieu naturel, un DP E2 est refusé avec un message pour l'utilisateur")
+    void dpE2RefuseEnMilieuNaturel() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeance(admin);
+        long dpE2 = moniteurId(admin, "e2@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpE2)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("au moins E3")));
     }
 
     @Test
@@ -184,7 +197,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
@@ -214,7 +227,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
@@ -232,7 +245,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
@@ -260,7 +273,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
@@ -287,7 +300,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
@@ -324,7 +337,7 @@ class FicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e2@club.fr");
         long seance = creerSeance(admin);
-        long dpId = moniteurId(admin, "e2@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
 
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
