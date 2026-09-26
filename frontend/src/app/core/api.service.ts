@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
-  AdhesionVue, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
+  AdhesionVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
@@ -79,6 +79,11 @@ export class ApiService {
   /** Pour les écrans d'administration : consultation d'une saison au choix, sans passer par le cache hors ligne. */
   cursusDeLaSaison(saisonId: number): Observable<CursusVue[]> {
     return this.http.get<CursusVue[]>('/api/cursus', { params: { saisonId } });
+  }
+
+  /** Élèves proposés à l'inscription sur une saison : niveau actuel, ancienneté, niveau suggéré. */
+  candidatsInscription(saisonId: number): Observable<CandidatInscription[]> {
+    return this.http.get<CandidatInscription[]>('/api/cursus/candidats', { params: { saisonId } });
   }
 
   /** Toutes les saisons d'un élève : pour retrouver les compétences acquises l'an dernier. */

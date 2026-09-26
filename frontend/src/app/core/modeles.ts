@@ -29,6 +29,25 @@ export interface CursusVue {
  * référentiel) : pour un élève déjà breveté qui continue de plonger avec le
  * club. À distinguer d'un CursusVue, qui porte toujours un niveau.
  */
+/** Un élève proposé dans le formulaire d'inscription, vu depuis la saison choisie. */
+export interface CandidatInscription {
+  eleveId: number;
+  nom: string;
+  prenom: string;
+  /** null : aucun brevet connu (débutant). */
+  niveauActuel: string | null;
+  /** true : niveau repris de la fiche élève, pas d'un brevet délivré dans l'appli. */
+  niveauDeclare: boolean;
+  /** Saisons antérieures avec un cursus ou une adhésion ; 0 = première saison au club. */
+  saisonsPrecedentes: number;
+  derniereSaison: string | null;
+  /** Niveaux déjà ouverts pour l'élève sur la saison choisie. */
+  inscriptionsSaison: string[];
+  adhesionSaison: boolean;
+  niveauPropose: 'N1' | 'N2' | 'N3' | null;
+  motifProposition: string;
+}
+
 export interface AdhesionVue {
   id: number;
   eleveId: number;

@@ -47,6 +47,15 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
            """)
     List<Cursus> parEleve(@Param("eleveId") Long eleveId);
 
+    /** Tous les cursus du club, pour retracer le parcours de chaque élève en une requête. */
+    @Query("""
+           select c from Cursus c
+             join fetch c.eleve e
+             join fetch c.referentiel r
+             join fetch c.saison s
+           """)
+    List<Cursus> tousAvecEleveEtSaison();
+
     boolean existsByMoniteurReferentId(Long moniteurReferentId);
     boolean existsByEleveIdAndSaisonIdAndReferentielId(Long eleveId, Long saisonId, Long referentielId);
     boolean existsByEleveIdAndSaisonId(Long eleveId, Long saisonId);
