@@ -9,6 +9,7 @@ import fr.club.plongee.evaluation.service.GrilleService;
 import fr.club.plongee.formation.*;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.progression.repository.ProgressionTypeRepository;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.Niveau;
@@ -39,12 +40,13 @@ class GrilleServiceTest {
     @Mock ParticipationRepository participations;
     @Mock SeanceRepository seances;
     @Mock PhotoEleveRepository photos;
+    @Mock ProgressionTypeRepository progressions;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos);
+        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos, progressions);
     }
 
     @Test

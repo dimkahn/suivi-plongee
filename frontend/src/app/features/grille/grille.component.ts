@@ -14,6 +14,7 @@ import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, St
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { periodeDuMois, plageMois } from '../../core/progression';
 
 /** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
 interface CritereAffiche extends CritereVue {
@@ -198,6 +199,33 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
 
       @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
+      @if (g.progression) {
+        <section class="carte programme" aria-label="Programme de la progression">
+          @if (periodeEnCours(); as p) {
+            <p class="periode">
+              <span class="etiquette-programme">Au programme</span>
+              <strong>{{ p.intitule }}</strong>
+              <span class="secondaire"> · {{ plage(p.moisDebut, p.moisFin) }}</span>
+            </p>
+            @if (p.note) {
+              <details class="note-periode"><summary>Contenu de la période</summary><p>{{ p.note }}</p></details>
+            }
+            @if (blocsAuProgramme().size > 0) {
+              <button type="button" class="bouton-discret" (click)="ouvrirBlocsAuProgramme()">
+                Ouvrir les {{ blocsAuProgramme().size }} blocs au programme
+              </button>
+            }
+          } @else {
+            <p class="secondaire periode">Aucune période de « {{ g.progression }} » ce mois-ci.</p>
+          }
+          @if (nombreEnRetard() > 0) {
+            <p class="retard-resume" role="status">
+              {{ nombreEnRetard() }} bloc(s) en retard sur la progression
+            </p>
+          }
+        </section>
+      }
+
       @for (groupe of groupesAffiches(); track groupe.regroupement ?? '') {
         @if (groupe.regroupement) {
           <h2 class="titre-groupe">{{ groupe.regroupement }}</h2>
@@ -212,8 +240,17 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
               <span class="chevron" aria-hidden="true">{{ blocsOuverts().has(bloc.id) ? '▾' : '▸' }}</span>
               <span class="texte-bloc">
               <span class="intitule">{{ bloc.intitule }}</span>
+              @if (blocsAuProgramme().has(bloc.id) || bloc.enRetard) {
+                <span class="pastilles">
+                  @if (blocsAuProgramme().has(bloc.id)) { <span class="pastille au-programme">Au programme</span> }
+                  @if (bloc.enRetard) { <span class="pastille en-retard">En retard</span> }
+                </span>
+              }
               <span class="secondaire detail">
                 {{ bloc.acquis }} / {{ bloc.total }} acquis
+                @if (bloc.enRetard && bloc.echeance) {
+                  · prévu avant le {{ bloc.echeance | dateFr }}
+                }
                 @if (bloc.evaluationTransverse) {
                   · vérifiée au fil des autres compétences, sans séance dédiée
                 }
@@ -434,6 +471,24 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     }
     .bloc header h3 { font-size: 1.0625rem; }
     .valide { margin: 0; color: var(--acquis); font-weight: 700; font-size: .9375rem; }
+
+    /* Progression suivie : période du mois de la séance choisie (ou du jour) et retard. */
+    .programme { margin-top: var(--pas-3); padding: var(--pas-2) var(--pas-3); display: flex; flex-direction: column; gap: var(--pas); align-items: flex-start; }
+    .programme .periode { margin: 0; }
+    .etiquette-programme {
+      display: inline-block; margin-right: 6px; padding: 0 8px; border-radius: var(--r-s);
+      background: var(--profond); color: #fff; font-size: .8125rem; font-weight: 700;
+    }
+    .note-periode summary { padding: 12px 0; line-height: 20px; color: var(--profond); font-weight: 700; cursor: pointer; }
+    .note-periode p { margin: 0; font-size: .9375rem; }
+    .retard-resume { margin: 0; color: var(--en-cours); font-weight: 700; }
+    .pastilles { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pastille {
+      padding: 0 8px; border-radius: var(--r-s); font-family: var(--font-texte);
+      font-size: .75rem; font-weight: 700; line-height: 1.5;
+    }
+    .pastille.au-programme { border: 1px solid var(--profond); color: var(--profond); }
+    .pastille.en-retard { background: var(--en-cours-clair); border: 1px solid var(--en-cours); color: var(--en-cours); }
 
     /* Textes du MFT (révisions post-PE20) : la compétence attendue reste visible,
        le reste se déplie à la demande pour ne pas repousser les critères. */
@@ -669,6 +724,24 @@ export class GrilleComponent implements OnDestroy {
   });
 
   seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
+
+  /**
+   * Période de la progression suivie qui couvre le mois de la séance choisie,
+   * ou du jour sans séance. `periodes` peut manquer dans une grille mise en
+   * cache avant l'arrivée des progressions.
+   */
+  periodeEnCours = computed(() => {
+    const g = this.grille();
+    return g ? periodeDuMois(g.periodes ?? [], this.seanceChoisie()?.date ?? this.aujourdhui) : null;
+  });
+  blocsAuProgramme = computed(() => new Set(this.periodeEnCours()?.blocIds ?? []));
+  nombreEnRetard = computed(() => this.grille()?.blocs.filter(b => b.enRetard).length ?? 0);
+  readonly plage = plageMois;
+
+  /** Ajoute les blocs au programme aux blocs dépliés, sans refermer les autres. */
+  ouvrirBlocsAuProgramme(): void {
+    this.blocsOuverts.set(new Set([...this.blocsOuverts(), ...this.blocsAuProgramme()]));
+  }
 
   readonly aujourdhui = dateDuJour();
   private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');

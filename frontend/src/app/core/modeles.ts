@@ -66,7 +66,21 @@ export interface BlocVue {
   comportement: string | null;
   theorie: string | null;
   modalitesEvaluation: string | null;
+  /** Fin de la dernière période de la progression suivie qui contient ce bloc ; null sans progression. */
+  echeance: string | null;
+  /** Échéance passée, bloc non validé et critères pas tous acquis (calculé par le serveur). */
+  enRetard: boolean;
   criteres: CritereVue[];
+}
+
+/** Une période de la progression suivie par le cursus. */
+export interface PeriodeGrilleVue {
+  intitule: string;
+  moisDebut: number;
+  moisFin: number;
+  milieu: 'ARTIFICIEL' | 'NATUREL' | null;
+  note: string | null;
+  blocIds: number[];
 }
 
 export interface GrilleVue {
@@ -91,6 +105,9 @@ export interface GrilleVue {
   criteresAcquis: number;
   criteresTotal: number;
   blocs: BlocVue[];
+  /** Progression suivie par la saison pour ce référentiel ; null et liste vide sinon. */
+  progression: string | null;
+  periodes: PeriodeGrilleVue[];
 }
 
 export interface SeanceVue {

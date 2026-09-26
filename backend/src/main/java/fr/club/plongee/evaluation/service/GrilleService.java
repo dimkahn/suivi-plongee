@@ -3,6 +3,7 @@ package fr.club.plongee.evaluation.service;
 import fr.club.plongee.evaluation.domain.ValidationCompetence;
 import fr.club.plongee.evaluation.domain.StatutAcquisition;
 
+import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.domain.Evaluation;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
@@ -13,6 +14,9 @@ import fr.club.plongee.formation.repository.ParticipationRepository;
 import fr.club.plongee.formation.repository.PhotoEleveRepository;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.SeanceRepository;
+import fr.club.plongee.progression.domain.ProgressionType;
+import fr.club.plongee.progression.repository.ProgressionTypeRepository;
+import fr.club.plongee.progression.service.EcheancesProgression;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
 import org.springframework.stereotype.Service;
@@ -40,7 +44,13 @@ public class GrilleService {
                           /** Revisions post-PE20 uniquement : null sur les blocs plus anciens. */
                           String competenceAttendue, String comportement,
                           String theorie, String modalitesEvaluation,
+                          /** Fin de la derniere periode de la progression suivie qui contient le bloc ; null sinon. */
+                          LocalDate echeance, boolean enRetard,
                           List<CritereVue> criteres) {}
+
+    /** Une periode de la progression suivie par le cursus : le front en tire les blocs « au programme ». */
+    public record PeriodeGrilleVue(String intitule, int moisDebut, int moisFin, String milieu, String note,
+                                   List<Long> blocIds) {}
 
     public record GrilleVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto,
                             String email, String telephone, String contactUrgenceNom,
@@ -50,7 +60,9 @@ public class GrilleService {
                             String niveauEncadrantValidation, int prerogativeProfondeur,
                             int seancesNage, int seancesBloc, int seancesPlongee,
                             int criteresAcquis, int criteresTotal,
-                            List<BlocVue> blocs) {}
+                            List<BlocVue> blocs,
+                            /** Progression suivie par la saison pour ce referentiel ; null et liste vide sinon. */
+                            String progression, List<PeriodeGrilleVue> periodes) {}
 
     /** Vue globale d'un élève : une colonne par séance, comme l'onglet individuel du tableur. */
     public record SeanceEnTeteVue(Long id, LocalDate date, String lieu, String milieu) {}
@@ -69,18 +81,21 @@ public class GrilleService {
     private final ParticipationRepository participations;
     private final SeanceRepository seances;
     private final PhotoEleveRepository photos;
+    private final ProgressionTypeRepository progressions;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
                          ParticipationRepository participations,
                          SeanceRepository seances,
-                         PhotoEleveRepository photos) {
+                         PhotoEleveRepository photos,
+                         ProgressionTypeRepository progressions) {
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
         this.participations = participations;
         this.seances = seances;
         this.photos = photos;
+        this.progressions = progressions;
     }
 
     @Transactional(readOnly = true)
@@ -91,6 +106,15 @@ public class GrilleService {
         Map<Long, Evaluation> etat = evaluationService.etatCourant(cursusId);
         Map<Long, ValidationCompetence> valide = validations.findByCursusId(cursusId).stream()
                 .collect(Collectors.toMap(v -> v.getBloc().getId(), v -> v));
+
+        // Progression suivie par la saison pour ce referentiel : echeance de chaque bloc.
+        // Le retard n'a de sens que pour une formation en cours.
+        ProgressionType progression = progressions
+                .suivie(cursus.getSaison().getId(), cursus.getReferentiel().getId()).orElse(null);
+        Map<Long, LocalDate> echeances = progression == null ? Map.of()
+                : EcheancesProgression.parBloc(progression, cursus.getSaison().getDateDebut());
+        boolean enCours = cursus.getStatut() == Cursus.Statut.EN_COURS;
+        LocalDate aujourdhui = Calendrier.aujourdhui();
 
         int acquisTotal = 0;
         int total = 0;
@@ -114,6 +138,9 @@ public class GrilleService {
                     bloc.getRegroupement(),
                     bloc.getCompetenceAttendue(), bloc.getComportement(),
                     bloc.getTheorie(), bloc.getModalitesEvaluation(),
+                    echeances.get(bloc.getId()),
+                    enCours && EcheancesProgression.enRetard(echeances.get(bloc.getId()), aujourdhui,
+                            v != null, acquis, criteres.size()),
                     criteres));
         }
 
@@ -132,7 +159,18 @@ public class GrilleService {
                 (int) participations.compterAtelier(cursusId, Participation.Atelier.NAGE),
                 (int) participations.compterAtelier(cursusId, Participation.Atelier.BLOC),
                 (int) participations.compterAtelier(cursusId, Participation.Atelier.PLONGEE),
-                acquisTotal, total, blocs);
+                acquisTotal, total, blocs,
+                progression == null ? null : progression.getNom(),
+                progression == null ? List.of() : periodesVue(progression));
+    }
+
+    private static List<PeriodeGrilleVue> periodesVue(ProgressionType p) {
+        return p.getPeriodes().stream()
+                .sorted(java.util.Comparator.comparingInt(fr.club.plongee.progression.domain.PeriodeProgression::getRang))
+                .map(pp -> new PeriodeGrilleVue(pp.getIntitule(), pp.getMoisDebut(), pp.getMoisFin(),
+                        pp.getMilieu() == null ? null : pp.getMilieu().name(), pp.getNote(),
+                        pp.getBlocs().stream().map(BlocCompetence::getId).toList()))
+                .toList();
     }
 
     /**
