@@ -126,6 +126,14 @@ tous les blocs (validations en milieu naturel du N2/N3) repousse toutes les
 échéances au mois de juin ; c'est voulu pour N2/N3, et V24 a retiré ce
 travers de la proposition N1.
 
+**Encadrants : niveau d'encadrement et niveau de plongeur sont distincts.**
+`utilisateur.niveau_plongeur` (N1 à N5, V25, saisi par un ADMIN dans l'écran
+Moniteurs) n'est pas déduit de `niveau_encadrement` : un E1 peut n'être que
+N2. Le **directeur de plongée d'une fiche de sécurité est E3 minimum, quel
+que soit le milieu** (choix du club, 2026 ; `FicheSecuriteService`,
+constante `NIVEAU_DP_MINIMUM` — règle de sécurité générale, pas du MFT,
+donc pas une colonne du référentiel).
+
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas

@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 public class FicheSecuriteService {
 
     /**
-     * Niveau d'encadrement minimal du directeur de plongée en milieu naturel
-     * (Code du sport, art. A322-72 : E3 ou E4). Règle de sécurité générale,
-     * pas du MFT d'un niveau : elle vit ici plutôt que dans le référentiel.
-     * En piscine ou en fosse, tout moniteur actif peut être DP.
+     * Niveau d'encadrement minimal du directeur de plongée, quel que soit le
+     * milieu (choix du club, 2026 : E3 ou E4, y compris en piscine et en
+     * fosse). Règle de sécurité générale, pas du MFT d'un niveau : elle vit
+     * ici plutôt que dans le référentiel.
      */
-    static final NiveauEncadrement NIVEAU_DP_MILIEU_NATUREL = NiveauEncadrement.E3;
+    static final NiveauEncadrement NIVEAU_DP_MINIMUM = NiveauEncadrement.E3;
 
     /**
      * Un plongeur, tel que soumis par le formulaire d'établissement : voir
@@ -117,10 +117,9 @@ public class FicheSecuriteService {
             throw new RegleMetierException(
                     "Le directeur de plongée doit être un moniteur actif avec un niveau d'encadrement.");
         }
-        // Code du sport : en milieu naturel, la plongée est dirigée par un E3 au moins.
-        if (seance.getMilieu() == Milieu.NATUREL && !dp.getNiveauEncadrement().auMoins(NIVEAU_DP_MILIEU_NATUREL)) {
-            throw new RegleMetierException("En milieu naturel, le directeur de plongée doit être au moins "
-                    + NIVEAU_DP_MILIEU_NATUREL + " ; " + dp.nomComplet() + " est " + dp.getNiveauEncadrement() + ".");
+        if (!dp.getNiveauEncadrement().auMoins(NIVEAU_DP_MINIMUM)) {
+            throw new RegleMetierException("Le directeur de plongée doit être au moins "
+                    + NIVEAU_DP_MINIMUM + " ; " + dp.nomComplet() + " est " + dp.getNiveauEncadrement() + ".");
         }
 
         FicheSecurite fiche = fiches.findBySeanceId(seanceId).orElseGet(() -> {

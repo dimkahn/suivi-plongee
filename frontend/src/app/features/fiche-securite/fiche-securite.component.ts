@@ -110,13 +110,11 @@ interface FormulaireEntete {
         <label for="dp">Directeur de plongée</label>
         <app-combobox idChamp="dp" [options]="dpsPossibles()" [(valeur)]="f.dpId"
                       aide="Rechercher un moniteur…" texteVide="Aucun moniteur ne correspond." />
-        @if (seance()?.milieu === 'NATUREL') {
-          <p class="secondaire">En milieu naturel, seuls les E3 et E4 peuvent diriger la plongée.</p>
-        }
+        <p class="secondaire">Seuls les E3 et E4 peuvent diriger la plongée.</p>
         @if (dpNonHabilite(f.dpId); as m) {
           <div class="alerte" role="status">
             {{ m.nomComplet }} ({{ m.niveauEncadrement }}) est enregistré comme directeur de plongée,
-            mais ne peut pas diriger en milieu naturel : choisissez un E3 ou un E4.
+            mais le DP doit être au moins E3 : choisissez un E3 ou un E4.
           </div>
         }
 
@@ -433,12 +431,12 @@ export class FicheSecuriteComponent {
   moniteurs = signal<MoniteurOptionVue[]>([]);
 
   /**
-   * Directeurs de plongée proposés : tout moniteur actif en piscine ou en
-   * fosse, E3 et E4 seulement en milieu naturel. Simple confort d'affichage :
-   * le serveur refuse de toute façon un DP non habilité.
+   * Directeurs de plongée proposés : E3 et E4 seulement, quel que soit le
+   * milieu. Simple confort d'affichage : le serveur refuse de toute façon un
+   * DP non habilité.
    */
   dpsPossibles = computed<OptionCombobox[]>(() => this.moniteurs()
-    .filter(m => this.seance()?.milieu !== 'NATUREL' || m.niveauEncadrement === 'E3' || m.niveauEncadrement === 'E4')
+    .filter(m => m.niveauEncadrement === 'E3' || m.niveauEncadrement === 'E4')
     .map(m => ({ id: m.id, libelle: m.nomComplet, detail: m.niveauEncadrement })));
 
   /**

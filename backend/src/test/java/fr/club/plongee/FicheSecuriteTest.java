@@ -156,8 +156,8 @@ class FicheSecuriteTest {
     }
 
     @Test
-    @DisplayName("En milieu naturel, un DP E2 est refusé avec un message pour l'utilisateur")
-    void dpE2RefuseEnMilieuNaturel() throws Exception {
+    @DisplayName("Un DP E2 est refusé avec un message pour l'utilisateur")
+    void dpE2Refuse() throws Exception {
         String admin = jeton("presidente@club.fr");
         long seance = creerSeance(admin);
         long dpE2 = moniteurId(admin, "e2@club.fr");
