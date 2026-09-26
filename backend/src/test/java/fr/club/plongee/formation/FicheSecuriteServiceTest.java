@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -53,12 +55,17 @@ class FicheSecuriteServiceTest {
         service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService, excelService);
     }
 
+    /** E3 : peut diriger une plongée en milieu naturel, comme la séance de test. */
     private Utilisateur moniteur(long id, String prenom, String nom) {
+        return moniteur(id, prenom, nom, NiveauEncadrement.E3);
+    }
+
+    private Utilisateur moniteur(long id, String prenom, String nom, NiveauEncadrement niveau) {
         Utilisateur u = new Utilisateur();
         u.setId(id);
         u.setPrenom(prenom);
         u.setNom(nom);
-        u.setNiveauEncadrement(NiveauEncadrement.E2);
+        u.setNiveauEncadrement(niveau);
         u.setRoles(EnumSet.of(RoleNom.MONITEUR));
         return u;
     }
@@ -112,6 +119,37 @@ class FicheSecuriteServiceTest {
         assertThat(palanquee.membres()).extracting(FicheSecuriteService.PlongeurVue::prenom)
                 .containsExactly("Anis", "Sonia");
         assertThat(palanquee.membres().get(0).fonction()).isEqualTo("PLONGEUR");
+    }
+
+    @Test
+    @DisplayName("En milieu naturel, un DP E2 est refusé")
+    void enregistrer_refuseDpE2EnMilieuNaturel() {
+        when(seances.findById(1L)).thenReturn(Optional.of(seance(1L)));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur(10L, "Tiago", "Nogueira", NiveauEncadrement.E2)));
+
+        FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
+                null, null, null, null, null, null, List.of());
+
+        assertThatThrownBy(() -> service.enregistrer(1L, saisie))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("au moins E3");
+        verify(fiches, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("En piscine ou en fosse, un DP E2 est accepté")
+    void enregistrer_accepteDpE2EnMilieuArtificiel() {
+        Seance piscine = seance(1L);
+        piscine.setMilieu(Milieu.ARTIFICIEL);
+        when(seances.findById(1L)).thenReturn(Optional.of(piscine));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur(10L, "Tiago", "Nogueira", NiveauEncadrement.E2)));
+        when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
+        when(fiches.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
+                null, null, null, null, null, null, List.of());
+
+        assertThat(service.enregistrer(1L, saisie).dp()).isEqualTo("Tiago Nogueira");
     }
 
     @Test

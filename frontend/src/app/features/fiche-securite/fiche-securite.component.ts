@@ -8,6 +8,7 @@ import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
   FicheSecuriteVue, GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
   PlongeurVue, SeanceVue
@@ -74,7 +75,7 @@ interface FormulaireEntete {
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe],
+  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, ComboboxComponent],
   template: `
     <a routerLink="/fiches-securite" class="bouton-discret">← Fiches de sécurité</a>
 
@@ -107,12 +108,17 @@ interface FormulaireEntete {
         <h3>Directeur de plongée et conditions</h3>
 
         <label for="dp">Directeur de plongée</label>
-        <select id="dp" name="dp" [(ngModel)]="f.dpId">
-          <option [ngValue]="null">— Choisir —</option>
-          @for (m of moniteurs(); track m.id) {
-            <option [ngValue]="m.id">{{ m.nomComplet }}{{ m.niveauEncadrement ? ' (' + m.niveauEncadrement + ')' : '' }}</option>
-          }
-        </select>
+        <app-combobox idChamp="dp" [options]="dpsPossibles()" [(valeur)]="f.dpId"
+                      aide="Rechercher un moniteur…" texteVide="Aucun moniteur ne correspond." />
+        @if (seance()?.milieu === 'NATUREL') {
+          <p class="secondaire">En milieu naturel, seuls les E3 et E4 peuvent diriger la plongée.</p>
+        }
+        @if (dpNonHabilite(f.dpId); as m) {
+          <div class="alerte" role="status">
+            {{ m.nomComplet }} ({{ m.niveauEncadrement }}) est enregistré comme directeur de plongée,
+            mais ne peut pas diriger en milieu naturel : choisissez un E3 ou un E4.
+          </div>
+        }
 
         <div class="grille-conditions">
           <div>
@@ -425,6 +431,25 @@ export class FicheSecuriteComponent {
 
   seance = signal<SeanceVue | null>(null);
   moniteurs = signal<MoniteurOptionVue[]>([]);
+
+  /**
+   * Directeurs de plongée proposés : tout moniteur actif en piscine ou en
+   * fosse, E3 et E4 seulement en milieu naturel. Simple confort d'affichage :
+   * le serveur refuse de toute façon un DP non habilité.
+   */
+  dpsPossibles = computed<OptionCombobox[]>(() => this.moniteurs()
+    .filter(m => this.seance()?.milieu !== 'NATUREL' || m.niveauEncadrement === 'E3' || m.niveauEncadrement === 'E4')
+    .map(m => ({ id: m.id, libelle: m.nomComplet, detail: m.niveauEncadrement })));
+
+  /**
+   * DP déjà enregistré (fiche ancienne) qui ne serait plus accepté pour cette
+   * séance. Méthode et non computed : le formulaire modifie `dpId` en place,
+   * sans passer par le signal.
+   */
+  dpNonHabilite(dpId: number | null): MoniteurOptionVue | null {
+    if (dpId == null || this.dpsPossibles().some(o => o.id === dpId)) return null;
+    return this.moniteurs().find(m => m.id === dpId) ?? null;
+  }
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
