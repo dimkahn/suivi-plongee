@@ -161,6 +161,7 @@ public class RegleDelivranceService {
         }
 
         cursus.setStatut(Cursus.Statut.DELIVRE);
+        cursus.getEleve().enregistrerBrevet(ref.getNiveau().name());
 
         Qualification q = new Qualification();
         q.setEleve(cursus.getEleve());
