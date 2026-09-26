@@ -48,7 +48,8 @@ public class AuthController {
 
     public record DemandeReinitialisation(@NotBlank String jeton, @NotBlank String nouveauMotDePasse) {}
 
-    public record DemandeIdentite(@NotBlank String nom, @NotBlank String prenom, String numeroLicence) {}
+    /** Nom et prénom ne sont pas modifiables ici (réservés à l'ADMIN) : s'ils sont envoyés, ils sont ignorés. */
+    public record DemandeIdentite(String numeroLicence) {}
 
     public record DemandeChangementEmail(@NotBlank @Email String nouvelEmail, @NotBlank String motDePasseActuel) {}
 
@@ -133,14 +134,14 @@ public class AuthController {
      * Modification de son propre compte. Chaque reponse renvoie une session
      * a jour : le nom affiche change, et le jeton d'acces porte l'e-mail en
      * sujet, donc l'ancien ne vaut plus rien apres un changement d'e-mail.
-     * Le niveau d'encadrement n'est pas modifiable ici (reserve a l'ADMIN).
+     * Ni le niveau d'encadrement, ni le nom et le prenom ne sont modifiables
+     * ici (reserves a l'ADMIN, ecran Moniteurs).
      */
 
     @PutMapping("/moi")
     public Session modifierIdentite(@AuthenticationPrincipal UtilisateurPrincipal principal,
                                     @Valid @RequestBody DemandeIdentite demande) {
-        Utilisateur u = monCompte.modifierIdentite(principal.id(), demande.nom(), demande.prenom(),
-                demande.numeroLicence());
+        Utilisateur u = monCompte.modifierLicence(principal.id(), demande.numeroLicence());
         return session(UtilisateurPrincipal.de(u), u);
     }
 

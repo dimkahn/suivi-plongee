@@ -21,8 +21,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Un moniteur modifie son propre compte (identite, e-mail, mot de passe),
- * mais pas son niveau d'encadrement, qui reste du ressort de l'ADMIN.
+ * Un moniteur modifie son propre compte (licence, e-mail, mot de passe),
+ * mais ni son nom, ni son prenom, ni son niveau d'encadrement, qui restent
+ * du ressort de l'ADMIN.
  * Chaque test travaille sur un moniteur cree pour l'occasion : les comptes
  * de demonstration servent aux autres tests et ne doivent pas changer.
  */
@@ -67,7 +68,7 @@ class MonCompteTest {
     }
 
     @Test
-    @DisplayName("Un moniteur corrige son nom et sa licence, sans toucher a son niveau")
+    @DisplayName("Un moniteur corrige sa licence, mais ni son nom, ni son prenom, ni son niveau")
     void modifierIdentite() throws Exception {
         String email = nouveauMoniteur();
         String moi = jeton(email, MOT_DE_PASSE);
@@ -77,7 +78,7 @@ class MonCompteTest {
                         .content("""
                                  {"nom":"Cousteau","prenom":"Jacques-Yves","numeroLicence":"A-99","niveauEncadrement":"E4"}"""))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nomComplet").value("Jacques-Yves Cousteau"))
+                .andExpect(jsonPath("$.nomComplet").value("Moniteur Test"))
                 .andExpect(jsonPath("$.numeroLicence").value("A-99"))
                 .andExpect(jsonPath("$.niveauEncadrement").value("E1"));
     }
