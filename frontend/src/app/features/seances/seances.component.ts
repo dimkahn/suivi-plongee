@@ -59,7 +59,7 @@ function formulaireVide(): FormulaireSeance {
       notations. Milieu et profondeur se figent dès qu'une présence ou une
       évaluation y est rattachée.
     </p>
-    <a routerLink="/seances/generer" class="bouton-discret lien-generation">
+    <a routerLink="/admin/seances/generer" class="bouton-discret lien-generation">
       Générer toutes les séances d'une saison…
     </a>
 

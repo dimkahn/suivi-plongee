@@ -23,7 +23,7 @@ const JOURS: { valeur: JourSemaine; libelle: string }[] = [
   selector: 'app-generation-saison',
   imports: [FormsModule, RouterLink, DateFrPipe],
   template: `
-    <a routerLink="/seances" class="retour">&larr; Séances</a>
+    <a routerLink="/admin/seances" class="retour">&larr; Séances</a>
     <h1>Générer les séances d'une saison</h1>
     <p class="secondaire">
       Choisissez les jours de la semaine et décrivez la séance : elle est créée chaque semaine de la

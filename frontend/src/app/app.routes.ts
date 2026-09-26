@@ -51,18 +51,9 @@ export const routes: Routes = [
     loadComponent: () => import('./features/presences/presences.component')
       .then(m => m.PresencesComponent)
   },
-  {
-    path: 'seances',
-    canActivate: [gardeConnecte, gardeAdmin],
-    loadComponent: () => import('./features/seances/seances.component')
-      .then(m => m.SeancesComponent)
-  },
-  {
-    path: 'seances/generer',
-    canActivate: [gardeConnecte, gardeAdmin],
-    loadComponent: () => import('./features/seances/generation-saison.component')
-      .then(m => m.GenerationSaisonComponent)
-  },
+  // Anciennes adresses, avant le passage des séances dans l'administration.
+  { path: 'seances', pathMatch: 'full', redirectTo: 'admin/seances' },
+  { path: 'seances/generer', pathMatch: 'full', redirectTo: 'admin/seances/generer' },
   {
     path: 'fiches-securite',
     canActivate: [gardeConnecte, gardeEncadrant],
@@ -122,6 +113,18 @@ export const routes: Routes = [
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/referentiel-admin.component')
       .then(m => m.ReferentielAdminComponent)
+  },
+  {
+    path: 'admin/seances',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/seances/seances.component')
+      .then(m => m.SeancesComponent)
+  },
+  {
+    path: 'admin/seances/generer',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/seances/generation-saison.component')
+      .then(m => m.GenerationSaisonComponent)
   },
   {
     path: 'admin/progressions',

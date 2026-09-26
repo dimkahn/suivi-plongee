@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <h1>Administration</h1>
-    <p class="secondaire">Gestion du club : comptes, élèves, saisons et inscriptions.</p>
+    <p class="secondaire">Gestion du club : comptes, élèves, saisons, séances et inscriptions.</p>
 
     <ul>
       <li class="carte">
@@ -25,6 +25,12 @@ import { RouterLink } from '@angular/router';
         <a routerLink="/admin/saisons">
           <span class="nom">Saisons</span>
           <span class="secondaire">Ouverture et fermeture des saisons</span>
+        </a>
+      </li>
+      <li class="carte">
+        <a routerLink="/admin/seances">
+          <span class="nom">Séances</span>
+          <span class="secondaire">Calendrier de la saison : créer, modifier, générer une saison ou un séjour</span>
         </a>
       </li>
       <li class="carte">
