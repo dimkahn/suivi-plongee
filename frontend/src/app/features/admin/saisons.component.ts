@@ -1,9 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { SaisonVue } from '../../core/modeles';
+import { ProgressionResume, ProgressionVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 
 @Component({
@@ -69,6 +69,47 @@ import { DateFrPipe } from '../../core/date-fr';
                   {{ s.ouverte ? 'Fermer' : 'Rouvrir' }}
                 </button>
               </div>
+
+              <div class="progressions">
+                <span class="titre-progressions">Progressions suivies</span>
+                @if (editionProgressions() === s.id) {
+                  @for (g of groupesProgressions(); track g.referentielId) {
+                    <label [for]="'progression-' + s.id + '-' + g.referentielId">{{ g.libelle }}</label>
+                    <select [id]="'progression-' + s.id + '-' + g.referentielId"
+                            [(ngModel)]="choixProgressions[g.referentielId]">
+                      <option [ngValue]="null">Aucune</option>
+                      @for (p of g.progressions; track p.id) { <option [ngValue]="p.id">{{ p.nom }}</option> }
+                    </select>
+                  } @empty {
+                    <p class="secondaire">Aucune progression type : créez-en depuis « Progressions types ».</p>
+                  }
+                  <div class="actions">
+                    <button type="button" class="bouton-principal" (click)="enregistrerProgressions(s)"
+                            [disabled]="envoi()">
+                      {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+                    </button>
+                    <button type="button" class="bouton-discret" (click)="editionProgressions.set(null)">
+                      Annuler
+                    </button>
+                  </div>
+                } @else {
+                  @let suivies = progressionsSuivies().get(s.id) ?? [];
+                  @if (suivies.length === 0) {
+                    <span class="secondaire">Aucune : les séances n'affichent pas de programme.</span>
+                  } @else {
+                    <ul class="liste-progressions">
+                      @for (p of suivies; track p.id) {
+                        <li>{{ p.nom }} <span class="secondaire">({{ p.niveau }} · MFT {{ p.versionMft }})</span></li>
+                      }
+                    </ul>
+                  }
+                  <div class="actions">
+                    <button type="button" class="bouton-discret" (click)="commencerProgressions(s)">
+                      Choisir les progressions
+                    </button>
+                  </div>
+                }
+              </div>
             }
           </li>
         }
@@ -92,6 +133,11 @@ import { DateFrPipe } from '../../core/date-fr';
     .etat.actif { background: var(--acquis-clair); color: var(--acquis); }
     .etat.inactif { background: #EEF2F4; color: var(--craie); }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
+    .actions .bouton-principal { width: auto; margin-top: 0; }
+    .progressions { margin-top: var(--pas-2); padding-top: var(--pas-2); border-top: 1px solid var(--trait); }
+    .titre-progressions { display: block; font-weight: 700; font-size: .9375rem; margin-bottom: 4px; }
+    .liste-progressions { display: block; padding-left: 1.25rem; list-style: disc; }
+    .liste-progressions li { padding: 2px 0; }
 
     @media (max-width: 600px) {
       .ligne { flex-direction: column; }
@@ -113,6 +159,27 @@ export class SaisonsComponent {
   enEdition = signal<number | null>(null);
   brouillon = { libelle: '', dateDebut: '', dateFin: '' };
 
+  /** Toutes les progressions types, et celles que suit chaque saison. */
+  progressions = signal<ProgressionResume[]>([]);
+  progressionsSuivies = signal<Map<number, ProgressionVue[]>>(new Map());
+  editionProgressions = signal<number | null>(null);
+  /** Progression choisie par référentiel pendant l'édition ; null = aucune. */
+  choixProgressions: Record<number, number | null> = {};
+
+  /** Une liste de choix par référentiel : une saison en suit au plus une progression. */
+  groupesProgressions = computed(() => {
+    const groupes = new Map<number, { referentielId: number; libelle: string; progressions: ProgressionResume[] }>();
+    for (const p of this.progressions()) {
+      if (!groupes.has(p.referentielId)) {
+        groupes.set(p.referentielId, {
+          referentielId: p.referentielId, libelle: `${p.niveau} · MFT ${p.versionMft}`, progressions: []
+        });
+      }
+      groupes.get(p.referentielId)!.progressions.push(p);
+    }
+    return [...groupes.values()];
+  });
+
   constructor() {
     void this.charger();
   }
@@ -121,11 +188,50 @@ export class SaisonsComponent {
     this.chargement.set(true);
     try {
       this.liste.set(await firstValueFrom(this.api.saisons()));
+      await this.chargerProgressions();
     } catch {
       this.message.set('Impossible de charger les saisons.');
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  /** Facultatif : un échec ici laisse l'écran des saisons utilisable. */
+  private async chargerProgressions(): Promise<void> {
+    try {
+      this.progressions.set(await firstValueFrom(this.api.progressions()));
+      const suivies = new Map<number, ProgressionVue[]>();
+      await Promise.all(this.liste().map(async s =>
+        suivies.set(s.id, await firstValueFrom(this.api.progressionsSaison(s.id)))));
+      this.progressionsSuivies.set(suivies);
+    } catch {
+      this.message.set('Impossible de charger les progressions suivies par les saisons.');
+    }
+  }
+
+  commencerProgressions(s: SaisonVue): void {
+    this.message.set(null);
+    this.choixProgressions = {};
+    for (const g of this.groupesProgressions()) this.choixProgressions[g.referentielId] = null;
+    for (const p of this.progressionsSuivies().get(s.id) ?? []) this.choixProgressions[p.referentielId] = p.id;
+    this.editionProgressions.set(s.id);
+  }
+
+  enregistrerProgressions(s: SaisonVue): void {
+    const ids = Object.values(this.choixProgressions).filter((id): id is number => id != null);
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.definirProgressionsSaison(s.id, ids).subscribe({
+      next: suivies => {
+        this.envoi.set(false);
+        this.progressionsSuivies.set(new Map(this.progressionsSuivies()).set(s.id, suivies));
+        this.editionProgressions.set(null);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "Le choix des progressions n'a pas pu être enregistré.");
+      }
+    });
   }
 
   creer(): void {
@@ -140,6 +246,7 @@ export class SaisonsComponent {
         next: s => {
           this.envoi.set(false);
           this.liste.set([s, ...this.liste()]);
+          this.progressionsSuivies.set(new Map(this.progressionsSuivies()).set(s.id, []));
           this.libelle = '';
           this.dateDebut = '';
           this.dateFin = '';

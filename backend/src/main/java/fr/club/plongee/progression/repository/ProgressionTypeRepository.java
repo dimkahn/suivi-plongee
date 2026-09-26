@@ -14,4 +14,13 @@ public interface ProgressionTypeRepository extends JpaRepository<ProgressionType
             order by r.niveau, r.dateApplication desc, p.nom
            """)
     List<ProgressionType> listerAvecReferentiel();
+
+    @Query("""
+           select p from ProgressionType p
+             join fetch p.referentiel r
+             join p.saisons s
+            where s.id = :saisonId
+            order by r.niveau, p.nom
+           """)
+    List<ProgressionType> suiviesPar(Long saisonId);
 }

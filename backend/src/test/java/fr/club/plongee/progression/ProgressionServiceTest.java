@@ -2,6 +2,8 @@ package fr.club.plongee.progression;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.formation.domain.Milieu;
+import fr.club.plongee.formation.domain.Saison;
+import fr.club.plongee.formation.repository.SaisonRepository;
 import fr.club.plongee.progression.domain.PeriodeProgression;
 import fr.club.plongee.progression.domain.ProgressionType;
 import fr.club.plongee.progression.repository.ProgressionTypeRepository;
@@ -38,6 +40,7 @@ class ProgressionServiceTest {
     @Mock ProgressionTypeRepository progressions;
     @Mock ReferentielRepository referentiels;
     @Mock BlocCompetenceRepository blocs;
+    @Mock SaisonRepository saisons;
 
     ProgressionService service;
     Referentiel n1;
@@ -46,7 +49,7 @@ class ProgressionServiceTest {
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new ProgressionService(progressions, referentiels, blocs);
+        service = new ProgressionService(progressions, referentiels, blocs, saisons);
         n1 = referentiel(1L, Niveau.N1);
         immersion = bloc(10L, 3, "S'immerger", n1);
         equilibre = bloc(11L, 6, "S'équilibrer", n1);
@@ -127,6 +130,49 @@ class ProgressionServiceTest {
         assertThat(copie.periodes().get(0).id()).isNull();
         assertThat(copie.periodes().get(0).blocs()).extracting(ProgressionService.BlocResume::id)
                 .containsExactly(10L);
+    }
+
+    @Test
+    @DisplayName("Une saison ne suit pas deux progressions du même référentiel")
+    void definirPourSaison_refuseDeuxProgressionsDuMemeReferentiel() {
+        when(saisons.findById(9L)).thenReturn(Optional.of(saison(9L)));
+        when(progressions.findAllById(anyIterable())).thenReturn(List.of(progression(5L, n1), progression(6L, n1)));
+
+        assertThatThrownBy(() -> service.definirPourSaison(9L, List.of(5L, 6L)))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("une progression par référentiel");
+    }
+
+    @Test
+    @DisplayName("Définir les progressions d'une saison retire celles qui ne sont plus choisies")
+    void definirPourSaison_remplaceLesProgressionsSuivies() {
+        Saison s = saison(9L);
+        ProgressionType ancienne = progression(5L, n1);
+        ancienne.getSaisons().add(s);
+        ProgressionType nouvelle = progression(6L, n1);
+        when(saisons.findById(9L)).thenReturn(Optional.of(s));
+        when(progressions.findAllById(anyIterable())).thenReturn(List.of(nouvelle));
+        when(progressions.suiviesPar(9L)).thenReturn(List.of(ancienne));
+
+        service.definirPourSaison(9L, List.of(6L));
+
+        assertThat(ancienne.getSaisons()).isEmpty();
+        assertThat(nouvelle.getSaisons()).containsExactly(s);
+    }
+
+    private static Saison saison(Long id) {
+        Saison s = new Saison();
+        s.setId(id);
+        s.setLibelle("2026-2027");
+        return s;
+    }
+
+    private static ProgressionType progression(Long id, Referentiel r) {
+        ProgressionType p = new ProgressionType();
+        p.setId(id);
+        p.setReferentiel(r);
+        p.setNom("P" + id);
+        return p;
     }
 
     private static Referentiel referentiel(Long id, Niveau niveau) {

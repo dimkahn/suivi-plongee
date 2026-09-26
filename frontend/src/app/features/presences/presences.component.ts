@@ -7,9 +7,10 @@ import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
-import { Atelier, LignePresence, SeanceVue, StatutPresence } from '../../core/modeles';
+import { Atelier, LignePresence, ProgressionVue, SeanceVue, StatutPresence } from '../../core/modeles';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 
 type Niveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
@@ -56,7 +57,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, CalendrierSeancesComponent],
+  imports: [FormsModule, CalendrierSeancesComponent, ProgrammeSeanceComponent],
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
@@ -109,6 +110,12 @@ function normaliser(texte: string): string {
         }
       }
     </dialog>
+
+    @if (seanceChoisie(); as s) {
+      <div class="programme">
+        <app-programme-seance [progressions]="progressionsAffichees()" [date]="s.date"/>
+      </div>
+    }
 
     @if (seanceId()) {
       <div class="filtres">
@@ -202,6 +209,7 @@ function normaliser(texte: string): string {
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
 
+    .programme { margin-top: var(--pas-2); }
     .filtres {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
       margin: var(--pas-3) 0 var(--pas-2);
@@ -358,6 +366,11 @@ export class PresencesComponent implements OnDestroy {
   });
 
   seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
+  /** Progressions suivies par la saison ; le filtre de niveau restreint aussi le programme affiché. */
+  progressions = signal<ProgressionVue[]>([]);
+  progressionsAffichees = computed(() => this.niveau() === 'TOUS'
+    ? this.progressions()
+    : this.progressions().filter(p => p.niveau === this.niveau()));
 
   readonly aujourdhui = dateDuJour();
   private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
@@ -389,6 +402,8 @@ export class PresencesComponent implements OnDestroy {
   private async charger(): Promise<void> {
     try {
       this.seances.set(await this.api.seances());
+      // Facultatif : sans progression rattachée à la saison, pas de programme affiché.
+      this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
       // Par défaut : la dernière séance passée ou du jour.
       const derniere = this.seancesPassees().at(-1);
       if (derniere) this.choisirSeance(derniere);

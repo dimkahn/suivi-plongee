@@ -3,6 +3,8 @@ package fr.club.plongee.progression.service;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.Milieu;
+import fr.club.plongee.formation.domain.Saison;
+import fr.club.plongee.formation.repository.SaisonRepository;
 import fr.club.plongee.progression.domain.PeriodeProgression;
 import fr.club.plongee.progression.domain.ProgressionType;
 import fr.club.plongee.progression.repository.ProgressionTypeRepository;
@@ -51,12 +53,52 @@ public class ProgressionService {
     private final ProgressionTypeRepository progressions;
     private final ReferentielRepository referentiels;
     private final BlocCompetenceRepository blocs;
+    private final SaisonRepository saisons;
 
     public ProgressionService(ProgressionTypeRepository progressions, ReferentielRepository referentiels,
-                              BlocCompetenceRepository blocs) {
+                              BlocCompetenceRepository blocs, SaisonRepository saisons) {
         this.progressions = progressions;
         this.referentiels = referentiels;
         this.blocs = blocs;
+        this.saisons = saisons;
+    }
+
+    /**
+     * Progressions suivies par une saison, periodes comprises : de quoi
+     * afficher le programme de chaque seance. Sans saison precisee : la
+     * saison ouverte la plus recente, comme la liste des seances.
+     */
+    @Transactional(readOnly = true)
+    public List<ProgressionVue> deLaSaison(Long saisonId) {
+        Long id = saisonId != null ? saisonId : saisons.findFirstByOuverteTrueOrderByDateDebutDesc()
+                .orElseThrow(() -> new RessourceIntrouvableException("Aucune saison ouverte")).getId();
+        return progressions.suiviesPar(id).stream().map(this::vers).toList();
+    }
+
+    /** Remplace les progressions suivies par la saison ; au plus une par référentiel. */
+    @Transactional
+    public List<ProgressionVue> definirPourSaison(Long saisonId, List<Long> progressionIds) {
+        Saison saison = saisons.findById(saisonId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Saison introuvable"));
+        Set<Long> ids = progressionIds == null ? Set.of() : new LinkedHashSet<>(progressionIds);
+        List<ProgressionType> choisies = progressions.findAllById(ids);
+        if (choisies.size() != ids.size()) {
+            throw new RessourceIntrouvableException("Progression introuvable");
+        }
+        Set<Long> referentielsVus = new HashSet<>();
+        for (ProgressionType p : choisies) {
+            if (!referentielsVus.add(p.getReferentiel().getId())) {
+                throw new RegleMetierException("Une saison ne suit qu'une progression par référentiel ("
+                        + p.getReferentiel().getNiveau() + " MFT " + p.getReferentiel().getVersionMft() + ").");
+            }
+        }
+        for (ProgressionType p : progressions.suiviesPar(saisonId)) {
+            if (!ids.contains(p.getId())) p.getSaisons().remove(saison);
+        }
+        for (ProgressionType p : choisies) {
+            p.getSaisons().add(saison);
+        }
+        return deLaSaison(saisonId);
     }
 
     @Transactional(readOnly = true)

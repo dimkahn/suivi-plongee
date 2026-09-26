@@ -1,10 +1,13 @@
 package fr.club.plongee.progression.domain;
 
+import fr.club.plongee.formation.domain.Saison;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * L'annee de formation type d'un niveau, decoupee en periodes (plages de
@@ -33,6 +36,13 @@ public class ProgressionType {
     @OneToMany(mappedBy = "progression", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("rang")
     private List<PeriodeProgression> periodes = new ArrayList<>();
+
+    /** Saisons qui suivent cette progression (au plus une progression par referentiel et par saison). */
+    @ManyToMany
+    @JoinTable(name = "progression_saison",
+            joinColumns = @JoinColumn(name = "progression_id"),
+            inverseJoinColumns = @JoinColumn(name = "saison_id"))
+    private Set<Saison> saisons = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -72,5 +82,13 @@ public class ProgressionType {
 
     public void setPeriodes(List<PeriodeProgression> periodes) {
         this.periodes = periodes;
+    }
+
+    public Set<Saison> getSaisons() {
+        return saisons;
+    }
+
+    public void setSaisons(Set<Saison> saisons) {
+        this.saisons = saisons;
     }
 }

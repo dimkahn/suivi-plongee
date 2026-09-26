@@ -109,8 +109,13 @@ travaillés. En mois et non en dates, pour resservir d'une saison à l'autre.
 Choix du club (2026) : un découpage séance par séance a été écarté comme trop
 lourd à tenir. Un bloc peut figurer dans plusieurs périodes. V22 installe
 une proposition par niveau (N1 PE20, N2 PA20|PE40, N3 PA40|PE60), à adapter
-depuis l'écran. Suites prévues : afficher la période en cours sur les
-séances, signaler dans la grille les blocs au programme, et un bloc « en
+depuis l'écran. Une saison suit au plus une progression par référentiel
+(table `progression_saison`, choix dans `/admin/saisons`, règle tenue par
+`ProgressionService`) ; aucune migration ne rattache une progression à une
+saison réelle (seule la démo V102 le fait). Chaque séance affiche la période
+qui couvre son mois (`core/progression.ts`, `ProgrammeSeanceComponent`,
+liste des séances et feuille de présence ; embarqué hors ligne). Suites
+prévues : signaler dans la grille les blocs au programme, et un bloc « en
 retard » quand la dernière période qui le contient est passée sans qu'il
 soit acquis.
 

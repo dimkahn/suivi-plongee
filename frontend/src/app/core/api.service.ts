@@ -152,6 +152,7 @@ export class ApiService {
     // connus, groupes de la saison ouverte. Un échec ici n'empêche pas le reste.
     await this.tenter(() => this.moniteursActifs());
     await this.tenter(() => this.plongeursConnus());
+    await this.tenter(() => this.progressionsDeLaSaison());
     const saisons = await this.tenter(() => this.saisonsHorsLigne());
     const ouverte = saisons?.find(s => s.ouverte);
     if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
@@ -569,6 +570,22 @@ export class ApiService {
 
   supprimerProgression(id: number): Observable<unknown> {
     return this.http.delete(`/api/progressions/${id}`);
+  }
+
+  /** Progressions suivies par la saison ouverte : programme des séances, gardé pour le hors ligne. */
+  progressionsDeLaSaison(): Promise<ProgressionVue[]> {
+    return this.lireOuRetomber('progressions:saison',
+      () => this.http.get<ProgressionVue[]>('/api/progressions/saison'));
+  }
+
+  /** Pour l'écran des saisons : n'importe quelle saison, sans passer par le cache. */
+  progressionsSaison(saisonId: number): Observable<ProgressionVue[]> {
+    return this.http.get<ProgressionVue[]>('/api/progressions/saison', { params: { saisonId } });
+  }
+
+  /** Au plus une progression par référentiel : le serveur refuse sinon. */
+  definirProgressionsSaison(saisonId: number, progressionIds: number[]): Observable<ProgressionVue[]> {
+    return this.http.put<ProgressionVue[]>(`/api/progressions/saison/${saisonId}`, { progressionIds });
   }
 
   // ----------------------------------------------------------------

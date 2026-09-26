@@ -5,6 +5,7 @@ import fr.club.plongee.progression.service.ProgressionService.DemandeProgression
 import fr.club.plongee.progression.service.ProgressionService.ProgressionResume;
 import fr.club.plongee.progression.service.ProgressionService.ProgressionVue;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,8 @@ import java.util.List;
 @RequestMapping("/api/progressions")
 public class ProgressionController {
 
+    public record DemandeProgressionsSaison(@NotNull List<Long> progressionIds) {}
+
     private final ProgressionService service;
 
     public ProgressionController(ProgressionService service) {
@@ -25,6 +28,19 @@ public class ProgressionController {
     @GetMapping
     public List<ProgressionResume> lister() {
         return service.lister();
+    }
+
+    /** Progressions suivies par une saison (par défaut la saison ouverte), périodes comprises. */
+    @GetMapping("/saison")
+    public List<ProgressionVue> deLaSaison(@RequestParam(required = false) Long saisonId) {
+        return service.deLaSaison(saisonId);
+    }
+
+    @PutMapping("/saison/{saisonId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ProgressionVue> definirPourSaison(@PathVariable Long saisonId,
+                                                  @Valid @RequestBody DemandeProgressionsSaison demande) {
+        return service.definirPourSaison(saisonId, demande.progressionIds());
     }
 
     @GetMapping("/{id}")
