@@ -37,6 +37,9 @@ public class GrilleService {
                           LocalDate dateValidation, String valideePar,
                           /** Etiquette "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en qualifications. */
                           String regroupement,
+                          /** Revisions post-PE20 uniquement : null sur les blocs plus anciens. */
+                          String competenceAttendue, String comportement,
+                          String theorie, String modalitesEvaluation,
                           List<CritereVue> criteres) {}
 
     public record GrilleVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto,
@@ -109,6 +112,8 @@ public class GrilleService {
                     v == null ? null : v.getDateValidation(),
                     v == null ? null : v.getMoniteur().nomComplet(),
                     bloc.getRegroupement(),
+                    bloc.getCompetenceAttendue(), bloc.getComportement(),
+                    bloc.getTheorie(), bloc.getModalitesEvaluation(),
                     criteres));
         }
 

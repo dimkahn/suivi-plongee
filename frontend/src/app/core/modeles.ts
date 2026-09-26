@@ -61,6 +61,11 @@ export interface BlocVue {
   valideePar: string | null;
   /** "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en plusieurs qualifications. */
   regroupement: string | null;
+  /** Revisions post-PE20 (decembre 2025) uniquement : null sur les blocs plus anciens. */
+  competenceAttendue: string | null;
+  comportement: string | null;
+  theorie: string | null;
+  modalitesEvaluation: string | null;
   criteres: CritereVue[];
 }
 
