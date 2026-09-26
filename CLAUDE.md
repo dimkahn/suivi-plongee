@@ -188,7 +188,7 @@ Flyway à la main (les types choisis par H2/Hibernate ne sont pas toujours
 ceux qu'on veut en Postgres).
 
 **Les vacances scolaires viennent de la source officielle, pas d'une copie.**
-La génération d'une saison (`/seances/generer`, `GenerationSaisonService`)
+La génération d'une saison (`/admin/seances/generer`, `GenerationSaisonService`)
 lit les vacances de la zone choisie dans le jeu de données « Calendrier
 scolaire » de data.education.gouv.fr (`CalendrierScolaireOfficiel`) au
 moment de l'aperçu : le serveur doit pouvoir joindre internet. Source

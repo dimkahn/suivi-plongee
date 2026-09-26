@@ -41,9 +41,6 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
               </a>
             }
             @if (auth.estAdmin()) {
-              <a routerLink="/seances" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
-                Séances
-              </a>
               <a routerLink="/admin" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Administration
               </a>
