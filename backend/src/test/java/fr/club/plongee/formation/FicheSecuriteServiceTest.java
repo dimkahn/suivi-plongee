@@ -55,7 +55,7 @@ class FicheSecuriteServiceTest {
         service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService, excelService);
     }
 
-    /** E3 : peut diriger une plongée en milieu naturel, comme la séance de test. */
+    /** E3 : niveau minimal d'un directeur de plongée. */
     private Utilisateur moniteur(long id, String prenom, String nom) {
         return moniteur(id, prenom, nom, NiveauEncadrement.E3);
     }
@@ -137,19 +137,20 @@ class FicheSecuriteServiceTest {
     }
 
     @Test
-    @DisplayName("En piscine ou en fosse, un DP E2 est accepté")
-    void enregistrer_accepteDpE2EnMilieuArtificiel() {
+    @DisplayName("En piscine ou en fosse aussi, un DP E2 est refusé")
+    void enregistrer_refuseDpE2EnMilieuArtificiel() {
         Seance piscine = seance(1L);
         piscine.setMilieu(Milieu.ARTIFICIEL);
         when(seances.findById(1L)).thenReturn(Optional.of(piscine));
         when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur(10L, "Tiago", "Nogueira", NiveauEncadrement.E2)));
-        when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
-        when(fiches.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
                 null, null, null, null, null, null, List.of());
 
-        assertThat(service.enregistrer(1L, saisie).dp()).isEqualTo("Tiago Nogueira");
+        assertThatThrownBy(() -> service.enregistrer(1L, saisie))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("au moins E3");
+        verify(fiches, never()).save(any());
     }
 
     @Test
