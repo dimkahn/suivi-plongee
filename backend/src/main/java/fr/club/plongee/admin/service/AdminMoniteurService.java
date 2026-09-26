@@ -81,7 +81,7 @@ public class AdminMoniteurService {
      */
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
-                             NiveauEncadrement niveauEncadrement, String numeroLicence,
+                             NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
                              LocalDate certificatValideJusquAu, boolean admin) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
             throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
@@ -92,6 +92,7 @@ public class AdminMoniteurService {
         u.setNom(nom);
         u.setPrenom(prenom);
         u.setNiveauEncadrement(niveauEncadrement);
+        u.setNiveauPlongeur(vide(niveauPlongeur) ? null : niveauPlongeur);
         u.setNumeroLicence(numeroLicence);
         u.setCertificatValideJusquAu(certificatValideJusquAu);
         u.setActif(true);
@@ -123,7 +124,7 @@ public class AdminMoniteurService {
      */
     @Transactional
     public Utilisateur modifier(Long id, Long auteurId, String email, String nom, String prenom,
-                                NiveauEncadrement niveauEncadrement, String numeroLicence,
+                                NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
                                 LocalDate certificatValideJusquAu, Boolean admin) {
         Utilisateur u = moniteur(id);
         if (Boolean.FALSE.equals(admin) && u.getId().equals(auteurId) && u.getRoles().contains(RoleNom.ADMIN)) {
@@ -138,6 +139,7 @@ public class AdminMoniteurService {
         u.setNom(nom.trim());
         u.setPrenom(prenom.trim());
         u.setNiveauEncadrement(niveauEncadrement);
+        u.setNiveauPlongeur(vide(niveauPlongeur) ? null : niveauPlongeur);
         u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
         u.setCertificatValideJusquAu(certificatValideJusquAu);
         if (Boolean.TRUE.equals(admin)) u.getRoles().add(RoleNom.ADMIN);
@@ -216,5 +218,9 @@ public class AdminMoniteurService {
             throw new RessourceIntrouvableException("Moniteur introuvable");
         }
         return u;
+    }
+
+    private static boolean vide(String s) {
+        return s == null || s.isBlank();
     }
 }

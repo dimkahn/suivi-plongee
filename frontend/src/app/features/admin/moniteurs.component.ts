@@ -50,6 +50,12 @@ function aVerifier(m: MoniteurVue): boolean {
         <option value="E4">E4</option>
       </select>
 
+      <label for="niveau-plongeur">Niveau de plongeur</label>
+      <select id="niveau-plongeur" name="niveauPlongeur" [(ngModel)]="niveauPlongeur">
+        <option value="">Non renseigné</option>
+        @for (n of niveauxPlongeur; track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+
       <label for="licence">N° de licence</label>
       <input id="licence" type="text" name="licence" [(ngModel)]="numeroLicence" placeholder="Facultatif">
 
@@ -102,7 +108,7 @@ function aVerifier(m: MoniteurVue): boolean {
                 <span class="nom">{{ m.prenom }} {{ m.nom }}</span>
                 <span class="secondaire">{{ m.email }}</span>
                 <span class="secondaire">
-                  {{ m.niveauEncadrement }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
+                  {{ m.niveauEncadrement }}{{ m.niveauPlongeur ? ' · plongeur ' + m.niveauPlongeur : '' }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
                   · Droit à l'image {{ m.autorisationImage ? (m.aPhoto ? 'recueilli, photo déposée' : 'recueilli') : 'non recueilli' }}
                 </span>
                 <span [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)">
@@ -158,6 +164,13 @@ function aVerifier(m: MoniteurVue): boolean {
                   <option value="E2">E2</option>
                   <option value="E3">E3</option>
                   <option value="E4">E4</option>
+                </select>
+
+                <label [for]="'niveau-plongeur-' + m.id">Niveau de plongeur</label>
+                <select [id]="'niveau-plongeur-' + m.id" name="editionNiveauPlongeur"
+                        [(ngModel)]="edition.niveauPlongeur">
+                  <option value="">Non renseigné</option>
+                  @for (n of niveauxPlongeur; track n) { <option [value]="n">{{ n }}</option> }
                 </select>
 
                 <label [for]="'licence-' + m.id">N° de licence</label>
@@ -296,13 +309,17 @@ export class MoniteursComponent {
   nom = '';
   email = '';
   niveauEncadrement: NiveauEncadrement = 'E1';
+  /** Distinct de l'encadrement : un E1 peut n'être que N2. Chaîne vide = non renseigné. */
+  niveauPlongeur = '';
+  readonly niveauxPlongeur = ['N1', 'N2', 'N3', 'N4', 'N5'];
   numeroLicence = '';
   certificatValideJusquAu = '';
   admin = false;
   envoiCreation = signal(false);
 
   moniteurEdite = signal<number | null>(null);
-  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, numeroLicence: '',
+  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
+              numeroLicence: '',
               certificatValideJusquAu: '', admin: false };
   envoiEdition = signal(false);
 
@@ -340,6 +357,7 @@ export class MoniteursComponent {
       nom: this.nom,
       prenom: this.prenom,
       niveauEncadrement: this.niveauEncadrement,
+      niveauPlongeur: this.niveauPlongeur || null,
       numeroLicence: this.numeroLicence || null,
       certificatValideJusquAu: this.certificatValideJusquAu || null,
       admin: this.admin
@@ -350,6 +368,7 @@ export class MoniteursComponent {
         this.prenom = '';
         this.nom = '';
         this.email = '';
+        this.niveauPlongeur = '';
         this.numeroLicence = '';
         this.certificatValideJusquAu = '';
         this.admin = false;
@@ -382,6 +401,7 @@ export class MoniteursComponent {
       nom: m.nom,
       email: m.email,
       niveauEncadrement: m.niveauEncadrement ?? 'E1',
+      niveauPlongeur: m.niveauPlongeur ?? '',
       numeroLicence: m.numeroLicence ?? '',
       certificatValideJusquAu: m.certificatValideJusquAu ?? '',
       admin: m.admin
@@ -398,7 +418,8 @@ export class MoniteursComponent {
     this.envoiEdition.set(true);
     this.message.set(null);
     this.api.modifierMoniteur(m.id, {
-      ...e, numeroLicence: e.numeroLicence || null, certificatValideJusquAu: e.certificatValideJusquAu || null
+      ...e, niveauPlongeur: e.niveauPlongeur || null, numeroLicence: e.numeroLicence || null,
+      certificatValideJusquAu: e.certificatValideJusquAu || null
     }).subscribe({
       next: maj => {
         this.envoiEdition.set(false);

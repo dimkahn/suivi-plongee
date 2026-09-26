@@ -1,9 +1,10 @@
-import { Component, WritableSignal, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, WritableSignal, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { GroupePlongeursVue, MembreGroupeVue, PlongeurConnuVue, SaisonVue } from '../../core/modeles';
+import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 
 function membreVide(): MembreGroupeVue {
   return { eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null };
@@ -18,7 +19,7 @@ function membreVide(): MembreGroupeVue {
  */
 @Component({
   selector: 'app-groupes',
-  imports: [FormsModule],
+  imports: [FormsModule, ComboboxComponent],
   template: `
     <h1>Groupes de plongeurs</h1>
     <p class="secondaire">
@@ -35,12 +36,6 @@ function membreVide(): MembreGroupeVue {
       }
     </select>
 
-    <datalist id="plongeurs-club">
-      @for (c of plongeursConnus(); track libellePlongeurConnu(c)) {
-        <option [value]="libellePlongeurConnu(c)"></option>
-      }
-    </datalist>
-
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     <section class="carte panneau">
@@ -51,8 +46,9 @@ function membreVide(): MembreGroupeVue {
 
       @for (m of nouveauxMembres(); track m; let i = $index) {
         <div class="ligne-membre">
-          <input type="text" class="selecteur-connu" placeholder="Rechercher un plongeur du club…"
-                 list="plongeurs-club" (change)="choisirPlongeurConnu(nouveauxMembres, i, $event)">
+          <app-combobox class="selecteur-connu" [idChamp]="'nv-connu-' + i" [options]="optionsConnus()"
+                        [valeur]="indexConnu(m)" (valeurChange)="choisirPlongeurConnu(nouveauxMembres, i, $event)"
+                        aide="Rechercher un plongeur du club…" texteVide="Aucun plongeur ne correspond." />
           <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'nv-prenom-' + i">
           <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'nv-nom-' + i">
           <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude" [name]="'nv-aptitude-' + i">
@@ -83,8 +79,10 @@ function membreVide(): MembreGroupeVue {
 
               @for (m of brouillonMembres(); track m; let i = $index) {
                 <div class="ligne-membre">
-                  <input type="text" class="selecteur-connu" placeholder="Rechercher un plongeur du club…"
-                         list="plongeurs-club" (change)="choisirPlongeurConnu(brouillonMembres, i, $event)">
+                  <app-combobox class="selecteur-connu" [idChamp]="'ed-connu-' + g.id + '-' + i"
+                                [options]="optionsConnus()" [valeur]="indexConnu(m)"
+                                (valeurChange)="choisirPlongeurConnu(brouillonMembres, i, $event)"
+                                aide="Rechercher un plongeur du club…" texteVide="Aucun plongeur ne correspond." />
                   <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'ed-prenom-' + g.id + '-' + i">
                   <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'ed-nom-' + g.id + '-' + i">
                   <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
@@ -137,7 +135,7 @@ function membreVide(): MembreGroupeVue {
 
     .ligne-membre { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin: var(--pas) 0; }
     .ligne-membre input[type="text"] { flex: 1 1 140px; }
-    .selecteur-connu { flex-basis: 220px; }
+    .selecteur-connu { display: block; flex: 1 1 100%; }
 
     .danger { color: #B3261E; border-color: #B3261E; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
@@ -222,24 +220,41 @@ export class GroupesComponent {
     membres.set(membres().filter((_, i) => i !== index));
   }
 
-  /** Libellé affiché dans la combobox, voir la même logique dans fiche-securite.component.ts. */
-  libellePlongeurConnu(c: PlongeurConnuVue): string {
-    const type = c.eleveId !== null ? 'ELEVE:' + c.eleveId : 'ENCADRANT:' + c.utilisateurId;
-    return `${c.prenom} ${c.nom}${c.aptitude ? ' — ' + c.aptitude : ''} (${type})`;
+  /**
+   * Plongeurs du club proposés dans la liste de choix ; l'id d'une option est
+   * sa position dans `plongeursConnus` (élèves et encadrants ont chacun leur
+   * propre numérotation d'id). Le détail donne niveau, niveau en préparation
+   * et niveau d'encadrement.
+   */
+  optionsConnus = computed<OptionCombobox[]>(() => this.plongeursConnus().map((c, i) => ({
+    id: i,
+    libelle: `${c.prenom} ${c.nom}`,
+    detail: [
+      `Niveau ${c.niveau ?? 'non renseigné'}`,
+      c.niveauPreparation ? `en préparation ${c.niveauPreparation}` : null,
+      c.niveauEncadrement ? `encadrant ${c.niveauEncadrement}` : null
+    ].filter(Boolean).join(' · ')
+  })));
+
+  /** Position dans `plongeursConnus` du plongeur de cette ligne, null s'il a été saisi à la main. */
+  indexConnu(m: MembreGroupeVue): number | null {
+    if (m.eleveId === null && m.utilisateurId === null) return null;
+    const i = this.plongeursConnus().findIndex(c =>
+      (m.eleveId !== null && c.eleveId === m.eleveId) || (m.utilisateurId !== null && c.utilisateurId === m.utilisateurId));
+    return i >= 0 ? i : null;
   }
 
-  /** Pré-remplit un membre depuis le dossier du plongeur choisi, éditable ensuite. */
-  choisirPlongeurConnu(membres: WritableSignal<MembreGroupeVue[]>, index: number, event: Event): void {
-    const champ = event.target as HTMLInputElement;
-    const correspondance = champ.value.match(/\((ELEVE|ENCADRANT):(\d+)\)\s*$/);
-    if (!correspondance) return;
-    const [, type, idTexte] = correspondance;
-    const id = Number(idTexte);
-    const candidat = this.plongeursConnus().find(c =>
-      (type === 'ELEVE' && c.eleveId === id) || (type === 'ENCADRANT' && c.utilisateurId === id));
-    champ.value = '';
-    if (!candidat) return;
-
+  /**
+   * Pré-remplit un membre depuis le dossier du plongeur choisi, éditable
+   * ensuite. Choix effacé : la ligne n'est plus rattachée à un dossier, les
+   * champs déjà remplis restent, en saisie libre.
+   */
+  choisirPlongeurConnu(membres: WritableSignal<MembreGroupeVue[]>, index: number, choix: number | null): void {
+    const candidat = choix === null ? null : this.plongeursConnus()[choix];
+    if (!candidat) {
+      membres.set(membres().map((m, i) => i !== index ? m : { ...m, eleveId: null, utilisateurId: null }));
+      return;
+    }
     membres.set(membres().map((m, i) => i !== index ? m : {
       ...m, eleveId: candidat.eleveId, utilisateurId: candidat.utilisateurId,
       nom: candidat.nom, prenom: candidat.prenom,

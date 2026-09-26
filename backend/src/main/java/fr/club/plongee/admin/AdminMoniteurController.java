@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,7 +34,7 @@ import java.util.List;
 public class AdminMoniteurController {
 
     public record MoniteurVue(Long id, String email, String nom, String prenom, boolean actif,
-                              String niveauEncadrement, String numeroLicence,
+                              String niveauEncadrement, String niveauPlongeur, String numeroLicence,
                               LocalDate certificatValideJusquAu, boolean admin,
                               boolean autorisationImage, boolean aPhoto) {}
 
@@ -41,6 +42,7 @@ public class AdminMoniteurController {
     public record DemandeCreationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                           @NotBlank String prenom,
                                           @NotNull NiveauEncadrement niveauEncadrement,
+                                          @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                           String numeroLicence, LocalDate certificatValideJusquAu,
                                           Boolean admin) {}
 
@@ -51,6 +53,7 @@ public class AdminMoniteurController {
     public record DemandeModificationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                               @NotBlank String prenom,
                                               @NotNull NiveauEncadrement niveauEncadrement,
+                                          @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                               String numeroLicence, LocalDate certificatValideJusquAu,
                                               Boolean admin) {}
 
@@ -79,8 +82,8 @@ public class AdminMoniteurController {
     @PreAuthorize("hasRole('ADMIN')")
     public MoniteurVue creer(@Valid @RequestBody DemandeCreationMoniteur demande) {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
-                demande.niveauEncadrement(), demande.numeroLicence(), demande.certificatValideJusquAu(),
-                Boolean.TRUE.equals(demande.admin())));
+                demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
+                demande.certificatValideJusquAu(), Boolean.TRUE.equals(demande.admin())));
     }
 
     @PutMapping("/{id}")
@@ -88,8 +91,8 @@ public class AdminMoniteurController {
     public MoniteurVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeModificationMoniteur demande,
                                 @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return vue(service.modifier(id, auteur.id(), demande.email(), demande.nom(), demande.prenom(),
-                demande.niveauEncadrement(), demande.numeroLicence(), demande.certificatValideJusquAu(),
-                demande.admin()));
+                demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
+                demande.certificatValideJusquAu(), demande.admin()));
     }
 
     @PutMapping("/{id}/activation")
@@ -141,7 +144,7 @@ public class AdminMoniteurController {
     private MoniteurVue vue(fr.club.plongee.securite.domain.Utilisateur u) {
         return new MoniteurVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif(),
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
-                u.getNumeroLicence(), u.getCertificatValideJusquAu(), u.getRoles().contains(RoleNom.ADMIN),
+                u.getNiveauPlongeur(), u.getNumeroLicence(), u.getCertificatValideJusquAu(), u.getRoles().contains(RoleNom.ADMIN),
                 u.isAutorisationImage(), u.isAutorisationImage() && photos.existsById(u.getId()));
     }
 }
