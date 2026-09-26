@@ -248,6 +248,22 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
           </header>
 
           @if (blocsOuverts().has(bloc.id)) {
+          @if (bloc.competenceAttendue) {
+            <p class="competence-attendue"><strong>Compétence attendue :</strong> {{ bloc.competenceAttendue }}</p>
+          }
+          @if (bloc.comportement || bloc.theorie || bloc.modalitesEvaluation) {
+            <div class="complements">
+              @if (bloc.comportement) {
+                <details><summary>Comportement</summary><p>{{ bloc.comportement }}</p></details>
+              }
+              @if (bloc.theorie) {
+                <details><summary>Théorie</summary><p>{{ bloc.theorie }}</p></details>
+              }
+              @if (bloc.modalitesEvaluation) {
+                <details><summary>Modalités d'évaluation</summary><p>{{ bloc.modalitesEvaluation }}</p></details>
+              }
+            </div>
+          }
           <ul [id]="'criteres-' + bloc.id">
             @for (critere of bloc.criteres; track critere.id) {
               <li>
@@ -418,6 +434,18 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     }
     .bloc header h3 { font-size: 1.0625rem; }
     .valide { margin: 0; color: var(--acquis); font-weight: 700; font-size: .9375rem; }
+
+    /* Textes du MFT (révisions post-PE20) : la compétence attendue reste visible,
+       le reste se déplie à la demande pour ne pas repousser les critères. */
+    .competence-attendue { margin: 0 0 var(--pas-2); max-width: 70ch; font-size: .9375rem; }
+    .complements { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--pas-2); }
+    .complements details { border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--fond); }
+    .complements summary {
+      /* list-item garde le triangle natif ; 12 + 20 + 12 = 44 px de cible tactile. */
+      display: list-item; padding: 12px var(--pas-2); line-height: 20px;
+      color: var(--profond); font-weight: 700; font-size: .9375rem; cursor: pointer;
+    }
+    .complements details p { margin: 0; padding: 0 var(--pas-2) var(--pas-2); max-width: 70ch; font-size: .875rem; }
 
     ul { list-style: none; margin: 0; padding: 0; }
     li { padding: var(--pas-2) 0; border-top: 1px solid var(--trait); }
