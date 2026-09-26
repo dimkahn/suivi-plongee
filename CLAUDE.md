@@ -114,10 +114,17 @@ depuis l'écran. Une saison suit au plus une progression par référentiel
 `ProgressionService`) ; aucune migration ne rattache une progression à une
 saison réelle (seule la démo V102 le fait). Chaque séance affiche la période
 qui couvre son mois (`core/progression.ts`, `ProgrammeSeanceComponent`,
-liste des séances et feuille de présence ; embarqué hors ligne). Suites
-prévues : signaler dans la grille les blocs au programme, et un bloc « en
-retard » quand la dernière période qui le contient est passée sans qu'il
-soit acquis.
+liste des séances et feuille de présence ; embarqué hors ligne). Dans la
+grille, les blocs de la période du mois (séance choisie, sinon aujourd'hui)
+sont marqués « Au programme ». Le **retard est calculé par le serveur**
+(`EcheancesProgression`, appelé par `GrilleService`) : l'échéance d'un bloc
+est le dernier jour de la dernière période qui le contient, située dans
+l'année de la saison ; un bloc est en retard si cette date est passée, qu'il
+n'est pas validé et que ses critères ne sont pas tous acquis, pour un cursus
+`EN_COURS` seulement. Conséquence : une période de fin de saison qui reprend
+tous les blocs (validations en milieu naturel du N2/N3) repousse toutes les
+échéances au mois de juin ; c'est voulu pour N2/N3, et V24 a retiré ce
+travers de la proposition N1.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
