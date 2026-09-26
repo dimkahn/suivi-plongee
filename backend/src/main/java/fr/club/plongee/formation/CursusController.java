@@ -96,9 +96,17 @@ public class CursusController {
     public CursusVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeModificationCursus demande) {
         Cursus c = cursus.chargerComplet(id)
                 .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
+        boolean devientDelivre = demande.statut() == Cursus.Statut.DELIVRE && c.getStatut() != Cursus.Statut.DELIVRE;
         c.setStatut(demande.statut());
         c.setMoniteurReferent(moniteur(demande.moniteurReferentId()));
         cursus.save(c);
+        // Passage manuel à « brevet délivré » : la fiche élève prend ce niveau.
+        // Pas de retour en arrière si le statut est ensuite corrigé : l'ancien
+        // niveau reste lisible dans l'historique Envers de l'élève.
+        if (devientDelivre) {
+            c.getEleve().enregistrerBrevet(c.getReferentiel().getNiveau().name());
+            eleves.save(c.getEleve());
+        }
         return vue(c);
     }
 

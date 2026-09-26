@@ -38,8 +38,9 @@ public class Eleve {
      * pré-remplir l'aptitude d'un membre de palanquée ou d'un groupe de
      * plongeurs (voir PlongeurConnuService) quand l'élève n'a pas encore de
      * {@link Cursus} DELIVRE dans l'application — typiquement un brevet
-     * obtenu avant l'usage de l'outil ou dans un autre club. N'est jamais
-     * recalculé depuis un cursus délivré ici : celui-ci reste prioritaire.
+     * obtenu avant l'usage de l'outil ou dans un autre club. Mis à jour
+     * quand un cursus passe à DELIVRE (voir {@link #enregistrerBrevet}),
+     * pour que la fiche élève reste juste.
      */
     private String dernierNiveau;
 
@@ -134,6 +135,20 @@ public class Eleve {
 
     public void setDernierNiveau(String dernierNiveau) {
         this.dernierNiveau = dernierNiveau;
+    }
+
+    /**
+     * Un brevet vient d'être délivré dans l'application : il devient le
+     * dernier niveau connu, sauf si la fiche porte déjà un niveau N1-N5 plus
+     * élevé (brevet obtenu ailleurs, correction tardive d'un ancien cursus).
+     * Un niveau déclaré hors de cette échelle (« CMAS 2* ») est remplacé.
+     */
+    public void enregistrerBrevet(String niveau) {
+        if (dernierNiveau != null && dernierNiveau.trim().matches("N[1-5]")
+                && dernierNiveau.trim().compareTo(niveau) > 0) {
+            return;
+        }
+        this.dernierNiveau = niveau;
     }
 
     public String getEmail() {

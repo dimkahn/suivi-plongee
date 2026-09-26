@@ -279,6 +279,7 @@ class RegleDelivranceServiceTest {
         assertThat(d.getPlongeesMilieuNaturelAFaire()).isEqualTo(4);
         assertThat(d.getEcheancePlongees()).isEqualTo(LocalDate.now().plusMonths(12));
         assertThat(c.getStatut()).isEqualTo(Cursus.Statut.DELIVRE);
+        assertThat(c.getEleve().getDernierNiveau()).isEqualTo("N1");
         verify(qualifications).save(argThat(q -> q.getType().equals("N1")));
     }
 
