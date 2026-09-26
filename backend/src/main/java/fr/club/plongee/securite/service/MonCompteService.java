@@ -35,11 +35,15 @@ public class MonCompteService {
         this.encodeur = encodeur;
     }
 
+    /**
+     * Seul le n° de licence se modifie depuis « Mon compte ». Nom et prénom
+     * sont fixés par un ADMIN (écran Moniteurs) : ils figurent sur les fiches
+     * de sécurité et dans l'historique des évaluations, un encadrant ne doit
+     * pas pouvoir les changer lui-même.
+     */
     @Transactional
-    public Utilisateur modifierIdentite(Long id, String nom, String prenom, String numeroLicence) {
+    public Utilisateur modifierLicence(Long id, String numeroLicence) {
         Utilisateur u = compte(id);
-        u.setNom(nom.trim());
-        u.setPrenom(prenom.trim());
         u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
         return utilisateurs.save(u);
     }

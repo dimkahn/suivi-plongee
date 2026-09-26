@@ -88,7 +88,8 @@ export class AuthService {
    * courante. Le niveau d'encadrement ne se modifie pas ici.
    */
 
-  modifierIdentite(demande: { nom: string; prenom: string; numeroLicence: string | null }): Observable<Session> {
+  /** Seule la licence se modifie ici : nom et prénom sont fixés par un admin. */
+  modifierIdentite(demande: { numeroLicence: string | null }): Observable<Session> {
     return this.http.put<Session>('/api/auth/moi', demande).pipe(tap(s => this.session.set(s)));
   }
 

@@ -73,11 +73,11 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
       <h2>Identité</h2>
       @if (messages().identite; as m) { <div [class]="m.ok ? 'succes' : 'alerte'" role="status">{{ m.texte }}</div> }
 
-      <label for="prenom">Prénom</label>
-      <input id="prenom" type="text" name="prenom" autocomplete="given-name" [(ngModel)]="prenom">
-
-      <label for="nom">Nom</label>
-      <input id="nom" type="text" name="nom" autocomplete="family-name" [(ngModel)]="nom">
+      <p class="nom-complet">{{ auth.session()?.prenom }} {{ auth.session()?.nom }}</p>
+      <p class="secondaire">
+        Votre nom figure sur les fiches de sécurité et dans l'historique des évaluations :
+        pour le corriger, adressez-vous à un administrateur du club.
+      </p>
 
       <label for="licence">N° de licence</label>
       <input id="licence" type="text" name="licence" [(ngModel)]="numeroLicence" placeholder="Facultatif">
@@ -131,6 +131,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .nom-complet { margin: var(--pas) 0 4px; font-weight: 700; font-size: 1.0625rem; }
     h1 { margin-bottom: var(--pas); }
     .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
     .panneau h2 { margin-bottom: var(--pas); }
@@ -164,8 +165,6 @@ export class MonCompteComponent implements OnDestroy {
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
 
-  prenom = this.auth.session()?.prenom ?? '';
-  nom = this.auth.session()?.nom ?? '';
   numeroLicence = this.auth.session()?.numeroLicence ?? '';
 
   nouvelEmail = '';
@@ -253,13 +252,9 @@ export class MonCompteComponent implements OnDestroy {
   }
 
   enregistrerIdentite(): void {
-    if (!this.prenom.trim() || !this.nom.trim()) {
-      this.message('identite', false, 'Prénom et nom sont obligatoires.');
-      return;
-    }
     this.envoyer('identite',
-      this.auth.modifierIdentite({ nom: this.nom, prenom: this.prenom, numeroLicence: this.numeroLicence || null }),
-      'Identité enregistrée.');
+      this.auth.modifierIdentite({ numeroLicence: this.numeroLicence || null }),
+      'N° de licence enregistré.');
   }
 
   changerEmail(): void {
