@@ -163,6 +163,8 @@ export interface MoniteurVue {
   prenom: string;
   actif: boolean;
   niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
+  /** Niveau de plongeur (N1 à N5), distinct de l'encadrement : un E1 peut n'être que N2. */
+  niveauPlongeur: string | null;
   numeroLicence: string | null;
   certificatValideJusquAu: string | null;
   admin: boolean;
@@ -424,8 +426,15 @@ export interface PlongeurConnuVue {
   utilisateurId: number | null;
   nom: string;
   prenom: string;
+  /** Pré-remplissage d'un membre de palanquée ou de groupe. */
   aptitude: string | null;
   qualificationPreparee: string | null;
+  /** Les mêmes informations séparées, pour l'affichage : brevet de plongeur, */
+  niveau: string | null;
+  /** formation en cours, */
+  niveauPreparation: string | null;
+  /** et niveau d'encadrement (encadrant, ou élève qui a aussi un compte d'encadrant). */
+  niveauEncadrement: string | null;
 }
 
 /**

@@ -37,6 +37,13 @@ public class Utilisateur {
     @Enumerated(EnumType.STRING)
     private NiveauEncadrement niveauEncadrement;
 
+    /**
+     * Niveau de plongeur (N1 à N5), distinct du niveau d'encadrement : un E1
+     * peut n'être que N2. Saisi par un ADMIN ; null tant qu'il est inconnu.
+     */
+    @Column(length = 2)
+    private String niveauPlongeur;
+
     private String numeroLicence;
 
     /**
@@ -129,6 +136,14 @@ public class Utilisateur {
 
     public String getNumeroLicence() {
         return numeroLicence;
+    }
+
+    public String getNiveauPlongeur() {
+        return niveauPlongeur;
+    }
+
+    public void setNiveauPlongeur(String niveauPlongeur) {
+        this.niveauPlongeur = niveauPlongeur;
     }
 
     public void setNumeroLicence(String numeroLicence) {
