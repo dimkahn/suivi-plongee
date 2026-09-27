@@ -3,14 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
-import { LigneTrombinoscope, LigneTrombinoscopeMoniteur } from '../../core/modeles';
+import { GroupeEntrainementVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur } from '../../core/modeles';
+import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 
-type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 type Population = 'ELEVES' | 'MONITEURS';
 
 @Component({
   selector: 'app-trombinoscope',
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, FiltreGroupeComponent],
   template: `
     <h1>Trombinoscope</h1>
 
@@ -26,16 +26,12 @@ type Population = 'ELEVES' | 'MONITEURS';
     </div>
 
     @if (population() === 'ELEVES') {
-      <p class="secondaire">Par niveau, saison courante. Sans photo si le droit à l'image n'a pas été recueilli.</p>
+      <p class="secondaire">Par groupe d'entraînement, saison courante. Sans photo si le droit à l'image n'a pas été recueilli.</p>
 
-      <div class="filtres" role="group" aria-label="Filtrer par niveau">
-        @for (choix of niveaux; track choix) {
-          <button type="button" class="bouton-discret" [class.actif]="niveauFiltre() === choix"
-                  [attr.aria-pressed]="niveauFiltre() === choix" (click)="niveauFiltre.set(choix)">
-            {{ choix === 'TOUS' ? 'Tous' : libellePreparation(choix) }}
-          </button>
-        }
-      </div>
+      @if (groupes().length > 0) {
+        <app-filtre-groupe class="filtres" [groupes]="groupes()" [eleveIds]="eleveIds()"
+                           [(valeur)]="groupeFiltre" />
+      }
     } @else {
       <p class="secondaire">Encadrants actifs du club. Sans photo si le droit à l'image n'a pas été recueilli.</p>
     }
@@ -102,8 +98,7 @@ type Population = 'ELEVES' | 'MONITEURS';
     h1 { margin-bottom: var(--pas); }
     .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; }
     .onglets .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
-    .filtres { display: flex; gap: var(--pas); margin: var(--pas-3) 0; flex-wrap: wrap; }
-    .filtres .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .filtres { margin: var(--pas-3) 0; }
     .etiquette-recherche { display: block; margin: 0 0 4px; font-weight: 700; font-size: .9375rem; }
     .recherche { max-width: 320px; margin-bottom: var(--pas-3); }
 
@@ -127,20 +122,22 @@ type Population = 'ELEVES' | 'MONITEURS';
 export class TrombinoscopeComponent implements OnDestroy {
   private api = inject(ApiService);
 
-  readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
   readonly libellePreparation = libellePreparation;
 
   lignes = signal<LigneTrombinoscope[]>([]);
   chargement = signal(true);
   erreur = signal<string | null>(null);
-  niveauFiltre = signal<FiltreNiveau>('TOUS');
+  /** Groupes d'entraînement de la saison ouverte (ceux du planning du bassin). */
+  groupes = signal<GroupeEntrainementVue[]>([]);
+  groupeFiltre = signal<FiltreGroupe>('TOUS');
   filtreNom = signal('');
 
+  eleveIds = computed(() => this.lignes().map(l => l.eleveId));
+
   lignesFiltrees = computed(() => {
-    const niveau = this.niveauFiltre();
-    const parNiveau = niveau === 'TOUS' ? this.lignes() : this.lignes().filter(l => l.niveau === niveau);
+    const parGroupe = this.lignes().filter(l => passeFiltreGroupe(l.eleveId, this.groupeFiltre(), this.groupes()));
     const recherche = this.normaliser(this.filtreNom());
-    return recherche ? parNiveau.filter(l => this.normaliser(l.eleve).includes(recherche)) : parNiveau;
+    return recherche ? parGroupe.filter(l => this.normaliser(l.eleve).includes(recherche)) : parGroupe;
   });
 
   /** Casse et accents ignorés : « Loic » retrouve « Loïc » sur un clavier qui ne les tape pas facilement. */

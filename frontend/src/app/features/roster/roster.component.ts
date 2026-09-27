@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
 import { couleurCaci, libelleCaci } from '../../core/caci';
 import { ApiService } from '../../core/api.service';
-import { RosterVue } from '../../core/modeles';
+import { GroupeEntrainementVue, RosterVue } from '../../core/modeles';
+import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DateFrPipe } from '../../core/date-fr';
 
 const LIBELLES: Record<string, string> = {
@@ -12,26 +13,18 @@ const LIBELLES: Record<string, string> = {
   ABSENT: 'ABS', EXCUSE: 'Excusé', PRESENT: 'Présent'
 };
 
-type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
-
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink, FormsModule, DateFrPipe],
+  imports: [RouterLink, FormsModule, DateFrPipe, FiltreGroupeComponent],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
 
     @if (roster(); as r) {
-      <div class="filtres" role="group" aria-label="Filtrer par niveau">
-        @for (choix of niveaux; track choix) {
-          <button type="button" class="bouton-discret"
-                  [class.actif]="niveauFiltre() === choix"
-                  [attr.aria-pressed]="niveauFiltre() === choix"
-                  (click)="niveauFiltre.set(choix)">
-            {{ choix === 'TOUS' ? 'Tous' : libellePreparation(choix) }}
-          </button>
-        }
-      </div>
+      @if (groupes().length > 0) {
+        <app-filtre-groupe class="filtres" [groupes]="groupes()" [eleveIds]="eleveIds()"
+                           [(valeur)]="groupeFiltre" />
+      }
 
       <label for="filtreNom" class="etiquette-recherche">Nom ou prénom</label>
       <input id="filtreNom" type="text" class="recherche" placeholder="Rechercher un élève…"
@@ -46,7 +39,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
       @if (elevesFiltres().length === 0) {
         <div class="carte vide">
           <p>
-            Aucun élève {{ niveauFiltre() === 'TOUS' ? '' : 'en ' + niveauFiltre() + ' ' }}
+            Aucun élève {{ libelleGroupeFiltre() }}
             {{ filtreNom() ? 'ne correspond à « ' + filtreNom() + ' »' : 'sur cette saison' }}.
           </p>
         </div>
@@ -112,10 +105,7 @@ type FiltreNiveau = 'TOUS' | 'N1' | 'N2' | 'N3';
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .filtres { display: flex; gap: var(--pas); margin-top: var(--pas-3); flex-wrap: wrap; }
-    .filtres .bouton-discret.actif {
-      background: var(--profond); color: #fff; border-color: var(--profond);
-    }
+    .filtres { margin-top: var(--pas-3); }
     .etiquette-recherche { display: block; margin: var(--pas-2) 0 4px; font-weight: 700; font-size: .9375rem; }
     /* Espacement porté par le champ : il vaut pour le tableau comme pour le message « aucun élève ». */
     .recherche { max-width: 320px; margin-bottom: var(--pas-3); }
@@ -168,22 +158,32 @@ export class RosterComponent implements OnDestroy {
   readonly libelleCaci = libelleCaci;
   private api = inject(ApiService);
 
-  readonly niveaux: FiltreNiveau[] = ['TOUS', 'N1', 'N2', 'N3'];
   readonly libellePreparation = libellePreparation;
 
   roster = signal<RosterVue | null>(null);
   chargement = signal(true);
   erreur = signal<string | null>(null);
-  niveauFiltre = signal<FiltreNiveau>('TOUS');
+  /** Groupes d'entraînement de la saison ouverte (ceux du planning du bassin). */
+  groupes = signal<GroupeEntrainementVue[]>([]);
+  groupeFiltre = signal<FiltreGroupe>('TOUS');
   filtreNom = signal('');
+
+  eleveIds = computed(() => (this.roster()?.eleves ?? []).map(e => e.eleveId));
+
+  /** Complète « Aucun élève… » : « dans Prépa N2 », « sans groupe », ou rien. */
+  libelleGroupeFiltre = computed(() => {
+    const f = this.groupeFiltre();
+    if (f === 'TOUS') return '';
+    if (f === 'SANS') return 'sans groupe';
+    return 'dans ' + (this.groupes().find(g => g.id === f)?.nom ?? 'ce groupe');
+  });
 
   elevesFiltres = computed(() => {
     const r = this.roster();
     if (!r) return [];
-    const niveau = this.niveauFiltre();
-    const parNiveau = niveau === 'TOUS' ? r.eleves : r.eleves.filter(e => e.niveau === niveau);
+    const parGroupe = r.eleves.filter(e => passeFiltreGroupe(e.eleveId, this.groupeFiltre(), this.groupes()));
     const recherche = this.normaliser(this.filtreNom());
-    return recherche ? parNiveau.filter(e => this.normaliser(e.eleve).includes(recherche)) : parNiveau;
+    return recherche ? parGroupe.filter(e => this.normaliser(e.eleve).includes(recherche)) : parGroupe;
   });
 
   /** Casse et accents ignorés : « Loic » retrouve « Loïc » sur un clavier qui ne les tape pas facilement. */
@@ -192,6 +192,8 @@ export class RosterComponent implements OnDestroy {
   }
 
   constructor() {
+    // Facultatif : sans groupe (ou hors ligne sans cache), pas de filtre.
+    this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
     this.api.roster().subscribe({
       next: r => {
         this.roster.set(r);

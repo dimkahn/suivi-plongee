@@ -161,6 +161,7 @@ export class ApiService {
     await this.tenter(() => this.plongeursConnus());
     await this.tenter(() => this.progressionsDeLaSaison());
     await this.tenter(() => this.planningHorsLigne());
+    await this.tenter(() => this.groupesEntrainementSaisonOuverte());
     const saisons = await this.tenter(() => this.saisonsHorsLigne());
     const ouverte = saisons?.find(s => s.ouverte);
     if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
@@ -621,6 +622,17 @@ export class ApiService {
 
   groupesEntrainement(saisonId: number): Observable<GroupeEntrainementVue[]> {
     return this.http.get<GroupeEntrainementVue[]>('/api/groupes-entrainement', { params: { saisonId } });
+  }
+
+  /**
+   * Groupes d'entraînement de la saison ouverte, avec repli sur le cache :
+   * filtre des pages Infos élèves, Présences et Trombinoscope. Pas de saison
+   * ouverte : aucun groupe.
+   */
+  async groupesEntrainementSaisonOuverte(): Promise<GroupeEntrainementVue[]> {
+    const ouverte = (await this.saisonsHorsLigne()).find(s => s.ouverte);
+    if (!ouverte) return [];
+    return this.lireOuRetomber(`groupes-entrainement:${ouverte.id}`, () => this.groupesEntrainement(ouverte.id));
   }
 
   creerGroupeEntrainement(demande: DemandeGroupeEntrainement): Observable<GroupeEntrainementVue> {
