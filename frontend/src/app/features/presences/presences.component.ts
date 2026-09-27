@@ -7,12 +7,13 @@ import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
-import { Atelier, LignePresence, ProgressionVue, SeanceVue, StatutPresence } from '../../core/modeles';
+import {
+  Atelier, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
+} from '../../core/modeles';
+import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
-
-type Niveau = 'TOUS' | 'N1' | 'N2' | 'N3';
 
 /** Un bouton de la ligne : l'atelier fait par un élève présent. */
 interface Choix {
@@ -57,7 +58,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, CalendrierSeancesComponent, ProgrammeSeanceComponent],
+  imports: [FormsModule, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent],
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
@@ -119,14 +120,9 @@ function normaliser(texte: string): string {
 
     @if (seanceId()) {
       <div class="filtres">
-        <div class="niveaux" role="group" aria-label="Filtrer par niveau">
-          @for (n of niveaux; track n) {
-            <button type="button" class="bouton-discret" [class.actif]="niveau() === n"
-                    [attr.aria-pressed]="niveau() === n" (click)="niveau.set(n)">
-              {{ n === 'TOUS' ? 'Tous' : libellePreparation(n) }}
-            </button>
-          }
-        </div>
+        @if (groupes().length > 0) {
+          <app-filtre-groupe [groupes]="groupes()" [eleveIds]="eleveIds()" [(valeur)]="groupeFiltre" />
+        }
         <input type="search" class="recherche" aria-label="Rechercher un élève"
                placeholder="Rechercher un élève…"
                [ngModel]="rechercheEleve()" (ngModelChange)="rechercheEleve.set($event)">
@@ -214,8 +210,6 @@ function normaliser(texte: string): string {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
       margin: var(--pas-3) 0 var(--pas-2);
     }
-    .niveaux { display: flex; gap: var(--pas); flex-wrap: wrap; }
-    .niveaux .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
     .recherche { max-width: 320px; margin: 0; }
 
     .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
@@ -320,7 +314,6 @@ export class PresencesComponent implements OnDestroy {
   });
 
   readonly choix = CHOIX;
-  readonly niveaux: Niveau[] = ['TOUS', 'N1', 'N2', 'N3'];
   readonly libellePreparation = libellePreparation;
   readonly cleDe = cleDe;
 
@@ -351,7 +344,10 @@ export class PresencesComponent implements OnDestroy {
   message = signal<string | null>(null);
   enregistrements = signal<Set<number>>(new Set());
 
-  niveau = signal<Niveau>('TOUS');
+  /** Groupes d'entraînement de la saison ouverte (ceux du planning du bassin). */
+  groupes = signal<GroupeEntrainementVue[]>([]);
+  groupeFiltre = signal<FiltreGroupe>('TOUS');
+  eleveIds = computed(() => this.lignes().map(l => l.eleveId));
   rechercheEleve = signal('');
 
   /** Élève dont la carte a été touchée sur téléphone : barre de choix ouverte en bas d'écran. */
@@ -366,11 +362,16 @@ export class PresencesComponent implements OnDestroy {
   });
 
   seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
-  /** Progressions suivies par la saison ; le filtre de niveau restreint aussi le programme affiché. */
+  /**
+   * Progressions suivies par la saison ; un groupe choisi qui prépare un
+   * niveau restreint aussi le programme affiché à ce niveau.
+   */
   progressions = signal<ProgressionVue[]>([]);
-  progressionsAffichees = computed(() => this.niveau() === 'TOUS'
-    ? this.progressions()
-    : this.progressions().filter(p => p.niveau === this.niveau()));
+  progressionsAffichees = computed(() => {
+    const filtre = this.groupeFiltre();
+    const niveau = typeof filtre === 'number' ? this.groupes().find(g => g.id === filtre)?.niveauPrepare : null;
+    return niveau ? this.progressions().filter(p => p.niveau === niveau) : this.progressions();
+  });
 
   readonly aujourdhui = dateDuJour();
   private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
@@ -379,10 +380,11 @@ export class PresencesComponent implements OnDestroy {
   jourDialogue = signal<string | null>(null);
 
   lignesFiltrees = computed(() => {
-    const niveau = this.niveau();
+    const filtre = this.groupeFiltre();
+    const groupes = this.groupes();
     const recherche = normaliser(this.rechercheEleve());
     return this.lignes().filter(l =>
-      (niveau === 'TOUS' || l.niveau === niveau)
+      passeFiltreGroupe(l.eleveId, filtre, groupes)
       && (!recherche || normaliser(l.eleve).includes(recherche)));
   });
 
@@ -404,6 +406,8 @@ export class PresencesComponent implements OnDestroy {
       this.seances.set(await this.api.seances());
       // Facultatif : sans progression rattachée à la saison, pas de programme affiché.
       this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
+      // Facultatif aussi : sans groupe (ou hors ligne sans cache), pas de filtre.
+      this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
       // Par défaut : la dernière séance passée ou du jour.
       const derniere = this.seancesPassees().at(-1);
       if (derniere) this.choisirSeance(derniere);

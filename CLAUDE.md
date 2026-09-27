@@ -155,7 +155,10 @@ au-delà de sa capacité (élèves + encadrants attitrés), groupe N1 ou encadr�
 par un E1 en fosse sans limite à 6 m, ligne donnée à deux groupes. Les
 encadrants consultent en lecture sur `/planning` (soirée par soirée, leurs
 groupes en tête, `PlanningVue.mesGroupeIds` calculé côté serveur ; embarqué
-hors ligne). Suite prévue : planning des moniteurs (lot 3).
+hors ligne). Les filtres des pages Infos élèves, Présences et Trombinoscope
+sont les groupes d'entraînement de la saison ouverte (`FiltreGroupeComponent`),
+et non plus les niveaux PN1/PN2/PN3. Suite prévue : planning des moniteurs
+(lot 3).
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
