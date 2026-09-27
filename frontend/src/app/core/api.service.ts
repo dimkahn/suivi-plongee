@@ -6,7 +6,8 @@ import {
   EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
-  DemandeProgression, ProgressionResume, ProgressionVue
+  DemandeProgression, ProgressionResume, ProgressionVue,
+  DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -593,6 +594,60 @@ export class ApiService {
   /** Au plus une progression par référentiel : le serveur refuse sinon. */
   definirProgressionsSaison(saisonId: number, progressionIds: number[]): Observable<ProgressionVue[]> {
     return this.http.put<ProgressionVue[]>(`/api/progressions/saison/${saisonId}`, { progressionIds });
+  }
+
+  // ----------------------------------------------------------------
+  //  Planning du bassin : espaces et groupes d'entraînement. Lecture pour
+  //  les encadrants, écriture réservée à l'ADMIN.
+  // ----------------------------------------------------------------
+
+  espacesBassin(): Observable<EspaceBassinVue[]> {
+    return this.http.get<EspaceBassinVue[]>('/api/espaces-bassin');
+  }
+
+  creerEspaceBassin(demande: DemandeEspaceBassin): Observable<EspaceBassinVue> {
+    return this.http.post<EspaceBassinVue>('/api/espaces-bassin', demande);
+  }
+
+  modifierEspaceBassin(id: number, demande: DemandeEspaceBassin): Observable<EspaceBassinVue> {
+    return this.http.put<EspaceBassinVue>(`/api/espaces-bassin/${id}`, demande);
+  }
+
+  supprimerEspaceBassin(id: number): Observable<unknown> {
+    return this.http.delete(`/api/espaces-bassin/${id}`);
+  }
+
+  groupesEntrainement(saisonId: number): Observable<GroupeEntrainementVue[]> {
+    return this.http.get<GroupeEntrainementVue[]>('/api/groupes-entrainement', { params: { saisonId } });
+  }
+
+  creerGroupeEntrainement(demande: DemandeGroupeEntrainement): Observable<GroupeEntrainementVue> {
+    return this.http.post<GroupeEntrainementVue>('/api/groupes-entrainement', demande);
+  }
+
+  modifierGroupeEntrainement(id: number, demande: DemandeGroupeEntrainement): Observable<GroupeEntrainementVue> {
+    return this.http.put<GroupeEntrainementVue>(`/api/groupes-entrainement/${id}`, demande);
+  }
+
+  supprimerGroupeEntrainement(id: number): Observable<unknown> {
+    return this.http.delete(`/api/groupes-entrainement/${id}`);
+  }
+
+  ordonnerGroupesEntrainement(saisonId: number, groupeIds: number[]): Observable<GroupeEntrainementVue[]> {
+    return this.http.put<GroupeEntrainementVue[]>(`/api/groupes-entrainement/saison/${saisonId}/ordre`, { groupeIds });
+  }
+
+  elevesSaisonGroupes(saisonId: number): Observable<EleveSaisonGroupeVue[]> {
+    return this.http.get<EleveSaisonGroupeVue[]>(`/api/groupes-entrainement/saison/${saisonId}/eleves`);
+  }
+
+  rangerEleveGroupe(saisonId: number, eleveId: number, groupeId: number | null): Observable<EleveSaisonGroupeVue> {
+    return this.http.put<EleveSaisonGroupeVue>(
+      `/api/groupes-entrainement/saison/${saisonId}/eleves/${eleveId}`, { groupeId });
+  }
+
+  appliquerSuggestionsGroupes(saisonId: number): Observable<EleveSaisonGroupeVue[]> {
+    return this.http.post<EleveSaisonGroupeVue[]>(`/api/groupes-entrainement/saison/${saisonId}/suggestions`, {});
   }
 
   // ----------------------------------------------------------------

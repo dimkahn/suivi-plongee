@@ -134,6 +134,19 @@ que soit le milieu** (choix du club, 2026 ; `FicheSecuriteService`,
 constante `NIVEAU_DP_MINIMUM` — règle de sécurité générale, pas du MFT,
 donc pas une colonne du référentiel).
 
+**Planning du bassin : espaces et groupes d'entraînement (lot 1, 2026).**
+Remplace le tableur « Planning » du lundi soir (groupes × dates, chaque case
+= ligne d'eau, F10 fosse 10 m, F6 fosse limitée à 6 m). Paquet
+`fr.club.plongee.planning`. `EspaceBassin` : lignes d'eau et fosse (V26 installe
+lignes 1 à 6 + fosse 10 m, 15 plongeurs encadrants compris). `GroupeEntrainement`
+(par saison) : encadrants attitrés, ligne attitrée, élèves rangés **explicitement**
+par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
+`niveau_prepare` et du cursus en cours ; un élève dans au plus un groupe par
+saison (règle du service). **Sans rapport avec `GroupePlongeurs`** (V13), qui
+compose les palanquées d'un séjour. Suites prévues : grille manuelle des
+soirées (lot 2, avec un « responsable de séance » distinct du DP de la fiche
+de sécurité) puis planning des moniteurs (lot 3).
+
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas

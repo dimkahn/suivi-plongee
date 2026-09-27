@@ -576,3 +576,53 @@ export interface DemandeProgression {
   description: string | null;
   periodes: DemandePeriodeProgression[];
 }
+
+// ----------------------------------------------------------------
+//  Planning du bassin : espaces (lignes d'eau, fosse) et groupes
+//  d'entraînement de la saison.
+// ----------------------------------------------------------------
+
+export interface EspaceBassinVue {
+  id: number;
+  nom: string;
+  type: 'LIGNE' | 'FOSSE';
+  ordre: number;
+  profondeurMax: number | null;
+  /** Plongeurs admis en même temps, encadrants compris. */
+  capacite: number | null;
+  actif: boolean;
+}
+
+export type DemandeEspaceBassin = Omit<EspaceBassinVue, 'id'>;
+
+export interface GroupeEntrainementVue {
+  id: number;
+  saisonId: number;
+  nom: string;
+  ordre: number;
+  niveauPrepare: 'N1' | 'N2' | 'N3' | null;
+  espaceAttitreId: number | null;
+  espaceAttitre: string | null;
+  encadrants: { id: number; nomComplet: string; niveauEncadrement: string | null }[];
+  eleves: { id: number; nom: string; prenom: string }[];
+}
+
+export interface DemandeGroupeEntrainement {
+  saisonId: number;
+  nom: string;
+  niveauPrepare: 'N1' | 'N2' | 'N3' | null;
+  espaceAttitreId: number | null;
+  encadrantIds: number[];
+}
+
+/** Un élève de la saison vu depuis l'écran de rangement. */
+export interface EleveSaisonGroupeVue {
+  eleveId: number;
+  nom: string;
+  prenom: string;
+  niveauxEnCours: string[];
+  /** Adhérent sans formation cette saison. */
+  adhesionSeule: boolean;
+  groupeId: number | null;
+  groupeSuggereId: number | null;
+}
