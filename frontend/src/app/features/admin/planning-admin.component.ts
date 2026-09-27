@@ -1,5 +1,6 @@
 import { Component, ElementRef, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -46,13 +47,18 @@ interface EditionSoiree {
  */
 @Component({
   selector: 'app-planning-admin',
-  imports: [FormsModule, ComboboxComponent],
+  imports: [FormsModule, RouterLink, ComboboxComponent],
   template: `
     <h1>Planning du bassin</h1>
     <p class="secondaire">
       Touchez une case pour placer un groupe ce soir-là, ou la ligne « Responsable » pour choisir le
       responsable de séance et les présences annoncées des encadrants. Une case en gris clair est la ligne
       attitrée du groupe.
+    </p>
+    <p class="secondaire">
+      Les soirées du planning sont les dates de la saison qui ont une séance : pour ajouter un soir, créez la
+      séance dans <a routerLink="/admin/seances">Séances</a>, ou toutes celles de l'année d'un coup avec
+      <a routerLink="/admin/seances/generer">Générer la saison</a>.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -91,7 +97,14 @@ interface EditionSoiree {
           <p>Aucun groupe d'entraînement pour cette saison : créez-les d'abord dans « Groupes d'entraînement ».</p>
         </div>
       } @else if (soireesAffichees().length === 0) {
-        <div class="carte vide"><p>Aucune séance sur cette période.</p></div>
+        <div class="carte vide">
+          <p>
+            Aucune séance sur cette période{{ jour() !== null ? ' pour ce jour de la semaine' : '' }}. Créez les
+            séances dans <a routerLink="/admin/seances">Séances</a> ou
+            <a routerLink="/admin/seances/generer">Générer la saison</a> : chaque date qui a une séance devient
+            une soirée du planning.
+          </p>
+        </div>
       } @else {
         <div class="defilement" role="region" aria-label="Planning" tabindex="0">
           <table>
