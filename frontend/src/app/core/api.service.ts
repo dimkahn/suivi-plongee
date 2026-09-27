@@ -327,6 +327,10 @@ export class ApiService {
     return this.http.put(`/api/admin/moniteurs/${id}/mot-de-passe`, { nouveauMotDePasse });
   }
 
+  envoyerLienReinitialisationMoniteur(id: number): Observable<unknown> {
+    return this.http.post(`/api/admin/moniteurs/${id}/lien-reinitialisation`, {});
+  }
+
   supprimerMoniteur(id: number): Observable<unknown> {
     return this.http.delete(`/api/admin/moniteurs/${id}`);
   }

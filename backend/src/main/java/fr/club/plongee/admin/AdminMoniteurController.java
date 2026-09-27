@@ -109,6 +109,13 @@ public class AdminMoniteurController {
         service.changerMotDePasse(id, demande.nouveauMotDePasse());
     }
 
+    @PostMapping("/{id}/lien-reinitialisation")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void envoyerLienReinitialisation(@PathVariable Long id) {
+        service.envoyerLienReinitialisation(id);
+    }
+
     @PutMapping("/{id}/autorisation-image")
     @PreAuthorize("hasRole('ADMIN')")
     public MoniteurVue changerAutorisationImage(@PathVariable Long id,
