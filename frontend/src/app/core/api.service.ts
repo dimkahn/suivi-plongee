@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
@@ -10,7 +10,7 @@ import {
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue
 } from './modeles';
-import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
+import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
 
@@ -145,7 +145,7 @@ export class ApiService {
    * déclencher pendant qu'on a encore du réseau, avant de partir en bord de
    * bassin ou sur le bateau.
    */
-  async precharger(): Promise<{ grilles: number; feuilles: number; fiches: number }> {
+  async precharger(): Promise<{ grilles: number; feuilles: number; fiches: number; photos: number }> {
     const paquet = await firstValueFrom(
       this.http.get<Paquet>('/api/synchronisation/paquet'));
 
@@ -161,6 +161,7 @@ export class ApiService {
     await this.tenter(() => this.plongeursConnus());
     await this.tenter(() => this.progressionsDeLaSaison());
     await this.tenter(() => this.planningHorsLigne());
+    await this.tenter(() => this.roster());
     await this.tenter(() => this.groupesEntrainementSaisonOuverte());
     const saisons = await this.tenter(() => this.saisonsHorsLigne());
     const ouverte = saisons?.find(s => s.ouverte);
@@ -175,7 +176,21 @@ export class ApiService {
       if (await this.tenter(() => this.feuillePresence(s.id))) feuilles++;
       if (await this.tenter(() => this.ficheSecurite(s.id))) fiches++;
     }
-    return { grilles: paquet.grilles.length, feuilles, fiches };
+
+    // Trombinoscopes et photos. Une photo dont le consentement a été retiré
+    // depuis le dernier préchargement est effacée du téléphone.
+    let photos = 0;
+    const eleves = await this.tenter(() => this.trombinoscope()) ?? [];
+    const moniteurs = await this.tenter(() => this.trombinoscopeMoniteurs()) ?? [];
+    const aCharger = [
+      ...eleves.map(l => ({ cle: `photo-eleve:${l.eleveId}`, aPhoto: l.aPhoto, lire: () => this.photoEleve(l.eleveId) })),
+      ...moniteurs.map(m => ({ cle: `photo-moniteur:${m.id}`, aPhoto: m.aPhoto, lire: () => this.photoMoniteur(m.id) }))
+    ];
+    for (const p of aCharger) {
+      if (!p.aPhoto) await supprimer(MAGASIN_CACHE, p.cle);
+      else if (await this.tenter(p.lire)) photos++;
+    }
+    return { grilles: paquet.grilles.length, feuilles, fiches, photos };
   }
 
   async dateDuCache(cle: string): Promise<number | null> {
@@ -215,10 +230,12 @@ export class ApiService {
     return this.http.get(`/api/cursus/${cursusId}/fiche.pdf`, { responseType: 'blob' });
   }
 
-  /** Vue d'ensemble de la saison, réservée aux encadrants (roster « Infos Élèves »). */
-  roster(saisonId?: number): Observable<RosterVue> {
-    const params = saisonId ? { params: { saisonId } } : {};
-    return this.http.get<RosterVue>('/api/roster', params);
+  /**
+   * Vue d'ensemble de la saison ouverte, réservée aux encadrants (roster
+   * « Infos Élèves »). Embarquée hors ligne par « Préparer hors ligne ».
+   */
+  roster(): Promise<RosterVue> {
+    return this.lireOuRetomber('roster', () => this.http.get<RosterVue>('/api/roster'));
   }
 
   noterEnLigne(cursusId: number, critereId: number, statut: Statut,
@@ -336,6 +353,7 @@ export class ApiService {
   }
 
   changerAutorisationImageMoniteur(id: number, autorisationImage: boolean): Observable<MoniteurVue> {
+    if (!autorisationImage) void supprimer(MAGASIN_CACHE, `photo-moniteur:${id}`);
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}/autorisation-image`, { autorisationImage });
   }
 
@@ -350,15 +368,16 @@ export class ApiService {
   //  autorisationImage (distinct de l'autorisation de pratiquer).
   // ----------------------------------------------------------------
 
-  trombinoscope(niveau?: 'N1' | 'N2' | 'N3'): Observable<LigneTrombinoscope[]> {
-    const params = niveau ? { params: { niveau } } : {};
-    return this.http.get<LigneTrombinoscope[]>('/api/trombinoscope', params);
+  trombinoscope(): Promise<LigneTrombinoscope[]> {
+    return this.lireOuRetomber('trombinoscope',
+      () => this.http.get<LigneTrombinoscope[]>('/api/trombinoscope'));
   }
 
   /** À convertir en URL d'objet côté composant : l'auth passe par un en-tête, pas par un cookie. */
   /** Moniteurs actifs, accessible à tout encadrant. */
-  trombinoscopeMoniteurs(): Observable<LigneTrombinoscopeMoniteur[]> {
-    return this.http.get<LigneTrombinoscopeMoniteur[]>('/api/moniteurs/trombinoscope');
+  trombinoscopeMoniteurs(): Promise<LigneTrombinoscopeMoniteur[]> {
+    return this.lireOuRetomber('trombinoscope-moniteurs',
+      () => this.http.get<LigneTrombinoscopeMoniteur[]>('/api/moniteurs/trombinoscope'));
   }
 
   /** Photo du moniteur connecté, déposée par lui-même depuis « Mon compte ». */
@@ -378,15 +397,18 @@ export class ApiService {
     return this.http.delete('/api/auth/moi/photo');
   }
 
-  photoMoniteur(id: number): Observable<Blob> {
-    return this.http.get(`/api/moniteurs/${id}/photo`, { responseType: 'blob' });
+  photoMoniteur(id: number): Promise<Blob> {
+    return this.lirePhoto(`photo-moniteur:${id}`,
+      () => this.http.get(`/api/moniteurs/${id}/photo`, { responseType: 'blob' }));
   }
 
-  photoEleve(eleveId: number): Observable<Blob> {
-    return this.http.get(`/api/eleves/${eleveId}/photo`, { responseType: 'blob' });
+  photoEleve(eleveId: number): Promise<Blob> {
+    return this.lirePhoto(`photo-eleve:${eleveId}`,
+      () => this.http.get(`/api/eleves/${eleveId}/photo`, { responseType: 'blob' }));
   }
 
   changerAutorisationImage(eleveId: number, autorisationImage: boolean): Observable<unknown> {
+    if (!autorisationImage) void supprimer(MAGASIN_CACHE, `photo-eleve:${eleveId}`);
     return this.http.put(`/api/eleves/${eleveId}/autorisation-image`, { autorisationImage });
   }
 
@@ -397,6 +419,7 @@ export class ApiService {
   }
 
   supprimerPhotoEleve(eleveId: number): Observable<unknown> {
+    void supprimer(MAGASIN_CACHE, `photo-eleve:${eleveId}`);
     return this.http.delete(`/api/eleves/${eleveId}/photo`);
   }
 
@@ -721,6 +744,27 @@ export class ApiService {
       return valeur;
     } catch (erreur) {
       const entree = await lire<Entree<T>>(MAGASIN_CACHE, cle);
+      if (entree) return entree.valeur;
+      throw erreur;
+    }
+  }
+
+  /**
+   * Comme lireOuRetomber, mais la copie locale ne sert que faute de réseau.
+   * Si le serveur répond (404 : consentement retiré ou photo supprimée), la
+   * copie est effacée : une photo retirée ne doit plus s'afficher nulle part.
+   */
+  private async lirePhoto(cle: string, appel: () => Observable<Blob>): Promise<Blob> {
+    try {
+      const photo = await firstValueFrom(appel());
+      await this.deposer(cle, photo);
+      return photo;
+    } catch (erreur) {
+      if (erreur instanceof HttpErrorResponse && erreur.status !== 0) {
+        await supprimer(MAGASIN_CACHE, cle);
+        throw erreur;
+      }
+      const entree = await lire<Entree<Blob>>(MAGASIN_CACHE, cle);
       if (entree) return entree.valeur;
       throw erreur;
     }

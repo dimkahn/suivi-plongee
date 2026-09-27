@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
 import { couleurCaci, libelleCaci } from '../../core/caci';
 import { ApiService } from '../../core/api.service';
+import { ReseauService } from '../../core/reseau.service';
 import { GroupeEntrainementVue, RosterVue } from '../../core/modeles';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DateFrPipe } from '../../core/date-fr';
@@ -157,6 +158,7 @@ export class RosterComponent implements OnDestroy {
   readonly couleurCaci = couleurCaci;
   readonly libelleCaci = libelleCaci;
   private api = inject(ApiService);
+  private reseau = inject(ReseauService);
 
   readonly libellePreparation = libellePreparation;
 
@@ -194,19 +196,21 @@ export class RosterComponent implements OnDestroy {
   constructor() {
     // Facultatif : sans groupe (ou hors ligne sans cache), pas de filtre.
     this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
-    this.api.roster().subscribe({
-      next: r => {
+    this.api.roster().then(
+      r => {
         this.roster.set(r);
         this.chargement.set(false);
         for (const e of r.eleves) {
           if (e.aPhoto) this.chargerPhoto(e.eleveId);
         }
       },
-      error: () => {
-        this.erreur.set("Impossible de charger la vue d'ensemble.");
+      () => {
+        this.erreur.set(this.reseau.enLigne()
+          ? "Impossible de charger la vue d'ensemble."
+          : "Infos élèves non disponibles hors ligne : utilisez « Préparer hors ligne » quand vous avez du réseau.");
         this.chargement.set(false);
       }
-    });
+    );
   }
 
   /** Un élève inscrit à deux formations la même saison n'a qu'une photo : on ne la charge qu'une fois. */
@@ -216,14 +220,14 @@ export class RosterComponent implements OnDestroy {
   private chargerPhoto(eleveId: number): void {
     if (this.photosDemandees.has(eleveId)) return;
     this.photosDemandees.add(eleveId);
-    this.api.photoEleve(eleveId).subscribe({
-      next: blob => {
+    this.api.photoEleve(eleveId).then(
+      blob => {
         const copie = new Map(this.urlsPhotos());
         copie.set(eleveId, URL.createObjectURL(blob));
         this.urlsPhotos.set(copie);
       },
-      error: () => { /* pas de photo consultable : les initiales restent affichées */ }
-    });
+      () => { /* pas de photo consultable : les initiales restent affichées */ }
+    );
   }
 
   urlPhoto(eleveId: number): string | null {

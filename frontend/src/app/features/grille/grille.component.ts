@@ -805,10 +805,10 @@ export class GrilleComponent implements OnDestroy {
   }
 
   private chargerPhoto(eleveId: number): void {
-    this.api.photoEleve(eleveId).subscribe({
-      next: blob => this.urlPhoto.set(URL.createObjectURL(blob)),
-      error: () => { /* pas de photo consultable : la silhouette reste affichée */ }
-    });
+    this.api.photoEleve(eleveId).then(
+      blob => this.urlPhoto.set(URL.createObjectURL(blob)),
+      () => { /* pas de photo consultable : la silhouette reste affichée */ }
+    );
   }
 
   ngOnDestroy(): void {
