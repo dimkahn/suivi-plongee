@@ -28,6 +28,12 @@ import { RouterLink } from '@angular/router';
         </a>
       </li>
       <li class="carte">
+        <a routerLink="/admin/planning">
+          <span class="nom">Planning du bassin</span>
+          <span class="secondaire">Soir par soir : ligne d'eau ou fosse de chaque groupe, responsable de séance</span>
+        </a>
+      </li>
+      <li class="carte">
         <a routerLink="/admin/groupes-entrainement">
           <span class="nom">Groupes d'entraînement</span>
           <span class="secondaire">Groupes de la saison, encadrants attitrés, lignes d'eau et fosse, élèves</span>

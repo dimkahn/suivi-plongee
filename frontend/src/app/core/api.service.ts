@@ -7,7 +7,8 @@ import {
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue,
-  DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue
+  DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
+  DemandeCasePlanning, PlanningVue, SoireePlanningVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -159,6 +160,7 @@ export class ApiService {
     await this.tenter(() => this.moniteursActifs());
     await this.tenter(() => this.plongeursConnus());
     await this.tenter(() => this.progressionsDeLaSaison());
+    await this.tenter(() => this.planningHorsLigne());
     const saisons = await this.tenter(() => this.saisonsHorsLigne());
     const ouverte = saisons?.find(s => s.ouverte);
     if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
@@ -648,6 +650,27 @@ export class ApiService {
 
   appliquerSuggestionsGroupes(saisonId: number): Observable<EleveSaisonGroupeVue[]> {
     return this.http.post<EleveSaisonGroupeVue[]>(`/api/groupes-entrainement/saison/${saisonId}/suggestions`, {});
+  }
+
+  /** Planning des soirées d'une saison : où est chaque groupe, qui est responsable de séance. */
+  planning(saisonId: number): Observable<PlanningVue> {
+    return this.http.get<PlanningVue>('/api/planning', { params: { saisonId } });
+  }
+
+  /** Planning de la saison ouverte, avec repli sur le cache : consulté au bord du bassin. */
+  planningHorsLigne(): Promise<PlanningVue> {
+    return this.lireOuRetomber('planning', () => this.http.get<PlanningVue>('/api/planning'));
+  }
+
+  definirCasePlanning(saisonId: number, date: string, groupeId: number,
+                      demande: DemandeCasePlanning): Observable<SoireePlanningVue> {
+    return this.http.put<SoireePlanningVue>(
+      `/api/planning/saison/${saisonId}/soirees/${date}/groupes/${groupeId}`, demande);
+  }
+
+  definirSoireePlanning(saisonId: number, date: string,
+                        demande: { responsableId: number | null; note: string | null }): Observable<SoireePlanningVue> {
+    return this.http.put<SoireePlanningVue>(`/api/planning/saison/${saisonId}/soirees/${date}`, demande);
   }
 
   // ----------------------------------------------------------------
