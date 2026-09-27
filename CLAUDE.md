@@ -155,10 +155,18 @@ au-delà de sa capacité (élèves + encadrants attitrés), groupe N1 ou encadr�
 par un E1 en fosse sans limite à 6 m, ligne donnée à deux groupes. Les
 encadrants consultent en lecture sur `/planning` (soirée par soirée, leurs
 groupes en tête, `PlanningVue.mesGroupeIds` calculé côté serveur ; embarqué
-hors ligne). Les filtres des pages Infos élèves, Présences et Trombinoscope
-sont les groupes d'entraînement de la saison ouverte (`FiltreGroupeComponent`),
-et non plus les niveaux PN1/PN2/PN3. Suite prévue : planning des moniteurs
-(lot 3).
+hors ligne). **Présences des encadrants (lot 3)** : `disponibilite_encadrant`
+(V28), une réponse PRESENT/ABSENT par encadrant et par soirée, donnée depuis
+`/planning` ou par un admin à sa place (`saisi_par_id`) ; pas de ligne = pas
+encore répondu, jamais supposé présent ni absent. Avertissements ajoutés :
+groupe ayant séance dont tous les encadrants attitrés ont répondu absent,
+responsable de séance absent, et, dès qu'un encadrant a répondu présent,
+aucun E3 parmi les présents (`FicheSecuriteService.NIVEAU_DP_MINIMUM`). La
+réponse demande le réseau (pas de file hors ligne). Les filtres des pages
+Infos élèves, Présences et Trombinoscope sont les groupes d'entraînement de
+la saison ouverte (`FiltreGroupeComponent`), et non plus les niveaux
+PN1/PN2/PN3. Suite possible : remplaçant d'un encadrant absent, rappel
+aux encadrants qui n'ont pas répondu.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela

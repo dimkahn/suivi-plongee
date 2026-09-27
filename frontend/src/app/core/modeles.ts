@@ -640,11 +640,21 @@ export interface CasePlanningVue {
   libelle: string;
 }
 
+/** Un encadrant tel que le planning l'affiche. */
+export interface EncadrantPlanningVue {
+  id: number;
+  nomComplet: string;
+  niveauEncadrement: string | null;
+}
+
 export interface SoireePlanningVue {
   date: string;
   responsableId: number | null;
   responsable: string | null;
   note: string | null;
+  /** Réponses des encadrants ; qui n'est dans aucune des deux listes n'a pas répondu. */
+  presents: EncadrantPlanningVue[];
+  absents: EncadrantPlanningVue[];
   cases: CasePlanningVue[];
   avertissements: string[];
 }
@@ -658,8 +668,10 @@ export interface GroupePlanningVue {
   nombreEleves: number;
   /** Élèves et encadrants attitrés : ce que le groupe pèse dans la fosse. */
   effectif: number;
-  encadrants: { id: number; nomComplet: string; niveauEncadrement: string | null }[];
+  encadrants: EncadrantPlanningVue[];
 }
+
+export type ReponseDisponibilite = 'PRESENT' | 'ABSENT';
 
 export interface PlanningVue {
   saisonId: number;
@@ -669,6 +681,8 @@ export interface PlanningVue {
   soirees: SoireePlanningVue[];
   /** Groupes dont l'utilisateur connecté est encadrant attitré. */
   mesGroupeIds: number[];
+  /** L'utilisateur connecté, pour retrouver ses réponses dans les soirées. */
+  utilisateurId: number;
 }
 
 export interface DemandeCasePlanning {
