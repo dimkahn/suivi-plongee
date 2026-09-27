@@ -96,6 +96,7 @@ jobs:
           context: ./${{ matrix.service }}
           platforms: linux/amd64,linux/arm64
           push: true
+          build-args: VERSION=${{ env.TAG }}
           tags: |
             ghcr.io/dimkahn/suivi-plongee-${{ matrix.service }}:${{ env.TAG }}
             ghcr.io/dimkahn/suivi-plongee-${{ matrix.service }}:latest

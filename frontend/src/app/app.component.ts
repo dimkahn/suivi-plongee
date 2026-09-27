@@ -5,6 +5,13 @@ import { FileAttenteService } from './core/file-attente.service';
 import { FileEcrituresService } from './core/file-ecritures.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 
+/**
+ * Tag déployé, fixé à la compilation (`ng build --define`, voir le
+ * Dockerfile du frontend) ; « dev » hors des images de production. Avec le
+ * service worker, c'est la version réellement chargée sur le téléphone.
+ */
+declare const VERSION_APPLI: string;
+
 @Component({
   selector: 'app-racine',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent],
@@ -68,6 +75,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
       <app-bandeau-sync />
 
       <main><router-outlet /></main>
+      <footer class="version">Version {{ version }}</footer>
     } @else {
       <p class="vide">Ouverture de la session…</p>
     }
@@ -122,6 +130,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
       padding: 2px 8px; font-weight: 700; font-size: .8125rem;
     }
     main { max-width: 1120px; margin: 0 auto; padding: var(--pas-3); }
+    .version { text-align: center; color: var(--craie); font-size: 0.75rem; padding: var(--pas-2); }
     @media (max-width: 600px) { main { padding: var(--pas-2); } }
 
     /* Sous 860px, le menu passe derriere un bouton plutot que de se
@@ -144,6 +153,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
   `]
 })
 export class AppComponent {
+  readonly version = VERSION_APPLI;
   auth = inject(AuthService);
   private file = inject(FileAttenteService);
   private ecritures = inject(FileEcrituresService);

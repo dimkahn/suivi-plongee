@@ -31,7 +31,10 @@
                 "output": "/"
               }
             ],
-            "serviceWorker": "ngsw-config.json"
+            "serviceWorker": "ngsw-config.json",
+            "define": {
+              "VERSION_APPLI": "\"dev\""
+            }
           },
           "configurations": {
             "production": {

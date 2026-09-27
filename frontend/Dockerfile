@@ -8,7 +8,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build -- --configuration production
+# Tag déployé, affiché en pied de page (voir VERSION_APPLI dans app.component.ts).
+ARG VERSION=dev
+RUN npm run build -- --configuration production --define "VERSION_APPLI=\"${VERSION}\""
 
 # Étape d'exécution : sert les fichiers statiques avec nginx
 FROM nginx:alpine

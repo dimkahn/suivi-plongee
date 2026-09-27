@@ -56,7 +56,10 @@ services:
 
   frontend:
     image: ghcr.io/dimkahn/suivi-plongee-frontend:${VERSION:-latest}
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VERSION: ${VERSION:-dev}
     restart: unless-stopped
     depends_on:
       - backend
