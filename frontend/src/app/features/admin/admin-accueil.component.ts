@@ -28,6 +28,12 @@ import { RouterLink } from '@angular/router';
         </a>
       </li>
       <li class="carte">
+        <a routerLink="/admin/groupes-entrainement">
+          <span class="nom">Groupes d'entraînement</span>
+          <span class="secondaire">Groupes de la saison, encadrants attitrés, lignes d'eau et fosse, élèves</span>
+        </a>
+      </li>
+      <li class="carte">
         <a routerLink="/admin/seances">
           <span class="nom">Séances</span>
           <span class="secondaire">Calendrier de la saison : créer, modifier, générer une saison ou un séjour</span>

@@ -115,6 +115,12 @@ export const routes: Routes = [
       .then(m => m.ReferentielAdminComponent)
   },
   {
+    path: 'admin/groupes-entrainement',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/groupes-entrainement.component')
+      .then(m => m.GroupesEntrainementComponent)
+  },
+  {
     path: 'admin/seances',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/seances/seances.component')
