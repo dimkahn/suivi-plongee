@@ -137,55 +137,30 @@ lien manuellement et le transmettre au moniteur :
 docker compose -f docker-compose.prod.yml logs backend | grep "invitation\|reinitialisation"
 ```
 
-## Déploiement automatique (GitHub Actions)
+## Tests et images (GitHub Actions)
 
-Une fois le serveur installé (étapes 1 à 6), chaque **tag `v…` posé sur un
-commit de `master`** part tout seul en production
-(`.github/workflows/deploiement.yml`) :
+Chaque **tag `v…` posé sur un commit de `master`** lance
+`.github/workflows/deploiement.yml` (« Tests et images ») :
 
 1. vérification que le commit tagué est bien sur `master` ;
-2. tests d'intégration du backend (`mvn test`) : s'ils échouent, rien ne part ;
+2. tests d'intégration du backend (`mvn test`) ;
 3. construction des images backend et frontend (x86 et ARM) et publication
-   sur `ghcr.io/dimkahn/suivi-plongee-backend` / `-frontend` ;
-4. connexion SSH au serveur, puis `outils/deployer.sh` : **sauvegarde de la
-   base** dans `sauvegardes/` (les 10 dernières sont gardées), téléchargement
-   des images, redémarrage, et attente que `/actuator/health` réponde. Si le
-   backend ne répond pas dans les 5 minutes, le workflow échoue en rouge et
-   affiche les derniers journaux.
+   sur `ghcr.io/dimkahn/suivi-plongee-backend` / `-frontend`.
 
-La VM ne compile plus rien : une petite VM de 1 Go suffit.
+Ce workflow **ne met plus rien en production** : il n'a plus d'étape SSH, et
+les secrets `SSH_*` ainsi que l'environnement `production` peuvent être
+supprimés de GitHub. La mise en production est faite par le serveur lui-même
+(section suivante). Attention : le serveur n'attend pas le résultat des
+tests ; regarder l'onglet *Actions* avant de poser le tag sur un commit
+douteux, ou faire tourner `mvn test` en local d'abord.
 
-### Mise en place (une seule fois)
-
-**Sur ton poste**, créer une clé SSH réservée au déploiement (sans phrase de
-passe, elle ne sert qu'à ça) :
+Les images de ghcr.io restent utilisables à la main sur un serveur trop
+petit pour construire (1 Go de mémoire) :
 
 ```bash
-ssh-keygen -t ed25519 -f cle-deploiement -N "" -C "deploiement github"
-ssh-copy-id -i cle-deploiement.pub ubuntu@<IP_PUBLIQUE>
-ssh-keyscan -t ed25519 <IP_PUBLIQUE>    # empreinte du serveur, pour le secret ci-dessous
+git fetch --tags && git checkout --detach v2026.09.1
+./outils/deployer.sh v2026.09.1
 ```
-
-Sur la VM, le dépôt doit être cloné dans `~/suivi-plongee` (étape 5), avec
-son `.env`, et l'utilisateur doit être dans le groupe `docker`.
-
-**Sur GitHub**, dans *Settings → Secrets and variables → Actions* :
-
-| Secret | Valeur |
-|---|---|
-| `SSH_HOTE` | IP publique ou nom de domaine de la VM |
-| `SSH_UTILISATEUR` | `ubuntu` (ou l'utilisateur de la VM) |
-| `SSH_CLE_PRIVEE` | contenu **entier** du fichier `cle-deploiement` (clé privée) |
-| `SSH_EMPREINTE_HOTE` | la ligne affichée par `ssh-keyscan` |
-
-Variable facultative (onglet *Variables*) : `DOSSIER_SERVEUR` si le dépôt
-n'est pas dans `~/suivi-plongee` sur la VM.
-
-Créer aussi un environnement `production` (*Settings → Environments*). On
-peut y cocher *Required reviewers* pour valider chaque mise en production à
-la main avant l'étape SSH.
-
-Supprimer ensuite `cle-deploiement` de ton poste (elle vit dans GitHub).
 
 ### Livrer une version
 
@@ -195,38 +170,16 @@ git tag v2026.09.1          # année.mois.numéro, par exemple
 git push origin v2026.09.1
 ```
 
-Suivre l'avancement dans l'onglet *Actions* du dépôt (compter une dizaine de
-minutes, surtout la première fois). Éviter de livrer pendant une séance :
-l'application est coupée une ou deux minutes au redémarrage (les notations
-hors ligne attendent dans la file du téléphone et repartent ensuite).
+Dans les 5 minutes, le serveur voit le tag et le déploie (compter une
+dizaine de minutes de construction, surtout la première fois). Éviter de
+livrer pendant une séance : l'application est coupée une ou deux minutes au
+redémarrage (les notations hors ligne attendent dans la file du téléphone et
+repartent ensuite).
 
-### Revenir en arrière
+## Déploiement automatique (surveillance des tags)
 
-*Actions → Déploiement → Run workflow*, et saisir le tag précédent : il est
-reconstruit et redéployé de la même façon.
-
-Attention : si la version annulée contenait une **migration Flyway**,
-l'ancienne version tourne sur le schéma déjà migré, ce qui convient pour un
-ajout de colonne ou de table mais pas toujours. En cas de doute, restaurer la
-sauvegarde prise juste avant le déploiement fautif, **backend arrêté** :
-
-```bash
-cd ~/suivi-plongee
-docker compose -f docker-compose.prod.yml stop backend
-ls sauvegardes/                              # avant-<tag>-<date>.sql.gz
-docker compose -f docker-compose.prod.yml exec -T db \
-  psql -U plongee -d plongee -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-gunzip -c sauvegardes/avant-v2026.09.2-2026-09-30-2130.sql.gz | \
-  docker compose -f docker-compose.prod.yml exec -T db psql -U plongee -d plongee
-```
-
-puis relancer le déploiement du tag précédent (ci-dessus). Les saisies
-faites entre ce déploiement et la restauration sont perdues.
-
-## Déploiement automatique sans GitHub Actions (surveillance des tags)
-
-Alternative au workflow ci-dessus, pour une machine assez puissante pour
-construire elle-même les images (compter plusieurs Go de mémoire) :
+Sur le serveur, qui doit être assez puissant pour construire lui-même les
+images (compter plusieurs Go de mémoire) :
 `outils/surveiller-tags.sh`, lancé par cron toutes les 5 minutes, regarde
 s'il y a un nouveau **tag `v…` sur `master`** et le déploie :
 
@@ -248,10 +201,6 @@ Seul un tag plus récent que la version en ligne est déployé : le script ne
 revient jamais en arrière de lui-même. Les images des 5 dernières versions
 déployées restent sur la machine.
 
-**Ne pas activer les deux mécanismes pour le même serveur** : un même tag
-serait déployé deux fois. Avec ce script, retirer les secrets SSH du dépôt
-GitHub (ou le job `deploiement` du workflow) pour que GitHub Actions s'arrête
-aux tests et aux images.
 
 ### Mise en place (une seule fois)
 
@@ -285,15 +234,41 @@ ls sauvegardes/              # avant-<tag>-<date>.sql.gz
                                   # même noté en échec, même plus ancien
 ```
 
-Si le journal finit par « intervention manuelle nécessaire », ni le nouveau
-tag ni la version précédente n'ont redémarré : voir « Revenir en arrière »
-ci-dessus, en travaillant dans `~/suivi-plongee-deploiement/depot` et en
-ajoutant `-p suivi-plongee` aux commandes `docker compose`.
+### Revenir en arrière
+
+Si un tag déployé avec succès se révèle fautif à l'usage :
+
+```bash
+~/suivi-plongee-deploiement/surveiller-tags.sh v2026.09.1   # le tag précédent
+```
+
+Il est reconstruit et redéployé de la même façon (sauvegarde comprise).
+Attention : si la version annulée contenait une **migration Flyway**,
+l'ancienne version tourne sur le schéma déjà migré, ce qui convient pour un
+ajout de colonne ou de table mais pas toujours. En cas de doute, restaurer la
+sauvegarde prise juste avant le déploiement fautif, **backend arrêté** :
+
+```bash
+cd ~/suivi-plongee-deploiement/depot
+dc() { docker compose -p suivi-plongee -f docker-compose.prod.yml "$@"; }
+dc stop backend
+ls ../sauvegardes/                           # avant-<tag>-<date>.sql.gz
+dc exec -T db psql -U plongee -d plongee -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+gunzip -c ../sauvegardes/avant-v2026.09.2-2026-09-30-2130.sql.gz | \
+  dc exec -T db psql -U plongee -d plongee
+```
+
+puis redéployer le tag précédent (ci-dessus). Les saisies faites entre ce
+déploiement et la restauration sont perdues.
+
+C'est aussi la marche à suivre si le journal finit par « intervention
+manuelle nécessaire » : ni le nouveau tag ni la version précédente n'ont
+redémarré.
 
 ## Maintenir en conditions
 
-**Mettre à jour** : voir « Déploiement automatique » ci-dessus. Sans GitHub
-Actions, la mise à jour à la main reste possible (le serveur compile alors
+**Mettre à jour** : voir « Déploiement automatique » ci-dessus. Sans la
+surveillance des tags, la mise à jour à la main reste possible (le serveur compile alors
 lui-même, ce qui peut manquer de mémoire sur une VM de 1 Go) :
 
 ```bash

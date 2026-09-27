@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Met en production une version déjà construite et publiée sur ghcr.io.
-# Lancé sur le serveur, depuis le dossier du dépôt, par le workflow GitHub
-# « Déploiement » (.github/workflows/deploiement.yml) ; peut aussi servir à
-# la main pour revenir à une version précédente :
+# Met en production une version déjà construite et publiée sur ghcr.io par
+# le workflow GitHub « Tests et images ». Le déploiement automatique passe
+# désormais par outils/surveiller-tags.sh, qui construit sur place ; ce
+# script reste pour un serveur trop petit pour construire, ou à la main :
 #
 #   git fetch --tags && git checkout --detach v2026.09.1
 #   ./outils/deployer.sh v2026.09.1
