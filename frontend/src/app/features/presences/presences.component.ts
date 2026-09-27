@@ -489,14 +489,14 @@ export class PresencesComponent implements OnDestroy {
   }
 
   private chargerPhoto(eleveId: number): void {
-    this.api.photoEleve(eleveId).subscribe({
-      next: blob => {
+    this.api.photoEleve(eleveId).then(
+      blob => {
         const copie = new Map(this.urlsPhotos());
         copie.set(eleveId, URL.createObjectURL(blob));
         this.urlsPhotos.set(copie);
       },
-      error: () => { /* pas de photo consultable : la silhouette reste affichée */ }
-    });
+      () => { /* pas de photo consultable : la silhouette reste affichée */ }
+    );
   }
 
   urlPhoto(eleveId: number): string | null {

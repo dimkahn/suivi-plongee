@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
+import { ReseauService } from '../../core/reseau.service';
 import { GroupeEntrainementVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur } from '../../core/modeles';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 
@@ -121,6 +122,7 @@ type Population = 'ELEVES' | 'MONITEURS';
 })
 export class TrombinoscopeComponent implements OnDestroy {
   private api = inject(ApiService);
+  private reseau = inject(ReseauService);
 
   readonly libellePreparation = libellePreparation;
 
@@ -162,29 +164,31 @@ export class TrombinoscopeComponent implements OnDestroy {
   afficherMoniteurs(): void {
     this.population.set('MONITEURS');
     if (this.moniteurs() !== null) return;
-    this.api.trombinoscopeMoniteurs().subscribe({
-      next: lignes => {
+    this.api.trombinoscopeMoniteurs().then(
+      lignes => {
         this.moniteurs.set(lignes);
         for (const m of lignes) {
           if (m.aPhoto) this.chargerPhotoMoniteur(m.id);
         }
       },
-      error: () => {
-        this.erreurMoniteurs.set('Impossible de charger le trombinoscope des moniteurs.');
+      () => {
+        this.erreurMoniteurs.set(this.reseau.enLigne()
+          ? 'Impossible de charger le trombinoscope des moniteurs.'
+          : 'Trombinoscope des moniteurs non disponible hors ligne : utilisez « Préparer hors ligne » quand vous avez du réseau.');
         this.moniteurs.set([]);
       }
-    });
+    );
   }
 
   private chargerPhotoMoniteur(id: number): void {
-    this.api.photoMoniteur(id).subscribe({
-      next: blob => {
+    this.api.photoMoniteur(id).then(
+      blob => {
         const copie = new Map(this.urlsPhotosMoniteurs());
         copie.set(id, URL.createObjectURL(blob));
         this.urlsPhotosMoniteurs.set(copie);
       },
-      error: () => { /* pas de photo consultable : la silhouette reste affichée */ }
-    });
+      () => { /* pas de photo consultable : la silhouette reste affichée */ }
+    );
   }
 
   urlPhotoMoniteur(id: number): string {
@@ -193,30 +197,32 @@ export class TrombinoscopeComponent implements OnDestroy {
 
   constructor() {
     this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
-    this.api.trombinoscope().subscribe({
-      next: lignes => {
+    this.api.trombinoscope().then(
+      lignes => {
         this.lignes.set(lignes);
         this.chargement.set(false);
         for (const l of lignes) {
           if (l.aPhoto) this.chargerPhoto(l.eleveId);
         }
       },
-      error: () => {
-        this.erreur.set('Impossible de charger le trombinoscope.');
+      () => {
+        this.erreur.set(this.reseau.enLigne()
+          ? 'Impossible de charger le trombinoscope.'
+          : 'Trombinoscope non disponible hors ligne : utilisez « Préparer hors ligne » quand vous avez du réseau.');
         this.chargement.set(false);
       }
-    });
+    );
   }
 
   private chargerPhoto(eleveId: number): void {
-    this.api.photoEleve(eleveId).subscribe({
-      next: blob => {
+    this.api.photoEleve(eleveId).then(
+      blob => {
         const copie = new Map(this.urlsPhotos());
         copie.set(eleveId, URL.createObjectURL(blob));
         this.urlsPhotos.set(copie);
       },
-      error: () => { /* pas de photo consultable : la silhouette reste affichée */ }
-    });
+      () => { /* pas de photo consultable : la silhouette reste affichée */ }
+    );
   }
 
   urlPhoto(eleveId: number): string {

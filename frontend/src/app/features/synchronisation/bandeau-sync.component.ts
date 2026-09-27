@@ -112,9 +112,9 @@ export class BandeauSyncComponent {
   async precharger(): Promise<void> {
     this.message.set('Préparation du mode hors ligne…');
     try {
-      const { grilles, feuilles, fiches } = await this.api.precharger();
+      const { grilles, feuilles, fiches, photos } = await this.api.precharger();
       this.message.set(`Disponibles hors ligne : ${grilles} grille(s), ${feuilles} feuille(s) de présence, `
-        + `${fiches} fiche(s) de sécurité.`);
+        + `${fiches} fiche(s) de sécurité, ${photos} photo(s).`);
     } catch {
       this.message.set('Le préchargement a échoué. Réessayez avec du réseau.');
     }
