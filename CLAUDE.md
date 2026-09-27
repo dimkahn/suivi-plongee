@@ -143,9 +143,19 @@ lignes 1 à 6 + fosse 10 m, 15 plongeurs encadrants compris). `GroupeEntrainemen
 par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
 `niveau_prepare` et du cursus en cours ; un élève dans au plus un groupe par
 saison (règle du service). **Sans rapport avec `GroupePlongeurs`** (V13), qui
-compose les palanquées d'un séjour. Suites prévues : grille manuelle des
-soirées (lot 2, avec un « responsable de séance » distinct du DP de la fiche
-de sécurité) puis planning des moniteurs (lot 3).
+compose les palanquées d'un séjour. **Grille des soirées (lot 2)** :
+`/admin/planning`, `PlanningService`. Une soirée = une date de la saison qui
+porte des séances. `affectation_groupe` (V27) ne stocke que les **écarts** à
+la ligne attitrée (autre espace, fosse avec `profondeur_limitee` = le « F6 »,
+activité, absence) : changer la ligne attitrée suit sur toutes les dates non
+retouchées. `soiree_planning` porte le **responsable de séance**, distinct du
+DP de la fiche de sécurité (E3 minimum, choisi à part ; `seance.dp_id` reste
+inutilisé). Avertissements calculés par le serveur, jamais bloquants : fosse
+au-delà de sa capacité (élèves + encadrants attitrés), groupe N1 ou encadré
+par un E1 en fosse sans limite à 6 m, ligne donnée à deux groupes. Les
+encadrants consultent en lecture sur `/planning` (soirée par soirée, leurs
+groupes en tête, `PlanningVue.mesGroupeIds` calculé côté serveur ; embarqué
+hors ligne). Suite prévue : planning des moniteurs (lot 3).
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
@@ -194,7 +204,8 @@ fiche de sécurité, profil réalisé) passent par une seconde file,
 garde que la dernière version par cible, envoyées dans l'ordre de leur
 première saisie (une fiche avant son profil réalisé). « Préparer hors
 ligne » embarque aussi les feuilles de présence et fiches de sécurité des
-séances à ±30 jours, les moniteurs, plongeurs connus et groupes.
+séances à ±30 jours, les moniteurs, plongeurs connus, groupes et le
+planning du bassin de la saison ouverte.
 
 **L'historique des entités modifiables passe par Envers, pas par un journal
 maison.** `Utilisateur`, `Eleve`, `Seance`, `Cursus`, `ValidationCompetence`

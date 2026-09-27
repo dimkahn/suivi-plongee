@@ -73,6 +73,12 @@ export const routes: Routes = [
       .then(m => m.FicheSecuriteRealiseComponent)
   },
   {
+    path: 'planning',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/planning/planning.component')
+      .then(m => m.PlanningComponent)
+  },
+  {
     path: 'groupes',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/groupes/groupes.component')
@@ -119,6 +125,12 @@ export const routes: Routes = [
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/groupes-entrainement.component')
       .then(m => m.GroupesEntrainementComponent)
+  },
+  {
+    path: 'admin/planning',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/planning-admin.component')
+      .then(m => m.PlanningAdminComponent)
   },
   {
     path: 'admin/seances',

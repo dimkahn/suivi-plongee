@@ -626,3 +626,54 @@ export interface EleveSaisonGroupeVue {
   groupeId: number | null;
   groupeSuggereId: number | null;
 }
+
+/** Place d'un groupe un soir donné (ATTITREE : sa ligne attitrée, rien d'enregistré). */
+export interface CasePlanningVue {
+  groupeId: number;
+  type: 'ATTITREE' | 'ESPACE' | 'ACTIVITE' | 'ABSENT' | 'AUCUN';
+  espaceId: number | null;
+  espace: string | null;
+  espaceType: 'LIGNE' | 'FOSSE' | null;
+  profondeurLimitee: number | null;
+  activite: string | null;
+  /** En clair : « Ligne 3 », « Fosse (limitée à 6 m) », « Baptêmes », « Absent ». */
+  libelle: string;
+}
+
+export interface SoireePlanningVue {
+  date: string;
+  responsableId: number | null;
+  responsable: string | null;
+  note: string | null;
+  cases: CasePlanningVue[];
+  avertissements: string[];
+}
+
+export interface GroupePlanningVue {
+  id: number;
+  nom: string;
+  niveauPrepare: string | null;
+  espaceAttitreId: number | null;
+  espaceAttitre: string | null;
+  nombreEleves: number;
+  /** Élèves et encadrants attitrés : ce que le groupe pèse dans la fosse. */
+  effectif: number;
+  encadrants: { id: number; nomComplet: string; niveauEncadrement: string | null }[];
+}
+
+export interface PlanningVue {
+  saisonId: number;
+  saison: string;
+  groupes: GroupePlanningVue[];
+  espaces: { id: number; nom: string; type: 'LIGNE' | 'FOSSE'; profondeurMax: number | null; capacite: number | null }[];
+  soirees: SoireePlanningVue[];
+  /** Groupes dont l'utilisateur connecté est encadrant attitré. */
+  mesGroupeIds: number[];
+}
+
+export interface DemandeCasePlanning {
+  type: 'ATTITREE' | 'ESPACE' | 'ACTIVITE' | 'ABSENT';
+  espaceId?: number | null;
+  profondeurLimitee?: number | null;
+  activite?: string | null;
+}

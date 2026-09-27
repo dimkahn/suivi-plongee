@@ -27,6 +27,9 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
               <a routerLink="/eleves" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Infos élèves
               </a>
+              <a routerLink="/planning" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Planning
+              </a>
               <a routerLink="/presences" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Présences
               </a>
