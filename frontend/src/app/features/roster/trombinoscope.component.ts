@@ -192,6 +192,7 @@ export class TrombinoscopeComponent implements OnDestroy {
   }
 
   constructor() {
+    this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
     this.api.trombinoscope().subscribe({
       next: lignes => {
         this.lignes.set(lignes);
