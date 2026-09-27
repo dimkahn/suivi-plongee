@@ -223,6 +223,73 @@ gunzip -c sauvegardes/avant-v2026.09.2-2026-09-30-2130.sql.gz | \
 puis relancer le déploiement du tag précédent (ci-dessus). Les saisies
 faites entre ce déploiement et la restauration sont perdues.
 
+## Déploiement automatique sans GitHub Actions (surveillance des tags)
+
+Alternative au workflow ci-dessus, pour une machine assez puissante pour
+construire elle-même les images (compter plusieurs Go de mémoire) :
+`outils/surveiller-tags.sh`, lancé par cron toutes les 5 minutes, regarde
+s'il y a un nouveau **tag `v…` sur `master`** et le déploie :
+
+1. construction des images du tag sur la machine : si elle échoue, la
+   version en ligne n'est pas touchée ;
+2. les images de la version en ligne sont mises de côté sous le tag d'image
+   `avant-<tag>` ;
+3. **sauvegarde de la base** (les 10 dernières sont gardées) ; si elle
+   échoue, rien ne redémarre ;
+4. démarrage de tout le `docker-compose.prod.yml` sur le nouveau tag, puis
+   attente que `/actuator/health` réponde (5 minutes au plus) ;
+5. s'il ne répond pas : **retour arrière automatique**, backend arrêté,
+   restauration de la sauvegarde (une migration Flyway a pu passer), puis
+   redémarrage des images `avant-<tag>`. Aucune saisie n'est perdue : le
+   backend n'a jamais répondu entre la sauvegarde et la restauration. Le tag
+   est noté en échec et n'est plus retenté tout seul.
+
+Seul un tag plus récent que la version en ligne est déployé : le script ne
+revient jamais en arrière de lui-même. Les images des 5 dernières versions
+déployées restent sur la machine.
+
+**Ne pas activer les deux mécanismes pour le même serveur** : un même tag
+serait déployé deux fois. Avec ce script, retirer les secrets SSH du dépôt
+GitHub (ou le job `deploiement` du workflow) pour que GitHub Actions s'arrête
+aux tests et aux images.
+
+### Mise en place (une seule fois)
+
+Sur la machine, depuis un clone du dépôt qui contient le `.env` de prod
+(étape 5), avec un utilisateur du groupe `docker` et une clé SSH GitHub sans
+phrase de passe (cron n'a pas d'agent SSH) :
+
+```bash
+outils/surveiller-tags.sh --installer
+```
+
+Cela crée `~/suivi-plongee-deploiement/` (un autre dossier avec
+`DOSSIER_DEPLOIEMENT=…`), y clone le dépôt, y copie le `.env` et le script,
+puis ajoute la ligne cron. Le dossier de développement n'est ensuite plus
+jamais utilisé par le déploiement. Le nom de projet docker compose reste
+`suivi-plongee` : mêmes conteneurs, **même volume de base** qu'avant.
+
+Pour modifier le `.env` de prod, c'est désormais
+`~/suivi-plongee-deploiement/depot/.env`. Pour une nouvelle version du
+script lui-même, relancer `--installer` depuis un dépôt à jour.
+
+### Suivre et intervenir
+
+```bash
+cd ~/suivi-plongee-deploiement
+tail -f journal.log          # ce qui s'est passé, construction comprise
+cat version-en-ligne         # dernier tag déployé avec succès
+cat tags-en-echec            # tags abandonnés après un échec
+ls sauvegardes/              # avant-<tag>-<date>.sql.gz
+./surveiller-tags.sh v2026.10.1   # (re)déployer ce tag tout de suite,
+                                  # même noté en échec, même plus ancien
+```
+
+Si le journal finit par « intervention manuelle nécessaire », ni le nouveau
+tag ni la version précédente n'ont redémarré : voir « Revenir en arrière »
+ci-dessus, en travaillant dans `~/suivi-plongee-deploiement/depot` et en
+ajoutant `-p suivi-plongee` aux commandes `docker compose`.
+
 ## Maintenir en conditions
 
 **Mettre à jour** : voir « Déploiement automatique » ci-dessus. Sans GitHub
