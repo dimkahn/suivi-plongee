@@ -129,6 +129,29 @@ class AdminMoniteurTest {
     }
 
     @Test
+    @DisplayName("Un ADMIN envoie un lien de reinitialisation a un moniteur actif, sans toucher a son mot de passe")
+    void lienReinitialisation() throws Exception {
+        String admin = admin();
+        JsonNode m = nouveauMoniteur(admin);
+        long id = m.get("id").asLong();
+        String lui = jeton(m.get("email").asText(), MOT_DE_PASSE);
+
+        mvc.perform(post("/api/admin/moniteurs/" + id + "/lien-reinitialisation").header("Authorization", lui))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(post("/api/admin/moniteurs/" + id + "/lien-reinitialisation").header("Authorization", admin))
+                .andExpect(status().isAccepted());
+        // Tant que le lien n'a pas servi, l'ancien mot de passe reste valable.
+        jeton(m.get("email").asText(), MOT_DE_PASSE);
+
+        mvc.perform(put("/api/admin/moniteurs/" + id + "/activation").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"actif\":false}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/admin/moniteurs/" + id + "/lien-reinitialisation").header("Authorization", admin))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
     @DisplayName("La photo d'un moniteur exige le droit a l'image, et son retrait la supprime")
     void photoSousConsentement() throws Exception {
         String admin = admin();

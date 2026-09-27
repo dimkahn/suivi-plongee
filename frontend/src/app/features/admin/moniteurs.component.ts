@@ -133,6 +133,12 @@ function aVerifier(m: MoniteurVue): boolean {
               <button type="button" class="bouton-discret" (click)="basculerMotDePasse(m.id)">
                 Changer le mot de passe
               </button>
+              @if (m.actif) {
+                <button type="button" class="bouton-discret" (click)="envoyerLienReinitialisation(m)"
+                        [disabled]="envoiLien() === m.id">
+                  {{ envoiLien() === m.id ? 'Envoi…' : 'Envoyer un lien de réinitialisation' }}
+                </button>
+              }
               <button type="button" class="bouton-discret" (click)="changerAutorisationImage(m)">
                 {{ m.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
               </button>
@@ -457,6 +463,25 @@ export class MoniteursComponent {
       error: (e: HttpErrorResponse) => {
         this.envoiMotDePasse.set(false);
         this.message.set(e.error?.detail ?? "Le mot de passe n'a pas pu être mis à jour.");
+      }
+    });
+  }
+
+  /** Moniteur dont le lien de réinitialisation est en cours d'envoi. */
+  envoiLien = signal<number | null>(null);
+
+  envoyerLienReinitialisation(m: MoniteurVue): void {
+    if (!confirm(`Envoyer à ${m.prenom} ${m.nom} (${m.email}) un lien pour choisir un nouveau mot de passe ?`)) return;
+    this.message.set(null);
+    this.envoiLien.set(m.id);
+    this.api.envoyerLienReinitialisationMoniteur(m.id).subscribe({
+      next: () => {
+        this.envoiLien.set(null);
+        this.message.set(`Lien de réinitialisation envoyé à ${m.email} (valable une heure).`);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiLien.set(null);
+        this.message.set(e.error?.detail ?? "Le lien n'a pas pu être envoyé.");
       }
     });
   }

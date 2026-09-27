@@ -174,6 +174,21 @@ public class AdminMoniteurService {
         refreshTokens.revoquerTout(id);
     }
 
+    /**
+     * Envoie au moniteur un lien de réinitialisation, comme un « mot de passe
+     * oublié » demandé à sa place : le mot de passe actuel reste valable tant
+     * que le lien n'a pas servi.
+     */
+    @Transactional
+    public void envoyerLienReinitialisation(Long id) {
+        Utilisateur u = moniteur(id);
+        if (!u.isActif()) {
+            throw new RegleMetierException(
+                    "Ce compte est désactivé : réactivez-le avant d'envoyer un lien de réinitialisation.");
+        }
+        reinitialisations.demander(u);
+    }
+
     @Transactional
     public void supprimer(Long id, Long auteurId) {
         Utilisateur u = moniteur(id);
