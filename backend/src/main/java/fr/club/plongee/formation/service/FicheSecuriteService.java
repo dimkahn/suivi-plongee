@@ -34,7 +34,7 @@ public class FicheSecuriteService {
      * fosse). Règle de sécurité générale, pas du MFT d'un niveau : elle vit
      * ici plutôt que dans le référentiel.
      */
-    static final NiveauEncadrement NIVEAU_DP_MINIMUM = NiveauEncadrement.E3;
+    public static final NiveauEncadrement NIVEAU_DP_MINIMUM = NiveauEncadrement.E3;
 
     /**
      * Un plongeur, tel que soumis par le formulaire d'établissement : voir

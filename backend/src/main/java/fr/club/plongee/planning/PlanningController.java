@@ -4,6 +4,7 @@ import fr.club.plongee.evaluation.service.HabilitationService;
 import fr.club.plongee.planning.service.PlanningService;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.planning.service.PlanningService.DemandeCase;
+import fr.club.plongee.planning.service.PlanningService.DemandeDisponibilite;
 import fr.club.plongee.planning.service.PlanningService.DemandeSoiree;
 import fr.club.plongee.planning.service.PlanningService.PlanningVue;
 import fr.club.plongee.planning.service.PlanningService.SoireeVue;
@@ -18,7 +19,7 @@ import java.time.LocalDate;
 /**
  * Planning des soirées d'entraînement : consulté par les encadrants, tenu
  * par un admin, case par case (groupe × date) et soirée par soirée
- * (responsable de séance, note).
+ * (responsable de séance, note). Chaque encadrant y annonce sa présence.
  */
 @RestController
 @RequestMapping("/api/planning")
@@ -52,5 +53,26 @@ public class PlanningController {
                                    @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                    @Valid @RequestBody DemandeSoiree demande) {
         return service.definirSoiree(saisonId, date, demande);
+    }
+
+    /** Présence de l'encadrant connecté à une soirée. */
+    @PutMapping("/saison/{saisonId}/soirees/{date}/disponibilite")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public SoireeVue definirMaDisponibilite(@PathVariable Long saisonId,
+                                           @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                           @RequestBody DemandeDisponibilite demande, Authentication authentication) {
+        Long moi = HabilitationService.principal(authentication).id();
+        return service.definirDisponibilite(saisonId, date, moi, demande.reponse(), moi);
+    }
+
+    /** Présence d'un encadrant saisie par un admin (prévenu par téléphone, par exemple). */
+    @PutMapping("/saison/{saisonId}/soirees/{date}/disponibilites/{utilisateurId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SoireeVue definirDisponibilite(@PathVariable Long saisonId,
+                                          @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                          @PathVariable Long utilisateurId, @RequestBody DemandeDisponibilite demande,
+                                          Authentication authentication) {
+        return service.definirDisponibilite(saisonId, date, utilisateurId, demande.reponse(),
+                HabilitationService.principal(authentication).id());
     }
 }

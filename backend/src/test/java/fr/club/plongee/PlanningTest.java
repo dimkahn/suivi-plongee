@@ -108,6 +108,40 @@ class PlanningTest {
     }
 
     @Test
+    @DisplayName("Un encadrant annonce sa présence ; l'admin répond à la place d'un autre ; un élève ne peut pas")
+    void disponibilites() throws Exception {
+        String e1 = jeton("e1@club.fr");
+        String admin = jeton("presidente@club.fr");
+        JsonNode p = planning(e1);
+        long saison = p.get("saisonId").asLong();
+        long moi = p.get("utilisateurId").asLong();
+        String date = p.get("soirees").get(2).get("date").asText();
+        String base = "/api/planning/saison/" + saison + "/soirees/" + date;
+
+        JsonNode soiree = json.readTree(mvc.perform(put(base + "/disponibilite").header("Authorization", e1)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reponse\":\"ABSENT\"}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(soiree.get("absents").toString()).contains("\"id\":" + moi);
+
+        // Présent, saisi par l'admin à sa place
+        soiree = json.readTree(mvc.perform(put(base + "/disponibilites/" + moi).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reponse\":\"PRESENT\"}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(soiree.get("presents").toString()).contains("\"id\":" + moi);
+        assertThat(soiree.get("absents").size()).isZero();
+
+        // Réponse vide : effacée
+        soiree = json.readTree(mvc.perform(put(base + "/disponibilite").header("Authorization", e1)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reponse\":null}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(soiree.get("presents").size()).isZero();
+
+        mvc.perform(put(base + "/disponibilites/" + moi).header("Authorization", e1)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reponse\":\"PRESENT\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("Une date sans séance est refusée avec un message pour l'utilisateur")
     void dateSansSeanceRefusee() throws Exception {
         String admin = jeton("presidente@club.fr");

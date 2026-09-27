@@ -1,19 +1,24 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { dateDuJour, dateFr } from '../../core/date-fr';
 import { JOURS, codeCase, jourDe } from '../../core/planning';
-import { CasePlanningVue, GroupePlanningVue, PlanningVue, SoireePlanningVue } from '../../core/modeles';
+import {
+  CasePlanningVue, GroupePlanningVue, PlanningVue, ReponseDisponibilite, SoireePlanningVue
+} from '../../core/modeles';
 
-/** Nombre de soirées à venir listées pour les groupes de l'encadrant. */
-const SOIREES_A_VENIR = 6;
+/** Nombre de soirées à venir listées d'emblée ; le reste de la saison sur demande. */
+const SOIREES_A_VENIR = 8;
 
 /**
- * Planning du bassin côté encadrant, en lecture : où est chaque groupe ce
- * soir (ou à la prochaine soirée), qui est responsable de séance, et les
- * prochaines soirées des groupes qu'on encadre. Pensé pour le téléphone,
- * au bord du bassin : embarqué par « Préparer hors ligne ».
+ * Planning du bassin côté encadrant : où est chaque groupe ce soir (ou à la
+ * prochaine soirée), qui est responsable de séance, qui vient, et les
+ * prochaines soirées des groupes qu'on encadre. L'encadrant y annonce sa
+ * présence ou son absence, soirée par soirée. Pensé pour le téléphone, au
+ * bord du bassin : la lecture est embarquée par « Préparer hors ligne », la
+ * réponse demande le réseau.
  */
 @Component({
   selector: 'app-planning',
@@ -51,6 +56,27 @@ const SOIREES_A_VENIR = 6;
           </p>
           @if (s.note) { <p class="note">{{ s.note }}</p> }
 
+          @if (auth.estMoniteur()) {
+            <div class="ma-reponse" role="group" [attr.aria-label]="'Ma présence le ' + dateLongue(s.date)">
+              <span>Vous serez là ?</span>
+              <button type="button" class="bouton-discret" [class.present]="maReponse(s) === 'PRESENT'"
+                      [attr.aria-pressed]="maReponse(s) === 'PRESENT'" [disabled]="envoi() === s.date"
+                      (click)="repondre(s, 'PRESENT')">Présent</button>
+              <button type="button" class="bouton-discret" [class.absent]="maReponse(s) === 'ABSENT'"
+                      [attr.aria-pressed]="maReponse(s) === 'ABSENT'" [disabled]="envoi() === s.date"
+                      (click)="repondre(s, 'ABSENT')">Absent</button>
+            </div>
+          }
+          <p class="secondaire qui-vient">
+            @if (s.presents.length === 0 && s.absents.length === 0) {
+              Aucun encadrant n'a encore répondu.
+            } @else {
+              <strong>{{ s.presents.length }} présent{{ s.presents.length > 1 ? 's' : '' }}</strong>
+              @if (s.presents.length > 0) { : {{ noms(s.presents) }} }
+              @if (s.absents.length > 0) { · {{ s.absents.length }} absent{{ s.absents.length > 1 ? 's' : '' }} : {{ noms(s.absents) }} }
+            }
+          </p>
+
           <ul class="groupes">
             @for (l of lignesSoiree(); track l.groupe.id) {
               <li [class.mien]="l.mien">
@@ -78,7 +104,7 @@ const SOIREES_A_VENIR = 6;
           }
         </section>
 
-        @if (mesGroupes().length > 0 && aVenir().length > 0) {
+        @if ((mesGroupes().length > 0 || auth.estMoniteur()) && aVenir().length > 0) {
           <section class="carte a-venir" aria-labelledby="titre-a-venir">
             <h2 id="titre-a-venir">Mes prochaines soirées</h2>
             <table>
@@ -86,6 +112,7 @@ const SOIREES_A_VENIR = 6;
                 <tr>
                   <th scope="col">Date</th>
                   @for (g of mesGroupes(); track g.id) { <th scope="col">{{ g.nom }}</th> }
+                  @if (auth.estMoniteur()) { <th scope="col">Ma présence</th> }
                 </tr>
               </thead>
               <tbody>
@@ -93,10 +120,27 @@ const SOIREES_A_VENIR = 6;
                   <tr>
                     <th scope="row">{{ jourCourt(v.soiree.date) }} {{ dateCourte(v.soiree.date) }}</th>
                     @for (c of v.cases; track c.groupeId) { <td>{{ c.libelle }}</td> }
+                    @if (auth.estMoniteur()) {
+                      <td class="reponse-courte">
+                        <button type="button" class="bouton-discret" [class.present]="maReponse(v.soiree) === 'PRESENT'"
+                                [attr.aria-pressed]="maReponse(v.soiree) === 'PRESENT'"
+                                [attr.aria-label]="'Présent le ' + dateLongue(v.soiree.date)"
+                                [disabled]="envoi() === v.soiree.date" (click)="repondre(v.soiree, 'PRESENT')">✓</button>
+                        <button type="button" class="bouton-discret" [class.absent]="maReponse(v.soiree) === 'ABSENT'"
+                                [attr.aria-pressed]="maReponse(v.soiree) === 'ABSENT'"
+                                [attr.aria-label]="'Absent le ' + dateLongue(v.soiree.date)"
+                                [disabled]="envoi() === v.soiree.date" (click)="repondre(v.soiree, 'ABSENT')">✗</button>
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
             </table>
+            @if (!touteLaSaison() && resteAVenir() > 0) {
+              <button type="button" class="bouton-discret plus" (click)="touteLaSaison.set(true)">
+                Afficher les {{ resteAVenir() }} soirées suivantes
+              </button>
+            }
           </section>
         }
 
@@ -145,6 +189,15 @@ const SOIREES_A_VENIR = 6;
     th, td { text-align: left; padding: 6px var(--pas) 6px 0; border-bottom: 1px solid var(--trait); }
     tbody th { font-weight: 400; white-space: nowrap; color: var(--craie); }
     .legende { margin-top: var(--pas-2); }
+    .ma-reponse { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
+    .ma-reponse span { font-weight: 700; margin-right: auto; }
+    .ma-reponse .bouton-discret { min-height: 44px; min-width: 96px; }
+    .present { background: var(--acquis); color: #fff; border-color: var(--acquis); }
+    .absent { background: #B3261E; color: #fff; border-color: #B3261E; }
+    .qui-vient { margin: var(--pas) 0 0; }
+    .reponse-courte { white-space: nowrap; }
+    .reponse-courte .bouton-discret { min-width: 44px; min-height: 44px; padding: 0; margin-right: 4px; }
+    .plus { margin-top: var(--pas); }
   `]
 })
 export class PlanningComponent {
@@ -156,6 +209,9 @@ export class PlanningComponent {
   message = signal<string | null>(null);
   /** Soirée affichée, dans la liste des soirées de la saison. */
   index = signal(0);
+  /** Date de la soirée dont la réponse part au serveur. */
+  envoi = signal<string | null>(null);
+  touteLaSaison = signal(false);
 
   soiree = computed<SoireePlanningVue | null>(() => this.planning()?.soirees[this.index()] ?? null);
 
@@ -173,15 +229,21 @@ export class PlanningComponent {
     return [...lignes.filter(l => l.mien), ...lignes.filter(l => !l.mien)];
   });
 
+  private soireesAVenir = computed(() => {
+    const aujourdhui = dateDuJour();
+    return (this.planning()?.soirees ?? []).filter(s => s.date >= aujourdhui);
+  });
+
   /** Prochaines soirées (à partir d'aujourd'hui), réduites aux groupes qu'on encadre. */
   aVenir = computed(() => {
     const p = this.planning();
     if (!p) return [];
-    const aujourdhui = dateDuJour();
     const indices = p.groupes.map((g, i) => p.mesGroupeIds.includes(g.id) ? i : -1).filter(i => i >= 0);
-    return p.soirees.filter(s => s.date >= aujourdhui).slice(0, SOIREES_A_VENIR)
-      .map(soiree => ({ soiree, cases: indices.map(i => soiree.cases[i]) }));
+    const soirees = this.touteLaSaison() ? this.soireesAVenir() : this.soireesAVenir().slice(0, SOIREES_A_VENIR);
+    return soirees.map(soiree => ({ soiree, cases: indices.map(i => soiree.cases[i]) }));
   });
+
+  resteAVenir = computed(() => Math.max(0, this.soireesAVenir().length - SOIREES_A_VENIR));
 
   constructor() {
     void this.charger();
@@ -201,6 +263,40 @@ export class PlanningComponent {
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  maReponse(s: SoireePlanningVue): ReponseDisponibilite | null {
+    const moi = this.planning()?.utilisateurId;
+    if (s.presents.some(e => e.id === moi)) return 'PRESENT';
+    if (s.absents.some(e => e.id === moi)) return 'ABSENT';
+    return null;
+  }
+
+  /** Toucher la réponse déjà donnée l'efface (« pas encore répondu »). */
+  repondre(s: SoireePlanningVue, reponse: ReponseDisponibilite): void {
+    const p = this.planning();
+    if (!p) return;
+    this.message.set(null);
+    this.envoi.set(s.date);
+    this.api.definirMaDisponibilite(p.saisonId, s.date, this.maReponse(s) === reponse ? null : reponse).subscribe({
+      next: soiree => {
+        this.envoi.set(null);
+        const actuel = this.planning();
+        if (actuel) {
+          this.planning.set({ ...actuel, soirees: actuel.soirees.map(x => x.date === soiree.date ? soiree : x) });
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(null);
+        this.message.set(err.status === 0
+          ? 'Pas de connexion : votre réponse n\'est pas enregistrée, réessayez une fois connecté.'
+          : err.error?.detail ?? 'Votre réponse n\'a pas pu être enregistrée.');
+      }
+    });
+  }
+
+  noms(encadrants: { nomComplet: string }[]): string {
+    return encadrants.map(e => e.nomComplet.split(' ')[0]).join(', ');
   }
 
   deplacer(pas: number): void {

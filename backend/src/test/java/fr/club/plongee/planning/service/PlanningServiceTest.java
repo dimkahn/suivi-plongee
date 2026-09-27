@@ -89,6 +89,42 @@ class PlanningServiceTest {
                 .containsExactly("Ligne 3 donnée à plusieurs groupes : Prépa N2, N2+.");
     }
 
+    @Test
+    @DisplayName("Groupe dont tous les encadrants attitrés sont absents : signalé, sauf s'il n'a pas séance")
+    void groupeSansEncadrantPresent() {
+        GroupeEntrainement g = groupe(1L, "Prépa N2", "N2", LIGNE_3, 3);
+        Utilisateur encadrant = g.getEncadrants().iterator().next();
+        encadrant.setPrenom("Samuel");
+        encadrant.setNom("Martin");
+
+        assertThat(PlanningService.avertissementsEncadrants(List.of(g), List.of(PlanningService.caseVue(g, null)),
+                null, List.of(), List.of(encadrant)))
+                .containsExactly("Prépa N2 : aucun encadrant attitré présent (Samuel Martin absent).");
+
+        AffectationGroupe absent = new AffectationGroupe();
+        absent.setType(AffectationGroupe.Type.ABSENT);
+        assertThat(PlanningService.avertissementsEncadrants(List.of(g), List.of(PlanningService.caseVue(g, absent)),
+                null, List.of(), List.of(encadrant))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Des présents mais aucun E3 : pas de directeur de plongée ; personne n'a répondu : rien")
+    void aucunE3Present() {
+        Utilisateur e2 = new Utilisateur();
+        e2.setId(50L);
+        e2.setNiveauEncadrement(NiveauEncadrement.E2);
+        Utilisateur e3 = new Utilisateur();
+        e3.setId(51L);
+        e3.setNiveauEncadrement(NiveauEncadrement.E3);
+
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, List.of(e2), List.of()))
+                .anyMatch(s -> s.contains("pas de directeur de plongée"));
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, List.of(e2, e3), List.of()))
+                .isEmpty();
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, List.of(), List.of()))
+                .isEmpty();
+    }
+
     private static CaseVue fosse(GroupeEntrainement g, Integer limite) {
         AffectationGroupe a = new AffectationGroupe();
         a.setType(AffectationGroupe.Type.ESPACE);

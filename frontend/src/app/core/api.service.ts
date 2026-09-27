@@ -8,7 +8,7 @@ import {
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
-  DemandeCasePlanning, PlanningVue, SoireePlanningVue
+  DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire } from './base-locale';
 
@@ -683,6 +683,20 @@ export class ApiService {
   definirSoireePlanning(saisonId: number, date: string,
                         demande: { responsableId: number | null; note: string | null }): Observable<SoireePlanningVue> {
     return this.http.put<SoireePlanningVue>(`/api/planning/saison/${saisonId}/soirees/${date}`, demande);
+  }
+
+  /** L'encadrant connecté annonce sa présence à une soirée ; null efface sa réponse. */
+  definirMaDisponibilite(saisonId: number, date: string,
+                         reponse: ReponseDisponibilite | null): Observable<SoireePlanningVue> {
+    return this.http.put<SoireePlanningVue>(
+      `/api/planning/saison/${saisonId}/soirees/${date}/disponibilite`, { reponse });
+  }
+
+  /** Un admin répond à la place d'un encadrant (prévenu par téléphone, par exemple). */
+  definirDisponibilite(saisonId: number, date: string, utilisateurId: number,
+                       reponse: ReponseDisponibilite | null): Observable<SoireePlanningVue> {
+    return this.http.put<SoireePlanningVue>(
+      `/api/planning/saison/${saisonId}/soirees/${date}/disponibilites/${utilisateurId}`, { reponse });
   }
 
   // ----------------------------------------------------------------

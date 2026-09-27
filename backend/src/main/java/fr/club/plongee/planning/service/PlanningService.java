@@ -6,12 +6,15 @@ import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.Saison;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.SaisonRepository;
+import fr.club.plongee.formation.service.FicheSecuriteService;
 import fr.club.plongee.formation.repository.SeanceRepository;
 import fr.club.plongee.planning.domain.AffectationGroupe;
+import fr.club.plongee.planning.domain.DisponibiliteEncadrant;
 import fr.club.plongee.planning.domain.EspaceBassin;
 import fr.club.plongee.planning.domain.GroupeEntrainement;
 import fr.club.plongee.planning.domain.SoireePlanning;
 import fr.club.plongee.planning.repository.AffectationGroupeRepository;
+import fr.club.plongee.planning.repository.DisponibiliteEncadrantRepository;
 import fr.club.plongee.planning.repository.EspaceBassinRepository;
 import fr.club.plongee.planning.repository.GroupeEntrainementRepository;
 import fr.club.plongee.planning.repository.SoireePlanningRepository;
@@ -32,8 +35,10 @@ import java.util.stream.Collectors;
  * Planning des soirées d'entraînement : pour chaque date de la saison qui
  * porte des séances, où est chaque groupe (ligne d'eau, fosse, activité) et
  * qui est responsable de séance. Un groupe sans consigne pour une date est à
- * sa ligne attitrée. Les avertissements (fosse trop pleine, débutants ou E1
- * en fosse profonde, ligne en double) n'empêchent rien : l'admin décide.
+ * sa ligne attitrée. Chaque encadrant répond présent ou absent, soirée par
+ * soirée. Les avertissements (fosse trop pleine, débutants ou E1 en fosse
+ * profonde, ligne en double, groupe sans encadrant présent, pas de E3 pour
+ * la fiche de sécurité) n'empêchent rien : l'admin décide.
  */
 @Service
 public class PlanningService {
@@ -64,17 +69,26 @@ public class PlanningService {
     public record CaseVue(Long groupeId, String type, Long espaceId, String espace, String espaceType,
                           Integer profondeurLimitee, String activite, String libelle) {}
 
+    /** {@code presents}, {@code absents} : réponses des encadrants ; qui n'y figure pas n'a pas répondu. */
     public record SoireeVue(LocalDate date, Long responsableId, String responsable, String note,
+                            List<EncadrantPlanningVue> presents, List<EncadrantPlanningVue> absents,
                             List<CaseVue> cases, List<String> avertissements) {}
 
-    /** {@code mesGroupeIds} : groupes dont l'utilisateur connecté est encadrant attitré. */
+    /**
+     * {@code mesGroupeIds} : groupes dont l'utilisateur connecté est encadrant
+     * attitré ; {@code utilisateurId} : lui-même, pour retrouver ses réponses.
+     */
     public record PlanningVue(Long saisonId, String saison, List<GroupePlanningVue> groupes,
-                              List<EspacePlanningVue> espaces, List<SoireeVue> soirees, List<Long> mesGroupeIds) {}
+                              List<EspacePlanningVue> espaces, List<SoireeVue> soirees, List<Long> mesGroupeIds,
+                              Long utilisateurId) {}
 
     public record DemandeCase(@NotNull TypeCase type, Long espaceId, @Min(1) Integer profondeurLimitee,
                               @Size(max = 80) String activite) {}
 
     public record DemandeSoiree(Long responsableId, @Size(max = 200) String note) {}
+
+    /** {@code reponse} vide : efface la réponse (« pas encore répondu »). */
+    public record DemandeDisponibilite(DisponibiliteEncadrant.Reponse reponse) {}
 
     private final SaisonRepository saisons;
     private final SeanceRepository seances;
@@ -83,10 +97,12 @@ public class PlanningService {
     private final AffectationGroupeRepository affectations;
     private final SoireePlanningRepository soirees;
     private final UtilisateurRepository utilisateurs;
+    private final DisponibiliteEncadrantRepository disponibilites;
 
     public PlanningService(SaisonRepository saisons, SeanceRepository seances, GroupeEntrainementRepository groupes,
                            EspaceBassinRepository espaces, AffectationGroupeRepository affectations,
-                           SoireePlanningRepository soirees, UtilisateurRepository utilisateurs) {
+                           SoireePlanningRepository soirees, UtilisateurRepository utilisateurs,
+                           DisponibiliteEncadrantRepository disponibilites) {
         this.saisons = saisons;
         this.seances = seances;
         this.groupes = groupes;
@@ -94,6 +110,7 @@ public class PlanningService {
         this.affectations = affectations;
         this.soirees = soirees;
         this.utilisateurs = utilisateurs;
+        this.disponibilites = disponibilites;
     }
 
     /**
@@ -115,7 +132,8 @@ public class PlanningService {
                 ctx.groupes.stream()
                         .filter(g -> g.getEncadrants().stream().anyMatch(u -> u.getId().equals(utilisateurId)))
                         .map(GroupeEntrainement::getId)
-                        .toList());
+                        .toList(),
+                utilisateurId);
     }
 
     /** Place d'un groupe pour une soirée ; type ATTITREE efface la consigne (retour à la ligne attitrée). */
@@ -188,13 +206,44 @@ public class PlanningService {
         return soiree(contexte(saison), date);
     }
 
+    /**
+     * Réponse d'un encadrant pour une soirée, saisie par lui-même ou par un
+     * admin ({@code saisiParId}) ; une réponse vide l'efface.
+     */
+    @Transactional
+    public SoireeVue definirDisponibilite(Long saisonId, LocalDate date, Long utilisateurId,
+                                          DisponibiliteEncadrant.Reponse reponse, Long saisiParId) {
+        Saison saison = saison(saisonId);
+        verifierSoiree(saison, date);
+        Utilisateur encadrant = utilisateurs.findById(utilisateurId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Encadrant introuvable"));
+        if (!encadrant.isActif() || !encadrant.estMoniteur()) {
+            throw new RegleMetierException(encadrant.nomComplet()
+                    + " n'est pas un encadrant actif : pas de présence à annoncer.");
+        }
+        Optional<DisponibiliteEncadrant> existante = disponibilites.findByUtilisateurIdAndDateSoiree(utilisateurId, date);
+        if (reponse == null) {
+            existante.ifPresent(disponibilites::delete);
+        } else {
+            DisponibiliteEncadrant d = existante.orElseGet(DisponibiliteEncadrant::new);
+            d.setSaison(saison);
+            d.setDateSoiree(date);
+            d.setUtilisateur(encadrant);
+            d.setReponse(reponse);
+            d.setSaisiPar(saisiParId == null ? null : utilisateurs.getReferenceById(saisiParId));
+            disponibilites.save(d);
+        }
+        return soiree(contexte(saison), date);
+    }
+
     // ------------------------------------------------------------------
 
     /** Ce qu'il faut pour assembler une soirée, chargé une fois pour toute la saison. */
     private record Contexte(List<GroupeEntrainement> groupes,
                             Map<LocalDate, Map<Long, AffectationGroupe>> affectations,
                             Map<LocalDate, SoireePlanning> soirees,
-                            Map<Long, Integer> capacites) {}
+                            Map<Long, Integer> capacites,
+                            Map<LocalDate, List<DisponibiliteEncadrant>> disponibilites) {}
 
     private Contexte contexte(Saison saison) {
         Map<LocalDate, Map<Long, AffectationGroupe>> parDate = new HashMap<>();
@@ -207,7 +256,9 @@ public class PlanningService {
         for (EspaceBassin e : espaces.findAll()) {
             if (e.getCapacite() != null) capacites.put(e.getId(), e.getCapacite());
         }
-        return new Contexte(groupes.parSaison(saison.getId()), parDate, soireesParDate, capacites);
+        Map<LocalDate, List<DisponibiliteEncadrant>> reponses = disponibilites.parSaison(saison.getId()).stream()
+                .collect(Collectors.groupingBy(DisponibiliteEncadrant::getDateSoiree));
+        return new Contexte(groupes.parSaison(saison.getId()), parDate, soireesParDate, capacites, reponses);
     }
 
     private SoireeVue soiree(Contexte ctx, LocalDate date) {
@@ -215,8 +266,60 @@ public class PlanningService {
         List<CaseVue> cases = ctx.groupes.stream().map(g -> caseVue(g, consignes.get(g.getId()))).toList();
         SoireePlanning s = ctx.soirees.get(date);
         Utilisateur r = s == null ? null : s.getResponsable();
+        List<DisponibiliteEncadrant> reponses = ctx.disponibilites.getOrDefault(date, List.of());
+        List<Utilisateur> presents = encadrants(reponses, DisponibiliteEncadrant.Reponse.PRESENT);
+        List<Utilisateur> absents = encadrants(reponses, DisponibiliteEncadrant.Reponse.ABSENT);
+        List<String> avertissements = new ArrayList<>(avertissements(ctx.groupes, cases, ctx.capacites));
+        avertissements.addAll(avertissementsEncadrants(ctx.groupes, cases, r, presents, absents));
         return new SoireeVue(date, r == null ? null : r.getId(), r == null ? null : r.nomComplet(),
-                s == null ? null : s.getNote(), cases, avertissements(ctx.groupes, cases, ctx.capacites));
+                s == null ? null : s.getNote(),
+                presents.stream().map(PlanningService::encadrantVue).toList(),
+                absents.stream().map(PlanningService::encadrantVue).toList(),
+                cases, avertissements);
+    }
+
+    private static List<Utilisateur> encadrants(List<DisponibiliteEncadrant> reponses,
+                                                DisponibiliteEncadrant.Reponse reponse) {
+        return reponses.stream().filter(d -> d.getReponse() == reponse).map(DisponibiliteEncadrant::getUtilisateur)
+                .sorted(Comparator.comparing(Utilisateur::nomComplet)).toList();
+    }
+
+    /**
+     * Ce que les réponses des encadrants font apparaître : un groupe qui a
+     * séance mais dont tous les encadrants attitrés ont répondu absent, un
+     * responsable de séance absent, et, dès qu'au moins un encadrant a
+     * répondu présent, l'absence de tout E3 parmi eux (pas de directeur de
+     * plongée pour la fiche de sécurité). Qui n'a pas répondu ne compte ni
+     * comme présent ni comme absent.
+     */
+    static List<String> avertissementsEncadrants(List<GroupeEntrainement> groupesSaison, List<CaseVue> cases,
+                                                 Utilisateur responsable, List<Utilisateur> presents,
+                                                 List<Utilisateur> absents) {
+        Set<Long> absentsIds = absents.stream().map(Utilisateur::getId).collect(Collectors.toSet());
+        Map<Long, CaseVue> caseParGroupe = new HashMap<>();
+        cases.forEach(c -> caseParGroupe.put(c.groupeId(), c));
+        List<String> resultat = new ArrayList<>();
+
+        for (GroupeEntrainement g : groupesSaison) {
+            CaseVue c = caseParGroupe.get(g.getId());
+            if (c != null && TypeCase.ABSENT.name().equals(c.type())) continue;
+            if (!g.getEncadrants().isEmpty()
+                    && g.getEncadrants().stream().allMatch(u -> absentsIds.contains(u.getId()))) {
+                String noms = g.getEncadrants().stream().map(Utilisateur::nomComplet).sorted()
+                        .collect(Collectors.joining(", "));
+                resultat.add(g.getNom() + " : aucun encadrant attitré présent (" + noms + " absent"
+                        + (g.getEncadrants().size() > 1 ? "s" : "") + ").");
+            }
+        }
+        if (responsable != null && absentsIds.contains(responsable.getId())) {
+            resultat.add(responsable.nomComplet() + ", responsable de séance, a répondu absent.");
+        }
+        if (!presents.isEmpty() && presents.stream().noneMatch(u -> u.getNiveauEncadrement() != null
+                && u.getNiveauEncadrement().auMoins(FicheSecuriteService.NIVEAU_DP_MINIMUM))) {
+            resultat.add("Aucun " + FicheSecuriteService.NIVEAU_DP_MINIMUM
+                    + " parmi les présents : pas de directeur de plongée pour la fiche de sécurité.");
+        }
+        return resultat;
     }
 
     static CaseVue caseVue(GroupeEntrainement g, AffectationGroupe a) {
@@ -293,14 +396,18 @@ public class PlanningService {
         return g.getEleves().size() + g.getEncadrants().size();
     }
 
+    private static EncadrantPlanningVue encadrantVue(Utilisateur u) {
+        return new EncadrantPlanningVue(u.getId(), u.nomComplet(),
+                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name());
+    }
+
     private static GroupePlanningVue groupeVue(GroupeEntrainement g) {
         EspaceBassin e = g.getEspaceAttitre();
         return new GroupePlanningVue(g.getId(), g.getNom(), g.getNiveauPrepare(),
                 e == null ? null : e.getId(), e == null ? null : e.getNom(),
                 g.getEleves().size(), effectif(g),
                 g.getEncadrants().stream()
-                        .map(u -> new EncadrantPlanningVue(u.getId(), u.nomComplet(),
-                                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name()))
+                        .map(PlanningService::encadrantVue)
                         .sorted(Comparator.comparing(EncadrantPlanningVue::nomComplet))
                         .toList());
     }

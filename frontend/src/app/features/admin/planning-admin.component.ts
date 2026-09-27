@@ -7,8 +7,8 @@ import { dateFr } from '../../core/date-fr';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { JOURS, codeCase, jourDe } from '../../core/planning';
 import {
-  CasePlanningVue, DemandeCasePlanning, GroupePlanningVue, MoniteurOptionVue, PlanningVue, SaisonVue,
-  SoireePlanningVue
+  CasePlanningVue, DemandeCasePlanning, GroupePlanningVue, MoniteurOptionVue, PlanningVue, ReponseDisponibilite,
+  SaisonVue, SoireePlanningVue
 } from '../../core/modeles';
 
 /** Périodes proposées pour ne pas afficher toute la saison d'un coup (mois 1-12). */
@@ -51,7 +51,8 @@ interface EditionSoiree {
     <h1>Planning du bassin</h1>
     <p class="secondaire">
       Touchez une case pour placer un groupe ce soir-là, ou la ligne « Responsable » pour choisir le
-      responsable de séance. Une case en gris clair est la ligne attitrée du groupe.
+      responsable de séance et les présences annoncées des encadrants. Une case en gris clair est la ligne
+      attitrée du groupe.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -117,6 +118,21 @@ interface EditionSoiree {
                             [attr.aria-label]="'Responsable du ' + dateLongue(s.date) + ' : ' + (s.responsable ?? 'aucun')">
                       {{ prenom(s.responsable) }}
                       @if (s.note) { <span class="note-indicateur" aria-hidden="true">•</span> }
+                    </button>
+                  </td>
+                }
+              </tr>
+              <tr class="ligne-encadrants">
+                <th scope="row" class="colonne-groupe">
+                  Encadrants
+                  <span class="detail-groupe">présents / absents</span>
+                </th>
+                @for (s of soireesAffichees(); track s.date) {
+                  <td>
+                    <button type="button" class="case" (click)="editerSoiree(s)"
+                            [attr.aria-label]="dateLongue(s.date) + ' : ' + s.presents.length + ' présent(s), '
+                              + s.absents.length + ' absent(s)'">
+                      <span class="nb-presents">{{ s.presents.length }}</span>@if (s.absents.length > 0) {<span class="nb-absents">/{{ s.absents.length }}</span>}
                     </button>
                   </td>
                 }
@@ -227,6 +243,29 @@ interface EditionSoiree {
           </button>
           <button type="button" class="bouton-discret" (click)="fermer()">Annuler</button>
         </div>
+
+        @if (soireeEditee(); as s) {
+          <h3>Présences des encadrants</h3>
+          <p class="secondaire">
+            Chacun répond depuis son planning ; touchez un bouton pour répondre à la place d'un encadrant
+            (enregistré aussitôt, toucher à nouveau l'efface).
+          </p>
+          <ul class="presences">
+            @for (m of moniteurs(); track m.id) {
+              <li>
+                <span>{{ m.nomComplet }} <span class="secondaire">{{ m.niveauEncadrement }}</span></span>
+                <span class="boutons">
+                  <button type="button" class="bouton-discret" [class.present]="reponseDe(s, m.id) === 'PRESENT'"
+                          [attr.aria-pressed]="reponseDe(s, m.id) === 'PRESENT'" [disabled]="envoi()"
+                          [attr.aria-label]="m.nomComplet + ' présent'" (click)="repondrePour(s, m.id, 'PRESENT')">✓</button>
+                  <button type="button" class="bouton-discret" [class.absent]="reponseDe(s, m.id) === 'ABSENT'"
+                          [attr.aria-pressed]="reponseDe(s, m.id) === 'ABSENT'" [disabled]="envoi()"
+                          [attr.aria-label]="m.nomComplet + ' absent'" (click)="repondrePour(s, m.id, 'ABSENT')">✗</button>
+                </span>
+              </li>
+            }
+          </ul>
+        }
       }
     </dialog>
   `,
@@ -265,6 +304,18 @@ interface EditionSoiree {
     .type-ACTIVITE { background: #FEF9C3; font-size: .75rem; }
     .type-ABSENT { color: var(--craie); }
     .responsable { font-weight: 400; font-size: .8125rem; color: #B3261E; }
+    .nb-presents { color: var(--acquis); }
+    .nb-absents { color: #B3261E; font-weight: 400; }
+    .dialogue h3 { margin: var(--pas-3) 0 4px; font-size: 1rem; }
+    .presences { list-style: none; margin: var(--pas) 0 0; padding: 0; max-height: 40vh; overflow-y: auto; }
+    .presences li {
+      display: flex; align-items: center; justify-content: space-between; gap: var(--pas);
+      border-bottom: 1px solid var(--trait); padding: 2px 0;
+    }
+    .presences .boutons { white-space: nowrap; }
+    .presences .bouton-discret { min-width: 44px; min-height: 44px; padding: 0; margin-left: 4px; }
+    .present { background: var(--acquis); color: #fff; border-color: var(--acquis); }
+    .absent { background: #B3261E; color: #fff; border-color: #B3261E; }
     .note-indicateur { color: var(--profond); }
     .legende { margin-top: var(--pas); }
     .avertissements { padding: var(--pas-2); margin-top: var(--pas-2); }
@@ -323,8 +374,20 @@ export class PlanningAdminComponent {
 
   espacesLignes = computed(() => (this.planning()?.espaces ?? []).filter(e => e.type === 'LIGNE'));
   espacesFosses = computed(() => (this.planning()?.espaces ?? []).filter(e => e.type === 'FOSSE'));
-  optionsResponsables = computed<OptionCombobox[]>(() => this.moniteurs()
-    .map(m => ({ id: m.id, libelle: m.nomComplet, detail: m.niveauEncadrement })));
+  /** Soirée ouverte dans le dialogue, à jour des réponses saisies depuis celui-ci. */
+  soireeEditee = computed(() => {
+    const date = this.editionSoiree()?.date;
+    return date ? this.planning()?.soirees.find(s => s.date === date) ?? null : null;
+  });
+
+  /** Encadrants de la soirée ouverte ; ceux qui ont répondu présent sont signalés. */
+  optionsResponsables = computed<OptionCombobox[]>(() => {
+    const presents = new Set(this.soireeEditee()?.presents.map(e => e.id) ?? []);
+    return this.moniteurs().map(m => ({
+      id: m.id, libelle: m.nomComplet,
+      detail: presents.has(m.id) ? `${m.niveauEncadrement} · présent` : m.niveauEncadrement
+    }));
+  });
 
   constructor() {
     void this.charger();
@@ -431,14 +494,43 @@ export class PlanningAdminComponent {
       { responsableId: e.responsableId, note: e.note.trim() || null }));
   }
 
+  reponseDe(s: SoireePlanningVue, utilisateurId: number): ReponseDisponibilite | null {
+    if (s.presents.some(e => e.id === utilisateurId)) return 'PRESENT';
+    if (s.absents.some(e => e.id === utilisateurId)) return 'ABSENT';
+    return null;
+  }
+
+  /** Réponse saisie à la place d'un encadrant ; toucher la réponse déjà donnée l'efface. Le dialogue reste ouvert. */
+  repondrePour(s: SoireePlanningVue, utilisateurId: number, reponse: ReponseDisponibilite): void {
+    const saisonId = this.saisonId();
+    if (saisonId === null) return;
+    this.envoi.set(true);
+    this.api.definirDisponibilite(saisonId, s.date, utilisateurId,
+      this.reponseDe(s, utilisateurId) === reponse ? null : reponse).subscribe({
+      next: soiree => {
+        this.envoi.set(false);
+        this.remplacerSoiree(soiree);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.fermer();
+        this.message.set(err.error?.detail ?? "La réponse n'a pas pu être enregistrée.");
+      }
+    });
+  }
+
+  private remplacerSoiree(soiree: SoireePlanningVue): void {
+    const p = this.planning();
+    if (p) this.planning.set({ ...p, soirees: p.soirees.map(s => s.date === soiree.date ? soiree : s) });
+  }
+
   /** La réponse est la soirée recalculée (cases et avertissements) : on la remplace telle quelle. */
   private envoyer(appel: ReturnType<ApiService['definirSoireePlanning']>): void {
     this.envoi.set(true);
     appel.subscribe({
       next: soiree => {
         this.envoi.set(false);
-        const p = this.planning();
-        if (p) this.planning.set({ ...p, soirees: p.soirees.map(s => s.date === soiree.date ? soiree : s) });
+        this.remplacerSoiree(soiree);
         this.fermer();
       },
       error: (err: HttpErrorResponse) => {
