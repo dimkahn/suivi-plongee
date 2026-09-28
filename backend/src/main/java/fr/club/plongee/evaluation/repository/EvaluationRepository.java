@@ -12,6 +12,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     java.util.Optional<Evaluation> findByReferenceClient(String referenceClient);
 
     boolean existsByMoniteurId(Long moniteurId);
+    boolean existsByCursusId(Long cursusId);
     boolean existsBySeanceId(Long seanceId);
     boolean existsByCritereId(Long critereId);
     boolean existsByCritere_BlocId(Long blocId);

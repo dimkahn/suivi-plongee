@@ -499,10 +499,16 @@ export class ApiService {
     return this.http.post<CursusVue>('/api/cursus', demande);
   }
 
+  /** niveau : refusé par le serveur dès qu'une compétence est notée. */
   modifierCursus(id: number, demande: {
-    moniteurReferentId: number | null; statut: string;
+    moniteurReferentId: number | null; statut: string; niveau?: 'N1' | 'N2' | 'N3';
   }): Observable<CursusVue> {
     return this.http.put<CursusVue>(`/api/cursus/${id}`, demande);
+  }
+
+  /** La formation devient une adhésion sans formation (maintien) ; refusé s'il y a des notes ou des présences. */
+  passerEnMaintien(cursusId: number): Observable<unknown> {
+    return this.http.post(`/api/cursus/${cursusId}/maintien`, {});
   }
 
   // ----------------------------------------------------------------
@@ -519,7 +525,8 @@ export class ApiService {
     return this.http.get<AdhesionVue[]>('/api/adhesions', { params: { eleveId } });
   }
 
-  adherer(demande: { eleveId: number; saisonId: number }): Observable<AdhesionVue> {
+  /** groupeId : groupe d'entraînement de la saison où ranger l'élève ; absent ou null, son groupe ne change pas. */
+  adherer(demande: { eleveId: number; saisonId: number; groupeId?: number | null }): Observable<AdhesionVue> {
     return this.http.post<AdhesionVue>('/api/adhesions', demande);
   }
 

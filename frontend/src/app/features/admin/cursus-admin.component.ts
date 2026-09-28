@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { CandidatInscription, CursusVue, GroupeEntrainementVue, MoniteurVue, SaisonVue } from '../../core/modeles';
+import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, MoniteurVue, SaisonVue } from '../../core/modeles';
 import { normaliser } from '../../core/seance-lieu';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
@@ -107,7 +107,13 @@ const LIBELLES_STATUT: Record<string, string> = {
         @for (n of niveaux; track n) {
           <option [value]="n">{{ n }}{{ candidatChoisi()?.niveauPropose === n ? ' (proposé)' : '' }}</option>
         }
+        <option value="MAINTIEN">Aucun — maintien, sans formation</option>
       </select>
+      @if (niveau === 'MAINTIEN') {
+        <p class="secondaire">
+          L'élève plonge avec le club cette saison sans préparer de niveau : ni référentiel, ni moniteur référent.
+        </p>
+      }
 
       <label for="groupe">Groupe d'entraînement</label>
       @if (groupes().length === 0) {
@@ -128,13 +134,15 @@ const LIBELLES_STATUT: Record<string, string> = {
         }
       }
 
-      <label for="referent">Moniteur référent</label>
-      <select id="referent" name="referent" [(ngModel)]="moniteurReferentId">
-        <option [ngValue]="null">Sans référent</option>
-        @for (m of moniteurs(); track m.id) {
-          <option [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}</option>
-        }
-      </select>
+      @if (niveau !== 'MAINTIEN') {
+        <label for="referent">Moniteur référent</label>
+        <select id="referent" name="referent" [(ngModel)]="moniteurReferentId">
+          <option [ngValue]="null">Sans référent</option>
+          @for (m of moniteurs(); track m.id) {
+            <option [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}</option>
+          }
+        </select>
+      }
 
       <button type="button" class="bouton-principal" (click)="inscrire()" [disabled]="envoi()">
         {{ envoi() ? 'Inscription…' : 'Inscrire' }}
@@ -161,6 +169,20 @@ const LIBELLES_STATUT: Record<string, string> = {
           <li class="carte">
             @if (edition() === c.id) {
               @if (formulaireEdition(); as f) {
+                <span class="nom">{{ c.eleve }}</span><span class="secondaire">&nbsp;· {{ c.saison }}</span>
+                <label [for]="'niveau-' + c.id">Niveau préparé</label>
+                <select [id]="'niveau-' + c.id" name="niveauEdition" [(ngModel)]="f.niveau">
+                  @for (n of niveaux; track n) { <option [value]="n">{{ n }}</option> }
+                  <option value="MAINTIEN">Aucun — maintien, sans formation</option>
+                </select>
+                @if (f.niveau !== c.niveau) {
+                  <p class="secondaire">
+                    Possible seulement si aucune compétence n'a encore été notée
+                    @if (f.niveau === 'MAINTIEN') { ni aucune présence }
+                    pour cette formation.
+                  </p>
+                }
+                @if (f.niveau !== 'MAINTIEN') {
                 <label [for]="'statut-' + c.id">Statut</label>
                 <select [id]="'statut-' + c.id" name="statut" [(ngModel)]="f.statut">
                   @for (s of statuts; track s) { <option [value]="s">{{ libelleStatut(s) }}</option> }
@@ -172,6 +194,7 @@ const LIBELLES_STATUT: Record<string, string> = {
                     <option [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}</option>
                   }
                 </select>
+                }
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
                     {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
@@ -194,6 +217,26 @@ const LIBELLES_STATUT: Record<string, string> = {
                 <button type="button" class="bouton-discret" (click)="commencerEdition(c)">Modifier</button>
               </div>
             }
+          </li>
+        }
+      </ul>
+    }
+
+    @if (adhesionsFiltrees().length > 0) {
+      <h2 class="titre-maintien">Maintien, sans formation</h2>
+      <ul>
+        @for (a of adhesionsFiltrees(); track a.id) {
+          <li class="carte">
+            <div class="ligne">
+              <div class="identite">
+                <span class="nom">{{ a.eleve }}</span>
+                <span class="secondaire">Maintien · {{ a.saison }}</span>
+              </div>
+              <span class="etat">Sans formation</span>
+            </div>
+            <div class="actions">
+              <button type="button" class="bouton-discret" (click)="retirerAdhesion(a)">Retirer de la saison</button>
+            </div>
           </li>
         }
       </ul>
@@ -254,6 +297,7 @@ const LIBELLES_STATUT: Record<string, string> = {
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
+    .titre-maintien { margin: var(--pas-3) 0 var(--pas-2); }
     .etat {
       flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
       background: #EEF2F4; color: var(--craie);
@@ -305,7 +349,16 @@ export class CursusAdminComponent {
 
   candidatChoisi = signal<CandidatInscription | null>(null);
   saisonId = signal<number | null>(null);
-  niveau: 'N1' | 'N2' | 'N3' = 'N1';
+  /** MAINTIEN : l'élève ne prépare aucun niveau (adhésion sans formation). */
+  niveau: 'N1' | 'N2' | 'N3' | 'MAINTIEN' = 'N1';
+
+  /** Adhésions sans formation de la saison ouverte, affichées sous les inscriptions. */
+  adhesions = signal<AdhesionVue[]>([]);
+  adhesionsFiltrees = computed(() => {
+    const r = normaliser(this.filtreNom());
+    return r ? this.adhesions().filter(a => normaliser(a.eleve).includes(r)) : this.adhesions();
+  });
+  private saisonOuverteId: number | null = null;
   moniteurReferentId: number | null = null;
 
   /** Groupes d'entraînement de la saison choisie. */
@@ -314,7 +367,7 @@ export class CursusAdminComponent {
   groupeId: number | null = null;
   /** Choisi à la main : on ne le remplace plus par la suggestion quand le niveau change. */
   private groupeTouche = false;
-  private niveauSignal = signal<'N1' | 'N2' | 'N3'>('N1');
+  private niveauSignal = signal<'N1' | 'N2' | 'N3' | 'MAINTIEN'>('N1');
 
   /** Le groupe où l'élève est déjà rangé cette saison, s'il y en a un. */
   groupeActuel = computed(() => {
@@ -332,7 +385,9 @@ export class CursusAdminComponent {
     [...this.groupes()].sort((a, b) => a.ordre - b.ordre).find(g => g.niveauPrepare === this.niveauSignal()) ?? null);
 
   edition = signal<number | null>(null);
-  formulaireEdition = signal<{ statut: string; moniteurReferentId: number | null } | null>(null);
+  formulaireEdition = signal<{
+    statut: string; moniteurReferentId: number | null; niveau: 'N1' | 'N2' | 'N3' | 'MAINTIEN';
+  } | null>(null);
 
   constructor() {
     void this.charger();
@@ -351,7 +406,11 @@ export class CursusAdminComponent {
       this.moniteurs.set(moniteurs);
       // Saison ouverte la plus récente par défaut : c'est presque toujours celle qu'on inscrit.
       const ouverte = saisons.find(s => s.ouverte);
-      if (ouverte) this.choisirSaison(ouverte.id);
+      if (ouverte) {
+        this.saisonOuverteId = ouverte.id;
+        this.choisirSaison(ouverte.id);
+        this.chargerAdhesions();
+      }
     } catch {
       this.message.set("Impossible de charger les données d'inscription.");
     } finally {
@@ -379,7 +438,7 @@ export class CursusAdminComponent {
     });
   }
 
-  changerNiveau(n: 'N1' | 'N2' | 'N3'): void {
+  changerNiveau(n: 'N1' | 'N2' | 'N3' | 'MAINTIEN'): void {
     this.niveau = n;
     this.niveauSignal.set(n);
     if (!this.groupeTouche) this.proposerGroupe();
@@ -464,10 +523,15 @@ export class CursusAdminComponent {
       this.message.set('Choisissez la saison puis un élève dans la liste.');
       return;
     }
+    if (this.niveau === 'MAINTIEN') {
+      this.inscrireEnMaintien(c.eleveId, `${c.prenom} ${c.nom}`, saisonId);
+      return;
+    }
+    const niveau = this.niveau;
     this.envoi.set(true);
     this.message.set(null);
     this.api.inscrireCursus({
-      eleveId: c.eleveId, saisonId, niveau: this.niveau,
+      eleveId: c.eleveId, saisonId, niveau,
       moniteurReferentId: this.moniteurReferentId,
       groupeId: this.groupeId
     }).subscribe({
@@ -488,13 +552,67 @@ export class CursusAdminComponent {
     });
   }
 
+  private inscrireEnMaintien(eleveId: number, nom: string, saisonId: number): void {
+    const groupe = this.groupes().find(g => g.id === this.groupeId);
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.adherer({ eleveId, saisonId, groupeId: this.groupeId }).subscribe({
+      next: () => {
+        this.envoi.set(false);
+        this.message.set(`${nom} est inscrit·e en maintien, sans formation`
+          + (groupe ? `, dans le groupe « ${groupe.nom} ».` : '.'));
+        this.choisirSaison(saisonId);
+        this.chargerAdhesions();
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "L'inscription n'a pas pu être enregistrée.");
+      }
+    });
+  }
+
   commencerEdition(c: CursusVue): void {
     this.message.set(null);
     this.edition.set(c.id);
     // CursusVue n'expose que le nom du référent, pas son id : on le retrouve par
     // correspondance de nom. Rare faux-positif possible en cas d'homonymie exacte.
     const m = this.moniteurs().find(x => `${x.prenom} ${x.nom}` === c.moniteurReferent);
-    this.formulaireEdition.set({ statut: c.statut, moniteurReferentId: m?.id ?? null });
+    this.formulaireEdition.set({ statut: c.statut, moniteurReferentId: m?.id ?? null, niveau: c.niveau });
+  }
+
+  private passerEnMaintien(c: CursusVue): void {
+    if (!confirm(`${c.eleve} ne prépare plus le ${c.niveau} : passer en maintien, sans formation ?`)) return;
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.passerEnMaintien(c.id).subscribe({
+      next: () => {
+        this.envoi.set(false);
+        this.liste.set(this.liste().filter(x => x.id !== c.id));
+        this.annulerEdition();
+        this.chargerAdhesions();
+        this.message.set(`${c.eleve} est passé·e en maintien, sans formation.`);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "Le passage en maintien n'a pas pu être enregistré.");
+      }
+    });
+  }
+
+  retirerAdhesion(a: AdhesionVue): void {
+    if (!confirm(`Retirer ${a.eleve} de la saison ${a.saison} ?`)) return;
+    this.api.retirerAdhesion(a.id).subscribe({
+      next: () => this.adhesions.set(this.adhesions().filter(x => x.id !== a.id)),
+      error: (e: HttpErrorResponse) => this.message.set(e.error?.detail ?? "L'adhésion n'a pas pu être retirée.")
+    });
+  }
+
+  private chargerAdhesions(): void {
+    if (this.saisonOuverteId === null) return;
+    this.api.adhesionsDeLaSaison(this.saisonOuverteId).subscribe({
+      next: a => this.adhesions.set(a),
+      error: () => this.message.set('Impossible de charger les élèves en maintien.')
+    });
   }
 
   annulerEdition(): void {
@@ -505,8 +623,15 @@ export class CursusAdminComponent {
   enregistrer(c: CursusVue): void {
     const f = this.formulaireEdition();
     if (!f) return;
+    if (f.niveau === 'MAINTIEN') {
+      this.passerEnMaintien(c);
+      return;
+    }
     this.envoi.set(true);
-    this.api.modifierCursus(c.id, { statut: f.statut, moniteurReferentId: f.moniteurReferentId }).subscribe({
+    this.message.set(null);
+    this.api.modifierCursus(c.id, {
+      statut: f.statut, moniteurReferentId: f.moniteurReferentId, niveau: f.niveau
+    }).subscribe({
       next: maj => {
         this.envoi.set(false);
         this.liste.set(this.liste().map(x => x.id === maj.id ? maj : x));

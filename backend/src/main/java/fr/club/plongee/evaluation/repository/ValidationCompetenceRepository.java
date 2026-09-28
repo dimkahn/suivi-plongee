@@ -11,5 +11,6 @@ public interface ValidationCompetenceRepository extends JpaRepository<Validation
     Optional<ValidationCompetence> findByCursusIdAndBlocId(Long cursusId, Long blocId);
     boolean existsByCursusIdAndBlocId(Long cursusId, Long blocId);
     boolean existsByMoniteurId(Long moniteurId);
+    boolean existsByCursusId(Long cursusId);
     boolean existsByBlocId(Long blocId);
 }
