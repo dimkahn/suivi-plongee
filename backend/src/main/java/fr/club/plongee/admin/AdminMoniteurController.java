@@ -35,27 +35,28 @@ public class AdminMoniteurController {
 
     public record MoniteurVue(Long id, String email, String nom, String prenom, boolean actif,
                               String niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                              LocalDate certificatValideJusquAu, boolean admin,
+                              LocalDate certificatValideJusquAu, boolean admin, boolean directeurTechnique,
                               boolean autorisationImage, boolean aPhoto) {}
 
-    /** {@code admin} facultatif : absent, le moniteur est cree sans le role ADMIN. */
+    /** {@code admin} et {@code directeurTechnique} facultatifs : absents, le moniteur est cree sans ces roles. */
     public record DemandeCreationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                           @NotBlank String prenom,
                                           @NotNull NiveauEncadrement niveauEncadrement,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                           String numeroLicence, LocalDate certificatValideJusquAu,
-                                          Boolean admin) {}
+                                          Boolean admin, Boolean directeurTechnique) {}
 
     /**
-     * {@code admin} facultatif : absent, le role ADMIN du moniteur reste tel
-     * quel (compatibilite avec un ecran qui ne l'envoie pas).
+     * {@code admin} et {@code directeurTechnique} facultatifs : absents, le
+     * role correspondant reste tel quel (compatibilite avec un ecran qui ne
+     * les envoie pas).
      */
     public record DemandeModificationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                               @NotBlank String prenom,
                                               @NotNull NiveauEncadrement niveauEncadrement,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                               String numeroLicence, LocalDate certificatValideJusquAu,
-                                              Boolean admin) {}
+                                              Boolean admin, Boolean directeurTechnique) {}
 
     public record DemandeAutorisationImage(@NotNull Boolean autorisationImage) {}
 
@@ -83,7 +84,8 @@ public class AdminMoniteurController {
     public MoniteurVue creer(@Valid @RequestBody DemandeCreationMoniteur demande) {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
-                demande.certificatValideJusquAu(), Boolean.TRUE.equals(demande.admin())));
+                demande.certificatValideJusquAu(), Boolean.TRUE.equals(demande.admin()),
+                Boolean.TRUE.equals(demande.directeurTechnique())));
     }
 
     @PutMapping("/{id}")
@@ -92,7 +94,7 @@ public class AdminMoniteurController {
                                 @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return vue(service.modifier(id, auteur.id(), demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
-                demande.certificatValideJusquAu(), demande.admin()));
+                demande.certificatValideJusquAu(), demande.admin(), demande.directeurTechnique()));
     }
 
     @PutMapping("/{id}/activation")
@@ -152,6 +154,6 @@ public class AdminMoniteurController {
         return new MoniteurVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif(),
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
                 u.getNiveauPlongeur(), u.getNumeroLicence(), u.getCertificatValideJusquAu(), u.getRoles().contains(RoleNom.ADMIN),
-                u.isAutorisationImage(), u.isAutorisationImage() && photos.existsById(u.getId()));
+                u.getRoles().contains(RoleNom.DIRECTEUR_TECHNIQUE), u.isAutorisationImage(), u.isAutorisationImage() && photos.existsById(u.getId()));
     }
 }

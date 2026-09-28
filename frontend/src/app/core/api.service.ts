@@ -8,7 +8,9 @@ import {
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
-  DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue
+  DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
+  DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
+  FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue, SortieVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -318,11 +320,12 @@ export class ApiService {
     numeroLicence?: string | null;
     certificatValideJusquAu?: string | null;
     admin?: boolean;
+    directeurTechnique?: boolean;
   }): Observable<MoniteurVue> {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
 
-  /** Seul endroit où le niveau d'encadrement et le rôle ADMIN d'un moniteur peuvent changer. */
+  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique) d'un moniteur changent. */
   modifierMoniteur(id: number, demande: {
     email: string;
     nom: string;
@@ -332,6 +335,7 @@ export class ApiService {
     numeroLicence: string | null;
     certificatValideJusquAu: string | null;
     admin: boolean;
+    directeurTechnique: boolean;
   }): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
   }
@@ -772,5 +776,89 @@ export class ApiService {
 
   private deposer<T>(cle: string, valeur: T): Promise<IDBValidKey> {
     return ecrire<Entree<T>>(MAGASIN_CACHE, { cle, valeur, majLe: Date.now() });
+  }
+
+  // ----------------------------------------------------------------
+  //  Matériel du club et prêts : directeur technique (ou ADMIN).
+  //  Pas de mode hors ligne : un prêt se vérifie contre l'état du serveur.
+  // ----------------------------------------------------------------
+
+  equipements(): Observable<EquipementVue[]> {
+    return this.http.get<EquipementVue[]>('/api/materiel/equipements');
+  }
+
+  ficheEquipement(id: number): Observable<FicheEquipementVue> {
+    return this.http.get<FicheEquipementVue>(`/api/materiel/equipements/${id}`);
+  }
+
+  creerEquipement(demande: DemandeEquipement): Observable<EquipementVue> {
+    return this.http.post<EquipementVue>('/api/materiel/equipements', demande);
+  }
+
+  modifierEquipement(id: number, demande: DemandeEquipement): Observable<EquipementVue> {
+    return this.http.put<EquipementVue>(`/api/materiel/equipements/${id}`, demande);
+  }
+
+  supprimerEquipement(id: number): Observable<unknown> {
+    return this.http.delete(`/api/materiel/equipements/${id}`);
+  }
+
+  mettreAuRebut(id: number, dateRebut: string, motif: string): Observable<EquipementVue> {
+    return this.http.post<EquipementVue>(`/api/materiel/equipements/${id}/rebut`, { dateRebut, motif });
+  }
+
+  remettreEnStock(id: number): Observable<EquipementVue> {
+    return this.http.delete<EquipementVue>(`/api/materiel/equipements/${id}/rebut`);
+  }
+
+  ajouterIntervention(equipementId: number, demande: DemandeIntervention): Observable<InterventionVue> {
+    return this.http.post<InterventionVue>(`/api/materiel/equipements/${equipementId}/interventions`, demande);
+  }
+
+  /** enCours : prêts non rendus ; sinon l'historique des prêts rendus. */
+  prets(enCours: boolean): Observable<PretVue[]> {
+    return this.http.get<PretVue[]>('/api/materiel/prets', { params: { enCours } });
+  }
+
+  preter(demande: DemandePret): Observable<PretVue> {
+    return this.http.post<PretVue>('/api/materiel/prets', demande);
+  }
+
+  rendrePret(id: number, demande: DemandeRetour): Observable<PretVue> {
+    return this.http.post<PretVue>(`/api/materiel/prets/${id}/retour`, demande);
+  }
+
+  annulerPret(id: number): Observable<unknown> {
+    return this.http.delete(`/api/materiel/prets/${id}`);
+  }
+
+  photosPret(pretId: number): Observable<PhotoPretVue[]> {
+    return this.http.get<PhotoPretVue[]>(`/api/materiel/prets/${pretId}/photos`);
+  }
+
+  deposerPhotoPret(pretId: number, fichier: File, moment: MomentPhotoPret,
+                   equipementId: number | null, legende: string | null): Observable<PhotoPretVue> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    donnees.append('moment', moment);
+    if (equipementId !== null) donnees.append('equipementId', String(equipementId));
+    if (legende) donnees.append('legende', legende);
+    return this.http.post<PhotoPretVue>(`/api/materiel/prets/${pretId}/photos`, donnees);
+  }
+
+  photoPret(photoId: number): Observable<Blob> {
+    return this.http.get(`/api/materiel/prets/photos/${photoId}`, { responseType: 'blob' });
+  }
+
+  supprimerPhotoPret(photoId: number): Observable<unknown> {
+    return this.http.delete(`/api/materiel/prets/photos/${photoId}`);
+  }
+
+  emprunteurs(): Observable<EmprunteurVue[]> {
+    return this.http.get<EmprunteurVue[]>('/api/materiel/emprunteurs');
+  }
+
+  sortiesMateriel(): Observable<SortieVue[]> {
+    return this.http.get<SortieVue[]>('/api/materiel/sorties');
   }
 }

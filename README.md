@@ -61,7 +61,7 @@ Mot de passe commun : `plongee2026`.
 | Compte | Rôle | Ce qu'il peut faire |
 |---|---|---|
 | `presidente@club.fr` | ADMIN + E4 | Tout, y compris délivrer les brevets |
-| `e3@club.fr` | MONITEUR E3 | Noter et valider N1, N2 et N3 |
+| `e3@club.fr` | MONITEUR E3, DIRECTEUR_TECHNIQUE | Noter et valider N1, N2 et N3 ; matériel et prêts |
 | `e2@club.fr` | MONITEUR E2 | Noter et valider N1 et N2 |
 | `e1@club.fr` | MONITEUR E1 | Noter et valider N1 uniquement |
 | `eleve@club.fr` | ELEVE | Consulter sa propre grille, sans rien saisir |

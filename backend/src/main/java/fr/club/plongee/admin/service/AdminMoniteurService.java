@@ -82,7 +82,7 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
                              NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                             LocalDate certificatValideJusquAu, boolean admin) {
+                             LocalDate certificatValideJusquAu, boolean admin, boolean directeurTechnique) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
             throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
         }
@@ -96,7 +96,10 @@ public class AdminMoniteurService {
         u.setNumeroLicence(numeroLicence);
         u.setCertificatValideJusquAu(certificatValideJusquAu);
         u.setActif(true);
-        u.setRoles(admin ? EnumSet.of(RoleNom.MONITEUR, RoleNom.ADMIN) : EnumSet.of(RoleNom.MONITEUR));
+        EnumSet<RoleNom> roles = EnumSet.of(RoleNom.MONITEUR);
+        if (admin) roles.add(RoleNom.ADMIN);
+        if (directeurTechnique) roles.add(RoleNom.DIRECTEUR_TECHNIQUE);
+        u.setRoles(roles);
 
         byte[] brut = new byte[32];
         ALEA.nextBytes(brut);
@@ -114,8 +117,8 @@ public class AdminMoniteurService {
      * Un changement d'e-mail ferme les sessions du moniteur (le jeton
      * d'acces porte l'e-mail) : il se reconnecte avec la nouvelle adresse.
      *
-     * <p>Le role ADMIN se donne et se retire aussi ici ({@code admin} nul :
-     * inchange). Un ADMIN ne peut pas
+     * <p>Les roles ADMIN et DIRECTEUR_TECHNIQUE se donnent et se retirent
+     * aussi ici (nul : inchange). Un ADMIN ne peut pas
      * se le retirer lui-meme : le club garde ainsi toujours au moins un
      * administrateur. Les roles sont relus en base a chaque requete
      * ({@code JwtAuthFilter}) : le changement s'applique immediatement cote
@@ -125,7 +128,7 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur modifier(Long id, Long auteurId, String email, String nom, String prenom,
                                 NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                                LocalDate certificatValideJusquAu, Boolean admin) {
+                                LocalDate certificatValideJusquAu, Boolean admin, Boolean directeurTechnique) {
         Utilisateur u = moniteur(id);
         if (Boolean.FALSE.equals(admin) && u.getId().equals(auteurId) && u.getRoles().contains(RoleNom.ADMIN)) {
             throw new RegleMetierException("Vous ne pouvez pas vous retirer vous-même le rôle administrateur.");
@@ -144,6 +147,8 @@ public class AdminMoniteurService {
         u.setCertificatValideJusquAu(certificatValideJusquAu);
         if (Boolean.TRUE.equals(admin)) u.getRoles().add(RoleNom.ADMIN);
         else if (Boolean.FALSE.equals(admin)) u.getRoles().remove(RoleNom.ADMIN);
+        if (Boolean.TRUE.equals(directeurTechnique)) u.getRoles().add(RoleNom.DIRECTEUR_TECHNIQUE);
+        else if (Boolean.FALSE.equals(directeurTechnique)) u.getRoles().remove(RoleNom.DIRECTEUR_TECHNIQUE);
         utilisateurs.save(u);
         if (emailChange) refreshTokens.revoquerTout(id);
         return u;

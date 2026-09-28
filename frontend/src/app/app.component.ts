@@ -50,6 +50,11 @@ declare const VERSION_APPLI: string;
                 Groupes
               </a>
             }
+            @if (auth.gereMateriel()) {
+              <a routerLink="/materiel" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Matériel
+              </a>
+            }
             @if (auth.estAdmin()) {
               <a routerLink="/admin" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Administration

@@ -171,6 +171,40 @@ la saison ouverte (`FiltreGroupeComponent`), et non plus les niveaux
 PN1/PN2/PN3. Suite possible : remplaçant d'un encadrant absent, rappel
 aux encadrants qui n'ont pas répondu.
 
+**Matériel et prêts : le domaine du directeur technique (2026).** Rôle
+`DIRECTEUR_TECHNIQUE` (V29), cumulé avec MONITEUR, donné par un ADMIN dans
+l'écran Moniteurs ; `/api/materiel/**` est ouvert au DT et à l'ADMIN (qui le
+supplée). Paquet `fr.club.plongee.materiel`, écrans `/materiel` (inventaire),
+`/materiel/:id` (fiche, imprimable) et `/materiel/prets`. Un seul
+`Equipement` pour les quatre types (bloc, détendeur, gilet, combinaison),
+colonnes propres à un type nulles pour les autres, comme `bloc_competence`.
+Cadre retenu : détendeurs, gilets et combinaisons prêtés sont traités
+comme des **EPI d'occasion** (position FFESSM 2018) ; la fiche de gestion
+(Code du sport A322-177, contenu fixé par l'annexe III-27, conservée trois
+ans après rebut) = les champs de `equipement` + le journal
+`intervention_equipement`, **en ajout seul** comme `evaluation`. A322-81 :
+un détendeur est désinfecté à chaque changement d'utilisateur — le serveur
+refuse le prêt sans cette confirmation et l'inscrit au journal. Blocs :
+arrêté du 20 novembre 2017, inspection TIV ≤ 12 mois, requalification 6
+ans sous régime TIV, 2 ans sinon (`regime_tiv` par bloc). **Échéances
+calculées par le serveur** (`EcheancesEquipement`) ; bloquent un prêt :
+rebut, hors service, dernier contrôle non conforme, date de rebut prévue
+atteinte, TIV ou requalification d'un bloc dépassée ou inconnue **jusqu'au
+retour prévu**. Une révision fabricant en retard n'est qu'un avertissement
+(échéance de notice, pas de texte). Un prêt garde `emprunteur_nom` : la
+suppression d'un élève retire le lien, pas la trace du matériel. Pas de
+mode hors ligne pour le matériel. **Photos avant/après prêt** (V30,
+`photo_pret`, `PhotoPretService`) : table séparée comme `photo_eleve`,
+rattachée au prêt et éventuellement à un équipement ; « avant » tant que
+le prêt est en cours, « après » même rendu, suppression seulement tant
+qu'il est en cours (ensuite elles font foi), 12 par moment, JPEG/PNG
+vérifiés par leur signature. Le téléphone réduit la photo avant l'envoi
+(`core/reduire-photo.ts`, 1600 px). On photographie le matériel, pas les
+personnes : pas de consentement à l'image en jeu, l'écran le rappelle.
+Suites possibles : masques et tubas
+(A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
+la fiche de gestion.
+
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas

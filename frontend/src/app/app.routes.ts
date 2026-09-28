@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { gardeAdmin, gardeConnecte, gardeEncadrant } from './core/gardes';
+import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeMateriel } from './core/gardes';
 
 export const routes: Routes = [
   // Page d'accueil : Infos élèves. Un compte sans rôle d'encadrant en est
@@ -149,6 +149,24 @@ export const routes: Routes = [
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/progressions-admin.component')
       .then(m => m.ProgressionsAdminComponent)
+  },
+  {
+    path: 'materiel',
+    canActivate: [gardeConnecte, gardeMateriel],
+    loadComponent: () => import('./features/materiel/inventaire.component')
+      .then(m => m.InventaireComponent)
+  },
+  {
+    path: 'materiel/prets',
+    canActivate: [gardeConnecte, gardeMateriel],
+    loadComponent: () => import('./features/materiel/prets.component')
+      .then(m => m.PretsComponent)
+  },
+  {
+    path: 'materiel/:id',
+    canActivate: [gardeConnecte, gardeMateriel],
+    loadComponent: () => import('./features/materiel/fiche-equipement.component')
+      .then(m => m.FicheEquipementComponent)
   },
   {
     path: 'trombinoscope',

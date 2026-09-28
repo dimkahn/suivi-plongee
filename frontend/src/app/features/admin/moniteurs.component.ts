@@ -21,7 +21,7 @@ function aVerifier(m: MoniteurVue): boolean {
     <h1>Moniteurs</h1>
     <p class="secondaire">
       Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
-      administrateurs. Le niveau d'encadrement et le rôle d'administrateur ne se changent qu'ici.
+      administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -65,6 +65,10 @@ function aVerifier(m: MoniteurVue): boolean {
       <label class="case">
         <input type="checkbox" name="admin" [(ngModel)]="admin">
         Administrateur (gestion des moniteurs, élèves, saisons, référentiel)
+      </label>
+      <label class="case">
+        <input type="checkbox" name="directeurTechnique" [(ngModel)]="directeurTechnique">
+        Directeur technique (matériel du club et prêts)
       </label>
 
       <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
@@ -117,6 +121,7 @@ function aVerifier(m: MoniteurVue): boolean {
               </div>
               <div class="badges">
                 @if (m.admin) { <span class="etat admin">Admin</span> }
+                @if (m.directeurTechnique) { <span class="etat admin" title="Directeur technique">DT</span> }
                 <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
                   {{ m.actif ? 'Actif' : 'Désactivé' }}
                 </span>
@@ -197,6 +202,10 @@ function aVerifier(m: MoniteurVue): boolean {
                     Vous ne pouvez pas vous retirer vous-même ce rôle : demandez-le à un autre administrateur.
                   </p>
                 }
+                <label class="case">
+                  <input type="checkbox" name="editionDirecteurTechnique" [(ngModel)]="edition.directeurTechnique">
+                  Directeur technique (matériel du club et prêts)
+                </label>
 
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="modifier(m)"
@@ -321,12 +330,13 @@ export class MoniteursComponent {
   numeroLicence = '';
   certificatValideJusquAu = '';
   admin = false;
+  directeurTechnique = false;
   envoiCreation = signal(false);
 
   moniteurEdite = signal<number | null>(null);
   edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
               numeroLicence: '',
-              certificatValideJusquAu: '', admin: false };
+              certificatValideJusquAu: '', admin: false, directeurTechnique: false };
   envoiEdition = signal(false);
 
   moniteurMotDePasse = signal<number | null>(null);
@@ -366,7 +376,8 @@ export class MoniteursComponent {
       niveauPlongeur: this.niveauPlongeur || null,
       numeroLicence: this.numeroLicence || null,
       certificatValideJusquAu: this.certificatValideJusquAu || null,
-      admin: this.admin
+      admin: this.admin,
+      directeurTechnique: this.directeurTechnique
     }).subscribe({
       next: m => {
         this.envoiCreation.set(false);
@@ -378,6 +389,7 @@ export class MoniteursComponent {
         this.numeroLicence = '';
         this.certificatValideJusquAu = '';
         this.admin = false;
+        this.directeurTechnique = false;
         this.message.set(`${m.prenom} ${m.nom} a été ajouté·e ; un lien pour définir son mot de passe lui a été envoyé.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -410,7 +422,8 @@ export class MoniteursComponent {
       niveauPlongeur: m.niveauPlongeur ?? '',
       numeroLicence: m.numeroLicence ?? '',
       certificatValideJusquAu: m.certificatValideJusquAu ?? '',
-      admin: m.admin
+      admin: m.admin,
+      directeurTechnique: m.directeurTechnique
     };
     this.moniteurEdite.set(m.id);
   }
