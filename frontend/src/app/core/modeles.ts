@@ -170,6 +170,8 @@ export interface MoniteurVue {
   admin: boolean;
   /** Gère le matériel du club et les prêts. */
   directeurTechnique: boolean;
+  /** Pilote l'assistant IA (développement de l'application) ; seulement avec le rôle admin. */
+  ia: boolean;
   autorisationImage: boolean;
   aPhoto: boolean;
 }
@@ -927,4 +929,54 @@ export interface DemandeRetour {
   dateRetour: string;
   equipements: { equipementId: number; incident: string | null; horsService: boolean }[];
   remarques: string | null;
+}
+
+// ---------------------------------------------------------------
+//  Assistant IA (profil dev uniquement, page /ia)
+// ---------------------------------------------------------------
+
+export interface EtatIaVue {
+  disponible: boolean;
+  depot: string;
+  brancheCourante: string | null;
+  dossierTravail: string;
+}
+
+export interface SessionIaVue {
+  id: number;
+  titre: string;
+  branche: string;
+  creePar: string;
+  creeLe: string;
+  /** 'assistant' ou 'tests' pendant un travail, sinon null. */
+  travailEnCours: string | null;
+}
+
+export type TypeJournalIa = 'MESSAGE' | 'TEXTE' | 'OUTIL' | 'OUTIL_ERREUR' | 'FIN' | 'ERREUR' | 'ARRET'
+  | 'TESTS_LANCES' | 'TESTS_OK' | 'TESTS_KO' | 'MERGE' | 'TAG_POUSSE';
+
+export interface LigneJournalIaVue {
+  id: number;
+  type: TypeJournalIa;
+  contenu: string | null;
+  commitSha: string | null;
+  /** Nul pour ce qui vient de l'assistant. */
+  auteur: string | null;
+  creeLe: string;
+}
+
+export interface LivraisonIaVue {
+  branche: string;
+  brancheSha: string;
+  masterSha: string;
+  /** Commits de la branche absents de master, « abc1234 message ». */
+  commits: string[];
+  resumeModifications: string;
+  copiePropre: boolean;
+  /** mvn test vert enregistré sur le dernier commit de la branche. */
+  brancheTestee: boolean;
+  dansMaster: boolean;
+  masterTeste: boolean;
+  tagSuggere: string;
+  travailEnCours: string | null;
 }

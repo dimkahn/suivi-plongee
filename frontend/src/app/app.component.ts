@@ -55,6 +55,11 @@ declare const VERSION_APPLI: string;
                 Matériel
               </a>
             }
+            @if (auth.estIa()) {
+              <a routerLink="/ia" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Assistant IA
+              </a>
+            }
             @if (auth.estAdmin()) {
               <a routerLink="/admin" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Administration
