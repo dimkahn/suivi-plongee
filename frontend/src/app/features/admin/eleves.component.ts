@@ -57,12 +57,9 @@ function trier(eleves: EleveVue[]): EleveVue[] {
   imports: [FormsModule, DateFrPipe, RecadragePhotoComponent],
   template: `
     <h1>Élèves</h1>
-    <!-- Suggestions de saisie ; la taille reste libre (grilles propres à chaque fabricant). -->
+    <!-- Suggestions pour le gilet ; la taille reste libre. La combinaison n'en a pas : texte libre seulement. -->
     <datalist id="tailles-gilet">
       @for (t of taillesGilet; track t) { <option [value]="t"></option> }
-    </datalist>
-    <datalist id="tailles-combinaison">
-      @for (t of taillesCombinaison; track t) { <option [value]="t"></option> }
     </datalist>
     <p class="secondaire">Dossier, autorisation de pratiquer, droit à l'image et photo.</p>
 
@@ -103,7 +100,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           <div>
             <label for="tailleCombinaison">Taille de combinaison</label>
             <input id="tailleCombinaison" type="text" name="tailleCombinaison" [(ngModel)]="f.tailleCombinaison"
-                   maxlength="20" list="tailles-combinaison" placeholder="Ex. T3">
+                   maxlength="20" placeholder="Facultatif">
           </div>
         </div>
         <label class="case">
@@ -242,7 +239,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   <div>
                     <label [for]="'tailleCombinaison-' + e.id">Taille de combinaison</label>
                     <input [id]="'tailleCombinaison-' + e.id" type="text" name="tailleCombinaison"
-                           [(ngModel)]="f.tailleCombinaison" maxlength="20" list="tailles-combinaison" placeholder="Ex. T3">
+                           [(ngModel)]="f.tailleCombinaison" maxlength="20" placeholder="Facultatif">
                   </div>
                 </div>
                 <label class="case">
@@ -453,8 +450,6 @@ export class ElevesComponent {
 
   readonly statuts = STATUTS;
   readonly taillesGilet = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
-  readonly taillesCombinaison = ['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7',
-                                 '8 ans', '10 ans', '12 ans', '14 ans'];
 
   recadrage = signal<{ eleve: EleveVue; fichier: File } | null>(null);
   recadrageEnCours = signal(false);
