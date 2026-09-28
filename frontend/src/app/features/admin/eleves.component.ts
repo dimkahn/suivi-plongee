@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -442,6 +443,13 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 })
 export class ElevesComponent {
   private api = inject(ApiService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  /**
+   * Page d'où l'on vient (ex. /trombinoscope, « Modifier l'élève ») : on y
+   * revient après l'enregistrement ou l'annulation. Chemin interne seulement.
+   */
+  private retour: string | null = null;
 
   readonly statuts = STATUTS;
   readonly taillesGilet = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -553,6 +561,7 @@ export class ElevesComponent {
       const saisonCourante = saisons.find(s => s.ouverte) ?? saisons[0] ?? null;
       this.saisonCreationId = saisons.find(s => s.ouverte)?.id ?? null;
       if (saisonCourante) await this.changerSaison(saisonCourante.id);
+      this.ouvrirDepuisLien(liste);
     } catch {
       this.message.set('Impossible de charger la liste des élèves.');
     } finally {
@@ -732,6 +741,28 @@ export class ElevesComponent {
   annulerEdition(): void {
     this.edition.set(null);
     this.formulaireEdition.set(null);
+    if (this.retour) void this.router.navigateByUrl(this.retour);
+  }
+
+  /** {@code ?modifier=ID} : ouvre directement la modification de cet élève (depuis le trombinoscope). */
+  private ouvrirDepuisLien(liste: EleveVue[]): void {
+    const params = this.route.snapshot.queryParamMap;
+    const id = Number(params.get('modifier'));
+    if (!id) return;
+    const retour = params.get('retour');
+    // Seulement un chemin de l'application : jamais « //site » ni une adresse externe.
+    this.retour = retour && retour.startsWith('/') && !retour.startsWith('//') ? retour : null;
+    const e = liste.find(x => x.id === id);
+    if (!e) {
+      this.message.set("Cet élève n'est pas dans la liste des élèves actifs (archivé ?).");
+      return;
+    }
+    // L'élève doit rester visible quels que soient les filtres.
+    this.filtreNom.set(`${e.prenom} ${e.nom}`);
+    this.filtreStatut.set('TOUS');
+    this.filtreCaci.set('TOUS');
+    this.commencerEdition(e);
+    setTimeout(() => document.getElementById('prenom-' + e.id)?.scrollIntoView({ block: 'center' }));
   }
 
   enregistrer(e: EleveVue): void {

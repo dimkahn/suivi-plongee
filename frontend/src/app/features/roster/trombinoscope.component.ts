@@ -1,9 +1,14 @@
-import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, OnDestroy, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
+import { AuthService } from '../../core/auth.service';
+import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { GroupeEntrainementVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur } from '../../core/modeles';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 
@@ -11,7 +16,7 @@ type Population = 'ELEVES' | 'MONITEURS';
 
 @Component({
   selector: 'app-trombinoscope',
-  imports: [RouterLink, FormsModule, FiltreGroupeComponent],
+  imports: [RouterLink, FormsModule, NgTemplateOutlet, FiltreGroupeComponent, RecadragePhotoComponent],
   template: `
     <h1>Trombinoscope</h1>
 
@@ -76,22 +81,87 @@ type Population = 'ELEVES' | 'MONITEURS';
     } @else {
       <div class="grille">
         @for (l of lignesFiltrees(); track l.eleveId) {
-          <a class="carte fiche" [routerLink]="['/cursus', l.cursusId]">
-            @if (l.aPhoto) {
-              <img [src]="urlPhoto(l.eleveId)" [alt]="l.eleve" width="120" height="120">
-            } @else {
-              <div class="silhouette" [attr.aria-label]="l.eleve">
-                {{ initiales(l.eleve) }}
-              </div>
-            }
-            <span class="nom">{{ l.eleve }}</span>
-            <span class="secondaire">{{ libellePreparation(l.niveau) }}</span>
-            @if (!l.autorisationImage) {
-              <span class="secondaire">Droit à l'image non recueilli</span>
-            }
-          </a>
+          <!-- Un admin a plusieurs gestes possibles (menu) ; un moniteur n'a que la fiche de suivi. -->
+          @if (auth.estAdmin()) {
+            <button type="button" class="carte fiche" (click)="ouvrirActions(l)"
+                    [attr.aria-label]="'Actions pour ' + l.eleve">
+              <ng-container [ngTemplateOutlet]="contenuFiche" [ngTemplateOutletContext]="{ $implicit: l }" />
+            </button>
+          } @else {
+            <a class="carte fiche" [routerLink]="['/cursus', l.cursusId]">
+              <ng-container [ngTemplateOutlet]="contenuFiche" [ngTemplateOutletContext]="{ $implicit: l }" />
+            </a>
+          }
         }
       </div>
+    }
+
+    <ng-template #contenuFiche let-l>
+      @if (l.aPhoto) {
+        <img [src]="urlPhoto(l.eleveId)" [alt]="l.eleve" width="120" height="120">
+      } @else {
+        <div class="silhouette" [attr.aria-label]="l.eleve">
+          {{ initiales(l.eleve) }}
+        </div>
+      }
+      <span class="nom">{{ l.eleve }}</span>
+      <span class="secondaire">{{ libellePreparation(l.niveau) }}</span>
+      @if (!l.autorisationImage) {
+        <span class="secondaire">Droit à l'image non recueilli</span>
+      }
+    </ng-template>
+
+    <dialog #dialogueActions class="dialogue-seance" aria-labelledby="titre-actions-eleve"
+            (close)="choisi.set(null)">
+      @if (choisi(); as l) {
+        <div class="entete-dialogue">
+          <h2 id="titre-actions-eleve">{{ l.eleve }}</h2>
+          <button type="button" class="bouton-discret" (click)="fermerActions()" aria-label="Fermer">✕</button>
+        </div>
+        <p class="secondaire">{{ libellePreparation(l.niveau) }}</p>
+
+        @if (messageActions(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+
+        <div class="actions-eleve">
+          <a class="bouton-principal" [routerLink]="['/cursus', l.cursusId]" (click)="fermerActions()">
+            Fiche de suivi
+          </a>
+          <a class="bouton-discret" routerLink="/admin/eleves"
+             [queryParams]="{ modifier: l.eleveId, retour: '/trombinoscope' }" (click)="fermerActions()">
+            Modifier l'élève
+          </a>
+        </div>
+
+        @if (!l.aPhoto) {
+          <section class="photo">
+            <h3>Photo</h3>
+            @if (!l.autorisationImage) {
+              <p class="secondaire">
+                Pas de photo sans le droit à l'image, distinct de l'autorisation de pratiquer.
+              </p>
+              <label class="case">
+                <input type="checkbox" [(ngModel)]="consentementConfirme">
+                Le droit à l'image a été recueilli (accord de l'élève, ou de son responsable légal s'il est mineur)
+              </label>
+              <button type="button" class="bouton-discret" (click)="recueillirDroitImage(l)"
+                      [disabled]="!consentementConfirme || envoi()">
+                {{ envoi() ? 'Enregistrement…' : "Enregistrer le droit à l'image" }}
+              </button>
+            } @else {
+              <label class="bouton-discret upload">
+                Prendre ou choisir une photo
+                <input type="file" accept="image/*" hidden (change)="choisirPhoto($event)">
+              </label>
+            }
+          </section>
+        }
+      }
+    </dialog>
+
+    @if (recadrage(); as r) {
+      <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.ligne.eleve"
+                           [enCours]="envoi()" (valide)="deposerPhoto($event)"
+                           (annule)="recadrage.set(null)" (illisible)="imageIllisible()" />
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -117,12 +187,33 @@ type Population = 'ELEVES' | 'MONITEURS';
       display: flex; align-items: center; justify-content: center;
       font-family: var(--font-titres), sans-serif; font-size: 2rem; font-weight: 700; color: var(--craie);
     }
+    button.fiche { width: 100%; font: inherit; border: none; cursor: pointer; }
     .nom { font-weight: 700; margin-top: 4px; }
+
+    .actions-eleve { display: grid; gap: var(--pas); margin: var(--pas-2) 0; }
+    .actions-eleve a { display: flex; align-items: center; justify-content: center; text-decoration: none;
+                       min-height: 44px; }
+    .actions-eleve .bouton-discret { border: 1px solid var(--trait); border-radius: var(--r-s); color: inherit; }
+    .photo { border-top: 1px solid var(--trait); padding-top: var(--pas-2); display: grid; gap: var(--pas); }
+    .photo h3 { margin: 0; }
+    .case { display: flex; align-items: flex-start; gap: var(--pas); min-height: 44px; }
+    .case input { width: auto; flex: none; margin-top: 4px; }
+    .upload { display: flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
+              border: 1px solid var(--trait); border-radius: var(--r-s); }
   `]
 })
 export class TrombinoscopeComponent implements OnDestroy {
   private api = inject(ApiService);
   private reseau = inject(ReseauService);
+  auth = inject(AuthService);
+  private dialogueActions = viewChild<ElementRef<HTMLDialogElement>>('dialogueActions');
+
+  /** Élève dont le menu d'actions est ouvert (admins seulement). */
+  choisi = signal<LigneTrombinoscope | null>(null);
+  messageActions = signal<string | null>(null);
+  envoi = signal(false);
+  consentementConfirme = false;
+  recadrage = signal<{ ligne: LigneTrombinoscope; fichier: File } | null>(null);
 
   readonly libellePreparation = libellePreparation;
 
@@ -227,6 +318,83 @@ export class TrombinoscopeComponent implements OnDestroy {
 
   urlPhoto(eleveId: number): string {
     return this.urlsPhotos().get(eleveId) ?? '';
+  }
+
+  ouvrirActions(l: LigneTrombinoscope): void {
+    this.choisi.set(l);
+    this.messageActions.set(null);
+    this.consentementConfirme = false;
+    this.dialogueActions()?.nativeElement.showModal();
+  }
+
+  fermerActions(): void {
+    this.dialogueActions()?.nativeElement.close();
+  }
+
+  /** Remplace la ligne dans la liste et dans le menu ouvert. */
+  private majLigne(eleveId: number, maj: Partial<LigneTrombinoscope>): LigneTrombinoscope | null {
+    this.lignes.set(this.lignes().map(x => x.eleveId === eleveId ? { ...x, ...maj } : x));
+    const nouvelle = this.lignes().find(x => x.eleveId === eleveId) ?? null;
+    if (this.choisi()?.eleveId === eleveId) this.choisi.set(nouvelle);
+    return nouvelle;
+  }
+
+  async recueillirDroitImage(l: LigneTrombinoscope): Promise<void> {
+    if (!this.consentementConfirme) return;
+    this.envoi.set(true);
+    this.messageActions.set(null);
+    try {
+      await firstValueFrom(this.api.changerAutorisationImage(l.eleveId, true));
+      this.majLigne(l.eleveId, { autorisationImage: true });
+    } catch (e) {
+      this.messageActions.set((e as HttpErrorResponse).error?.detail
+        ?? (this.reseau.enLigne() ? "Le droit à l'image n'a pas pu être enregistré." : 'Pas de réseau : réessayez plus tard.'));
+    } finally {
+      this.envoi.set(false);
+    }
+  }
+
+  /** Ouvre le recadrage ; la photo n'est envoyée qu'une fois validée. */
+  choisirPhoto(evenement: Event): void {
+    const entree = evenement.target as HTMLInputElement;
+    const fichier = entree.files?.[0];
+    entree.value = '';
+    const l = this.choisi();
+    if (!fichier || !l) return;
+    this.messageActions.set(null);
+    // Le dialogue modal passerait au-dessus du recadrage : on le ferme le temps de recadrer.
+    this.fermerActions();
+    this.recadrage.set({ ligne: l, fichier });
+  }
+
+  imageIllisible(): void {
+    const r = this.recadrage();
+    this.recadrage.set(null);
+    if (r) this.rouvrir(r.ligne, "Cette image n'a pas pu être lue.");
+  }
+
+  /** Rouvre le menu de l'élève avec un message (échec pendant le recadrage ou l'envoi). */
+  private rouvrir(l: LigneTrombinoscope, message: string): void {
+    this.ouvrirActions(this.lignes().find(x => x.eleveId === l.eleveId) ?? l);
+    this.messageActions.set(message);
+  }
+
+  async deposerPhoto(fichier: File): Promise<void> {
+    const r = this.recadrage();
+    if (!r) return;
+    this.envoi.set(true);
+    try {
+      await firstValueFrom(this.api.deposerPhotoEleve(r.ligne.eleveId, fichier));
+      this.recadrage.set(null);
+      this.majLigne(r.ligne.eleveId, { aPhoto: true });
+      this.chargerPhoto(r.ligne.eleveId);
+    } catch (e) {
+      this.recadrage.set(null);
+      this.rouvrir(r.ligne, (e as HttpErrorResponse).error?.detail
+        ?? (this.reseau.enLigne() ? "La photo n'a pas pu être déposée." : 'Pas de réseau : réessayez plus tard.'));
+    } finally {
+      this.envoi.set(false);
+    }
   }
 
   initiales(nom: string): string {
