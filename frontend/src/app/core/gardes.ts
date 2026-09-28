@@ -67,3 +67,6 @@ export const gardeMateriel: CanActivateFn = () => {
     map(() => auth.gereMateriel() || router.createUrlTree(['/cursus']))
   );
 };
+
+/** Sorties : même public que le matériel (le DT y rattache ses prêts), admin compris. */
+export const gardeSorties: CanActivateFn = gardeMateriel;
