@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -29,6 +29,9 @@ function formulaireVide(): FormulaireEleve {
            certificatValideJusquAu: '', dernierNiveau: '', email: '', telephone: '',
            contactUrgenceNom: '', contactUrgenceTelephone: '', autorisationLegale: false };
 }
+
+/** Ce que la création fait en plus du dossier : rattachement à une saison, photo. */
+type FormationCreation = 'MAINTIEN' | 'N1' | 'N2' | 'N3';
 
 function depuis(e: EleveVue): FormulaireEleve {
   return {
@@ -83,6 +86,46 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
           Autorisation du responsable légal recueillie
         </label>
+
+        <label for="saisonCreation">Saison</label>
+        <select id="saisonCreation" name="saisonCreation" [(ngModel)]="saisonCreationId">
+          <option [ngValue]="null">Aucune pour l'instant</option>
+          @for (s of saisons(); track s.id) {
+            <option [ngValue]="s.id">{{ s.libelle }}{{ s.ouverte ? ' (ouverte)' : '' }}</option>
+          }
+        </select>
+        @if (saisonCreationId !== null) {
+          <label for="formationCreation">Pour cette saison</label>
+          <select id="formationCreation" name="formationCreation" [(ngModel)]="formationCreation">
+            <option value="N1">Formation N1</option>
+            <option value="N2">Formation N2</option>
+            <option value="N3">Formation N3</option>
+            <option value="MAINTIEN">Aucune formation — maintien</option>
+          </select>
+        }
+
+        <label class="case">
+          <input type="checkbox" name="autorisationImageCreation" [(ngModel)]="autorisationImageCreation"
+                 (ngModelChange)="!$event && oublierPhotoCreation()">
+          Droit à l'image recueilli
+        </label>
+        <div class="photo-creation">
+          @if (apercuCreation(); as apercu) {
+            <img [src]="apercu" alt="Photo choisie pour le nouvel élève">
+          }
+          <label class="bouton-discret upload" [class.inactif]="!autorisationImageCreation">
+            {{ apercuCreation() ? 'Changer la photo' : 'Choisir une photo' }}
+            <input type="file" accept="image/jpeg,image/png" hidden [disabled]="!autorisationImageCreation"
+                   (change)="choisirPhotoCreation($event)">
+          </label>
+          @if (apercuCreation()) {
+            <button type="button" class="bouton-discret" (click)="oublierPhotoCreation()">Retirer</button>
+          }
+        </div>
+        @if (!autorisationImageCreation) {
+          <p class="secondaire">Pas de photo sans le droit à l'image.</p>
+        }
+
         <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
           {{ envoi() ? 'Création…' : "Ajouter l'élève" }}
         </button>
@@ -294,6 +337,11 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       }
     </section>
 
+    @if (recadrageCreation(); as fichier) {
+      <app-recadrage-photo [fichier]="fichier" [titre]="'Recadrer la photo du nouvel élève'"
+                           [enCours]="false" (valide)="garderPhotoCreation($event)"
+                           (annule)="recadrageCreation.set(null)" (illisible)="imageIllisibleCreation()" />
+    }
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.eleve.prenom + ' ' + r.eleve.nom"
                            [enCours]="recadrageEnCours()" (valide)="deposerPhoto($event)"
@@ -331,6 +379,12 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .upload { cursor: pointer; }
+    .upload.inactif { opacity: .5; cursor: not-allowed; }
+    .photo-creation { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); }
+    .photo-creation img { width: 72px; height: 72px; object-fit: cover; border-radius: 50%; }
+    /* Un <label> n'hérite pas de la bordure des <button> (styles.css) : on la redonne. */
+    .photo-creation .upload { display: inline-flex; align-items: center; margin: 0; font-weight: 400;
+                              border: 1px solid var(--trait); border-radius: var(--r-s); }
     .danger { color: #B3261E; border-color: #B3261E; }
     .historique {
       margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
@@ -428,11 +482,19 @@ export class ElevesComponent {
   }
 
   formulaireCreation = signal<FormulaireEleve>(formulaireVide());
+  saisonCreationId: number | null = null;
+  formationCreation: FormationCreation = 'N1';
+  autorisationImageCreation = false;
+  /** Photo déjà recadrée, envoyée une fois l'élève créé. */
+  photoCreation = signal<File | null>(null);
+  apercuCreation = signal<string | null>(null);
+  recadrageCreation = signal<File | null>(null);
   edition = signal<number | null>(null);
   formulaireEdition = signal<FormulaireEleve | null>(null);
 
   constructor() {
     void this.charger();
+    inject(DestroyRef).onDestroy(() => this.oublierPhotoCreation());
   }
 
   private async charger(): Promise<void> {
@@ -445,6 +507,7 @@ export class ElevesComponent {
       this.liste.set(liste);
       this.saisons.set(saisons);
       const saisonCourante = saisons.find(s => s.ouverte) ?? saisons[0] ?? null;
+      this.saisonCreationId = saisons.find(s => s.ouverte)?.id ?? null;
       if (saisonCourante) await this.changerSaison(saisonCourante.id);
     } catch {
       this.message.set('Impossible de charger la liste des élèves.');
@@ -514,7 +577,13 @@ export class ElevesComponent {
     });
   }
 
-  creer(): void {
+  /**
+   * Création en plusieurs appels, dans cet ordre : le dossier, puis le
+   * rattachement à la saison (inscription ou maintien), puis le droit à
+   * l'image et la photo. Si une étape après la première échoue, l'élève
+   * existe déjà : on le dit, et la suite se fait depuis sa ligne.
+   */
+  async creer(): Promise<void> {
     const f = this.formulaireCreation();
     if (!f.nom || !f.prenom) {
       this.message.set('Nom et prénom sont obligatoires.');
@@ -522,23 +591,91 @@ export class ElevesComponent {
     }
     this.envoi.set(true);
     this.message.set(null);
-    this.api.creerEleve({
-      nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
-      numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
-      dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
-      contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
-      autorisationLegale: f.autorisationLegale
-    }).subscribe({
-      next: e => {
-        this.envoi.set(false);
-        this.liste.set([...this.liste(), e].sort((a, b) => a.nom.localeCompare(b.nom)));
-        this.formulaireCreation.set(formulaireVide());
-      },
-      error: (err: HttpErrorResponse) => {
-        this.envoi.set(false);
-        this.message.set(err.error?.detail ?? "L'ajout n'a pas pu être enregistré.");
+    let e: EleveVue;
+    try {
+      e = await firstValueFrom(this.api.creerEleve({
+        nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
+        numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
+        dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
+        contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
+        autorisationLegale: f.autorisationLegale
+      }));
+    } catch (err) {
+      this.envoi.set(false);
+      this.message.set((err as HttpErrorResponse).error?.detail ?? "L'ajout n'a pas pu être enregistré.");
+      return;
+    }
+    this.liste.set([...this.liste(), e].sort((a, b) => a.nom.localeCompare(b.nom)));
+
+    const echecs: string[] = [];
+    const saisonId = this.saisonCreationId;
+    if (saisonId !== null) {
+      try {
+        if (this.formationCreation === 'MAINTIEN') {
+          const a = await firstValueFrom(this.api.adherer({ eleveId: e.id, saisonId }));
+          if (this.filtreSaisonId() === saisonId) this.adhesionsDeLaSaison.set([...this.adhesionsDeLaSaison(), a]);
+        } else {
+          const c = await firstValueFrom(this.api.inscrireCursus({ eleveId: e.id, saisonId, niveau: this.formationCreation }));
+          if (this.filtreSaisonId() === saisonId) this.cursusDeLaSaison.set([...this.cursusDeLaSaison(), c]);
+        }
+      } catch (err) {
+        echecs.push(`rattachement à la saison (${(err as HttpErrorResponse).error?.detail ?? 'erreur'})`);
       }
-    });
+    }
+    if (this.autorisationImageCreation) {
+      try {
+        await firstValueFrom(this.api.changerAutorisationImage(e.id, true));
+        e = { ...e, autorisationImage: true };
+        this.remplacer(e);
+        const photo = this.photoCreation();
+        if (photo) {
+          try {
+            await firstValueFrom(this.api.deposerPhotoEleve(e.id, photo));
+          } catch (err) {
+            echecs.push(`photo (${(err as HttpErrorResponse).error?.detail ?? 'erreur'})`);
+          }
+        }
+      } catch (err) {
+        echecs.push(`droit à l'image (${(err as HttpErrorResponse).error?.detail ?? 'erreur'})`);
+      }
+    }
+
+    this.envoi.set(false);
+    this.formulaireCreation.set(formulaireVide());
+    this.formationCreation = 'N1';
+    this.autorisationImageCreation = false;
+    this.oublierPhotoCreation();
+    this.message.set(echecs.length
+      ? `${e.prenom} ${e.nom} a été créé·e, mais pas : ${echecs.join(' ; ')}. À reprendre depuis sa ligne ou l'écran Inscriptions.`
+      : `${e.prenom} ${e.nom} a été ajouté·e.`);
+  }
+
+  choisirPhotoCreation(evenement: Event): void {
+    const entree = evenement.target as HTMLInputElement;
+    const fichier = entree.files?.[0];
+    entree.value = '';
+    if (!fichier) return;
+    this.message.set(null);
+    this.recadrageCreation.set(fichier);
+  }
+
+  garderPhotoCreation(fichier: File): void {
+    this.oublierPhotoCreation();
+    this.photoCreation.set(fichier);
+    this.apercuCreation.set(URL.createObjectURL(fichier));
+  }
+
+  imageIllisibleCreation(): void {
+    this.recadrageCreation.set(null);
+    this.message.set("Cette image n'a pas pu être lue.");
+  }
+
+  oublierPhotoCreation(): void {
+    this.recadrageCreation.set(null);
+    const apercu = this.apercuCreation();
+    if (apercu) URL.revokeObjectURL(apercu);
+    this.apercuCreation.set(null);
+    this.photoCreation.set(null);
   }
 
   commencerEdition(e: EleveVue): void {
