@@ -21,13 +21,16 @@ interface FormulaireEleve {
   telephone: string;
   contactUrgenceNom: string;
   contactUrgenceTelephone: string;
+  tailleGilet: string;
+  tailleCombinaison: string;
   autorisationLegale: boolean;
 }
 
 function formulaireVide(): FormulaireEleve {
   return { nom: '', prenom: '', dateNaissance: '', numeroLicence: '',
            certificatValideJusquAu: '', dernierNiveau: '', email: '', telephone: '',
-           contactUrgenceNom: '', contactUrgenceTelephone: '', autorisationLegale: false };
+           contactUrgenceNom: '', contactUrgenceTelephone: '', tailleGilet: '', tailleCombinaison: '',
+           autorisationLegale: false };
 }
 
 /** Ce que la création fait en plus du dossier : rattachement à une saison, photo. */
@@ -39,6 +42,7 @@ function depuis(e: EleveVue): FormulaireEleve {
     numeroLicence: e.numeroLicence ?? '', certificatValideJusquAu: e.certificatValideJusquAu ?? '',
     dernierNiveau: e.dernierNiveau ?? '', email: e.email ?? '', telephone: e.telephone ?? '',
     contactUrgenceNom: e.contactUrgenceNom ?? '', contactUrgenceTelephone: e.contactUrgenceTelephone ?? '',
+    tailleGilet: e.tailleGilet ?? '', tailleCombinaison: e.tailleCombinaison ?? '',
     autorisationLegale: e.autorisationLegale
   };
 }
@@ -52,6 +56,13 @@ function trier(eleves: EleveVue[]): EleveVue[] {
   imports: [FormsModule, DateFrPipe, RecadragePhotoComponent],
   template: `
     <h1>Élèves</h1>
+    <!-- Suggestions de saisie ; la taille reste libre (grilles propres à chaque fabricant). -->
+    <datalist id="tailles-gilet">
+      @for (t of taillesGilet; track t) { <option [value]="t"></option> }
+    </datalist>
+    <datalist id="tailles-combinaison">
+      @for (t of taillesCombinaison; track t) { <option [value]="t"></option> }
+    </datalist>
     <p class="secondaire">Dossier, autorisation de pratiquer, droit à l'image et photo.</p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -82,6 +93,18 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         <label for="contactUrgenceTelephone">Contact d'urgence — téléphone</label>
         <input id="contactUrgenceTelephone" type="tel" name="contactUrgenceTelephone"
                [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
+        <div class="tailles">
+          <div>
+            <label for="tailleGilet">Taille de gilet stabilisateur</label>
+            <input id="tailleGilet" type="text" name="tailleGilet" [(ngModel)]="f.tailleGilet" maxlength="20"
+                   list="tailles-gilet" placeholder="Ex. M">
+          </div>
+          <div>
+            <label for="tailleCombinaison">Taille de combinaison</label>
+            <input id="tailleCombinaison" type="text" name="tailleCombinaison" [(ngModel)]="f.tailleCombinaison"
+                   maxlength="20" list="tailles-combinaison" placeholder="Ex. T3">
+          </div>
+        </div>
         <label class="case">
           <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
           Autorisation du responsable légal recueillie
@@ -209,6 +232,18 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                 <label [for]="'contactUrgenceTelephone-' + e.id">Contact d'urgence — téléphone</label>
                 <input [id]="'contactUrgenceTelephone-' + e.id" type="tel" name="contactUrgenceTelephone"
                        [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
+                <div class="tailles">
+                  <div>
+                    <label [for]="'tailleGilet-' + e.id">Taille de gilet stabilisateur</label>
+                    <input [id]="'tailleGilet-' + e.id" type="text" name="tailleGilet" [(ngModel)]="f.tailleGilet"
+                           maxlength="20" list="tailles-gilet" placeholder="Ex. M">
+                  </div>
+                  <div>
+                    <label [for]="'tailleCombinaison-' + e.id">Taille de combinaison</label>
+                    <input [id]="'tailleCombinaison-' + e.id" type="text" name="tailleCombinaison"
+                           [(ngModel)]="f.tailleCombinaison" maxlength="20" list="tailles-combinaison" placeholder="Ex. T3">
+                  </div>
+                </div>
                 <label class="case">
                   <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
                   Autorisation du responsable légal recueillie
@@ -234,6 +269,11 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                     Autorisation légale {{ e.autorisationLegale ? 'recueillie' : 'manquante' }}
                     · Droit à l'image {{ e.autorisationImage ? 'recueilli' : 'non recueilli' }}
                   </span>
+                  @if (e.tailleGilet || e.tailleCombinaison) {
+                    <span class="secondaire">
+                      Gilet {{ e.tailleGilet || '?' }} · Combinaison {{ e.tailleCombinaison || '?' }}
+                    </span>
+                  }
                   @if (filtreSaisonId(); as saisonId) {
                     <span class="secondaire">
                       @if (adhesionDe(e); as a) {
@@ -380,6 +420,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .upload { cursor: pointer; }
     .upload.inactif { opacity: .5; cursor: not-allowed; }
+    .tailles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--pas-2); }
     .photo-creation { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); }
     .photo-creation img { width: 72px; height: 72px; object-fit: cover; border-radius: 50%; }
     /* Un <label> n'hérite pas de la bordure des <button> (styles.css) : on la redonne. */
@@ -403,6 +444,9 @@ export class ElevesComponent {
   private api = inject(ApiService);
 
   readonly statuts = STATUTS;
+  readonly taillesGilet = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+  readonly taillesCombinaison = ['T0', 'T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7',
+                                 '8 ans', '10 ans', '12 ans', '14 ans'];
 
   recadrage = signal<{ eleve: EleveVue; fichier: File } | null>(null);
   recadrageEnCours = signal(false);
@@ -598,6 +642,7 @@ export class ElevesComponent {
         numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
         dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
         contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
+        tailleGilet: f.tailleGilet || null, tailleCombinaison: f.tailleCombinaison || null,
         autorisationLegale: f.autorisationLegale
       }));
     } catch (err) {
@@ -698,6 +743,7 @@ export class ElevesComponent {
       numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
       dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
       contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
+      tailleGilet: f.tailleGilet || null, tailleCombinaison: f.tailleCombinaison || null,
       autorisationLegale: f.autorisationLegale
     }).subscribe({
       next: maj => {

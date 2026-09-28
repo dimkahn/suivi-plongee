@@ -273,6 +273,9 @@ export interface EleveVue {
   telephone: string | null;
   contactUrgenceNom: string | null;
   contactUrgenceTelephone: string | null;
+  /** Tailles pour le prêt de matériel, en texte libre (S, M, T3, 12 ans…). */
+  tailleGilet: string | null;
+  tailleCombinaison: string | null;
   autorisationLegale: boolean;
   autorisationImage: boolean;
   archive: boolean;

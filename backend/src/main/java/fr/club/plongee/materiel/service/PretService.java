@@ -89,7 +89,7 @@ public class PretService {
                 .map(u -> new EmprunteurVue(TypeEmprunteur.ENCADRANT, u.getId(), u.nomComplet(),
                         u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name()));
         Stream<EmprunteurVue> lesEleves = eleves.findByArchiveLeIsNullOrderByNomAscPrenomAsc().stream()
-                .map(e -> new EmprunteurVue(TypeEmprunteur.ELEVE, e.getId(), e.nomComplet(), e.getDernierNiveau()));
+                .map(e -> new EmprunteurVue(TypeEmprunteur.ELEVE, e.getId(), e.nomComplet(), precisionEleve(e)));
         return Stream.concat(lesEleves, encadrants).toList();
     }
 
@@ -278,6 +278,15 @@ public class PretService {
 
     private static String nettoyer(String s) {
         return vide(s) ? null : s.trim();
+    }
+
+    /** « N1 · gilet M · combinaison T3 » : ce qu'il faut savoir pour choisir le matériel à prêter. */
+    private static String precisionEleve(Eleve e) {
+        List<String> morceaux = new ArrayList<>();
+        if (!vide(e.getDernierNiveau())) morceaux.add(e.getDernierNiveau());
+        if (!vide(e.getTailleGilet())) morceaux.add("gilet " + e.getTailleGilet());
+        if (!vide(e.getTailleCombinaison())) morceaux.add("combinaison " + e.getTailleCombinaison());
+        return morceaux.isEmpty() ? null : String.join(" · ", morceaux);
     }
 
     private static boolean vide(String s) {
