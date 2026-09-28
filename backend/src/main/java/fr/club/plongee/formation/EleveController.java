@@ -9,6 +9,7 @@ import fr.club.plongee.commun.RessourceIntrouvableException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -36,13 +37,15 @@ public class EleveController {
     public record EleveVue(Long id, String nom, String prenom, LocalDate dateNaissance,
                            String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
                            String email, String telephone, String contactUrgenceNom,
-                           String contactUrgenceTelephone,
+                           String contactUrgenceTelephone, String tailleGilet, String tailleCombinaison,
                            boolean autorisationLegale, boolean autorisationImage, boolean archive) {}
 
     public record DemandeEleve(@NotBlank String nom, @NotBlank String prenom, LocalDate dateNaissance,
                                String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
                                String email, String telephone, String contactUrgenceNom,
                                String contactUrgenceTelephone,
+                               @Size(max = 20, message = "Taille de gilet : 20 caractères au plus.") String tailleGilet,
+                               @Size(max = 20, message = "Taille de combinaison : 20 caractères au plus.") String tailleCombinaison,
                                boolean autorisationLegale) {}
 
     public record DemandeAutorisationImage(@NotNull Boolean autorisationImage) {}
@@ -130,13 +133,20 @@ public class EleveController {
         e.setTelephone(demande.telephone());
         e.setContactUrgenceNom(demande.contactUrgenceNom());
         e.setContactUrgenceTelephone(demande.contactUrgenceTelephone());
+        e.setTailleGilet(vide(demande.tailleGilet()) ? null : demande.tailleGilet().trim());
+        e.setTailleCombinaison(vide(demande.tailleCombinaison()) ? null : demande.tailleCombinaison().trim());
         e.setAutorisationLegale(demande.autorisationLegale());
+    }
+
+    private static boolean vide(String texte) {
+        return texte == null || texte.isBlank();
     }
 
     private EleveVue vue(Eleve e) {
         return new EleveVue(e.getId(), e.getNom(), e.getPrenom(), e.getDateNaissance(),
                 e.getNumeroLicence(), e.getCertificatValideJusquAu(), e.getDernierNiveau(),
                 e.getEmail(), e.getTelephone(), e.getContactUrgenceNom(), e.getContactUrgenceTelephone(),
+                e.getTailleGilet(), e.getTailleCombinaison(),
                 e.isAutorisationLegale(), e.isAutorisationImage(), e.getArchiveLe() != null);
     }
 

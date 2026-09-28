@@ -53,6 +53,16 @@ public class Eleve {
 
     private String contactUrgenceTelephone;
 
+    /**
+     * Tailles pour le prêt de matériel (gilet stabilisateur, combinaison),
+     * en texte libre comme {@code equipement.taille} : S, M, T3, 12 ans...
+     */
+    @Column(length = 20)
+    private String tailleGilet;
+
+    @Column(length = 20)
+    private String tailleCombinaison;
+
     @Column(nullable = false)
     private boolean autorisationLegale = false;
 
@@ -181,6 +191,22 @@ public class Eleve {
 
     public void setContactUrgenceTelephone(String contactUrgenceTelephone) {
         this.contactUrgenceTelephone = contactUrgenceTelephone;
+    }
+
+    public String getTailleGilet() {
+        return tailleGilet;
+    }
+
+    public void setTailleGilet(String tailleGilet) {
+        this.tailleGilet = tailleGilet;
+    }
+
+    public String getTailleCombinaison() {
+        return tailleCombinaison;
+    }
+
+    public void setTailleCombinaison(String tailleCombinaison) {
+        this.tailleCombinaison = tailleCombinaison;
     }
 
     public boolean isAutorisationLegale() {

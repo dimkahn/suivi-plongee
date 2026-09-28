@@ -59,6 +59,8 @@ interface DemandeEleve {
   telephone?: string | null;
   contactUrgenceNom?: string | null;
   contactUrgenceTelephone?: string | null;
+  tailleGilet?: string | null;
+  tailleCombinaison?: string | null;
   autorisationLegale: boolean;
 }
 
