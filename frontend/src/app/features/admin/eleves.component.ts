@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AdhesionVue, CursusVue, EleveVue, SaisonVue } from '../../core/modeles';
+import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { etatCaci, libelleCaci } from '../../core/caci';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
@@ -109,7 +109,8 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         </label>
 
         <label for="saisonCreation">Saison</label>
-        <select id="saisonCreation" name="saisonCreation" [(ngModel)]="saisonCreationId">
+        <select id="saisonCreation" name="saisonCreation" [ngModel]="saisonCreationId"
+                (ngModelChange)="changerSaisonCreation($event)">
           <option [ngValue]="null">Aucune pour l'instant</option>
           @for (s of saisons(); track s.id) {
             <option [ngValue]="s.id">{{ s.libelle }}{{ s.ouverte ? ' (ouverte)' : '' }}</option>
@@ -117,12 +118,28 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         </select>
         @if (saisonCreationId !== null) {
           <label for="formationCreation">Pour cette saison</label>
-          <select id="formationCreation" name="formationCreation" [(ngModel)]="formationCreation">
+          <select id="formationCreation" name="formationCreation" [ngModel]="formationCreation"
+                  (ngModelChange)="formationCreation = $event; suggererGroupe()">
             <option value="N1">Formation N1</option>
             <option value="N2">Formation N2</option>
             <option value="N3">Formation N3</option>
             <option value="MAINTIEN">Aucune formation — maintien</option>
           </select>
+
+          <label for="groupeCreation">Groupe d'entraînement</label>
+          @if (groupesCreation().length === 0) {
+            <p class="secondaire">
+              Aucun groupe pour cette saison : créez-les dans « Groupes d'entraînement », puis rangez l'élève.
+            </p>
+          } @else {
+            <select id="groupeCreation" name="groupeCreation" [ngModel]="groupeCreationId"
+                    (ngModelChange)="groupeCreationId = $event; groupeCreationTouche = true">
+              <option [ngValue]="null">Aucun pour l'instant</option>
+              @for (g of groupesCreation(); track g.id) {
+                <option [ngValue]="g.id">{{ g.nom }}{{ g.id === groupeSuggere()?.id ? ' (suggéré)' : '' }}</option>
+              }
+            </select>
+          }
         }
 
         <label class="case">
@@ -418,7 +435,8 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .upload { cursor: pointer; }
     .upload.inactif { opacity: .5; cursor: not-allowed; }
-    .tailles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--pas-2); }
+    /* Aligne les champs même quand un intitulé passe sur deux lignes (téléphone). */
+    .tailles { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--pas-2); align-items: end; }
     .photo-creation { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); }
     .photo-creation img { width: 72px; height: 72px; object-fit: cover; border-radius: 50%; }
     /* Un <label> n'hérite pas de la bordure des <button> (styles.css) : on la redonne. */
@@ -531,6 +549,11 @@ export class ElevesComponent {
   formulaireCreation = signal<FormulaireEleve>(formulaireVide());
   saisonCreationId: number | null = null;
   formationCreation: FormationCreation = 'N1';
+  /** Groupes d'entraînement de la saison choisie à la création. */
+  groupesCreation = signal<GroupeEntrainementVue[]>([]);
+  groupeCreationId: number | null = null;
+  /** Choisi à la main : on ne le remplace plus par la suggestion. */
+  groupeCreationTouche = false;
   autorisationImageCreation = false;
   /** Photo déjà recadrée, envoyée une fois l'élève créé. */
   photoCreation = signal<File | null>(null);
@@ -554,7 +577,7 @@ export class ElevesComponent {
       this.liste.set(liste);
       this.saisons.set(saisons);
       const saisonCourante = saisons.find(s => s.ouverte) ?? saisons[0] ?? null;
-      this.saisonCreationId = saisons.find(s => s.ouverte)?.id ?? null;
+      void this.changerSaisonCreation(saisons.find(s => s.ouverte)?.id ?? null);
       if (saisonCourante) await this.changerSaison(saisonCourante.id);
       this.ouvrirDepuisLien(liste);
     } catch {
@@ -661,10 +684,12 @@ export class ElevesComponent {
     if (saisonId !== null) {
       try {
         if (this.formationCreation === 'MAINTIEN') {
-          const a = await firstValueFrom(this.api.adherer({ eleveId: e.id, saisonId }));
+          const a = await firstValueFrom(this.api.adherer({ eleveId: e.id, saisonId, groupeId: this.groupeCreationId }));
           if (this.filtreSaisonId() === saisonId) this.adhesionsDeLaSaison.set([...this.adhesionsDeLaSaison(), a]);
         } else {
-          const c = await firstValueFrom(this.api.inscrireCursus({ eleveId: e.id, saisonId, niveau: this.formationCreation }));
+          const c = await firstValueFrom(this.api.inscrireCursus({
+            eleveId: e.id, saisonId, niveau: this.formationCreation, groupeId: this.groupeCreationId
+          }));
           if (this.filtreSaisonId() === saisonId) this.cursusDeLaSaison.set([...this.cursusDeLaSaison(), c]);
         }
       } catch (err) {
@@ -692,11 +717,40 @@ export class ElevesComponent {
     this.envoi.set(false);
     this.formulaireCreation.set(formulaireVide());
     this.formationCreation = 'N1';
+    this.groupeCreationTouche = false;
+    this.suggererGroupe();
     this.autorisationImageCreation = false;
     this.oublierPhotoCreation();
     this.message.set(echecs.length
       ? `${e.prenom} ${e.nom} a été créé·e, mais pas : ${echecs.join(' ; ')}. À reprendre depuis sa ligne ou l'écran Inscriptions.`
       : `${e.prenom} ${e.nom} a été ajouté·e.`);
+  }
+
+  async changerSaisonCreation(saisonId: number | null): Promise<void> {
+    this.saisonCreationId = saisonId;
+    this.groupesCreation.set([]);
+    this.groupeCreationId = null;
+    this.groupeCreationTouche = false;
+    if (saisonId === null) return;
+    try {
+      const groupes = await firstValueFrom(this.api.groupesEntrainement(saisonId));
+      if (this.saisonCreationId !== saisonId) return;
+      this.groupesCreation.set([...groupes].sort((a, b) => a.ordre - b.ordre));
+      this.suggererGroupe();
+    } catch {
+      this.message.set("Les groupes d'entraînement de cette saison n'ont pas pu être chargés.");
+    }
+  }
+
+  /** Premier groupe (dans l'ordre d'affichage) qui prépare le niveau choisi, comme l'écran Inscriptions. */
+  groupeSuggere(): GroupeEntrainementVue | null {
+    const niveau = this.formationCreation === 'MAINTIEN' ? null : this.formationCreation;
+    return niveau ? this.groupesCreation().find(g => g.niveauPrepare === niveau) ?? null : null;
+  }
+
+  /** Préselectionne la suggestion, sauf si un groupe a été choisi à la main. */
+  suggererGroupe(): void {
+    if (!this.groupeCreationTouche) this.groupeCreationId = this.groupeSuggere()?.id ?? null;
   }
 
   choisirPhotoCreation(evenement: Event): void {
