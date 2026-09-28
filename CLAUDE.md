@@ -201,6 +201,16 @@ qu'il est en cours (ensuite elles font foi), 12 par moment, JPEG/PNG
 vérifiés par leur signature. Le téléphone réduit la photo avant l'envoi
 (`core/reduire-photo.ts`, 1600 px). On photographie le matériel, pas les
 personnes : pas de consentement à l'image en jeu, l'écran le rappelle.
+**Sorties** (V31, `Sortie`, `/admin/sorties`, `SortieService`) : nom,
+lieu, dates, et les séances choisies explicitement parmi celles de ses
+dates ; une séance appartient au plus à une sortie (contrainte en base).
+Gérées par un ADMIN ou le DT (l'écran est dans l'administration mais
+ouvert au DT, `gardeSorties`), consultées par les moniteurs. Les prêts
+se rattachent à la sortie (`pret.sortie_id`, V31 a retiré
+`pret.seance_id`) ; retour prévu par défaut = dernier jour de la sortie.
+L'écran peut créer les plongées d'une sortie via `POST /api/seances/serie`
+(ouvert aux MONITEUR ; un DT est toujours moniteur). Une sortie qui porte
+des prêts ne se supprime plus.
 Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.

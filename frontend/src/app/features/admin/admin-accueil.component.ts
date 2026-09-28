@@ -46,6 +46,12 @@ import { RouterLink } from '@angular/router';
         </a>
       </li>
       <li class="carte">
+        <a routerLink="/admin/sorties">
+          <span class="nom">Sorties</span>
+          <span class="secondaire">Week-ends et séjours : dates, lieu, plongées qui en font partie ; prêts de matériel</span>
+        </a>
+      </li>
+      <li class="carte">
         <a routerLink="/admin/cursus">
           <span class="nom">Inscriptions</span>
           <span class="secondaire">Inscrire un élève dans une formation, changer de référent</span>

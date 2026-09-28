@@ -11,7 +11,6 @@ import fr.club.plongee.materiel.service.PretService.DemandePret;
 import fr.club.plongee.materiel.service.PretService.DemandeRetour;
 import fr.club.plongee.materiel.service.PretService.EmprunteurVue;
 import fr.club.plongee.materiel.service.PretService.PretVue;
-import fr.club.plongee.materiel.service.PretService.SortieVue;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.materiel.domain.PhotoPret;
 import fr.club.plongee.materiel.service.PhotoPretService;
@@ -168,8 +167,4 @@ public class MaterielController {
         return prets.emprunteurs();
     }
 
-    @GetMapping("/sorties")
-    public List<SortieVue> sorties() {
-        return prets.sorties();
-    }
 }

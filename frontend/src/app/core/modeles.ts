@@ -817,9 +817,12 @@ export interface PretVue {
   emprunteurType: 'ELEVE' | 'ENCADRANT' | null;
   emprunteurId: number | null;
   emprunteur: string;
-  seanceId: number | null;
-  dateSeance: string | null;
-  lieuSeance: string | null;
+  sortieId: number | null;
+  sortieNom: string | null;
+  sortieLieu: string | null;
+  sortieDebut: string | null;
+  sortieFin: string | null;
+  nombrePlongees: number;
   motif: string | null;
   datePret: string;
   dateRetourPrevue: string | null;
@@ -861,18 +864,53 @@ export interface EmprunteurVue {
   precision: string | null;
 }
 
-/** Séance en milieu naturel proposée pour rattacher un prêt. */
-export interface SortieVue {
+// ----------------------------------------------------------------
+//  Sorties : nom, lieu, dates et séances choisies (admin ou directeur
+//  technique). Une séance appartient au plus à une sortie.
+// ----------------------------------------------------------------
+
+export interface SeanceSortieVue {
   id: number;
   date: string;
+  ordre: number | null;
+  milieu: 'ARTIFICIEL' | 'NATUREL';
   lieu: string | null;
   site: string | null;
+  commentaire: string | null;
+}
+
+export interface SortieVue {
+  id: number;
+  nom: string;
+  lieu: string | null;
+  dateDebut: string;
+  dateFin: string;
+  remarques: string | null;
+  /** Deux séances d'une même plongée (deux bateaux) comptent pour une. */
+  nombrePlongees: number;
+  seances: SeanceSortieVue[];
+}
+
+/** Une séance des dates de la sortie : déjà choisie, ou prise par une autre sortie. */
+export interface SeancePossibleVue {
+  seance: SeanceSortieVue;
+  choisie: boolean;
+  autreSortie: string | null;
+}
+
+export interface DemandeSortie {
+  nom: string;
+  lieu: string | null;
+  dateDebut: string;
+  /** Absente : sortie d'une journée. */
+  dateFin: string | null;
+  remarques: string | null;
 }
 
 export interface DemandePret {
   eleveId: number | null;
   utilisateurId: number | null;
-  seanceId: number | null;
+  sortieId: number | null;
   motif: string | null;
   datePret: string;
   dateRetourPrevue: string | null;

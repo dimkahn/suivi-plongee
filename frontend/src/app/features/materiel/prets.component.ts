@@ -8,7 +8,7 @@ import {
   EmprunteurVue, EquipementVue, PretVue, SortieVue, TYPES_EQUIPEMENT, TypeEquipement
 } from '../../core/modeles';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
-import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
+import { DateFrPipe, dateDuJour, periode } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
 import { descriptionEquipement } from './materiel';
 import { PhotosPretComponent } from './photos-pret.component';
@@ -49,13 +49,17 @@ interface LigneRetour { incident: string; horsService: boolean; }
                       aide="Rechercher un élève ou un encadrant…" texteVide="Personne ne correspond." />
 
         <label for="sortie">Sortie</label>
-        <select id="sortie" name="sortie" [ngModel]="seanceId" (ngModelChange)="choisirSortie($event)">
+        <select id="sortie" name="sortie" [ngModel]="sortieId" (ngModelChange)="choisirSortie($event)">
           <option [ngValue]="null">Aucune (préciser le motif)</option>
           @for (s of sorties(); track s.id) {
             <option [ngValue]="s.id">{{ libelleSortie(s) }}</option>
           }
         </select>
-        @if (seanceId === null) {
+        <p class="secondaire">
+          Sortie absente de la liste ? <a routerLink="/admin/sorties">Gérer les sorties</a>
+        </p>
+
+        @if (sortieId === null) {
           <label for="motif">Motif</label>
           <input id="motif" name="motif" [(ngModel)]="motif" maxlength="120" placeholder="Sortie mer, stage, fosse…">
         }
@@ -164,7 +168,9 @@ interface LigneRetour { incident: string; horsService: boolean; }
                 <div class="identite">
                   <span class="nom">{{ p.emprunteur }}</span>
                   <span class="secondaire">
-                    @if (p.lieuSeance) { Sortie du {{ p.dateSeance | dateFr }} · {{ p.lieuSeance }} }
+                    @if (p.sortieId && p.sortieDebut) {
+                      {{ p.sortieNom }} · {{ periode(p.sortieDebut, p.sortieFin) }}@if (p.sortieLieu) { · {{ p.sortieLieu }}}
+                    }
                     @else if (p.motif) { {{ p.motif }} }
                   </span>
                 </div>
@@ -314,7 +320,7 @@ export class PretsComponent {
   sorties = signal<SortieVue[]>([]);
 
   emprunteur: number | null = null;
-  seanceId: number | null = null;
+  sortieId: number | null = null;
   motif = '';
   datePret = dateDuJour();
   dateRetourPrevue = '';
@@ -357,14 +363,20 @@ export class PretsComponent {
     if (equipement) void this.ouvrirFormulaire(equipement);
   }
 
+  readonly periode = periode;
+
+  /** « Week-end à Blaisy · du 10/10/2026 au 11/10/2026 · 4 plongées ». */
   libelleSortie(s: SortieVue): string {
-    return [dateFr(s.date), s.lieu, s.site].filter(Boolean).join(' · ');
+    return [s.nom, periode(s.dateDebut, s.dateFin),
+      s.nombrePlongees ? `${s.nombrePlongees} plongée${s.nombrePlongees > 1 ? 's' : ''}` : null]
+      .filter(Boolean).join(' · ');
   }
 
+  /** Le matériel revient à la fin de la sortie : on le propose, modifiable. */
   choisirSortie(id: number | null): void {
-    this.seanceId = id;
+    this.sortieId = id;
     const s = this.sorties().find(x => x.id === id);
-    if (s && !this.dateRetourPrevue && s.date >= this.datePret) this.dateRetourPrevue = s.date;
+    if (s && s.dateFin >= this.datePret) this.dateRetourPrevue = s.dateFin;
   }
 
   basculer(id: number): void {
@@ -380,7 +392,7 @@ export class PretsComponent {
       const [equipements, emprunteurs, sorties] = await Promise.all([
         firstValueFrom(this.api.equipements()),
         firstValueFrom(this.api.emprunteurs()),
-        firstValueFrom(this.api.sortiesMateriel())
+        firstValueFrom(this.api.sorties(true))
       ]);
       this.equipements.set(equipements);
       this.emprunteurs.set(emprunteurs);
@@ -405,8 +417,8 @@ export class PretsComponent {
     this.api.preter({
       eleveId: choisi.type === 'ELEVE' ? choisi.id : null,
       utilisateurId: choisi.type === 'ENCADRANT' ? choisi.id : null,
-      seanceId: this.seanceId,
-      motif: this.seanceId === null ? (this.motif.trim() || null) : null,
+      sortieId: this.sortieId,
+      motif: this.sortieId === null ? (this.motif.trim() || null) : null,
       datePret: this.datePret,
       dateRetourPrevue: this.dateRetourPrevue || null,
       equipementIds: [...this.selection()],
@@ -498,7 +510,7 @@ export class PretsComponent {
   private reinitialiserFormulaire(): void {
     this.formulaireOuvert.set(false);
     this.emprunteur = null;
-    this.seanceId = null;
+    this.sortieId = null;
     this.motif = '';
     this.datePret = dateDuJour();
     this.dateRetourPrevue = '';

@@ -17,6 +17,11 @@ export function dateDuJour(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** « le 10/10/2026 » ou « du 10/10/2026 au 11/10/2026 ». */
+export function periode(debut: string, fin: string | null): string {
+  return !fin || fin === debut ? `le ${dateFr(debut)}` : `du ${dateFr(debut)} au ${dateFr(fin)}`;
+}
+
 @Pipe({ name: 'dateFr' })
 export class DateFrPipe implements PipeTransform {
   transform(iso: string | null | undefined): string {

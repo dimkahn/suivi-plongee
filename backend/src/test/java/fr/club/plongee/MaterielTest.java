@@ -293,4 +293,35 @@ class MaterielTest {
 
         assertThat(lire(photos, dt)).extracting(p -> p.get("moment").asText()).containsExactly("AVANT", "APRES");
     }
+
+    @Test
+    @DisplayName("Un prêt rattaché à une sortie court par défaut jusqu'à son dernier jour")
+    void pretPourUneSortie() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate debut = AUJOURDHUI.plusDays(3);
+        long sortie = json.readTree(mvc.perform(post("/api/sorties").header("Authorization", dt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"nom":"Week-end Annecy","lieu":"Lac d'Annecy","dateDebut":"%s","dateFin":"%s"}"""
+                                .formatted(debut, debut.plusDays(1))))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        long gilet = json.readTree(mvc.perform(post("/api/materiel/equipements").header("Authorization", dt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"type":"GILET","reference":"G-90","taille":"M"}"""))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        mvc.perform(post("/api/materiel/prets").header("Authorization", dt).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"eleveId":%d,"sortieId":%d,"datePret":"%s","equipementIds":[%d]}"""
+                                .formatted(eleveBerthier(dt), sortie, debut, gilet)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.dateRetourPrevue").value(debut.plusDays(1).toString()))
+                .andExpect(jsonPath("$.sortieNom").value("Week-end Annecy"))
+                .andExpect(jsonPath("$.sortieFin").value(debut.plusDays(1).toString()));
+
+        // Une sortie qui a des prêts ne se supprime plus.
+        mvc.perform(delete("/api/sorties/" + sortie).header("Authorization", dt))
+                .andExpect(status().isUnprocessableEntity());
+    }
 }

@@ -397,7 +397,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
                 <strong>{{ p.emprunteur }}</strong>
                 — du {{ p.datePret | dateFr }}
                 @if (p.dateRetour) { au {{ p.dateRetour | dateFr }} } @else { <em>(en cours)</em> }
-                @if (p.lieuSeance || p.motif) { <span class="secondaire"> · {{ p.lieuSeance ?? p.motif }}</span> }
+                @if (p.sortieNom || p.motif) { <span class="secondaire"> · {{ p.sortieNom ?? p.motif }}</span> }
               </li>
             }
           </ul>

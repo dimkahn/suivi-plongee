@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeMateriel } from './core/gardes';
+import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeMateriel, gardeSorties } from './core/gardes';
 
 export const routes: Routes = [
   // Page d'accueil : Infos élèves. Un compte sans rôle d'encadrant en est
@@ -131,6 +131,12 @@ export const routes: Routes = [
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/planning-admin.component')
       .then(m => m.PlanningAdminComponent)
+  },
+  {
+    path: 'admin/sorties',
+    canActivate: [gardeConnecte, gardeSorties],
+    loadComponent: () => import('./features/admin/sorties.component')
+      .then(m => m.SortiesComponent)
   },
   {
     path: 'admin/seances',

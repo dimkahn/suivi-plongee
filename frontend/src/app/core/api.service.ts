@@ -10,7 +10,8 @@ import {
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
-  FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue, SortieVue
+  FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue,
+  DemandeSortie, SeancePossibleVue, SortieVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -858,7 +859,33 @@ export class ApiService {
     return this.http.get<EmprunteurVue[]>('/api/materiel/emprunteurs');
   }
 
-  sortiesMateriel(): Observable<SortieVue[]> {
-    return this.http.get<SortieVue[]>('/api/materiel/sorties');
+  // ----------------------------------------------------------------
+  //  Sorties : lecture pour les encadrants, gestion par un admin ou le
+  //  directeur technique.
+  // ----------------------------------------------------------------
+
+  /** recentes : à venir ou finies depuis peu (choix pour un prêt) ; sinon toutes, les plus récentes d'abord. */
+  sorties(recentes: boolean): Observable<SortieVue[]> {
+    return this.http.get<SortieVue[]>('/api/sorties', { params: { recentes } });
+  }
+
+  creerSortie(demande: DemandeSortie): Observable<SortieVue> {
+    return this.http.post<SortieVue>('/api/sorties', demande);
+  }
+
+  modifierSortie(id: number, demande: DemandeSortie): Observable<SortieVue> {
+    return this.http.put<SortieVue>(`/api/sorties/${id}`, demande);
+  }
+
+  supprimerSortie(id: number): Observable<unknown> {
+    return this.http.delete(`/api/sorties/${id}`);
+  }
+
+  seancesPossiblesSortie(id: number): Observable<SeancePossibleVue[]> {
+    return this.http.get<SeancePossibleVue[]>(`/api/sorties/${id}/seances-possibles`);
+  }
+
+  definirSeancesSortie(id: number, seanceIds: number[]): Observable<SortieVue> {
+    return this.http.put<SortieVue>(`/api/sorties/${id}/seances`, { seanceIds });
   }
 }

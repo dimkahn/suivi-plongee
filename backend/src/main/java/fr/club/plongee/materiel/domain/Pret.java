@@ -1,7 +1,7 @@
 package fr.club.plongee.materiel.domain;
 
 import fr.club.plongee.formation.domain.Eleve;
-import fr.club.plongee.formation.domain.Seance;
+import fr.club.plongee.formation.domain.Sortie;
 import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 import org.hibernate.envers.Audited;
@@ -12,8 +12,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Prêt de matériel à un élève ou à un encadrant, pour une sortie (séance
- * en milieu naturel) ou un autre motif. {@code dateRetour} null = en cours.
+ * Prêt de matériel à un élève ou à un encadrant, pour une sortie ou un
+ * autre motif. {@code dateRetour} null = en cours.
  * {@code emprunteurNom} garde le nom tel qu'au moment du prêt : le lien vers
  * l'élève ou le compte peut disparaître, la traçabilité du matériel reste.
  */
@@ -37,8 +37,8 @@ public class Pret {
     private String emprunteurNom;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seance_id")
-    private Seance seance;
+    @JoinColumn(name = "sortie_id")
+    private Sortie sortie;
 
     @Column(length = 120)
     private String motif;
@@ -101,12 +101,12 @@ public class Pret {
         this.emprunteurNom = emprunteurNom;
     }
 
-    public Seance getSeance() {
-        return seance;
+    public Sortie getSortie() {
+        return sortie;
     }
 
-    public void setSeance(Seance seance) {
-        this.seance = seance;
+    public void setSortie(Sortie sortie) {
+        this.sortie = sortie;
     }
 
     public String getMotif() {

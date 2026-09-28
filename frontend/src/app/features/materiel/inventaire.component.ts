@@ -28,6 +28,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
       </div>
       <div class="actions">
         <a routerLink="/materiel/prets" class="bouton-principal">Prêts</a>
+        <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
         <a routerLink="/materiel/nouveau" class="bouton-discret">Ajouter un équipement</a>
       </div>
     </div>

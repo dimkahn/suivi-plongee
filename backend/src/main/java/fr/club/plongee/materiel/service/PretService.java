@@ -4,10 +4,9 @@ import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.Eleve;
-import fr.club.plongee.formation.domain.Milieu;
-import fr.club.plongee.formation.domain.Seance;
+import fr.club.plongee.formation.domain.Sortie;
 import fr.club.plongee.formation.repository.EleveRepository;
-import fr.club.plongee.formation.repository.SeanceRepository;
+import fr.club.plongee.formation.service.SortieService;
 import fr.club.plongee.materiel.domain.Equipement;
 import fr.club.plongee.materiel.domain.PhotoPret.Moment;
 import fr.club.plongee.materiel.domain.Pret;
@@ -39,26 +38,22 @@ import java.util.stream.Stream;
 @Service
 public class PretService {
 
-    /** Séances en milieu naturel proposées : à venir, ou passées depuis moins de tant de jours. */
-    static final int JOURS_SORTIES_PASSEES = 14;
-
     public enum TypeEmprunteur { ELEVE, ENCADRANT }
 
     public record EmprunteurVue(TypeEmprunteur type, Long id, String nomComplet, String precision) {}
-
-    public record SortieVue(Long id, LocalDate date, String lieu, String site) {}
 
     public record EquipementPreteVue(Long id, TypeEquipement type, String typeLibelle, String reference,
                                      String description) {}
 
     public record PretVue(Long id, TypeEmprunteur emprunteurType, Long emprunteurId, String emprunteur,
-                          Long seanceId, LocalDate dateSeance, String lieuSeance, String motif,
+                          Long sortieId, String sortieNom, String sortieLieu, LocalDate sortieDebut,
+                          LocalDate sortieFin, int nombrePlongees, String motif,
                           LocalDate datePret, LocalDate dateRetourPrevue, LocalDate dateRetour,
                           boolean enRetard, String pretePar, String recuPar, String remarques,
                           List<EquipementPreteVue> equipements, long photosAvant, long photosApres) {}
 
     /** Un seul emprunteur : {@code eleveId} ou {@code utilisateurId}. */
-    public record DemandePret(Long eleveId, Long utilisateurId, Long seanceId, @Size(max = 120) String motif,
+    public record DemandePret(Long eleveId, Long utilisateurId, Long sortieId, @Size(max = 120) String motif,
                               @NotNull LocalDate datePret, LocalDate dateRetourPrevue,
                               @NotEmpty List<Long> equipementIds, Boolean detendeursDesinfectes,
                               String remarques) {}
@@ -73,16 +68,16 @@ public class PretService {
     private final MaterielService materiel;
     private final EleveRepository eleves;
     private final UtilisateurRepository utilisateurs;
-    private final SeanceRepository seances;
+    private final SortieService sorties;
     private final PhotoPretService photos;
 
     public PretService(PretRepository prets, MaterielService materiel, EleveRepository eleves,
-                       UtilisateurRepository utilisateurs, SeanceRepository seances, PhotoPretService photos) {
+                       UtilisateurRepository utilisateurs, SortieService sorties, PhotoPretService photos) {
         this.prets = prets;
         this.materiel = materiel;
         this.eleves = eleves;
         this.utilisateurs = utilisateurs;
-        this.seances = seances;
+        this.sorties = sorties;
         this.photos = photos;
     }
 
@@ -96,14 +91,6 @@ public class PretService {
         Stream<EmprunteurVue> lesEleves = eleves.findByArchiveLeIsNullOrderByNomAscPrenomAsc().stream()
                 .map(e -> new EmprunteurVue(TypeEmprunteur.ELEVE, e.getId(), e.nomComplet(), e.getDernierNiveau()));
         return Stream.concat(lesEleves, encadrants).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<SortieVue> sorties() {
-        return seances.findByMilieuAndDateSeanceGreaterThanEqualOrderByDateSeanceAscOrdreAsc(Milieu.NATUREL,
-                        Calendrier.aujourdhui().minusDays(JOURS_SORTIES_PASSEES)).stream()
-                .map(s -> new SortieVue(s.getId(), s.getDateSeance(), s.getLieu(), s.getSite()))
-                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -141,18 +128,21 @@ public class PretService {
             p.setUtilisateur(u);
             p.setEmprunteurNom(u.nomComplet());
         }
-        if (d.seanceId() != null) {
-            p.setSeance(seances.findById(d.seanceId())
-                    .orElseThrow(() -> new RessourceIntrouvableException("Séance introuvable")));
+        LocalDate retourPrevu = d.dateRetourPrevue();
+        if (d.sortieId() != null) {
+            Sortie s = sorties.sortie(d.sortieId());
+            p.setSortie(s);
+            // Sans retour prévu, le matériel revient à la fin de la sortie : c'est jusque-là qu'il doit tenir.
+            if (retourPrevu == null && !s.getDateFin().isBefore(d.datePret())) retourPrevu = s.getDateFin();
         }
         p.setMotif(nettoyer(d.motif()));
         p.setDatePret(d.datePret());
-        p.setDateRetourPrevue(d.dateRetourPrevue());
+        p.setDateRetourPrevue(retourPrevu);
         p.setRemarques(nettoyer(d.remarques()));
         p.setPretePar(utilisateurs.getReferenceById(auteurId));
 
         // L'équipement doit rester utilisable jusqu'au retour prévu.
-        LocalDate finDuPret = d.dateRetourPrevue() != null ? d.dateRetourPrevue() : d.datePret();
+        LocalDate finDuPret = retourPrevu != null ? retourPrevu : d.datePret();
         Map<Long, Pret> enCours = new HashMap<>();
         for (Pret q : prets.enCours()) q.getEquipements().forEach(e -> enCours.put(e.getId(), q));
 
@@ -243,15 +233,15 @@ public class PretService {
     }
 
     private PretVue vue(Pret p) {
-        return vue(p, photos.compter(List.of(p.getId())).getOrDefault(p.getId(), Map.of()));
+        return vues(List.of(p)).getFirst();
     }
 
     private PretVue vue(Pret p, Map<Moment, Long> photosDuPret) {
+        Sortie sortie = p.getSortie();
         TypeEmprunteur type = p.getEleve() != null ? TypeEmprunteur.ELEVE
                 : p.getUtilisateur() != null ? TypeEmprunteur.ENCADRANT : null;
         Long emprunteurId = p.getEleve() != null ? p.getEleve().getId()
                 : p.getUtilisateur() != null ? p.getUtilisateur().getId() : null;
-        Seance s = p.getSeance();
         boolean enRetard = p.estEnCours() && p.getDateRetourPrevue() != null
                 && p.getDateRetourPrevue().isBefore(Calendrier.aujourdhui());
         List<EquipementPreteVue> equipements = p.getEquipements().stream()
@@ -260,9 +250,9 @@ public class PretService {
                         description(e)))
                 .toList();
         return new PretVue(p.getId(), type, emprunteurId, p.getEmprunteurNom(),
-                s == null ? null : s.getId(), s == null ? null : s.getDateSeance(),
-                s == null ? null : Stream.of(s.getLieu(), s.getSite()).filter(Objects::nonNull)
-                        .reduce((a, b) -> a + " – " + b).orElse(null),
+                sortie == null ? null : sortie.getId(), sortie == null ? null : sortie.getNom(),
+                sortie == null ? null : sortie.getLieu(), sortie == null ? null : sortie.getDateDebut(),
+                sortie == null ? null : sortie.getDateFin(), sortie == null ? 0 : sortie.nombrePlongees(),
                 p.getMotif(), p.getDatePret(), p.getDateRetourPrevue(), p.getDateRetour(), enRetard,
                 p.getPretePar() == null ? null : p.getPretePar().nomComplet(),
                 p.getRecuPar() == null ? null : p.getRecuPar().nomComplet(),
