@@ -21,6 +21,7 @@ public interface AdhesionSaisonRepository extends JpaRepository<AdhesionSaison, 
 
     @Query("""
            select a from AdhesionSaison a
+             join fetch a.eleve
              join fetch a.saison s
             where a.eleve.id = :eleveId
             order by s.dateDebut desc

@@ -39,8 +39,11 @@ public class CursusController {
     public record DemandeInscription(@NotNull Long eleveId, @NotNull Long saisonId,
                                      @NotNull Niveau niveau, Long moniteurReferentId, Long groupeId) {}
 
-    /** Edition complete : le front renvoie l'etat courant modifie, moniteurReferentId a null retire le referent. */
-    public record DemandeModificationCursus(Long moniteurReferentId, @NotNull Cursus.Statut statut) {}
+    /**
+     * Edition complete : le front renvoie l'etat courant modifie, moniteurReferentId a null retire le referent.
+     * {@code niveau} facultatif (absent : inchange) ; en changer est refuse des qu'une competence est notee.
+     */
+    public record DemandeModificationCursus(Long moniteurReferentId, @NotNull Cursus.Statut statut, Niveau niveau) {}
 
     private final CursusRepository cursus;
     private final SaisonRepository saisons;
@@ -49,10 +52,12 @@ public class CursusController {
     private final UtilisateurRepository utilisateurs;
     private final CandidatsInscriptionService candidats;
     private final GroupeEntrainementService groupes;
+    private final ChangementFormationService changements;
 
     public CursusController(CursusRepository cursus, SaisonRepository saisons, EleveRepository eleves,
                             ReferentielRepository referentiels, UtilisateurRepository utilisateurs,
-                            CandidatsInscriptionService candidats, GroupeEntrainementService groupes) {
+                            CandidatsInscriptionService candidats, GroupeEntrainementService groupes,
+                            ChangementFormationService changements) {
         this.cursus = cursus;
         this.saisons = saisons;
         this.eleves = eleves;
@@ -60,6 +65,7 @@ public class CursusController {
         this.utilisateurs = utilisateurs;
         this.candidats = candidats;
         this.groupes = groupes;
+        this.changements = changements;
     }
 
     /**
@@ -106,9 +112,11 @@ public class CursusController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public CursusVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeModificationCursus demande) {
         Cursus c = cursus.chargerComplet(id)
                 .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
+        if (demande.niveau() != null) changements.changerNiveau(c, demande.niveau());
         boolean devientDelivre = demande.statut() == Cursus.Statut.DELIVRE && c.getStatut() != Cursus.Statut.DELIVRE;
         c.setStatut(demande.statut());
         c.setMoniteurReferent(moniteur(demande.moniteurReferentId()));
@@ -121,6 +129,17 @@ public class CursusController {
             eleves.save(c.getEleve());
         }
         return vue(c);
+    }
+
+    /**
+     * L'élève ne prépare finalement aucun niveau : le cursus devient une
+     * adhésion sans formation. Refusé dès qu'il y a des notes ou des présences.
+     */
+    @PostMapping("/{id}/maintien")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void passerEnMaintien(@PathVariable Long id) {
+        changements.passerEnMaintien(id);
     }
 
     private Utilisateur moniteur(Long id) {

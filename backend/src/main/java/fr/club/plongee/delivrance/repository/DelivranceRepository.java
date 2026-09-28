@@ -13,6 +13,7 @@ public interface DelivranceRepository extends JpaRepository<Delivrance, Long> {
 
     Optional<Delivrance> findByCursusId(Long cursusId);
     boolean existsByDelivreParId(Long delivreParId);
+    boolean existsByCursusId(Long cursusId);
 
     /** Les N1 dont les 4 plongees en milieu naturel arrivent a echeance. */
     @Query("""

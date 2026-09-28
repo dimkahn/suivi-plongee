@@ -6,10 +6,12 @@ import fr.club.plongee.formation.service.*;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
+import fr.club.plongee.planning.service.GroupeEntrainementService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -28,19 +30,22 @@ public class AdhesionController {
     public record AdhesionVue(Long id, Long eleveId, String eleve, Long saisonId, String saison,
                               LocalDate adhereLe) {}
 
-    public record DemandeAdhesion(@NotNull Long eleveId, @NotNull Long saisonId) {}
+    /** {@code groupeId} facultatif : le groupe d'entraînement de la saison où ranger l'élève. */
+    public record DemandeAdhesion(@NotNull Long eleveId, @NotNull Long saisonId, Long groupeId) {}
 
     private final AdhesionSaisonRepository adhesions;
     private final CursusRepository cursus;
     private final EleveRepository eleves;
     private final SaisonRepository saisons;
+    private final GroupeEntrainementService groupes;
 
     public AdhesionController(AdhesionSaisonRepository adhesions, CursusRepository cursus,
-                              EleveRepository eleves, SaisonRepository saisons) {
+                              EleveRepository eleves, SaisonRepository saisons, GroupeEntrainementService groupes) {
         this.adhesions = adhesions;
         this.cursus = cursus;
         this.eleves = eleves;
         this.saisons = saisons;
+        this.groupes = groupes;
     }
 
     /** Selon le paramètre fourni : toutes les adhésions d'une saison, ou l'historique d'un élève. */
@@ -57,9 +62,11 @@ public class AdhesionController {
         throw new RegleMetierException("Préciser saisonId ou eleveId.");
     }
 
+    /** Tout ou rien : un groupe refusé annule aussi l'adhésion. */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public AdhesionVue adherer(@Valid @RequestBody DemandeAdhesion demande) {
         Eleve eleve = eleves.findById(demande.eleveId())
                 .orElseThrow(() -> new RessourceIntrouvableException("Élève introuvable"));
@@ -79,6 +86,7 @@ public class AdhesionController {
         a.setEleve(eleve);
         a.setSaison(saison);
         adhesions.save(a);
+        if (demande.groupeId() != null) groupes.ranger(saison.getId(), eleve.getId(), demande.groupeId());
         return vue(a);
     }
 
