@@ -89,4 +89,47 @@ class GroupeEntrainementTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(retire.get("groupeId").isNull()).isTrue();
     }
+
+    @Test
+    @DisplayName("À l'inscription, l'admin range l'élève dans un groupe ; un groupe inconnu annule toute l'inscription")
+    void groupeChoisiALInscription() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        // Saison 2026-2027 (fermée, V11) : les cursus de la saison ouverte sont comptés par DonneesDemoTest.
+        long saisonId = -1;
+        for (JsonNode sa : json.readTree(mvc.perform(get("/api/saisons").header("Authorization", admin))
+                .andReturn().getResponse().getContentAsString())) {
+            if (sa.get("libelle").asText().equals("2026-2027")) saisonId = sa.get("id").asLong();
+        }
+        long debutants = json.readTree(mvc.perform(post("/api/groupes-entrainement").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"saisonId":%d,"nom":"Débutants 2026","niveauPrepare":"N1"}""".formatted(saisonId)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        long eleveId = json.readTree(mvc.perform(post("/api/eleves").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"nom":"Groupe","prenom":"Inscription","dateNaissance":"2001-01-01","autorisationLegale":true}"""))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        // Groupe inconnu : ni cursus ni groupe.
+        mvc.perform(post("/api/cursus").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"eleveId":%d,"saisonId":%d,"niveau":"N1","groupeId":999999}""".formatted(eleveId, saisonId)))
+                .andExpect(status().isNotFound());
+        assertThat(json.readTree(mvc.perform(get("/api/cursus/eleve/" + eleveId).header("Authorization", admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())).isEmpty();
+
+        mvc.perform(post("/api/cursus").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"eleveId":%d,"saisonId":%d,"niveau":"N1","groupeId":%d}""".formatted(eleveId, saisonId, debutants)))
+                .andExpect(status().isCreated());
+
+        JsonNode eleves = json.readTree(mvc.perform(get("/api/groupes-entrainement/saison/" + saisonId + "/eleves")
+                        .header("Authorization", admin))
+                .andReturn().getResponse().getContentAsString());
+        JsonNode inscrit = null;
+        for (JsonNode e : eleves) if (e.get("eleveId").asLong() == eleveId) inscrit = e;
+        assertThat(inscrit.get("groupeId").asLong()).isEqualTo(debutants);
+    }
 }

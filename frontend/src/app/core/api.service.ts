@@ -491,8 +491,10 @@ export class ApiService {
   //  Inscription d'un élève dans une formation (cursus), réservée à l'ADMIN.
   // ----------------------------------------------------------------
 
+  /** groupeId : groupe d'entraînement de la saison où ranger l'élève ; absent ou null, son groupe ne change pas. */
   inscrireCursus(demande: {
     eleveId: number; saisonId: number; niveau: 'N1' | 'N2' | 'N3'; moniteurReferentId?: number | null;
+    groupeId?: number | null;
   }): Observable<CursusVue> {
     return this.http.post<CursusVue>('/api/cursus', demande);
   }

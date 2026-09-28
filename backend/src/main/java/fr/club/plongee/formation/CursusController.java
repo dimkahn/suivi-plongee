@@ -6,6 +6,7 @@ import fr.club.plongee.formation.service.*;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
+import fr.club.plongee.planning.service.GroupeEntrainementService;
 import fr.club.plongee.referentiel.domain.Niveau;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
@@ -18,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,9 +31,13 @@ public class CursusController {
     public record CursusVue(Long id, Long eleveId, String eleve, String niveau, String saison, String statut,
                             String moniteurReferent) {}
 
-    /** Le référentiel n'est jamais choisi à la main : on prend la version active du niveau. */
+    /**
+     * Le référentiel n'est jamais choisi à la main : on prend la version active du niveau.
+     * {@code groupeId} facultatif : le groupe d'entraînement de la saison où ranger l'élève
+     * (il quitte alors son groupe actuel) ; absent, son groupe ne change pas.
+     */
     public record DemandeInscription(@NotNull Long eleveId, @NotNull Long saisonId,
-                                     @NotNull Niveau niveau, Long moniteurReferentId) {}
+                                     @NotNull Niveau niveau, Long moniteurReferentId, Long groupeId) {}
 
     /** Edition complete : le front renvoie l'etat courant modifie, moniteurReferentId a null retire le referent. */
     public record DemandeModificationCursus(Long moniteurReferentId, @NotNull Cursus.Statut statut) {}
@@ -42,16 +48,18 @@ public class CursusController {
     private final ReferentielRepository referentiels;
     private final UtilisateurRepository utilisateurs;
     private final CandidatsInscriptionService candidats;
+    private final GroupeEntrainementService groupes;
 
     public CursusController(CursusRepository cursus, SaisonRepository saisons, EleveRepository eleves,
                             ReferentielRepository referentiels, UtilisateurRepository utilisateurs,
-                            CandidatsInscriptionService candidats) {
+                            CandidatsInscriptionService candidats, GroupeEntrainementService groupes) {
         this.cursus = cursus;
         this.saisons = saisons;
         this.eleves = eleves;
         this.referentiels = referentiels;
         this.utilisateurs = utilisateurs;
         this.candidats = candidats;
+        this.groupes = groupes;
     }
 
     /**
@@ -64,10 +72,14 @@ public class CursusController {
         return candidats.candidats(saisonId);
     }
 
-    /** Inscription d'un élève dans une formation : réservée à l'ADMIN. */
+    /**
+     * Inscription d'un élève dans une formation : réservée à l'ADMIN. Tout ou
+     * rien : un groupe refusé (autre saison) annule aussi l'inscription.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public CursusVue inscrire(@Valid @RequestBody DemandeInscription demande) {
         Eleve eleve = eleves.findById(demande.eleveId())
                 .orElseThrow(() -> new RessourceIntrouvableException("Élève introuvable"));
@@ -88,6 +100,7 @@ public class CursusController {
         c.setReferentiel(referentiel);
         c.setMoniteurReferent(moniteur(demande.moniteurReferentId()));
         cursus.save(c);
+        if (demande.groupeId() != null) groupes.ranger(saison.getId(), eleve.getId(), demande.groupeId());
         return vue(cursus.chargerComplet(c.getId()).orElseThrow());
     }
 

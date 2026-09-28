@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { CandidatInscription, CursusVue, MoniteurVue, SaisonVue } from '../../core/modeles';
+import { CandidatInscription, CursusVue, GroupeEntrainementVue, MoniteurVue, SaisonVue } from '../../core/modeles';
 import { normaliser } from '../../core/seance-lieu';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
@@ -103,11 +103,30 @@ const LIBELLES_STATUT: Record<string, string> = {
       }
 
       <label for="niveau">Niveau préparé</label>
-      <select id="niveau" name="niveau" [(ngModel)]="niveau">
+      <select id="niveau" name="niveau" [ngModel]="niveau" (ngModelChange)="changerNiveau($event)">
         @for (n of niveaux; track n) {
           <option [value]="n">{{ n }}{{ candidatChoisi()?.niveauPropose === n ? ' (proposé)' : '' }}</option>
         }
       </select>
+
+      <label for="groupe">Groupe d'entraînement</label>
+      @if (groupes().length === 0) {
+        <p class="secondaire">
+          Aucun groupe pour cette saison : créez-les dans « Groupes d'entraînement », puis rangez l'élève.
+        </p>
+      } @else {
+        <select id="groupe" name="groupe" [ngModel]="groupeId" (ngModelChange)="choisirGroupe($event)">
+          <option [ngValue]="null">{{ libelleSansChangement() }}</option>
+          @for (g of groupes(); track g.id) {
+            @if (g.id !== groupeActuel()?.id) {
+              <option [ngValue]="g.id">{{ g.nom }}{{ g.id === groupeSuggere()?.id ? ' (suggéré)' : '' }}</option>
+            }
+          }
+        </select>
+        @if (groupeActuel() && groupeId !== null) {
+          <p class="secondaire">L'élève quittera « {{ groupeActuel()!.nom }} » : un seul groupe par saison.</p>
+        }
+      }
 
       <label for="referent">Moniteur référent</label>
       <select id="referent" name="referent" [(ngModel)]="moniteurReferentId">
@@ -289,6 +308,29 @@ export class CursusAdminComponent {
   niveau: 'N1' | 'N2' | 'N3' = 'N1';
   moniteurReferentId: number | null = null;
 
+  /** Groupes d'entraînement de la saison choisie. */
+  groupes = signal<GroupeEntrainementVue[]>([]);
+  /** null : le groupe de l'élève ne change pas (il reste dans son groupe actuel, ou sans groupe). */
+  groupeId: number | null = null;
+  /** Choisi à la main : on ne le remplace plus par la suggestion quand le niveau change. */
+  private groupeTouche = false;
+  private niveauSignal = signal<'N1' | 'N2' | 'N3'>('N1');
+
+  /** Le groupe où l'élève est déjà rangé cette saison, s'il y en a un. */
+  groupeActuel = computed(() => {
+    const c = this.candidatChoisi();
+    return c ? this.groupes().find(g => g.eleves.some(e => e.id === c.eleveId)) ?? null : null;
+  });
+
+  libelleSansChangement = computed(() => {
+    const g = this.groupeActuel();
+    return g ? `Laisser dans « ${g.nom} »` : "Ne pas ranger pour l'instant";
+  });
+
+  /** Premier groupe (dans l'ordre d'affichage) qui prépare le niveau choisi, comme la suggestion de l'écran des groupes. */
+  groupeSuggere = computed(() =>
+    [...this.groupes()].sort((a, b) => a.ordre - b.ordre).find(g => g.niveauPrepare === this.niveauSignal()) ?? null);
+
   edition = signal<number | null>(null);
   formulaireEdition = signal<{ statut: string; moniteurReferentId: number | null } | null>(null);
 
@@ -323,11 +365,34 @@ export class CursusAdminComponent {
     this.candidatChoisi.set(null);
     this.rechercheEleve.set('');
     this.candidats.set([]);
+    this.groupes.set([]);
+    this.groupeId = null;
+    this.groupeTouche = false;
     if (id === null) return;
     this.api.candidatsInscription(id).subscribe({
       next: c => { if (this.saisonId() === id) this.candidats.set(c); },
       error: () => this.message.set('Impossible de charger les élèves pour cette saison.')
     });
+    this.api.groupesEntrainement(id).subscribe({
+      next: g => { if (this.saisonId() === id) this.groupes.set(g); },
+      error: () => this.message.set("Impossible de charger les groupes d'entraînement de cette saison.")
+    });
+  }
+
+  changerNiveau(n: 'N1' | 'N2' | 'N3'): void {
+    this.niveau = n;
+    this.niveauSignal.set(n);
+    if (!this.groupeTouche) this.proposerGroupe();
+  }
+
+  choisirGroupe(id: number | null): void {
+    this.groupeId = id;
+    this.groupeTouche = true;
+  }
+
+  /** Élève déjà dans un groupe : on l'y laisse ; sinon, le groupe qui prépare son niveau. */
+  private proposerGroupe(): void {
+    this.groupeId = this.groupeActuel() ? null : this.groupeSuggere()?.id ?? null;
   }
 
   /** Tant qu'aucune option n'a été choisie, aucun élève n'est retenu pour l'inscription. */
@@ -374,6 +439,9 @@ export class CursusAdminComponent {
     this.comboboxOuvert.set(false);
     this.indexActif.set(-1);
     if (c.niveauPropose) this.niveau = c.niveauPropose;
+    this.niveauSignal.set(this.niveau);
+    this.groupeTouche = false;
+    this.proposerGroupe();
   }
 
   niveauCourt(c: CandidatInscription): string {
@@ -400,13 +468,17 @@ export class CursusAdminComponent {
     this.message.set(null);
     this.api.inscrireCursus({
       eleveId: c.eleveId, saisonId, niveau: this.niveau,
-      moniteurReferentId: this.moniteurReferentId
+      moniteurReferentId: this.moniteurReferentId,
+      groupeId: this.groupeId
     }).subscribe({
       next: cursus => {
         this.envoi.set(false);
         this.liste.set([cursus, ...this.liste()]);
         this.moniteurReferentId = null;
-        // Recharge les candidats : l'élève affiche désormais son inscription de la saison.
+        const groupe = this.groupes().find(g => g.id === this.groupeId);
+        this.message.set(`${cursus.eleve} est inscrit·e en ${cursus.niveau}`
+          + (groupe ? `, dans le groupe « ${groupe.nom} ».` : '.'));
+        // Recharge les candidats (et les groupes) : l'élève affiche désormais son inscription de la saison.
         this.choisirSaison(saisonId);
       },
       error: (e: HttpErrorResponse) => {
