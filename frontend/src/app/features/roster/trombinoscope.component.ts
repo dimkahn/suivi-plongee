@@ -14,6 +14,15 @@ import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../co
 
 type Population = 'ELEVES' | 'MONITEURS';
 
+/** Carte dont le menu est ouvert : un élève (fiche, modification, photo) ou un moniteur (photo seulement). */
+type Cible =
+  | { sorte: 'ELEVE'; ligne: LigneTrombinoscope }
+  | { sorte: 'MONITEUR'; ligne: LigneTrombinoscopeMoniteur };
+
+function idCible(c: Cible): number {
+  return c.sorte === 'ELEVE' ? c.ligne.eleveId : c.ligne.id;
+}
+
 @Component({
   selector: 'app-trombinoscope',
   imports: [RouterLink, FormsModule, NgTemplateOutlet, FiltreGroupeComponent, RecadragePhotoComponent],
@@ -57,18 +66,17 @@ type Population = 'ELEVES' | 'MONITEURS';
       } @else {
         <div class="grille">
           @for (m of moniteursFiltres(); track m.id) {
-            <div class="carte fiche">
-              @if (m.aPhoto) {
-                <img [src]="urlPhotoMoniteur(m.id)" [alt]="m.nomComplet" width="120" height="120">
-              } @else {
-                <div class="silhouette" [attr.aria-label]="m.nomComplet">{{ initiales(m.nomComplet) }}</div>
-              }
-              <span class="nom">{{ m.nomComplet }}</span>
-              <span class="secondaire">{{ m.niveauEncadrement ?? 'Niveau non renseigné' }}</span>
-              @if (!m.autorisationImage) {
-                <span class="secondaire">Droit à l'image non recueilli</span>
-              }
-            </div>
+            <!-- Un admin peut ajouter la photo qui manque ; sinon la carte n'est qu'un affichage. -->
+            @if (auth.estAdmin() && !m.aPhoto) {
+              <button type="button" class="carte fiche" (click)="ouvrirActions({ sorte: 'MONITEUR', ligne: m })"
+                      [attr.aria-label]="'Ajouter une photo pour ' + m.nomComplet">
+                <ng-container [ngTemplateOutlet]="contenuFicheMoniteur" [ngTemplateOutletContext]="{ $implicit: m }" />
+              </button>
+            } @else {
+              <div class="carte fiche">
+                <ng-container [ngTemplateOutlet]="contenuFicheMoniteur" [ngTemplateOutletContext]="{ $implicit: m }" />
+              </div>
+            }
           }
         </div>
       }
@@ -83,7 +91,7 @@ type Population = 'ELEVES' | 'MONITEURS';
         @for (l of lignesFiltrees(); track l.eleveId) {
           <!-- Un admin a plusieurs gestes possibles (menu) ; un moniteur n'a que la fiche de suivi. -->
           @if (auth.estAdmin()) {
-            <button type="button" class="carte fiche" (click)="ouvrirActions(l)"
+            <button type="button" class="carte fiche" (click)="ouvrirActions({ sorte: 'ELEVE', ligne: l })"
                     [attr.aria-label]="'Actions pour ' + l.eleve">
               <ng-container [ngTemplateOutlet]="contenuFiche" [ngTemplateOutletContext]="{ $implicit: l }" />
             </button>
@@ -95,6 +103,19 @@ type Population = 'ELEVES' | 'MONITEURS';
         }
       </div>
     }
+
+    <ng-template #contenuFicheMoniteur let-m>
+      @if (m.aPhoto) {
+        <img [src]="urlPhotoMoniteur(m.id)" [alt]="m.nomComplet" width="120" height="120">
+      } @else {
+        <div class="silhouette" [attr.aria-label]="m.nomComplet">{{ initiales(m.nomComplet) }}</div>
+      }
+      <span class="nom">{{ m.nomComplet }}</span>
+      <span class="secondaire">{{ m.niveauEncadrement ?? 'Niveau non renseigné' }}</span>
+      @if (!m.autorisationImage) {
+        <span class="secondaire">Droit à l'image non recueilli</span>
+      }
+    </ng-template>
 
     <ng-template #contenuFiche let-l>
       @if (l.aPhoto) {
@@ -111,39 +132,47 @@ type Population = 'ELEVES' | 'MONITEURS';
       }
     </ng-template>
 
-    <dialog #dialogueActions class="dialogue-seance" aria-labelledby="titre-actions-eleve"
+    <dialog #dialogueActions class="dialogue-seance" aria-labelledby="titre-actions"
             (close)="choisi.set(null)">
-      @if (choisi(); as l) {
+      @if (choisi(); as c) {
         <div class="entete-dialogue">
-          <h2 id="titre-actions-eleve">{{ l.eleve }}</h2>
+          <h2 id="titre-actions">{{ nomCible(c) }}</h2>
           <button type="button" class="bouton-discret" (click)="fermerActions()" aria-label="Fermer">✕</button>
         </div>
-        <p class="secondaire">{{ libellePreparation(l.niveau) }}</p>
+        <p class="secondaire">
+          {{ c.sorte === 'ELEVE' ? libellePreparation(c.ligne.niveau) : (c.ligne.niveauEncadrement ?? 'Niveau non renseigné') }}
+        </p>
 
         @if (messageActions(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-        <div class="actions-eleve">
-          <a class="bouton-principal" [routerLink]="['/cursus', l.cursusId]" (click)="fermerActions()">
-            Fiche de suivi
-          </a>
-          <a class="bouton-discret" routerLink="/admin/eleves"
-             [queryParams]="{ modifier: l.eleveId, retour: '/trombinoscope' }" (click)="fermerActions()">
-            Modifier l'élève
-          </a>
-        </div>
+        @if (c.sorte === 'ELEVE') {
+          <div class="actions-eleve">
+            <a class="bouton-principal" [routerLink]="['/cursus', c.ligne.cursusId]" (click)="fermerActions()">
+              Fiche de suivi
+            </a>
+            <a class="bouton-discret" routerLink="/admin/eleves"
+               [queryParams]="{ modifier: c.ligne.eleveId, retour: '/trombinoscope' }" (click)="fermerActions()">
+              Modifier l'élève
+            </a>
+          </div>
+        }
 
-        @if (!l.aPhoto) {
-          <section class="photo">
+        @if (!c.ligne.aPhoto) {
+          <section class="photo" [class.seule]="c.sorte === 'MONITEUR'">
             <h3>Photo</h3>
-            @if (!l.autorisationImage) {
+            @if (!c.ligne.autorisationImage) {
               <p class="secondaire">
-                Pas de photo sans le droit à l'image, distinct de l'autorisation de pratiquer.
+                Pas de photo sans le droit à l'image@if (c.sorte === 'ELEVE') {, distinct de l'autorisation de pratiquer}.
               </p>
               <label class="case">
                 <input type="checkbox" [(ngModel)]="consentementConfirme">
-                Le droit à l'image a été recueilli (accord de l'élève, ou de son responsable légal s'il est mineur)
+                @if (c.sorte === 'ELEVE') {
+                  Le droit à l'image a été recueilli (accord de l'élève, ou de son responsable légal s'il est mineur)
+                } @else {
+                  Le moniteur a donné son accord pour paraître dans le trombinoscope
+                }
               </label>
-              <button type="button" class="bouton-discret" (click)="recueillirDroitImage(l)"
+              <button type="button" class="bouton-discret" (click)="recueillirDroitImage(c)"
                       [disabled]="!consentementConfirme || envoi()">
                 {{ envoi() ? 'Enregistrement…' : "Enregistrer le droit à l'image" }}
               </button>
@@ -159,7 +188,7 @@ type Population = 'ELEVES' | 'MONITEURS';
     </dialog>
 
     @if (recadrage(); as r) {
-      <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.ligne.eleve"
+      <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + nomCible(r.cible)"
                            [enCours]="envoi()" (valide)="deposerPhoto($event)"
                            (annule)="recadrage.set(null)" (illisible)="imageIllisible()" />
     }
@@ -196,6 +225,7 @@ type Population = 'ELEVES' | 'MONITEURS';
     .actions-eleve .bouton-discret { border: 1px solid var(--trait); border-radius: var(--r-s); color: inherit; }
     .photo { border-top: 1px solid var(--trait); padding-top: var(--pas-2); display: grid; gap: var(--pas); }
     .photo h3 { margin: 0; }
+    .photo.seule { border-top: none; padding-top: 0; }
     .case { display: flex; align-items: flex-start; gap: var(--pas); min-height: 44px; }
     .case input { width: auto; flex: none; margin-top: 4px; }
     .upload { display: flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
@@ -208,12 +238,12 @@ export class TrombinoscopeComponent implements OnDestroy {
   auth = inject(AuthService);
   private dialogueActions = viewChild<ElementRef<HTMLDialogElement>>('dialogueActions');
 
-  /** Élève dont le menu d'actions est ouvert (admins seulement). */
-  choisi = signal<LigneTrombinoscope | null>(null);
+  /** Carte dont le menu d'actions est ouvert (admins seulement). */
+  choisi = signal<Cible | null>(null);
   messageActions = signal<string | null>(null);
   envoi = signal(false);
   consentementConfirme = false;
-  recadrage = signal<{ ligne: LigneTrombinoscope; fichier: File } | null>(null);
+  recadrage = signal<{ cible: Cible; fichier: File } | null>(null);
 
   readonly libellePreparation = libellePreparation;
 
@@ -320,8 +350,12 @@ export class TrombinoscopeComponent implements OnDestroy {
     return this.urlsPhotos().get(eleveId) ?? '';
   }
 
-  ouvrirActions(l: LigneTrombinoscope): void {
-    this.choisi.set(l);
+  nomCible(c: Cible): string {
+    return c.sorte === 'ELEVE' ? c.ligne.eleve : c.ligne.nomComplet;
+  }
+
+  ouvrirActions(c: Cible): void {
+    this.choisi.set(c);
     this.messageActions.set(null);
     this.consentementConfirme = false;
     this.dialogueActions()?.nativeElement.showModal();
@@ -331,21 +365,38 @@ export class TrombinoscopeComponent implements OnDestroy {
     this.dialogueActions()?.nativeElement.close();
   }
 
-  /** Remplace la ligne dans la liste et dans le menu ouvert. */
-  private majLigne(eleveId: number, maj: Partial<LigneTrombinoscope>): LigneTrombinoscope | null {
-    this.lignes.set(this.lignes().map(x => x.eleveId === eleveId ? { ...x, ...maj } : x));
-    const nouvelle = this.lignes().find(x => x.eleveId === eleveId) ?? null;
-    if (this.choisi()?.eleveId === eleveId) this.choisi.set(nouvelle);
-    return nouvelle;
+  /** Relit la carte dans sa liste : l'état a pu changer depuis l'ouverture du menu. */
+  private fraiche(c: Cible): Cible {
+    if (c.sorte === 'ELEVE') {
+      const ligne = this.lignes().find(x => x.eleveId === c.ligne.eleveId);
+      return ligne ? { sorte: 'ELEVE', ligne } : c;
+    }
+    const ligne = (this.moniteurs() ?? []).find(x => x.id === c.ligne.id);
+    return ligne ? { sorte: 'MONITEUR', ligne } : c;
   }
 
-  async recueillirDroitImage(l: LigneTrombinoscope): Promise<void> {
+  /** Met à jour la carte dans sa liste et dans le menu ouvert. */
+  private majCible(c: Cible, maj: { aPhoto?: boolean; autorisationImage?: boolean }): void {
+    if (c.sorte === 'ELEVE') {
+      this.lignes.set(this.lignes().map(x => x.eleveId === c.ligne.eleveId ? { ...x, ...maj } : x));
+    } else {
+      this.moniteurs.set((this.moniteurs() ?? []).map(x => x.id === c.ligne.id ? { ...x, ...maj } : x));
+    }
+    const ouverte = this.choisi();
+    if (ouverte && ouverte.sorte === c.sorte && idCible(ouverte) === idCible(c)) {
+      this.choisi.set(this.fraiche(c));
+    }
+  }
+
+  async recueillirDroitImage(c: Cible): Promise<void> {
     if (!this.consentementConfirme) return;
     this.envoi.set(true);
     this.messageActions.set(null);
     try {
-      await firstValueFrom(this.api.changerAutorisationImage(l.eleveId, true));
-      this.majLigne(l.eleveId, { autorisationImage: true });
+      await firstValueFrom(c.sorte === 'ELEVE'
+        ? this.api.changerAutorisationImage(c.ligne.eleveId, true)
+        : this.api.changerAutorisationImageMoniteur(c.ligne.id, true));
+      this.majCible(c, { autorisationImage: true });
     } catch (e) {
       this.messageActions.set((e as HttpErrorResponse).error?.detail
         ?? (this.reseau.enLigne() ? "Le droit à l'image n'a pas pu être enregistré." : 'Pas de réseau : réessayez plus tard.'));
@@ -359,38 +410,44 @@ export class TrombinoscopeComponent implements OnDestroy {
     const entree = evenement.target as HTMLInputElement;
     const fichier = entree.files?.[0];
     entree.value = '';
-    const l = this.choisi();
-    if (!fichier || !l) return;
+    const c = this.choisi();
+    if (!fichier || !c) return;
     this.messageActions.set(null);
     // Le dialogue modal passerait au-dessus du recadrage : on le ferme le temps de recadrer.
     this.fermerActions();
-    this.recadrage.set({ ligne: l, fichier });
+    this.recadrage.set({ cible: c, fichier });
   }
 
   imageIllisible(): void {
     const r = this.recadrage();
     this.recadrage.set(null);
-    if (r) this.rouvrir(r.ligne, "Cette image n'a pas pu être lue.");
+    if (r) this.rouvrir(r.cible, "Cette image n'a pas pu être lue.");
   }
 
-  /** Rouvre le menu de l'élève avec un message (échec pendant le recadrage ou l'envoi). */
-  private rouvrir(l: LigneTrombinoscope, message: string): void {
-    this.ouvrirActions(this.lignes().find(x => x.eleveId === l.eleveId) ?? l);
+  /** Rouvre le menu avec un message (échec pendant le recadrage ou l'envoi). */
+  private rouvrir(c: Cible, message: string): void {
+    this.ouvrirActions(this.fraiche(c));
     this.messageActions.set(message);
   }
 
   async deposerPhoto(fichier: File): Promise<void> {
     const r = this.recadrage();
     if (!r) return;
+    const c = r.cible;
     this.envoi.set(true);
     try {
-      await firstValueFrom(this.api.deposerPhotoEleve(r.ligne.eleveId, fichier));
+      if (c.sorte === 'ELEVE') {
+        await firstValueFrom(this.api.deposerPhotoEleve(c.ligne.eleveId, fichier));
+      } else {
+        await firstValueFrom(this.api.deposerPhotoMoniteur(c.ligne.id, fichier));
+      }
       this.recadrage.set(null);
-      this.majLigne(r.ligne.eleveId, { aPhoto: true });
-      this.chargerPhoto(r.ligne.eleveId);
+      this.majCible(c, { aPhoto: true });
+      if (c.sorte === 'ELEVE') this.chargerPhoto(c.ligne.eleveId);
+      else this.chargerPhotoMoniteur(c.ligne.id);
     } catch (e) {
       this.recadrage.set(null);
-      this.rouvrir(r.ligne, (e as HttpErrorResponse).error?.detail
+      this.rouvrir(c, (e as HttpErrorResponse).error?.detail
         ?? (this.reseau.enLigne() ? "La photo n'a pas pu être déposée." : 'Pas de réseau : réessayez plus tard.'));
     } finally {
       this.envoi.set(false);
