@@ -27,6 +27,9 @@ export class AuthService {
   readonly roles = computed(() => this.session()?.roles ?? []);
   readonly estMoniteur = computed(() => this.roles().includes('MONITEUR'));
   readonly estAdmin = computed(() => this.roles().includes('ADMIN'));
+  readonly estDirecteurTechnique = computed(() => this.roles().includes('DIRECTEUR_TECHNIQUE'));
+  /** Matériel et prêts : le directeur technique, ou un admin qui le supplée. */
+  readonly gereMateriel = computed(() => this.estDirecteurTechnique() || this.estAdmin());
   readonly niveau = computed(() => this.session()?.niveauEncadrement ?? null);
 
   get jeton(): string | null {

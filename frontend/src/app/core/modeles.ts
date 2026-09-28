@@ -168,6 +168,8 @@ export interface MoniteurVue {
   numeroLicence: string | null;
   certificatValideJusquAu: string | null;
   admin: boolean;
+  /** Gère le matériel du club et les prêts. */
+  directeurTechnique: boolean;
   autorisationImage: boolean;
   aPhoto: boolean;
 }
@@ -690,4 +692,198 @@ export interface DemandeCasePlanning {
   espaceId?: number | null;
   profondeurLimitee?: number | null;
   activite?: string | null;
+}
+
+// ----------------------------------------------------------------
+//  Matériel du club et prêts : domaine du directeur technique.
+//  Échéances et alertes calculées par le serveur (EcheancesEquipement).
+// ----------------------------------------------------------------
+
+export type TypeEquipement = 'BLOC' | 'DETENDEUR' | 'GILET' | 'COMBINAISON';
+
+export const TYPES_EQUIPEMENT: { valeur: TypeEquipement; libelle: string; pluriel: string }[] = [
+  { valeur: 'BLOC', libelle: 'Bloc', pluriel: 'Blocs' },
+  { valeur: 'DETENDEUR', libelle: 'Détendeur', pluriel: 'Détendeurs' },
+  { valeur: 'GILET', libelle: 'Gilet stabilisateur', pluriel: 'Gilets' },
+  { valeur: 'COMBINAISON', libelle: 'Combinaison', pluriel: 'Combinaisons' }
+];
+
+/** A_REGULARISER : une alerte bloque le prêt (TIV dépassée, contrôle non conforme...). */
+export type StatutEquipement = 'DISPONIBLE' | 'PRETE' | 'A_REGULARISER' | 'HORS_SERVICE' | 'REBUTE';
+
+export const LIBELLES_STATUT_EQUIPEMENT: Record<StatutEquipement, string> = {
+  DISPONIBLE: 'Disponible',
+  PRETE: 'Prêté',
+  A_REGULARISER: 'À régulariser',
+  HORS_SERVICE: 'Hors service',
+  REBUTE: 'Au rebut'
+};
+
+export interface AlerteEquipement {
+  gravite: 'BLOQUANT' | 'AVERTISSEMENT';
+  message: string;
+}
+
+/** Champs saisis de la fiche de gestion (Code du sport, annexe III-27). */
+export interface ChampsEquipement {
+  reference: string;
+  marque: string | null;
+  modele: string | null;
+  numeroSerie: string | null;
+  taille: string | null;
+  dateFabrication: string | null;
+  dateAchat: string | null;
+  dateMiseEnService: string | null;
+  dateRebutPrevue: string | null;
+  notice: string | null;
+  consignesEntretien: string | null;
+  periodiciteRevisionMois: number | null;
+  volumeLitres: number | null;
+  pressionServiceBar: number | null;
+  pressionEpreuveBar: number | null;
+  matiere: 'ACIER' | 'ALUMINIUM' | null;
+  robinetterie: string | null;
+  datePremiereEpreuve: string | null;
+  nitrox: boolean;
+  regimeTiv: boolean;
+  composition: string | null;
+  epaisseurMm: number | null;
+  horsService: boolean;
+  remarques: string | null;
+}
+
+export interface EquipementVue extends ChampsEquipement {
+  id: number;
+  type: TypeEquipement;
+  typeLibelle: string;
+  dateRebut: string | null;
+  motifRebut: string | null;
+  statut: StatutEquipement;
+  derniereInspection: string | null;
+  prochaineInspection: string | null;
+  derniereRequalification: string | null;
+  prochaineRequalification: string | null;
+  derniereRevision: string | null;
+  prochaineRevision: string | null;
+  alertes: AlerteEquipement[];
+  pretEnCours: { id: number; emprunteur: string; dateRetourPrevue: string | null } | null;
+}
+
+/** Les trois dernières dates ne servent qu'à la création : reprise de l'historique au journal. */
+export interface DemandeEquipement extends ChampsEquipement {
+  type: TypeEquipement;
+  derniereInspectionVisuelle?: string | null;
+  derniereRequalification?: string | null;
+  derniereRevision?: string | null;
+}
+
+export type TypeIntervention = 'INSPECTION_VISUELLE' | 'REQUALIFICATION' | 'REVISION' | 'REPARATION'
+  | 'REMPLACEMENT_PIECE' | 'CONTROLE' | 'DESINFECTION' | 'INCIDENT';
+
+export const TYPES_INTERVENTION: { valeur: TypeIntervention; libelle: string; blocSeulement?: boolean }[] = [
+  { valeur: 'INSPECTION_VISUELLE', libelle: 'Inspection visuelle (TIV)', blocSeulement: true },
+  { valeur: 'REQUALIFICATION', libelle: 'Requalification (épreuve hydraulique)', blocSeulement: true },
+  { valeur: 'REVISION', libelle: 'Révision' },
+  { valeur: 'REPARATION', libelle: 'Réparation' },
+  { valeur: 'REMPLACEMENT_PIECE', libelle: "Remplacement d'une pièce" },
+  { valeur: 'CONTROLE', libelle: 'Contrôle' },
+  { valeur: 'DESINFECTION', libelle: 'Désinfection' },
+  { valeur: 'INCIDENT', libelle: 'Incident' }
+];
+
+export interface InterventionVue {
+  id: number;
+  type: TypeIntervention;
+  typeLibelle: string;
+  dateIntervention: string;
+  intervenant: string | null;
+  resultat: 'CONFORME' | 'NON_CONFORME' | null;
+  description: string | null;
+  pretId: number | null;
+  saisiPar: string | null;
+  saisiLe: string;
+}
+
+export interface DemandeIntervention {
+  type: TypeIntervention;
+  dateIntervention: string;
+  intervenant: string | null;
+  resultat: 'CONFORME' | 'NON_CONFORME' | null;
+  description: string | null;
+}
+
+export interface PretVue {
+  id: number;
+  emprunteurType: 'ELEVE' | 'ENCADRANT' | null;
+  emprunteurId: number | null;
+  emprunteur: string;
+  seanceId: number | null;
+  dateSeance: string | null;
+  lieuSeance: string | null;
+  motif: string | null;
+  datePret: string;
+  dateRetourPrevue: string | null;
+  dateRetour: string | null;
+  enRetard: boolean;
+  pretePar: string | null;
+  recuPar: string | null;
+  remarques: string | null;
+  equipements: { id: number; type: TypeEquipement; typeLibelle: string; reference: string; description: string }[];
+  photosAvant: number;
+  photosApres: number;
+}
+
+export type MomentPhotoPret = 'AVANT' | 'APRES';
+
+/** Photo de l'état du matériel à la remise ou au retour ; le contenu se lit à part. */
+export interface PhotoPretVue {
+  id: number;
+  moment: MomentPhotoPret;
+  /** Null : la photo montre tout le lot. */
+  equipementId: number | null;
+  equipementReference: string | null;
+  legende: string | null;
+  priseLe: string;
+  prisePar: string | null;
+}
+
+export interface FicheEquipementVue {
+  equipement: EquipementVue;
+  journal: InterventionVue[];
+  prets: PretVue[];
+}
+
+export interface EmprunteurVue {
+  type: 'ELEVE' | 'ENCADRANT';
+  id: number;
+  nomComplet: string;
+  /** Niveau d'encadrement (encadrant) ou dernier niveau obtenu (élève). */
+  precision: string | null;
+}
+
+/** Séance en milieu naturel proposée pour rattacher un prêt. */
+export interface SortieVue {
+  id: number;
+  date: string;
+  lieu: string | null;
+  site: string | null;
+}
+
+export interface DemandePret {
+  eleveId: number | null;
+  utilisateurId: number | null;
+  seanceId: number | null;
+  motif: string | null;
+  datePret: string;
+  dateRetourPrevue: string | null;
+  equipementIds: number[];
+  /** Obligatoire dès qu'un détendeur est prêté (Code du sport, art. A322-81). */
+  detendeursDesinfectes: boolean;
+  remarques: string | null;
+}
+
+export interface DemandeRetour {
+  dateRetour: string;
+  equipements: { equipementId: number; incident: string | null; horsService: boolean }[];
+  remarques: string | null;
 }

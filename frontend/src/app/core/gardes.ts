@@ -58,3 +58,12 @@ export const gardeEncadrant: CanActivateFn = () => {
     map(() => auth.estMoniteur() || auth.estAdmin() || router.createUrlTree(['/cursus']))
   );
 };
+
+/** Matériel et prêts : directeur technique ou admin. Confort d'affichage, comme les autres gardes. */
+export const gardeMateriel: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return apresResolutionSession().pipe(
+    map(() => auth.gereMateriel() || router.createUrlTree(['/cursus']))
+  );
+};

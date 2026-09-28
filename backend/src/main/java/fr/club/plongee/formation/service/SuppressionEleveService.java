@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Les fiches de securite ne sont pas touchees : document du DP, elles
  * gardent le nom et le prenom tels que saisis, seul le lien vers le dossier
- * de l'eleve est retire. Idem pour les groupes de plongeurs.
+ * de l'eleve est retire. Idem pour les groupes de plongeurs et pour les
+ * prets de materiel (le nom garde dans le pret reste : tracabilite du
+ * materiel, fiche de gestion des EPI conservee trois ans apres rebut).
  *
  * <p>SQL natif et non JPA : les suppressions en masse ne passent pas par
  * Envers, qui recreerait sinon une ligne d'audit (avec l'identite de
@@ -67,6 +69,8 @@ public class SuppressionEleveService {
         executer("DELETE FROM photo_eleve WHERE eleve_id = :id", eleveId);
         executer("UPDATE membre_palanquee SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
         executer("UPDATE membre_groupe_plongeurs SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
+        executer("UPDATE pret SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
+        executer("UPDATE pret_aud SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
 
         executer("DELETE FROM eleve_aud WHERE id = :id", eleveId);
         executer("DELETE FROM eleve WHERE id = :id", eleveId);
