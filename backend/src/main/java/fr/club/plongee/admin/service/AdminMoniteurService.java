@@ -8,6 +8,7 @@ import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.formation.repository.FicheSecuriteRepository;
 import fr.club.plongee.formation.repository.SeanceRepository;
+import fr.club.plongee.ia.repository.SessionIaRepository;
 import fr.club.plongee.securite.*;
 import fr.club.plongee.securite.domain.*;
 import fr.club.plongee.securite.repository.*;
@@ -33,6 +34,8 @@ public class AdminMoniteurService {
 
     private static final int LONGUEUR_MIN_MOT_DE_PASSE = 10;
     private static final SecureRandom ALEA = new SecureRandom();
+    private static final String ROLE_IA_SANS_ADMIN =
+            "Le rôle IA est réservé aux administrateurs : donnez d'abord le rôle administrateur.";
 
     private final UtilisateurRepository utilisateurs;
     private final PasswordEncoder encodeur;
@@ -45,6 +48,7 @@ public class AdminMoniteurService {
     private final CursusRepository cursus;
     private final FicheSecuriteRepository fichesSecurite;
     private final PhotoMoniteurService photoService;
+    private final SessionIaRepository sessionsIa;
 
     public AdminMoniteurService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                ReinitialisationMotDePasseService reinitialisations,
@@ -55,7 +59,8 @@ public class AdminMoniteurService {
                                SeanceRepository seances,
                                CursusRepository cursus,
                                FicheSecuriteRepository fichesSecurite,
-                               PhotoMoniteurService photoService) {
+                               PhotoMoniteurService photoService,
+                               SessionIaRepository sessionsIa) {
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
@@ -67,6 +72,7 @@ public class AdminMoniteurService {
         this.cursus = cursus;
         this.fichesSecurite = fichesSecurite;
         this.photoService = photoService;
+        this.sessionsIa = sessionsIa;
     }
 
     @Transactional(readOnly = true)
@@ -82,9 +88,13 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
                              NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                             LocalDate certificatValideJusquAu, boolean admin, boolean directeurTechnique) {
+                             LocalDate certificatValideJusquAu, boolean admin, boolean directeurTechnique,
+                             boolean ia) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
             throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
+        }
+        if (ia && !admin) {
+            throw new RegleMetierException(ROLE_IA_SANS_ADMIN);
         }
 
         Utilisateur u = new Utilisateur();
@@ -99,6 +109,7 @@ public class AdminMoniteurService {
         EnumSet<RoleNom> roles = EnumSet.of(RoleNom.MONITEUR);
         if (admin) roles.add(RoleNom.ADMIN);
         if (directeurTechnique) roles.add(RoleNom.DIRECTEUR_TECHNIQUE);
+        if (ia) roles.add(RoleNom.IA);
         u.setRoles(roles);
 
         byte[] brut = new byte[32];
@@ -117,8 +128,9 @@ public class AdminMoniteurService {
      * Un changement d'e-mail ferme les sessions du moniteur (le jeton
      * d'acces porte l'e-mail) : il se reconnecte avec la nouvelle adresse.
      *
-     * <p>Les roles ADMIN et DIRECTEUR_TECHNIQUE se donnent et se retirent
-     * aussi ici (nul : inchange). Un ADMIN ne peut pas
+     * <p>Les roles ADMIN, DIRECTEUR_TECHNIQUE et IA se donnent et se retirent
+     * aussi ici (nul : inchange). IA n'existe qu'avec ADMIN : refuse sans
+     * lui, retire en meme temps que lui. Un ADMIN ne peut pas
      * se le retirer lui-meme : le club garde ainsi toujours au moins un
      * administrateur. Les roles sont relus en base a chaque requete
      * ({@code JwtAuthFilter}) : le changement s'applique immediatement cote
@@ -128,7 +140,8 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur modifier(Long id, Long auteurId, String email, String nom, String prenom,
                                 NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                                LocalDate certificatValideJusquAu, Boolean admin, Boolean directeurTechnique) {
+                                LocalDate certificatValideJusquAu, Boolean admin, Boolean directeurTechnique,
+                                Boolean ia) {
         Utilisateur u = moniteur(id);
         if (Boolean.FALSE.equals(admin) && u.getId().equals(auteurId) && u.getRoles().contains(RoleNom.ADMIN)) {
             throw new RegleMetierException("Vous ne pouvez pas vous retirer vous-même le rôle administrateur.");
@@ -149,6 +162,12 @@ public class AdminMoniteurService {
         else if (Boolean.FALSE.equals(admin)) u.getRoles().remove(RoleNom.ADMIN);
         if (Boolean.TRUE.equals(directeurTechnique)) u.getRoles().add(RoleNom.DIRECTEUR_TECHNIQUE);
         else if (Boolean.FALSE.equals(directeurTechnique)) u.getRoles().remove(RoleNom.DIRECTEUR_TECHNIQUE);
+        if (Boolean.TRUE.equals(ia)) {
+            if (!u.getRoles().contains(RoleNom.ADMIN)) throw new RegleMetierException(ROLE_IA_SANS_ADMIN);
+            u.getRoles().add(RoleNom.IA);
+        } else if (Boolean.FALSE.equals(ia) || !u.getRoles().contains(RoleNom.ADMIN)) {
+            u.getRoles().remove(RoleNom.IA);
+        }
         utilisateurs.save(u);
         if (emailChange) refreshTokens.revoquerTout(id);
         return u;
@@ -202,10 +221,11 @@ public class AdminMoniteurService {
         }
         if (evaluations.existsByMoniteurId(id) || validations.existsByMoniteurId(id)
                 || delivrances.existsByDelivreParId(id) || cursus.existsByMoniteurReferentId(id)
-                || seances.existsByDpId(id) || fichesSecurite.existsByDpId(id)) {
+                || seances.existsByDpId(id) || fichesSecurite.existsByDpId(id)
+                || sessionsIa.existsByCreeParId(id)) {
             throw new RegleMetierException(
-                    "Ce moniteur a des évaluations, validations, séances ou fiches de sécurité "
-                            + "enregistrées : désactivez son compte plutôt que de le supprimer, "
+                    "Ce moniteur a des évaluations, validations, séances, fiches de sécurité "
+                            + "ou sessions de l'assistant IA enregistrées : désactivez son compte plutôt que de le supprimer, "
                             + "pour garder l'historique.");
         }
         refreshTokens.revoquerTout(id);

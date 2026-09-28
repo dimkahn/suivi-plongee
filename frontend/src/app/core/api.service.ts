@@ -11,7 +11,8 @@ import {
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue,
-  DemandeSortie, SeancePossibleVue, SortieVue
+  DemandeSortie, SeancePossibleVue, SortieVue,
+  EtatIaVue, LigneJournalIaVue, LivraisonIaVue, SessionIaVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -324,11 +325,12 @@ export class ApiService {
     certificatValideJusquAu?: string | null;
     admin?: boolean;
     directeurTechnique?: boolean;
+    ia?: boolean;
   }): Observable<MoniteurVue> {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
 
-  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique) d'un moniteur changent. */
+  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique, IA) d'un moniteur changent. */
   modifierMoniteur(id: number, demande: {
     email: string;
     nom: string;
@@ -339,6 +341,7 @@ export class ApiService {
     certificatValideJusquAu: string | null;
     admin: boolean;
     directeurTechnique: boolean;
+    ia: boolean;
   }): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
   }
@@ -898,5 +901,50 @@ export class ApiService {
 
   definirSeancesSortie(id: number, seanceIds: number[]): Observable<SortieVue> {
     return this.http.put<SortieVue>(`/api/sorties/${id}/seances`, { seanceIds });
+  }
+
+  // ---------------------------------------------------------------
+  //  Assistant IA : profil dev seulement (le serveur de production
+  //  répond 404). Réservé aux admins qui ont le rôle IA.
+  // ---------------------------------------------------------------
+
+  etatIa(): Observable<EtatIaVue> {
+    return this.http.get<EtatIaVue>('/api/ia/etat');
+  }
+
+  sessionsIa(): Observable<SessionIaVue[]> {
+    return this.http.get<SessionIaVue[]>('/api/ia/sessions');
+  }
+
+  creerSessionIa(titre: string): Observable<SessionIaVue> {
+    return this.http.post<SessionIaVue>('/api/ia/sessions', { titre });
+  }
+
+  journalIa(id: number, apres: number): Observable<LigneJournalIaVue[]> {
+    return this.http.get<LigneJournalIaVue[]>(`/api/ia/sessions/${id}/journal`, { params: { apres } });
+  }
+
+  envoyerMessageIa(id: number, texte: string): Observable<unknown> {
+    return this.http.post(`/api/ia/sessions/${id}/messages`, { texte });
+  }
+
+  arreterIa(id: number): Observable<unknown> {
+    return this.http.post(`/api/ia/sessions/${id}/arret`, {});
+  }
+
+  livraisonIa(id: number): Observable<LivraisonIaVue> {
+    return this.http.get<LivraisonIaVue>(`/api/ia/sessions/${id}/livraison`);
+  }
+
+  lancerTestsIa(id: number): Observable<unknown> {
+    return this.http.post(`/api/ia/sessions/${id}/tests`, {});
+  }
+
+  mergerIa(id: number): Observable<LivraisonIaVue> {
+    return this.http.post<LivraisonIaVue>(`/api/ia/sessions/${id}/merge`, {});
+  }
+
+  taggerEtPousserIa(id: number, tag: string): Observable<LivraisonIaVue> {
+    return this.http.post<LivraisonIaVue>(`/api/ia/sessions/${id}/tag`, { tag });
   }
 }

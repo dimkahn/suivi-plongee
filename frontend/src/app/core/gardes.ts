@@ -70,3 +70,12 @@ export const gardeMateriel: CanActivateFn = () => {
 
 /** Sorties : même public que le matériel (le DT y rattache ses prêts), admin compris. */
 export const gardeSorties: CanActivateFn = gardeMateriel;
+
+/** Assistant IA : admin avec le rôle IA. Confort d'affichage, comme les autres gardes. */
+export const gardeIa: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return apresResolutionSession().pipe(
+    map(() => auth.estIa() || router.createUrlTree(['/cursus']))
+  );
+};
