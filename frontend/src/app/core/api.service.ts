@@ -924,8 +924,12 @@ export class ApiService {
     return this.http.get<LigneJournalIaVue[]>(`/api/ia/sessions/${id}/journal`, { params: { apres } });
   }
 
-  envoyerMessageIa(id: number, texte: string): Observable<unknown> {
-    return this.http.post(`/api/ia/sessions/${id}/messages`, { texte });
+  /** Texte et pièces jointes (captures, documents) en multipart ; le texte peut être vide s'il y a des fichiers. */
+  envoyerMessageIa(id: number, texte: string, fichiers: File[] = []): Observable<unknown> {
+    const donnees = new FormData();
+    donnees.append('texte', texte);
+    for (const f of fichiers) donnees.append('fichiers', f, f.name);
+    return this.http.post(`/api/ia/sessions/${id}/messages`, donnees);
   }
 
   arreterIa(id: number): Observable<unknown> {

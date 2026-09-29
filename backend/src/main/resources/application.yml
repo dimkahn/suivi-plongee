@@ -72,13 +72,19 @@ spring:
       enabled: true
   flyway:
     locations: classpath:db/migration, classpath:db/demo
+  # Pièces jointes de l'assistant IA (20 Mo par fichier, 10 par message).
+  # Les photos gardent leur propre limite de 5 Mo, vérifiée par leurs services.
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 60MB
 
 # Assistant IA (fr.club.plongee.ia, page /ia) : profil dev uniquement,
 # Claude Code tourne sur ce poste avec le compte qui y est connecte.
 app:
   ia:
     # Depot git principal : mvn spring-boot:run se lance depuis backend/.
-    depot: ${IA_DEPOT:/home/dev/suivi-plongee}
+    depot: ${IA_DEPOT:/home/dev/suivi-plongee-ia}
     # Copies de travail (une par session) et journal.log, hors du depot.
     dossier-travail: ${IA_DOSSIER:${user.home}/.suivi-plongee-ia}
     claude: ${IA_CLAUDE:claude}

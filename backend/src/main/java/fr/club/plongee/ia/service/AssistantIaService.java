@@ -103,7 +103,16 @@ public class AssistantIaService {
             sur le commit exact avant le merge. Quand la fonctionnalité est prête : commite tout (la \
             copie doit être propre), vérifie toi-même que mvn test passe, puis dis-le en résumant ce qui \
             a changé. Si master a avancé et que le merge est refusé, on te demandera de rebaser \
-            (git rebase master).""";
+            (git rebase master).
+            Les pièces jointes des messages (captures d'écran, documents) sont dans un dossier hors du \
+            dépôt, dont les chemins sont donnés dans le message : lis-les avec l'outil Read. Ne les \
+            ajoute au dépôt que si on te le demande, en les copiant à leur place.""";
+
+    /** Un fichier joint à un message, tel que reçu du navigateur. */
+    public record PieceJointe(String nom, byte[] contenu) {}
+
+    static final int PIECES_MAX_PAR_MESSAGE = 10;
+    static final long TAILLE_MAX_PIECE_OCTETS = 20L * 1024 * 1024;
 
     /** Un travail en arrière-plan sur une session : l'assistant qui répond, ou les tests. */
     private record Travail(String nature, Process processus) {}
@@ -198,10 +207,56 @@ public class AssistantIaService {
 
     /** Envoie un message à l'assistant ; sa réponse arrive dans le journal au fil de l'eau. */
     public void envoyer(Long sessionId, String texte, Long auteurId) {
+        envoyer(sessionId, texte, List.of(), auteurId);
+    }
+
+    /**
+     * Envoie un message, avec d'éventuelles pièces jointes ; la réponse
+     * arrive dans le journal au fil de l'eau. Les pièces sont enregistrées
+     * hors du dépôt, dans le dossier {@code …-pieces} de la session, que
+     * Claude Code peut lire ({@code --add-dir}) ; leurs chemins sont ajoutés
+     * au message.
+     */
+    public void envoyer(Long sessionId, String texte, List<PieceJointe> pieces, Long auteurId) {
         SessionIa s = session(sessionId);
-        if (texte == null || texte.isBlank()) throw new RegleMetierException("Le message est vide.");
+        boolean sansTexte = texte == null || texte.isBlank();
+        if (sansTexte && pieces.isEmpty()) throw new RegleMetierException("Le message est vide.");
+        if (pieces.size() > PIECES_MAX_PAR_MESSAGE) {
+            throw new RegleMetierException("Pas plus de " + PIECES_MAX_PAR_MESSAGE + " fichiers par message.");
+        }
+        for (PieceJointe piece : pieces) {
+            if (piece.contenu().length == 0) throw new RegleMetierException("Le fichier « " + piece.nom() + " » est vide.");
+            if (piece.contenu().length > TAILLE_MAX_PIECE_OCTETS) {
+                throw new RegleMetierException("Le fichier « " + piece.nom() + " » dépasse "
+                        + TAILLE_MAX_PIECE_OCTETS / (1024 * 1024) + " Mo.");
+            }
+        }
         exigerLibre(sessionId);
         boolean premier = !journal.existsBySessionIdAndType(sessionId, TypeJournalIa.MESSAGE);
+
+        Path dossierPieces = dossierPieces(s);
+        List<String> cheminsPieces = new ArrayList<>();
+        List<String> resumePieces = new ArrayList<>();
+        if (!pieces.isEmpty()) {
+            String horodatage = LocalDateTime.now(PARIS).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            try {
+                Files.createDirectories(dossierPieces);
+                for (int i = 0; i < pieces.size(); i++) {
+                    PieceJointe piece = pieces.get(i);
+                    Path cible = dossierPieces.resolve(horodatage + "-" + (i + 1) + "-" + nomDeFichier(piece.nom()));
+                    Files.write(cible, piece.contenu());
+                    cheminsPieces.add(cible.toString());
+                    resumePieces.add(piece.nom() + " (" + taille(piece.contenu().length) + ")");
+                }
+            } catch (IOException e) {
+                throw new RegleMetierException("Les pièces jointes n'ont pas pu être enregistrées : " + e.getMessage());
+            }
+        }
+        String demande = sansTexte ? "Voici des fichiers." : texte.strip();
+        String consigne = cheminsPieces.isEmpty() ? demande : demande
+                + "\n\nPièces jointes (à lire avec l'outil Read) :\n- " + String.join("\n- ", cheminsPieces);
+        String pourLeJournal = resumePieces.isEmpty() ? demande : demande
+                + "\n\nPièces jointes : " + String.join(", ", resumePieces);
 
         List<String> commande = new ArrayList<>(List.of(claude, "-p",
                 "--output-format", "stream-json", "--verbose",
@@ -209,6 +264,10 @@ public class AssistantIaService {
                 "--append-system-prompt", CONSIGNES.formatted(s.getBranche())));
         commande.addAll(premier ? List.of("--session-id", s.getClaudeSessionId())
                                 : List.of("--resume", s.getClaudeSessionId()));
+        if (!cheminsPieces.isEmpty() || Files.isDirectory(dossierPieces)) {
+            // Lecture des pièces jointes de la session, y compris celles des messages précédents.
+            commande.addAll(List.of("--add-dir", dossierPieces.toString()));
+        }
         commande.add("--allowedTools");
         commande.addAll(OUTILS_AUTORISES);
         commande.add("--disallowedTools");
@@ -220,13 +279,13 @@ public class AssistantIaService {
         pb.environment().put("GIT_SSH_COMMAND", "false");
         pb.environment().put("GIT_TERMINAL_PROMPT", "0");
 
-        journaliste.noter(sessionId, TypeJournalIa.MESSAGE, texte.strip(), null, auteurId);
+        journaliste.noter(sessionId, TypeJournalIa.MESSAGE, pourLeJournal, null, auteurId);
         Process p;
         try {
             p = pb.start();
             // Le message passe par l'entrée standard : --allowedTools, variadique, avalerait un argument final.
             try (OutputStream entree = p.getOutputStream()) {
-                entree.write(texte.strip().getBytes(StandardCharsets.UTF_8));
+                entree.write(consigne.getBytes(StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             journaliste.noter(sessionId, TypeJournalIa.ERREUR, "Claude Code n'a pas pu être lancé : " + e.getMessage(),
@@ -528,6 +587,27 @@ public class AssistantIaService {
             throw new RegleMetierException("La copie de travail a des modifications non commitées : demandez à "
                     + "l'assistant de les commiter (ou de les annuler) d'abord. Seul un commit se teste et se merge.");
         }
+    }
+
+    /** À côté de la copie de travail, jamais dedans : une pièce jointe ne doit pas finir commitée par erreur. */
+    private Path dossierPieces(SessionIa s) {
+        return dossierTravail.resolve(Path.of(s.getDossier()).getFileName() + "-pieces");
+    }
+
+    /** Nom sûr : sans chemin (« ../ »), sans accents ni caractères spéciaux, extension gardée. */
+    static String nomDeFichier(String nom) {
+        String base = nom == null ? "" : nom.replace('\\', '/');
+        base = base.substring(base.lastIndexOf('/') + 1);
+        base = Normalizer.normalize(base, Normalizer.Form.NFD).replaceAll("\\p{M}", "")
+                .replaceAll("[^A-Za-z0-9._-]+", "_").replaceAll("^[._]+", "");
+        if (base.length() > 80) base = base.substring(base.length() - 80);
+        return base.isEmpty() ? "fichier" : base;
+    }
+
+    private static String taille(long octets) {
+        if (octets < 1024) return octets + " o";
+        if (octets < 1024 * 1024) return (octets / 1024) + " Ko";
+        return String.format(java.util.Locale.FRANCE, "%.1f Mo", octets / (1024.0 * 1024));
     }
 
     static String slug(String titre) {

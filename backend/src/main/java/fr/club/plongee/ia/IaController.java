@@ -7,10 +7,16 @@ import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.context.annotation.Profile;
+import fr.club.plongee.commun.RegleMetierException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 import java.time.Instant;
 import java.util.List;
@@ -73,11 +79,28 @@ public class IaController {
         return service.journal(id, apres).stream().map(IaController::vue).toList();
     }
 
-    @PostMapping("/sessions/{id}/messages")
+    @PostMapping(value = "/sessions/{id}/messages", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void envoyer(@PathVariable Long id, @Valid @RequestBody DemandeMessage demande,
                         @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         service.envoyer(id, demande.texte(), auteur.id());
+    }
+
+    /** Message avec pièces jointes (captures d'écran, documents) : texte facultatif s'il y a des fichiers. */
+    @PostMapping(value = "/sessions/{id}/messages", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void envoyerAvecPieces(@PathVariable Long id, @RequestParam(required = false) String texte,
+                                  @RequestParam(value = "fichiers", required = false) List<MultipartFile> fichiers,
+                                  @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        List<AssistantIaService.PieceJointe> pieces = new ArrayList<>();
+        for (MultipartFile f : fichiers == null ? List.<MultipartFile>of() : fichiers) {
+            try {
+                pieces.add(new AssistantIaService.PieceJointe(f.getOriginalFilename(), f.getBytes()));
+            } catch (IOException e) {
+                throw new RegleMetierException("Le fichier « " + f.getOriginalFilename() + " » n'a pas pu être lu.");
+            }
+        }
+        service.envoyer(id, texte, pieces, auteur.id());
     }
 
     @PostMapping("/sessions/{id}/arret")

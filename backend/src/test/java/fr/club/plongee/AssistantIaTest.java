@@ -20,6 +20,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.mock.web.MockMultipartFile;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -51,6 +53,13 @@ class AssistantIaTest {
             git(DEPOT, "remote", "add", "origin", ORIGINE.toString());
             git(DEPOT, "push", "-q", "origin", "master");
 
+            // Faux Claude Code : garde le message (entrée standard) et ses arguments, puis termine son tour.
+            Path fauxClaude = RACINE.resolve("faux-claude.sh");
+            Files.writeString(fauxClaude, "#!/bin/sh\ncat > \"" + RACINE.resolve("message.txt") + "\"\n"
+                    + "echo \"$@\" > \"" + RACINE.resolve("arguments.txt") + "\"\n"
+                    + "echo '{\"type\":\"result\",\"is_error\":false,\"duration_ms\":1}'\n");
+            Files.setPosixFilePermissions(fauxClaude, PosixFilePermissions.fromString("rwxr-xr-x"));
+
             Path fauxMvn = RACINE.resolve("faux-mvn.sh");
             Files.writeString(fauxMvn, "#!/bin/sh\necho \"tests simulés\"\nexit 0\n");
             Files.setPosixFilePermissions(fauxMvn, PosixFilePermissions.fromString("rwxr-xr-x"));
@@ -64,7 +73,7 @@ class AssistantIaTest {
         registre.add("app.ia.depot", DEPOT::toString);
         registre.add("app.ia.dossier-travail", () -> RACINE.resolve("travail").toString());
         registre.add("app.ia.mvn", () -> RACINE.resolve("faux-mvn.sh").toString());
-        registre.add("app.ia.claude", () -> "/bin/false");
+        registre.add("app.ia.claude", () -> RACINE.resolve("faux-claude.sh").toString());
     }
 
     @Autowired MockMvc mvc;
@@ -187,6 +196,44 @@ class AssistantIaTest {
         for (JsonNode ligne : lire("/api/ia/sessions/" + id + "/journal", admin)) types.add(ligne.get("type").asText());
         assertThat(types)
                 .containsSubsequence("TESTS_LANCES", "TESTS_OK", "MERGE", "TAG_POUSSE");
+    }
+
+    @Test
+    @DisplayName("Les pièces jointes sont rangées hors du dépôt et leurs chemins transmis à l'assistant")
+    void piecesJointes() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        JsonNode session = poster("/api/ia/sessions", admin, """
+                {"titre":"Capture de l'écran des présences"}""", 201);
+        long id = session.get("id").asLong();
+        String branche = session.get("branche").asText();
+
+        mvc.perform(multipart("/api/ia/sessions/" + id + "/messages").header("Authorization", admin)
+                        .file(new MockMultipartFile("fichiers", "Capture d'écran.png", "image/png", new byte[]{1, 2, 3}))
+                        .file(new MockMultipartFile("fichiers", "../../etc/passwd", "text/plain", "piège".getBytes()))
+                        .param("texte", "Le bouton est mal placé"))
+                .andExpect(status().isAccepted());
+        attendre(id, admin, "FIN");
+
+        Path pieces = RACINE.resolve("travail").resolve(branche.replace('/', '-') + "-pieces");
+        java.util.List<Path> fichiers;
+        try (var liste = Files.list(pieces)) {
+            fichiers = liste.sorted().toList();
+        }
+        assertThat(fichiers).hasSize(2);
+        assertThat(fichiers.get(0).getFileName().toString()).endsWith("-1-Capture_d_ecran.png");
+        assertThat(fichiers.get(1).getFileName().toString()).endsWith("-2-passwd");
+        assertThat(Files.readAllBytes(fichiers.get(0))).containsExactly(1, 2, 3);
+
+        String message = Files.readString(RACINE.resolve("message.txt"));
+        assertThat(message).startsWith("Le bouton est mal placé").contains(fichiers.get(0).toString());
+        assertThat(Files.readString(RACINE.resolve("arguments.txt"))).contains("--add-dir " + pieces);
+
+        String journal = null;
+        for (JsonNode ligne : lire("/api/ia/sessions/" + id + "/journal", admin)) {
+            if (ligne.get("type").asText().equals("MESSAGE")) journal = ligne.get("contenu").asText();
+        }
+        assertThat(journal).contains("Pièces jointes : Capture d'écran.png (3 o), ../../etc/passwd (6 o)")
+                .doesNotContain(pieces.toString());
     }
 
     private void attendre(long sessionId, String jeton, String type) throws Exception {

@@ -5,6 +5,10 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { EtatIaVue, LigneJournalIaVue, LivraisonIaVue, SessionIaVue, TypeJournalIa } from '../../core/modeles';
 
+/** Limites des pièces jointes, les mêmes que le serveur (AssistantIaService). */
+const PIECES_MAX = 10;
+const TAILLE_MAX_PIECE = 20 * 1024 * 1024;
+
 /** Lignes du journal qui terminent un travail : on relit alors l'état de la livraison. */
 const FINS_DE_TRAVAIL: TypeJournalIa[] = ['FIN', 'ERREUR', 'ARRET', 'TESTS_OK', 'TESTS_KO'];
 const EVENEMENTS: Partial<Record<TypeJournalIa, string>> = {
@@ -109,16 +113,36 @@ const EVENEMENTS: Partial<Record<TypeJournalIa, string>> = {
               @if (travail() === 'tests') { <p class="secondaire attente">Les tests tournent (plusieurs minutes)…</p> }
             </div>
 
-            <form class="saisie" (ngSubmit)="envoyer()">
+            <form class="saisie" (ngSubmit)="envoyer()" [class.survol]="survol()"
+                  (dragover)="survolDepot($event)" (dragleave)="survol.set(false)" (drop)="deposer($event)">
               <label for="texte" class="visuellement-cache">Message à l'assistant</label>
               <textarea id="texte" name="texte" rows="3" [(ngModel)]="texte" [disabled]="!!travail()"
-                        (keydown.control.enter)="envoyer()"
-                        placeholder="Votre demande (Ctrl+Entrée pour envoyer)"></textarea>
+                        (keydown.control.enter)="envoyer()" (paste)="coller($event)"
+                        placeholder="Votre demande (Ctrl+Entrée pour envoyer). Glissez ou collez des fichiers ici."></textarea>
+              @if (pieces().length) {
+                <ul class="pieces" aria-label="Pièces jointes">
+                  @for (f of pieces(); track $index) {
+                    <li>
+                      <span class="nom-piece">{{ f.name }}</span>
+                      <span class="secondaire">{{ taille(f.size) }}</span>
+                      <button type="button" class="bouton-discret retirer" (click)="retirerPiece($index)"
+                              [attr.aria-label]="'Retirer ' + f.name">✕</button>
+                    </li>
+                  }
+                </ul>
+              }
               <div class="actions">
+                <label class="bouton-discret joindre" [class.inactif]="!!travail()">
+                  Joindre des fichiers
+                  <input type="file" multiple hidden [disabled]="!!travail()" (change)="choisirPieces($event)">
+                </label>
                 @if (travail()) {
                   <button type="button" class="bouton-discret danger" (click)="arreter()">Interrompre</button>
                 } @else {
-                  <button type="submit" class="bouton-principal" [disabled]="!texte.trim() || envoi()">Envoyer</button>
+                  <button type="submit" class="bouton-principal"
+                          [disabled]="(!texte.trim() && !pieces().length) || envoi()">
+                    {{ envoi() ? 'Envoi…' : 'Envoyer' }}
+                  </button>
                 }
               </div>
             </form>
@@ -228,6 +252,15 @@ const EVENEMENTS: Partial<Record<TypeJournalIa, string>> = {
     textarea { resize: vertical; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; justify-content: flex-end; margin-top: var(--pas); }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
+    .saisie.survol { outline: 2px dashed var(--profond); outline-offset: 4px; border-radius: var(--r-s); }
+    .pieces { list-style: none; margin: var(--pas) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .pieces li { display: flex; align-items: center; gap: 6px; padding-left: 12px; border: 1px solid var(--trait);
+                 border-radius: var(--r-s); background: var(--fond); max-width: 100%; }
+    .nom-piece { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .retirer { min-width: 44px; border: none; background: none; }
+    .joindre { display: inline-flex; align-items: center; cursor: pointer; margin: 0 auto 0 0; font-weight: 400;
+               border: 1px solid var(--trait); border-radius: var(--r-s); }
+    .joindre.inactif { opacity: .5; cursor: not-allowed; }
 
     .controles { list-style: none; margin: var(--pas) 0; padding: 0; display: grid; gap: 4px; color: #B91C1C; }
     .controles .ok { color: var(--acquis); }
@@ -268,6 +301,9 @@ export class AssistantIaComponent {
 
   titre = '';
   texte = '';
+  /** Fichiers joints au prochain message (captures d'écran, documents). */
+  pieces = signal<File[]>([]);
+  survol = signal(false);
   tag = '';
 
   constructor() {
@@ -308,6 +344,7 @@ export class AssistantIaComponent {
   choisir(s: SessionIaVue): void {
     this.choisie.set(s);
     this.lignes.set([]);
+    this.pieces.set([]);
     this.livraison.set(null);
     this.confirmation.set(null);
     this.message.set(null);
@@ -319,12 +356,14 @@ export class AssistantIaComponent {
   async envoyer(): Promise<void> {
     const s = this.choisie();
     const texte = this.texte.trim();
-    if (!s || !texte || this.travail()) return;
+    const pieces = this.pieces();
+    if (!s || (!texte && !pieces.length) || this.travail() || this.envoi()) return;
     this.envoi.set(true);
     this.message.set(null);
     try {
-      await firstValueFrom(this.api.envoyerMessageIa(s.id, texte));
+      await firstValueFrom(this.api.envoyerMessageIa(s.id, texte, pieces));
       this.texte = '';
+      this.pieces.set([]);
       this.travail.set('assistant');
       void this.suivre();
     } catch (e) {
@@ -332,6 +371,59 @@ export class AssistantIaComponent {
     } finally {
       this.envoi.set(false);
     }
+  }
+
+  choisirPieces(evenement: Event): void {
+    const entree = evenement.target as HTMLInputElement;
+    this.ajouterPieces([...(entree.files ?? [])]);
+    entree.value = '';
+  }
+
+  survolDepot(evenement: DragEvent): void {
+    if (this.travail() || !evenement.dataTransfer?.types.includes('Files')) return;
+    evenement.preventDefault();
+    this.survol.set(true);
+  }
+
+  deposer(evenement: DragEvent): void {
+    this.survol.set(false);
+    if (this.travail() || !evenement.dataTransfer?.files.length) return;
+    evenement.preventDefault();
+    this.ajouterPieces([...evenement.dataTransfer.files]);
+  }
+
+  /** Une capture d'écran collée (Ctrl+V) devient une pièce jointe ; du texte collé reste du texte. */
+  coller(evenement: ClipboardEvent): void {
+    const fichiers = [...(evenement.clipboardData?.files ?? [])];
+    if (!fichiers.length) return;
+    evenement.preventDefault();
+    const horodatage = new Date().toISOString().slice(11, 19).replaceAll(':', '');
+    this.ajouterPieces(fichiers.map((f, i) => f.name && f.name !== 'image.png'
+      ? f : new File([f], `capture-${horodatage}${i ? '-' + (i + 1) : ''}.png`, { type: f.type })));
+  }
+
+  retirerPiece(index: number): void {
+    this.pieces.set(this.pieces().filter((_, i) => i !== index));
+  }
+
+  /** Mêmes limites que le serveur, pour prévenir avant l'envoi. */
+  private ajouterPieces(fichiers: File[]): void {
+    const tropGros = fichiers.filter(f => f.size > TAILLE_MAX_PIECE);
+    const vides = fichiers.filter(f => f.size === 0);
+    const retenus = [...this.pieces(), ...fichiers.filter(f => f.size > 0 && f.size <= TAILLE_MAX_PIECE)];
+    this.pieces.set(retenus.slice(0, PIECES_MAX));
+    const problemes = [
+      ...tropGros.map(f => `« ${f.name} » dépasse 20 Mo`),
+      ...vides.map(f => `« ${f.name} » est vide`),
+      ...(retenus.length > PIECES_MAX ? [`pas plus de ${PIECES_MAX} fichiers par message`] : [])
+    ];
+    this.message.set(problemes.length ? `Non joint : ${problemes.join(' ; ')}.` : null);
+  }
+
+  taille(octets: number): string {
+    if (octets < 1024) return `${octets} o`;
+    if (octets < 1024 * 1024) return `${Math.round(octets / 1024)} Ko`;
+    return `${(octets / (1024 * 1024)).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mo`;
   }
 
   async arreter(): Promise<void> {

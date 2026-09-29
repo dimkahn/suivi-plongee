@@ -236,7 +236,12 @@ master devient le commit testé) ou tagué. Le tag poussé part en production
 par `surveiller-tags.sh`. `journal_ia` est en ajout seul comme `evaluation`,
 recopié dans `journal.log` du dossier de travail (la base dev est en
 mémoire). Les copies de travail ne sont pas supprimées automatiquement
-(`git worktree remove`).
+(`git worktree remove`). **Pièces jointes** (captures collées, documents) :
+10 fichiers de 20 Mo au plus par message (limite multipart relevée en
+profil dev seulement ; les photos gardent leurs 5 Mo, vérifiés par leurs
+services), rangées à côté de la copie de travail dans `…-pieces/`, jamais
+dedans, sous un nom nettoyé ; Claude Code y a accès par `--add-dir` et
+reçoit leurs chemins dans le message.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
