@@ -65,8 +65,16 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
+    @if (!creationOuverte()) {
+      <button type="button" class="bouton-principal ouvrir-creation" (click)="ouvrirCreation()">
+        Créer un élève
+      </button>
+    } @else {
     <section class="carte panneau">
-      <h2>Ajouter un élève</h2>
+      <div class="entete-panneau">
+        <h2>Ajouter un élève</h2>
+        <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Fermer</button>
+      </div>
       @if (formulaireCreation(); as f) {
         <label for="prenom">Prénom</label>
         <input id="prenom" type="text" name="prenom" [(ngModel)]="f.prenom">
@@ -169,6 +177,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         </button>
       }
     </section>
+    }
 
     <section class="filtres">
       <div>
@@ -408,6 +417,8 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     h1 { margin-bottom: var(--pas); }
     .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
     .panneau h2 { margin-bottom: 4px; }
+    .entete-panneau { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); }
+    .ouvrir-creation { width: auto; margin: var(--pas-3) 0; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; }
     .case input { width: auto; }
@@ -546,6 +557,8 @@ export class ElevesComponent {
     return this.saisons().find(s => s.id === saisonId)?.libelle ?? '';
   }
 
+  /** Panneau de création caché par défaut ; ce qui est saisi reste si on le referme. */
+  creationOuverte = signal(false);
   formulaireCreation = signal<FormulaireEleve>(formulaireVide());
   saisonCreationId: number | null = null;
   formationCreation: FormationCreation = 'N1';
@@ -715,6 +728,7 @@ export class ElevesComponent {
     }
 
     this.envoi.set(false);
+    this.creationOuverte.set(false);
     this.formulaireCreation.set(formulaireVide());
     this.formationCreation = 'N1';
     this.groupeCreationTouche = false;
@@ -724,6 +738,12 @@ export class ElevesComponent {
     this.message.set(echecs.length
       ? `${e.prenom} ${e.nom} a été créé·e, mais pas : ${echecs.join(' ; ')}. À reprendre depuis sa ligne ou l'écran Inscriptions.`
       : `${e.prenom} ${e.nom} a été ajouté·e.`);
+  }
+
+  ouvrirCreation(): void {
+    this.message.set(null);
+    this.creationOuverte.set(true);
+    setTimeout(() => document.getElementById('prenom')?.focus());
   }
 
   async changerSaisonCreation(saisonId: number | null): Promise<void> {
