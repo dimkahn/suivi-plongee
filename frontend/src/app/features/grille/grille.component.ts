@@ -780,6 +780,16 @@ export class GrilleComponent implements OnDestroy {
         void this.charger();
       });
     });
+
+    // Au retour du réseau, la file envoie les notes prises hors ligne et les
+    // retire de l'attente : sans rechargement, la grille retomberait sur
+    // l'état embarqué avant de partir, comme si la note avait disparu.
+    effect(() => {
+      if (this.file.derniereSync() === null) return;
+      untracked(() => {
+        if (this.grille()) void this.charger();
+      });
+    });
   }
 
   private reinitialiser(): void {
