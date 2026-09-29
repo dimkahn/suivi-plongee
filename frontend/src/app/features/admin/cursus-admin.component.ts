@@ -16,14 +16,22 @@ const LIBELLES_STATUT: Record<string, string> = {
   selector: 'app-cursus-admin',
   imports: [FormsModule],
   template: `
-    <h1>Inscriptions</h1>
-    <p class="secondaire">
-      Inscrit un élève dans une formation : le référentiel actif du niveau choisi est figé
-      automatiquement, il ne bougera plus même si le MFT est révisé en cours de saison.
-    </p>
+    <div class="entete">
+      <div>
+        <h1>Inscriptions</h1>
+        <p class="secondaire">
+          Inscrit un élève dans une formation : le référentiel actif du niveau choisi est figé
+          automatiquement, il ne bougera plus même si le MFT est révisé en cours de saison.
+        </p>
+      </div>
+      @if (!creationOuverte()) {
+        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle inscription</button>
+      }
+    </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
+    @if (creationOuverte()) {
     <section class="carte panneau">
       <h2>Nouvelle inscription</h2>
 
@@ -144,10 +152,14 @@ const LIBELLES_STATUT: Record<string, string> = {
         </select>
       }
 
-      <button type="button" class="bouton-principal" (click)="inscrire()" [disabled]="envoi()">
-        {{ envoi() ? 'Inscription…' : 'Inscrire' }}
-      </button>
+      <div class="actions">
+        <button type="button" class="bouton-principal" (click)="inscrire()" [disabled]="envoi()">
+          {{ envoi() ? 'Inscription…' : 'Inscrire' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
+      </div>
     </section>
+    }
 
     <section class="filtres">
       <div>
@@ -245,10 +257,11 @@ const LIBELLES_STATUT: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
+    .entete > div { flex: 1 1 320px; }
+    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
-    .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     .filtres { display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); margin-bottom: var(--pas-3); }
     .filtres > div { min-width: 220px; flex: 1 1 220px; max-width: 320px; }
@@ -321,6 +334,9 @@ export class CursusAdminComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
+
+  /** Formulaire d'inscription caché par défaut. */
+  creationOuverte = signal(false);
 
   filtreNom = signal('');
   listeFiltree = computed(() => {
@@ -516,6 +532,11 @@ export class CursusAdminComponent {
     return LIBELLES_STATUT[statut] ?? statut;
   }
 
+  ouvrirCreation(): void {
+    this.message.set(null);
+    this.creationOuverte.set(true);
+  }
+
   inscrire(): void {
     const c = this.candidatChoisi();
     const saisonId = this.saisonId();
@@ -537,6 +558,7 @@ export class CursusAdminComponent {
     }).subscribe({
       next: cursus => {
         this.envoi.set(false);
+        this.creationOuverte.set(false);
         this.liste.set([cursus, ...this.liste()]);
         this.moniteurReferentId = null;
         const groupe = this.groupes().find(g => g.id === this.groupeId);
@@ -559,6 +581,7 @@ export class CursusAdminComponent {
     this.api.adherer({ eleveId, saisonId, groupeId: this.groupeId }).subscribe({
       next: () => {
         this.envoi.set(false);
+        this.creationOuverte.set(false);
         this.message.set(`${nom} est inscrit·e en maintien, sans formation`
           + (groupe ? `, dans le groupe « ${groupe.nom} ».` : '.'));
         this.choisirSaison(saisonId);

@@ -18,14 +18,22 @@ function aVerifier(m: MoniteurVue): boolean {
   selector: 'app-moniteurs',
   imports: [FormsModule, RecadragePhotoComponent],
   template: `
-    <h1>Moniteurs</h1>
-    <p class="secondaire">
-      Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
-      administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
-    </p>
+    <div class="entete">
+      <div>
+        <h1>Moniteurs</h1>
+        <p class="secondaire">
+          Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
+          administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
+        </p>
+      </div>
+      @if (!creationOuverte()) {
+        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouveau moniteur</button>
+      }
+    </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
+    @if (creationOuverte()) {
     <section class="carte panneau">
       <h2>Ajouter un moniteur</h2>
       <p class="secondaire">
@@ -71,10 +79,14 @@ function aVerifier(m: MoniteurVue): boolean {
         Directeur technique (matériel du club et prêts)
       </label>
 
-      <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
-        {{ envoiCreation() ? 'Création…' : 'Ajouter le moniteur' }}
-      </button>
+      <div class="actions">
+        <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
+          {{ envoiCreation() ? 'Création…' : 'Ajouter le moniteur' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
+      </div>
     </section>
+    }
 
     <div class="filtres">
       <div>
@@ -249,7 +261,10 @@ function aVerifier(m: MoniteurVue): boolean {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
+    .entete > div { flex: 1 1 320px; }
+    .entete .bouton-principal, .panneau .actions .bouton-principal { width: auto; margin-top: 0; }
+    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; }
@@ -332,6 +347,7 @@ export class MoniteursComponent {
   admin = false;
   directeurTechnique = false;
   envoiCreation = signal(false);
+  creationOuverte = signal(false);
 
   moniteurEdite = signal<number | null>(null);
   edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
@@ -361,6 +377,11 @@ export class MoniteursComponent {
     }
   }
 
+  ouvrirCreation(): void {
+    this.message.set(null);
+    this.creationOuverte.set(true);
+  }
+
   creer(): void {
     if (!this.prenom || !this.nom || !this.email) {
       this.message.set('Prénom, nom et e-mail sont obligatoires.');
@@ -381,6 +402,7 @@ export class MoniteursComponent {
     }).subscribe({
       next: m => {
         this.envoiCreation.set(false);
+        this.creationOuverte.set(false);
         this.liste.set([...this.liste(), m].sort((a, b) => a.nom.localeCompare(b.nom)));
         this.prenom = '';
         this.nom = '';

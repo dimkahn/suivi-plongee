@@ -56,25 +56,25 @@ function trier(eleves: EleveVue[]): EleveVue[] {
   selector: 'app-eleves',
   imports: [FormsModule, DateFrPipe, RecadragePhotoComponent],
   template: `
-    <h1>Élèves</h1>
     <!-- Suggestions pour le gilet ; la taille reste libre. La combinaison n'en a pas : texte libre seulement. -->
     <datalist id="tailles-gilet">
       @for (t of taillesGilet; track t) { <option [value]="t"></option> }
     </datalist>
-    <p class="secondaire">Dossier, autorisation de pratiquer, droit à l'image et photo.</p>
+    <div class="entete">
+      <div>
+        <h1>Élèves</h1>
+        <p class="secondaire">Dossier, autorisation de pratiquer, droit à l'image et photo.</p>
+      </div>
+      @if (!creationOuverte()) {
+        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvel élève</button>
+      }
+    </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (!creationOuverte()) {
-      <button type="button" class="bouton-principal ouvrir-creation" (click)="ouvrirCreation()">
-        Créer un élève
-      </button>
-    } @else {
+    @if (creationOuverte()) {
     <section class="carte panneau">
-      <div class="entete-panneau">
-        <h2>Ajouter un élève</h2>
-        <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Fermer</button>
-      </div>
+      <h2>Nouvel élève</h2>
       @if (formulaireCreation(); as f) {
         <label for="prenom">Prénom</label>
         <input id="prenom" type="text" name="prenom" [(ngModel)]="f.prenom">
@@ -172,9 +172,12 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           <p class="secondaire">Pas de photo sans le droit à l'image.</p>
         }
 
-        <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
-          {{ envoi() ? 'Création…' : "Ajouter l'élève" }}
-        </button>
+        <div class="actions">
+          <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+            {{ envoi() ? 'Création…' : "Ajouter l'élève" }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
+        </div>
       }
     </section>
     }
@@ -420,10 +423,11 @@ function trier(eleves: EleveVue[]): EleveVue[] {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
+    .entete > div { flex: 1 1 320px; }
+    .entete .bouton-principal { width: auto; margin-top: 0; }
+    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     .panneau h2 { margin-bottom: 4px; }
-    .entete-panneau { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); }
-    .ouvrir-creation { width: auto; margin: var(--pas-3) 0; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; }
     .case input { width: auto; }
