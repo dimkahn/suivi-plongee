@@ -80,7 +80,7 @@ class ExportPdfTest {
     @Test
     @DisplayName("Un eleve peut telecharger sa propre fiche PDF")
     void elevePeutTelechargerSaPropreFiche() throws Exception {
-        long cursus = cursusDuNiveau("N1"); // le N1 de demonstration appartient a eleve@club.fr
+        long cursus = cursusDuNiveau("N2"); // le N2 de la saison ouverte est celui de Camille (eleve@club.fr)
         mvc.perform(get("/api/cursus/" + cursus + "/fiche.pdf")
                         .header("Authorization", jeton("eleve@club.fr")))
                 .andExpect(status().isOk())
@@ -90,7 +90,7 @@ class ExportPdfTest {
     @Test
     @DisplayName("Un eleve ne peut pas telecharger la fiche PDF d'un autre eleve")
     void eleveNePeutPasTelechargerLaFicheDUnAutre() throws Exception {
-        long cursus = cursusDuNiveau("N2"); // appartient a Mateo, pas a Camille (eleve@club.fr)
+        long cursus = cursusDuNiveau("N3"); // appartient a Sonia, pas a Camille (eleve@club.fr)
         mvc.perform(get("/api/cursus/" + cursus + "/fiche.pdf")
                         .header("Authorization", jeton("eleve@club.fr")))
                 .andExpect(status().isForbidden());

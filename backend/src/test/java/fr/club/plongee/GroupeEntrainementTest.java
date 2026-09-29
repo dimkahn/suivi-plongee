@@ -47,7 +47,7 @@ class GroupeEntrainementTest {
         JsonNode groupes = json.readTree(mvc.perform(get("/api/groupes-entrainement").header("Authorization", e1))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(groupes).extracting(g -> g.get("nom").asText())
-                .startsWith("Débutants", "Perfect N1", "Prépa N2", "N2+", "Prépa N3");
+                .startsWith("Débutants", "Prépa N2", "N2+", "Prépa N3"); // saison 2026-2027 (V107)
         assertThat(groupes.get(0).get("espaceAttitre").asText()).isEqualTo("Ligne 6");
         assertThat(groupes.get(0).get("encadrants")).hasSize(2);
     }
@@ -94,16 +94,16 @@ class GroupeEntrainementTest {
     @DisplayName("À l'inscription, l'admin range l'élève dans un groupe ; un groupe inconnu annule toute l'inscription")
     void groupeChoisiALInscription() throws Exception {
         String admin = jeton("presidente@club.fr");
-        // Saison 2026-2027 (fermée, V11) : les cursus de la saison ouverte sont comptés par DonneesDemoTest.
+        // Saison 2025-2026 (fermée depuis V107) : l'élève créé ici reste hors de la saison ouverte.
         long saisonId = -1;
         for (JsonNode sa : json.readTree(mvc.perform(get("/api/saisons").header("Authorization", admin))
                 .andReturn().getResponse().getContentAsString())) {
-            if (sa.get("libelle").asText().equals("2026-2027")) saisonId = sa.get("id").asLong();
+            if (sa.get("libelle").asText().equals("2025-2026")) saisonId = sa.get("id").asLong();
         }
         long debutants = json.readTree(mvc.perform(post("/api/groupes-entrainement").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                 {"saisonId":%d,"nom":"Débutants 2026","niveauPrepare":"N1"}""".formatted(saisonId)))
+                                 {"saisonId":%d,"nom":"Débutants test","niveauPrepare":"N1"}""".formatted(saisonId)))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
 
         long eleveId = json.readTree(mvc.perform(post("/api/eleves").header("Authorization", admin)
