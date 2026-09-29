@@ -1,0 +1,14 @@
+{
+  "name": "videos-suivi-plongee",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enregistrement des vidéos explicatives de l'appli (Playwright), sur les données de démonstration.",
+  "type": "module",
+  "scripts": {
+    "preparer": "node preparer-donnees.mjs",
+    "enregistrer": "node enregistrer.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}
