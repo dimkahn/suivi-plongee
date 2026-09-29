@@ -42,7 +42,14 @@ déclenche `.github/workflows/deploiement.yml`, qui ne fait plus que les
 tests et les images ghcr.io (plus d'étape SSH). Voir `DEPLOIEMENT.md`,
 « Déploiement automatique ».
 
-Le frontend proxifie `/api` vers `localhost:8080` (`proxy.conf.json`).
+Vidéos d'aide : `outils/videos/tourner.sh` (Playwright, données de démo,
+backend `dev` neuf) puis `outils/videos/publier.sh`. Page publique `/videos`
+(`VideosComponent`, sans connexion) ; les fichiers ne sont ni dans le dépôt
+ni dans les images, Caddy les sert sous `/medias/videos/` depuis le dossier
+`VIDEOS` du `.env`. Voir `outils/videos/LISEZ-MOI.md`.
+
+Le frontend proxifie `/api` vers `localhost:8080` et `/medias/videos` vers
+`outils/videos/apercu.mjs` (port 4300) (`proxy.conf.json`).
 Comptes de démonstration dans le README, mot de passe `plongee2026`.
 
 ## Décisions structurantes — ne pas défaire sans raison

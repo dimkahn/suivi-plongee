@@ -4,7 +4,15 @@
 # vers l'IP publique de la machine (voir DEPLOIEMENT.md).
 
 {$DOMAINE} {
-	reverse_proxy frontend:80
+	# Vidéos d'aide (page publique /videos de l'appli) : fichiers hors du
+	# dépôt, dans le dossier VIDEOS du .env, publiés par outils/videos/publier.sh.
+	handle_path /medias/videos/* {
+		root * /srv/videos
+		file_server
+	}
+	handle {
+		reverse_proxy frontend:80
+	}
 }
 
 # Sites en plus, propres à la machine (un fichier *.caddy par site), rangés

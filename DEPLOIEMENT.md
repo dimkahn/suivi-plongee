@@ -292,10 +292,35 @@ synchronisation vers son propre poste suffit pour un club).
 docker compose -f docker-compose.prod.yml logs -f backend
 ```
 
+## Vidéos d'aide
+
+La page publique `/videos` de l'appli (sans connexion, liée depuis la page
+de connexion et le menu) présente les vidéos de prise en main. Les fichiers
+ne sont ni dans le dépôt ni dans les images : Caddy les sert sous
+`/medias/videos/` depuis un dossier de la machine, monté en lecture seule
+(`VIDEOS` dans le `.env`, `videos-publiees/` du dépôt par défaut). Tant que
+le dossier est vide, la page annonce que les vidéos ne sont pas encore
+publiées.
+
+Pour les tourner puis les publier, sur la machine de production (le
+tournage lance un backend `dev` à part, sur le port 8080 de l'hôte, sans
+toucher à la prod) :
+
+```bash
+outils/videos/tourner.sh     # ~30 min, Chromium sans écran
+outils/videos/publier.sh     # copie dans le dossier servi par Caddy
+```
+
+Ni tag ni redéploiement : la page relit `catalogue.json` à chaque visite.
+Installer `ffmpeg` (`sudo apt install ffmpeg`) pour produire aussi des MP4,
+que les iPhone lisent mieux que le WebM. Détails dans
+`outils/videos/LISEZ-MOI.md`.
+
 ## Changer de machine
 
 Toutes les données vivent dans la base PostgreSQL, photos des élèves
-comprises (table `photo_eleve`) : il n'y a aucun fichier à copier à côté.
+comprises (table `photo_eleve`) : il n'y a aucun autre fichier à copier, hormis
+les vidéos d'aide, qui se retournent (voir ci-dessus).
 Deux choses suffisent à tout retrouver sur une nouvelle VM : **un dump de
 la base** et **le fichier `.env`**.
 

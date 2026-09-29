@@ -38,3 +38,7 @@ sauvegardes/
 
 # Configuration MCP locale (peut contenir des jetons)
 .mcp.json
+
+# Vidéos d'aide publiées (outils/videos/publier.sh) : servies par Caddy, jamais versionnées
+videos-publiees/*
+!videos-publiees/.gitkeep
