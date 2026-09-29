@@ -279,6 +279,8 @@ export interface EleveVue {
   autorisationLegale: boolean;
   autorisationImage: boolean;
   archive: boolean;
+  /** Jamais vrai sans le droit à l'image. */
+  aPhoto: boolean;
 }
 
 export interface LigneTrombinoscope {

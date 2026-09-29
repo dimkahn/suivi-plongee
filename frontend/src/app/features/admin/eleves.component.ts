@@ -281,6 +281,11 @@ function trier(eleves: EleveVue[]): EleveVue[] {
               }
             } @else {
               <div class="ligne">
+                @if (urlPhoto(e.id); as url) {
+                  <img class="avatar" [src]="url" [alt]="e.prenom + ' ' + e.nom" width="56" height="56">
+                } @else {
+                  <div class="avatar silhouette" aria-hidden="true">{{ initiales(e) }}</div>
+                }
                 <div class="identite">
                   <span class="nom">{{ e.prenom }} {{ e.nom }}</span>
                   <span class="secondaire">
@@ -317,7 +322,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                 </button>
                 @if (e.autorisationImage) {
                   <label class="bouton-discret upload">
-                    Déposer une photo
+                    {{ e.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
                     <input type="file" accept="image/jpeg,image/png" hidden
                            (change)="choisirPhoto(e, $event)">
                   </label>
@@ -439,8 +444,15 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
-    .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
-    .identite { display: flex; flex-direction: column; gap: 2px; }
+    .ligne { display: flex; align-items: flex-start; gap: var(--pas-2); }
+    .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .avatar {
+      flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--fond);
+    }
+    .silhouette {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-titres), sans-serif; font-size: .9375rem; font-weight: 700; color: var(--craie);
+    }
     .nom { font-weight: 700; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; margin-top: 0; }
@@ -460,10 +472,6 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .archives { margin-top: var(--pas-4); display: grid; gap: var(--pas-2); }
     .archives > .bouton-discret { justify-self: start; }
     .saisons { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-
-    @media (max-width: 600px) {
-      .ligne { flex-direction: column; }
-    }
 
   `]
 })
@@ -577,7 +585,38 @@ export class ElevesComponent {
 
   constructor() {
     void this.charger();
-    inject(DestroyRef).onDestroy(() => this.oublierPhotoCreation());
+    inject(DestroyRef).onDestroy(() => {
+      this.oublierPhotoCreation();
+      for (const url of this.urlsPhotos().values()) URL.revokeObjectURL(url);
+    });
+  }
+
+  /** Photos affichées sur les lignes, par élève (adresses locales des images). */
+  private urlsPhotos = signal<Map<number, string>>(new Map());
+
+  private chargerPhoto(eleveId: number): void {
+    this.api.photoEleve(eleveId).then(
+      blob => this.poserPhoto(eleveId, URL.createObjectURL(blob)),
+      () => { /* pas de photo consultable : les initiales restent affichées */ }
+    );
+  }
+
+  /** Remplace (ou retire, avec null) la photo affichée d'un élève. */
+  private poserPhoto(eleveId: number, url: string | null): void {
+    const copie = new Map(this.urlsPhotos());
+    const ancienne = copie.get(eleveId);
+    if (ancienne) URL.revokeObjectURL(ancienne);
+    if (url) copie.set(eleveId, url);
+    else copie.delete(eleveId);
+    this.urlsPhotos.set(copie);
+  }
+
+  urlPhoto(eleveId: number): string | null {
+    return this.urlsPhotos().get(eleveId) ?? null;
+  }
+
+  initiales(e: EleveVue): string {
+    return ((e.prenom[0] ?? '') + (e.nom[0] ?? '')).toUpperCase();
   }
 
   private async charger(): Promise<void> {
@@ -588,6 +627,9 @@ export class ElevesComponent {
         firstValueFrom(this.api.saisons())
       ]);
       this.liste.set(liste);
+      for (const e of liste) {
+        if (e.aPhoto) this.chargerPhoto(e.id);
+      }
       this.saisons.set(saisons);
       const saisonCourante = saisons.find(s => s.ouverte) ?? saisons[0] ?? null;
       void this.changerSaisonCreation(saisons.find(s => s.ouverte)?.id ?? null);
@@ -718,6 +760,9 @@ export class ElevesComponent {
         if (photo) {
           try {
             await firstValueFrom(this.api.deposerPhotoEleve(e.id, photo));
+            e = { ...e, aPhoto: true };
+            this.remplacer(e);
+            this.poserPhoto(e.id, URL.createObjectURL(photo));
           } catch (err) {
             echecs.push(`photo (${(err as HttpErrorResponse).error?.detail ?? 'erreur'})`);
           }
@@ -861,7 +906,11 @@ export class ElevesComponent {
   changerAutorisationImage(e: EleveVue): void {
     this.message.set(null);
     this.api.changerAutorisationImage(e.id, !e.autorisationImage).subscribe({
-      next: () => this.remplacer({ ...e, autorisationImage: !e.autorisationImage }),
+      next: () => {
+        // Retirer le consentement supprime aussi la photo côté serveur.
+        if (e.autorisationImage) this.poserPhoto(e.id, null);
+        this.remplacer({ ...e, autorisationImage: !e.autorisationImage, aPhoto: false });
+      },
       error: (err: HttpErrorResponse) =>
         this.message.set(err.error?.detail ?? "L'action n'a pas pu être enregistrée.")
     });
@@ -888,6 +937,9 @@ export class ElevesComponent {
     this.recadrageEnCours.set(true);
     try {
       await firstValueFrom(this.api.deposerPhotoEleve(r.eleve.id, fichier));
+      const actuel = this.liste().find(x => x.id === r.eleve.id);
+      if (actuel) this.remplacer({ ...actuel, aPhoto: true });
+      this.poserPhoto(r.eleve.id, URL.createObjectURL(fichier));
       this.message.set(`Photo enregistrée pour ${r.eleve.prenom} ${r.eleve.nom}.`);
       this.recadrage.set(null);
     } catch (err) {
@@ -929,6 +981,7 @@ export class ElevesComponent {
       next: maj => {
         this.archives.set((this.archives() ?? []).filter(x => x.id !== e.id));
         this.liste.set(trier([...this.liste(), maj]));
+        if (maj.aPhoto) this.chargerPhoto(maj.id);
       },
       error: (err: HttpErrorResponse) =>
         this.message.set(err.error?.detail ?? "Le désarchivage n'a pas pu être enregistré.")

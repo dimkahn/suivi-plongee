@@ -38,7 +38,9 @@ public class EleveController {
                            String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
                            String email, String telephone, String contactUrgenceNom,
                            String contactUrgenceTelephone, String tailleGilet, String tailleCombinaison,
-                           boolean autorisationLegale, boolean autorisationImage, boolean archive) {}
+                           boolean autorisationLegale, boolean autorisationImage, boolean archive,
+                           /** Jamais vrai sans le droit à l'image. */
+                           boolean aPhoto) {}
 
     public record DemandeEleve(@NotBlank String nom, @NotBlank String prenom, LocalDate dateNaissance,
                                String numeroLicence, LocalDate certificatValideJusquAu, String dernierNiveau,
@@ -68,7 +70,9 @@ public class EleveController {
     @GetMapping
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public List<EleveVue> lister() {
-        return eleves.findByArchiveLeIsNullOrderByNomAscPrenomAsc().stream().map(this::vue).toList();
+        Set<Long> avecPhoto = photos.idsElevesAvecPhoto();
+        return eleves.findByArchiveLeIsNullOrderByNomAscPrenomAsc().stream()
+                .map(e -> vue(e, avecPhoto.contains(e.getId()))).toList();
     }
 
     @PostMapping
@@ -143,11 +147,16 @@ public class EleveController {
     }
 
     private EleveVue vue(Eleve e) {
+        return vue(e, photos.existsById(e.getId()));
+    }
+
+    private EleveVue vue(Eleve e, boolean photoEnBase) {
         return new EleveVue(e.getId(), e.getNom(), e.getPrenom(), e.getDateNaissance(),
                 e.getNumeroLicence(), e.getCertificatValideJusquAu(), e.getDernierNiveau(),
                 e.getEmail(), e.getTelephone(), e.getContactUrgenceNom(), e.getContactUrgenceTelephone(),
                 e.getTailleGilet(), e.getTailleCombinaison(),
-                e.isAutorisationLegale(), e.isAutorisationImage(), e.getArchiveLe() != null);
+                e.isAutorisationLegale(), e.isAutorisationImage(), e.getArchiveLe() != null,
+                e.isAutorisationImage() && photoEnBase);
     }
 
     /**
