@@ -53,19 +53,29 @@ function formulaireVide(): FormulaireSeance {
   selector: 'app-seances',
   imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, ProgrammeSeanceComponent],
   template: `
-    <h1>Séances</h1>
-    <p class="secondaire">
-      Ouvre une séance sur la saison courante, pour y rattacher présences et
-      notations. Milieu et profondeur se figent dès qu'une présence ou une
-      évaluation y est rattachée.
-    </p>
+    <div class="entete">
+      <div>
+        <h1>Séances</h1>
+        <p class="secondaire">
+          Ouvre une séance sur la saison courante, pour y rattacher présences et
+          notations. Milieu et profondeur se figent dès qu'une présence ou une
+          évaluation y est rattachée.
+        </p>
+      </div>
+      @if (!panneauOuvert()) {
+        <div class="boutons-entete">
+          <button type="button" class="bouton-principal" (click)="ouvrir('SEANCE')">Nouvelle séance</button>
+          <button type="button" class="bouton-discret" (click)="ouvrir('SEJOUR')">Séjour de plongée</button>
+        </div>
+      }
+    </div>
     <a routerLink="/admin/seances/generer" class="bouton-discret lien-generation">
       Générer toutes les séances d'une saison…
     </a>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    <div class="panneaux">
+    @if (panneauOuvert() === 'SEANCE') {
     <section class="carte panneau" id="nouvelle-seance">
       <h2>Nouvelle séance</h2>
       @if (formulaireCreation(); as f) {
@@ -95,12 +105,17 @@ function formulaireVide(): FormulaireSeance {
         <textarea id="commentaire" name="commentaire" rows="2"
                   [(ngModel)]="f.commentaire" placeholder="Facultatif"></textarea>
 
-        <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
-          {{ envoi() ? 'Création…' : 'Créer la séance' }}
-        </button>
+        <div class="actions">
+          <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+            {{ envoi() ? 'Création…' : 'Créer la séance' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="panneauOuvert.set(null)">Annuler</button>
+        </div>
       }
     </section>
+    }
 
+    @if (panneauOuvert() === 'SEJOUR') {
     <section class="carte panneau" id="sejour">
       <h2>Séjour de plongée</h2>
       <p class="secondaire">
@@ -173,13 +188,16 @@ function formulaireVide(): FormulaireSeance {
           }
         </p>
 
-        <button type="button" class="bouton-principal" (click)="creerSejour()"
-                [disabled]="envoi() || a.total === 0">
-          {{ envoi() ? 'Création…' : a.total > 0 ? 'Créer les ' + a.total + ' séances' : 'Créer les séances' }}
-        </button>
+        <div class="actions">
+          <button type="button" class="bouton-principal" (click)="creerSejour()"
+                  [disabled]="envoi() || a.total === 0">
+            {{ envoi() ? 'Création…' : a.total > 0 ? 'Créer les ' + a.total + ' séances' : 'Créer les séances' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="panneauOuvert.set(null)">Annuler</button>
+        </div>
       }
     </section>
-    </div>
+    }
 
     <div class="onglets" role="group" aria-label="Affichage des séances">
       <button type="button" class="bouton-discret" [class.actif]="vue() === 'LISTE'"
@@ -299,9 +317,11 @@ function formulaireVide(): FormulaireSeance {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .lien-generation { display: inline-flex; align-items: center; margin-top: var(--pas-2); text-decoration: none; }
-    .panneaux { display: flex; flex-wrap: wrap; gap: var(--pas-3); align-items: flex-start; margin: var(--pas-3) 0; }
-    .panneau { flex: 1 1 360px; max-width: 480px; padding: var(--pas-3); }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
+    .entete > div:first-child { flex: 1 1 320px; }
+    .boutons-entete { display: flex; gap: var(--pas); flex-wrap: wrap; }
+    .lien-generation { display: inline-flex; align-items: center; text-decoration: none; }
+    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
     .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pas-2); }
     .infos { border: none; margin: var(--pas-2) 0 0; padding: 0; }
     .infos legend { font-weight: 700; font-size: .9375rem; margin-bottom: var(--pas); padding: 0; }
@@ -311,7 +331,6 @@ function formulaireVide(): FormulaireSeance {
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     textarea { resize: vertical; }
-    .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     #recherche-seance { max-width: 420px; margin-bottom: var(--pas-2); }
 
@@ -372,6 +391,8 @@ export class SeancesComponent {
 
   formulaireCreation = signal<FormulaireSeance>(formulaireVide());
   formulaireSejour = signal<FormulaireSejour>(sejourVide());
+  /** Formulaire de création affiché : aucun par défaut, un seul à la fois. */
+  panneauOuvert = signal<'SEANCE' | 'SEJOUR' | null>(null);
 
   edition = signal<number | null>(null);
   formulaireEdition = signal<FormulaireSeance | null>(null);
@@ -393,10 +414,16 @@ export class SeancesComponent {
     }
   }
 
-  /** Pré-remplit la date du formulaire de création et le fait défiler à l'écran. */
+  ouvrir(panneau: 'SEANCE' | 'SEJOUR'): void {
+    this.message.set(null);
+    this.panneauOuvert.set(panneau);
+  }
+
+  /** Ouvre le formulaire de création, date pré-remplie, et le fait défiler à l'écran. */
   preparerCreation(date: string): void {
     this.formulaireCreation.set({ ...formulaireVide(), dateSeance: date });
-    document.getElementById('nouvelle-seance')?.scrollIntoView({ behavior: 'smooth' });
+    this.ouvrir('SEANCE');
+    setTimeout(() => document.getElementById('nouvelle-seance')?.scrollIntoView({ behavior: 'smooth' }));
   }
 
   /** Recalculé à chaque rendu : le formulaire est un objet muté par ngModel, pas un signal. */
@@ -436,6 +463,7 @@ export class SeancesComponent {
         this.liste.set([...this.liste(), ...creees]
           .sort((a, b) => a.date.localeCompare(b.date) || a.ordre - b.ordre));
         this.formulaireSejour.set(sejourVide());
+        this.panneauOuvert.set(null);
         this.message.set(`${creees.length} séance(s) créée(s) pour le séjour.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -467,6 +495,7 @@ export class SeancesComponent {
         this.liste.set([...this.liste(), s]
           .sort((a, b) => a.date.localeCompare(b.date) || a.ordre - b.ordre));
         this.formulaireCreation.set(formulaireVide());
+        this.panneauOuvert.set(null);
       },
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);

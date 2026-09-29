@@ -10,25 +10,37 @@ import { DateFrPipe } from '../../core/date-fr';
   selector: 'app-saisons',
   imports: [FormsModule, DateFrPipe],
   template: `
-    <h1>Saisons</h1>
-    <p class="secondaire">
-      Une saison fermée sort seulement des saisons proposées par défaut : rien n'est rétroactif.
-    </p>
+    <div class="entete">
+      <div>
+        <h1>Saisons</h1>
+        <p class="secondaire">
+          Une saison fermée sort seulement des saisons proposées par défaut : rien n'est rétroactif.
+        </p>
+      </div>
+      @if (!creationOuverte()) {
+        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle saison</button>
+      }
+    </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    <section class="carte panneau">
-      <h2>Nouvelle saison</h2>
-      <label for="libelle">Libellé</label>
-      <input id="libelle" type="text" name="libelle" [(ngModel)]="libelle" placeholder="2026-2027">
-      <label for="debut">Début</label>
-      <input id="debut" type="date" name="debut" [(ngModel)]="dateDebut">
-      <label for="fin">Fin</label>
-      <input id="fin" type="date" name="fin" [(ngModel)]="dateFin">
-      <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
-        {{ envoi() ? 'Création…' : 'Créer la saison' }}
-      </button>
-    </section>
+    @if (creationOuverte()) {
+      <section class="carte panneau">
+        <h2>Nouvelle saison</h2>
+        <label for="libelle">Libellé</label>
+        <input id="libelle" type="text" name="libelle" [(ngModel)]="libelle" placeholder="2026-2027">
+        <label for="debut">Début</label>
+        <input id="debut" type="date" name="debut" [(ngModel)]="dateDebut">
+        <label for="fin">Fin</label>
+        <input id="fin" type="date" name="fin" [(ngModel)]="dateFin">
+        <div class="actions">
+          <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+            {{ envoi() ? 'Création…' : 'Créer la saison' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
+        </div>
+      </section>
+    }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -119,10 +131,11 @@ import { DateFrPipe } from '../../core/date-fr';
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
+    .entete > div { flex: 1 1 320px; }
+    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
-    .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -152,6 +165,7 @@ export class SaisonsComponent {
   message = signal<string | null>(null);
   envoi = signal(false);
 
+  creationOuverte = signal(false);
   libelle = '';
   dateDebut = '';
   dateFin = '';
@@ -234,6 +248,11 @@ export class SaisonsComponent {
     });
   }
 
+  ouvrirCreation(): void {
+    this.message.set(null);
+    this.creationOuverte.set(true);
+  }
+
   creer(): void {
     if (!this.libelle || !this.dateDebut || !this.dateFin) {
       this.message.set('Libellé, début et fin sont obligatoires.');
@@ -245,6 +264,7 @@ export class SaisonsComponent {
       .subscribe({
         next: s => {
           this.envoi.set(false);
+          this.creationOuverte.set(false);
           this.liste.set([s, ...this.liste()]);
           this.progressionsSuivies.set(new Map(this.progressionsSuivies()).set(s.id, []));
           this.libelle = '';
