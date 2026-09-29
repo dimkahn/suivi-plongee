@@ -111,6 +111,18 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
           </button>
           @if (infosSupplementairesOuvertes()) {
             <dl class="infos-supplementaires">
+              <dt>Date de naissance</dt><dd>{{ g.dateNaissance ? (g.dateNaissance | dateFr) : 'non renseignée' }}</dd>
+              <dt>CACI valide jusqu'au</dt>
+              <dd>
+                @if (g.certificatValideJusquAu) {
+                  {{ g.certificatValideJusquAu | dateFr }}
+                  @if (g.certificatValideJusquAu < aujourdhui) { <strong class="caci-expire">(expiré)</strong> }
+                } @else {
+                  non renseigné
+                }
+              </dd>
+              <dt>Taille de gilet</dt><dd>{{ g.tailleGilet || 'non renseignée' }}</dd>
+              <dt>Taille de combinaison</dt><dd>{{ g.tailleCombinaison || 'non renseignée' }}</dd>
               <dt>E-mail</dt><dd>{{ g.email || 'non renseigné' }}</dd>
               <dt>Téléphone</dt><dd>{{ g.telephone || 'non renseigné' }}</dd>
               <dt>Contact d'urgence</dt>
@@ -436,6 +448,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     }
     .infos-supplementaires dt { font-weight: 700; color: var(--craie); }
     .infos-supplementaires dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+    .infos-supplementaires .caci-expire { color: var(--en-cours); }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
