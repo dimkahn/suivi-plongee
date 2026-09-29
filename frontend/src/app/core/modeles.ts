@@ -111,6 +111,11 @@ export interface GrilleVue {
   telephone: string | null;
   contactUrgenceNom: string | null;
   contactUrgenceTelephone: string | null;
+  /** Dates au format ISO (AAAA-MM-JJ). */
+  dateNaissance: string | null;
+  certificatValideJusquAu: string | null;
+  tailleGilet: string | null;
+  tailleCombinaison: string | null;
   niveau: 'N1' | 'N2' | 'N3';
   versionMft: string;
   saison: string;
