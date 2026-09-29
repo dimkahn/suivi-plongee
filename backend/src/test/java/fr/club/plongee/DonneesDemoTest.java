@@ -50,18 +50,22 @@ class DonneesDemoTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
-        JsonNode cursus = json.readTree(reponse);
-        assertThat(cursus).hasSize(4);
+        // D'autres tests inscrivent des eleves : on verifie l'absence de doublon
+        // plutot qu'un nombre exact de cursus.
+        java.util.List<String> eleves = new java.util.ArrayList<>();
+        for (JsonNode c : json.readTree(reponse)) eleves.add(c.get("eleve").asText());
+        assertThat(eleves).doesNotHaveDuplicates()
+                .contains("Anis Dulac", "Léa Morel", "Camille Berthier", "Sonia Perrot");
     }
 
     @Test
-    @DisplayName("Les evaluations semees sur le N1 de Camille existent bien (pas de code de bloc perime)")
-    void evaluationsSemeesSurLeN1DeCamille() throws Exception {
+    @DisplayName("Les evaluations semees sur le N1 d'Anis existent bien (criteres de la revision active)")
+    void evaluationsSemeesSurLeN1DAnis() throws Exception {
         String cursusReponse = mvc.perform(get("/api/cursus").header("Authorization", jeton("e3@club.fr")))
                 .andReturn().getResponse().getContentAsString();
         long cursusN1 = -1;
         for (JsonNode c : json.readTree(cursusReponse)) {
-            if ("N1".equals(c.get("niveau").asText())) { cursusN1 = c.get("id").asLong(); break; }
+            if ("Anis Dulac".equals(c.get("eleve").asText())) { cursusN1 = c.get("id").asLong(); break; }
         }
         assertThat(cursusN1).isPositive();
 
@@ -70,9 +74,9 @@ class DonneesDemoTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
-        // Deux evaluations sont semees dans V100 (un ACQUIS, un EN_COURS) :
-        // si les codes de bloc ne correspondaient plus a la revision active,
-        // ces INSERT ... SELECT n'auraient silencieusement rien insere.
+        // V107 seme les notes par intitule de critere (savoir_faire) : si les
+        // intitules ne correspondaient plus a la revision active, ces
+        // INSERT ... SELECT n'auraient silencieusement rien insere.
         assertThat(json.readTree(grille).get("criteresAcquis").asInt()).isGreaterThan(0);
     }
 }

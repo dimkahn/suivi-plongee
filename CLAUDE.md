@@ -115,7 +115,7 @@ une proposition par niveau (N1 PE20, N2 PA20|PE40, N3 PA40|PE60), à adapter
 depuis l'écran. Une saison suit au plus une progression par référentiel
 (table `progression_saison`, choix dans `/admin/saisons`, règle tenue par
 `ProgressionService`) ; aucune migration ne rattache une progression à une
-saison réelle (seule la démo V102 le fait). Chaque séance affiche la période
+saison réelle (seules les démos V102 et V107 le font). Chaque séance affiche la période
 qui couvre son mois (`core/progression.ts`, `ProgrammeSeanceComponent`,
 liste des séances et feuille de présence ; embarqué hors ligne). Dans la
 grille, les blocs de la période du mois (séance choisie, sinon aujourd'hui)

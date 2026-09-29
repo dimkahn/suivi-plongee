@@ -18,8 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Maintien à l'inscription, changement de niveau et passage en maintien
- * d'une inscription. Les élèves créés ici vont dans la saison 2026-2027
- * (fermée, V11) : ceux de la saison ouverte sont comptés par DonneesDemoTest.
+ * d'une inscription. Les élèves créés ici vont dans la saison 2025-2026
+ * (fermée depuis V107) : ils ne se mêlent pas à ceux de la saison ouverte.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,11 +42,11 @@ class ChangementFormationTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
     }
 
-    private long saison2026(String jeton) throws Exception {
+    private long saisonFermee(String jeton) throws Exception {
         for (JsonNode s : lire("/api/saisons", jeton)) {
-            if (s.get("libelle").asText().equals("2026-2027")) return s.get("id").asLong();
+            if (s.get("libelle").asText().equals("2025-2026")) return s.get("id").asLong();
         }
-        throw new AssertionError("Saison 2026-2027 absente");
+        throw new AssertionError("Saison 2025-2026 absente");
     }
 
     private long nouvelEleve(String jeton, String prenom) throws Exception {
@@ -62,12 +62,12 @@ class ChangementFormationTest {
     @DisplayName("Un élève en simple maintien est inscrit sans formation, directement dans son groupe")
     void maintienAvecGroupe() throws Exception {
         String admin = jeton();
-        long saison = saison2026(admin);
+        long saison = saisonFermee(admin);
         long eleve = nouvelEleve(admin, "Maintien");
         long groupe = json.readTree(mvc.perform(post("/api/groupes-entrainement").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                 {"saisonId":%d,"nom":"N2+ 2026"}""".formatted(saison)))
+                                 {"saisonId":%d,"nom":"N2+ test"}""".formatted(saison)))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
 
         mvc.perform(post("/api/adhesions").header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
@@ -87,7 +87,7 @@ class ChangementFormationTest {
     @DisplayName("Une inscription sans note change de niveau, puis passe en maintien")
     void changementDeNiveauPuisMaintien() throws Exception {
         String admin = jeton();
-        long saison = saison2026(admin);
+        long saison = saisonFermee(admin);
         long eleve = nouvelEleve(admin, "Hesitant");
         long cursusId = json.readTree(mvc.perform(post("/api/cursus").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,21 +105,21 @@ class ChangementFormationTest {
                 .andExpect(status().isNoContent());
         assertThat(lire("/api/cursus/eleve/" + eleve, admin)).isEmpty();
         assertThat(lire("/api/adhesions?eleveId=" + eleve, admin)).singleElement()
-                .satisfies(a -> assertThat(a.get("saison").asText()).isEqualTo("2026-2027"));
+                .satisfies(a -> assertThat(a.get("saison").asText()).isEqualTo("2025-2026"));
     }
 
     @Test
     @DisplayName("Une formation déjà notée ne change plus de niveau et ne passe pas en maintien")
     void refusDesQueDesCompetencesSontNotees() throws Exception {
         String admin = jeton();
-        // Camille Berthier (démo) : N1 délivré, compétences notées.
+        // Camille Berthier (démo) : N2 en cours sur la saison ouverte, déjà notée (V107).
         JsonNode camille = null;
         for (JsonNode c : lire("/api/cursus", admin)) if (c.get("eleve").asText().equals("Camille Berthier")) camille = c;
 
         mvc.perform(put("/api/cursus/" + camille.get("id").asLong()).header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                 {"statut":"%s","niveau":"N2"}""".formatted(camille.get("statut").asText())))
+                                 {"statut":"%s","niveau":"N3"}""".formatted(camille.get("statut").asText())))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.startsWith("Des compétences ont déjà été notées")));
         mvc.perform(post("/api/cursus/" + camille.get("id").asLong() + "/maintien").header("Authorization", admin))
