@@ -12,7 +12,7 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.core.JacksonException;
@@ -61,7 +61,7 @@ import java.util.regex.Pattern;
  * Un tag {@code v…} poussé part en production (outils/surveiller-tags.sh).
  */
 @Service
-@Profile("dev")
+@ConditionalOnProperty(name = "app.ia.active", havingValue = "true")
 public class AssistantIaService {
 
     private static final Logger log = LoggerFactory.getLogger(AssistantIaService.class);
@@ -108,6 +108,25 @@ public class AssistantIaService {
             dépôt, dont les chemins sont donnés dans le message : lis-les avec l'outil Read. Ne les \
             ajoute au dépôt que si on te le demande, en les copiant à leur place.""";
 
+    /**
+     * Variables d'environnement transmises à Claude Code et aux tests : de
+     * quoi trouver les outils, s'authentifier auprès d'Anthropic et signer
+     * les commits, rien d'autre. Les secrets du serveur (base, JWT, SMTP,
+     * agent SSH) ne passent pas. Limite connue : dans le même conteneur et
+     * sous le même utilisateur, /proc/1/environ reste lisible.
+     */
+    private static final Pattern VARIABLES_TRANSMISES = Pattern.compile(
+            "PATH|HOME|USER|LOGNAME|SHELL|LANG|LANGUAGE|TZ|TERM|TMPDIR|JAVA_HOME|MAVEN_HOME|M2_HOME|MAVEN_OPTS"
+                    + "|LC_\\w+|XDG_\\w+|NODE_\\w+|NVM_\\w+|npm_config_\\w+|CLAUDE_\\w+|ANTHROPIC_\\w+"
+                    + "|GIT_AUTHOR_\\w+|GIT_COMMITTER_\\w+|(?i:https?_proxy|no_proxy)");
+
+    public static void filtrerEnvironnement(Map<String, String> environnement) {
+        environnement.keySet().removeIf(nom -> !VARIABLES_TRANSMISES.matcher(nom).matches());
+        // Deuxième verrou sur le push, indépendant des règles de Claude Code : aucune connexion SSH possible.
+        environnement.put("GIT_SSH_COMMAND", "false");
+        environnement.put("GIT_TERMINAL_PROMPT", "0");
+    }
+
     /** Un fichier joint à un message, tel que reçu du navigateur. */
     public record PieceJointe(String nom, byte[] contenu) {}
 
@@ -132,6 +151,8 @@ public class AssistantIaService {
     private final Path dossierTravail;
     private final String claude;
     private final String mvn;
+    /** Adresse du dépôt GitHub, pour le cloner au premier usage (production). Vide : dépôt déjà en place. */
+    private final String depotDistant;
 
     private final Map<Long, Travail> travaux = new ConcurrentHashMap<>();
 
@@ -140,7 +161,8 @@ public class AssistantIaService {
                               @Value("${app.ia.depot}") String depot,
                               @Value("${app.ia.dossier-travail}") String dossierTravail,
                               @Value("${app.ia.claude}") String claude,
-                              @Value("${app.ia.mvn}") String mvn) {
+                              @Value("${app.ia.mvn}") String mvn,
+                              @Value("${app.ia.depot-distant:}") String depotDistant) {
         this.sessions = sessions;
         this.journal = journal;
         this.utilisateurs = utilisateurs;
@@ -150,9 +172,11 @@ public class AssistantIaService {
         this.dossierTravail = Path.of(dossierTravail).toAbsolutePath().normalize();
         this.claude = claude;
         this.mvn = mvn;
+        this.depotDistant = depotDistant.strip();
     }
 
     public Etat etat() {
+        preparerDepot();
         CommandeLocale.Resultat r = CommandeLocale.git(depot, "symbolic-ref", "--short", "-q", "HEAD");
         return new Etat(depot.toString(), r.reussi() ? r.sortie() : null, dossierTravail.toString());
     }
@@ -180,6 +204,8 @@ public class AssistantIaService {
         String propre = titre == null ? "" : titre.strip();
         if (propre.isEmpty()) throw new RegleMetierException("Donnez un titre à la session (ce que vous voulez faire).");
         if (propre.length() > 120) throw new RegleMetierException("Titre trop long : 120 caractères au plus.");
+        preparerDepot();
+        synchroniserMaster();
 
         String base = "ia/" + LocalDateTime.now(PARIS).format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"))
                 + "-" + slug(propre);
@@ -275,9 +301,7 @@ public class AssistantIaService {
 
         ProcessBuilder pb = new ProcessBuilder(commande).directory(Path.of(s.getDossier()).toFile())
                 .redirectErrorStream(true);
-        // Deuxième verrou sur le push, indépendant des règles de Claude Code : aucune connexion SSH possible.
-        pb.environment().put("GIT_SSH_COMMAND", "false");
-        pb.environment().put("GIT_TERMINAL_PROMPT", "0");
+        filtrerEnvironnement(pb.environment());
 
         journaliste.noter(sessionId, TypeJournalIa.MESSAGE, pourLeJournal, null, auteurId);
         Process p;
@@ -321,7 +345,7 @@ public class AssistantIaService {
 
         ProcessBuilder pb = new ProcessBuilder(mvn, "-B", "test").directory(dossier.toFile())
                 .redirectErrorStream(true).redirectOutput(sortie.toFile());
-        pb.environment().put("GIT_SSH_COMMAND", "false");
+        filtrerEnvironnement(pb.environment());
         Process p;
         try {
             p = pb.start();
@@ -385,6 +409,8 @@ public class AssistantIaService {
         String branche = s.getBranche();
         String sha = CommandeLocale.gitExige(depot, "Branche introuvable", "rev-parse", branche);
         String masterSha = CommandeLocale.gitExige(depot, "master introuvable", "rev-parse", BRANCHE_PRINCIPALE);
+        synchroniserMaster();
+        masterSha = CommandeLocale.gitExige(depot, "master introuvable", "rev-parse", BRANCHE_PRINCIPALE);
         if (sha.equals(masterSha) || CommandeLocale.git(depot, "merge-base", "--is-ancestor", sha, masterSha).reussi()) {
             throw new RegleMetierException("Rien à merger : master contient déjà tout le travail de cette branche.");
         }
@@ -397,18 +423,7 @@ public class AssistantIaService {
                     + "l'assistant de rebaser son travail sur master (git rebase master), puis relancez les tests.");
         }
 
-        CommandeLocale.Resultat courante = CommandeLocale.git(depot, "symbolic-ref", "--short", "-q", "HEAD");
-        if (courante.reussi() && courante.sortie().equals(BRANCHE_PRINCIPALE)) {
-            // master est extrait dans le dépôt principal : on avance aussi ses fichiers.
-            if (!CommandeLocale.git(depot, "status", "--porcelain", "--untracked-files=no").sortie().isBlank()) {
-                throw new RegleMetierException("Le dépôt principal (" + depot + ") a des modifications non "
-                        + "commitées sur master : commitez-les ou mettez-les de côté avant de merger.");
-            }
-            CommandeLocale.gitExige(depot, "Le merge a échoué", "merge", "--ff-only", branche);
-        } else {
-            // master n'est pas extrait : on déplace la référence, git refuse tout ce qui n'est pas une avance rapide.
-            CommandeLocale.gitExige(depot, "Le merge a échoué", "fetch", ".", branche + ":" + BRANCHE_PRINCIPALE);
-        }
+        avancerMaster(branche, "Le merge a échoué");
         journaliste.noter(sessionId, TypeJournalIa.MERGE,
                 branche + " mergée sur master (avance rapide jusqu'à " + court(sha) + "). Rien n'est encore poussé.",
                 sha, auteurId);
@@ -443,6 +458,65 @@ public class AssistantIaService {
         }
         journaliste.noter(sessionId, TypeJournalIa.TAG_POUSSE, "master et le tag " + tag + " poussés sur GitHub ("
                 + court(masterSha) + "). Mise en production par le serveur dans les 5 minutes.", masterSha, auteurId);
+    }
+
+    /** Amène master sur {@code cible}, en avance rapide seulement (git refuse le reste). */
+    private void avancerMaster(String cible, String contexte) {
+        CommandeLocale.Resultat courante = CommandeLocale.git(depot, "symbolic-ref", "--short", "-q", "HEAD");
+        if (courante.reussi() && courante.sortie().equals(BRANCHE_PRINCIPALE)) {
+            // master est extrait dans le dépôt principal : on avance aussi ses fichiers.
+            if (!CommandeLocale.git(depot, "status", "--porcelain", "--untracked-files=no").sortie().isBlank()) {
+                throw new RegleMetierException("Le dépôt principal (" + depot + ") a des modifications non "
+                        + "commitées sur master : commitez-les ou mettez-les de côté.");
+            }
+            CommandeLocale.gitExige(depot, contexte, "merge", "--ff-only", "-q", cible);
+        } else {
+            // master n'est pas extrait : on déplace la référence.
+            CommandeLocale.gitExige(depot, contexte, "fetch", "-q", ".", cible + ":" + BRANCHE_PRINCIPALE);
+        }
+    }
+
+    /**
+     * Au premier usage en production : clone le dépôt GitHub si le dossier
+     * n'en contient pas encore ({@code app.ia.depot-distant}).
+     */
+    private synchronized void preparerDepot() {
+        if (Files.isDirectory(depot.resolve(".git"))) return;
+        if (depotDistant.isEmpty()) {
+            throw new RegleMetierException("Pas de dépôt git dans " + depot + " : clonez-y le dépôt, ou indiquez "
+                    + "son adresse (IA_DEPOT_DISTANT) pour que le serveur le clone.");
+        }
+        try (var contenu = Files.exists(depot) ? Files.list(depot) : java.util.stream.Stream.<Path>empty()) {
+            if (contenu.findAny().isPresent()) {
+                throw new RegleMetierException("Le dossier " + depot + " n'est pas vide et ne contient pas de dépôt git.");
+            }
+            Files.createDirectories(depot.getParent());
+        } catch (IOException e) {
+            throw new RegleMetierException("Le dossier " + depot + " n'est pas utilisable : " + e.getMessage());
+        }
+        CommandeLocale.gitExige(depot.getParent(), "Le dépôt n'a pas pu être cloné",
+                "clone", "-q", depotDistant, depot.toString());
+        log.info("Dépôt de l'assistant IA cloné depuis {} dans {}", depotDistant, depot);
+    }
+
+    /**
+     * Master avance aussi ailleurs (poste du développeur) : on reprend celui
+     * de GitHub avant une nouvelle session ou un merge. Avance rapide
+     * seulement ; un master local en avance (merge pas encore poussé) est
+     * gardé, un master qui a divergé arrête tout.
+     */
+    private void synchroniserMaster() {
+        if (!CommandeLocale.git(depot, "remote", "get-url", "origin").reussi()) return;
+        CommandeLocale.gitExige(depot, "GitHub n'a pas pu être joint pour mettre master à jour", "fetch", "-q", "origin");
+        String local = CommandeLocale.gitExige(depot, "master introuvable", "rev-parse", BRANCHE_PRINCIPALE);
+        CommandeLocale.Resultat distant = CommandeLocale.git(depot, "rev-parse", "origin/" + BRANCHE_PRINCIPALE);
+        if (!distant.reussi() || distant.sortie().equals(local)) return;
+        if (CommandeLocale.git(depot, "merge-base", "--is-ancestor", distant.sortie(), local).reussi()) return;
+        if (!CommandeLocale.git(depot, "merge-base", "--is-ancestor", local, distant.sortie()).reussi()) {
+            throw new RegleMetierException("Le master du dépôt de l'assistant (" + depot + ") a divergé de celui de "
+                    + "GitHub : à réconcilier à la main avant de continuer.");
+        }
+        avancerMaster("origin/" + BRANCHE_PRINCIPALE, "master n'a pas pu être mis à jour depuis GitHub");
     }
 
     /** Prochain tag du mois : vAAAA.MM.N, N suivant le plus grand déjà posé ce mois-ci. */

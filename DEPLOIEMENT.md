@@ -265,6 +265,60 @@ C'est aussi la marche à suivre si le journal finit par « intervention
 manuelle nécessaire » : ni le nouveau tag ni la version précédente n'ont
 redémarré.
 
+## Assistant IA en production
+
+L'assistant IA (page `/ia`, voir CLAUDE.md) fait tourner Claude Code dans
+le conteneur du backend : il code sur sa branche, et vous lancez depuis la
+page les tests, le merge sur master puis le tag qui part en production.
+Il est **coupé par défaut**. Pour l'activer, une seule fois, sur le serveur :
+
+1. **Jeton Claude.** Sur un poste où Claude Code est connecté à votre
+   abonnement : `claude setup-token`, puis copier le jeton affiché.
+2. **Clé de déploiement GitHub**, dans le dossier du clone de déploiement
+   (`~/suivi-plongee-deploiement/depot`, ignoré par git) :
+
+   ```bash
+   cd ~/suivi-plongee-deploiement/depot
+   mkdir -p ia-ssh && ssh-keygen -t ed25519 -N '' -C assistant-ia -f ia-ssh/cle-deploiement
+   cat ia-ssh/cle-deploiement.pub
+   ```
+
+   Sur GitHub : dépôt → Settings → Deploy keys → Add deploy key, coller la
+   clé publique et **cocher « Allow write access »** (le serveur pousse
+   master et le tag).
+3. **Dans `.env`** (même dossier), en plus des `SMTP_*` déjà présents, qui
+   servent aussi à envoyer le code d'accès :
+
+   ```bash
+   BACKEND_CIBLE=execution-ia
+   IA_ACTIVE=true
+   CLAUDE_CODE_OAUTH_TOKEN=<jeton de l'étape 1>
+   IA_EMAIL_COMMITS=<adresse des commits de l'assistant>
+   ```
+
+4. **Prise en compte** au prochain tag, ou tout de suite :
+   `~/suivi-plongee-deploiement/surveiller-tags.sh <tag en ligne>`.
+5. Dans l'application : écran Moniteurs, cocher « IA » sur votre compte
+   (administrateurs seulement), puis page **Assistant IA** → « Recevoir un
+   code ». Le code part à l'adresse `app.ia.email-code` d'`application.yml`,
+   vaut une heure et ne sert qu'une fois ; l'accès se referme au bout de
+   cette heure.
+
+Au premier usage, le serveur clone le dépôt dans le volume `ia-donnees`
+(`/ia/depot`) ; copies de travail, pièces jointes et `journal.log` sont
+dans `/ia/travail`. Pour tout couper : `IA_ACTIVE=false` (l'image avec IA
+peut rester).
+
+À savoir :
+
+- Un tag poussé depuis la page redéploie la production, donc redémarre le
+  backend : la session en cours s'arrête là, c'est la dernière étape.
+- `mvn test` tourne dans le conteneur (tests du backend, construction du
+  frontend) : quelques minutes et plusieurs Go de mémoire sur la VM.
+- Claude Code ne reçoit ni les mots de passe ni la clé de déploiement
+  (environnement filtré), mais il tourne dans le même conteneur que le
+  backend : ne lui faites pas lire de fichier d'origine douteuse.
+
 ## Maintenir en conditions
 
 **Mettre à jour** : voir « Déploiement automatique » ci-dessus. Sans la

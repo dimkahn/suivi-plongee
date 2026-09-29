@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { EtatIaVue, LigneJournalIaVue, LivraisonIaVue, SessionIaVue, TypeJournalIa } from '../../core/modeles';
+import { AccesIaVue, EtatIaVue, LigneJournalIaVue, LivraisonIaVue, SessionIaVue, TypeJournalIa } from '../../core/modeles';
 
 /** Limites des pièces jointes, les mêmes que le serveur (AssistantIaService). */
 const PIECES_MAX = 10;
@@ -32,10 +32,44 @@ const EVENEMENTS: Partial<Record<TypeJournalIa, string>> = {
 
     @if (indisponible()) {
       <div class="carte vide">
-        <p>L'assistant IA ne fonctionne que sur le poste de développement (profil dev) :
-          Claude Code n'est jamais lancé sur le serveur de production.</p>
+        <p>L'assistant IA n'est pas activé sur ce serveur (réglage IA_ACTIVE).</p>
       </div>
+    } @else if (!acces()) {
+      <p class="vide">Chargement…</p>
+    } @else if (!acces()!.ouvert) {
+      <section class="carte verrou">
+        <h2>Accès protégé</h2>
+        <p>
+          L'assistant peut modifier le code et le mettre en production : il faut un code à usage unique,
+          envoyé à <strong>{{ acces()!.destinataire }}</strong>. Il vaut une heure, et l'accès se referme
+          au bout de cette heure.
+        </p>
+        @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+        @if (acces()!.codeEnvoye) {
+          <form (ngSubmit)="validerCode()">
+            <label for="code">Code reçu par courriel</label>
+            <input id="code" name="code" [(ngModel)]="code" autocomplete="one-time-code"
+                   autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="Ex. K7PX2MQA">
+            <div class="actions">
+              <button type="button" class="bouton-discret" (click)="demanderCode()" [disabled]="envoi()">
+                Renvoyer un code
+              </button>
+              <button type="submit" class="bouton-principal" [disabled]="!code.trim() || envoi()">Ouvrir</button>
+            </div>
+          </form>
+        } @else {
+          <div class="actions">
+            <button type="button" class="bouton-principal" (click)="demanderCode()" [disabled]="envoi()">
+              {{ envoi() ? 'Envoi…' : 'Recevoir un code' }}
+            </button>
+          </div>
+        }
+      </section>
     } @else {
+      <p class="secondaire">
+        Accès ouvert jusqu'à {{ heure(acces()!.ouvertJusquA) }}.
+        <button type="button" class="lien" (click)="fermerAcces()">Refermer maintenant</button>
+      </p>
       <p class="secondaire">
         Claude Code travaille sur une copie du code, dans sa propre branche. Rien n'atteint master ni la
         production sans vos clics : tests, merge, puis tag.
@@ -219,6 +253,11 @@ const EVENEMENTS: Partial<Record<TypeJournalIa, string>> = {
     }
   `,
   styles: [`
+    .verrou { max-width: 560px; padding: var(--pas-3); margin-top: var(--pas-2); }
+    .verrou input { font-family: ui-monospace, monospace; letter-spacing: .15em; text-transform: uppercase; }
+    .verrou .actions { justify-content: flex-start; }
+    .lien { background: none; border: none; padding: 0 4px; min-height: 44px; color: var(--profond);
+            text-decoration: underline; cursor: pointer; font: inherit; }
     .disposition { display: grid; grid-template-columns: 260px 1fr 300px; gap: var(--pas-2); align-items: start;
                    margin-top: var(--pas-2); }
     .carte { padding: var(--pas-2); }
@@ -285,6 +324,9 @@ export class AssistantIaComponent {
   private fil = viewChild<ElementRef<HTMLElement>>('fil');
 
   etat = signal<EtatIaVue | null>(null);
+  /** Verrou par code envoyé par courriel ; null tant qu'il n'est pas lu. */
+  acces = signal<AccesIaVue | null>(null);
+  code = '';
   indisponible = signal(false);
   sessions = signal<SessionIaVue[]>([]);
   choisie = signal<SessionIaVue | null>(null);
@@ -318,10 +360,85 @@ export class AssistantIaComponent {
 
   private async demarrer(): Promise<void> {
     try {
+      this.acces.set(await firstValueFrom(this.api.accesIa()));
+    } catch {
+      // Adresses absentes (serveur sans assistant) ou rôles manquants.
+      this.indisponible.set(true);
+      return;
+    }
+    if (!this.acces()!.ouvert) return;
+    try {
       this.etat.set(await firstValueFrom(this.api.etatIa()));
       this.sessions.set(await firstValueFrom(this.api.sessionsIa()));
+    } catch (e) {
+      this.erreur(e, "L'assistant n'a pas pu être chargé.");
+    }
+  }
+
+  async demanderCode(): Promise<void> {
+    this.envoi.set(true);
+    this.message.set(null);
+    try {
+      this.acces.set(await firstValueFrom(this.api.demanderCodeIa()));
+      this.code = '';
+      this.message.set(`Code envoyé à ${this.acces()!.destinataire}.`);
+    } catch (e) {
+      this.erreur(e, "Le code n'a pas pu être envoyé.");
+    } finally {
+      this.envoi.set(false);
+    }
+  }
+
+  async validerCode(): Promise<void> {
+    if (!this.code.trim()) return;
+    this.envoi.set(true);
+    this.message.set(null);
+    try {
+      this.acces.set(await firstValueFrom(this.api.validerCodeIa(this.code.trim())));
+      this.code = '';
+      void this.demarrer();
+    } catch (e) {
+      this.erreur(e, "Le code n'a pas pu être vérifié.");
+      // Code annulé après trop d'erreurs : l'écran revient à « Recevoir un code ».
+      this.acces.set(await firstValueFrom(this.api.accesIa()).catch(() => this.acces()));
+    } finally {
+      this.envoi.set(false);
+    }
+  }
+
+  async fermerAcces(): Promise<void> {
+    try {
+      await firstValueFrom(this.api.fermerAccesIa());
     } catch {
-      this.indisponible.set(true);
+      // déjà refermé côté serveur : on relit l'état ci-dessous
+    }
+    this.fermerLocalement();
+    this.acces.set(await firstValueFrom(this.api.accesIa()).catch(() => null));
+  }
+
+  private fermerLocalement(): void {
+    this.choisie.set(null);
+    this.sessions.set([]);
+    this.lignes.set([]);
+    this.livraison.set(null);
+    this.pieces.set([]);
+  }
+
+  heure(iso: string | null): string {
+    return iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  }
+
+  /** Une réponse 403 en cours d'usage : l'heure est passée, on revient à l'écran du code. */
+  private async verifierAcces(): Promise<void> {
+    try {
+      const a = await firstValueFrom(this.api.accesIa());
+      if (!a.ouvert) {
+        this.fermerLocalement();
+        this.message.set("L'heure d'accès est écoulée : demandez un nouveau code.");
+      }
+      this.acces.set(a);
+    } catch {
+      // réseau : sans conséquence, le prochain appel réessaiera
     }
   }
 
@@ -508,8 +625,9 @@ export class AssistantIaComponent {
         const el = this.fil()?.nativeElement;
         if (el) el.scrollTop = el.scrollHeight;
       });
-    } catch {
-      // Réseau ou serveur momentanément absent : on réessaie au tour suivant.
+    } catch (e) {
+      if ((e as HttpErrorResponse)?.status === 403) void this.verifierAcces();
+      // Sinon réseau ou serveur momentanément absent : on réessaie au tour suivant.
     } finally {
       this.lectureEnCours = false;
     }
@@ -535,6 +653,10 @@ export class AssistantIaComponent {
   }
 
   private erreur(e: unknown, defaut: string): void {
+    if ((e as HttpErrorResponse)?.status === 403 && this.acces()?.ouvert) {
+      void this.verifierAcces();
+      return;
+    }
     this.message.set((e as HttpErrorResponse)?.error?.detail ?? defaut);
   }
 }

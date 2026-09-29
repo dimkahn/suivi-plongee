@@ -23,6 +23,8 @@ frontend/frontend-dev.pid
 
 # Secrets : jamais versionnés
 .env
+# Clé de déploiement GitHub de l'assistant IA (serveur de production)
+ia-ssh/
 application-local.yml
 
 # Fichier retiré de l'historique (données personnelles), à ne jamais recommitter

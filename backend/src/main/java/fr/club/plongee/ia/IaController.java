@@ -2,11 +2,12 @@ package fr.club.plongee.ia;
 
 import fr.club.plongee.ia.domain.JournalIa;
 import fr.club.plongee.ia.domain.SessionIa;
+import fr.club.plongee.ia.service.AccesIaService;
 import fr.club.plongee.ia.service.AssistantIaService;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import fr.club.plongee.commun.RegleMetierException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,14 +27,19 @@ import java.util.List;
  * qu'en profil dev : Claude Code tourne sur le poste du développeur, jamais
  * sur le serveur de production, où ces adresses répondent 404.
  *
- * <p>Réservé à un ADMIN qui a aussi le rôle IA. L'auteur de chaque geste
- * vient du SecurityContext.
+ * <p>Réservé à un ADMIN qui a aussi le rôle IA, et qui a saisi le code
+ * d'accès envoyé par courriel ({@link AccesIaService}) ; seules les
+ * adresses {@code /acces} échappent à cette dernière condition. L'auteur
+ * de chaque geste vient du SecurityContext.
  */
 @RestController
 @RequestMapping("/api/ia")
-@Profile("dev")
-@PreAuthorize("hasRole('ADMIN') and hasRole('IA')")
+@ConditionalOnProperty(name = "app.ia.active", havingValue = "true")
+@PreAuthorize("hasRole('ADMIN') and hasRole('IA') and @accesIa.ouvert(authentication)")
 public class IaController {
+
+    /** Les adresses du code d'accès : les rôles suffisent, l'accès n'est pas encore ouvert. */
+    private static final String ROLES = "hasRole('ADMIN') and hasRole('IA')";
 
     public record EtatVue(boolean disponible, String depot, String brancheCourante, String dossierTravail) {}
 
@@ -49,10 +55,42 @@ public class IaController {
 
     public record DemandeTag(@NotBlank String tag) {}
 
-    private final AssistantIaService service;
+    public record DemandeCode(@NotBlank String code) {}
 
-    public IaController(AssistantIaService service) {
+    private final AssistantIaService service;
+    private final AccesIaService acces;
+
+    public IaController(AssistantIaService service, AccesIaService acces) {
         this.service = service;
+        this.acces = acces;
+    }
+
+    @GetMapping("/acces")
+    @PreAuthorize(ROLES)
+    public AccesIaService.EtatAcces etatAcces(@AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return acces.etat(auteur.id());
+    }
+
+    /** Envoie un code à l'adresse configurée (app.ia.email-code), jamais à celle du demandeur. */
+    @PostMapping("/acces/code")
+    @PreAuthorize(ROLES)
+    public AccesIaService.EtatAcces demanderCode(@AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        acces.demanderCode(auteur.id());
+        return acces.etat(auteur.id());
+    }
+
+    @PostMapping("/acces")
+    @PreAuthorize(ROLES)
+    public AccesIaService.EtatAcces validerCode(@Valid @RequestBody DemandeCode demande,
+                                                @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return acces.valider(auteur.id(), demande.code());
+    }
+
+    @DeleteMapping("/acces")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize(ROLES)
+    public void fermerAcces(@AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        acces.fermer(auteur.id());
     }
 
     @GetMapping("/etat")
