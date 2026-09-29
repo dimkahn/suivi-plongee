@@ -4,6 +4,8 @@ import { ouvrirGrille, critere, noter } from '../grille.mjs';
 export default {
   id: 'M4',
   titre: 'Noter un élève pendant la séance',
+  public: 'Moniteur',
+  resume: 'Choisir la séance, noter les critères au programme, laisser un commentaire pour le prochain encadrant.',
   compte: 'e2@club.fr',
 
   async jouer(g) {

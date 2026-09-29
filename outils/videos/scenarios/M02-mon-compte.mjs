@@ -7,6 +7,8 @@ import { dessinerPortraits } from '../portraits.mjs';
 export default {
   id: 'M2',
   titre: 'Mon compte',
+  public: 'Moniteur',
+  resume: 'Déposer sa photo, retrouver son niveau et son CACI, changer son e-mail ou son mot de passe.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {

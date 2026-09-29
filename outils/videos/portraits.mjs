@@ -41,3 +41,32 @@ export async function dessinerPortraits(demandes) {
   await navigateur.close();
   return images;
 }
+
+/** Photos de matériel pour les prêts : un bloc et un détendeur dessinés, sur fond clair. */
+export async function dessinerMateriel() {
+  const bloc = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#DCE8EC"/><rect y="470" width="800" height="130" fill="#B9C9CF"/>
+    <rect x="330" y="140" width="140" height="380" rx="60" fill="#E8A33B"/>
+    <rect x="330" y="230" width="140" height="26" fill="#1F2A30" opacity=".25"/>
+    <rect x="378" y="96" width="44" height="54" rx="8" fill="#6B7780"/>
+    <rect x="360" y="80" width="80" height="24" rx="8" fill="#3E4A52"/>
+    <text x="400" y="400" font-family="sans-serif" font-size="34" font-weight="700" text-anchor="middle" fill="#fff">B-02</text>
+  </svg>`;
+  const detendeur = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+    <rect width="800" height="600" fill="#E6EEF1"/>
+    <circle cx="300" cy="300" r="70" fill="#3E4A52"/><circle cx="300" cy="300" r="34" fill="#9AA6AE"/>
+    <path d="M370 300 C470 300 470 200 560 200" stroke="#1F2A30" stroke-width="18" fill="none"/>
+    <circle cx="590" cy="200" r="52" fill="#FF7F50"/><rect x="570" y="250" width="40" height="40" rx="8" fill="#1F2A30"/>
+    <path d="M300 370 C300 470 420 480 480 470" stroke="#1F2A30" stroke-width="14" fill="none"/>
+    <circle cx="510" cy="468" r="36" fill="#F4F4F4" stroke="#1F2A30" stroke-width="8"/>
+  </svg>`;
+  const navigateur = await chromium.launch();
+  const page = await navigateur.newPage({ viewport: { width: 800, height: 600 } });
+  const images = [];
+  for (const svg of [bloc, detendeur]) {
+    await page.setContent(`<body style="margin:0">${svg}</body>`);
+    images.push(await page.screenshot({ type: 'jpeg', quality: 85 }));
+  }
+  await navigateur.close();
+  return images;
+}
