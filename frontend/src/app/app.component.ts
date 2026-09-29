@@ -65,6 +65,9 @@ declare const VERSION_APPLI: string;
                 Préparer hors ligne
               </button>
             }
+            <a routerLink="/videos" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+              Vidéos d'aide
+            </a>
             <a routerLink="/mon-compte" routerLinkActive="actif" class="qui" (click)="fermerMenu()"
                title="Mon compte : nom, e-mail, mot de passe">
               {{ auth.session()?.nomComplet }}

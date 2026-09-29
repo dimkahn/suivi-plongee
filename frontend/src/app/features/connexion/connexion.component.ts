@@ -1,11 +1,11 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-connexion',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="accueil">
       <div class="carte panneau">
@@ -43,6 +43,8 @@ import { AuthService } from '../../core/auth.service';
           <button type="button" class="lien-oubli" (click)="basculerOubli()">
             Mot de passe oublié ?
           </button>
+
+          <a routerLink="/videos" class="lien-oubli lien-videos">Vidéos d'aide : l'appli en images</a>
         } @else {
           <p class="secondaire">
             Indiquez votre e-mail : si un compte lui correspond, un lien de
@@ -90,6 +92,7 @@ import { AuthService } from '../../core/auth.service';
       background: none; border: none; color: var(--profond); font-size: .875rem;
       text-decoration: underline; text-align: center;
     }
+    .lien-videos { display: flex; align-items: center; justify-content: center; min-height: 44px; }
     .succes {
       background: #e6f4ea; color: #1e4620; border-radius: var(--r-s); padding: var(--pas-2);
     }

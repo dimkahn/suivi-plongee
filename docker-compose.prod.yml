@@ -78,6 +78,8 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ${CADDY_SITES:-./caddy-sites}:/etc/caddy/sites:ro
+      # Vidéos d'aide, hors du dépôt : publiées par outils/videos/publier.sh.
+      - ${VIDEOS:-./videos-publiees}:/srv/videos:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

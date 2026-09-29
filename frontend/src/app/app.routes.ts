@@ -180,5 +180,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/roster/trombinoscope.component')
       .then(m => m.TrombinoscopeComponent)
   },
+  // Page publique : les vidéos d'aide se regardent sans compte.
+  {
+    path: 'videos',
+    loadComponent: () => import('./features/videos/videos.component')
+      .then(m => m.VideosComponent)
+  },
   { path: '**', redirectTo: '' }
 ];
