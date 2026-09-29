@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -120,6 +120,11 @@ function aVerifier(m: MoniteurVue): boolean {
         @for (m of listeFiltree(); track m.id) {
           <li class="carte">
             <div class="ligne">
+              @if (urlPhoto(m.id); as url) {
+                <img class="avatar" [src]="url" [alt]="m.prenom + ' ' + m.nom" width="56" height="56">
+              } @else {
+                <div class="avatar silhouette" aria-hidden="true">{{ initiales(m) }}</div>
+              }
               <div class="identite">
                 <span class="nom">{{ m.prenom }} {{ m.nom }}</span>
                 <span class="secondaire">{{ m.email }}</span>
@@ -287,8 +292,15 @@ function aVerifier(m: MoniteurVue): boolean {
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
-    .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
-    .identite { display: flex; flex-direction: column; gap: 2px; }
+    .ligne { display: flex; align-items: flex-start; gap: var(--pas-2); }
+    .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .avatar {
+      flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--fond);
+    }
+    .silhouette {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-titres), sans-serif; font-size: .9375rem; font-weight: 700; color: var(--craie);
+    }
     .nom { font-weight: 700; }
     .etat {
       flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
@@ -308,7 +320,7 @@ function aVerifier(m: MoniteurVue): boolean {
     .mot-de-passe .bouton-principal { width: auto; margin-top: 0; }
 
     @media (max-width: 600px) {
-      .ligne { flex-direction: column; }
+      .ligne { flex-wrap: wrap; }
     }
   `]
 })
@@ -364,12 +376,47 @@ export class MoniteursComponent {
 
   constructor() {
     void this.charger();
+    inject(DestroyRef).onDestroy(() => {
+      for (const url of this.urlsPhotos().values()) URL.revokeObjectURL(url);
+    });
+  }
+
+  /** Photos affichées sur les lignes, par moniteur (adresses locales des images). */
+  private urlsPhotos = signal<Map<number, string>>(new Map());
+
+  private chargerPhoto(moniteurId: number): void {
+    this.api.photoMoniteur(moniteurId).then(
+      blob => this.poserPhoto(moniteurId, URL.createObjectURL(blob)),
+      () => { /* pas de photo consultable : les initiales restent affichées */ }
+    );
+  }
+
+  /** Remplace (ou retire, avec null) la photo affichée d'un moniteur. */
+  private poserPhoto(moniteurId: number, url: string | null): void {
+    const copie = new Map(this.urlsPhotos());
+    const ancienne = copie.get(moniteurId);
+    if (ancienne) URL.revokeObjectURL(ancienne);
+    if (url) copie.set(moniteurId, url);
+    else copie.delete(moniteurId);
+    this.urlsPhotos.set(copie);
+  }
+
+  urlPhoto(moniteurId: number): string | null {
+    return this.urlsPhotos().get(moniteurId) ?? null;
+  }
+
+  initiales(m: MoniteurVue): string {
+    return ((m.prenom[0] ?? '') + (m.nom[0] ?? '')).toUpperCase();
   }
 
   private async charger(): Promise<void> {
     this.chargement.set(true);
     try {
-      this.liste.set(await firstValueFrom(this.api.moniteurs()));
+      const liste = await firstValueFrom(this.api.moniteurs());
+      this.liste.set(liste);
+      for (const m of liste) {
+        if (m.aPhoto) this.chargerPhoto(m.id);
+      }
     } catch {
       this.message.set('Impossible de charger la liste des moniteurs.');
     } finally {
@@ -531,7 +578,11 @@ export class MoniteursComponent {
         && !confirm(`Retirer le droit à l'image de ${m.prenom} ${m.nom} ? Sa photo sera supprimée.`)) return;
     this.message.set(null);
     this.api.changerAutorisationImageMoniteur(m.id, !m.autorisationImage).subscribe({
-      next: maj => this.remplacer(maj),
+      next: maj => {
+        // Retirer le consentement supprime aussi la photo côté serveur.
+        if (!maj.aPhoto) this.poserPhoto(maj.id, null);
+        this.remplacer(maj);
+      },
       error: (e: HttpErrorResponse) =>
         this.message.set(e.error?.detail ?? "L'action n'a pas pu être enregistrée.")
     });
@@ -560,6 +611,7 @@ export class MoniteursComponent {
       await firstValueFrom(this.api.deposerPhotoMoniteur(r.moniteur.id, fichier));
       const actuel = this.liste().find(x => x.id === r.moniteur.id) ?? r.moniteur;
       this.remplacer({ ...actuel, aPhoto: true });
+      this.poserPhoto(r.moniteur.id, URL.createObjectURL(fichier));
       this.message.set(`Photo enregistrée pour ${r.moniteur.prenom} ${r.moniteur.nom}.`);
       this.recadrage.set(null);
     } catch (err) {
@@ -573,7 +625,10 @@ export class MoniteursComponent {
     if (!confirm(`Supprimer définitivement le compte de ${m.prenom} ${m.nom} ?`)) return;
     this.message.set(null);
     this.api.supprimerMoniteur(m.id).subscribe({
-      next: () => this.liste.set(this.liste().filter(x => x.id !== m.id)),
+      next: () => {
+        this.poserPhoto(m.id, null);
+        this.liste.set(this.liste().filter(x => x.id !== m.id));
+      },
       error: (e: HttpErrorResponse) =>
         this.message.set(e.error?.detail ?? "La suppression n'a pas pu être enregistrée.")
     });
