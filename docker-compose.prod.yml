@@ -34,7 +34,11 @@ services:
 
   backend:
     image: ghcr.io/dimkahn/suivi-plongee-backend:${VERSION:-latest}
-    build: ./backend
+    build:
+      context: ./backend
+      # « execution-ia » : image avec Claude Code, git, Maven et Node pour
+      # l'assistant IA (voir DEPLOIEMENT.md, « Assistant IA en production »).
+      target: ${BACKEND_CIBLE:-execution}
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -50,6 +54,29 @@ services:
       SMTP_MOT_DE_PASSE: ${SMTP_MOT_DE_PASSE:?definir SMTP_MOT_DE_PASSE dans .env (mot de passe d'application pour Gmail)}
       MAIL_EXPEDITEUR: ${MAIL_EXPEDITEUR:-Club de plongee <no-reply@cppjvo.fr>}
       CLUB_NOM: ${CLUB_NOM:-Club de plongee}
+      # Assistant IA : coupé tant que IA_ACTIVE n'est pas à true (et l'image
+      # construite avec BACKEND_CIBLE=execution-ia). Accès par code envoyé à
+      # app.ia.email-code (application.yml), avec les SMTP_* ci-dessus.
+      IA_ACTIVE: ${IA_ACTIVE:-false}
+      IA_DEPOT: /ia/depot
+      IA_DOSSIER: /ia/travail
+      IA_DEPOT_DISTANT: git@github.com:dimkahn/suivi-plongee.git
+      # Jeton de l'abonnement Claude (claude setup-token).
+      CLAUDE_CODE_OAUTH_TOKEN: ${CLAUDE_CODE_OAUTH_TOKEN:-}
+      CLAUDE_CONFIG_DIR: /ia/claude
+      # Clé de déploiement GitHub (droit d'écriture), pour le clone et le push
+      # du tag par le serveur ; jamais transmise à Claude Code lui-même.
+      GIT_SSH_COMMAND: ssh -i /ia/ssh/cle-deploiement -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/ia/known_hosts
+      GIT_AUTHOR_NAME: Assistant IA
+      GIT_AUTHOR_EMAIL: ${IA_EMAIL_COMMITS:-assistant-ia@invalid}
+      GIT_COMMITTER_NAME: Assistant IA
+      GIT_COMMITTER_EMAIL: ${IA_EMAIL_COMMITS:-assistant-ia@invalid}
+    volumes:
+      # Dépôt de l'assistant, copies de travail, journal, historique Claude.
+      - ia-donnees:/ia
+      - ia-maven:/root/.m2
+      # Clé de déploiement, déposée à la main sur le serveur (jamais commitée).
+      - ./ia-ssh:/ia/ssh:ro
     depends_on:
       db:
         condition: service_healthy
@@ -81,5 +108,7 @@ services:
 
 volumes:
   db-data:
+  ia-donnees:
+  ia-maven:
   caddy-data:
   caddy-config:

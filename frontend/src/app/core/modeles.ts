@@ -942,6 +942,17 @@ export interface EtatIaVue {
   dossierTravail: string;
 }
 
+/** Verrou de l'assistant : code à usage unique envoyé par courriel, valable une heure. */
+export interface AccesIaVue {
+  ouvert: boolean;
+  /** Fin de l'accès (ISO), quand il est ouvert. */
+  ouvertJusquA: string | null;
+  /** Adresse qui reçoit les codes, masquée (« k•••i@gmail.com »). */
+  destinataire: string;
+  /** Un code a été envoyé et peut encore être saisi. */
+  codeEnvoye: boolean;
+}
+
 export interface SessionIaVue {
   id: number;
   titre: string;

@@ -8,7 +8,7 @@ import fr.club.plongee.securite.repository.UtilisateurRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +30,7 @@ import java.time.ZoneId;
  * des tests : chaque ligne est sa propre transaction.
  */
 @Service
-@Profile("dev")
+@ConditionalOnProperty(name = "app.ia.active", havingValue = "true")
 public class JournalIaService {
 
     private static final Logger log = LoggerFactory.getLogger(JournalIaService.class);
@@ -61,13 +61,24 @@ public class JournalIaService {
         return ligne;
     }
 
-    private synchronized void recopier(Long sessionId, TypeJournalIa type, String contenu, String commitSha,
-                                       Long auteurId) {
-        String ligne = "%s session=%d %s auteur=%s%s %s%n".formatted(
+    /**
+     * Événements qui ne relèvent d'aucune session (code d'accès demandé,
+     * accès ouvert ou refermé) : dans journal.log seulement, la table
+     * journal_ia étant rattachée à une session.
+     */
+    public void noterHorsSession(String texte) {
+        ecrire("%s ACCES %s%n".formatted(OffsetDateTime.now(ZoneId.of("Europe/Paris")), texte));
+    }
+
+    private void recopier(Long sessionId, TypeJournalIa type, String contenu, String commitSha, Long auteurId) {
+        ecrire("%s session=%d %s auteur=%s%s %s%n".formatted(
                 OffsetDateTime.now(ZoneId.of("Europe/Paris")), sessionId, type,
                 auteurId == null ? "assistant" : auteurId,
                 commitSha == null ? "" : " commit=" + commitSha,
-                contenu == null ? "" : contenu.replace("\n", "\n    "));
+                contenu == null ? "" : contenu.replace("\n", "\n    ")));
+    }
+
+    private synchronized void ecrire(String ligne) {
         try {
             Files.createDirectories(fichier.getParent());
             Files.writeString(fichier, ligne, StandardCharsets.UTF_8,

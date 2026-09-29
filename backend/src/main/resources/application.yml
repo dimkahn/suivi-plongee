@@ -14,9 +14,11 @@ spring:
     locations: classpath:db/migration
   servlet:
     multipart:
-      # Photos du trombinoscope : 5 Mo max, revalide côté serveur dans EleveController.
-      max-file-size: 5MB
-      max-request-size: 5MB
+      # 20 Mo pour les pièces jointes de l'assistant IA (10 par message). Les
+      # photos gardent 5 Mo, vérifiés par leurs services (EleveController,
+      # PhotoMoniteurService, PhotoPretService).
+      max-file-size: 20MB
+      max-request-size: 60MB
 
 app:
   jwt:
@@ -40,6 +42,36 @@ app:
   club:
     # Nom de la structure, en-tete obligatoire de la fiche de securite (A322-72).
     nom: ${CLUB_NOM:Club de plongee}
+  # Assistant IA (fr.club.plongee.ia, page /ia) : Claude Code piloté depuis
+  # l'application. Coupé par défaut ; activé en profil dev, ou en production
+  # par IA_ACTIVE=true (image backend « execution-ia », voir DEPLOIEMENT.md).
+  # L'accès exige en plus un code envoyé par courriel (AccesIaService).
+  ia:
+    active: ${IA_ACTIVE:false}
+    # Depot git principal : mvn spring-boot:run se lance depuis backend/.
+    depot: ${IA_DEPOT:/home/dev/suivi-plongee-ia}
+    # Adresse GitHub du dépôt, pour que le serveur le clone dans « depot » au
+    # premier usage (production). Vide : le dépôt doit déjà y être.
+    depot-distant: ${IA_DEPOT_DISTANT:}
+    # Copies de travail (une par session) et journal.log, hors du depot.
+    dossier-travail: ${IA_DOSSIER:${user.home}/.suivi-plongee-ia}
+    claude: ${IA_CLAUDE:claude}
+    mvn: ${IA_MVN:mvn}
+    # Code d'accès à usage unique (OTP), envoyé à cette adresse et à elle
+    # seule, quel que soit l'admin qui le demande.
+    email-code: ${IA_EMAIL_CODE:kahn.dimitri@gmail.com}
+    # Validité du code à partir de son envoi : il se saisit dans ce délai,
+    # et l'accès qu'il ouvre se referme à la fin du même délai. En mémoire :
+    # un redémarrage du serveur referme aussi l'accès.
+    validite-code-minutes: 60
+    # Serveur d'envoi du code, à part de spring.mail (le profil dev n'envoie
+    # aucun autre courriel). Mêmes variables qu'en production ; sans
+    # SMTP_HOTE, pas de code.
+    smtp:
+      hote: ${SMTP_HOTE:}
+      port: ${SMTP_PORT:587}
+      utilisateur: ${SMTP_UTILISATEUR:}
+      mot-de-passe: ${SMTP_MOT_DE_PASSE:}
 
 # Seul /actuator/health est exposé (autorisé sans jeton dans SecurityConfig),
 # pour le contrôle de santé du déploiement. Le serveur SMTP n'y est pas
@@ -72,23 +104,11 @@ spring:
       enabled: true
   flyway:
     locations: classpath:db/migration, classpath:db/demo
-  # Pièces jointes de l'assistant IA (20 Mo par fichier, 10 par message).
-  # Les photos gardent leur propre limite de 5 Mo, vérifiée par leurs services.
-  servlet:
-    multipart:
-      max-file-size: 20MB
-      max-request-size: 60MB
 
-# Assistant IA (fr.club.plongee.ia, page /ia) : profil dev uniquement,
-# Claude Code tourne sur ce poste avec le compte qui y est connecte.
+# Assistant IA : activé par ce profil (IA_ACTIVE=false pour le couper).
 app:
   ia:
-    # Depot git principal : mvn spring-boot:run se lance depuis backend/.
-    depot: ${IA_DEPOT:/home/dev/suivi-plongee-ia}
-    # Copies de travail (une par session) et journal.log, hors du depot.
-    dossier-travail: ${IA_DOSSIER:${user.home}/.suivi-plongee-ia}
-    claude: ${IA_CLAUDE:claude}
-    mvn: ${IA_MVN:mvn}
+    active: ${IA_ACTIVE:true}
 
 ---
 spring:

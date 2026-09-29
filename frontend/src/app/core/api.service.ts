@@ -12,7 +12,7 @@ import {
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue,
   DemandeSortie, SeancePossibleVue, SortieVue,
-  EtatIaVue, LigneJournalIaVue, LivraisonIaVue, SessionIaVue
+  AccesIaVue, EtatIaVue, LigneJournalIaVue, LivraisonIaVue, SessionIaVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -907,6 +907,23 @@ export class ApiService {
   //  Assistant IA : profil dev seulement (le serveur de production
   //  répond 404). Réservé aux admins qui ont le rôle IA.
   // ---------------------------------------------------------------
+
+  accesIa(): Observable<AccesIaVue> {
+    return this.http.get<AccesIaVue>('/api/ia/acces');
+  }
+
+  /** Le code part à l'adresse configurée côté serveur (app.ia.email-code), jamais à celle du demandeur. */
+  demanderCodeIa(): Observable<AccesIaVue> {
+    return this.http.post<AccesIaVue>('/api/ia/acces/code', {});
+  }
+
+  validerCodeIa(code: string): Observable<AccesIaVue> {
+    return this.http.post<AccesIaVue>('/api/ia/acces', { code });
+  }
+
+  fermerAccesIa(): Observable<unknown> {
+    return this.http.delete('/api/ia/acces');
+  }
 
   etatIa(): Observable<EtatIaVue> {
     return this.http.get<EtatIaVue>('/api/ia/etat');

@@ -215,33 +215,50 @@ Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.
 
-**Assistant IA : Claude Code piloté depuis l'application, en local seulement (2026).**
+**Assistant IA : Claude Code piloté depuis l'application (2026).**
 Rôle `IA` (V33), donné dans l'écran Moniteurs et **réservé à un ADMIN** :
 refusé sans le rôle ADMIN, retiré avec lui (`AdminMoniteurService`).
-Paquet `fr.club.plongee.ia`, page `/ia`. `IaController` et
-`AssistantIaService` sont en `@Profile("dev")` : Claude Code tourne sur le
-poste du développeur, avec le compte qui y est connecté (`claude`, puis
-`/login`), **jamais sur le serveur de production**, où `/api/ia/**` répond
-404. Chaque session = une branche `ia/...` et sa copie de travail
-(`git worktree`) dans `app.ia.dossier-travail` (`~/.suivi-plongee-ia`),
-hors du dépôt ; un message = un `claude -p --output-format stream-json`,
-repris par `--resume`, lu ligne à ligne vers le journal. L'assistant ne fait
-que coder et commiter sur sa branche : push, merge, tag, changement de
-branche sont refusés par `--disallowedTools`, et `GIT_SSH_COMMAND=false`
-bloque le push quoi qu'il arrive. Tests, merge et tag+push sont des
-**boutons confirmés** de la page ; le serveur exige un `mvn test` vert
-(pom racine, frontend compris), inscrit au journal (`TESTS_OK` +
-`commit_sha`), **sur le commit exact** mergé (avance rapide seulement :
-master devient le commit testé) ou tagué. Le tag poussé part en production
-par `surveiller-tags.sh`. `journal_ia` est en ajout seul comme `evaluation`,
-recopié dans `journal.log` du dossier de travail (la base dev est en
-mémoire). Les copies de travail ne sont pas supprimées automatiquement
-(`git worktree remove`). **Pièces jointes** (captures collées, documents) :
-10 fichiers de 20 Mo au plus par message (limite multipart relevée en
-profil dev seulement ; les photos gardent leurs 5 Mo, vérifiés par leurs
-services), rangées à côté de la copie de travail dans `…-pieces/`, jamais
-dedans, sous un nom nettoyé ; Claude Code y a accès par `--add-dir` et
-reçoit leurs chemins dans le message.
+**Code d'accès (OTP)** en plus des rôles (`AccesIaService`, bean `accesIa`
+dans le `@PreAuthorize` d'`IaController`) : un code à usage unique envoyé
+à `app.ia.email-code` et à elle seule, quel que soit l'admin qui le
+demande ; il vaut `app.ia.validite-code-minutes` (60) à partir de l'envoi,
+et l'accès qu'il ouvre se referme au même moment. Code haché, 5 erreurs
+l'annulent, en mémoire (un redémarrage referme tout). Envoi par
+`EnvoiCodeIaSmtp`, SMTP à part (`app.ia.smtp`, variables `SMTP_*`) puisque
+le profil dev n'envoie pas de courriel : non configuré, pas de code, jamais
+de repli sur la console.
+**Choix révisé (2026) : plus seulement en local.** Les beans de
+`fr.club.plongee.ia` dépendent de `app.ia.active` (vrai en profil dev,
+`IA_ACTIVE=true` ailleurs), plus du profil. En production : image backend
+`execution-ia` (`BACKEND_CIBLE`), volume `/ia`, clé de déploiement GitHub
+et jeton Claude ; voir DEPLOIEMENT.md, « Assistant IA en production ».
+Choix du propriétaire du dépôt, seul utilisateur : l'assistant tourne alors
+dans le conteneur du backend, à côté de la base. Claude Code et les tests
+ne reçoivent qu'un environnement filtré (`filtrerEnvironnement` : ni
+secrets, ni agent SSH, `GIT_SSH_COMMAND=false`), mais `/proc/1/environ`
+reste lisible sous le même utilisateur : ne pas lui faire lire de fichier
+d'origine douteuse.
+Chaque session = une branche `ia/...` et sa copie de travail
+(`git worktree`) dans `app.ia.dossier-travail`, hors du dépôt
+`app.ia.depot` (cloné depuis `app.ia.depot-distant` au premier usage s'il
+manque ; master y est ramené à celui de GitHub, en avance rapide, avant une
+session ou un merge). Un message = un `claude -p --output-format
+stream-json`, repris par `--resume`, lu ligne à ligne vers le journal.
+L'assistant ne fait que coder et commiter sur sa branche : push, merge,
+tag, changement de branche sont refusés par `--disallowedTools`. Tests,
+merge et tag+push sont des **boutons confirmés** de la page ; le serveur
+exige un `mvn test` vert (pom racine, frontend compris), inscrit au journal
+(`TESTS_OK` + `commit_sha`), **sur le commit exact** mergé (avance rapide
+seulement : master devient le commit testé) ou tagué. Le tag poussé part en
+production par `surveiller-tags.sh` (en production, ce redéploiement
+redémarre le backend, donc l'assistant). `journal_ia` est en ajout seul
+comme `evaluation`, recopié dans `journal.log` du dossier de travail.
+**Pièces jointes** : 10 fichiers de 20 Mo au plus par message (limite
+multipart de 20 Mo ; les photos gardent 5 Mo, vérifiés par leurs services ;
+nginx 60 Mo sur `/api/ia/` seulement), rangées à côté de la copie de
+travail dans `…-pieces/`, jamais dedans ; Claude Code y a accès par
+`--add-dir`. Les copies de travail ne sont pas supprimées automatiquement
+(`git worktree remove`).
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
