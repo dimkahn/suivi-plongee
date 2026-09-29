@@ -2,6 +2,8 @@
 export default {
   id: 'M15',
   titre: 'Le trombinoscope',
+  public: 'Moniteur',
+  resume: 'Mettre un nom sur un visage : élèves par groupe et encadrants du club.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, menu }) {

@@ -2,6 +2,8 @@
 export default {
   id: 'M14',
   titre: 'Dire si je suis présent à une soirée',
+  public: 'Moniteur',
+  resume: 'Dire en un toucher si l\'on sera là aux prochaines soirées.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu }) {

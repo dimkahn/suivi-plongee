@@ -2,6 +2,8 @@
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
+  public: 'Moniteur',
+  resume: 'La feuille de présence d\'une séance en moins d\'une minute : nage, bloc ou théorie pour chaque élève.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, menu, choisirDerniereSeance }) {

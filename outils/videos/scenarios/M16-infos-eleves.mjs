@@ -2,6 +2,8 @@
 export default {
   id: 'M16',
   titre: 'Infos élèves',
+  public: 'Moniteur',
+  resume: 'Toute la saison sur un écran : CACI, séances suivies, contacts d\'urgence.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut }) {

@@ -4,6 +4,8 @@ import { ouvrirGrille, ouvrirBloc, critere, noter } from '../grille.mjs';
 export default {
   id: 'M5',
   titre: 'Corriger une note et retrouver l\'historique',
+  public: 'Moniteur',
+  resume: 'Rien ne s\'efface : corriger une note et retrouver qui a noté quoi, et quand.',
   compte: 'e2@club.fr',
 
   async jouer(g) {

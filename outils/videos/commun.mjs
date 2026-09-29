@@ -1,16 +1,28 @@
-// Outils communs aux scénarios : navigateur au format téléphone, connexion,
-// sous-titres incrustés et « toucher » visible (un rond à l'endroit touché),
-// pour qu'on voie à la vidéo ce que le moniteur fait avec son doigt.
+// Outils communs aux scénarios : navigateur au format téléphone (ou
+// ordinateur pour l'administration), connexion, sous-titres incrustés et
+// « toucher » visible (un rond à l'endroit touché), pour qu'on voie à la
+// vidéo ce que l'utilisateur fait avec son doigt ou sa souris.
 
 import { chromium, devices } from 'playwright';
 
 export const APPLI = process.env.APPLI ?? 'http://localhost:4200';
 export const MOT_DE_PASSE = 'plongee2026';
 
-// Pixel 7 : 412 × 915 points. La vidéo est enregistrée en 2×, assez net
-// pour un écran d'ordinateur ou un vidéoprojecteur.
+// Pixel 7 : 412 × 839 points utiles. Playwright filme la page à sa taille
+// CSS et ne l'agrandit jamais : une vidéo plus grande que l'écran laisserait
+// la page dans un coin, entourée de gris. L'administration se fait plutôt à
+// un bureau : format ordinateur, 1280 × 800.
 const TELEPHONE = devices['Pixel 7'];
-const TAILLE_VIDEO = { width: TELEPHONE.viewport.width * 2, height: TELEPHONE.viewport.height * 2 };
+const FORMATS = {
+  telephone: {
+    contexte: TELEPHONE,
+    video: { ...TELEPHONE.viewport }
+  },
+  ordinateur: {
+    contexte: { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
+    video: { width: 1280, height: 800 }
+  }
+};
 
 /** Multiplie toutes les pauses (RYTHME=1.5 pour une vidéo plus posée). */
 const RYTHME = Number(process.env.RYTHME ?? 1);
@@ -61,21 +73,22 @@ const INCRUSTATIONS = `
  * Ouvre un navigateur, connecte `compte` hors caméra (sauf `connecte: false`)
  * et renvoie une page qui enregistre la vidéo dans `dossier`.
  */
-export async function ouvrirTournage({ compte, connecte = true, dossier }) {
+export async function ouvrirTournage({ compte, connecte = true, dossier, format = 'telephone' }) {
+  const { contexte: appareil, video } = FORMATS[format];
   const navigateur = await chromium.launch();
   let etat;
   if (connecte) {
     // Connexion dans un contexte sans caméra ; « Se souvenir de moi » pose le
     // cookie de rafraîchissement, que le contexte filmé reprend.
-    const coulisses = await navigateur.newContext({ ...TELEPHONE, locale: 'fr-FR' });
+    const coulisses = await navigateur.newContext({ ...appareil, locale: 'fr-FR' });
     const p = await coulisses.newPage();
     await seConnecter(p, compte);
     etat = await coulisses.storageState();
     await coulisses.close();
   }
   const contexte = await navigateur.newContext({
-    ...TELEPHONE, locale: 'fr-FR', timezoneId: 'Europe/Paris', storageState: etat,
-    recordVideo: { dir: dossier, size: TAILLE_VIDEO }
+    ...appareil, locale: 'fr-FR', timezoneId: 'Europe/Paris', storageState: etat,
+    recordVideo: { dir: dossier, size: video }
   });
   await contexte.addInitScript(INCRUSTATIONS);
   const page = await contexte.newPage();
@@ -90,8 +103,11 @@ export async function seConnecter(page, email) {
   await page.waitForURL(u => !u.pathname.includes('connexion'));
 }
 
-/** Les gestes filmés, liés à une page. */
-export function gestes(page) {
+/**
+ * Les gestes filmés, liés à une page. `vignette` : chemin de l'image
+ * d'aperçu de la vidéo, prise par le geste du même nom.
+ */
+export function gestes(page, { vignette: cheminVignette } = {}) {
   const pause = ms => page.waitForTimeout(ms * RYTHME);
 
   /**
@@ -141,10 +157,83 @@ export function gestes(page) {
     await pause(700);
   };
 
-  /** Ouvre le menu (téléphone) et touche une entrée. */
+  /** Touche une entrée du menu ; sur téléphone, ouvre d'abord le menu (☰). */
   const menu = async entree => {
-    await toucher(page.getByRole('button', { name: 'Menu' }), { apres: 700 });
+    const bouton = page.getByRole('button', { name: 'Menu' });
+    if (await bouton.isVisible()) await toucher(bouton, { apres: 700 });
     await toucher(page.locator('#menu-principal').getByText(entree, { exact: true }), { apres: 1200 });
+  };
+
+  /** Menu « Administration », puis la carte `ecran` de la page d'accueil admin. */
+  const administration = async ecran => {
+    await menu('Administration');
+    await toucher(page.locator('main a').filter({ hasText: ecran }).first(), { apres: 1200 });
+  };
+
+  /** Choisit l'option `libelle` d'une liste déroulante (`exact: false` : début du libellé). */
+  const choisir = async (cible, libelle, { exact = true } = {}) => {
+    const el = typeof cible === 'string' ? page.locator(cible).first() : cible;
+    await toucher(el, { apres: 200 });
+    let valeur = libelle;
+    if (!exact) {
+      valeur = await el.evaluate((s, debut) => {
+        const o = [...s.options].find(x => x.textContent.trim().startsWith(debut));
+        return o ? o.textContent.trim() : debut;
+      }, libelle);
+    }
+    await el.selectOption({ label: valeur });
+    await page.keyboard.press('Escape').catch(() => {});
+    await pause(600);
+  };
+
+  /** Coche ou décoche une case (cible : la case elle-même ou son libellé). */
+  const cocher = async (cible, valeur = true) => {
+    const el = typeof cible === 'string' ? page.locator(cible).first() : cible;
+    if ((await el.isChecked()) !== valeur) await toucher(el, { apres: 500 });
+  };
+
+  /** Remplit un champ date (AAAA-MM-JJ) : le sélecteur natif ne se filme pas. */
+  const dater = async (cible, date) => {
+    const el = typeof cible === 'string' ? page.locator(cible).first() : cible;
+    await toucher(el, { apres: 200 });
+    await el.fill(date);
+    await pause(500);
+  };
+
+  /** Liste à recherche de l'appli (app-combobox) : tape `texte`, touche l'option `option`. */
+  const rechercherEtChoisir = async (idChamp, texte, option = texte) => {
+    await saisir(`#${idChamp}`, texte);
+    await toucher(page.locator(`#${idChamp}-liste button`).filter({ hasText: option }).first(), { apres: 700 });
+  };
+
+  /**
+   * Liste native <datalist> (plongeur du club) : tape le début du nom, puis
+   * reprend l'option complète, comme un toucher sur la suggestion du clavier.
+   */
+  const suggestion = async (cible, debut) => {
+    const el = typeof cible === 'string' ? page.locator(cible).first() : cible;
+    await saisir(el, debut);
+    await el.evaluate((champ, d) => {
+      const liste = document.getElementById(champ.getAttribute('list'));
+      const o = [...(liste?.options ?? [])].find(x => x.value.startsWith(d));
+      if (o) champ.value = o.value;
+      champ.dispatchEvent(new Event('change', { bubbles: true }));
+    }, debut);
+    await pause(800);
+  };
+
+  /** Coupe ou rétablit le réseau (mode avion). */
+  const reseau = async actif => {
+    await page.context().setOffline(!actif);
+    await pause(600);
+  };
+
+  /** Capture l'image d'aperçu de la vidéo (la dernière prise l'emporte). */
+  const vignette = async () => {
+    if (!cheminVignette) return;
+    await page.evaluate(() => window.__videoSousTitre?.(null));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: cheminVignette, type: 'jpeg', quality: 80 });
   };
 
   /**
@@ -159,5 +248,8 @@ export function gestes(page) {
     await toucher(dialogue.locator('.seances-du-jour button').first(), { apres: 1200 });
   };
 
-  return { page, pause, legende, toucher, saisir, defiler, enHaut, menu, choisirDerniereSeance };
+  return {
+    page, pause, legende, toucher, saisir, defiler, enHaut, menu, administration,
+    choisir, cocher, dater, reseau, vignette, choisirDerniereSeance, rechercherEtChoisir, suggestion
+  };
 }

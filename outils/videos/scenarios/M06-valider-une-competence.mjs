@@ -4,6 +4,8 @@ import { ouvrirGrille, ouvrirBloc, bloc, critere, noter } from '../grille.mjs';
 export default {
   id: 'M6',
   titre: 'Valider une compétence',
+  public: 'Moniteur',
+  resume: 'Valider un bloc de compétences quand tous ses critères sont acquis, et comprendre les refus.',
   compte: 'e2@club.fr',
 
   async jouer(g) {

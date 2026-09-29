@@ -4,6 +4,8 @@ import { APPLI } from '../commun.mjs';
 export default {
   id: 'M1',
   titre: 'Se connecter et s\'y retrouver',
+  public: 'Moniteur',
+  resume: 'Se connecter depuis son téléphone, trouver les écrans dans le menu, récupérer un mot de passe oublié.',
   compte: 'e2@club.fr',
   connecte: false,
 

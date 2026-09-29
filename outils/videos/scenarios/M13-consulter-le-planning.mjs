@@ -2,6 +2,8 @@
 export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',
+  public: 'Moniteur',
+  resume: 'Où est mon groupe ce soir ? Ligne d\'eau, fosse, responsable de séance et avertissements.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {
