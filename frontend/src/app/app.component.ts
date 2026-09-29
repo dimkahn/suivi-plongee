@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
 import { FileEcrituresService } from './core/file-ecritures.service';
+import { MiseAJourService } from './core/mise-a-jour.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 
 /**
@@ -80,6 +81,13 @@ declare const VERSION_APPLI: string;
         </header>
       }
 
+      @if (miseAJour.disponible()) {
+        <div class="bandeau-version" role="status">
+          <span>Une nouvelle version de l'application est disponible.</span>
+          <button type="button" (click)="miseAJour.appliquer()">Mettre à jour</button>
+        </div>
+      }
+
       <app-bandeau-sync />
 
       <main><router-outlet /></main>
@@ -137,6 +145,13 @@ declare const VERSION_APPLI: string;
       border: 1px solid rgba(255,255,255,.5); border-radius: var(--r-s);
       padding: 2px 8px; font-weight: 700; font-size: .8125rem;
     }
+    .bandeau-version {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--pas-2); flex-wrap: wrap;
+      padding: 10px var(--pas-3); font-size: .9375rem;
+      background: var(--en-cours-clair); color: var(--en-cours);
+    }
+    .bandeau-version button { min-height: 44px; }
     main { max-width: 1120px; margin: 0 auto; padding: var(--pas-3); }
     .version { text-align: center; color: var(--craie); font-size: 0.75rem; padding: var(--pas-2); }
     @media (max-width: 600px) { main { padding: var(--pas-2); } }
@@ -165,6 +180,7 @@ export class AppComponent {
   auth = inject(AuthService);
   private file = inject(FileAttenteService);
   private ecritures = inject(FileEcrituresService);
+  miseAJour = inject(MiseAJourService);
 
   @ViewChild(BandeauSyncComponent) bandeau?: BandeauSyncComponent;
 
@@ -179,6 +195,7 @@ export class AppComponent {
     void this.ecritures.demarrer();
 
     this.auth.initialiser();
+    this.miseAJour.demarrer();
   }
 
   fermerMenu(): void {
