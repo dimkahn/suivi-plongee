@@ -6,3 +6,8 @@
 {$DOMAINE} {
 	reverse_proxy frontend:80
 }
+
+# Sites en plus, propres à la machine (un fichier *.caddy par site), rangés
+# hors du dépôt : dossier CADDY_SITES du .env, vide par défaut (caddy-sites/).
+# Un service lancé sur l'hôte même se joint par host.docker.internal.
+import /etc/caddy/sites/*.caddy
