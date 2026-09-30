@@ -46,9 +46,13 @@ const INCRUSTATIONS = `
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installer);
     else installer();
+    // Un <dialog> modal passe au-dessus de tout, z-index compris : le
+    // sous-titre et le rond du toucher se logent dedans tant qu'il est ouvert.
+    const hote = () => document.querySelector('dialog[open]') ?? document.documentElement;
     window.__videoSousTitre = (texte, enHaut) => {
       installer();
       const st = document.getElementById('video-soustitre');
+      if (st.parentNode !== hote()) hote().appendChild(st);
       // En haut quand le geste filmé se passe en bas de l'écran (barre de choix).
       st.style.top = enHaut ? '84px' : 'auto';
       st.style.bottom = enHaut ? 'auto' : '20px';
@@ -62,7 +66,7 @@ const INCRUSTATIONS = `
         borderRadius: '50%', background: 'rgba(255, 127, 80, .45)', border: '3px solid #ff7f50',
         zIndex: 2147483646, pointerEvents: 'none', transition: 'transform .5s, opacity .5s'
       });
-      document.documentElement.appendChild(rond);
+      hote().appendChild(rond);
       requestAnimationFrame(() => { rond.style.transform = 'scale(1.6)'; rond.style.opacity = '0'; });
       setTimeout(() => rond.remove(), 700);
     };
