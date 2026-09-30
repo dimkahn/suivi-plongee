@@ -279,6 +279,28 @@ Compte : `e2@club.fr` · format téléphone · 40 s
 8. « Informations supplémentaires » : téléphone et contact d'urgence.
 9. Aucune donnée de santé n'est enregistrée : seule la date de fin du certificat.
 
+### M17 — Noter les présents en une fois
+
+Tout le groupe a travaillé le même exercice : une seule notation pour tous les présents, un commentaire par critère.
+
+Compte : `e2@club.fr` · format téléphone · 62 s
+
+1. Tout le groupe a fait le même exercice ? Notez-le en une fois, depuis « Présences ».
+2. Choisissez la séance : ici, la piscine du lundi 21 septembre.
+3. Filtrez sur votre groupe, puis faites l'appel si ce n'est pas déjà fait.
+4. Touchez « Noter les présents ».
+5. Les présents du groupe sont tous cochés. Décochez celui qui n'a pas fait l'exercice.
+6. Puis cochez le ou les critères travaillés. Les blocs « Au programme » du mois viennent en premier.
+7. Chaque critère coché demande son commentaire : il s'ajoutera à la fiche de chaque élève.
+8. Un deuxième critère ? Même chose, avec son propre commentaire.
+9. Tant qu'un commentaire manque, « Valider la notation » reste grisé.
+10. Rien ne recule : un critère acquis reste acquis, un critère en cours reste en cours.
+11. Un critère non abordé passe « en cours ». Le commentaire s'ajoute dans tous les cas.
+12. La notation groupée demande le réseau.
+13. Le bilan s'affiche en haut de la feuille de présence.
+14. Dans la fiche de Hugo, le vidage de masque est passé « en cours », avec le commentaire.
+15. Pour noter un élève à part, sa grille reste là, comme avant.
+
 ## Administrateur
 
 ### A1 — Tour de l'administration
