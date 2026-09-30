@@ -312,9 +312,11 @@ outils/videos/publier.sh     # copie dans le dossier servi par Caddy
 ```
 
 Ni tag ni redéploiement : la page relit `catalogue.json` à chaque visite.
-Installer `ffmpeg` (`sudo apt install ffmpeg`) pour produire aussi des MP4,
-que les iPhone lisent mieux que le WebM. Détails dans
-`outils/videos/LISEZ-MOI.md`.
+Installer `ffmpeg` et `pip` (`sudo apt install ffmpeg python3-pip`) : ffmpeg
+monte la voix off (les sous-titres lus par Piper, synthèse vocale installée
+par `tourner.sh` dans `outils/videos/.piper/`) et produit les MP4, que les
+iPhone lisent mieux que le WebM. Sans eux, les vidéos restent muettes, en
+WebM. Détails dans `outils/videos/LISEZ-MOI.md`.
 
 ## Changer de machine
 

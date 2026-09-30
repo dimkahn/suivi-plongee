@@ -18,9 +18,9 @@
 // backend redémarré.
 
 import { readdir, readFile, rename, mkdir, rm, writeFile, stat } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ouvrirTournage, gestes } from './commun.mjs';
+import { ouvrirTournage, ouvrirVoix, gestes } from './commun.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const SORTIES = join(ICI, 'sorties');
@@ -46,6 +46,8 @@ if (fichiers.length === 0) {
 }
 
 let echecs = 0;
+// Voix off : chaque sous-titre lu par Piper, monté ensuite par monter.mjs.
+const voix = await ouvrirVoix(join(SORTIES, 'voix'));
 
 for (const fichier of fichiers) {
   const scenario = (await import(`./scenarios/${fichier}`)).default;
@@ -55,7 +57,7 @@ for (const fichier of fichiers) {
   process.stdout.write(`${scenario.id} — ${scenario.titre}… `);
 
   await rm(join(SORTIES, `${nom}-ECHEC.png`), { force: true });
-  const { navigateur, contexte, page } = await ouvrirTournage({
+  const { navigateur, contexte, page, debutVideo } = await ouvrirTournage({
     compte: scenario.compte, connecte: scenario.connecte ?? true,
     format: scenario.format ?? 'telephone', dossier: brouillon
   });
@@ -63,7 +65,7 @@ for (const fichier of fichiers) {
   let vignettePrise = false;
   const texte = [];
   try {
-    const g = gestes(page, { vignette: cheminVignette });
+    const g = gestes(page, { vignette: cheminVignette, voix, debutVideo });
     const vignette = g.vignette;
     g.vignette = async () => { vignettePrise = true; await vignette(); };
     const legende = g.legende;
@@ -72,12 +74,15 @@ for (const fichier of fichiers) {
       await legende(t, ...reste);
     };
     await scenario.jouer(g);
+    await g.attendreVoix(); // ne pas couper la dernière phrase
     if (!vignettePrise) await vignette();
     const duree = Math.round((Date.now() - debut) / 1000);
     await contexte.close(); // termine l'écriture de la vidéo
     const [video] = await readdir(brouillon);
     await rename(join(brouillon, video), join(SORTIES, `${nom}.webm`));
-    await writeFile(join(SORTIES, `${nom}.json`), JSON.stringify({ duree, texte }));
+    await writeFile(join(SORTIES, `${nom}.json`), JSON.stringify({
+      duree, texte, voix: g.pistes.map(p => ({ debut: p.debut, fichier: basename(p.fichier) }))
+    }));
     console.log(`sorties/${nom}.webm (${duree} s)`);
   } catch (e) {
     echecs++;
@@ -90,6 +95,7 @@ for (const fichier of fichiers) {
   }
 }
 
+voix?.fermer();
 await ecrireCatalogue();
 process.exit(echecs ? 1 : 0);
 
@@ -105,9 +111,9 @@ async function ecrireCatalogue() {
     const s = (await import(`./scenarios/${fichier}`)).default;
     const nom = fichier.replace(/\.mjs$/, '');
     const tournee = await existe(`${nom}.webm`);
-    let duree = null, texte = [];
+    let duree = null, texte = [], sonore = false;
     if (tournee && await existe(`${nom}.json`)) {
-      ({ duree, texte = [] } = JSON.parse(await readFile(join(SORTIES, `${nom}.json`), 'utf8')));
+      ({ duree, texte = [], sonore = false } = JSON.parse(await readFile(join(SORTIES, `${nom}.json`), 'utf8')));
     }
     videos.push({
       id: s.id, titre: s.titre, public: s.public, resume: s.resume,
@@ -115,7 +121,7 @@ async function ecrireCatalogue() {
       webm: tournee ? `${nom}.webm` : null,
       mp4: await existe(`${nom}.mp4`) ? `${nom}.mp4` : null,
       vignette: await existe(`${nom}.jpg`) ? `${nom}.jpg` : null,
-      duree, texte, compte: s.compte
+      duree, texte, voix: sonore, compte: s.compte
     });
   }
   const ordre = v => [PUBLICS.indexOf(v.public), v.id.replace(/\d+/, n => n.padStart(3, '0'))];
