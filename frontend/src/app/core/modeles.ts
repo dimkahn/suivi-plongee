@@ -534,19 +534,17 @@ export interface FeuillePresence {
 /**
  * Notation groupée des présents d'une séance : le serveur ne fait jamais
  * reculer un élève (acquis reste acquis, en cours reste en cours, non abordé
- * passe en cours) et ajoute le commentaire.
+ * passe en cours) et ajoute le commentaire, obligatoire, de chaque critère.
  */
 export interface DemandeNotationGroupee {
   cursusIds: number[];
-  critereIds: number[];
-  commentaire: string | null;
+  criteres: { critereId: number; commentaire: string }[];
 }
 
 export interface BilanNotationGroupee {
   eleves: number;
   passesEnCours: number;
   commentairesAjoutes: number;
-  inchanges: number;
 }
 
 // ----------------------------------------------------------------

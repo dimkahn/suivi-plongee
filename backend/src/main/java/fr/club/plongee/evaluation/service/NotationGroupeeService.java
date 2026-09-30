@@ -15,13 +15,15 @@ import fr.club.plongee.securite.UtilisateurPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * Notation en une fois de plusieurs élèves présents à une séance, sur un ou
- * plusieurs critères, avec un même commentaire.
+ * plusieurs critères. Chaque critère coché porte son propre commentaire,
+ * obligatoire, repris pour tous les élèves notés.
  *
  * <p>Ce n'est pas une note imposée : la saisie ne fait jamais reculer un élève.
  * <ul>
@@ -29,8 +31,6 @@ import java.util.stream.Collectors;
  *   <li>critère en cours : il reste en cours, seul le commentaire est ajouté ;</li>
  *   <li>critère non abordé (ou jamais noté) : il passe en cours, avec le commentaire.</li>
  * </ul>
- * Sans commentaire, un critère déjà acquis ou en cours est laissé tel quel :
- * une ligne identique à la précédente n'apporterait rien à l'historique.
  *
  * <p>Tout ou rien : si un seul élève est refusé (absent, cursus clos, niveau
  * d'encadrement insuffisant, séance en piscine pour un N2...), rien n'est
@@ -40,10 +40,13 @@ import java.util.stream.Collectors;
 @Service
 public class NotationGroupeeService {
 
-    public record NotationGroupee(List<Long> cursusIds, List<Long> critereIds, String commentaire) {}
+    public record NotationGroupee(List<Long> cursusIds, List<CritereCommente> criteres) {}
+
+    /** Un critère coché et le commentaire écrit pour lui. */
+    public record CritereCommente(Long critereId, String commentaire) {}
 
     /** Ce qui a été fait, pour le message affiché au moniteur. */
-    public record BilanNotationGroupee(int eleves, int passesEnCours, int commentairesAjoutes, int inchanges) {}
+    public record BilanNotationGroupee(int eleves, int passesEnCours, int commentairesAjoutes) {}
 
     private final EvaluationService evaluationService;
     private final EvaluationRepository evaluations;
@@ -72,17 +75,24 @@ public class NotationGroupeeService {
     public BilanNotationGroupee noter(Long seanceId, NotationGroupee demande, UtilisateurPrincipal auteur) {
         List<Long> cursusIds = demande.cursusIds() == null ? List.of()
                 : demande.cursusIds().stream().distinct().toList();
-        List<Long> critereIds = demande.critereIds() == null ? List.of()
-                : demande.critereIds().stream().distinct().toList();
         if (cursusIds.isEmpty()) throw new RegleMetierException("Choisissez au moins un élève.");
-        if (critereIds.isEmpty()) throw new RegleMetierException("Choisissez au moins un critère.");
-        String commentaire = demande.commentaire() == null || demande.commentaire().isBlank()
-                ? null : demande.commentaire().trim();
+        // Un critère envoyé deux fois : on garde le dernier commentaire.
+        Map<Long, String> commentaires = new LinkedHashMap<>();
+        if (demande.criteres() != null) {
+            for (CritereCommente c : demande.criteres()) {
+                if (c == null || c.critereId() == null) continue;
+                if (c.commentaire() == null || c.commentaire().isBlank()) {
+                    throw new RegleMetierException("Écrivez un commentaire pour chaque critère coché.");
+                }
+                commentaires.put(c.critereId(), c.commentaire().trim());
+            }
+        }
+        if (commentaires.isEmpty()) throw new RegleMetierException("Choisissez au moins un critère.");
 
         Seance seance = seances.findById(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
 
-        int passesEnCours = 0, commentaires = 0, inchanges = 0;
+        int passesEnCours = 0, commentairesAjoutes = 0;
         for (Long cursusId : cursusIds) {
             Cursus cursus = cursusRepository.chargerComplet(cursusId)
                     .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
@@ -96,23 +106,20 @@ public class NotationGroupeeService {
 
             Map<Long, StatutAcquisition> etat = evaluations.etatCourant(cursusId).stream()
                     .collect(Collectors.toMap(e -> e.getCritere().getId(), Evaluation::getStatut));
-            for (Long critereId : critereIds) {
+            for (Map.Entry<Long, String> critere : commentaires.entrySet()) {
+                Long critereId = critere.getKey();
                 StatutAcquisition avant = etat.getOrDefault(critereId, StatutAcquisition.NON_ABORDE);
                 StatutAcquisition apres = statutApres(avant);
-                if (avant == apres && commentaire == null) {
-                    inchanges++;
-                    continue;
-                }
                 try {
                     evaluationService.noter(cursusId, new EvaluationService.Notation(
-                            critereId, seanceId, apres, commentaire, null, null), auteur);
+                            critereId, seanceId, apres, critere.getValue(), null, null), auteur);
                 } catch (RegleMetierException refus) {
                     throw new RegleMetierException(eleve + " : " + refus.getMessage());
                 }
-                if (avant == apres) commentaires++; else passesEnCours++;
+                if (avant == apres) commentairesAjoutes++; else passesEnCours++;
             }
         }
-        return new BilanNotationGroupee(cursusIds.size(), passesEnCours, commentaires, inchanges);
+        return new BilanNotationGroupee(cursusIds.size(), passesEnCours, commentairesAjoutes);
     }
 
     private void verifierPresent(Cursus cursus, Seance seance, String eleve) {

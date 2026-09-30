@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -86,13 +87,15 @@ class NotationGroupeeTest {
         return json.readTree(historique).size();
     }
 
+    /** Même commentaire pour chaque critère coché (le serveur accepte un commentaire différent par critère). */
     private String noterGroupe(String moniteur, long seanceId, List<Long> cursusIds, List<Long> critereIds,
                                String commentaire, int statutAttendu) throws Exception {
+        List<Map<String, Object>> criteres = critereIds.stream()
+                .map(id -> Map.<String, Object>of("critereId", id, "commentaire", commentaire == null ? "" : commentaire))
+                .toList();
         return mvc.perform(post("/api/seances/" + seanceId + "/notation-groupee").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json.writeValueAsString(java.util.Map.of(
-                                "cursusIds", cursusIds, "critereIds", critereIds,
-                                "commentaire", commentaire == null ? "" : commentaire))))
+                        .content(json.writeValueAsString(Map.of("cursusIds", cursusIds, "criteres", criteres))))
                 .andExpect(status().is(statutAttendu))
                 .andReturn().getResponse().getContentAsString();
     }
@@ -173,17 +176,30 @@ class NotationGroupeeTest {
         assertThat(enCours.get("statut").asText()).isEqualTo("EN_COURS");
         assertThat(enCours.get("commentaire").asText()).isEqualTo("Encore un peu");
 
-        // Sans commentaire, rien ne change : aucune ligne ajoutée.
-        bilan = json.readTree(noterGroupe(moniteur, seanceId, List.of(present),
-                List.of(dejaAcquis, nonAborde), null, 200));
-        assertThat(bilan.get("inchanges").asInt()).isEqualTo(2);
-        assertThat(nombreDeSaisies(moniteur, present, dejaAcquis)).isEqualTo(2);
+        // Un commentaire propre à chaque critère coché.
+        mvc.perform(post("/api/seances/" + seanceId + "/notation-groupee").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"cursusIds":[%d],"criteres":[{"critereId":%d,"commentaire":"Vidage fluide"},
+                                  {"critereId":%d,"commentaire":"Palmage à reprendre"}]}"""
+                                .formatted(present, dejaAcquis, nonAborde)))
+                .andExpect(status().isOk());
+        assertThat(critere(moniteur, present, dejaAcquis).get("commentaire").asText()).isEqualTo("Vidage fluide");
+        assertThat(critere(moniteur, present, nonAborde).get("commentaire").asText())
+                .isEqualTo("Palmage à reprendre");
+        assertThat(nombreDeSaisies(moniteur, present, dejaAcquis)).isEqualTo(3);
+
+        // Un critère coché sans commentaire : refusé, aucune ligne ajoutée.
+        String sansCommentaire = noterGroupe(moniteur, seanceId, List.of(present),
+                List.of(dejaAcquis, nonAborde), null, 422);
+        assertThat(sansCommentaire).contains("commentaire pour chaque critère");
+        assertThat(nombreDeSaisies(moniteur, present, dejaAcquis)).isEqualTo(3);
 
         // Un élève non présent : refus nommé, et rien n'est enregistré pour les autres.
         String refus = noterGroupe(moniteur, seanceId, List.of(present, absent),
                 List.of(dejaAcquis), "Ne doit pas passer", 422);
         assertThat(refus).contains("Absente").contains("pas noté présent");
-        assertThat(nombreDeSaisies(moniteur, present, dejaAcquis)).isEqualTo(2);
+        assertThat(nombreDeSaisies(moniteur, present, dejaAcquis)).isEqualTo(3);
 
         // Un élève ne note pas.
         noterGroupe(jeton("eleve@club.fr"), seanceId, List.of(present), List.of(dejaAcquis), "x", 403);

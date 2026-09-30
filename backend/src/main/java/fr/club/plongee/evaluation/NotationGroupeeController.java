@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Notation groupée depuis la feuille de présence : plusieurs élèves présents,
- * un ou plusieurs critères, un même commentaire. L'habilitation (niveau
+ * un ou plusieurs critères, chacun avec son commentaire. L'habilitation (niveau
  * d'encadrement suffisant pour chaque élève) est vérifiée par le service,
  * élève par élève, puisqu'elle dépend du cursus de chacun.
  */

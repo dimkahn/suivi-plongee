@@ -13,10 +13,11 @@ import { periodeDuMois } from '../../core/progression';
 
 /**
  * Notation groupée depuis la feuille de présence : le moniteur coche des
- * élèves présents (tous par défaut), un ou plusieurs critères et écrit un
- * commentaire commun. Le serveur ne fait jamais reculer un élève : un
- * critère acquis reste acquis, en cours reste en cours, non abordé passe en
- * cours ; le commentaire s'ajoute dans tous les cas.
+ * élèves présents (tous par défaut) et un ou plusieurs critères ; cocher un
+ * critère ouvre son commentaire, obligatoire, commun aux élèves notés. Le
+ * serveur ne fait jamais reculer un élève : un critère acquis reste acquis,
+ * en cours reste en cours, non abordé passe en cours ; le commentaire
+ * s'ajoute dans tous les cas.
  *
  * Les critères dépendent de la version du MFT figée sur chaque cursus : on
  * note les élèves d'une même formation à la fois. Nécessite le réseau.
@@ -37,8 +38,9 @@ import { periodeDuMois } from '../../core/progression';
           <button type="button" class="bouton-discret" (click)="fermer()">Fermer</button>
         </div>
         <p class="secondaire">
-          Un critère déjà acquis reste acquis, un critère en cours reste en cours : seul le commentaire
-          s'ajoute. Un critère non abordé passe en cours, avec le commentaire.
+          Chaque critère coché demande son commentaire. Un critère déjà acquis reste acquis, un critère
+          en cours reste en cours : seul le commentaire s'ajoute. Un critère non abordé passe en cours,
+          avec le commentaire.
         </p>
 
         @if (!reseau.enLigne()) {
@@ -111,22 +113,30 @@ import { periodeDuMois } from '../../core/progression';
                       <!-- Le critère de réalisation, souvent commun à tout le bloc, alourdirait la liste. -->
                       <span [attr.title]="c.critereRealisation">{{ c.savoirFaire }}</span>
                     </label>
+                    @if (criteresCoches().has(c.id)) {
+                      <textarea class="commentaire" rows="2" required
+                                [attr.aria-label]="'Commentaire : ' + c.savoirFaire"
+                                [class.manquant]="!commentaireDe(c.id).trim()"
+                                placeholder="Commentaire obligatoire (ex. : bon palmage, poumon-ballast à reprendre)"
+                                [ngModel]="commentaireDe(c.id)"
+                                (ngModelChange)="changerCommentaire(c.id, $event)"></textarea>
+                    }
                   </li>
                 }
               </ul>
             </details>
           }
 
-          <label for="commentaire-groupe" class="titre-champ">Commentaire</label>
-          <textarea id="commentaire-groupe" rows="3" placeholder="Ex. : bon palmage, poumon-ballast à reprendre"
-                    [ngModel]="commentaire()" (ngModelChange)="commentaire.set($event)"></textarea>
-
           <div class="actions">
             <button type="button" class="bouton-principal" [disabled]="!peutEnvoyer()" (click)="envoyer()">
               {{ envoi() ? 'Enregistrement…' : 'Valider la notation' }}
             </button>
-            @if (!commentaire().trim()) {
-              <span class="secondaire">Sans commentaire, seuls les critères non abordés changent.</span>
+            @if (commentairesManquants() > 0) {
+              <span class="secondaire">
+                {{ commentairesManquants() === 1
+                  ? 'Un critère coché attend son commentaire.'
+                  : commentairesManquants() + ' critères cochés attendent leur commentaire.' }}
+              </span>
             }
           </div>
         }
@@ -172,7 +182,11 @@ import { periodeDuMois } from '../../core/progression';
       text-align: center; font-size: .8125rem; padding: 0 6px;
     }
 
-    .titre-champ { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; }
+    .commentaire {
+      display: block; width: 100%; box-sizing: border-box; min-height: 44px;
+      margin: 0 0 var(--pas); font: inherit;
+    }
+    .commentaire.manquant { border-color: var(--accent); }
     .actions {
       display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2);
       margin-top: var(--pas-2); position: sticky; bottom: calc(-1 * var(--pas-2));
@@ -202,7 +216,8 @@ export class NotationGroupeeComponent {
   private referentiels = signal<Map<number, ReferentielVue>>(new Map());
   cursusCoches = signal<Set<number>>(new Set());
   criteresCoches = signal<Set<number>>(new Set());
-  commentaire = signal('');
+  /** Commentaire par critère : gardé si on décoche puis recoche le critère. */
+  private commentaires = signal<Map<number, string>>(new Map());
 
   /** Une entrée par version du MFT représentée parmi les présents. */
   formations = computed(() => {
@@ -240,17 +255,21 @@ export class NotationGroupeeComponent {
     return new Set(periode?.blocs.map(b => b.id) ?? []);
   });
 
+  commentairesManquants = computed(() =>
+    [...this.criteresCoches()].filter(id => !this.commentaireDe(id).trim()).length);
+
   peutEnvoyer = computed(() => {
     const ref = this.referentiel();
     return !!ref && !this.envoi() && this.reseau.enLigne()
       && this.cursusCoches().size > 0 && this.criteresCoches().size > 0
+      && this.commentairesManquants() === 0
       && this.auth.peutValider(ref.niveauEncadrantValidation)
       && !(ref.milieuNaturelExclusif && this.seance().milieu !== 'NATUREL');
   });
 
   ouvrir(): void {
     this.erreur.set(null);
-    this.commentaire.set('');
+    this.commentaires.set(new Map());
     this.criteresCoches.set(new Set());
     const formations = this.formations();
     const actuelle = formations.find(f => f.referentielId === this.referentielId());
@@ -296,6 +315,14 @@ export class NotationGroupeeComponent {
     this.cursusCoches.set(this.cursusCoches().size === tous.length ? new Set() : new Set(tous));
   }
 
+  commentaireDe(critereId: number): string {
+    return this.commentaires().get(critereId) ?? '';
+  }
+
+  changerCommentaire(critereId: number, texte: string): void {
+    this.commentaires.set(new Map(this.commentaires()).set(critereId, texte));
+  }
+
   cochesDuBloc(b: BlocReferentielVue): number {
     const coches = this.criteresCoches();
     return b.criteres.filter(c => coches.has(c.id)).length;
@@ -309,13 +336,11 @@ export class NotationGroupeeComponent {
       const bilan = await firstValueFrom(this.api.noterGroupe(this.seance().id, {
         // Seuls les élèves de la formation affichée : une coche d'une autre formation ne part pas.
         cursusIds: this.elevesFormation().map(l => l.cursusId).filter(id => this.cursusCoches().has(id)),
-        critereIds: [...this.criteresCoches()],
-        commentaire: this.commentaire().trim() || null
+        criteres: [...this.criteresCoches()].map(id => ({ critereId: id, commentaire: this.commentaireDe(id).trim() }))
       }));
       const morceaux = [];
       if (bilan.passesEnCours > 0) morceaux.push(`${bilan.passesEnCours} critère(s) passé(s) en cours`);
       if (bilan.commentairesAjoutes > 0) morceaux.push(`${bilan.commentairesAjoutes} commentaire(s) ajouté(s)`);
-      if (morceaux.length === 0) morceaux.push('rien à changer');
       this.notee.emit(`Notation enregistrée pour ${bilan.eleves} élève(s) : ${morceaux.join(', ')}.`);
       this.fermer();
     } catch (e) {
