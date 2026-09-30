@@ -11,7 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +74,8 @@ class SortieTest {
     @DisplayName("Le directeur technique crée une sortie et choisit ses plongées parmi celles de ses dates")
     void choixDesSeances() throws Exception {
         String dt = jeton("e3@club.fr");
-        LocalDate samedi = AUJOURDHUI.plusDays(60);
+        // Un vrai samedi : le lundi porte les séances de piscine de démonstration, qui fausseraient le compte.
+        LocalDate samedi = AUJOURDHUI.plusDays(60).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
         List<Long> plongees = creerPlongees(dt, samedi);
 
         JsonNode sortie = envoyer("POST", "/api/sorties", dt, """
@@ -115,7 +118,7 @@ class SortieTest {
     @DisplayName("Une séance hors des dates de la sortie ne peut pas y être ajoutée")
     void seanceHorsDates() throws Exception {
         String dt = jeton("e3@club.fr");
-        LocalDate samedi = AUJOURDHUI.plusDays(90);
+        LocalDate samedi = AUJOURDHUI.plusDays(90).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
         List<Long> plongees = creerPlongees(dt, samedi);
         long id = envoyer("POST", "/api/sorties", dt, """
                 {"nom":"Samedi seul","dateDebut":"%s"}""".formatted(samedi), 201).get("id").asLong();

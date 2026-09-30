@@ -14,6 +14,8 @@ import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../co
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
+import { AuthService } from '../../core/auth.service';
+import { NotationGroupeeComponent } from './notation-groupee.component';
 
 /** Un bouton de la ligne : l'atelier fait par un élève présent. */
 interface Choix {
@@ -58,7 +60,8 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent],
+  imports: [FormsModule, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
+            NotationGroupeeComponent],
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
@@ -138,6 +141,16 @@ function normaliser(texte: string): string {
           @if (bilan().enAttente > 0) { · {{ bilan().enAttente }} en attente d'envoi }
         </p>
 
+        @if (auth.estMoniteur()) {
+          @if (seanceChoisie(); as s) {
+            <div class="notation-groupee">
+              <app-notation-groupee [seance]="s" [presents]="presentsANoter()" [progressions]="progressions()"
+                                    (notee)="message.set($event)" />
+              <span class="secondaire">Les présents affichés, sur un ou plusieurs critères, avec un même commentaire.</span>
+            </div>
+          }
+        }
+
         @if (lignesFiltrees().length === 0) {
           <div class="carte vide"><p>Aucun élève ne correspond aux filtres.</p></div>
         }
@@ -213,6 +226,9 @@ function normaliser(texte: string): string {
     .recherche { max-width: 320px; margin: 0; }
 
     .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
+    .notation-groupee {
+      display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2); margin-bottom: var(--pas-2);
+    }
 
     /* Plusieurs élèves par ligne dès que la largeur le permet. */
     .eleves {
@@ -304,6 +320,7 @@ function normaliser(texte: string): string {
 })
 export class PresencesComponent implements OnDestroy {
   private api = inject(ApiService);
+  auth = inject(AuthService);
   reseau = inject(ReseauService);
   private file = inject(FileEcrituresService);
 
@@ -386,6 +403,16 @@ export class PresencesComponent implements OnDestroy {
     return this.lignes().filter(l =>
       passeFiltreGroupe(l.eleveId, filtre, groupes)
       && (!recherche || normaliser(l.eleve).includes(recherche)));
+  });
+
+  /**
+   * Élèves proposés à la notation groupée : présents dans le filtre courant,
+   * et dont la présence est déjà chez le serveur (il refuse de noter un élève
+   * qu'il ne sait pas présent).
+   */
+  presentsANoter = computed(() => {
+    const enAttente = this.enAttente();
+    return this.lignesFiltrees().filter(l => l.statut === 'PRESENT' && !enAttente.has(l.cursusId));
   });
 
   bilan = computed(() => {

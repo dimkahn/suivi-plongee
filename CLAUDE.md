@@ -226,6 +226,13 @@ la fiche de gestion.
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas
 introduire d'UPDATE ni de DELETE sur cette table.
+**Notation groupée** (bouton « Noter les présents » de la feuille de
+présence, `NotationGroupeeService`, `POST /api/seances/{id}/notation-groupee`) :
+plusieurs élèves présents, un ou plusieurs critères, un même commentaire.
+Elle ne fait jamais reculer un élève : acquis reste acquis, en cours reste en
+cours (seul le commentaire s'ajoute), non abordé passe en cours. Élèves d'une
+même version du MFT à la fois, présence déjà enregistrée exigée, tout ou rien
+(un refus nomme l'élève), réseau obligatoire.
 
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via

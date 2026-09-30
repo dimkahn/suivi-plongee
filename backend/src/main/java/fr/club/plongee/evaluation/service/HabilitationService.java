@@ -32,8 +32,12 @@ public class HabilitationService {
         if (p == null || !p.actif() || !aLeRole(authentication, RoleNom.MONITEUR)) return false;
 
         Cursus cursus = cursusRepository.chargerComplet(cursusId).orElse(null);
-        if (cursus == null || !cursus.modifiable()) return false;
+        return cursus != null && peutEvaluer(p, cursus);
+    }
 
+    /** Même règle, pour un cursus déjà chargé (notation groupée des présents d'une séance). */
+    public boolean peutEvaluer(UtilisateurPrincipal p, Cursus cursus) {
+        if (p == null || !p.actif() || !cursus.modifiable()) return false;
         NiveauEncadrement requis = cursus.getReferentiel().getNiveauEncadrantValidation();
         return p.niveauEncadrement() != null && p.niveauEncadrement().auMoins(requis);
     }
