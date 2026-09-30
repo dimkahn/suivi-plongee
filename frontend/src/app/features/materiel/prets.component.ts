@@ -84,7 +84,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
             <ul class="choisis">
               @for (e of choisis(); track e.id) {
                 <li>
-                  <span>{{ e.typeLibelle }} {{ e.reference }}</span>
+                  <span>{{ e.typeLibelle }} {{ e.reference }}@if (e.ancienneReference) { (ancien n° {{ e.ancienneReference }})}</span>
                   <button type="button" class="bouton-discret" (click)="basculer(e.id)"
                           [attr.aria-label]="'Retirer ' + e.reference">Retirer</button>
                 </li>
@@ -98,7 +98,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
             }
           </div>
           <label for="rechercheMateriel" class="masque">Rechercher du matériel</label>
-          <input id="rechercheMateriel" name="rechercheMateriel" type="search" placeholder="Référence, taille, marque…"
+          <input id="rechercheMateriel" name="rechercheMateriel" type="search" placeholder="Référence, ancien n°, taille, marque…"
                  [ngModel]="rechercheMateriel()" (ngModelChange)="rechercheMateriel.set($event)">
           <ul class="disponibles">
             @for (e of disponibles(); track e.id) {
@@ -106,7 +106,9 @@ interface LigneRetour { incident: string; horsService: boolean; }
                 <label class="case">
                   <input type="checkbox" [checked]="selection().has(e.id)" (change)="basculer(e.id)">
                   <span class="identite">
-                    <strong>{{ e.reference }}</strong>
+                    <strong>
+                      {{ e.reference }}@if (e.ancienneReference) { <span class="ancien">· ancien n° {{ e.ancienneReference }}</span> }
+                    </strong>
                     @if (description(e); as d) { <span class="secondaire">{{ d }}</span> }
                     @for (a of e.alertes; track a.message) { <span class="avertissement">{{ a.message }}</span> }
                   </span>
@@ -248,6 +250,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .ancien { font-weight: 400; color: var(--craie); }
     .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap;
               margin-bottom: var(--pas-2); }
@@ -347,7 +350,7 @@ export class PretsComponent {
   disponibles = computed(() => {
     const r = normaliser(this.rechercheMateriel().trim());
     return this.enService().filter(e => e.statut === 'DISPONIBLE' && e.type === this.typeChoix()
-      && (!r || [e.reference, e.marque, e.modele, e.taille].some(v => v != null && normaliser(v).includes(r))));
+      && (!r || [e.reference, e.ancienneReference, e.marque, e.modele, e.taille].some(v => v != null && normaliser(v).includes(r))));
   });
 
   indisponibles = computed(() =>

@@ -86,7 +86,9 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           <ul>
             @for (e of aSurveiller(); track e.id) {
               <li>
-                <a [routerLink]="['/materiel', e.id]">{{ e.typeLibelle }} {{ e.reference }}</a>
+                <a [routerLink]="['/materiel', e.id]">
+                  {{ e.typeLibelle }} {{ e.reference }}@if (e.ancienneReference) { (ancien n° {{ e.ancienneReference }})}
+                </a>
                 @for (a of e.alertes; track a.message) {
                   <span [class.bloquant]="a.gravite === 'BLOQUANT'"> {{ a.message }}</span>
                 }
@@ -108,7 +110,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           }
         </div>
         <label for="recherche" class="masque">Rechercher</label>
-        <input id="recherche" type="search" placeholder="Référence, marque, n° de série…"
+        <input id="recherche" type="search" placeholder="Référence, ancien n°, marque, n° de série…"
                [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
         <label class="case">
           <input type="checkbox" [ngModel]="avecRebut()" (ngModelChange)="avecRebut.set($event)">
@@ -127,7 +129,9 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
               <a [routerLink]="['/materiel', e.id]" class="equipement">
                 <div class="ligne">
                   <div class="identite">
-                    <span class="nom">{{ e.typeLibelle }} {{ e.reference }}</span>
+                    <span class="nom">
+                      {{ e.typeLibelle }} {{ e.reference }}@if (e.ancienneReference) { <span class="ancien">· ancien n° {{ e.ancienneReference }}</span> }
+                    </span>
                     @if (description(e); as d) { <span class="secondaire">{{ d }}</span> }
                   </div>
                   <span [class]="'etat statut-' + e.statut">{{ libelleStatut[e.statut] }}</span>
@@ -192,6 +196,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas); }
     .identite { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .nom { font-weight: 700; }
+    .ancien { font-weight: 400; color: var(--craie); }
     .etat { flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700; }
     .statut-DISPONIBLE { background: var(--acquis-clair); color: var(--acquis); }
     .statut-PRETE { background: #E0F2FE; color: var(--profond-fonce); }
