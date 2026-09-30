@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +60,7 @@ public class SeanceController {
 
     /** Au-delà, c'est plus probablement une erreur de saisie qu'un séjour. */
     private static final int DUREE_MAX_SEJOUR_JOURS = 31;
+    private static final DateTimeFormatter FORMAT_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
                                   Participation.Atelier atelier, String commentaire) {}
@@ -108,7 +110,7 @@ public class SeanceController {
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public SeanceVue creer(@Valid @RequestBody DemandeSeance demande) {
         Seance s = new Seance();
-        s.setSaison(saisonCourante());
+        s.setSaison(saisonDesDates(demande.dateSeance(), demande.dateSeance()));
         s.setDateSeance(demande.dateSeance());
         s.setOrdre(demande.ordre() != null ? demande.ordre() : 1);
         s.setMilieu(demande.milieu());
@@ -147,7 +149,7 @@ public class SeanceController {
                 .toList();
         List<String> variantes = infos.isEmpty() ? java.util.Collections.singletonList(null) : infos;
 
-        Saison saison = saisonCourante();
+        Saison saison = saisonDesDates(demande.dateDebut(), demande.dateFin());
         Map<LocalDate, Integer> dernierOrdre = new HashMap<>();
         for (Seance existante : seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison.getId())) {
             dernierOrdre.merge(existante.getDateSeance(), existante.getOrdre(), Math::max);
@@ -211,6 +213,7 @@ public class SeanceController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @Transactional
     public SeanceVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeSeance demande) {
         Seance s = seances.findById(id)
                 .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
@@ -221,6 +224,16 @@ public class SeanceController {
             throw new RegleMetierException(
                     "Cette séance porte déjà des présences ou des évaluations : "
                             + "le milieu et la profondeur ne peuvent plus être modifiés.");
+        }
+
+        // Une séance ne change pas de saison : ses présences et ses évaluations
+        // se rattachent aux cursus de cette saison-là.
+        Saison saison = s.getSaison();
+        if (!demande.dateSeance().equals(s.getDateSeance())
+                && (demande.dateSeance().isBefore(saison.getDateDebut()) || demande.dateSeance().isAfter(saison.getDateFin()))) {
+            throw new RegleMetierException("La nouvelle date sort de la saison " + saison.getLibelle()
+                    + " (du " + FORMAT_DATE.format(saison.getDateDebut()) + " au " + FORMAT_DATE.format(saison.getDateFin())
+                    + ") : supprimez la séance et recréez-la à la bonne date.");
         }
 
         s.setDateSeance(demande.dateSeance());
@@ -317,6 +330,15 @@ public class SeanceController {
     private Seance seance(Long id) {
         return seances.findById(id)
                 .orElseThrow(() -> new RessourceIntrouvableException("Seance introuvable"));
+    }
+
+    /** La saison qui couvre ces dates : une séance n'est jamais rangée dans une saison qui ne la contient pas. */
+    private Saison saisonDesDates(LocalDate debut, LocalDate fin) {
+        return saisons.contenant(debut, fin).orElseThrow(() -> new RegleMetierException(debut.equals(fin)
+                ? "Aucune saison ne couvre le " + FORMAT_DATE.format(debut) + ". "
+                        + "Créez d'abord la saison dans Administration → Saisons, ou corrigez la date."
+                : "Les dates du séjour doivent tenir dans une seule saison. "
+                        + "Créez d'abord la saison dans Administration → Saisons, ou ajustez les dates."));
     }
 
     private Saison saisonCourante() {

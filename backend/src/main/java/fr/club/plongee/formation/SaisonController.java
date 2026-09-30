@@ -55,7 +55,10 @@ public class SaisonController {
         return vue(s);
     }
 
-    /** Les dates sont purement informatives (aucune règle métier ne s'y appuie) : modifiables sans restriction. */
+    /**
+     * Les dates décident de la saison où se range une séance créée ; les modifier
+     * ne déplace pas les séances déjà rangées.
+     */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public SaisonVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeSaison demande) {

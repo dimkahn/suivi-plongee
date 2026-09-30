@@ -97,12 +97,8 @@ class GenerationSaisonTest {
         generees.addAll(apercu(admin, "[\"MONDAY\"]", "Piscine", 2));
 
         Saison saison = saisons.findAll().stream().filter(s -> s.getLibelle().equals("2026-2027")).findFirst().orElseThrow();
-        // Même plage que l'aperçu : d'autres tests (même contexte, même base) rattachent
-        // à la saison ouverte des séances hors de ses dates (SerieSeancesTest, en 2030).
-        LocalDate debut = LocalDate.of(2026, 9, 1), fin = LocalDate.of(2027, 6, 30);
         Set<String> saisiesALaMain = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison.getId()).stream()
                 .filter(s -> s.getLieu().equals("Piscine") || s.getLieu().equals("Fosse"))
-                .filter(s -> !s.getDateSeance().isBefore(debut) && !s.getDateSeance().isAfter(fin))
                 .map(s -> s.getDateSeance() + " " + s.getLieu())
                 .collect(Collectors.toCollection(TreeSet::new));
         assertThat(generees).isEqualTo(saisiesALaMain);

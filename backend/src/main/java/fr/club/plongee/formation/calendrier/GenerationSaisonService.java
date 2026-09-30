@@ -74,9 +74,7 @@ public class GenerationSaisonService {
             throw new RegleMetierException("La période ne peut pas dépasser " + DUREE_MAX_JOURS
                     + " jours : générez une saison à la fois.");
         }
-        Saison saison = saisons.findAll().stream()
-                .filter(s -> !debut.isBefore(s.getDateDebut()) && !fin.isAfter(s.getDateFin()))
-                .findFirst()
+        Saison saison = saisons.contenant(debut, fin)
                 .orElseThrow(() -> new RegleMetierException("Les dates doivent tenir dans une seule saison. "
                         + "Créez d'abord la saison dans Administration → Saisons, ou ajustez les dates."));
 
