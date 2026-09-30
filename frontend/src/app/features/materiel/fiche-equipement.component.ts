@@ -272,6 +272,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
       <div class="entete">
         <div>
           <h1>{{ e.typeLibelle }} {{ e.reference }}</h1>
+          @if (e.ancienneReference) { <p class="ancien">Ancien n° {{ e.ancienneReference }}</p> }
           @if (description(e); as d) { <p class="secondaire">{{ d }}</p> }
         </div>
         <span [class]="'etat statut-' + e.statut">{{ libelleStatut[e.statut] }}</span>
@@ -345,7 +346,12 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
           pas : une erreur se corrige par une nouvelle ligne.
         </p>
 
-        @if (e.statut !== 'REBUTE') {
+        @if (e.statut !== 'REBUTE' && !ajoutJournal()) {
+          <button type="button" class="bouton-discret ouvrir-journal pas-imprime" (click)="ajoutJournal.set(true)">
+            Ajouter une entrée au journal
+          </button>
+        }
+        @if (e.statut !== 'REBUTE' && ajoutJournal()) {
           <form class="ajout-journal pas-imprime" (ngSubmit)="ajouterIntervention()">
             <div class="grille">
               <div>
@@ -380,7 +386,10 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
                       [(ngModel)]="i.description"
                       [placeholder]="i.type === 'INCIDENT' ? 'Que s\\'est-il passé ? (obligatoire)' : 'Pièces changées, observations…'">
             </textarea>
-            <button type="submit" class="bouton-principal" [disabled]="envoi()">Ajouter au journal</button>
+            <div class="actions">
+              <button type="submit" class="bouton-principal" [disabled]="envoi()">Ajouter au journal</button>
+              <button type="button" class="bouton-discret" (click)="fermerAjoutJournal()">Annuler</button>
+            </div>
           </form>
         }
 
@@ -499,7 +508,9 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
     .texte-libre { white-space: pre-line; margin: 4px 0; }
 
     .ajout-journal { padding: var(--pas-2); margin-bottom: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
-    .ajout-journal .bouton-principal { margin-top: var(--pas-2); }
+    .ajout-journal .actions { margin-bottom: 0; }
+    .ouvrir-journal { margin-bottom: var(--pas-2); }
+    .ancien { margin: 0 0 4px; font-weight: 700; color: var(--craie); }
     .journal { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     .journal li { border-left: 3px solid var(--trait); padding-left: var(--pas-2); display: flex; flex-direction: column; gap: 2px; }
     .ligne-journal { display: flex; gap: var(--pas); align-items: center; flex-wrap: wrap; }
@@ -536,6 +547,8 @@ export class FicheEquipementComponent {
   message = signal<string | null>(null);
   envoi = signal(false);
   edition = signal(false);
+  /** Le formulaire du journal reste replié tant qu'on ne le demande pas. */
+  ajoutJournal = signal(false);
 
   /** Formulaire de création ou de modification. */
   f: DemandeEquipement = demandeVide('BLOC');
@@ -584,6 +597,7 @@ export class FicheEquipementComponent {
       const id = brut === 'nouveau' ? null : Number(brut);
       this.id.set(id);
       this.edition.set(false);
+      this.ajoutJournal.set(false);
       this.message.set(null);
       if (id === null) {
         const type = this.route.snapshot.queryParamMap.get('type') as TypeEquipement | null;
@@ -662,7 +676,7 @@ export class FicheEquipementComponent {
     }).subscribe({
       next: () => {
         this.envoi.set(false);
-        this.i = this.interventionVide();
+        this.fermerAjoutJournal();
         void this.charger(id);
       },
       error: (err: HttpErrorResponse) => {
@@ -670,6 +684,13 @@ export class FicheEquipementComponent {
         this.message.set(err.error?.detail ?? "L'intervention n'a pas pu être enregistrée.");
       }
     });
+  }
+
+  fermerAjoutJournal(): void {
+    this.i = this.interventionVide();
+    const e = this.fiche()?.equipement;
+    if (e?.type === 'BLOC') this.i = { ...this.i, type: 'INSPECTION_VISUELLE' };
+    this.ajoutJournal.set(false);
   }
 
   mettreAuRebut(): void {
