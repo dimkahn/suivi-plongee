@@ -7,14 +7,19 @@
 #   3. installe Playwright et Chromium la première fois ;
 #   4. dépose les portraits dessinés (preparer-donnees.mjs) ;
 #   5. enregistre les vidéos (enregistrer.mjs) dans outils/videos/sorties/ ;
-#   6. convertit chaque vidéo en MP4 si ffmpeg est installé (ou désigné par
-#      la variable FFMPEG) : l'iPhone lit le MP4 plus sûrement que le WebM ;
+#   6. monte la voix off (chaque sous-titre lu par Piper, installé la
+#      première fois dans .piper/) et convertit chaque vidéo en MP4, si
+#      ffmpeg est installé (ou désigné par la variable FFMPEG) : l'iPhone
+#      lit le MP4 plus sûrement que le WebM. VOIX=0 : vidéos muettes ;
 #   7. arrête ce qu'il a démarré, même en cas d'échec ou de Ctrl+C.
 #
 # Usage, depuis n'importe où :
-#   outils/videos/tourner.sh              les dix vidéos
+#   outils/videos/tourner.sh              toutes les vidéos
 #   outils/videos/tourner.sh M03 M04      seulement celles-là
 #   RYTHME=1.5 outils/videos/tourner.sh   pauses 50 % plus longues
+#   RYTHME_CLIC=2 outils/videos/tourner.sh  touchers deux fois plus lents, le reste inchangé
+#   VOIX=0 outils/videos/tourner.sh       sans voix off (sous-titres à la place)
+#   SOUS_TITRES=1 outils/videos/tourner.sh  voix off et sous-titres
 #
 # Un backend qui tourne déjà sur le port 8080 est refusé : ses données ont
 # pu être modifiées (notes, présences…) et les vidéos ne montreraient plus
@@ -85,6 +90,22 @@ cd "$VIDEOS"
 [ -d node_modules/playwright ] || npm ci --no-audit --no-fund
 npx playwright install chromium
 
+etape "Voix off (Piper)"
+MODELE_VOIX="${VOIX_MODELE:-fr_FR-siwis-medium}"
+if [ "${VOIX:-1}" = "0" ]; then
+  echo "VOIX=0 : vidéos muettes."
+elif [ -f ".piper/voix/$MODELE_VOIX.onnx" ]; then
+  echo "Déjà installée ($MODELE_VOIX)."
+else
+  # Dans .piper/ du dossier des vidéos, hors dépôt : ni venv ni droits root.
+  if python3 -m pip install -q --target .piper piper-tts \
+     && PYTHONPATH=.piper python3 -m piper.download_voices --data-dir .piper/voix "$MODELE_VOIX"; then
+    echo "Voix $MODELE_VOIX installée."
+  else
+    echo "Installation de Piper impossible (python3 et pip requis) : vidéos muettes."
+  fi
+fi
+
 etape "Portraits du trombinoscope"
 node preparer-donnees.mjs
 
@@ -94,21 +115,13 @@ node enregistrer.mjs "$@" || resultat=$?
 
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || true)}"
 if [ -n "$FFMPEG" ]; then
-  etape "Conversion en MP4"
-  for webm in "$SORTIES"/*.webm; do
-    [ -e "$webm" ] || continue
-    mp4="${webm%.webm}.mp4"
-    [ "$mp4" -nt "$webm" ] && continue
-    # H.264 exige des dimensions paires (839 points de haut sur téléphone).
-    "$FFMPEG" -loglevel error -y -i "$webm" -vf 'scale=trunc(iw/2)*2:trunc(ih/2)*2' \
-      -c:v libx264 -pix_fmt yuv420p -crf 20 -movflags +faststart "$mp4"
-    echo "$(basename "$mp4")"
-  done
+  etape "Montage : voix off et MP4"
+  FFMPEG="$FFMPEG" node monter.mjs || resultat=1
   node enregistrer.mjs --catalogue
 else
   echo
-  echo "ffmpeg absent : vidéos laissées en WebM (voir LISEZ-MOI.md pour les convertir)."
+  echo "ffmpeg absent : vidéos laissées en WebM, sans voix off (sudo apt install ffmpeg)."
 fi
 
-[ "$resultat" -eq 0 ] || echec "au moins une vidéo n'a pas pu être enregistrée (voir sorties/*-ECHEC.png)."
+[ "$resultat" -eq 0 ] || echec "au moins une vidéo n'a pas pu être enregistrée ou montée (voir sorties/*-ECHEC.png et les messages ci-dessus)."
 etape "Terminé : vidéos dans outils/videos/sorties/"

@@ -43,7 +43,8 @@ tests et les images ghcr.io (plus d'étape SSH). Voir `DEPLOIEMENT.md`,
 « Déploiement automatique ».
 
 Vidéos d'aide : `outils/videos/tourner.sh` (Playwright, données de démo,
-backend `dev` neuf) puis `outils/videos/publier.sh`. Page publique `/videos`
+backend `dev` neuf ; voix off des sous-titres par Piper, montée par
+`monter.mjs` avec ffmpeg) puis `outils/videos/publier.sh`. Page publique `/videos`
 (`VideosComponent`, sans connexion) ; les fichiers ne sont ni dans le dépôt
 ni dans les images, Caddy les sert sous `/medias/videos/` depuis le dossier
 `VIDEOS` du `.env`. Voir `outils/videos/LISEZ-MOI.md`.

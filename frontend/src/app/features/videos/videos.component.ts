@@ -25,6 +25,8 @@ interface Video {
   duree: number | null;
   /** Les sous-titres de la vidéo, dans l'ordre : sa transcription. */
   texte?: string[];
+  /** Vrai si la vidéo porte la voix off (les sous-titres lus à voix haute). */
+  voix?: boolean;
 }
 
 interface Catalogue {
@@ -110,7 +112,7 @@ const PRESENTATION: Record<string, string> = {
           <h2 id="titre-lecteur">{{ v.titre }}</h2>
           <button type="button" class="bouton-discret" (click)="lecteur.close()">Fermer</button>
         </div>
-        <video controls autoplay playsinline [muted]="true" [class.ordinateur]="v.format === 'ordinateur'"
+        <video controls autoplay playsinline [muted]="!v.voix" [class.ordinateur]="v.format === 'ordinateur'"
                [attr.poster]="v.vignette ? url(v.vignette) : null">
           @if (v.mp4) { <source [src]="url(v.mp4)" type="video/mp4"> }
           @if (v.webm) { <source [src]="url(v.webm)" type="video/webm"> }
