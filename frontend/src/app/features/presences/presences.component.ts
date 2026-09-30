@@ -146,7 +146,7 @@ function normaliser(texte: string): string {
             <div class="notation-groupee">
               <app-notation-groupee [seance]="s" [presents]="presentsANoter()" [progressions]="progressions()"
                                     (notee)="message.set($event)" />
-              <span class="secondaire">Les présents affichés, sur un ou plusieurs critères, avec un même commentaire.</span>
+              <span class="secondaire">Les présents affichés, sur un ou plusieurs critères, chacun avec son commentaire.</span>
             </div>
           }
         }
