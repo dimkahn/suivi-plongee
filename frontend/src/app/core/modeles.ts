@@ -755,6 +755,10 @@ export interface AlerteEquipement {
 /** Champs saisis de la fiche de gestion (Code du sport, annexe III-27). */
 export interface ChampsEquipement {
   reference: string;
+  ancienneReference: string | null;
+  /** Null = le club. */
+  proprietaire: string | null;
+  constructeur: string | null;
   marque: string | null;
   modele: string | null;
   numeroSerie: string | null;
@@ -771,6 +775,7 @@ export interface ChampsEquipement {
   pressionEpreuveBar: number | null;
   matiere: 'ACIER' | 'ALUMINIUM' | null;
   robinetterie: string | null;
+  numeroRobinet: string | null;
   datePremiereEpreuve: string | null;
   nitrox: boolean;
   regimeTiv: boolean;
@@ -805,7 +810,17 @@ export interface DemandeEquipement extends ChampsEquipement {
   derniereRevision?: string | null;
 }
 
-export type TypeIntervention = 'INSPECTION_VISUELLE' | 'REQUALIFICATION' | 'REVISION' | 'REPARATION'
+/** Compte rendu de la reprise du classeur Excel du matériel. */
+export interface RapportImportMateriel {
+  blocs: number;
+  gilets: number;
+  interventions: number;
+  auRebut: number;
+  dejaPresents: string[];
+  remarques: string[];
+}
+
+export type TypeIntervention ='INSPECTION_VISUELLE' | 'REQUALIFICATION' | 'REVISION' | 'REPARATION'
   | 'REMPLACEMENT_PIECE' | 'CONTROLE' | 'DESINFECTION' | 'INCIDENT';
 
 export const TYPES_INTERVENTION: { valeur: TypeIntervention; libelle: string; blocSeulement?: boolean }[] = [

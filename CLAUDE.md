@@ -219,6 +219,18 @@ se rattachent à la sortie (`pret.sortie_id`, V31 a retiré
 L'écran peut créer les plongées d'une sortie via `POST /api/seances/serie`
 (ouvert aux MONITEUR ; un DT est toujours moniteur). Une sortie qui porte
 des prêts ne se supprime plus.
+**Reprise du classeur Excel** (« Historique Blocs », bouton « Importer le
+classeur Excel » de `/materiel`, `ImportMaterielService`, `POST
+/api/materiel/import`) : colonnes retrouvées par leur titre ; blocs
+`B-NN` (numéro du classeur), gilets `G-` + le n° de la feuille « Stabs ».
+Requalifications et visites TIV (une colonne par année) entrent au journal
+comme « conforme » ; une requalification postérieure à « Dernière
+Requalif » ou à aujourd'hui est une prévision, ignorée. « VENDU »/« REFORME »
+= mise au rebut (date lue dans le commentaire, sinon 1er janvier de
+l'année). Référence déjà présente = laissée telle quelle (réimport sans
+doublon). V33 a ajouté `proprietaire` (null = le club, sigle `CPPJVO`
+ignoré à l'import), `constructeur`, `ancienne_reference`, `numero_robinet`.
+Le fichier du club n'est pas dans le dépôt : le test fabrique le sien.
 Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.

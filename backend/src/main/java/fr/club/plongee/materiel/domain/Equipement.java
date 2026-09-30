@@ -33,6 +33,18 @@ public class Equipement {
     @Column(nullable = false, length = 30, unique = true)
     private String reference;
 
+    /** Ancien marquage, quand le club a renuméroté son matériel. */
+    @Column(length = 30)
+    private String ancienneReference;
+
+    /** Null = le club. Sinon le membre qui confie son matériel au suivi du club. */
+    @Column(length = 80)
+    private String proprietaire;
+
+    /** Fabricant (Roth, Heiser pour une bouteille), quand il diffère de la marque qui vend. */
+    @Column(length = 80)
+    private String constructeur;
+
     @Column(length = 80)
     private String marque;
 
@@ -78,6 +90,9 @@ public class Equipement {
 
     @Column(length = 80)
     private String robinetterie;
+
+    @Column(length = 60)
+    private String numeroRobinet;
 
     /** Poinçon de la première épreuve : base de la requalification tant qu'aucune n'est enregistrée. */
     private LocalDate datePremiereEpreuve;
@@ -135,6 +150,38 @@ public class Equipement {
 
     public void setReference(String reference) {
         this.reference = reference;
+    }
+
+    public String getAncienneReference() {
+        return ancienneReference;
+    }
+
+    public void setAncienneReference(String ancienneReference) {
+        this.ancienneReference = ancienneReference;
+    }
+
+    public String getProprietaire() {
+        return proprietaire;
+    }
+
+    public void setProprietaire(String proprietaire) {
+        this.proprietaire = proprietaire;
+    }
+
+    public String getConstructeur() {
+        return constructeur;
+    }
+
+    public void setConstructeur(String constructeur) {
+        this.constructeur = constructeur;
+    }
+
+    public String getNumeroRobinet() {
+        return numeroRobinet;
+    }
+
+    public void setNumeroRobinet(String numeroRobinet) {
+        this.numeroRobinet = numeroRobinet;
     }
 
     public String getMarque() {
