@@ -43,12 +43,14 @@ public class MaterielService {
     public record PretEnCoursVue(Long id, String emprunteur, LocalDate dateRetourPrevue) {}
 
     public record EquipementVue(Long id, TypeEquipement type, String typeLibelle, String reference,
+                                String ancienneReference, String proprietaire, String constructeur,
                                 String marque, String modele, String numeroSerie, String taille,
                                 LocalDate dateFabrication, LocalDate dateAchat, LocalDate dateMiseEnService,
                                 LocalDate dateRebutPrevue, String notice, String consignesEntretien,
                                 Integer periodiciteRevisionMois,
                                 BigDecimal volumeLitres, Integer pressionServiceBar, Integer pressionEpreuveBar,
-                                Equipement.Matiere matiere, String robinetterie, LocalDate datePremiereEpreuve,
+                                Equipement.Matiere matiere, String robinetterie, String numeroRobinet,
+                                LocalDate datePremiereEpreuve,
                                 boolean nitrox, boolean regimeTiv, String composition, BigDecimal epaisseurMm,
                                 boolean horsService, LocalDate dateRebut, String motifRebut, String remarques,
                                 Statut statut,
@@ -70,6 +72,8 @@ public class MaterielService {
      */
     public record DemandeEquipement(@NotNull TypeEquipement type,
                                     @NotBlank @Size(max = 30) String reference,
+                                    @Size(max = 30) String ancienneReference, @Size(max = 80) String proprietaire,
+                                    @Size(max = 80) String constructeur,
                                     @Size(max = 80) String marque, @Size(max = 80) String modele,
                                     @Size(max = 60) String numeroSerie, @Size(max = 20) String taille,
                                     LocalDate dateFabrication, LocalDate dateAchat, LocalDate dateMiseEnService,
@@ -78,7 +82,7 @@ public class MaterielService {
                                     @DecimalMin("0.1") BigDecimal volumeLitres,
                                     @Positive Integer pressionServiceBar, @Positive Integer pressionEpreuveBar,
                                     Equipement.Matiere matiere, @Size(max = 80) String robinetterie,
-                                    LocalDate datePremiereEpreuve, Boolean nitrox, Boolean regimeTiv,
+                                    @Size(max = 60) String numeroRobinet, LocalDate datePremiereEpreuve, Boolean nitrox, Boolean regimeTiv,
                                     @Size(max = 255) String composition, @DecimalMin("0.5") BigDecimal epaisseurMm,
                                     Boolean horsService, String remarques,
                                     LocalDate derniereInspectionVisuelle, LocalDate derniereRequalification,
@@ -268,6 +272,9 @@ public class MaterielService {
     private void appliquer(Equipement e, DemandeEquipement d) {
         boolean bloc = e.getType() == TypeEquipement.BLOC;
         e.setReference(d.reference().trim());
+        e.setAncienneReference(nettoyer(d.ancienneReference()));
+        e.setProprietaire(nettoyer(d.proprietaire()));
+        e.setConstructeur(nettoyer(d.constructeur()));
         e.setMarque(nettoyer(d.marque()));
         e.setModele(nettoyer(d.modele()));
         e.setNumeroSerie(nettoyer(d.numeroSerie()));
@@ -284,6 +291,7 @@ public class MaterielService {
         e.setPressionEpreuveBar(bloc ? d.pressionEpreuveBar() : null);
         e.setMatiere(bloc ? d.matiere() : null);
         e.setRobinetterie(bloc ? nettoyer(d.robinetterie()) : null);
+        e.setNumeroRobinet(bloc ? nettoyer(d.numeroRobinet()) : null);
         e.setDatePremiereEpreuve(bloc ? d.datePremiereEpreuve() : null);
         e.setNitrox(bloc && Boolean.TRUE.equals(d.nitrox()));
         e.setRegimeTiv(!bloc || !Boolean.FALSE.equals(d.regimeTiv()));
@@ -301,11 +309,12 @@ public class MaterielService {
                 : etat.bloquant() ? Statut.A_REGULARISER
                 : Statut.DISPONIBLE;
         return new EquipementVue(e.getId(), e.getType(), e.getType().libelle(), e.getReference(),
+                e.getAncienneReference(), e.getProprietaire(), e.getConstructeur(),
                 e.getMarque(), e.getModele(), e.getNumeroSerie(), e.getTaille(),
                 e.getDateFabrication(), e.getDateAchat(), e.getDateMiseEnService(), e.getDateRebutPrevue(),
                 e.getNotice(), e.getConsignesEntretien(), e.getPeriodiciteRevisionMois(),
                 e.getVolumeLitres(), e.getPressionServiceBar(), e.getPressionEpreuveBar(),
-                e.getMatiere(), e.getRobinetterie(), e.getDatePremiereEpreuve(),
+                e.getMatiere(), e.getRobinetterie(), e.getNumeroRobinet(), e.getDatePremiereEpreuve(),
                 e.isNitrox(), e.isRegimeTiv(), e.getComposition(), e.getEpaisseurMm(),
                 e.isHorsService(), e.getDateRebut(), e.getMotifRebut(), e.getRemarques(),
                 statut,

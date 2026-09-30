@@ -10,7 +10,7 @@ import {
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
-  FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue,
+  FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
@@ -873,6 +873,13 @@ export class ApiService {
 
   emprunteurs(): Observable<EmprunteurVue[]> {
     return this.http.get<EmprunteurVue[]>('/api/materiel/emprunteurs');
+  }
+
+  /** Reprise du classeur Excel du matériel ; ce qui existe déjà n'est pas touché. */
+  importerClasseurMateriel(fichier: File): Observable<RapportImportMateriel> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post<RapportImportMateriel>('/api/materiel/import', donnees);
   }
 
   // ----------------------------------------------------------------

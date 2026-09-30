@@ -10,6 +10,7 @@ export function descriptionEquipement(e: EquipementVue): string {
   if (modele) morceaux.push(modele);
   if (e.epaisseurMm != null) morceaux.push(`${e.epaisseurMm} mm`);
   if (e.taille) morceaux.push(`taille ${e.taille}`);
+  if (e.proprietaire) morceaux.push(`à ${e.proprietaire}`);
   return morceaux.join(', ');
 }
 

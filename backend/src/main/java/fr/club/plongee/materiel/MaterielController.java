@@ -1,5 +1,7 @@
 package fr.club.plongee.materiel;
 
+import fr.club.plongee.materiel.service.ImportMaterielService;
+import fr.club.plongee.materiel.service.ImportMaterielService.Rapport;
 import fr.club.plongee.materiel.service.MaterielService;
 import fr.club.plongee.materiel.service.MaterielService.DemandeEquipement;
 import fr.club.plongee.materiel.service.MaterielService.DemandeIntervention;
@@ -48,11 +50,14 @@ public class MaterielController {
     private final MaterielService materiel;
     private final PretService prets;
     private final PhotoPretService photos;
+    private final ImportMaterielService imports;
 
-    public MaterielController(MaterielService materiel, PretService prets, PhotoPretService photos) {
+    public MaterielController(MaterielService materiel, PretService prets, PhotoPretService photos,
+                              ImportMaterielService imports) {
         this.materiel = materiel;
         this.prets = prets;
         this.photos = photos;
+        this.imports = imports;
     }
 
     @GetMapping("/equipements")
@@ -160,6 +165,17 @@ public class MaterielController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void supprimerPhoto(@PathVariable Long photoId) {
         photos.supprimer(photoId);
+    }
+
+    /** Multipart : {@code fichier}, le classeur Excel du matériel tenu avant l'application. */
+    @PostMapping("/import")
+    public Rapport importer(@RequestParam("fichier") MultipartFile fichier,
+                            @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        try {
+            return imports.importer(fichier.getBytes(), auteur.id());
+        } catch (IOException e) {
+            throw new RegleMetierException("Le fichier n'a pas pu être lu.");
+        }
     }
 
     @GetMapping("/emprunteurs")

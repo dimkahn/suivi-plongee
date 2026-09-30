@@ -1,10 +1,11 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import {
-  EquipementVue, LIBELLES_STATUT_EQUIPEMENT, StatutEquipement, TYPES_EQUIPEMENT, TypeEquipement
+  EquipementVue, LIBELLES_STATUT_EQUIPEMENT, RapportImportMateriel, StatutEquipement, TYPES_EQUIPEMENT, TypeEquipement
 } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
@@ -30,10 +31,41 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
         <a routerLink="/materiel/prets" class="bouton-principal">Prêts</a>
         <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
         <a routerLink="/materiel/nouveau" class="bouton-discret">Ajouter un équipement</a>
+        <label class="bouton-discret import" [class.occupe]="importEnCours()">
+          {{ importEnCours() ? 'Import en cours…' : 'Importer le classeur Excel' }}
+          <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                 [disabled]="importEnCours()" (change)="importer($event)">
+        </label>
       </div>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+
+    @if (rapport(); as r) {
+      <section class="carte rapport" role="status">
+        <h2>Classeur importé</h2>
+        <p>
+          {{ r.blocs }} bloc(s) et {{ r.gilets }} gilet(s) ajoutés, {{ r.interventions }} ligne(s) d'historique
+          (visites TIV, requalifications) reprises au journal.
+          @if (r.auRebut > 0) { {{ r.auRebut }} bloc(s) vendu(s) ou réformé(s) enregistré(s) au rebut. }
+        </p>
+        @if (r.dejaPresents.length > 0) {
+          <p class="secondaire">
+            Déjà dans l'inventaire, laissés tels quels : {{ r.dejaPresents.join(', ') }}.
+          </p>
+        }
+        @if (r.remarques.length > 0) {
+          <p class="secondaire">À vérifier, recopié dans les remarques de la fiche :</p>
+          <ul>
+            @for (rq of r.remarques; track rq) { <li>{{ rq }}</li> }
+          </ul>
+        }
+        <p class="secondaire">
+          Le matériel reste à compléter à la main si besoin (matière des blocs, périodicité de révision des gilets).
+        </p>
+        <button type="button" class="bouton-discret" (click)="rapport.set(null)">Fermer</button>
+      </section>
+    }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -122,6 +154,13 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; }
     .actions a { display: inline-flex; align-items: center; text-decoration: none; }
     .actions .bouton-discret { color: var(--encre); }
+    .import { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; position: relative; }
+    .import input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .import:focus-within { outline: 3px solid var(--profond); outline-offset: 1px; }
+    .import.occupe { opacity: .6; cursor: progress; }
+    .rapport { padding: var(--pas-2); margin-bottom: var(--pas-2); border-left: 4px solid var(--acquis); }
+    .rapport h2 { margin-bottom: var(--pas); }
+    .rapport ul { margin: 0 0 var(--pas); padding-left: 1.25rem; }
 
     .compteurs { display: flex; gap: var(--pas); flex-wrap: wrap; margin: var(--pas-2) 0; }
     .compteur {
@@ -180,8 +219,10 @@ export class InventaireComponent {
   liste = signal<EquipementVue[]>([]);
   chargement = signal(true);
   message = signal<string | null>(null);
+  importEnCours = signal(false);
+  rapport = signal<RapportImportMateriel | null>(null);
 
-  type = signal<TypeEquipement | null>(null);
+  type =signal<TypeEquipement | null>(null);
   statut = signal<StatutEquipement | null>(null);
   recherche = signal('');
   avecRebut = signal(false);
@@ -204,12 +245,30 @@ export class InventaireComponent {
     return this.enService().filter(e =>
       (this.type() === null || e.type === this.type())
       && (this.statut() === null || e.statut === this.statut())
-      && (!r || [e.reference, e.marque, e.modele, e.numeroSerie, e.taille]
+      && (!r || [e.reference, e.ancienneReference, e.marque, e.modele, e.numeroSerie, e.taille, e.proprietaire]
         .some(v => v != null && normaliser(v).includes(r))));
   });
 
   constructor() {
     void this.charger();
+  }
+
+  async importer(evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    if (!fichier) return;
+    this.importEnCours.set(true);
+    this.message.set(null);
+    this.rapport.set(null);
+    try {
+      this.rapport.set(await firstValueFrom(this.api.importerClasseurMateriel(fichier)));
+      await this.charger();
+    } catch (err) {
+      this.message.set((err as HttpErrorResponse).error?.detail ?? "Le classeur n'a pas pu être importé.");
+    } finally {
+      this.importEnCours.set(false);
+    }
   }
 
   basculerStatut(s: StatutEquipement): void {

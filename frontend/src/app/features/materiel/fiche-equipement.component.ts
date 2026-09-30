@@ -14,11 +14,12 @@ import { descriptionEquipement } from './materiel';
 
 function demandeVide(type: TypeEquipement): DemandeEquipement {
   return {
-    type, reference: '', marque: null, modele: null, numeroSerie: null, taille: null,
+    type, reference: '', ancienneReference: null, proprietaire: null, constructeur: null,
+    marque: null, modele: null, numeroSerie: null, taille: null,
     dateFabrication: null, dateAchat: null, dateMiseEnService: null, dateRebutPrevue: null,
     notice: null, consignesEntretien: null, periodiciteRevisionMois: null,
     volumeLitres: null, pressionServiceBar: null, pressionEpreuveBar: null, matiere: null, robinetterie: null,
-    datePremiereEpreuve: null, nitrox: false, regimeTiv: true, composition: null, epaisseurMm: null,
+    numeroRobinet: null, datePremiereEpreuve: null, nitrox: false, regimeTiv: true, composition: null, epaisseurMm: null,
     horsService: false, remarques: null,
     derniereInspectionVisuelle: null, derniereRequalification: null, derniereRevision: null
   };
@@ -83,13 +84,29 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
                      [placeholder]="exempleReference()">
             </div>
             <div>
+              <label for="ancienneReference">Ancienne référence</label>
+              <input id="ancienneReference" name="ancienneReference" [(ngModel)]="f.ancienneReference" maxlength="30">
+            </div>
+            <div>
               <label for="numeroSerie">N° de série</label>
               <input id="numeroSerie" name="numeroSerie" [(ngModel)]="f.numeroSerie" maxlength="60">
+            </div>
+            <div>
+              <label for="proprietaire">Propriétaire</label>
+              <input id="proprietaire" name="proprietaire" [(ngModel)]="f.proprietaire" maxlength="80"
+                     placeholder="Vide : le club">
             </div>
             <div>
               <label for="marque">Marque</label>
               <input id="marque" name="marque" [(ngModel)]="f.marque" maxlength="80">
             </div>
+            @if (f.type === 'BLOC') {
+              <div>
+                <label for="constructeur">Constructeur</label>
+                <input id="constructeur" name="constructeur" [(ngModel)]="f.constructeur" maxlength="80"
+                       placeholder="Roth, Heiser…">
+              </div>
+            }
             <div>
               <label for="modele">Modèle</label>
               <input id="modele" name="modele" [(ngModel)]="f.modele" maxlength="80">
@@ -144,7 +161,11 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
               <div>
                 <label for="robinetterie">Robinetterie</label>
                 <input id="robinetterie" name="robinetterie" [(ngModel)]="f.robinetterie" maxlength="80"
-                       placeholder="Mono-sortie DIN/étrier…">
+                       placeholder="Marque, mono-sortie DIN/étrier…">
+              </div>
+              <div>
+                <label for="numeroRobinet">N° du robinet</label>
+                <input id="numeroRobinet" name="numeroRobinet" [(ngModel)]="f.numeroRobinet" maxlength="60">
               </div>
               <div>
                 <label for="premiereEpreuve">Date de première épreuve</label>
@@ -531,6 +552,9 @@ export class FicheEquipementComponent {
     if (!e) return [];
     const lignes: { libelle: string; valeur: string | number | null }[] = [
       { libelle: 'Référence du club', valeur: e.reference },
+      { libelle: 'Ancienne référence', valeur: e.ancienneReference },
+      { libelle: 'Propriétaire', valeur: e.proprietaire ?? 'Le club' },
+      { libelle: 'Constructeur', valeur: e.constructeur },
       { libelle: 'Marque', valeur: e.marque },
       { libelle: 'Modèle', valeur: e.modele },
       { libelle: 'N° de série', valeur: e.numeroSerie },
@@ -542,6 +566,7 @@ export class FicheEquipementComponent {
       { libelle: 'Pression de service', valeur: e.pressionServiceBar != null ? `${e.pressionServiceBar} bar` : null },
       { libelle: "Pression d'épreuve", valeur: e.pressionEpreuveBar != null ? `${e.pressionEpreuveBar} bar` : null },
       { libelle: 'Robinetterie', valeur: e.robinetterie },
+      { libelle: 'N° du robinet', valeur: e.numeroRobinet },
       { libelle: 'Première épreuve', valeur: this.fr(e.datePremiereEpreuve) },
       { libelle: 'Nitrox', valeur: e.type === 'BLOC' ? (e.nitrox ? 'Oui' : 'Non') : null },
       { libelle: 'Régime TIV', valeur: e.type === 'BLOC' ? (e.regimeTiv ? 'Oui' : 'Non') : null },
