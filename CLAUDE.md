@@ -228,7 +228,8 @@ donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pa
 introduire d'UPDATE ni de DELETE sur cette table.
 **Notation groupée** (bouton « Noter les présents » de la feuille de
 présence, `NotationGroupeeService`, `POST /api/seances/{id}/notation-groupee`) :
-plusieurs élèves présents, un ou plusieurs critères, un même commentaire.
+plusieurs élèves présents, un ou plusieurs critères, chacun avec son
+commentaire, obligatoire (le même pour tous les élèves notés).
 Elle ne fait jamais reculer un élève : acquis reste acquis, en cours reste en
 cours (seul le commentaire s'ajoute), non abordé passe en cours. Élèves d'une
 même version du MFT à la fois, présence déjà enregistrée exigée, tout ou rien
