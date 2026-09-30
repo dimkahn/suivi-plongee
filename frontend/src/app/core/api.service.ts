@@ -11,7 +11,7 @@ import {
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue,
-  DemandeSortie, SeancePossibleVue, SortieVue
+  DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -241,6 +241,11 @@ export class ApiService {
    */
   roster(): Promise<RosterVue> {
     return this.lireOuRetomber('roster', () => this.http.get<RosterVue>('/api/roster'));
+  }
+
+  /** Plusieurs élèves présents, un ou plusieurs critères, un même commentaire. Nécessite le réseau. */
+  noterGroupe(seanceId: number, demande: DemandeNotationGroupee): Observable<BilanNotationGroupee> {
+    return this.http.post<BilanNotationGroupee>(`/api/seances/${seanceId}/notation-groupee`, demande);
   }
 
   noterEnLigne(cursusId: number, critereId: number, statut: Statut,

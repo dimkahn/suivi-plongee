@@ -518,6 +518,8 @@ export interface LignePresence {
   eleveId: number;
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
+  /** Version du MFT figée sur le cursus ; absente d'une feuille embarquée hors ligne avant son ajout. */
+  referentielId?: number;
   statut: StatutPresence | null;
   atelier: Atelier | null;
   aPhoto: boolean;
@@ -527,6 +529,24 @@ export interface LignePresence {
 export interface FeuillePresence {
   seance: SeanceVue;
   eleves: LignePresence[];
+}
+
+/**
+ * Notation groupée des présents d'une séance : le serveur ne fait jamais
+ * reculer un élève (acquis reste acquis, en cours reste en cours, non abordé
+ * passe en cours) et ajoute le commentaire.
+ */
+export interface DemandeNotationGroupee {
+  cursusIds: number[];
+  critereIds: number[];
+  commentaire: string | null;
+}
+
+export interface BilanNotationGroupee {
+  eleves: number;
+  passesEnCours: number;
+  commentairesAjoutes: number;
+  inchanges: number;
 }
 
 // ----------------------------------------------------------------

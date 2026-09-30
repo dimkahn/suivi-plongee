@@ -63,9 +63,12 @@ public class SeanceController {
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
                                   Participation.Atelier atelier, String commentaire) {}
 
-    /** Une ligne de la feuille de présence ; statut/atelier null : rien de saisi pour cette séance. */
-    public record LignePresence(Long cursusId, Long eleveId, String eleve, String niveau, String statut,
-                                String atelier, boolean aPhoto, boolean autorisationImage) {}
+    /**
+     * Une ligne de la feuille de présence ; statut/atelier null : rien de saisi pour cette séance.
+     * {@code referentielId} : version du MFT figée sur le cursus, pour la notation groupée des présents.
+     */
+    public record LignePresence(Long cursusId, Long eleveId, String eleve, String niveau, Long referentielId,
+                                String statut, String atelier, boolean aPhoto, boolean autorisationImage) {}
 
     public record FeuillePresence(SeanceVue seance, List<LignePresence> eleves) {}
 
@@ -264,7 +267,7 @@ public class SeanceController {
                     Participation p = saisies.get(c.getId());
                     Eleve e = c.getEleve();
                     return new LignePresence(c.getId(), e.getId(), e.nomComplet(),
-                            c.getReferentiel().getNiveau().name(),
+                            c.getReferentiel().getNiveau().name(), c.getReferentiel().getId(),
                             p == null ? null : p.getStatut().name(),
                             p == null || p.getAtelier() == null ? null : p.getAtelier().name(),
                             e.isAutorisationImage() && photos.existsById(e.getId()),
