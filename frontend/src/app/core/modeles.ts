@@ -845,6 +845,8 @@ export interface InterventionVue {
   pretId: number | null;
   saisiPar: string | null;
   saisiLe: string;
+  /** La fiche d'inspection TIV détaillée, quand la ligne en a une. */
+  inspectionTivId: number | null;
 }
 
 export interface DemandeIntervention {
@@ -897,6 +899,97 @@ export interface FicheEquipementVue {
   equipement: EquipementVue;
   journal: InterventionVue[];
   prets: PretVue[];
+}
+
+export type MotifInspectionTiv = 'PERIODIQUE' | 'AVANT_REQUALIFICATION' | 'APRES_INCIDENT' | 'AUTRE';
+export type DecisionInspectionTiv = 'FAVORABLE' | 'DEFAVORABLE' | 'REBUT';
+
+export const MOTIFS_INSPECTION_TIV: { valeur: MotifInspectionTiv; libelle: string }[] = [
+  { valeur: 'PERIODIQUE', libelle: 'Inspection périodique (annuelle)' },
+  { valeur: 'AVANT_REQUALIFICATION', libelle: 'Visite avant requalification' },
+  { valeur: 'APRES_INCIDENT', libelle: 'Après un incident (choc, chute, eau, vidage complet)' },
+  { valeur: 'AUTRE', libelle: 'Autre' }
+];
+
+export const DECISIONS_INSPECTION_TIV: { valeur: DecisionInspectionTiv; libelle: string }[] = [
+  { valeur: 'FAVORABLE', libelle: 'Favorable au maintien en service' },
+  { valeur: 'DEFAVORABLE', libelle: 'Défavorable au maintien en service' },
+  { valeur: 'REBUT', libelle: 'Bouteille rebutée' }
+];
+
+/** Une question de la fiche d'inspection ; la liste vient du serveur. */
+export interface PointInspectionTivVue {
+  code: string;
+  libelle: string;
+  /** La réponse d'une bouteille sans défaut. */
+  reponseNormale: boolean;
+  /** La décision proposée en cas de défaut (colonne « Décision » de la fiche). */
+  actionProposee: string;
+  interditAvisFavorable: boolean;
+}
+
+export interface ModeleInspectionTivVue {
+  bloc: EquipementVue;
+  sections: { code: string; libelle: string; points: PointInspectionTivVue[] }[];
+  tivNom: string | null;
+  tivNumero: string | null;
+  filetageBouteille: string | null;
+  filetageRobinet: string | null;
+}
+
+export interface DemandeConstatTiv {
+  point: string;
+  reponse: boolean;
+  decision: string | null;
+  precisions: string | null;
+  realiseLe: string | null;
+}
+
+export interface DemandeInspectionTiv {
+  dateInspection: string;
+  motif: MotifInspectionTiv;
+  tivNom: string;
+  tivNumero: string;
+  filetageBouteille: string | null;
+  filetageRobinet: string | null;
+  marquageRequalification: string | null;
+  decision: DecisionInspectionTiv;
+  observations: string | null;
+  constats: DemandeConstatTiv[];
+}
+
+/** Le compte rendu d'inspection, tel qu'émis. */
+export interface InspectionTivVue {
+  id: number;
+  /** Identification unique du compte rendu (« TIV-2026-0042 »). */
+  numero: string;
+  /** La structure émettrice. */
+  club: string;
+  bloc: EquipementVue;
+  dateInspection: string;
+  motif: MotifInspectionTiv;
+  motifLibelle: string;
+  tivNom: string;
+  tivNumero: string;
+  proprietaire: string | null;
+  filetageBouteille: string | null;
+  filetageRobinet: string | null;
+  marquageRequalification: string | null;
+  decision: DecisionInspectionTiv;
+  decisionLibelle: string;
+  observations: string | null;
+  prochaineInspection: string | null;
+  prochaineRequalification: string | null;
+  saisiPar: string | null;
+  saisiLe: string;
+  sections: {
+    code: string;
+    libelle: string;
+    constats: {
+      point: string; libelle: string; reponse: boolean; defaut: boolean;
+      decision: string | null; precisions: string | null; realiseLe: string | null;
+    }[];
+  }[];
 }
 
 export interface EmprunteurVue {

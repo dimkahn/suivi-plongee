@@ -10,7 +10,7 @@ import {
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
-  FicheEquipementVue, InterventionVue, MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
+  FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
@@ -830,6 +830,18 @@ export class ApiService {
 
   ajouterIntervention(equipementId: number, demande: DemandeIntervention): Observable<InterventionVue> {
     return this.http.post<InterventionVue>(`/api/materiel/equipements/${equipementId}/interventions`, demande);
+  }
+
+  modeleInspectionTiv(equipementId: number): Observable<ModeleInspectionTivVue> {
+    return this.http.get<ModeleInspectionTivVue>(`/api/materiel/equipements/${equipementId}/inspections-tiv/modele`);
+  }
+
+  enregistrerInspectionTiv(equipementId: number, demande: DemandeInspectionTiv): Observable<InspectionTivVue> {
+    return this.http.post<InspectionTivVue>(`/api/materiel/equipements/${equipementId}/inspections-tiv`, demande);
+  }
+
+  inspectionTiv(id: number): Observable<InspectionTivVue> {
+    return this.http.get<InspectionTivVue>(`/api/materiel/inspections-tiv/${id}`);
   }
 
   /** enCours : prêts non rendus ; sinon l'historique des prêts rendus. */
