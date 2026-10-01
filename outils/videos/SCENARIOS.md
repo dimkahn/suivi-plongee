@@ -604,6 +604,27 @@ Compte : `e3@club.fr` · format téléphone · 26 s
 3. Il disparaît de l'inventaire et des prêts, mais sa fiche est gardée trois ans.
 4. Une erreur ? « Annuler la mise au rebut » depuis sa fiche.
 
+### D10 — La fiche d'inspection TIV d'un bloc
+
+Le TIV du club remplit la fiche d'évaluation et de suivi d'une bouteille, puis imprime le compte rendu.
+
+Compte : `e2@club.fr` · format téléphone
+
+1. Un TIV a l'entrée « Matériel » : il voit les blocs, sans gérer l'inventaire ni les prêts.
+2. Le bloc B-02 : son inspection visuelle arrive à échéance.
+3. Date, motif, nom et n° de TIV : ils seront repris à la prochaine fiche.
+4. Les filetages de la bouteille et du robinet : un mauvais appairage est le risque majeur.
+5. Chaque question part de la réponse d'une bouteille saine : on ne touche que les défauts.
+6. Filetage légèrement oxydé : la décision de la fiche est proposée, « À nettoyer ».
+7. Un défaut grave interdit l'avis favorable : l'appli le signale aussitôt.
+8. Fausse alerte : on revient sur « Non ».
+9. Avis favorable : le bloc repart pour douze mois.
+10. Défavorable, il n'est plus prêté ; rebuté, il est mis au rebut. Les deux demandent une observation.
+11. Le compte rendu, numéroté, se relit et s'imprime pour être signé.
+12. Une fiche enregistrée ne se modifie plus : une erreur se corrige par une nouvelle inspection.
+13. Pensez aussi à enregistrer la visite sur le dispositif fédéral en ligne.
+14. Dans le journal du bloc, « Voir la fiche d'inspection » la retrouve.
+
 ## Élève
 
 ### E1 — Consulter sa progression
