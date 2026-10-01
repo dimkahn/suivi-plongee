@@ -15,7 +15,7 @@ dans le même ordre.
 
 Le tour de l'appli pour qui la découvre : grille, présences, planning, fiches de sécurité, matériel.
 
-Compte : `e3@club.fr` · format téléphone · 60 s
+Compte : `e3@club.fr` · format téléphone · 70 s
 
 1. L'appli du club remplace le classeur partagé : elle se manie au téléphone, au bord du bassin.
 2. « Infos élèves » : toute la saison, CACI, séances suivies.
@@ -34,7 +34,7 @@ Compte : `e3@club.fr` · format téléphone · 60 s
 
 Se connecter depuis son téléphone, trouver les écrans dans le menu, récupérer un mot de passe oublié.
 
-Compte : `e2@club.fr` · format téléphone · 49 s
+Compte : `e2@club.fr` · format téléphone · 62 s
 
 1. Sur votre téléphone, ouvrez l'adresse de l'appli du club.
 2. Votre adresse e-mail…
@@ -53,7 +53,7 @@ Compte : `e2@club.fr` · format téléphone · 49 s
 
 Déposer sa photo, retrouver son niveau et son CACI, changer son e-mail ou son mot de passe.
 
-Compte : `e2@club.fr` · format téléphone · 48 s
+Compte : `e2@club.fr` · format téléphone · 56 s
 
 1. Votre compte : touchez votre nom dans le menu.
 2. En haut : votre niveau d'encadrement et la date de votre CACI.
@@ -71,7 +71,7 @@ Compte : `e2@club.fr` · format téléphone · 48 s
 
 La feuille de présence d'une séance en moins d'une minute : nage, bloc ou théorie pour chaque élève.
 
-Compte : `e2@club.fr` · format téléphone · 49 s
+Compte : `e2@club.fr` · format téléphone · 56 s
 
 1. Au bord du bassin : menu, puis « Présences ».
 2. D'abord la séance. Touchez « Changer » pour ouvrir le calendrier.
@@ -89,7 +89,7 @@ Compte : `e2@club.fr` · format téléphone · 49 s
 
 Choisir la séance, noter les critères au programme, laisser un commentaire pour le prochain encadrant.
 
-Compte : `e2@club.fr` · format téléphone · 49 s
+Compte : `e2@club.fr` · format téléphone · 61 s
 
 1. Dans « Infos élèves », touchez le nom de l'élève.
 2. Sa grille : niveau préparé, critères acquis, séances suivies.
@@ -109,7 +109,7 @@ Compte : `e2@club.fr` · format téléphone · 49 s
 
 Rien ne s'efface : corriger une note et retrouver qui a noté quoi, et quand.
 
-Compte : `e2@club.fr` · format téléphone · 36 s
+Compte : `e2@club.fr` · format téléphone · 41 s
 
 1. Séance du jour choisie, comme d'habitude.
 2. Le vidage de masque était « en cours », avec un commentaire de Tiago.
@@ -124,7 +124,7 @@ Compte : `e2@club.fr` · format téléphone · 36 s
 
 Valider un bloc de compétences quand tous ses critères sont acquis, et comprendre les refus.
 
-Compte : `e2@club.fr` · format téléphone · 46 s
+Compte : `e2@club.fr` · format téléphone · 57 s
 
 1. Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.
 2. Anis a choisi et réglé son matériel seul : dernier critère acquis.
@@ -138,7 +138,7 @@ Compte : `e2@club.fr` · format téléphone · 46 s
 
 Chaque encadrant note les niveaux de son encadrement : un E1 consulte une grille N2 sans pouvoir y toucher.
 
-Compte : `e1@club.fr` · format téléphone · 32 s
+Compte : `e1@club.fr` · format téléphone · 36 s
 
 1. Tiago est E1 : il encadre et note le N1.
 2. Il ouvre la grille de Camille, qui prépare le N2.
@@ -152,7 +152,7 @@ Compte : `e1@club.fr` · format téléphone · 32 s
 
 La vue globale, séance par séance comme l'ancien tableur, et la fiche de suivi en PDF.
 
-Compte : `e2@club.fr` · format téléphone · 32 s
+Compte : `e2@club.fr` · format téléphone · 37 s
 
 1. Sous le nom de l'élève : « Vue globale (toutes les séances) ».
 2. Une colonne par séance, une ligne par critère : comme l'onglet de l'élève dans l'ancien tableur.
@@ -165,7 +165,7 @@ Compte : `e2@club.fr` · format téléphone · 32 s
 
 Préparer le téléphone avant de partir, noter sans réseau, et laisser l'appli tout envoyer au retour.
 
-Compte : `e2@club.fr` · format téléphone · 51 s
+Compte : `e2@club.fr` · format téléphone · 60 s
 
 1. Pas de réseau à la piscine ? Avant de partir, avec du réseau : menu, « Préparer hors ligne ».
 2. Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.
@@ -183,7 +183,7 @@ Compte : `e2@club.fr` · format téléphone · 51 s
 
 Avant la mise à l'eau : directeur de plongée, conditions, palanquées et plongeurs.
 
-Compte : `e2@club.fr` · format téléphone · 44 s
+Compte : `e2@club.fr` · format téléphone · 52 s
 
 1. Menu, « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
 2. On retrouve la séance par sa date.
@@ -198,7 +198,7 @@ Compte : `e2@club.fr` · format téléphone · 44 s
 
 Au retour de plongée : heures, profondeurs, durées et paliers réalisés, palanquée par palanquée.
 
-Compte : `e2@club.fr` · format téléphone · 34 s
+Compte : `e2@club.fr` · format téléphone · 36 s
 
 1. Dimanche, à la gravière : la fiche a été établie avant la plongée.
 2. Pendant la plongée, « Marquer l'immersion » puis « Marquer la sortie » notent l'heure.
@@ -209,7 +209,7 @@ Compte : `e2@club.fr` · format téléphone · 34 s
 
 Saisir une fois les plongeurs d'un séjour, puis reprendre le groupe dans chaque fiche de sécurité.
 
-Compte : `e2@club.fr` · format téléphone · 39 s
+Compte : `e2@club.fr` · format téléphone · 42 s
 
 1. Un séjour, c'est plusieurs plongées avec les mêmes plongeurs. Menu, « Groupes ».
 2. On saisit la liste une seule fois.
@@ -220,7 +220,7 @@ Compte : `e2@club.fr` · format téléphone · 39 s
 
 Où est mon groupe ce soir ? Ligne d'eau, fosse, responsable de séance et avertissements.
 
-Compte : `e2@club.fr` · format téléphone · 46 s
+Compte : `e2@club.fr` · format téléphone · 56 s
 
 1. Le planning remplace le tableur du lundi soir : menu, puis « Planning ».
 2. En haut, la prochaine soirée : son responsable de séance et une note éventuelle.
@@ -237,7 +237,7 @@ Compte : `e2@club.fr` · format téléphone · 46 s
 
 Dire en un toucher si l'on sera là aux prochaines soirées.
 
-Compte : `e2@club.fr` · format téléphone · 34 s
+Compte : `e2@club.fr` · format téléphone · 39 s
 
 1. « Vous serez là ? » : l'admin compose les groupes avec vos réponses.
 2. On voit déjà qui a répondu. Vous, pas encore.
@@ -252,7 +252,7 @@ Compte : `e2@club.fr` · format téléphone · 34 s
 
 Mettre un nom sur un visage : élèves par groupe et encadrants du club.
 
-Compte : `e2@club.fr` · format téléphone · 32 s
+Compte : `e2@club.fr` · format téléphone · 35 s
 
 1. Mettre un nom sur un visage : menu, puis « Trombinoscope ».
 2. Les élèves de la saison, rangés par groupe d'entraînement.
@@ -267,7 +267,7 @@ Compte : `e2@club.fr` · format téléphone · 32 s
 
 Toute la saison sur un écran : CACI, séances suivies, contacts d'urgence.
 
-Compte : `e2@club.fr` · format téléphone · 40 s
+Compte : `e2@club.fr` · format téléphone · 49 s
 
 1. « Infos élèves » : la page d'accueil. Toute la saison sur un seul écran.
 2. Pour chaque élève : son niveau préparé, son référent, son CACI.
@@ -283,7 +283,7 @@ Compte : `e2@club.fr` · format téléphone · 40 s
 
 Tout le groupe a travaillé le même exercice : une seule notation pour tous les présents, un commentaire par critère.
 
-Compte : `e2@club.fr` · format téléphone · 62 s
+Compte : `e2@club.fr` · format téléphone · 81 s
 
 1. Tout le groupe a fait le même exercice ? Notez-le en une fois, depuis « Présences ».
 2. Choisissez la séance : ici, la piscine du lundi 21 septembre.
@@ -307,7 +307,7 @@ Compte : `e2@club.fr` · format téléphone · 62 s
 
 Ce que contient chaque écran d'administration, et dans quel ordre s'en servir en début de saison.
 
-Compte : `presidente@club.fr` · format ordinateur · 40 s
+Compte : `presidente@club.fr` · format ordinateur · 61 s
 
 1. Un compte administrateur voit tout ce que voit un moniteur, plus « Administration ».
 2. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
@@ -326,7 +326,7 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 
 Créer la saison, ajuster ses dates, choisir les progressions types qu'elle suit.
 
-Compte : `presidente@club.fr` · format ordinateur · 38 s
+Compte : `presidente@club.fr` · format ordinateur · 45 s
 
 1. Administration, « Saisons ».
 2. La saison en cours est ouverte ; les précédentes restent consultables, fermées.
@@ -339,7 +339,7 @@ Compte : `presidente@club.fr` · format ordinateur · 38 s
 
 Toute l'année en une fois : jours de la semaine, vacances scolaires et jours fériés retirés d'office.
 
-Compte : `presidente@club.fr` · format ordinateur · 36 s
+Compte : `presidente@club.fr` · format ordinateur · 44 s
 
 1. Plutôt que créer chaque lundi à la main : « Générer toutes les séances d'une saison ».
 2. Les vacances de la zone viennent du calendrier officiel de l'Éducation nationale.
@@ -353,7 +353,7 @@ Compte : `presidente@club.fr` · format ordinateur · 36 s
 
 Ajouter une séance exceptionnelle, la modifier, voir le calendrier et le programme du mois.
 
-Compte : `presidente@club.fr` · format ordinateur · 35 s
+Compte : `presidente@club.fr` · format ordinateur · 38 s
 
 1. Chaque séance porte le programme de la progression du mois.
 2. Une séance en plus : « Nouvelle séance ».
@@ -365,7 +365,7 @@ Compte : `presidente@club.fr` · format ordinateur · 35 s
 
 Créer le compte d'un encadrant : niveau d'encadrement, niveau de plongeur, rôles, CACI.
 
-Compte : `presidente@club.fr` · format ordinateur · 35 s
+Compte : `presidente@club.fr` · format ordinateur · 42 s
 
 1. La liste des encadrants, avec l'état de leur CACI.
 2. Niveau d'encadrement et niveau de plongeur sont distincts : un E1 peut n'être que N2.
@@ -377,7 +377,7 @@ Compte : `presidente@club.fr` · format ordinateur · 35 s
 
 Le dossier d'un élève : identité, CACI, contact d'urgence, autorisation de pratiquer et droit à l'image.
 
-Compte : `presidente@club.fr` · format ordinateur · 35 s
+Compte : `presidente@club.fr` · format ordinateur · 41 s
 
 1. Du certificat médical, seule la date de fin de validité est gardée : aucune donnée de santé.
 2. Nathan est mineur : l'autorisation du responsable légal couvre la pratique…
@@ -389,7 +389,7 @@ Compte : `presidente@club.fr` · format ordinateur · 35 s
 
 N1, N2 ou N3 : le référentiel est figé à l'inscription, avec un référent et un groupe d'entraînement.
 
-Compte : `presidente@club.fr` · format ordinateur · 30 s
+Compte : `presidente@club.fr` · format ordinateur · 33 s
 
 1. On cherche l'élève ; l'appli suggère le niveau d'après son parcours.
 2. Le groupe du niveau préparé est proposé d'office.
@@ -400,7 +400,7 @@ Compte : `presidente@club.fr` · format ordinateur · 30 s
 
 Un plongeur déjà breveté qui s'entraîne avec le club sans viser de niveau : le maintien.
 
-Compte : `presidente@club.fr` · format ordinateur · 36 s
+Compte : `presidente@club.fr` · format ordinateur · 38 s
 
 1. Inès arrive d'un autre club, déjà N2. Elle veut s'entraîner, pas passer de niveau.
 2. Pour cette saison : « Aucune formation — maintien », dans le groupe N2+.
@@ -411,7 +411,7 @@ Compte : `presidente@club.fr` · format ordinateur · 36 s
 
 En fin de formation, passer l'inscription à « Brevet délivré » : la grille est archivée, la fiche prend le niveau.
 
-Compte : `presidente@club.fr` · format ordinateur · 26 s
+Compte : `presidente@club.fr` · format ordinateur · 31 s
 
 1. Sonia a réussi son N3.
 2. La formation est close : sa grille passe en lecture seule, telle qu'elle a été validée.
@@ -422,7 +422,7 @@ Compte : `presidente@club.fr` · format ordinateur · 26 s
 
 Les groupes de la saison, leurs encadrants attitrés, leur ligne d'eau, et le rangement des élèves.
 
-Compte : `presidente@club.fr` · format ordinateur · 33 s
+Compte : `presidente@club.fr` · format ordinateur · 39 s
 
 1. Chaque groupe : son niveau préparé, sa ligne d'eau attitrée, ses encadrants.
 2. Un nouveau groupe pour les N1 tout frais :
@@ -434,7 +434,7 @@ Compte : `presidente@club.fr` · format ordinateur · 33 s
 
 La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, responsable de séance.
 
-Compte : `presidente@club.fr` · format ordinateur · 33 s
+Compte : `presidente@club.fr` · format ordinateur · 36 s
 
 1. Une ligne par groupe, une colonne par soirée : comme le tableur du lundi.
 2. Une case grisée = la ligne attitrée du groupe. On ne note que les écarts.
@@ -446,7 +446,7 @@ Compte : `presidente@club.fr` · format ordinateur · 33 s
 
 Fosse trop pleine, débutants sans limite à 6 m, pas d'E3 présent : le planning prévient, sans bloquer.
 
-Compte : `presidente@club.fr` · format ordinateur · 39 s
+Compte : `presidente@club.fr` · format ordinateur · 46 s
 
 1. Le ⚠ au-dessus d'une soirée signale quelque chose à vérifier.
 2. Mettons les débutants en fosse, sans limite de profondeur :
@@ -460,7 +460,7 @@ Compte : `presidente@club.fr` · format ordinateur · 39 s
 
 L'année d'un niveau découpée en périodes de mois : ce qui est « au programme » et ce qui est « en retard ».
 
-Compte : `presidente@club.fr` · format ordinateur · 39 s
+Compte : `presidente@club.fr` · format ordinateur · 45 s
 
 1. La progression N1 du club : des périodes de mois, avec les blocs travaillés.
 2. En mois et pas en dates : elle resert d'une saison à l'autre.
@@ -473,7 +473,7 @@ Compte : `presidente@club.fr` · format ordinateur · 39 s
 
 Les compétences fédérales de chaque niveau, leurs règles, et la prudence avant de corriger un référentiel en service.
 
-Compte : `presidente@club.fr` · format ordinateur · 35 s
+Compte : `presidente@club.fr` · format ordinateur · 45 s
 
 1. Une version datée du MFT par niveau, avec ses règles : âge, prérequis, encadrant requis…
 2. Ces règles sont appliquées par le serveur à chaque note et chaque validation.
@@ -486,7 +486,7 @@ Compte : `presidente@club.fr` · format ordinateur · 35 s
 
 Un week-end en mer : dates, lieu, et ses plongées créées d'un coup.
 
-Compte : `presidente@club.fr` · format ordinateur · 38 s
+Compte : `presidente@club.fr` · format ordinateur · 40 s
 
 1. Ses plongées : deux par jour, sur le site prévu.
 2. Elles sont créées et rattachées à la sortie, en un geste.
@@ -498,7 +498,7 @@ Compte : `presidente@club.fr` · format ordinateur · 38 s
 
 Blocs, détendeurs, gilets et combinaisons : leur état, et ce qui arrive à échéance.
 
-Compte : `e3@club.fr` · format téléphone · 29 s
+Compte : `e3@club.fr` · format téléphone · 35 s
 
 1. Le directeur technique a une entrée de plus dans le menu : « Matériel ».
 2. En haut, les compteurs : disponible, prêté, à régulariser, hors service.
@@ -511,7 +511,7 @@ Compte : `e3@club.fr` · format téléphone · 29 s
 
 Enregistrer un bloc neuf : caractéristiques, régime TIV, dates de contrôle.
 
-Compte : `e3@club.fr` · format téléphone · 29 s
+Compte : `e3@club.fr` · format téléphone · 31 s
 
 1. Un bloc neuf arrive au club : « Ajouter un équipement ».
 2. Un seul formulaire pour les quatre types : les champs suivent le type choisi.
@@ -522,7 +522,7 @@ Compte : `e3@club.fr` · format téléphone · 29 s
 
 Le journal d'un détendeur : révisions, réparations, désinfections. On ajoute, on ne modifie jamais.
 
-Compte : `e3@club.fr` · format téléphone · 33 s
+Compte : `e3@club.fr` · format téléphone · 37 s
 
 1. Le détendeur D-02 : sa révision est dépassée.
 2. Sa fiche tient lieu de fiche de gestion d'EPI (Code du sport) : à garder 3 ans après le rebut.
@@ -534,7 +534,7 @@ Compte : `e3@club.fr` · format téléphone · 33 s
 
 Inspection visuelle (TIV) et requalification : un bloc à régulariser redevient prêtable.
 
-Compte : `e3@club.fr` · format téléphone · 40 s
+Compte : `e3@club.fr` · format téléphone · 45 s
 
 1. Le bloc B-03 est « à régulariser » : TIV et requalification dépassées.
 2. Tant qu'il l'est, l'appli refuse de le prêter.
@@ -547,7 +547,7 @@ Compte : `e3@club.fr` · format téléphone · 40 s
 
 Un prêt en quelques touchers, avec la désinfection du détendeur confirmée à chaque changement d'utilisateur.
 
-Compte : `e3@club.fr` · format téléphone · 30 s
+Compte : `e3@club.fr` · format téléphone · 34 s
 
 1. Les prêts en cours et rendus. « Nouveau prêt » :
 2. On choisit le matériel dans l'inventaire.
@@ -559,7 +559,7 @@ Compte : `e3@club.fr` · format téléphone · 30 s
 
 Photographier l'état du matériel à la remise et au retour : ces photos font foi.
 
-Compte : `e3@club.fr` · format téléphone · 29 s
+Compte : `e3@club.fr` · format téléphone · 35 s
 
 1. À la remise du matériel, on le photographie : rayures, accrocs, état général.
 2. On photographie le matériel, jamais les personnes.
@@ -571,7 +571,7 @@ Compte : `e3@club.fr` · format téléphone · 29 s
 
 Enregistrer le retour, signaler un incident ou mettre un équipement hors service.
 
-Compte : `e3@club.fr` · format téléphone · 27 s
+Compte : `e3@club.fr` · format téléphone · 30 s
 
 1. Camille rapporte le matériel de son week-end.
 2. Pour chaque équipement : un incident éventuel.
@@ -584,7 +584,7 @@ Compte : `e3@club.fr` · format téléphone · 27 s
 
 Rattacher les prêts à une sortie : retour prévu au dernier jour, et les échéances vérifiées jusque-là.
 
-Compte : `e3@club.fr` · format téléphone · 46 s
+Compte : `e3@club.fr` · format téléphone · 48 s
 
 1. Le directeur technique gère aussi les sorties : « Sorties ».
 2. On choisit la sortie : le retour prévu se cale sur son dernier jour.
@@ -597,7 +597,7 @@ Compte : `e3@club.fr` · format téléphone · 46 s
 
 Retirer définitivement un équipement, en gardant sa fiche trois ans comme l'exige le Code du sport.
 
-Compte : `e3@club.fr` · format téléphone · 26 s
+Compte : `e3@club.fr` · format téléphone · 29 s
 
 1. Le gilet G-02 est hors service ; la pièce n'existe plus.
 2. En bas de sa fiche : « Mise au rebut », avec la date et le motif.
@@ -608,7 +608,7 @@ Compte : `e3@club.fr` · format téléphone · 26 s
 
 Le TIV du club remplit la fiche d'évaluation et de suivi d'une bouteille, puis imprime le compte rendu.
 
-Compte : `e2@club.fr` · format téléphone
+Compte : `e2@club.fr` · format téléphone · 73 s
 
 1. Un TIV a l'entrée « Matériel » : il voit les blocs, sans gérer l'inventaire ni les prêts.
 2. Le bloc B-02 : son inspection visuelle arrive à échéance.
@@ -631,7 +631,7 @@ Compte : `e2@club.fr` · format téléphone
 
 L'élève suit sa propre grille de compétences depuis son téléphone, sans rien pouvoir saisir.
 
-Compte : `eleve@club.fr` · format téléphone · 22 s
+Compte : `eleve@club.fr` · format téléphone · 25 s
 
 1. Camille est élève : son compte ne voit que sa propre formation.
 2. Sa grille N2 : ce qui est acquis, ce qui reste à travailler, ce qui est au programme.
