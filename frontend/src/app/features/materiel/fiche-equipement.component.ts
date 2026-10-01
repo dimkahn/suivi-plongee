@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import {
   DemandeEquipement, DemandeIntervention, EquipementVue, FicheEquipementVue, LIBELLES_STATUT_EQUIPEMENT,
   TYPES_EQUIPEMENT, TYPES_INTERVENTION, TypeEquipement
@@ -57,6 +58,8 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
+    } @else if (creation() && !gere()) {
+      <p class="vide">L'ajout d'équipements est réservé au directeur technique.</p>
     } @else if (creation() || edition()) {
       <h1>{{ creation() ? 'Nouvel équipement' : 'Modifier ' + (fiche()?.equipement?.typeLibelle ?? '') + ' ' + (fiche()?.equipement?.reference ?? '') }}</h1>
 
@@ -284,15 +287,15 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
       @if (e.pretEnCours; as p) {
         <p>
           Prêté à <strong>{{ p.emprunteur }}</strong>@if (p.dateRetourPrevue) {, retour prévu le {{ p.dateRetourPrevue | dateFr }}}.
-          <a routerLink="/materiel/prets" class="pas-imprime">Voir les prêts</a>
+          @if (gere()) { <a routerLink="/materiel/prets" class="pas-imprime">Voir les prêts</a> }
         </p>
       }
 
       <div class="actions pas-imprime">
-        @if (e.statut !== 'REBUTE') {
+        @if (e.statut !== 'REBUTE' && gere()) {
           <button type="button" class="bouton-discret" (click)="commencerEdition()">Modifier</button>
         }
-        @if (e.statut === 'DISPONIBLE') {
+        @if (e.statut === 'DISPONIBLE' && gere()) {
           <a [routerLink]="['/materiel/prets']" [queryParams]="{ equipement: e.id }" class="bouton-principal">Prêter</a>
         }
         <button type="button" class="bouton-discret" (click)="imprimer()">Imprimer la fiche</button>
@@ -351,9 +354,11 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
             @if (e.type === 'BLOC') {
               <a [routerLink]="['/materiel', e.id, 'tiv']" class="bouton-principal">Remplir la fiche d'inspection TIV</a>
             }
-            <button type="button" class="bouton-discret" (click)="ajoutJournal.set(true)">
-              Ajouter une entrée au journal
-            </button>
+            @if (gere()) {
+              <button type="button" class="bouton-discret" (click)="ajoutJournal.set(true)">
+                Ajouter une entrée au journal
+              </button>
+            }
           </div>
         }
         @if (e.statut !== 'REBUTE' && ajoutJournal()) {
@@ -424,6 +429,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
         }
       </section>
 
+      @if (gere()) {
       <section class="carte bloc-fiche">
         <h2>Prêts</h2>
         @if (fi.prets.length === 0) {
@@ -473,6 +479,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
           <button type="button" class="bouton-discret danger" (click)="supprimer()">Supprimer l'équipement</button>
         }
       </section>
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -543,6 +550,8 @@ export class FicheEquipementComponent {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  /** Faux pour un TIV : il consulte et remplit les fiches d'inspection, sans gérer le matériel ni les prêts. */
+  readonly gere = inject(AuthService).gereMateriel;
 
   readonly types = TYPES_EQUIPEMENT;
   readonly libelleStatut = LIBELLES_STATUT_EQUIPEMENT;

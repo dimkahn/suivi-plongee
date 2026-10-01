@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeMateriel, gardeSorties } from './core/gardes';
+import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeInspectionBlocs, gardeMateriel, gardeSorties } from './core/gardes';
 
 export const routes: Routes = [
   // Page d'accueil : Infos élèves. Un compte sans rôle d'encadrant en est
@@ -158,7 +158,7 @@ export const routes: Routes = [
   },
   {
     path: 'materiel',
-    canActivate: [gardeConnecte, gardeMateriel],
+    canActivate: [gardeConnecte, gardeInspectionBlocs],
     loadComponent: () => import('./features/materiel/inventaire.component')
       .then(m => m.InventaireComponent)
   },
@@ -170,19 +170,19 @@ export const routes: Routes = [
   },
   {
     path: 'materiel/tiv/:inspectionId',
-    canActivate: [gardeConnecte, gardeMateriel],
+    canActivate: [gardeConnecte, gardeInspectionBlocs],
     loadComponent: () => import('./features/materiel/rapport-inspection-tiv.component')
       .then(m => m.RapportInspectionTivComponent)
   },
   {
     path: 'materiel/:id/tiv',
-    canActivate: [gardeConnecte, gardeMateriel],
+    canActivate: [gardeConnecte, gardeInspectionBlocs],
     loadComponent: () => import('./features/materiel/saisie-inspection-tiv.component')
       .then(m => m.SaisieInspectionTivComponent)
   },
   {
     path: 'materiel/:id',
-    canActivate: [gardeConnecte, gardeMateriel],
+    canActivate: [gardeConnecte, gardeInspectionBlocs],
     loadComponent: () => import('./features/materiel/fiche-equipement.component')
       .then(m => m.FicheEquipementComponent)
   },

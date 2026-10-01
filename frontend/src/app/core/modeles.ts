@@ -175,6 +175,8 @@ export interface MoniteurVue {
   admin: boolean;
   /** Gère le matériel du club et les prêts. */
   directeurTechnique: boolean;
+  /** Technicien en inspection visuelle : remplit les fiches d'inspection des blocs. */
+  tiv: boolean;
   autorisationImage: boolean;
   aPhoto: boolean;
 }

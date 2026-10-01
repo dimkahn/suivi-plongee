@@ -117,7 +117,7 @@ public class InspectionTivService {
         }
         Optional<InspectionTiv> precedenteDuTiv = inspections.findFirstByInterventionSaisiParIdOrderByIdDesc(auteurId);
         Optional<InspectionTiv> precedenteDuBloc = inspections.findFirstByInterventionEquipementIdOrderByIdDesc(equipementId);
-        return new ModeleInspectionVue(materiel.lire(equipementId), sections,
+        return new ModeleInspectionVue(materiel.lire(equipementId, false), sections,
                 precedenteDuTiv.map(InspectionTiv::getTivNom)
                         .orElseGet(() -> utilisateurs.findById(auteurId).map(Utilisateur::nomComplet).orElse(null)),
                 precedenteDuTiv.map(InspectionTiv::getTivNumero).orElse(null),
@@ -246,7 +246,8 @@ public class InspectionTivService {
                     .toList();
             if (!constats.isEmpty()) sections.add(new SectionConstatsVue(s, s.libelle(), constats));
         }
-        return new InspectionTivVue(t.getId(), numero(t), nomClub, materiel.lire(bloc.getId()),
+        // Le compte rendu se lit aussi par un TIV : pas de nom d'emprunteur.
+        return new InspectionTivVue(t.getId(), numero(t), nomClub, materiel.lire(bloc.getId(), false),
                 i.getDateIntervention(), t.getMotif(), t.getMotif().libelle(),
                 t.getTivNom(), t.getTivNumero(), t.getProprietaire(),
                 t.getFiletageBouteille(), t.getFiletageRobinet(), t.getMarquageRequalification(),

@@ -247,6 +247,13 @@ avis défavorable ou un rebut. Le n° de TIV est repris de la dernière fiche
 saisie par le même compte (pas de colonne sur `utilisateur`). La saisie
 rapide « Inspection visuelle » du journal reste possible (reprise
 d'historique). Pas d'envoi au dispositif fédéral en ligne.
+**Rôle `TIV`** (V35, cumulé avec MONITEUR, donné par un ADMIN dans l'écran
+Moniteurs ; démo : `e2@club.fr`, V109) : remplit les fiches d'inspection
+et consulte l'inventaire et les fiches (`MaterielController.LECTURE_ET_INSPECTION`
+sur ces seules méthodes, le reste du contrôleur reste DT/ADMIN). Il voit
+qu'un équipement est prêté, pas à qui, et pas l'historique des prêts
+(emprunteurs mineurs). Côté écrans : `AuthService.inspecteBlocs`,
+`gardeInspectionBlocs` ; boutons de gestion masqués si `!gereMateriel`.
 Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.

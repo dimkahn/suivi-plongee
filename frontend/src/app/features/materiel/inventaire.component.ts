@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import {
   EquipementVue, LIBELLES_STATUT_EQUIPEMENT, RapportImportMateriel, StatutEquipement, TYPES_EQUIPEMENT, TypeEquipement
 } from '../../core/modeles';
@@ -27,6 +28,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           (Code du sport, annexe III-27) : à conserver trois ans après la mise au rebut.
         </p>
       </div>
+      @if (auth.gereMateriel()) {
       <div class="actions">
         <a routerLink="/materiel/prets" class="bouton-principal">Prêts</a>
         <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
@@ -37,7 +39,11 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
                  [disabled]="importEnCours()" (change)="importer($event)">
         </label>
       </div>
+      }
     </div>
+    @if (!auth.gereMateriel()) {
+      <p class="secondaire">En tant que TIV, ouvrez un bloc pour remplir sa fiche d'inspection.</p>
+    }
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
@@ -215,6 +221,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
 })
 export class InventaireComponent {
   private api = inject(ApiService);
+  readonly auth = inject(AuthService);
 
   readonly types = TYPES_EQUIPEMENT;
   readonly libelleStatut = LIBELLES_STATUT_EQUIPEMENT;
@@ -227,7 +234,8 @@ export class InventaireComponent {
   importEnCours = signal(false);
   rapport = signal<RapportImportMateriel | null>(null);
 
-  type =signal<TypeEquipement | null>(null);
+  /** Un TIV qui ne gère pas le matériel arrive directement sur les blocs. */
+  type = signal<TypeEquipement | null>(this.auth.gereMateriel() ? null : 'BLOC');
   statut = signal<StatutEquipement | null>(null);
   recherche = signal('');
   avecRebut = signal(false);
