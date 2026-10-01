@@ -340,6 +340,19 @@ par `tourner.sh` dans `outils/videos/.piper/`) et produit les MP4, que les
 iPhone lisent mieux que le WebM. Sans eux, les vidéos restent muettes, en
 WebM. Détails dans `outils/videos/LISEZ-MOI.md`.
 
+**Tournage automatique.** Une fois installé, un passage toutes les 5 minutes
+tourne et publie seul les scénarios nouveaux ou modifiés de la version en
+ligne (un scénario poussé attend donc le prochain tag) :
+
+```bash
+outils/videos/surveiller-scenarios.sh --installer   # une fois, depuis le dépôt de développement
+```
+
+Il travaille dans `~/suivi-plongee-videos/` (clone à part, journal dans
+`journal.log`), reprend les vidéos déjà tournées dans `outils/videos/sorties/`
+et laisse passer son tour si les ports 8080 ou 4200 sont pris. Voir l'en-tête
+du script.
+
 ## Changer de machine
 
 Toutes les données vivent dans la base PostgreSQL, photos des élèves

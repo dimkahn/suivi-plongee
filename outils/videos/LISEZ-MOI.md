@@ -89,6 +89,13 @@ sous `/medias/videos/` (`VIDEOS` du `.env` de la prod, sinon
 `videos-publiees/` du dépôt de prod). Ni tag ni redéploiement : la page
 relit le catalogue à chaque visite. Voir `DEPLOIEMENT.md`, « Vidéos d'aide ».
 
+Ou laisser faire la machine : `outils/videos/surveiller-scenarios.sh --installer`
+pose une tâche cron qui, toutes les 5 minutes, tourne et publie les
+scénarios nouveaux ou modifiés de la version en ligne (avec leur
+prédécesseur pour A7, D7 et D8). Un scénario en échec n'est retenté que
+quand son fichier change ; `~/suivi-plongee-videos/surveiller-scenarios.sh D10`
+le force. Journal : `~/suivi-plongee-videos/journal.log`.
+
 ## La voix off
 
 Chaque phrase des scénarios (geste `legende`) est lue à voix haute par [Piper](https://github.com/OHF-Voice/piper1-gpl),

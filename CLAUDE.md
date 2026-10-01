@@ -48,6 +48,9 @@ backend `dev` neuf ; voix off des sous-titres par Piper, montée par
 (`VideosComponent`, sans connexion) ; les fichiers ne sont ni dans le dépôt
 ni dans les images, Caddy les sert sous `/medias/videos/` depuis le dossier
 `VIDEOS` du `.env`. Voir `outils/videos/LISEZ-MOI.md`.
+`outils/videos/surveiller-scenarios.sh` (cron toutes les 5 minutes, clone
+dans `~/suivi-plongee-videos/`) tourne et publie seul les scénarios nouveaux
+ou modifiés de la version en ligne.
 
 Le frontend proxifie `/api` vers `localhost:8080` et `/medias/videos` vers
 `outils/videos/apercu.mjs` (port 4300) (`proxy.conf.json`).
