@@ -8,6 +8,10 @@
 	# dépôt, dans le dossier VIDEOS du .env, publiés par outils/videos/publier.sh.
 	handle_path /medias/videos/* {
 		root * /srv/videos
+		# Le catalogue change à chaque publication : le navigateur doit le
+		# redemander à chaque visite (les vidéos, elles, restent en cache).
+		@catalogue path /catalogue.json
+		header @catalogue Cache-Control "no-cache"
 		file_server
 	}
 	handle {
