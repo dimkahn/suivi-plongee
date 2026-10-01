@@ -61,6 +61,28 @@ Si le club possède déjà un nom de domaine (`cppjvo.fr`), un sous-domaine
 classique (`suivi.cppjvo.fr` en enregistrement `A` vers l'IP) fonctionne
 tout aussi bien.
 
+## En une commande : `outils/installer-serveur.sh`
+
+Une fois la VM créée (étape 1) et le nom de domaine pointé vers elle
+(étape 3), le script fait le reste des étapes 2 à 6 : paquets et Docker,
+pare-feu de la machine (80/443), `.env` (questions sur le domaine et le
+SMTP, mot de passe de la base et secret JWT générés), démarrage, premier
+compte administrateur. Il propose ensuite le déploiement automatique
+(« Déploiement automatique » plus bas) et les outils de tournage des
+vidéos d'aide.
+
+```bash
+ssh ubuntu@<IP_PUBLIQUE>
+git clone https://github.com/dimkahn/suivi-plongee.git
+cd suivi-plongee
+outils/installer-serveur.sh
+```
+
+Il se relance sans risque : un `.env` existant est gardé, une application
+déjà démarrée n'est pas reconstruite, le compte admin n'est créé que si
+la base n'en a aucun. Reste à faire à la main le pare-feu de l'hébergeur
+(étape 2, côté cloud). Les étapes ci-dessous détaillent ce qu'il fait.
+
 ## 4. Installer Docker sur la VM
 
 ```bash
