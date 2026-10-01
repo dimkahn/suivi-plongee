@@ -29,6 +29,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,13 +42,18 @@ import java.util.List;
 
 /**
  * Matériel du club et prêts pour les sorties : le domaine du directeur
- * technique. Un ADMIN y a accès aussi, pour le suppléer. L'auteur d'une
+ * technique. Un ADMIN y a accès aussi, pour le suppléer. Un TIV consulte
+ * l'inventaire et les fiches, et remplit les fiches d'inspection des blocs
+ * ({@link #LECTURE_ET_INSPECTION}) ; le reste lui est fermé. L'auteur d'une
  * saisie vient toujours du SecurityContext.
  */
 @RestController
 @RequestMapping("/api/materiel")
 @PreAuthorize("hasAnyRole('DIRECTEUR_TECHNIQUE','ADMIN')")
 public class MaterielController {
+
+    /** Remplace, sur les méthodes qui le portent, la restriction de la classe. */
+    static final String LECTURE_ET_INSPECTION = "hasAnyRole('DIRECTEUR_TECHNIQUE','ADMIN','TIV')";
 
     /** La fiche de gestion d'un équipement : description, journal, prêts. */
     public record FicheEquipementVue(EquipementVue equipement, List<InterventionVue> journal, List<PretVue> prets) {}
@@ -67,13 +74,26 @@ public class MaterielController {
     }
 
     @GetMapping("/equipements")
-    public List<EquipementVue> lister() {
-        return materiel.lister();
+    @PreAuthorize(LECTURE_ET_INSPECTION)
+    public List<EquipementVue> lister(Authentication authentication) {
+        return materiel.lister(gereLesPrets(authentication));
     }
 
     @GetMapping("/equipements/{id}")
-    public FicheEquipementVue fiche(@PathVariable Long id) {
-        return new FicheEquipementVue(materiel.lire(id), materiel.journal(id), prets.parEquipement(id));
+    @PreAuthorize(LECTURE_ET_INSPECTION)
+    public FicheEquipementVue fiche(@PathVariable Long id, Authentication authentication) {
+        boolean gereLesPrets = gereLesPrets(authentication);
+        return new FicheEquipementVue(materiel.lire(id, gereLesPrets), materiel.journal(id),
+                gereLesPrets ? prets.parEquipement(id) : List.of());
+    }
+
+    /**
+     * Les prêts nomment les emprunteurs, dont des mineurs : un TIV qui
+     * n'est ni DT ni admin voit qu'un équipement est prêté, pas à qui.
+     */
+    private static boolean gereLesPrets(Authentication authentication) {
+        return authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority)
+                .anyMatch(a -> a.equals("ROLE_DIRECTEUR_TECHNIQUE") || a.equals("ROLE_ADMIN"));
     }
 
     @PostMapping("/equipements")
@@ -113,6 +133,7 @@ public class MaterielController {
 
     /** Les questions de la fiche d'inspection qui concernent ce bloc, et ce qui peut être pré-rempli. */
     @GetMapping("/equipements/{id}/inspections-tiv/modele")
+    @PreAuthorize(LECTURE_ET_INSPECTION)
     public ModeleInspectionVue modeleInspectionTiv(@PathVariable Long id,
                                                    @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return inspectionsTiv.modele(id, auteur.id());
@@ -120,6 +141,7 @@ public class MaterielController {
 
     @PostMapping("/equipements/{id}/inspections-tiv")
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize(LECTURE_ET_INSPECTION)
     public InspectionTivVue enregistrerInspectionTiv(@PathVariable Long id,
                                                      @Valid @RequestBody DemandeInspectionTiv demande,
                                                      @AuthenticationPrincipal UtilisateurPrincipal auteur) {
@@ -127,6 +149,7 @@ public class MaterielController {
     }
 
     @GetMapping("/inspections-tiv/{id}")
+    @PreAuthorize(LECTURE_ET_INSPECTION)
     public InspectionTivVue inspectionTiv(@PathVariable Long id) {
         return inspectionsTiv.lire(id);
     }

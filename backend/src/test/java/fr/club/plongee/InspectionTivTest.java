@@ -193,6 +193,63 @@ class InspectionTivTest {
     }
 
     @Test
+    @DisplayName("Un TIV remplit la fiche d'inspection et consulte le matériel, sans gérer l'inventaire ni les prêts")
+    void roleTiv() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String tiv = jeton("e2@club.fr");
+        long bloc = creerBloc(dt, "B-T07", "ACIER", false);
+        JsonNode modele = lire("/api/materiel/equipements/" + bloc + "/inspections-tiv/modele", tiv);
+
+        JsonNode fiche = json.readTree(inspecter(tiv, bloc, "FAVORABLE", null, constats(modele, Map.of()))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        assertThat(lire("/api/materiel/inspections-tiv/" + fiche.get("id").asLong(), tiv).get("tivNom").asText())
+                .isEqualTo("Gwendoline Marchand");
+
+        // Il voit qu'un bloc est prêté, pas à qui, et pas l'historique des prêts.
+        JsonNode inventaire = lire("/api/materiel/equipements", tiv);
+        JsonNode b01 = null;
+        for (JsonNode e : inventaire) if (e.get("reference").asText().equals("B-01")) b01 = e;
+        assertThat(b01.get("pretEnCours").get("emprunteur").asText()).isEqualTo("un membre du club");
+        JsonNode ficheB01 = lire("/api/materiel/equipements/" + b01.get("id").asLong(), tiv);
+        assertThat(ficheB01.get("prets")).isEmpty();
+        assertThat(lire("/api/materiel/equipements/" + b01.get("id").asLong(), dt).get("prets")).isNotEmpty();
+
+        mvc.perform(post("/api/materiel/equipements").header("Authorization", tiv)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"type":"BLOC","reference":"B-T08"}"""))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/materiel/equipements/" + bloc + "/interventions").header("Authorization", tiv)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"type":"CONTROLE","dateIntervention":"%s"}""".formatted(AUJOURDHUI)))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/materiel/prets").header("Authorization", tiv))
+                .andExpect(status().isForbidden());
+        // Sans le rôle TIV, rien.
+        mvc.perform(get("/api/materiel/equipements").header("Authorization", jeton("e1@club.fr")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Un admin donne et retire le rôle TIV dans l'écran Moniteurs")
+    void donnerLeRoleTiv() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        JsonNode cree = json.readTree(mvc.perform(post("/api/admin/moniteurs").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"email":"tiv.essai@club.fr","nom":"Essai","prenom":"Tiv","niveauEncadrement":"E1",
+                                 "tiv":true}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tiv").value(true))
+                .andExpect(jsonPath("$.directeurTechnique").value(false))
+                .andReturn().getResponse().getContentAsString());
+        mvc.perform(put("/api/admin/moniteurs/" + cree.get("id").asLong()).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"email":"tiv.essai@club.fr","nom":"Essai","prenom":"Tiv","niveauEncadrement":"E1",
+                                 "tiv":false}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tiv").value(false));
+    }
+
+    @Test
     @DisplayName("Un avis défavorable bloque les prêts ; un rebut met le bloc au rebut")
     void defavorableEtRebut() throws Exception {
         String dt = jeton("e3@club.fr");

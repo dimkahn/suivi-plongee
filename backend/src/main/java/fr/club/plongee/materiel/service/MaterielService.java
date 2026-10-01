@@ -115,20 +115,34 @@ public class MaterielService {
 
     @Transactional(readOnly = true)
     public List<EquipementVue> lister() {
+        return lister(true);
+    }
+
+    /**
+     * {@code nomsEmprunteurs} faux pour qui ne gère pas les prêts (un TIV) :
+     * il voit qu'un équipement est prêté, pas à qui (des mineurs empruntent).
+     */
+    @Transactional(readOnly = true)
+    public List<EquipementVue> lister(boolean nomsEmprunteurs) {
         List<Equipement> liste = equipements.findAllByOrderByTypeAscReferenceAsc();
         Map<Long, List<InterventionEquipement>> journaux = liste.isEmpty() ? Map.of()
                 : interventions.parEquipements(liste.stream().map(Equipement::getId).toList()).stream()
                         .collect(Collectors.groupingBy(i -> i.getEquipement().getId()));
         Map<Long, Pret> enPret = pretsEnCoursParEquipement();
         return liste.stream()
-                .map(e -> vue(e, journaux.getOrDefault(e.getId(), List.of()), enPret.get(e.getId())))
+                .map(e -> vue(e, journaux.getOrDefault(e.getId(), List.of()), enPret.get(e.getId()), nomsEmprunteurs))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public EquipementVue lire(Long id) {
+        return lire(id, true);
+    }
+
+    @Transactional(readOnly = true)
+    public EquipementVue lire(Long id, boolean nomsEmprunteurs) {
         Equipement e = equipement(id);
-        return vue(e, interventions.parEquipement(id), pretsEnCoursParEquipement().get(id));
+        return vue(e, interventions.parEquipement(id), pretsEnCoursParEquipement().get(id), nomsEmprunteurs);
     }
 
     @Transactional(readOnly = true)
@@ -311,7 +325,8 @@ public class MaterielService {
         e.setRemarques(nettoyer(d.remarques()));
     }
 
-    private EquipementVue vue(Equipement e, List<InterventionEquipement> journal, Pret pretEnCours) {
+    private EquipementVue vue(Equipement e, List<InterventionEquipement> journal, Pret pretEnCours,
+                              boolean nomsEmprunteurs) {
         Etat etat = EcheancesEquipement.calculer(e, journal);
         Statut statut = e.estRebute() ? Statut.REBUTE
                 : e.isHorsService() ? Statut.HORS_SERVICE
@@ -333,7 +348,8 @@ public class MaterielService {
                 etat.derniereRevision(), etat.prochaineRevision(),
                 etat.alertes(),
                 pretEnCours == null ? null
-                        : new PretEnCoursVue(pretEnCours.getId(), pretEnCours.getEmprunteurNom(),
+                        : new PretEnCoursVue(pretEnCours.getId(),
+                                nomsEmprunteurs ? pretEnCours.getEmprunteurNom() : "un membre du club",
                                 pretEnCours.getDateRetourPrevue()));
     }
 

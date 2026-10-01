@@ -51,7 +51,7 @@ declare const VERSION_APPLI: string;
                 Groupes
               </a>
             }
-            @if (auth.gereMateriel()) {
+            @if (auth.inspecteBlocs()) {
               <a routerLink="/materiel" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Matériel
               </a>

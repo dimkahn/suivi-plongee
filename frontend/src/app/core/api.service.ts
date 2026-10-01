@@ -329,11 +329,12 @@ export class ApiService {
     certificatValideJusquAu?: string | null;
     admin?: boolean;
     directeurTechnique?: boolean;
+    tiv?: boolean;
   }): Observable<MoniteurVue> {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
 
-  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique) d'un moniteur changent. */
+  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique, TIV) d'un moniteur changent. */
   modifierMoniteur(id: number, demande: {
     email: string;
     nom: string;
@@ -344,6 +345,7 @@ export class ApiService {
     certificatValideJusquAu: string | null;
     admin: boolean;
     directeurTechnique: boolean;
+    tiv: boolean;
   }): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
   }

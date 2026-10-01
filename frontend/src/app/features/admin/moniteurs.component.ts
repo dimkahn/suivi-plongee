@@ -78,6 +78,10 @@ function aVerifier(m: MoniteurVue): boolean {
         <input type="checkbox" name="directeurTechnique" [(ngModel)]="directeurTechnique">
         Directeur technique (matériel du club et prêts)
       </label>
+      <label class="case">
+        <input type="checkbox" name="tiv" [(ngModel)]="tiv">
+        TIV (fiches d'inspection des blocs)
+      </label>
 
       <div class="actions">
         <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
@@ -139,6 +143,7 @@ function aVerifier(m: MoniteurVue): boolean {
               <div class="badges">
                 @if (m.admin) { <span class="etat admin">Admin</span> }
                 @if (m.directeurTechnique) { <span class="etat admin" title="Directeur technique">DT</span> }
+                @if (m.tiv) { <span class="etat admin" title="Technicien en inspection visuelle">TIV</span> }
                 <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
                   {{ m.actif ? 'Actif' : 'Désactivé' }}
                 </span>
@@ -222,6 +227,10 @@ function aVerifier(m: MoniteurVue): boolean {
                 <label class="case">
                   <input type="checkbox" name="editionDirecteurTechnique" [(ngModel)]="edition.directeurTechnique">
                   Directeur technique (matériel du club et prêts)
+                </label>
+                <label class="case">
+                  <input type="checkbox" name="editionTiv" [(ngModel)]="edition.tiv">
+                  TIV (fiches d'inspection des blocs)
                 </label>
 
                 <div class="actions">
@@ -358,13 +367,14 @@ export class MoniteursComponent {
   certificatValideJusquAu = '';
   admin = false;
   directeurTechnique = false;
+  tiv = false;
   envoiCreation = signal(false);
   creationOuverte = signal(false);
 
   moniteurEdite = signal<number | null>(null);
   edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
               numeroLicence: '',
-              certificatValideJusquAu: '', admin: false, directeurTechnique: false };
+              certificatValideJusquAu: '', admin: false, directeurTechnique: false, tiv: false };
   envoiEdition = signal(false);
 
   moniteurMotDePasse = signal<number | null>(null);
@@ -445,7 +455,8 @@ export class MoniteursComponent {
       numeroLicence: this.numeroLicence || null,
       certificatValideJusquAu: this.certificatValideJusquAu || null,
       admin: this.admin,
-      directeurTechnique: this.directeurTechnique
+      directeurTechnique: this.directeurTechnique,
+      tiv: this.tiv
     }).subscribe({
       next: m => {
         this.envoiCreation.set(false);
@@ -459,6 +470,7 @@ export class MoniteursComponent {
         this.certificatValideJusquAu = '';
         this.admin = false;
         this.directeurTechnique = false;
+        this.tiv = false;
         this.message.set(`${m.prenom} ${m.nom} a été ajouté·e ; un lien pour définir son mot de passe lui a été envoyé.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -492,7 +504,8 @@ export class MoniteursComponent {
       numeroLicence: m.numeroLicence ?? '',
       certificatValideJusquAu: m.certificatValideJusquAu ?? '',
       admin: m.admin,
-      directeurTechnique: m.directeurTechnique
+      directeurTechnique: m.directeurTechnique,
+      tiv: m.tiv
     };
     this.moniteurEdite.set(m.id);
   }

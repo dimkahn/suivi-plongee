@@ -68,5 +68,14 @@ export const gardeMateriel: CanActivateFn = () => {
   );
 };
 
+/** Inventaire, fiche d'un équipement et fiches d'inspection : le TIV en plus du DT et de l'admin. */
+export const gardeInspectionBlocs: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return apresResolutionSession().pipe(
+    map(() => auth.inspecteBlocs() || router.createUrlTree(['/cursus']))
+  );
+};
+
 /** Sorties : même public que le matériel (le DT y rattache ses prêts), admin compris. */
 export const gardeSorties: CanActivateFn = gardeMateriel;
