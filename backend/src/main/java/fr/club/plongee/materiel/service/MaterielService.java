@@ -4,12 +4,14 @@ import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.materiel.domain.Equipement;
+import fr.club.plongee.materiel.domain.InspectionTiv;
 import fr.club.plongee.materiel.domain.InterventionEquipement;
 import fr.club.plongee.materiel.domain.InterventionEquipement.Resultat;
 import fr.club.plongee.materiel.domain.Pret;
 import fr.club.plongee.materiel.domain.TypeEquipement;
 import fr.club.plongee.materiel.domain.TypeIntervention;
 import fr.club.plongee.materiel.repository.EquipementRepository;
+import fr.club.plongee.materiel.repository.InspectionTivRepository;
 import fr.club.plongee.materiel.repository.InterventionEquipementRepository;
 import fr.club.plongee.materiel.repository.PretRepository;
 import fr.club.plongee.materiel.service.EcheancesEquipement.Alerte;
@@ -59,9 +61,10 @@ public class MaterielService {
                                 LocalDate derniereRevision, LocalDate prochaineRevision,
                                 List<Alerte> alertes, PretEnCoursVue pretEnCours) {}
 
+    /** {@code inspectionTivId} : la fiche d'inspection détaillée, quand la ligne en a une. */
     public record InterventionVue(Long id, TypeIntervention type, String typeLibelle, LocalDate dateIntervention,
                                   String intervenant, Resultat resultat, String description, Long pretId,
-                                  String saisiPar, Instant saisiLe) {}
+                                  String saisiPar, Instant saisiLe, Long inspectionTivId) {}
 
     /**
      * Le type ne change plus après la création (le journal en dépend).
@@ -98,13 +101,16 @@ public class MaterielService {
     private final InterventionEquipementRepository interventions;
     private final PretRepository prets;
     private final UtilisateurRepository utilisateurs;
+    private final InspectionTivRepository inspectionsTiv;
 
     public MaterielService(EquipementRepository equipements, InterventionEquipementRepository interventions,
-                           PretRepository prets, UtilisateurRepository utilisateurs) {
+                           PretRepository prets, UtilisateurRepository utilisateurs,
+                           InspectionTivRepository inspectionsTiv) {
         this.equipements = equipements;
         this.interventions = interventions;
         this.prets = prets;
         this.utilisateurs = utilisateurs;
+        this.inspectionsTiv = inspectionsTiv;
     }
 
     @Transactional(readOnly = true)
@@ -128,7 +134,11 @@ public class MaterielService {
     @Transactional(readOnly = true)
     public List<InterventionVue> journal(Long id) {
         equipement(id);
-        return interventions.parEquipement(id).stream().map(MaterielService::vue).toList();
+        List<InterventionEquipement> journal = interventions.parEquipement(id);
+        Map<Long, Long> fichesTiv = journal.isEmpty() ? Map.of()
+                : inspectionsTiv.parInterventions(journal.stream().map(InterventionEquipement::getId).toList())
+                        .stream().collect(Collectors.toMap(t -> t.getIntervention().getId(), InspectionTiv::getId));
+        return journal.stream().map(i -> vue(i, fichesTiv.get(i.getId()))).toList();
     }
 
     @Transactional
@@ -227,7 +237,7 @@ public class MaterielService {
             throw new RegleMetierException("Décrivez l'incident.");
         }
         return vue(journaliser(e, d.type(), d.dateIntervention(), d.resultat(), d.description(), null,
-                utilisateurs.getReferenceById(auteurId), d.intervenant()));
+                utilisateurs.getReferenceById(auteurId), d.intervenant()), null);
     }
 
     /** État à une date donnée (fin d'un prêt), pour {@link PretService}, dans sa transaction. */
@@ -242,9 +252,9 @@ public class MaterielService {
         return journaliser(e, type, date, resultat, description, pret, auteur, null);
     }
 
-    private InterventionEquipement journaliser(Equipement e, TypeIntervention type, LocalDate date,
-                                               Resultat resultat, String description, Pret pret,
-                                               Utilisateur auteur, String intervenant) {
+    public InterventionEquipement journaliser(Equipement e, TypeIntervention type, LocalDate date,
+                                              Resultat resultat, String description, Pret pret,
+                                              Utilisateur auteur, String intervenant) {
         InterventionEquipement i = new InterventionEquipement();
         i.setEquipement(e);
         i.setType(type);
@@ -327,11 +337,11 @@ public class MaterielService {
                                 pretEnCours.getDateRetourPrevue()));
     }
 
-    private static InterventionVue vue(InterventionEquipement i) {
+    private static InterventionVue vue(InterventionEquipement i, Long inspectionTivId) {
         return new InterventionVue(i.getId(), i.getType(), i.getType().libelle(), i.getDateIntervention(),
                 i.getIntervenant(), i.getResultat(), i.getDescription(),
                 i.getPret() == null ? null : i.getPret().getId(),
-                i.getSaisiPar() == null ? null : i.getSaisiPar().nomComplet(), i.getSaisiLe());
+                i.getSaisiPar() == null ? null : i.getSaisiPar().nomComplet(), i.getSaisiLe(), inspectionTivId);
     }
 
     private static String nettoyer(String s) {

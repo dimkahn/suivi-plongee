@@ -231,6 +231,22 @@ l'année). Référence déjà présente = laissée telle quelle (réimport sans
 doublon). V33 a ajouté `proprietaire` (null = le club, sigle `CPPJVO`
 ignoré à l'import), `constructeur`, `ancienne_reference`, `numero_robinet`.
 Le fichier du club n'est pas dans le dépôt : le test fabrique le sien.
+**Fiche d'inspection TIV** (V34, `InspectionTiv`, `InspectionTivService`,
+écrans `/materiel/:id/tiv` (saisie) et `/materiel/tiv/:id` (compte rendu
+imprimable)) : l'onglet « FICHE D'EVALUATION ET DE SUIVI » du classeur,
+complété d'après le manuel de formation TIV de la FFESSM (UC8.2 : contenu
+du compte rendu ; UC11 service oxygène, UC12 aluminium). Les questions
+sont l'enum `PointInspectionTiv` (oui/non, réponse normale, décision
+proposée, défaut qui interdit l'avis favorable), pas une table : les
+questions aluminium et oxygène ne sont posées qu'aux blocs concernés.
+Une fiche = une ligne INSPECTION_VISUELLE du journal (conforme si avis
+favorable, non conforme sinon, ce qui bloque les prêts) + `inspection_tiv`
+et `constat_tiv`, en ajout seul ; le rebut met aussi le bloc au rebut.
+Le serveur exige une réponse à chaque question et une observation pour un
+avis défavorable ou un rebut. Le n° de TIV est repris de la dernière fiche
+saisie par le même compte (pas de colonne sur `utilisateur`). La saisie
+rapide « Inspection visuelle » du journal reste possible (reprise
+d'historique). Pas d'envoi au dispositif fédéral en ligne.
 Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.

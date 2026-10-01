@@ -2,6 +2,10 @@ package fr.club.plongee.materiel;
 
 import fr.club.plongee.materiel.service.ImportMaterielService;
 import fr.club.plongee.materiel.service.ImportMaterielService.Rapport;
+import fr.club.plongee.materiel.service.InspectionTivService;
+import fr.club.plongee.materiel.service.InspectionTivService.DemandeInspectionTiv;
+import fr.club.plongee.materiel.service.InspectionTivService.InspectionTivVue;
+import fr.club.plongee.materiel.service.InspectionTivService.ModeleInspectionVue;
 import fr.club.plongee.materiel.service.MaterielService;
 import fr.club.plongee.materiel.service.MaterielService.DemandeEquipement;
 import fr.club.plongee.materiel.service.MaterielService.DemandeIntervention;
@@ -51,13 +55,15 @@ public class MaterielController {
     private final PretService prets;
     private final PhotoPretService photos;
     private final ImportMaterielService imports;
+    private final InspectionTivService inspectionsTiv;
 
     public MaterielController(MaterielService materiel, PretService prets, PhotoPretService photos,
-                              ImportMaterielService imports) {
+                              ImportMaterielService imports, InspectionTivService inspectionsTiv) {
         this.materiel = materiel;
         this.prets = prets;
         this.photos = photos;
         this.imports = imports;
+        this.inspectionsTiv = inspectionsTiv;
     }
 
     @GetMapping("/equipements")
@@ -103,6 +109,26 @@ public class MaterielController {
     public InterventionVue ajouterIntervention(@PathVariable Long id, @Valid @RequestBody DemandeIntervention demande,
                                                @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return materiel.ajouterIntervention(id, demande, auteur.id());
+    }
+
+    /** Les questions de la fiche d'inspection qui concernent ce bloc, et ce qui peut être pré-rempli. */
+    @GetMapping("/equipements/{id}/inspections-tiv/modele")
+    public ModeleInspectionVue modeleInspectionTiv(@PathVariable Long id,
+                                                   @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return inspectionsTiv.modele(id, auteur.id());
+    }
+
+    @PostMapping("/equipements/{id}/inspections-tiv")
+    @ResponseStatus(HttpStatus.CREATED)
+    public InspectionTivVue enregistrerInspectionTiv(@PathVariable Long id,
+                                                     @Valid @RequestBody DemandeInspectionTiv demande,
+                                                     @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return inspectionsTiv.enregistrer(id, demande, auteur.id());
+    }
+
+    @GetMapping("/inspections-tiv/{id}")
+    public InspectionTivVue inspectionTiv(@PathVariable Long id) {
+        return inspectionsTiv.lire(id);
     }
 
     /** {@code enCours} : prêts non rendus (défaut) ; sinon l'historique des prêts rendus. */

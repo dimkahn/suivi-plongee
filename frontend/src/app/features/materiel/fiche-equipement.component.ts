@@ -347,9 +347,14 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
         </p>
 
         @if (e.statut !== 'REBUTE' && !ajoutJournal()) {
-          <button type="button" class="bouton-discret ouvrir-journal pas-imprime" (click)="ajoutJournal.set(true)">
-            Ajouter une entrée au journal
-          </button>
+          <div class="actions ouvrir-journal pas-imprime">
+            @if (e.type === 'BLOC') {
+              <a [routerLink]="['/materiel', e.id, 'tiv']" class="bouton-principal">Remplir la fiche d'inspection TIV</a>
+            }
+            <button type="button" class="bouton-discret" (click)="ajoutJournal.set(true)">
+              Ajouter une entrée au journal
+            </button>
+          </div>
         }
         @if (e.statut !== 'REBUTE' && ajoutJournal()) {
           <form class="ajout-journal pas-imprime" (ngSubmit)="ajouterIntervention()">
@@ -409,6 +414,9 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
                 </div>
                 @if (j.intervenant) { <span class="secondaire">{{ j.intervenant }}</span> }
                 @if (j.description) { <p class="texte-libre">{{ j.description }}</p> }
+                @if (j.inspectionTivId) {
+                  <a [routerLink]="['/materiel/tiv', j.inspectionTivId]" class="lien-tiv pas-imprime">Voir la fiche d'inspection</a>
+                }
                 <span class="secondaire">Saisi par {{ j.saisiPar ?? 'un compte supprimé' }}</span>
               </li>
             }
@@ -509,7 +517,8 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
 
     .ajout-journal { padding: var(--pas-2); margin-bottom: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
     .ajout-journal .actions { margin-bottom: 0; }
-    .ouvrir-journal { margin-bottom: var(--pas-2); }
+    .ouvrir-journal { margin: 0 0 var(--pas-2); }
+    .lien-tiv { display: inline-flex; align-items: center; min-height: 44px; }
     .ancien { margin: 0 0 4px; font-weight: 700; color: var(--craie); }
     .journal { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     .journal li { border-left: 3px solid var(--trait); padding-left: var(--pas-2); display: flex; flex-direction: column; gap: 2px; }
