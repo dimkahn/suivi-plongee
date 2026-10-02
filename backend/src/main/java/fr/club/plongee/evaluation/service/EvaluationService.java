@@ -41,6 +41,7 @@ public class EvaluationService {
     private final CritereRepository criteres;
     private final UtilisateurRepository utilisateurs;
     private final HabilitationService habilitation;
+    private final ParticipationRepository participations;
 
     public EvaluationService(EvaluationRepository evaluations,
                              ValidationCompetenceRepository validations,
@@ -48,7 +49,8 @@ public class EvaluationService {
                              SeanceRepository seances,
                              CritereRepository criteres,
                              UtilisateurRepository utilisateurs,
-                             HabilitationService habilitation) {
+                             HabilitationService habilitation,
+                             ParticipationRepository participations) {
         this.evaluations = evaluations;
         this.validations = validations;
         this.cursusRepository = cursusRepository;
@@ -56,6 +58,7 @@ public class EvaluationService {
         this.criteres = criteres;
         this.utilisateurs = utilisateurs;
         this.habilitation = habilitation;
+        this.participations = participations;
     }
 
     // ----------------------------------------------------------------
@@ -123,7 +126,8 @@ public class EvaluationService {
     /**
      * Regles du MFT attachees a la seance :
      *  - N2 et N3 : competences a obtenir en milieu naturel, piscines et fosses exclues ;
-     *  - la seance doit appartenir a la saison du cursus.
+     *  - la seance doit appartenir a la saison du cursus ;
+     *  - l'eleve doit y etre note present (choix du club, 2026).
      */
     private void verifierSeance(Cursus cursus, BlocCompetence bloc, Seance seance) {
         Referentiel ref = cursus.getReferentiel();
@@ -137,6 +141,15 @@ public class EvaluationService {
             throw new RegleMetierException(
                     "Les competences du " + ref.getNiveau() + " doivent etre obtenues en milieu naturel : "
                             + "les piscines et fosses sont exclues quelle qu'en soit la profondeur.");
+        }
+        boolean present = participations.findByCursusIdAndSeanceId(cursus.getId(), seance.getId())
+                .map(p -> p.getStatut() == Participation.Statut.PRESENT)
+                .orElse(false);
+        if (!present) {
+            throw new RegleMetierException(cursus.getEleve().nomComplet()
+                    + " n'est pas noté présent à la séance du "
+                    + seance.getDateSeance().format(Calendrier.DATE_FR)
+                    + " : renseignez d'abord sa présence dans la feuille de présence.");
         }
     }
 

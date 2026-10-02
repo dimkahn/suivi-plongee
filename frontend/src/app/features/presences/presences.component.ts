@@ -6,7 +6,7 @@ import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
-import { dateDuJour, dateFr } from '../../core/date-fr';
+import { dateDansJours, dateDuJour, dateFr } from '../../core/date-fr';
 import {
   Atelier, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
 } from '../../core/modeles';
@@ -67,6 +67,8 @@ function normaliser(texte: string): string {
     <p class="secondaire">
       Pour chaque élève présent, touchez ce qu'il a fait pendant la séance ; un élève sans choix est
       absent. Chaque choix est enregistré tout de suite ; toucher de nouveau le choix actif l'efface.
+      Les présences peuvent être annoncées jusqu'à une semaine avant la séance. Seul un élève
+      noté présent peut être évalué sur une séance.
     </p>
 
     @if (!reseau.enLigne()) {
@@ -90,7 +92,7 @@ function normaliser(texte: string): string {
           <h2 id="titre-dialogue-seance">Choisir la séance</h2>
           <button type="button" class="bouton-discret" (click)="fermerDialogueSeance()">Fermer</button>
         </div>
-        <app-calendrier-seances [seances]="seances()" [jourMax]="aujourdhui"
+        <app-calendrier-seances [seances]="seances()" [jourMax]="jourMax"
                                 [seanceMarquee]="seanceId()"
                                 [jourSelectionne]="jourDialogue()"
                                 (jourSelectionneChange)="toucherJour($event)" />
@@ -141,7 +143,11 @@ function normaliser(texte: string): string {
           @if (bilan().enAttente > 0) { · {{ bilan().enAttente }} en attente d'envoi }
         </p>
 
-        @if (auth.estMoniteur()) {
+        @if (seanceAVenir()) {
+          <div class="alerte" role="status">
+            Séance à venir : vous pouvez annoncer qui sera présent ; la notation sera possible le jour de la séance.
+          </div>
+        } @else if (auth.estMoniteur()) {
           @if (seanceChoisie(); as s) {
             <div class="notation-groupee">
               <app-notation-groupee [seance]="s" [presents]="presentsANoter()" [progressions]="progressions()"
@@ -372,13 +378,21 @@ export class PresencesComponent implements OnDestroy {
 
   private urlsPhotos = signal<Map<number, string>>(new Map());
 
-  /** On ne remplit pas une séance à venir : le serveur la refuserait. */
+  /** Séances déjà passées ou du jour : la séance proposée par défaut. */
   seancesPassees = computed(() => {
     const aujourdhui = dateDuJour();
     return this.seances().filter(s => s.date <= aujourdhui);
   });
 
+  /** Les présences s'annoncent au plus une semaine à l'avance : au-delà, le serveur refuserait. */
+  seancesOuvertes = computed(() => this.seances().filter(s => s.date <= this.jourMax));
+
   seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
+  /** Séance pas encore passée : présence annoncée, mais rien à noter avant le jour J. */
+  seanceAVenir = computed(() => {
+    const s = this.seanceChoisie();
+    return !!s && s.date > dateDuJour();
+  });
   /**
    * Progressions suivies par la saison ; un groupe choisi qui prépare un
    * niveau restreint aussi le programme affiché à ce niveau.
@@ -391,6 +405,8 @@ export class PresencesComponent implements OnDestroy {
   });
 
   readonly aujourdhui = dateDuJour();
+  /** Dernier jour dont on peut renseigner les présences (miroir de Seance.JOURS_ANTICIPATION_PRESENCE). */
+  readonly jourMax = dateDansJours(7);
   private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
   dialogueSeanceOuvert = signal(false);
   /** Jour touché dans le calendrier du dialogue. */
@@ -460,7 +476,7 @@ export class PresencesComponent implements OnDestroy {
   }
 
   seancesDuJour(jour: string): SeanceVue[] {
-    return this.seancesPassees().filter(s => s.date === jour);
+    return this.seancesOuvertes().filter(s => s.date === jour);
   }
 
   /** Un seul choix possible ce jour-là : on le prend tout de suite, sans second toucher. */

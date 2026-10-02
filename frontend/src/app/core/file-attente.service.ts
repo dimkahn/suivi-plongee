@@ -5,6 +5,7 @@ import { Statut } from './modeles';
 import {
   MAGASIN_ATTENTE, MAGASIN_REFUS, ecrire, lireTout, nouvelleReference, supprimer
 } from './base-locale';
+import { FileEcrituresService } from './file-ecritures.service';
 
 export interface SaisieEnAttente {
   referenceClient: string;
@@ -45,6 +46,7 @@ interface Resultat {
 @Injectable({ providedIn: 'root' })
 export class FileAttenteService {
   private http = inject(HttpClient);
+  private ecritures = inject(FileEcrituresService);
 
   readonly enAttente = signal<SaisieEnAttente[]>([]);
   readonly refus = signal<SaisieRefusee[]>([]);
@@ -130,6 +132,11 @@ export class FileAttenteService {
   private async envoyer(): Promise<void> {
     const file = [...this.enAttente()].sort((a, b) => a.creeLe - b.creeLe);
     if (file.length === 0) return;
+
+    // Le serveur ne note qu'un élève présent : les présences prises hors
+    // ligne partent d'abord. Si elles restent bloquées, les notes concernées
+    // seront refusées et remonteront au bandeau, avec « Réessayer ».
+    await this.ecritures.vider();
 
     this.synchronisation.set(true);
     try {

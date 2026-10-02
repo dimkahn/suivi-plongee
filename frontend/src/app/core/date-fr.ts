@@ -13,7 +13,13 @@ export function dateFr(iso: string | null | undefined): string {
 
 /** Date du jour au format ISO (AAAA-MM-JJ), en heure locale de l'appareil (pas en UTC). */
 export function dateDuJour(): string {
+  return dateDansJours(0);
+}
+
+/** Date du jour décalée de quelques jours, au format ISO, en heure locale. */
+export function dateDansJours(jours: number): string {
   const d = new Date();
+  d.setDate(d.getDate() + jours);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

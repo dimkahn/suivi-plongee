@@ -131,6 +131,11 @@ export interface GrilleVue {
   /** Progression suivie par la saison pour ce référentiel ; null et liste vide sinon. */
   progression: string | null;
   periodes: PeriodeGrilleVue[];
+  /**
+   * Séances où l'élève est noté présent : les seules où on peut le noter.
+   * Peut manquer dans une grille mise en cache avant cette règle.
+   */
+  seancesPresent?: number[];
 }
 
 export interface SeanceVue {

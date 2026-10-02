@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -81,6 +82,11 @@ class SuppressionEleveTest {
         String seances = mvc.perform(get("/api/seances").header("Authorization", moniteur))
                 .andReturn().getResponse().getContentAsString();
         long seance = json.readTree(seances).get(0).get("id").asLong();
+        mvc.perform(put("/api/seances/" + seance + "/presences").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 [{"cursusId":%d,"statut":"PRESENT","atelier":"BLOC"}]""".formatted(cursusId)))
+                .andExpect(status().isOk());
         mvc.perform(post("/api/cursus/" + cursusId + "/evaluations").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

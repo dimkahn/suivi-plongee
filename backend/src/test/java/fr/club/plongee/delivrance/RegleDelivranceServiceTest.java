@@ -291,6 +291,7 @@ class RegleDelivranceServiceTest {
 
         Seance seanceNaturelle = new Seance();
         seanceNaturelle.setMilieu(Milieu.NATUREL);
+        seanceNaturelle.setDateSeance(LocalDate.of(2025, 6, 1));
         Participation presenteEnNaturel = new Participation();
         presenteEnNaturel.setStatut(Participation.Statut.PRESENT);
         presenteEnNaturel.setSeance(seanceNaturelle);

@@ -64,7 +64,9 @@ public class GrilleService {
                             int criteresAcquis, int criteresTotal,
                             List<BlocVue> blocs,
                             /** Progression suivie par la saison pour ce referentiel ; null et liste vide sinon. */
-                            String progression, List<PeriodeGrilleVue> periodes) {}
+                            String progression, List<PeriodeGrilleVue> periodes,
+                            /** Seances ou l'eleve est note present : les seules proposees pour le noter. */
+                            List<Long> seancesPresent) {}
 
     /** Vue globale d'un élève : une colonne par séance, comme l'onglet individuel du tableur. */
     public record SeanceEnTeteVue(Long id, LocalDate date, String lieu, String milieu) {}
@@ -165,7 +167,8 @@ public class GrilleService {
                 (int) participations.compterAtelier(cursusId, Participation.Atelier.PLONGEE),
                 acquisTotal, total, blocs,
                 progression == null ? null : progression.getNom(),
-                progression == null ? List.of() : periodesVue(progression));
+                progression == null ? List.of() : periodesVue(progression),
+                participations.seancesOuPresent(cursusId));
     }
 
     private static List<PeriodeGrilleVue> periodesVue(ProgressionType p) {

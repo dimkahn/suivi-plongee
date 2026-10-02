@@ -16,6 +16,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -76,6 +77,12 @@ class SynchronisationTest {
         long critere = critere(cursus, 1, 0, auth);
         long seance = seance("ARTIFICIEL", auth);
         String reference = UUID.randomUUID().toString();
+        // On ne note qu'un élève présent à la séance.
+        mvc.perform(put("/api/seances/" + seance + "/presences").header("Authorization", auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 [{"cursusId":%d,"statut":"PRESENT","atelier":"BLOC"}]""".formatted(cursus)))
+                .andExpect(status().isOk());
 
         String lot = """
                 [{"referenceClient":"%s","cursusId":%d,"critereId":%d,"seanceId":%d,
