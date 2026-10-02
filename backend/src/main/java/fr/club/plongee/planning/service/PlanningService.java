@@ -3,6 +3,7 @@ package fr.club.plongee.planning.service;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
+import fr.club.plongee.formation.domain.Milieu;
 import fr.club.plongee.formation.domain.Saison;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.SaisonRepository;
@@ -418,15 +419,21 @@ public class PlanningService {
                         .toList());
     }
 
+    /**
+     * Les soirées du planning : dates qui portent au moins une séance en
+     * milieu artificiel (piscine, fosse). Une sortie en milieu naturel n'a ni
+     * ligne d'eau ni fosse : elle n'y figure pas.
+     */
     private List<LocalDate> datesDesSeances(Long saisonId) {
         return seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saisonId).stream()
+                .filter(s -> s.getMilieu() == Milieu.ARTIFICIEL)
                 .map(Seance::getDateSeance).distinct().toList();
     }
 
     private void verifierSoiree(Saison saison, LocalDate date) {
         if (!datesDesSeances(saison.getId()).contains(date)) {
-            throw new RegleMetierException("Aucune séance le " + date.format(Calendrier.DATE_FR)
-                    + " sur cette saison : créez d'abord la séance.");
+            throw new RegleMetierException("Aucune séance en piscine ou en fosse le " + date.format(Calendrier.DATE_FR)
+                    + " sur cette saison : le planning du bassin ne concerne que ces séances.");
         }
     }
 

@@ -150,4 +150,36 @@ class PlanningTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"note\":\"Noël\"}"))
                 .andExpect(status().isUnprocessableEntity());
     }
+
+    @Test
+    @DisplayName("Une date qui n'a qu'une séance en milieu naturel n'est pas une soirée du planning")
+    void seanceEnMilieuNaturelHorsPlanning() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        JsonNode p = planning(admin);
+        long saison = p.get("saisonId").asLong();
+
+        // Une date de la saison sans aucune séance, prise juste après la première soirée.
+        java.time.LocalDate date = java.time.LocalDate.parse(p.get("soirees").get(0).get("date").asText()).plusDays(1);
+        JsonNode seances = json.readTree(mvc.perform(get("/api/seances").header("Authorization", admin))
+                .andReturn().getResponse().getContentAsString());
+        java.util.Set<String> datesOccupees = new java.util.HashSet<>();
+        for (JsonNode s : seances) datesOccupees.add(s.get("date").asText());
+        while (datesOccupees.contains(date.toString())) date = date.plusDays(1);
+
+        long seanceId = json.readTree(mvc.perform(post("/api/seances").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"dateSeance":"%s","ordre":1,"milieu":"NATUREL","lieu":"Carrière test"}""".formatted(date)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+        try {
+            for (JsonNode s : planning(admin).get("soirees")) {
+                assertThat(s.get("date").asText()).isNotEqualTo(date.toString());
+            }
+            mvc.perform(put("/api/planning/saison/" + saison + "/soirees/" + date).header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"note\":\"Sortie\"}"))
+                    .andExpect(status().isUnprocessableEntity());
+        } finally {
+            mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
+        }
+    }
 }

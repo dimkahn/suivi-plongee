@@ -56,8 +56,8 @@ interface EditionSoiree {
       attitrée du groupe.
     </p>
     <p class="secondaire">
-      Les soirées du planning sont les dates de la saison qui ont une séance : pour ajouter un soir, créez la
-      séance dans <a routerLink="/admin/seances">Séances</a>, ou toutes celles de l'année d'un coup avec
+      Les soirées du planning sont les dates de la saison qui ont une séance en piscine ou en fosse (les
+      sorties en milieu naturel n'y figurent pas) : pour ajouter un soir, créez la séance dans <a routerLink="/admin/seances">Séances</a>, ou toutes celles de l'année d'un coup avec
       <a routerLink="/admin/seances/generer">Générer la saison</a>.
     </p>
 
@@ -99,10 +99,10 @@ interface EditionSoiree {
       } @else if (soireesAffichees().length === 0) {
         <div class="carte vide">
           <p>
-            Aucune séance sur cette période{{ jour() !== null ? ' pour ce jour de la semaine' : '' }}. Créez les
-            séances dans <a routerLink="/admin/seances">Séances</a> ou
-            <a routerLink="/admin/seances/generer">Générer la saison</a> : chaque date qui a une séance devient
-            une soirée du planning.
+            Aucune séance en piscine ou en fosse sur cette période{{ jour() !== null ? ' pour ce jour de la semaine' : '' }}.
+            Créez les séances dans <a routerLink="/admin/seances">Séances</a> ou
+            <a routerLink="/admin/seances/generer">Générer la saison</a> : chaque date qui a une séance en milieu
+            artificiel devient une soirée du planning.
           </p>
         </div>
       } @else {
