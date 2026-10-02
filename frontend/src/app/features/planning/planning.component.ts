@@ -91,9 +91,9 @@ const SOIREES_A_VENIR = 8;
                   <span class="secondaire encadrants-groupe">
                     @for (e of l.groupe.encadrants; track e.id; let dernier = $last) {
                       @if (estAbsent(s, e.id)) {
-                        <s class="absent" [attr.aria-label]="e.nomComplet + ', absent'">{{ e.nomComplet }}</s>
+                        <s class="nom-absent" [attr.aria-label]="e.nomComplet + ', absent'">{{ e.nomComplet }}</s>
                       } @else if (estPresent(s, e.id)) {
-                        <strong class="present" [attr.aria-label]="e.nomComplet + ', présent'">{{ e.nomComplet }}</strong>
+                        <strong class="nom-present" [attr.aria-label]="e.nomComplet + ', présent'">{{ e.nomComplet }}</strong>
                       } @else {
                         <span>{{ e.nomComplet }}</span>
                       }
@@ -190,9 +190,13 @@ const SOIREES_A_VENIR = 8;
     .code.type-ACTIVITE { background: #FEF9C3; font-size: .75rem; }
     .code.type-ABSENT, .code.type-AUCUN { color: var(--craie); }
     .texte { display: grid; min-width: 0; }
-    /* Qui a répondu est en gras : présent en noir, absent rayé en rouge. */
-    .encadrants-groupe s.absent { color: #B3261E; font-weight: 700; text-decoration-thickness: 2px; }
-    .encadrants-groupe strong.present { color: var(--encre); font-weight: 700; }
+    /*
+     * Qui a répondu est en gras, absent juste rayé : texte de la couleur
+     * habituelle, sans fond (les classes .present/.absent des boutons de
+     * réponse coloreraient le fond et rendraient le nom illisible).
+     */
+    .encadrants-groupe .nom-absent { font-weight: 700; text-decoration: line-through; text-decoration-thickness: 2px; }
+    .encadrants-groupe .nom-present { font-weight: 700; }
     .nom-groupe { font-weight: 700; }
     .etiquette {
       display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
