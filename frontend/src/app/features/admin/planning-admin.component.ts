@@ -323,7 +323,7 @@ interface EditionSoiree {
     .responsable { font-weight: 400; font-size: .8125rem; color: #B3261E; }
     .nb-presents { color: var(--acquis); }
     .nb-absents { color: #B3261E; font-weight: 400; }
-    .encadrant-absent { display: block; font-size: .6875rem; font-weight: 700; color: #B3261E; line-height: 1.2; }
+    .encadrant-absent { display: block; font-size: .6875rem; font-weight: 700; line-height: 1.2; }
     .dialogue h3 { margin: var(--pas-3) 0 4px; font-size: 1rem; }
     .presences { list-style: none; margin: var(--pas) 0 0; padding: 0; max-height: 40vh; overflow-y: auto; }
     .presences li {
