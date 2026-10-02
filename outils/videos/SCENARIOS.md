@@ -76,14 +76,16 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 1. Au bord du bassin : menu, puis « Présences ».
 2. D'abord la séance. Touchez « Changer » pour ouvrir le calendrier.
 3. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
-4. « Au programme » : ce que la progression du club prévoit ce mois-ci.
-5. Filtrez sur votre groupe d'entraînement.
-6. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
-7. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
-8. Un élève sans choix est absent.
-9. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
-10. Le compteur en haut de la liste fait le bilan.
-11. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+4. Un élève prévient de sa venue ? Les présences s'annoncent jusqu'à une semaine avant la séance.
+5. « Au programme » : ce que la progression du club prévoit ce mois-ci.
+6. Filtrez sur votre groupe d'entraînement.
+7. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
+8. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
+9. Un élève sans choix est absent.
+10. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
+11. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
+12. Le compteur en haut de la liste fait le bilan.
+13. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 
@@ -95,15 +97,16 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 2. Sa grille : niveau préparé, critères acquis, séances suivies.
 3. La jauge descend vers la profondeur du brevet à mesure qu'il progresse.
 4. Avant de noter, choisissez la séance du jour.
-5. « Au programme » : les compétences que la progression prévoit ce mois-ci.
-6. Chaque critère a trois états : non abordé, en cours, acquis.
-7. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, c'est acquis.
-8. Votre nom et la date s'affichent sous le critère.
-9. Le palmage de sustentation est en cours…
-10. … on laisse un mot pour le prochain encadrant.
-11. Le commentaire reste affiché sous le critère.
-12. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
-13. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
+5. Seules les séances où l'élève est noté présent sont proposées : faites l'appel d'abord.
+6. « Au programme » : les compétences que la progression prévoit ce mois-ci.
+7. Chaque critère a trois états : non abordé, en cours, acquis.
+8. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, c'est acquis.
+9. Votre nom et la date s'affichent sous le critère.
+10. Le palmage de sustentation est en cours…
+11. … on laisse un mot pour le prochain encadrant.
+12. Le commentaire reste affiché sous le critère.
+13. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
+14. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 
@@ -224,15 +227,16 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 1. Le planning remplace le tableur du lundi soir : menu, puis « Planning ».
 2. En haut, la prochaine soirée : son responsable de séance et une note éventuelle.
-3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau.
+3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau, « 5+6 » pour un groupe sur deux lignes.
 4. Sous chaque groupe, ses encadrants attitrés, le référent en premier.
-5. Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».
-6. « À savoir » signale ce qui cloche : ici, un groupe dont l'encadrant sera absent.
-7. Les flèches passent d'une soirée à l'autre.
-8. Plus bas : vos prochaines soirées, avec l'espace de votre groupe.
-9. Toute la saison, d'un coup.
-10. La légende en bas de page rappelle les abréviations.
-11. Préparé hors ligne, le planning se consulte même sans réseau au bassin.
+5. En gras, ceux qui ont répondu présent ; rayés, ceux qui seront absents.
+6. Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».
+7. « À savoir » signale ce qui cloche : ici, un groupe dont l'encadrant sera absent.
+8. Les flèches passent d'une soirée à l'autre.
+9. Plus bas : vos prochaines soirées, avec l'espace de votre groupe.
+10. Toute la saison, d'un coup.
+11. La légende en bas de page rappelle les abréviations.
+12. Préparé hors ligne, le planning se consulte même sans réseau au bassin.
 
 ### M14 — Dire si je suis présent à une soirée
 
@@ -243,7 +247,7 @@ Compte : `e2@club.fr` · format téléphone · 39 s
 1. « Vous serez là ? » : l'admin compose les groupes avec vos réponses.
 2. On voit déjà qui a répondu. Vous, pas encore.
 3. Un toucher suffit.
-4. Enregistré : votre nom rejoint la liste des présents.
+4. Enregistré : votre nom rejoint la liste des présents, et passe en gras sous votre groupe.
 5. Pour les soirées suivantes, répondez dans le tableau : ✓ présent, ✗ absent.
 6. Un empêchement ? Changez votre réponse à tout moment.
 7. Sans réponse, personne ne vous suppose présent ni absent.
@@ -421,18 +425,19 @@ Compte : `presidente@club.fr` · format ordinateur · 31 s
 
 ### A10 — Composer les groupes d'entraînement
 
-Les groupes de la saison, leurs référents et encadrants attitrés, leur ligne d'eau, et le rangement des élèves.
+Les groupes de la saison, leurs référents et encadrants attitrés, leurs lignes d'eau, et le rangement des élèves.
 
 Compte : `presidente@club.fr` · format ordinateur · 39 s
 
-1. Chaque groupe : son niveau préparé, sa ligne d'eau attitrée, ses référents et ses encadrants.
+1. Chaque groupe : son niveau préparé, ses lignes d'eau attitrées, ses référents et ses encadrants.
 2. Un nouveau groupe pour les N1 tout frais :
-3. Le référent est un encadrant attitré qui suit, en plus, les élèves du groupe.
-4. Les autres encadrants attitrés viennent en renfort, chaque lundi.
-5. Le référent s'affiche en tête, ici comme dans le planning des moniteurs.
-6. Plus bas, les élèves de la saison : chacun dans un groupe au plus.
-7. Le rangement est suggéré d'après le niveau préparé ; un adhérent sans formation se range à la main.
-8. Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
+3. Cochez sa ligne d'eau attitrée ; un groupe nombreux peut en avoir plusieurs.
+4. Le référent est un encadrant attitré qui suit, en plus, les élèves du groupe.
+5. Les autres encadrants attitrés viennent en renfort, chaque lundi.
+6. Le référent s'affiche en tête, ici comme dans le planning des moniteurs.
+7. Plus bas, les élèves de la saison : chacun dans un groupe au plus.
+8. Le rangement est suggéré d'après le niveau préparé ; un adhérent sans formation se range à la main.
+9. Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
 
 ### A11 — Tenir le planning des soirées
 
@@ -442,9 +447,11 @@ Compte : `presidente@club.fr` · format ordinateur · 36 s
 
 1. Une ligne par groupe, une colonne par soirée : comme le tableur du lundi.
 2. Une case grisée = la ligne attitrée du groupe. On ne note que les écarts.
-3. Ce soir-là, la Prépa N2 descend en fosse :
-4. La ligne « Responsable » : qui mène la séance, et une note pour tous.
-5. Les encadrants voient aussitôt leur soirée sur leur téléphone (« Planning »).
+3. Les débutants occupent deux lignes : « 5+6 ». Les sorties en milieu naturel n'y figurent pas.
+4. Un prénom rayé dans une case : un encadrant du groupe absent ce soir-là.
+5. Ce soir-là, la Prépa N2 descend en fosse :
+6. La ligne « Responsable » : qui mène la séance, et une note pour tous.
+7. Les encadrants voient aussitôt leur soirée sur leur téléphone (« Planning »).
 
 ### A12 — Les avertissements du planning
 

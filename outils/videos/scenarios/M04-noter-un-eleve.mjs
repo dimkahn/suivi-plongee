@@ -19,6 +19,7 @@ export default {
 
     await legende('Avant de noter, choisissez la séance du jour.', 0);
     await choisirDerniereSeance();
+    await legende('Seules les séances où l\'élève est noté présent sont proposées : faites l\'appel d\'abord.', 4000);
 
     await legende('« Au programme » : les compétences que la progression prévoit ce mois-ci.', 0);
     await page.locator('section.programme').scrollIntoViewIfNeeded();

@@ -5,7 +5,7 @@ export default {
   id: 'A10',
   titre: 'Composer les groupes d\'entraînement',
   public: 'Administrateur',
-  resume: 'Les groupes de la saison, leurs référents et encadrants attitrés, leur ligne d\'eau, et le rangement des élèves.',
+  resume: 'Les groupes de la saison, leurs référents et encadrants attitrés, leurs lignes d\'eau, et le rangement des élèves.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 

@@ -16,7 +16,7 @@ export default {
     await legende('On voit déjà qui a répondu. Vous, pas encore.', 3000);
     await legende('Un toucher suffit.', 0);
     await toucher(page.locator('.ma-reponse').getByRole('button', { name: 'Présent' }), { apres: 1500 });
-    await legende('Enregistré : votre nom rejoint la liste des présents.', 3500);
+    await legende('Enregistré : votre nom rejoint la liste des présents, et passe en gras sous votre groupe.', 3500);
 
     await legende('Pour les soirées suivantes, répondez dans le tableau : ✓ présent, ✗ absent.', 0);
     const lignes = page.locator('.a-venir tbody tr');

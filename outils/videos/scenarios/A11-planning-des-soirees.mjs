@@ -16,6 +16,8 @@ export default {
     await legende('Une ligne par groupe, une colonne par soirée : comme le tableur du lundi.', 3500);
     await legende('Une case grisée = la ligne attitrée du groupe. On ne note que les écarts.', 4000);
     await vignette();
+    await legende('Les débutants occupent deux lignes : « 5+6 ». Les sorties en milieu naturel n\'y figurent pas.', 4000);
+    await legende('Un prénom rayé dans une case : un encadrant du groupe absent ce soir-là.', 3500);
 
     await legende('Ce soir-là, la Prépa N2 descend en fosse :', 0);
     const casePrepaN2 = page.locator('button.case[aria-label^="Prépa N2, "]').nth(3);
