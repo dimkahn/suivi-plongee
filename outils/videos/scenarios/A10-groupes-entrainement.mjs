@@ -18,9 +18,13 @@ export default {
     await toucher(page.getByRole('button', { name: 'Nouveau groupe' }));
     await saisir('#nom-groupe', 'Perfect N1');
     await choisir('#espace-groupe', 'Ligne 1', { exact: false });
-    await legende('Le référent suit les élèves du groupe ; il compte aussi parmi ses encadrants.', 0);
+    await legende('Le référent est un encadrant attitré qui suit, en plus, les élèves du groupe.', 0);
     await rechercherEtChoisir('ajout-referent', 'Tia', 'Tiago');
+    await legende('Les autres encadrants attitrés viennent en renfort, chaque lundi.', 0);
+    await rechercherEtChoisir('ajout-encadrant', 'Flo', 'Flora');
+    await pause(1500);
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
+    await legende('Le référent s\'affiche en tête, ici comme dans le planning des moniteurs.', 3500);
 
     await legende('Plus bas, les élèves de la saison : chacun dans un groupe au plus.', 0);
     await page.getByRole('heading', { name: 'Élèves de la saison' }).scrollIntoViewIfNeeded();

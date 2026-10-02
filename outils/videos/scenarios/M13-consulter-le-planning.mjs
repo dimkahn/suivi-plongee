@@ -15,7 +15,8 @@ export default {
     await legende('En haut, la prochaine soirée : son responsable de séance et une note éventuelle.', 4000);
     await legende('Puis chaque groupe et son espace : le chiffre est la ligne d\'eau.', 3500);
     await page.locator('.soiree').getByText('Votre groupe').scrollIntoViewIfNeeded();
-    await legende('Votre groupe est encadré. Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».', 4500);
+    await legende('Sous chaque groupe, ses encadrants attitrés, le référent en premier.', 3500);
+    await legende('Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».', 3500);
     await legende('« À savoir » signale ce qui cloche : ici, un groupe dont l\'encadrant sera absent.', 4000);
 
     await enHaut();

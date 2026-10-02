@@ -225,13 +225,14 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 1. Le planning remplace le tableur du lundi soir : menu, puis « Planning ».
 2. En haut, la prochaine soirée : son responsable de séance et une note éventuelle.
 3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau.
-4. Votre groupe est encadré. Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».
-5. « À savoir » signale ce qui cloche : ici, un groupe dont l'encadrant sera absent.
-6. Les flèches passent d'une soirée à l'autre.
-7. Plus bas : vos prochaines soirées, avec l'espace de votre groupe.
-8. Toute la saison, d'un coup.
-9. La légende en bas de page rappelle les abréviations.
-10. Préparé hors ligne, le planning se consulte même sans réseau au bassin.
+4. Sous chaque groupe, ses encadrants attitrés, le référent en premier.
+5. Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».
+6. « À savoir » signale ce qui cloche : ici, un groupe dont l'encadrant sera absent.
+7. Les flèches passent d'une soirée à l'autre.
+8. Plus bas : vos prochaines soirées, avec l'espace de votre groupe.
+9. Toute la saison, d'un coup.
+10. La légende en bas de page rappelle les abréviations.
+11. Préparé hors ligne, le planning se consulte même sans réseau au bassin.
 
 ### M14 — Dire si je suis présent à une soirée
 
@@ -270,7 +271,7 @@ Toute la saison sur un écran : CACI, séances suivies, contacts d'urgence.
 Compte : `e2@club.fr` · format téléphone · 49 s
 
 1. « Infos élèves » : la page d'accueil. Toute la saison sur un seul écran.
-2. Pour chaque élève : son niveau préparé, son référent, son CACI.
+2. Pour chaque élève : son niveau préparé et son CACI.
 3. CACI : vert, plus d'un mois ; orange, moins d'un mois ; rouge, moins de 15 jours ; ⚠ expiré.
 4. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.
 5. Les boutons filtrent par groupe d'entraînement.
@@ -314,8 +315,8 @@ Compte : `presidente@club.fr` · format ordinateur · 61 s
 3. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
 4. Saisons : Ouvrir la saison, choisir les progressions suivies.
 5. Séances : Le calendrier : à la main, ou toute l'année d'un coup.
-6. Inscriptions : Qui prépare quel niveau, avec quel référent.
-7. Groupes d'entraînement : Les groupes du lundi soir, leurs encadrants et leur ligne d'eau.
+6. Inscriptions : Qui prépare quel niveau, dans quel groupe.
+7. Groupes d'entraînement : Les groupes du lundi soir, leurs référents, leurs encadrants et leur ligne d'eau.
 8. Planning du bassin : Soir par soir : où va chaque groupe.
 9. Sorties : Les week-ends et séjours en milieu naturel.
 10. Référentiel MFT : Les compétences fédérales, niveau par niveau.
@@ -387,14 +388,14 @@ Compte : `presidente@club.fr` · format ordinateur · 41 s
 
 ### A7 — Inscrire un élève en formation
 
-N1, N2 ou N3 : le référentiel est figé à l'inscription, avec un référent et un groupe d'entraînement.
+N1, N2 ou N3 : le référentiel est figé à l'inscription, avec un groupe d'entraînement.
 
 Compte : `presidente@club.fr` · format ordinateur · 33 s
 
 1. On cherche l'élève ; l'appli suggère le niveau d'après son parcours.
-2. Le groupe du niveau préparé est proposé d'office.
+2. Le groupe du niveau préparé est proposé d'office ; ses référents suivront l'élève.
 3. Le référentiel MFT actif est figé : une révision fédérale en cours d'année ne le change pas.
-4. « Modifier » change le référent ou le niveau, tant qu'aucune compétence n'est notée.
+4. « Modifier » change le statut ou le niveau, tant qu'aucune compétence n'est notée.
 
 ### A8 — Garder un plongeur breveté sans formation
 
@@ -420,15 +421,18 @@ Compte : `presidente@club.fr` · format ordinateur · 31 s
 
 ### A10 — Composer les groupes d'entraînement
 
-Les groupes de la saison, leurs encadrants attitrés, leur ligne d'eau, et le rangement des élèves.
+Les groupes de la saison, leurs référents et encadrants attitrés, leur ligne d'eau, et le rangement des élèves.
 
 Compte : `presidente@club.fr` · format ordinateur · 39 s
 
-1. Chaque groupe : son niveau préparé, sa ligne d'eau attitrée, ses encadrants.
+1. Chaque groupe : son niveau préparé, sa ligne d'eau attitrée, ses référents et ses encadrants.
 2. Un nouveau groupe pour les N1 tout frais :
-3. Plus bas, les élèves de la saison : chacun dans un groupe au plus.
-4. Le rangement est suggéré d'après le niveau préparé ; un adhérent sans formation se range à la main.
-5. Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
+3. Le référent est un encadrant attitré qui suit, en plus, les élèves du groupe.
+4. Les autres encadrants attitrés viennent en renfort, chaque lundi.
+5. Le référent s'affiche en tête, ici comme dans le planning des moniteurs.
+6. Plus bas, les élèves de la saison : chacun dans un groupe au plus.
+7. Le rangement est suggéré d'après le niveau préparé ; un adhérent sans formation se range à la main.
+8. Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
 
 ### A11 — Tenir le planning des soirées
 

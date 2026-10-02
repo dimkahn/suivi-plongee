@@ -21,7 +21,7 @@ export default {
       ['Saisons', 'Ouvrir la saison, choisir les progressions suivies.'],
       ['Séances', 'Le calendrier : à la main, ou toute l\'année d\'un coup.'],
       ['Inscriptions', 'Qui prépare quel niveau, dans quel groupe.'],
-      ['Groupes d\'entraînement', 'Les groupes du lundi soir, leurs encadrants et leur ligne d\'eau.'],
+      ['Groupes d\'entraînement', 'Les groupes du lundi soir, leurs référents, leurs encadrants et leur ligne d\'eau.'],
       ['Planning du bassin', 'Soir par soir : où va chaque groupe.'],
       ['Sorties', 'Les week-ends et séjours en milieu naturel.'],
       ['Référentiel MFT', 'Les compétences fédérales, niveau par niveau.'],
