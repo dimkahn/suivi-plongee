@@ -25,7 +25,8 @@ import java.util.Set;
 /**
  * Dossier d'un élève : identité, autorisations, photo. Le club suit des
  * mineurs : la gestion du dossier (création, modification, archivage) est
- * réservée aux ADMIN, la consultation aux encadrants.
+ * réservée aux ADMIN, la consultation aux encadrants, qui peuvent seulement
+ * mettre à jour les tailles de gilet et de combinaison.
  */
 @RestController
 @RequestMapping("/api/eleves")
@@ -49,6 +50,10 @@ public class EleveController {
                                @Size(max = 20, message = "Taille de gilet : 20 caractères au plus.") String tailleGilet,
                                @Size(max = 20, message = "Taille de combinaison : 20 caractères au plus.") String tailleCombinaison,
                                boolean autorisationLegale) {}
+
+    public record DemandeTailles(
+            @Size(max = 20, message = "Taille de gilet : 20 caractères au plus.") String tailleGilet,
+            @Size(max = 20, message = "Taille de combinaison : 20 caractères au plus.") String tailleCombinaison) {}
 
     public record DemandeAutorisationImage(@NotNull Boolean autorisationImage) {}
 
@@ -90,6 +95,21 @@ public class EleveController {
     public EleveVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeEleve demande) {
         Eleve e = eleve(id);
         appliquer(e, demande);
+        eleves.save(e);
+        return vue(e);
+    }
+
+    /**
+     * Tailles de gilet et de combinaison seules : un encadrant les corrige
+     * depuis la fiche de suivi, au bord du bassin. Le reste du dossier reste
+     * réservé aux ADMIN. Eleve étant audité, la modification garde son auteur.
+     */
+    @PutMapping("/{id}/tailles")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public EleveVue modifierTailles(@PathVariable Long id, @Valid @RequestBody DemandeTailles demande) {
+        Eleve e = eleve(id);
+        e.setTailleGilet(vide(demande.tailleGilet()) ? null : demande.tailleGilet().trim());
+        e.setTailleCombinaison(vide(demande.tailleCombinaison()) ? null : demande.tailleCombinaison().trim());
         eleves.save(e);
         return vue(e);
     }
