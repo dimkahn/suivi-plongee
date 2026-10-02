@@ -5,7 +5,7 @@ export default {
   id: 'A10',
   titre: 'Composer les groupes d\'entraînement',
   public: 'Administrateur',
-  resume: 'Les groupes de la saison, leurs encadrants attitrés, leur ligne d\'eau, et le rangement des élèves.',
+  resume: 'Les groupes de la saison, leurs référents et encadrants attitrés, leur ligne d\'eau, et le rangement des élèves.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -13,12 +13,13 @@ export default {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await administration('Groupes d\'entraînement');
-    await legende('Chaque groupe : son niveau préparé, sa ligne d\'eau attitrée, ses encadrants.', 3500);
+    await legende('Chaque groupe : son niveau préparé, sa ligne d\'eau attitrée, ses référents et ses encadrants.', 4000);
     await legende('Un nouveau groupe pour les N1 tout frais :', 0);
     await toucher(page.getByRole('button', { name: 'Nouveau groupe' }));
     await saisir('#nom-groupe', 'Perfect N1');
     await choisir('#espace-groupe', 'Ligne 1', { exact: false });
-    await rechercherEtChoisir('ajout-encadrant', 'Tia', 'Tiago');
+    await legende('Le référent suit les élèves du groupe ; il compte aussi parmi ses encadrants.', 0);
+    await rechercherEtChoisir('ajout-referent', 'Tia', 'Tiago');
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
 
     await legende('Plus bas, les élèves de la saison : chacun dans un groupe au plus.', 0);

@@ -5,7 +5,7 @@ export default {
   id: 'A7',
   titre: 'Inscrire un élève en formation',
   public: 'Administrateur',
-  resume: 'N1, N2 ou N3 : le référentiel est figé à l\'inscription, avec un référent et un groupe d\'entraînement.',
+  resume: 'N1, N2 ou N3 : le référentiel est figé à l\'inscription, avec un groupe d\'entraînement.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -19,12 +19,11 @@ export default {
     await saisir('#eleve', 'Pet');
     await toucher(page.locator('#liste-eleves button').filter({ hasText: 'Nathan' }).first(), { apres: 900 });
     await choisir('#niveau', 'N1', { exact: false });
-    await legende('Le groupe du niveau préparé est proposé d\'office.', 3000);
-    await choisir('#referent', 'Tiago Nogueira');
+    await legende('Le groupe du niveau préparé est proposé d\'office ; ses référents suivront l\'élève.', 3500);
     await vignette();
     await toucher(page.getByRole('button', { name: 'Inscrire' }), { apres: 2000 });
     await legende('Le référentiel MFT actif est figé : une révision fédérale en cours d\'année ne le change pas.', 4500);
-    await legende('« Modifier » change le référent ou le niveau, tant qu\'aucune compétence n\'est notée.', 4000);
+    await legende('« Modifier » change le statut ou le niveau, tant qu\'aucune compétence n\'est notée.', 4000);
     await legende(null, 0);
     await pause(500);
   }

@@ -106,20 +106,19 @@ SELECT g.id, u.id
 --  Inscriptions 2026-2027, figees sur le referentiel actif
 -- ------------------------------------------------------------
 
-INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
-SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2026-09-07'
-  FROM (VALUES ('A-01-000011', 'N1', 'e2@club.fr'),          -- Anis reprend son N1
-               ('A-01-000014', 'N1', 'e2@club.fr'),          -- Lea
-               ('A-01-000015', 'N1', 'e1@club.fr'),          -- Yanis
-               ('A-01-000016', 'N1', 'e1@club.fr'),          -- Chloe
-               ('A-01-000017', 'N1', 'e1@club.fr'),          -- Hugo
-               ('A-01-000010', 'N2', 'e3@club.fr'),          -- Camille, N1 l'an dernier
-               ('A-01-000012', 'N3', 'presidente@club.fr')   -- Sonia poursuit son N3
-       ) AS i(licence, niveau, referent)
+INSERT INTO cursus (eleve_id, saison_id, referentiel_id, statut, ouvert_le)
+SELECT e.id, s.id, r.id, 'EN_COURS', DATE '2026-09-07'
+  FROM (VALUES ('A-01-000011', 'N1'),          -- Anis reprend son N1
+               ('A-01-000014', 'N1'),          -- Lea
+               ('A-01-000015', 'N1'),          -- Yanis
+               ('A-01-000016', 'N1'),          -- Chloe
+               ('A-01-000017', 'N1'),          -- Hugo
+               ('A-01-000010', 'N2'),          -- Camille, N1 l'an dernier
+               ('A-01-000012', 'N3')           -- Sonia poursuit son N3
+       ) AS i(licence, niveau)
   JOIN eleve e ON e.numero_licence = i.licence
   JOIN saison s ON s.libelle = '2026-2027'
-  JOIN referentiel r ON r.niveau = i.niveau AND r.actif = TRUE
-  JOIN utilisateur m ON m.email = i.referent;
+  JOIN referentiel r ON r.niveau = i.niveau AND r.actif = TRUE;
 
 -- Mateo, N2 tout neuf, continue de plonger avec le club sans viser de
 -- nouveau niveau cette saison : adhesion seule, sans cursus.

@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * Groupe d'entraînement d'une saison (Débutants, Perfect N1, Prépa N2...) :
- * ses encadrants attitrés, sa ligne d'eau attitrée et ses élèves, rangés par
+ * ses encadrants attitrés (dont ses référents), sa ligne d'eau attitrée et ses élèves, rangés par
  * l'admin. Sans rapport avec {@code GroupePlongeurs}, qui compose les
  * palanquées d'un séjour. Un élève est dans au plus un groupe par saison
  * (règle tenue par {@code GroupeEntrainementService}).
@@ -45,6 +45,13 @@ public class GroupeEntrainement {
             joinColumns = @JoinColumn(name = "groupe_id"),
             inverseJoinColumns = @JoinColumn(name = "utilisateur_id"))
     private Set<Utilisateur> encadrants = new LinkedHashSet<>();
+
+    /** Référents du groupe : toujours aussi dans {@link #encadrants} (règle du service). */
+    @ManyToMany
+    @JoinTable(name = "groupe_entrainement_referent",
+            joinColumns = @JoinColumn(name = "groupe_id"),
+            inverseJoinColumns = @JoinColumn(name = "utilisateur_id"))
+    private Set<Utilisateur> referents = new LinkedHashSet<>();
 
     @ManyToMany
     @JoinTable(name = "groupe_entrainement_eleve",
@@ -106,6 +113,18 @@ public class GroupeEntrainement {
 
     public void setEncadrants(Set<Utilisateur> encadrants) {
         this.encadrants = encadrants;
+    }
+
+    public Set<Utilisateur> getReferents() {
+        return referents;
+    }
+
+    public void setReferents(Set<Utilisateur> referents) {
+        this.referents = referents;
+    }
+
+    public boolean estReferent(Utilisateur u) {
+        return referents.stream().anyMatch(r -> r.getId().equals(u.getId()));
     }
 
     public Set<Eleve> getEleves() {

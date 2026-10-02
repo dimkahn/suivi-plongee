@@ -157,7 +157,7 @@ class GroupeEntrainementServiceTest {
         u.setActif(false);
         when(utilisateurs.findById(3L)).thenReturn(Optional.of(u));
 
-        assertThatThrownBy(() -> service.creer(new DemandeGroupe(9L, "N2+", null, null, List.of(3L))))
+        assertThatThrownBy(() -> service.creer(new DemandeGroupe(9L, "N2+", null, null, List.of(3L), null)))
                 .isInstanceOf(RegleMetierException.class)
                 .hasMessageContaining("pas un encadrant actif");
     }

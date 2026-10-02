@@ -328,6 +328,6 @@ export class PlanningComponent {
   }
 
   encadrants(g: GroupePlanningVue): string {
-    return g.encadrants.map(e => e.nomComplet).join(' & ') || 'Sans encadrant';
+    return g.encadrants.map(e => e.nomComplet + (e.referent ? ' (référent)' : '')).join(' & ') || 'Sans encadrant';
   }
 }

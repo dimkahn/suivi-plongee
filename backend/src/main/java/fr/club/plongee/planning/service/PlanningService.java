@@ -52,7 +52,8 @@ public class PlanningService {
     /** ATTITREE : ligne attitrée du groupe (rien d'enregistré) ; AUCUN : pas de ligne attitrée ni de consigne. */
     public enum TypeCase { ATTITREE, ESPACE, ACTIVITE, ABSENT, AUCUN }
 
-    public record EncadrantPlanningVue(Long id, String nomComplet, String niveauEncadrement) {}
+    /** {@code referent} : référent du groupe (faux hors d'un groupe, par exemple pour les présences). */
+    public record EncadrantPlanningVue(Long id, String nomComplet, String niveauEncadrement, boolean referent) {}
 
     /** {@code effectif} : élèves du groupe et encadrants attitrés, pour la capacité de la fosse. */
     public record GroupePlanningVue(Long id, String nom, String niveauPrepare, Long espaceAttitreId,
@@ -397,8 +398,12 @@ public class PlanningService {
     }
 
     private static EncadrantPlanningVue encadrantVue(Utilisateur u) {
+        return encadrantVue(u, false);
+    }
+
+    private static EncadrantPlanningVue encadrantVue(Utilisateur u, boolean referent) {
         return new EncadrantPlanningVue(u.getId(), u.nomComplet(),
-                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name());
+                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(), referent);
     }
 
     private static GroupePlanningVue groupeVue(GroupeEntrainement g) {
@@ -407,8 +412,9 @@ public class PlanningService {
                 e == null ? null : e.getId(), e == null ? null : e.getNom(),
                 g.getEleves().size(), effectif(g),
                 g.getEncadrants().stream()
-                        .map(PlanningService::encadrantVue)
-                        .sorted(Comparator.comparing(EncadrantPlanningVue::nomComplet))
+                        .map(u -> encadrantVue(u, g.estReferent(u)))
+                        .sorted(Comparator.comparing((EncadrantPlanningVue v) -> !v.referent())
+                                .thenComparing(EncadrantPlanningVue::nomComplet))
                         .toList());
     }
 

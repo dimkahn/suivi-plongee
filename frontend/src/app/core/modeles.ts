@@ -21,7 +21,6 @@ export interface CursusVue {
   niveau: 'N1' | 'N2' | 'N3';
   saison: string;
   statut: string;
-  moniteurReferent: string | null;
 }
 
 /**
@@ -193,7 +192,6 @@ export interface LigneRoster {
   eleveId: number;
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
-  moniteurReferent: string | null;
   caciValide: boolean;
   /** Fin de validité du certificat médical (AAAA-MM-JJ), null si non renseignée. */
   caciFinValidite: string | null;
@@ -635,7 +633,8 @@ export interface GroupeEntrainementVue {
   niveauPrepare: 'N1' | 'N2' | 'N3' | null;
   espaceAttitreId: number | null;
   espaceAttitre: string | null;
-  encadrants: { id: number; nomComplet: string; niveauEncadrement: string | null }[];
+  /** Référents d'abord : un référent est aussi un encadrant attitré. */
+  encadrants: { id: number; nomComplet: string; niveauEncadrement: string | null; referent: boolean }[];
   eleves: { id: number; nom: string; prenom: string }[];
 }
 
@@ -644,7 +643,9 @@ export interface DemandeGroupeEntrainement {
   nom: string;
   niveauPrepare: 'N1' | 'N2' | 'N3' | null;
   espaceAttitreId: number | null;
+  /** Encadrants attitrés qui ne sont pas référents. */
   encadrantIds: number[];
+  referentIds: number[];
 }
 
 /** Un élève de la saison vu depuis l'écran de rangement. */
@@ -677,6 +678,8 @@ export interface EncadrantPlanningVue {
   id: number;
   nomComplet: string;
   niveauEncadrement: string | null;
+  /** Référent du groupe ; toujours faux dans les présences d'une soirée. */
+  referent: boolean;
 }
 
 export interface SoireePlanningVue {

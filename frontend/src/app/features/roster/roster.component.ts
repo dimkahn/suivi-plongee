@@ -77,9 +77,6 @@ const LIBELLES: Record<string, string> = {
                     }
                     <div class="identite-cellule">
                       <span class="nom">{{ e.eleve }}</span>
-                      @if (e.moniteurReferent) {
-                        <span class="secondaire">{{ e.moniteurReferent }}</span>
-                      }
                     </div>
                   </a>
                 </td>

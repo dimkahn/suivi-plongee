@@ -59,7 +59,7 @@ class CursusDelivreTest {
         mvc.perform(put("/api/cursus/" + cursusId).header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                 {"statut":"DELIVRE","moniteurReferentId":null}"""))
+                                 {"statut":"DELIVRE"}"""))
                 .andExpect(status().isOk());
 
         JsonNode eleves = json.readTree(mvc.perform(get("/api/eleves").header("Authorization", admin))
