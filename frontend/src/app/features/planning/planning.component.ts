@@ -92,6 +92,8 @@ const SOIREES_A_VENIR = 8;
                     @for (e of l.groupe.encadrants; track e.id; let dernier = $last) {
                       @if (estAbsent(s, e.id)) {
                         <s class="absent" [attr.aria-label]="e.nomComplet + ', absent'">{{ e.nomComplet }}</s>
+                      } @else if (estPresent(s, e.id)) {
+                        <strong class="present" [attr.aria-label]="e.nomComplet + ', présent'">{{ e.nomComplet }}</strong>
                       } @else {
                         <span>{{ e.nomComplet }}</span>
                       }
@@ -188,7 +190,9 @@ const SOIREES_A_VENIR = 8;
     .code.type-ACTIVITE { background: #FEF9C3; font-size: .75rem; }
     .code.type-ABSENT, .code.type-AUCUN { color: var(--craie); }
     .texte { display: grid; min-width: 0; }
-    .encadrants-groupe s.absent { color: #B3261E; text-decoration-thickness: 2px; }
+    /* Qui a répondu est en gras : présent en noir, absent rayé en rouge. */
+    .encadrants-groupe s.absent { color: #B3261E; font-weight: 700; text-decoration-thickness: 2px; }
+    .encadrants-groupe strong.present { color: var(--encre); font-weight: 700; }
     .nom-groupe { font-weight: 700; }
     .etiquette {
       display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
@@ -343,5 +347,10 @@ export class PlanningComponent {
   /** A répondu absent pour cette soirée : son nom est rayé dans les groupes qu'il encadre. */
   estAbsent(s: SoireePlanningVue, encadrantId: number): boolean {
     return s.absents.some(a => a.id === encadrantId);
+  }
+
+  /** A répondu présent : son nom est en gras ; qui n'a pas répondu reste en texte normal. */
+  estPresent(s: SoireePlanningVue, encadrantId: number): boolean {
+    return s.presents.some(p => p.id === encadrantId);
   }
 }
