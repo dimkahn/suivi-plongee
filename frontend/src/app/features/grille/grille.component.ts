@@ -852,7 +852,7 @@ export class GrilleComponent implements OnDestroy {
       this.id();
       untracked(() => {
         this.reinitialiser();
-        void this.charger();
+        void this.charger(true);
       });
     });
 
@@ -889,11 +889,19 @@ export class GrilleComponent implements OnDestroy {
     this.chargementHistoriqueSaisons.set(false);
   }
 
-  private async charger(): Promise<void> {
+  /**
+   * `premier` : ouverture de la fiche d'un élève. On y présélectionne sa
+   * dernière séance où il est noté présent ; un rechargement (retour du
+   * réseau) garde, lui, le choix fait par le moniteur, « aucune séance » compris.
+   */
+  private async charger(premier = false): Promise<void> {
     try {
       const g = await this.api.grille(Number(this.id()));
       this.grille.set(g);
       this.seances.set(await this.api.seances());
+      // Sans présences connues (grille en cache d'avant la règle), toute
+      // séance passée semblerait utilisable : pas de présélection.
+      if (premier && g.seancesPresent) this.seanceId.set(this.seancesUtilisables().at(-1)?.id ?? null);
       this.erreurChargement.set(false);
       if (!this.reseau.enLigne()) await this.afficherAgeDuCache();
       else this.ageDuCache.set(null);
