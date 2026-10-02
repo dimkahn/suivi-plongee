@@ -38,6 +38,10 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                  [disabled]="importEnCours()" (change)="importer($event)">
         </label>
+        <button type="button" class="bouton-discret" [disabled]="exportEnCours()" (click)="exporter()"
+                title="Blocs et gilets, au même format que le classeur importé">
+          {{ exportEnCours() ? 'Export en cours…' : 'Exporter le classeur Excel' }}
+        </button>
       </div>
       }
     </div>
@@ -53,7 +57,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
         <p>
           {{ r.blocs }} bloc(s) et {{ r.gilets }} gilet(s) ajoutés, {{ r.interventions }} ligne(s) d'historique
           (visites TIV, requalifications) reprises au journal.
-          @if (r.auRebut > 0) { {{ r.auRebut }} bloc(s) vendu(s) ou réformé(s) enregistré(s) au rebut. }
+          @if (r.auRebut > 0) { {{ r.auRebut }} équipement(s) vendu(s) ou réformé(s) enregistré(s) au rebut. }
         </p>
         @if (r.dejaPresents.length > 0) {
           <p class="secondaire">
@@ -233,6 +237,7 @@ export class InventaireComponent {
   message = signal<string | null>(null);
   importEnCours = signal(false);
   rapport = signal<RapportImportMateriel | null>(null);
+  exportEnCours = signal(false);
 
   /** Un TIV qui ne gère pas le matériel arrive directement sur les blocs. */
   type = signal<TypeEquipement | null>(this.auth.gereMateriel() ? null : 'BLOC');
@@ -281,6 +286,24 @@ export class InventaireComponent {
       this.message.set((err as HttpErrorResponse).error?.detail ?? "Le classeur n'a pas pu être importé.");
     } finally {
       this.importEnCours.set(false);
+    }
+  }
+
+  async exporter(): Promise<void> {
+    this.exportEnCours.set(true);
+    this.message.set(null);
+    try {
+      const blob = await firstValueFrom(this.api.exporterClasseurMateriel());
+      const url = URL.createObjectURL(blob);
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.download = `materiel-${new Date().toLocaleDateString('sv-SE')}.xlsx`;
+      lien.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.message.set("Le classeur Excel n'a pas pu être généré.");
+    } finally {
+      this.exportEnCours.set(false);
     }
   }
 

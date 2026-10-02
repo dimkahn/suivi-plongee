@@ -36,6 +36,9 @@ import java.util.regex.Pattern;
  * classeur ne crée pas de doublon. Les cases « VENDU » ou « REFORME »
  * mettent le bloc au rebut, sa fiche restant consultable.
  *
+ * <p>{@link ExportMaterielService} écrit l'inventaire dans ce même format :
+ * son fichier se réimporte ici.
+ *
  * <p>Ce que le classeur donne pour l'avenir n'est pas repris : une
  * requalification notée après la « Dernière Requalif » (ou après
  * aujourd'hui) n'est qu'une prévision.
@@ -47,7 +50,7 @@ public class ImportMaterielService {
     static final String SIGLE_CLUB = "CPPJVO";
 
     private static final String ORIGINE = "Repris du classeur du matériel.";
-    private static final String ORIGINE_MOIS = "Repris du classeur du matériel (seul le mois y est noté).";
+    static final String ORIGINE_MOIS = "Repris du classeur du matériel (seul le mois y est noté).";
     private static final Set<String> MARQUES_VIDES = Set.of("", "*", "?", "???", "vendu", "reforme", "requalif");
     private static final Set<String> TAILLES = Set.of("XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL");
     private static final Pattern DATE_TEXTE = Pattern.compile("(\\d{1,2})/(\\d{1,2})/(\\d{2,4})");
@@ -185,32 +188,42 @@ public class ImportMaterielService {
             imp.interventions++;
         });
 
-        String sortie = sortie(r);
-        if (sortie != null) {
-            LocalDate dateSortie = dateDansTexte(commentaire);
-            String precision = "";
-            if (dateSortie == null && anneeSortie != null) {
-                dateSortie = LocalDate.of(anneeSortie, 1, 1);
-                precision = " (date exacte inconnue : année " + anneeSortie + " d'après le classeur)";
-            }
-            if (dateSortie == null || dateSortie.isAfter(aujourdhui)) {
-                dateSortie = aujourdhui;
-                precision = " (date inconnue : date de l'import)";
-            }
-            e.setDateRebut(dateSortie);
-            // « Réformé par ROTH… » se suffit à lui-même.
-            String motif = (commentaire == null ? sortie
-                    : normaliser(commentaire).startsWith(normaliser(sortie)) ? commentaire
-                    : sortie + " : " + commentaire) + precision;
-            e.setMotifRebut(motif.length() > 255 ? motif.substring(0, 254) + "…" : motif);
-            imp.auRebut++;
-        } else if (commentaire != null) {
+        if (!mettreAuRebut(imp, e, r, commentaire, anneeSortie) && commentaire != null) {
             notes.addFirst(commentaire);
         }
         if (!notes.isEmpty()) {
             e.setRemarques("Classeur : " + String.join(" ; ", notes));
             imp.remarques.add(reference + " : " + String.join(" ; ", notes));
         }
+    }
+
+    /**
+     * Met l'équipement au rebut si une case de la ligne dit « VENDU » ou
+     * « REFORME » : à la date lue dans le commentaire, sinon au 1er janvier
+     * de l'année de la colonne marquée, sinon à la date de l'import.
+     */
+    private static boolean mettreAuRebut(Import imp, Equipement e, Row r, String commentaire, Integer anneeSortie) {
+        String sortie = sortie(r);
+        if (sortie == null) return false;
+        LocalDate aujourdhui = Calendrier.aujourdhui();
+        LocalDate dateSortie = dateDansTexte(commentaire);
+        String precision = "";
+        if (dateSortie == null && anneeSortie != null) {
+            dateSortie = LocalDate.of(anneeSortie, 1, 1);
+            precision = " (date exacte inconnue : année " + anneeSortie + " d'après le classeur)";
+        }
+        if (dateSortie == null || dateSortie.isAfter(aujourdhui)) {
+            dateSortie = aujourdhui;
+            precision = " (date inconnue : date de l'import)";
+        }
+        e.setDateRebut(dateSortie);
+        // « Réformé par ROTH… » se suffit à lui-même.
+        String motif = (commentaire == null ? sortie
+                : normaliser(commentaire).startsWith(normaliser(sortie)) ? commentaire
+                : sortie + " : " + commentaire) + precision;
+        e.setMotifRebut(motif.length() > 255 ? motif.substring(0, 254) + "…" : motif);
+        imp.auRebut++;
+        return true;
     }
 
     private void importerGilet(Import imp, Feuille f, Row r) {
@@ -236,6 +249,10 @@ public class ImportMaterielService {
         }
         e.setTaille(taille);
         e.setDateAchat(date(f.cellule(r, "date achat")));
+        String commentaire = texte(f.cellule(r, "commentaires"));
+        if (!mettreAuRebut(imp, e, r, commentaire, null) && commentaire != null) {
+            e.setRemarques("Classeur : " + commentaire);
+        }
         equipements.save(e);
         imp.gilets++;
     }
@@ -251,7 +268,7 @@ public class ImportMaterielService {
         return vendu ? "Vendu" : reforme ? "Réformé" : null;
     }
 
-    private static LocalDate dateDansTexte(String texte) {
+    static LocalDate dateDansTexte(String texte) {
         if (texte == null) return null;
         Matcher m = DATE_TEXTE.matcher(texte);
         if (!m.find()) return null;

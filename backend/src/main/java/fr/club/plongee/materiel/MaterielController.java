@@ -1,5 +1,7 @@
 package fr.club.plongee.materiel;
 
+import fr.club.plongee.materiel.service.ExportMaterielService;
+import fr.club.plongee.materiel.service.ExportMaterielService.ClasseurExcel;
 import fr.club.plongee.materiel.service.ImportMaterielService;
 import fr.club.plongee.materiel.service.ImportMaterielService.Rapport;
 import fr.club.plongee.materiel.service.InspectionTivService;
@@ -25,6 +27,7 @@ import fr.club.plongee.materiel.service.PhotoPretService.PhotoVue;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,14 +65,17 @@ public class MaterielController {
     private final PretService prets;
     private final PhotoPretService photos;
     private final ImportMaterielService imports;
+    private final ExportMaterielService exports;
     private final InspectionTivService inspectionsTiv;
 
     public MaterielController(MaterielService materiel, PretService prets, PhotoPretService photos,
-                              ImportMaterielService imports, InspectionTivService inspectionsTiv) {
+                              ImportMaterielService imports, ExportMaterielService exports,
+                              InspectionTivService inspectionsTiv) {
         this.materiel = materiel;
         this.prets = prets;
         this.photos = photos;
         this.imports = imports;
+        this.exports = exports;
         this.inspectionsTiv = inspectionsTiv;
     }
 
@@ -225,6 +231,16 @@ public class MaterielController {
         } catch (IOException e) {
             throw new RegleMetierException("Le fichier n'a pas pu être lu.");
         }
+    }
+
+    /** L'inventaire au format du classeur ci-dessus : le fichier se réimporte par {@link #importer}. */
+    @GetMapping(value = "/export.xlsx",
+            produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> exporter() {
+        ClasseurExcel excel = exports.exporter();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + excel.nomFichier() + "\"")
+                .body(excel.contenu());
     }
 
     @GetMapping("/emprunteurs")

@@ -900,6 +900,11 @@ export class ApiService {
     return this.http.post<RapportImportMateriel>('/api/materiel/import', donnees);
   }
 
+  /** Blocs et gilets au format du classeur ci-dessus, réimportable. */
+  exporterClasseurMateriel(): Observable<Blob> {
+    return this.http.get('/api/materiel/export.xlsx', { responseType: 'blob' });
+  }
+
   // ----------------------------------------------------------------
   //  Sorties : lecture pour les encadrants, gestion par un admin ou le
   //  directeur technique.

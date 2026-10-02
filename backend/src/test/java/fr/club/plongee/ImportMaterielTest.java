@@ -188,6 +188,78 @@ class ImportMaterielTest {
         assertThat(second.get("dejaPresents").toString()).contains("B-90", "B-92", "G-XL9");
     }
 
+    /** Le texte d'une case, chiffres sans « .0 ». */
+    private static String valeur(Cell c) {
+        if (c == null) return "";
+        return c.getCellType() == CellType.NUMERIC
+                ? java.math.BigDecimal.valueOf(c.getNumericCellValue()).stripTrailingZeros().toPlainString()
+                : c.getStringCellValue();
+    }
+
+    @Test
+    @DisplayName("L'export suit le format du classeur : réimporté sous d'autres numéros, il redonne les mêmes fiches")
+    void exportReimportable() throws Exception {
+        String dt = jeton("e3@club.fr");
+        importer(dt, classeur());
+
+        byte[] export = mvc.perform(get("/api/materiel/export.xlsx").header("Authorization", dt))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        mvc.perform(get("/api/materiel/export.xlsx").header("Authorization", jeton("e2@club.fr")))
+                .andExpect(status().isForbidden());
+
+        // Mêmes lignes renumérotées : 90 → 190, XL9 → RXL9 ; le reste est déjà dans l'inventaire.
+        byte[] renumerote;
+        try (Workbook wb = WorkbookFactory.create(new java.io.ByteArrayInputStream(export));
+             ByteArrayOutputStream sortie = new ByteArrayOutputStream()) {
+            Sheet blocs = wb.getSheet("Blocs");
+            assertThat(valeur(blocs.getRow(0).getCell(0))).isEqualTo("Numéro");
+            int trouves = 0;
+            for (Row r : blocs) {
+                String numero = valeur(r.getCell(0));
+                if (List.of("90", "91", "92").contains(numero)) {
+                    r.getCell(0).setCellValue("1" + numero);
+                    trouves++;
+                }
+            }
+            assertThat(trouves).isEqualTo(3);
+            for (Row r : wb.getSheet("Stabs")) {
+                String numero = valeur(r.getCell(0));
+                if (List.of("XL9", "S9").contains(numero)) r.getCell(0).setCellValue("R" + numero);
+            }
+            wb.write(sortie);
+            renumerote = sortie.toByteArray();
+        }
+
+        JsonNode rapport = importer(dt, renumerote);
+        assertThat(rapport.get("blocs").asInt()).isEqualTo(3);
+        assertThat(rapport.get("gilets").asInt()).isEqualTo(2);
+        assertThat(rapport.get("auRebut").asInt()).isEqualTo(1);
+
+        JsonNode inventaire = lire("/api/materiel/equipements", dt);
+        List<String> champs = List.of("statut", "proprietaire", "ancienneReference", "constructeur", "marque",
+                "modele", "numeroSerie", "taille", "volumeLitres", "pressionEpreuveBar", "pressionServiceBar",
+                "robinetterie", "numeroRobinet", "datePremiereEpreuve", "dateAchat", "derniereRequalification",
+                "prochaineRequalification", "derniereInspection", "dateRebut", "motifRebut", "remarques");
+        for (String[] paire : new String[][] {{"B-90", "B-190"}, {"B-91", "B-191"}, {"B-92", "B-192"},
+                {"G-XL9", "G-RXL9"}, {"G-S9", "G-RS9"}}) {
+            JsonNode avant = equipement(inventaire, paire[0]);
+            JsonNode apres = equipement(inventaire, paire[1]);
+            for (String champ : champs) {
+                assertThat(String.valueOf(apres.get(champ))).as(paire[1] + " " + champ)
+                        .isEqualTo(String.valueOf(avant.get(champ)));
+            }
+            JsonNode journalAvant = lire("/api/materiel/equipements/" + avant.get("id").asLong(), dt).get("journal");
+            JsonNode journalApres = lire("/api/materiel/equipements/" + apres.get("id").asLong(), dt).get("journal");
+            assertThat(journalApres).as(paire[1] + " journal").hasSize(journalAvant.size());
+            for (int i = 0; i < journalAvant.size(); i++) {
+                for (String champ : List.of("type", "dateIntervention", "resultat", "description")) {
+                    assertThat(String.valueOf(journalApres.get(i).get(champ))).as(paire[1] + " journal " + champ)
+                            .isEqualTo(String.valueOf(journalAvant.get(i).get(champ)));
+                }
+            }
+        }
+    }
+
     @Test
     @DisplayName("Un fichier qui n'est pas le classeur du matériel est refusé, et l'import reste réservé au DT")
     void refus() throws Exception {
