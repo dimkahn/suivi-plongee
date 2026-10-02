@@ -88,7 +88,19 @@ const SOIREES_A_VENIR = 8;
                     @if (l.mien) { <span class="etiquette">Votre groupe</span> }
                   </span>
                   <span class="place">{{ l.case.libelle }}</span>
-                  <span class="secondaire">{{ encadrants(l.groupe) }}</span>
+                  <span class="secondaire encadrants-groupe">
+                    @for (e of l.groupe.encadrants; track e.id; let dernier = $last) {
+                      @if (estAbsent(s, e.id)) {
+                        <s class="absent" [attr.aria-label]="e.nomComplet + ', absent'">{{ e.nomComplet }}</s>
+                      } @else {
+                        <span>{{ e.nomComplet }}</span>
+                      }
+                      @if (e.referent) { (référent) }
+                      @if (!dernier) { & }
+                    } @empty {
+                      Sans encadrant
+                    }
+                  </span>
                 </span>
               </li>
             }
@@ -176,6 +188,7 @@ const SOIREES_A_VENIR = 8;
     .code.type-ACTIVITE { background: #FEF9C3; font-size: .75rem; }
     .code.type-ABSENT, .code.type-AUCUN { color: var(--craie); }
     .texte { display: grid; min-width: 0; }
+    .encadrants-groupe s.absent { color: #B3261E; text-decoration-thickness: 2px; }
     .nom-groupe { font-weight: 700; }
     .etiquette {
       display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
@@ -327,7 +340,8 @@ export class PlanningComponent {
     return `${jour.charAt(0).toUpperCase()}${jour.slice(1)} ${dateFr(date)}`;
   }
 
-  encadrants(g: GroupePlanningVue): string {
-    return g.encadrants.map(e => e.nomComplet + (e.referent ? ' (référent)' : '')).join(' & ') || 'Sans encadrant';
+  /** A répondu absent pour cette soirée : son nom est rayé dans les groupes qu'il encadre. */
+  estAbsent(s: SoireePlanningVue, encadrantId: number): boolean {
+    return s.absents.some(a => a.id === encadrantId);
   }
 }

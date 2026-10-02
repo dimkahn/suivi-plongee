@@ -161,8 +161,12 @@ interface EditionSoiree {
                     <td>
                       <button type="button" class="case" [class]="'case type-' + c.type + (c.espaceType === 'FOSSE' ? ' fosse' : '')"
                               (click)="editerCase(g, s, c)"
-                              [attr.aria-label]="g.nom + ', ' + dateLongue(s.date) + ' : ' + c.libelle">
+                              [attr.aria-label]="g.nom + ', ' + dateLongue(s.date) + ' : ' + c.libelle
+                                + (absentsDuGroupe(g, s).length ? ', absents : ' + absentsDuGroupe(g, s).join(', ') : '')">
                         {{ code(c) }}
+                        @for (nom of absentsDuGroupe(g, s); track nom) {
+                          <s class="encadrant-absent" aria-hidden="true">{{ nom }}</s>
+                        }
                       </button>
                     </td>
                   }
@@ -174,7 +178,7 @@ interface EditionSoiree {
 
         <p class="legende secondaire">
           Chiffre : ligne d'eau · F10 : fosse · F6 : fosse limitée à 6 m (débutants, groupes encadrés par un E1)
-          · — : groupe absent · • : note sur la soirée
+          · — : groupe absent · • : note sur la soirée · <s>Prénom</s> : encadrant du groupe absent ce soir-là
         </p>
 
         @if (avertissements().length > 0) {
@@ -319,6 +323,7 @@ interface EditionSoiree {
     .responsable { font-weight: 400; font-size: .8125rem; color: #B3261E; }
     .nb-presents { color: var(--acquis); }
     .nb-absents { color: #B3261E; font-weight: 400; }
+    .encadrant-absent { display: block; font-size: .6875rem; font-weight: 400; color: #B3261E; line-height: 1.2; }
     .dialogue h3 { margin: var(--pas-3) 0 4px; font-size: 1rem; }
     .presences { list-style: none; margin: var(--pas) 0 0; padding: 0; max-height: 40vh; overflow-y: auto; }
     .presences li {
@@ -457,6 +462,11 @@ export class PlanningAdminComponent {
 
   encadrantsCourts(g: GroupePlanningVue): string {
     return g.encadrants.map(e => e.nomComplet.split(' ')[0]).join(' & ') || 'Sans encadrant';
+  }
+
+  /** Prénoms des encadrants attitrés du groupe qui ont répondu absent à cette soirée, rayés dans la case. */
+  absentsDuGroupe(g: GroupePlanningVue, s: SoireePlanningVue): string[] {
+    return g.encadrants.filter(e => s.absents.some(a => a.id === e.id)).map(e => e.nomComplet.split(' ')[0]);
   }
 
   editerCase(g: GroupePlanningVue, s: SoireePlanningVue, c: CasePlanningVue): void {
