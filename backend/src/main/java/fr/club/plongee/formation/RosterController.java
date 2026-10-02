@@ -30,7 +30,7 @@ public class RosterController {
      * {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève.
      * {@code caciFinValidite} : date seule (jamais le certificat), pour colorer l'échéance à l'écran.
      */
-    public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau, String moniteurReferent,
+    public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau,
                              boolean caciValide, LocalDate caciFinValidite, long seancesBloc, long seancesNage,
                              Map<Long, String> presencesParSeance, boolean aPhoto) {}
 
@@ -71,7 +71,6 @@ public class RosterController {
             Eleve e = c.getEleve();
             return new LigneEleve(c.getId(), e.getId(), e.nomComplet(),
                     c.getReferentiel().getNiveau().name(),
-                    c.getMoniteurReferent() == null ? null : c.getMoniteurReferent().nomComplet(),
                     c.getEleve().certificatValideAu(aujourdhui),
                     e.getCertificatValideJusquAu(),
                     participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),

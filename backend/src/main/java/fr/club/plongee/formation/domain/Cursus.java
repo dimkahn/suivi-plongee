@@ -1,13 +1,12 @@
 package fr.club.plongee.formation.domain;
 
 import fr.club.plongee.referentiel.domain.Referentiel;
-import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
 
-/** Historisé via Envers (voir fr.club.plongee.audit) : statut, référent, référentiel figé. */
+/** Historisé via Envers (voir fr.club.plongee.audit) : statut, référentiel figé. */
 @Entity
 @Audited
 public class Cursus {
@@ -32,10 +31,6 @@ public class Cursus {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "referentiel_id")
     private Referentiel referentiel;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "moniteur_referent_id")
-    private Utilisateur moniteurReferent;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -78,14 +73,6 @@ public class Cursus {
 
     public void setReferentiel(Referentiel referentiel) {
         this.referentiel = referentiel;
-    }
-
-    public Utilisateur getMoniteurReferent() {
-        return moniteurReferent;
-    }
-
-    public void setMoniteurReferent(Utilisateur moniteurReferent) {
-        this.moniteurReferent = moniteurReferent;
     }
 
     public Statut getStatut() {

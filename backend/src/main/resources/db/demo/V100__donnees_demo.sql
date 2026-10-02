@@ -43,29 +43,29 @@ INSERT INTO qualification (eleve_id, type, date_obtention, expire_le)
 SELECT id, 'RIFAP', DATE '2024-03-02', DATE '2027-03-02' FROM eleve WHERE numero_licence = 'A-01-000012';
 
 -- Cursus, chacun fige sur le referentiel de son niveau.
-INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
-SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-09-22'
-  FROM eleve e, saison s, referentiel r, utilisateur m
+INSERT INTO cursus (eleve_id, saison_id, referentiel_id, statut, ouvert_le)
+SELECT e.id, s.id, r.id, 'EN_COURS', DATE '2025-09-22'
+  FROM eleve e, saison s, referentiel r
  WHERE e.numero_licence = 'A-01-000010' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N1' AND r.actif = TRUE AND m.email = 'e2@club.fr';
+   AND r.niveau = 'N1' AND r.actif = TRUE;
 
-INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
-SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-09-22'
-  FROM eleve e, saison s, referentiel r, utilisateur m
+INSERT INTO cursus (eleve_id, saison_id, referentiel_id, statut, ouvert_le)
+SELECT e.id, s.id, r.id, 'EN_COURS', DATE '2025-09-22'
+  FROM eleve e, saison s, referentiel r
  WHERE e.numero_licence = 'A-01-000011' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N1' AND r.actif = TRUE AND m.email = 'e1@club.fr';
+   AND r.niveau = 'N1' AND r.actif = TRUE;
 
-INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
-SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-09-22'
-  FROM eleve e, saison s, referentiel r, utilisateur m
+INSERT INTO cursus (eleve_id, saison_id, referentiel_id, statut, ouvert_le)
+SELECT e.id, s.id, r.id, 'EN_COURS', DATE '2025-09-22'
+  FROM eleve e, saison s, referentiel r
  WHERE e.numero_licence = 'A-01-000013' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N2' AND r.actif = TRUE AND m.email = 'e3@club.fr';
+   AND r.niveau = 'N2' AND r.actif = TRUE;
 
-INSERT INTO cursus (eleve_id, saison_id, referentiel_id, moniteur_referent_id, statut, ouvert_le)
-SELECT e.id, s.id, r.id, m.id, 'EN_COURS', DATE '2025-10-05'
-  FROM eleve e, saison s, referentiel r, utilisateur m
+INSERT INTO cursus (eleve_id, saison_id, referentiel_id, statut, ouvert_le)
+SELECT e.id, s.id, r.id, 'EN_COURS', DATE '2025-10-05'
+  FROM eleve e, saison s, referentiel r
  WHERE e.numero_licence = 'A-01-000012' AND s.libelle = '2025-2026'
-   AND r.niveau = 'N3' AND r.actif = TRUE AND m.email = 'presidente@club.fr';
+   AND r.niveau = 'N3' AND r.actif = TRUE;
 
 -- Seances : bassin le lundi, sorties en milieu naturel le week-end.
 INSERT INTO seance (saison_id, date_seance, milieu, lieu, profondeur_max)

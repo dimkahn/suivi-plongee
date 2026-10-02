@@ -153,10 +153,15 @@ Remplace le tableur « Planning » du lundi soir (groupes × dates, chaque case
 = ligne d'eau, F10 fosse 10 m, F6 fosse limitée à 6 m). Paquet
 `fr.club.plongee.planning`. `EspaceBassin` : lignes d'eau et fosse (V26 installe
 lignes 1 à 6 + fosse 10 m, 15 plongeurs encadrants compris). `GroupeEntrainement`
-(par saison) : encadrants attitrés, ligne attitrée, élèves rangés **explicitement**
+(par saison) : encadrants attitrés, dont un ou plusieurs **référents** (V36,
+`groupe_entrainement_referent` ; un référent est toujours aussi encadrant
+attitré, règle du service, pour que le planning ne lise qu'une liste), ligne
+attitrée, élèves rangés **explicitement**
 par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
 `niveau_prepare` et du cursus en cours ; un élève dans au plus un groupe par
-saison (règle du service). **Sans rapport avec `GroupePlongeurs`** (V13), qui
+saison (règle du service). Choix du club (2026) : le suivi d'un élève passe
+par les référents de son groupe ; l'ancien « moniteur référent » propre à
+chaque cursus (`cursus.moniteur_referent_id`) a été supprimé par V36. **Sans rapport avec `GroupePlongeurs`** (V13), qui
 compose les palanquées d'un séjour. **Grille des soirées (lot 2)** :
 `/admin/planning`, `PlanningService`. Une soirée = une date de la saison qui
 porte des séances. `affectation_groupe` (V27) ne stocke que les **écarts** à

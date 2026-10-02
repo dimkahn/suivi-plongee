@@ -20,7 +20,7 @@ export default {
       ['Élèves', 'Les dossiers : autorisations, droit à l\'image, photo, tailles de matériel.'],
       ['Saisons', 'Ouvrir la saison, choisir les progressions suivies.'],
       ['Séances', 'Le calendrier : à la main, ou toute l\'année d\'un coup.'],
-      ['Inscriptions', 'Qui prépare quel niveau, avec quel référent.'],
+      ['Inscriptions', 'Qui prépare quel niveau, dans quel groupe.'],
       ['Groupes d\'entraînement', 'Les groupes du lundi soir, leurs encadrants et leur ligne d\'eau.'],
       ['Planning du bassin', 'Soir par soir : où va chaque groupe.'],
       ['Sorties', 'Les week-ends et séjours en milieu naturel.'],

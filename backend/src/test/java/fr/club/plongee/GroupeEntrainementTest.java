@@ -50,6 +50,41 @@ class GroupeEntrainementTest {
                 .startsWith("Débutants", "Prépa N2", "N2+", "Prépa N3"); // saison 2026-2027 (V107)
         assertThat(groupes.get(0).get("espaceAttitre").asText()).isEqualTo("Ligne 6");
         assertThat(groupes.get(0).get("encadrants")).hasSize(2);
+        // Le référent (V110) vient en tête des encadrants du groupe.
+        assertThat(groupes.get(0).get("encadrants").get(0).get("referent").asBoolean()).isTrue();
+        assertThat(groupes.get(0).get("encadrants").get(1).get("referent").asBoolean()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Un référent du groupe compte aussi parmi ses encadrants attitrés")
+    void referentDuGroupe() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        JsonNode groupes = json.readTree(mvc.perform(get("/api/groupes-entrainement").header("Authorization", admin))
+                .andReturn().getResponse().getContentAsString());
+        long saisonId = groupes.get(0).get("saisonId").asLong();
+        JsonNode moniteurs = json.readTree(mvc.perform(get("/api/admin/moniteurs").header("Authorization", admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        long referent = -1;
+        long attitre = -1;
+        for (JsonNode m : moniteurs) {
+            if (m.get("email").asText().equals("e3@club.fr")) referent = m.get("id").asLong();
+            if (m.get("email").asText().equals("e1@club.fr")) attitre = m.get("id").asLong();
+        }
+
+        JsonNode groupe = json.readTree(mvc.perform(post("/api/groupes-entrainement").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"saisonId":%d,"nom":"Groupe référent","encadrantIds":[%d],"referentIds":[%d]}"""
+                                .formatted(saisonId, attitre, referent)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        assertThat(groupe.get("encadrants")).hasSize(2);
+        assertThat(groupe.get("encadrants").get(0).get("id").asLong()).isEqualTo(referent);
+        assertThat(groupe.get("encadrants").get(0).get("referent").asBoolean()).isTrue();
+        assertThat(groupe.get("encadrants").get(1).get("id").asLong()).isEqualTo(attitre);
+        assertThat(groupe.get("encadrants").get(1).get("referent").asBoolean()).isFalse();
+
+        mvc.perform(delete("/api/groupes-entrainement/" + groupe.get("id").asLong()).header("Authorization", admin))
+                .andExpect(status().isOk());
     }
 
     @Test

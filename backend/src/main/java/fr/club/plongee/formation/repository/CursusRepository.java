@@ -15,7 +15,6 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
              join fetch c.eleve e
              join fetch c.referentiel r
              join fetch c.saison s
-             left join fetch c.moniteurReferent m
             where c.saison.id = :saisonId
             order by r.niveau, e.nom, e.prenom
            """)
@@ -26,7 +25,6 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
              join fetch c.eleve e
              join fetch c.referentiel r
              left join fetch c.saison s
-             left join fetch c.moniteurReferent m
             where c.id = :id
            """)
     Optional<Cursus> chargerComplet(@Param("id") Long id);
@@ -41,7 +39,6 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
              join fetch c.eleve e
              join fetch c.referentiel r
              join fetch c.saison s
-             left join fetch c.moniteurReferent m
             where c.eleve.id = :eleveId
             order by s.dateDebut desc
            """)
@@ -56,7 +53,6 @@ public interface CursusRepository extends JpaRepository<Cursus, Long> {
            """)
     List<Cursus> tousAvecEleveEtSaison();
 
-    boolean existsByMoniteurReferentId(Long moniteurReferentId);
     boolean existsByEleveIdAndSaisonIdAndReferentielId(Long eleveId, Long saisonId, Long referentielId);
     boolean existsByEleveIdAndSaisonId(Long eleveId, Long saisonId);
     boolean existsByReferentielId(Long referentielId);

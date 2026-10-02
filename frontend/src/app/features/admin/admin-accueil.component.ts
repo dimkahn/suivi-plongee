@@ -54,7 +54,7 @@ import { RouterLink } from '@angular/router';
       <li class="carte">
         <a routerLink="/admin/cursus">
           <span class="nom">Inscriptions</span>
-          <span class="secondaire">Inscrire un élève dans une formation, changer de référent</span>
+          <span class="secondaire">Inscrire un élève dans une formation, changer de niveau</span>
         </a>
       </li>
       <li class="carte">

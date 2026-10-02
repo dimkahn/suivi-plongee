@@ -32,7 +32,8 @@ import java.util.*;
 @Service
 public class GroupeEntrainementService {
 
-    public record EncadrantVue(Long id, String nomComplet, String niveauEncadrement) {}
+    /** {@code referent} : référent du groupe ; sinon simple encadrant attitré. */
+    public record EncadrantVue(Long id, String nomComplet, String niveauEncadrement, boolean referent) {}
 
     public record EleveGroupeVue(Long id, String nom, String prenom) {}
 
@@ -51,10 +52,14 @@ public class GroupeEntrainementService {
     public record EleveSaisonVue(Long eleveId, String nom, String prenom, List<String> niveauxEnCours,
                                  boolean adhesionSeule, Long groupeId, Long groupeSuggereId) {}
 
+    /**
+     * {@code referentIds} : référents du groupe ; {@code encadrantIds} : les autres encadrants
+     * attitrés. Un moniteur cité dans les deux listes est référent.
+     */
     public record DemandeGroupe(@NotNull Long saisonId, @NotBlank String nom,
                                 @Pattern(regexp = "N[1-3]", message = "Niveau préparé attendu : N1, N2 ou N3.")
                                 String niveauPrepare,
-                                Long espaceAttitreId, List<Long> encadrantIds) {}
+                                Long espaceAttitreId, List<Long> encadrantIds, List<Long> referentIds) {}
 
     private final GroupeEntrainementRepository groupes;
     private final EspaceBassinRepository espaces;
@@ -211,16 +216,25 @@ public class GroupeEntrainementService {
                     .orElseThrow(() -> new RessourceIntrouvableException("Espace introuvable"));
         }
         g.setEspaceAttitre(espace);
-        Set<Utilisateur> encadrants = new LinkedHashSet<>();
-        for (Long uid : d.encadrantIds() == null ? List.<Long>of() : d.encadrantIds()) {
+        // Un référent est aussi un encadrant attitré : le planning ne lit que cette liste-là.
+        Set<Utilisateur> referents = encadrantsActifs(d.referentIds());
+        Set<Utilisateur> encadrants = new LinkedHashSet<>(referents);
+        encadrants.addAll(encadrantsActifs(d.encadrantIds()));
+        g.setReferents(referents);
+        g.setEncadrants(encadrants);
+    }
+
+    private Set<Utilisateur> encadrantsActifs(List<Long> ids) {
+        Set<Utilisateur> resultat = new LinkedHashSet<>();
+        for (Long uid : ids == null ? List.<Long>of() : ids) {
             Utilisateur u = utilisateurs.findById(uid)
                     .orElseThrow(() -> new RessourceIntrouvableException("Encadrant introuvable"));
             if (!u.isActif() || !u.estMoniteur()) {
                 throw new RegleMetierException(u.nomComplet() + " n'est pas un encadrant actif.");
             }
-            encadrants.add(u);
+            resultat.add(u);
         }
-        g.setEncadrants(encadrants);
+        return resultat;
     }
 
     private GroupeVue vue(GroupeEntrainement g) {
@@ -229,8 +243,10 @@ public class GroupeEntrainementService {
                 e == null ? null : e.getId(), e == null ? null : e.getNom(),
                 g.getEncadrants().stream()
                         .map(u -> new EncadrantVue(u.getId(), u.nomComplet(),
-                                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name()))
-                        .sorted(Comparator.comparing(EncadrantVue::nomComplet))
+                                u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
+                                g.estReferent(u)))
+                        .sorted(Comparator.comparing((EncadrantVue v) -> !v.referent())
+                                .thenComparing(EncadrantVue::nomComplet))
                         .toList(),
                 g.getEleves().stream()
                         .sorted(Comparator.comparing(Eleve::getNom, String.CASE_INSENSITIVE_ORDER)

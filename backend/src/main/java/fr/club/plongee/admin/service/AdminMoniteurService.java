@@ -5,7 +5,6 @@ import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.delivrance.repository.DelivranceRepository;
 import fr.club.plongee.evaluation.repository.EvaluationRepository;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
-import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.formation.repository.FicheSecuriteRepository;
 import fr.club.plongee.formation.repository.SeanceRepository;
 import fr.club.plongee.securite.*;
@@ -42,7 +41,6 @@ public class AdminMoniteurService {
     private final ValidationCompetenceRepository validations;
     private final DelivranceRepository delivrances;
     private final SeanceRepository seances;
-    private final CursusRepository cursus;
     private final FicheSecuriteRepository fichesSecurite;
     private final PhotoMoniteurService photoService;
 
@@ -53,7 +51,6 @@ public class AdminMoniteurService {
                                ValidationCompetenceRepository validations,
                                DelivranceRepository delivrances,
                                SeanceRepository seances,
-                               CursusRepository cursus,
                                FicheSecuriteRepository fichesSecurite,
                                PhotoMoniteurService photoService) {
         this.utilisateurs = utilisateurs;
@@ -64,7 +61,6 @@ public class AdminMoniteurService {
         this.validations = validations;
         this.delivrances = delivrances;
         this.seances = seances;
-        this.cursus = cursus;
         this.fichesSecurite = fichesSecurite;
         this.photoService = photoService;
     }
@@ -206,7 +202,7 @@ public class AdminMoniteurService {
             throw new RegleMetierException("Vous ne pouvez pas supprimer votre propre compte.");
         }
         if (evaluations.existsByMoniteurId(id) || validations.existsByMoniteurId(id)
-                || delivrances.existsByDelivreParId(id) || cursus.existsByMoniteurReferentId(id)
+                || delivrances.existsByDelivreParId(id)
                 || seances.existsByDpId(id) || fichesSecurite.existsByDpId(id)) {
             throw new RegleMetierException(
                     "Ce moniteur a des évaluations, validations, séances ou fiches de sécurité "

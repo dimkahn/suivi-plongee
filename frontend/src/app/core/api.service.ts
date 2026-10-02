@@ -507,15 +507,14 @@ export class ApiService {
 
   /** groupeId : groupe d'entraînement de la saison où ranger l'élève ; absent ou null, son groupe ne change pas. */
   inscrireCursus(demande: {
-    eleveId: number; saisonId: number; niveau: 'N1' | 'N2' | 'N3'; moniteurReferentId?: number | null;
-    groupeId?: number | null;
+    eleveId: number; saisonId: number; niveau: 'N1' | 'N2' | 'N3'; groupeId?: number | null;
   }): Observable<CursusVue> {
     return this.http.post<CursusVue>('/api/cursus', demande);
   }
 
   /** niveau : refusé par le serveur dès qu'une compétence est notée. */
   modifierCursus(id: number, demande: {
-    moniteurReferentId: number | null; statut: string; niveau?: 'N1' | 'N2' | 'N3';
+    statut: string; niveau?: 'N1' | 'N2' | 'N3';
   }): Observable<CursusVue> {
     return this.http.put<CursusVue>(`/api/cursus/${id}`, demande);
   }

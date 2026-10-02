@@ -143,8 +143,7 @@ public class SynchronisationController {
         List<CursusController.CursusVue> vuesCursus = miens.stream()
                 .map(c -> new CursusController.CursusVue(c.getId(), c.getEleve().getId(), c.getEleve().nomComplet(),
                         c.getReferentiel().getNiveau().name(), c.getSaison().getLibelle(),
-                        c.getStatut().name(),
-                        c.getMoniteurReferent() == null ? null : c.getMoniteurReferent().nomComplet()))
+                        c.getStatut().name()))
                 .toList();
 
         List<SeanceController.SeanceVue> vuesSeances = seances

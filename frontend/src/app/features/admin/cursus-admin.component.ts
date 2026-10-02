@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, MoniteurVue, SaisonVue } from '../../core/modeles';
+import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
 import { normaliser } from '../../core/seance-lieu';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
@@ -119,7 +119,7 @@ const LIBELLES_STATUT: Record<string, string> = {
       </select>
       @if (niveau === 'MAINTIEN') {
         <p class="secondaire">
-          L'élève plonge avec le club cette saison sans préparer de niveau : ni référentiel, ni moniteur référent.
+          L'élève plonge avec le club cette saison sans préparer de niveau : pas de référentiel.
         </p>
       }
 
@@ -140,16 +140,6 @@ const LIBELLES_STATUT: Record<string, string> = {
         @if (groupeActuel() && groupeId !== null) {
           <p class="secondaire">L'élève quittera « {{ groupeActuel()!.nom }} » : un seul groupe par saison.</p>
         }
-      }
-
-      @if (niveau !== 'MAINTIEN') {
-        <label for="referent">Moniteur référent</label>
-        <select id="referent" name="referent" [(ngModel)]="moniteurReferentId">
-          <option [ngValue]="null">Sans référent</option>
-          @for (m of moniteurs(); track m.id) {
-            <option [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}</option>
-          }
-        </select>
       }
 
       <div class="actions">
@@ -199,13 +189,6 @@ const LIBELLES_STATUT: Record<string, string> = {
                 <select [id]="'statut-' + c.id" name="statut" [(ngModel)]="f.statut">
                   @for (s of statuts; track s) { <option [value]="s">{{ libelleStatut(s) }}</option> }
                 </select>
-                <label [for]="'referent-' + c.id">Moniteur référent</label>
-                <select [id]="'referent-' + c.id" name="referent" [(ngModel)]="f.moniteurReferentId">
-                  <option [ngValue]="null">Sans référent</option>
-                  @for (m of moniteurs(); track m.id) {
-                    <option [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}</option>
-                  }
-                </select>
                 }
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
@@ -219,8 +202,7 @@ const LIBELLES_STATUT: Record<string, string> = {
                 <div class="identite">
                   <span class="nom">{{ c.eleve }}</span>
                   <span class="secondaire">
-                    {{ c.niveau }} · {{ c.saison }} ·
-                    {{ c.moniteurReferent ?? 'sans référent' }}
+                    {{ c.niveau }} · {{ c.saison }}
                   </span>
                 </div>
                 <span class="etat">{{ libelleStatut(c.statut) }}</span>
@@ -330,7 +312,6 @@ export class CursusAdminComponent {
 
   liste = signal<CursusVue[]>([]);
   saisons = signal<SaisonVue[]>([]);
-  moniteurs = signal<MoniteurVue[]>([]);
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
@@ -375,7 +356,6 @@ export class CursusAdminComponent {
     return r ? this.adhesions().filter(a => normaliser(a.eleve).includes(r)) : this.adhesions();
   });
   private saisonOuverteId: number | null = null;
-  moniteurReferentId: number | null = null;
 
   /** Groupes d'entraînement de la saison choisie. */
   groupes = signal<GroupeEntrainementVue[]>([]);
@@ -402,7 +382,7 @@ export class CursusAdminComponent {
 
   edition = signal<number | null>(null);
   formulaireEdition = signal<{
-    statut: string; moniteurReferentId: number | null; niveau: 'N1' | 'N2' | 'N3' | 'MAINTIEN';
+    statut: string; niveau: 'N1' | 'N2' | 'N3' | 'MAINTIEN';
   } | null>(null);
 
   constructor() {
@@ -412,14 +392,12 @@ export class CursusAdminComponent {
   private async charger(): Promise<void> {
     this.chargement.set(true);
     try {
-      const [cursus, saisons, moniteurs] = await Promise.all([
+      const [cursus, saisons] = await Promise.all([
         this.api.cursus(),
-        firstValueFrom(this.api.saisons()),
-        firstValueFrom(this.api.moniteurs())
+        firstValueFrom(this.api.saisons())
       ]);
       this.liste.set(cursus);
       this.saisons.set(saisons);
-      this.moniteurs.set(moniteurs);
       // Saison ouverte la plus récente par défaut : c'est presque toujours celle qu'on inscrit.
       const ouverte = saisons.find(s => s.ouverte);
       if (ouverte) {
@@ -552,15 +530,12 @@ export class CursusAdminComponent {
     this.envoi.set(true);
     this.message.set(null);
     this.api.inscrireCursus({
-      eleveId: c.eleveId, saisonId, niveau,
-      moniteurReferentId: this.moniteurReferentId,
-      groupeId: this.groupeId
+      eleveId: c.eleveId, saisonId, niveau, groupeId: this.groupeId
     }).subscribe({
       next: cursus => {
         this.envoi.set(false);
         this.creationOuverte.set(false);
         this.liste.set([cursus, ...this.liste()]);
-        this.moniteurReferentId = null;
         const groupe = this.groupes().find(g => g.id === this.groupeId);
         this.message.set(`${cursus.eleve} est inscrit·e en ${cursus.niveau}`
           + (groupe ? `, dans le groupe « ${groupe.nom} ».` : '.'));
@@ -597,10 +572,7 @@ export class CursusAdminComponent {
   commencerEdition(c: CursusVue): void {
     this.message.set(null);
     this.edition.set(c.id);
-    // CursusVue n'expose que le nom du référent, pas son id : on le retrouve par
-    // correspondance de nom. Rare faux-positif possible en cas d'homonymie exacte.
-    const m = this.moniteurs().find(x => `${x.prenom} ${x.nom}` === c.moniteurReferent);
-    this.formulaireEdition.set({ statut: c.statut, moniteurReferentId: m?.id ?? null, niveau: c.niveau });
+    this.formulaireEdition.set({ statut: c.statut, niveau: c.niveau });
   }
 
   private passerEnMaintien(c: CursusVue): void {
@@ -653,7 +625,7 @@ export class CursusAdminComponent {
     this.envoi.set(true);
     this.message.set(null);
     this.api.modifierCursus(c.id, {
-      statut: f.statut, moniteurReferentId: f.moniteurReferentId, niveau: f.niveau
+      statut: f.statut, niveau: f.niveau
     }).subscribe({
       next: maj => {
         this.envoi.set(false);

@@ -27,9 +27,7 @@ import { CursusVue } from '../../core/modeles';
               <li class="carte">
                 <a [routerLink]="['/cursus', c.id]">
                   <span class="nom">{{ c.eleve }}</span>
-                  <span class="secondaire">
-                    {{ c.moniteurReferent ? 'Référent : ' + c.moniteurReferent : 'Sans référent' }}
-                  </span>
+                  <span class="secondaire">Saison {{ c.saison }}</span>
                 </a>
               </li>
             }

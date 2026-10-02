@@ -11,9 +11,7 @@ import fr.club.plongee.referentiel.domain.Niveau;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
 import fr.club.plongee.securite.domain.RoleNom;
-import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.UtilisateurPrincipal;
-import fr.club.plongee.securite.repository.UtilisateurRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
@@ -28,8 +26,7 @@ import java.util.List;
 @RequestMapping("/api/cursus")
 public class CursusController {
 
-    public record CursusVue(Long id, Long eleveId, String eleve, String niveau, String saison, String statut,
-                            String moniteurReferent) {}
+    public record CursusVue(Long id, Long eleveId, String eleve, String niveau, String saison, String statut) {}
 
     /**
      * Le référentiel n'est jamais choisi à la main : on prend la version active du niveau.
@@ -37,32 +34,29 @@ public class CursusController {
      * (il quitte alors son groupe actuel) ; absent, son groupe ne change pas.
      */
     public record DemandeInscription(@NotNull Long eleveId, @NotNull Long saisonId,
-                                     @NotNull Niveau niveau, Long moniteurReferentId, Long groupeId) {}
+                                     @NotNull Niveau niveau, Long groupeId) {}
 
     /**
-     * Edition complete : le front renvoie l'etat courant modifie, moniteurReferentId a null retire le referent.
+     * Edition complete : le front renvoie l'etat courant modifie.
      * {@code niveau} facultatif (absent : inchange) ; en changer est refuse des qu'une competence est notee.
      */
-    public record DemandeModificationCursus(Long moniteurReferentId, @NotNull Cursus.Statut statut, Niveau niveau) {}
+    public record DemandeModificationCursus(@NotNull Cursus.Statut statut, Niveau niveau) {}
 
     private final CursusRepository cursus;
     private final SaisonRepository saisons;
     private final EleveRepository eleves;
     private final ReferentielRepository referentiels;
-    private final UtilisateurRepository utilisateurs;
     private final CandidatsInscriptionService candidats;
     private final GroupeEntrainementService groupes;
     private final ChangementFormationService changements;
 
     public CursusController(CursusRepository cursus, SaisonRepository saisons, EleveRepository eleves,
-                            ReferentielRepository referentiels, UtilisateurRepository utilisateurs,
-                            CandidatsInscriptionService candidats, GroupeEntrainementService groupes,
+                            ReferentielRepository referentiels, CandidatsInscriptionService candidats, GroupeEntrainementService groupes,
                             ChangementFormationService changements) {
         this.cursus = cursus;
         this.saisons = saisons;
         this.eleves = eleves;
         this.referentiels = referentiels;
-        this.utilisateurs = utilisateurs;
         this.candidats = candidats;
         this.groupes = groupes;
         this.changements = changements;
@@ -104,7 +98,6 @@ public class CursusController {
         c.setEleve(eleve);
         c.setSaison(saison);
         c.setReferentiel(referentiel);
-        c.setMoniteurReferent(moniteur(demande.moniteurReferentId()));
         cursus.save(c);
         if (demande.groupeId() != null) groupes.ranger(saison.getId(), eleve.getId(), demande.groupeId());
         return vue(cursus.chargerComplet(c.getId()).orElseThrow());
@@ -119,7 +112,6 @@ public class CursusController {
         if (demande.niveau() != null) changements.changerNiveau(c, demande.niveau());
         boolean devientDelivre = demande.statut() == Cursus.Statut.DELIVRE && c.getStatut() != Cursus.Statut.DELIVRE;
         c.setStatut(demande.statut());
-        c.setMoniteurReferent(moniteur(demande.moniteurReferentId()));
         cursus.save(c);
         // Passage manuel à « brevet délivré » : la fiche élève prend ce niveau.
         // Pas de retour en arrière si le statut est ensuite corrigé : l'ancien
@@ -140,12 +132,6 @@ public class CursusController {
     @PreAuthorize("hasRole('ADMIN')")
     public void passerEnMaintien(@PathVariable Long id) {
         changements.passerEnMaintien(id);
-    }
-
-    private Utilisateur moniteur(Long id) {
-        if (id == null) return null;
-        return utilisateurs.findById(id)
-                .orElseThrow(() -> new RessourceIntrouvableException("Moniteur introuvable"));
     }
 
     /**
@@ -192,7 +178,6 @@ public class CursusController {
     private CursusVue vue(Cursus c) {
         return new CursusVue(c.getId(), c.getEleve().getId(), c.getEleve().nomComplet(),
                 c.getReferentiel().getNiveau().name(), c.getSaison().getLibelle(),
-                c.getStatut().name(),
-                c.getMoniteurReferent() == null ? null : c.getMoniteurReferent().nomComplet());
+                c.getStatut().name());
     }
 }

@@ -16,6 +16,8 @@ interface FormulaireGroupe {
   nom: string;
   niveauPrepare: 'N1' | 'N2' | 'N3' | null;
   espaceAttitreId: number | null;
+  referentIds: number[];
+  /** Encadrants attitrés qui ne sont pas référents. */
   encadrantIds: number[];
 }
 
@@ -26,7 +28,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
 
 /**
  * Groupes d'entraînement de la saison (Débutants, Perfect N1, Prépa N2...) :
- * composition, encadrants attitrés, ligne d'eau attitrée et rangement des
+ * composition, référents et encadrants attitrés, ligne d'eau attitrée et rangement des
  * élèves. Les espaces du bassin (lignes d'eau, fosse) se décrivent en bas de
  * page. Le planning des soirées (qui est où, quel lundi) vient ensuite.
  */
@@ -36,8 +38,8 @@ interface FormulaireEspace extends DemandeEspaceBassin {
   template: `
     <h1>Groupes d'entraînement</h1>
     <p class="secondaire">
-      Les groupes de la saison, leurs encadrants attitrés et leur ligne d'eau habituelle,
-      puis les élèves rangés dans chacun.
+      Les groupes de la saison, leurs référents (qui suivent les élèves du groupe), leurs autres
+      encadrants attitrés et leur ligne d'eau habituelle, puis les élèves rangés dans chacun.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -71,7 +73,10 @@ interface FormulaireEspace extends DemandeEspaceBassin {
                 </span>
                 <span class="encadrants">
                   @for (e of g.encadrants; track e.id) {
-                    <span class="puce">{{ e.nomComplet }}{{ e.niveauEncadrement ? ' · ' + e.niveauEncadrement : '' }}</span>
+                    <span class="puce" [class.referent]="e.referent">
+                      @if (e.referent) { <strong>Référent</strong> }
+                      {{ e.nomComplet }}{{ e.niveauEncadrement ? ' · ' + e.niveauEncadrement : '' }}
+                    </span>
                   } @empty {
                     <span class="secondaire">Aucun encadrant attitré</span>
                   }
@@ -203,13 +208,31 @@ interface FormulaireEspace extends DemandeEspaceBassin {
             <option ngValue="N3">N3</option>
           </select>
 
+          <span class="etiquette">Référents du groupe</span>
+          <p class="secondaire aide">Ils suivent les élèves du groupe ; ils comptent aussi parmi ses encadrants.</p>
+          <div class="encadrants">
+            @for (id of f.referentIds; track id) {
+              <span class="puce referent">
+                {{ nomMoniteur(id) }}
+                <button type="button" class="retirer" [attr.aria-label]="'Retirer ' + nomMoniteur(id) + ' des référents'"
+                        (click)="f.referentIds = sans(f.referentIds, id)">×</button>
+              </span>
+            } @empty {
+              <span class="secondaire">Aucun pour l'instant.</span>
+            }
+          </div>
+          <label for="ajout-referent">Ajouter un référent</label>
+          <app-combobox idChamp="ajout-referent" [options]="optionsEncadrants(f)" [valeur]="null"
+                        (valeurChange)="ajouterReferent(f, $event)"
+                        aide="Rechercher un moniteur…" texteVide="Aucun moniteur ne correspond." />
+
           <span class="etiquette">Encadrants attitrés</span>
           <div class="encadrants">
             @for (id of f.encadrantIds; track id) {
               <span class="puce">
                 {{ nomMoniteur(id) }}
                 <button type="button" class="retirer" [attr.aria-label]="'Retirer ' + nomMoniteur(id)"
-                        (click)="retirerEncadrant(f, id)">×</button>
+                        (click)="f.encadrantIds = sans(f.encadrantIds, id)">×</button>
               </span>
             } @empty {
               <span class="secondaire">Aucun pour l'instant.</span>
@@ -278,6 +301,8 @@ interface FormulaireEspace extends DemandeEspaceBassin {
       display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px;
       background: var(--fond); border: 1px solid var(--trait); font-size: .875rem;
     }
+    .puce.referent { border-color: var(--profond); }
+    .aide { margin: 0 0 var(--pas); font-size: .875rem; }
     .retirer {
       min-height: 32px; min-width: 32px; padding: 0; border: none; background: none;
       color: var(--craie); font-size: 1.125rem; cursor: pointer;
@@ -377,30 +402,37 @@ export class GroupesEntrainementComponent {
     return m ? `${m.nomComplet}${m.niveauEncadrement ? ' · ' + m.niveauEncadrement : ''}` : 'Encadrant inactif';
   }
 
-  /** Moniteurs actifs pas encore attitrés au groupe en cours d'édition. */
+  /** Moniteurs actifs ni référents ni attitrés au groupe en cours d'édition. */
   optionsEncadrants(f: FormulaireGroupe): OptionCombobox[] {
-    return this.moniteurs().filter(m => !f.encadrantIds.includes(m.id))
+    return this.moniteurs().filter(m => !f.encadrantIds.includes(m.id) && !f.referentIds.includes(m.id))
       .map(m => ({ id: m.id, libelle: m.nomComplet, detail: m.niveauEncadrement }));
+  }
+
+  ajouterReferent(f: FormulaireGroupe, id: number | null): void {
+    if (id !== null && !f.referentIds.includes(id)) f.referentIds = [...f.referentIds, id];
   }
 
   ajouterEncadrant(f: FormulaireGroupe, id: number | null): void {
     if (id !== null && !f.encadrantIds.includes(id)) f.encadrantIds = [...f.encadrantIds, id];
   }
 
-  retirerEncadrant(f: FormulaireGroupe, id: number): void {
-    f.encadrantIds = f.encadrantIds.filter(x => x !== id);
+  sans(ids: number[], id: number): number[] {
+    return ids.filter(x => x !== id);
   }
 
   nouveau(): void {
     this.message.set(null);
-    this.formulaire.set({ id: null, nom: '', niveauPrepare: null, espaceAttitreId: null, encadrantIds: [] });
+    this.formulaire.set({
+      id: null, nom: '', niveauPrepare: null, espaceAttitreId: null, referentIds: [], encadrantIds: []
+    });
   }
 
   modifier(g: GroupeEntrainementVue): void {
     this.message.set(null);
     this.formulaire.set({
       id: g.id, nom: g.nom, niveauPrepare: g.niveauPrepare, espaceAttitreId: g.espaceAttitreId,
-      encadrantIds: g.encadrants.map(e => e.id)
+      referentIds: g.encadrants.filter(e => e.referent).map(e => e.id),
+      encadrantIds: g.encadrants.filter(e => !e.referent).map(e => e.id)
     });
   }
 
@@ -414,7 +446,7 @@ export class GroupesEntrainementComponent {
     }
     const demande = {
       saisonId, nom: f.nom, niveauPrepare: f.niveauPrepare, espaceAttitreId: f.espaceAttitreId,
-      encadrantIds: f.encadrantIds
+      encadrantIds: f.encadrantIds, referentIds: f.referentIds
     };
     this.envoi.set(true);
     this.message.set(null);

@@ -11,7 +11,7 @@ export default {
     await pause(1200);
     await legende('« Infos élèves » : la page d\'accueil. Toute la saison sur un seul écran.', 3500);
     await page.locator('table').scrollIntoViewIfNeeded();
-    await legende('Pour chaque élève : son niveau préparé, son référent, son CACI.', 3500);
+    await legende('Pour chaque élève : son niveau préparé et son CACI.', 3500);
     await legende('CACI : vert, plus d\'un mois ; orange, moins d\'un mois ; rouge, moins de 15 jours ; ⚠ expiré.', 5000);
 
     await legende('Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.', 0);
