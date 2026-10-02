@@ -62,7 +62,7 @@ public class EspaceBassinController {
     @PreAuthorize("hasRole('ADMIN')")
     public void supprimer(@PathVariable Long id) {
         espace(id);
-        if (groupes.existsByEspaceAttitreId(id)) {
+        if (groupes.existsByEspaceAttitre(id)) {
             throw new RegleMetierException(
                     "Cet espace est la ligne attitrée d'au moins un groupe : désactivez-le plutôt que de le supprimer.");
         }

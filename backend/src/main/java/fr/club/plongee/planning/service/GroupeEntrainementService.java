@@ -25,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 /**
- * Groupes d'entraînement d'une saison : composition par l'admin (nom, ligne
- * d'eau attitrée, encadrants), rangement des élèves de la saison, et
+ * Groupes d'entraînement d'une saison : composition par l'admin (nom, lignes
+ * d'eau attitrées, encadrants), rangement des élèves de la saison, et
  * suggestion du groupe d'un élève d'après son cursus en cours.
  */
 @Service
@@ -38,7 +38,8 @@ public class GroupeEntrainementService {
     public record EleveGroupeVue(Long id, String nom, String prenom) {}
 
     public record GroupeVue(Long id, Long saisonId, String nom, int ordre, String niveauPrepare,
-                            Long espaceAttitreId, String espaceAttitre,
+                            /** Lignes attitrées dans l'ordre du bassin ; libellé « Ligne 5 + Ligne 6 », null sans ligne. */
+                            List<Long> espaceAttitreIds, String espacesAttitres,
                             List<EncadrantVue> encadrants, List<EleveGroupeVue> eleves) {}
 
     /**
@@ -59,7 +60,7 @@ public class GroupeEntrainementService {
     public record DemandeGroupe(@NotNull Long saisonId, @NotBlank String nom,
                                 @Pattern(regexp = "N[1-3]", message = "Niveau préparé attendu : N1, N2 ou N3.")
                                 String niveauPrepare,
-                                Long espaceAttitreId, List<Long> encadrantIds, List<Long> referentIds) {}
+                                List<Long> espaceAttitreIds, List<Long> encadrantIds, List<Long> referentIds) {}
 
     private final GroupeEntrainementRepository groupes;
     private final EspaceBassinRepository espaces;
@@ -210,12 +211,12 @@ public class GroupeEntrainementService {
     private void appliquer(GroupeEntrainement g, DemandeGroupe d) {
         g.setNom(d.nom().trim());
         g.setNiveauPrepare(d.niveauPrepare() == null || d.niveauPrepare().isBlank() ? null : d.niveauPrepare());
-        EspaceBassin espace = null;
-        if (d.espaceAttitreId() != null) {
-            espace = espaces.findById(d.espaceAttitreId())
-                    .orElseThrow(() -> new RessourceIntrouvableException("Espace introuvable"));
+        Set<EspaceBassin> attitres = new LinkedHashSet<>();
+        for (Long eid : d.espaceAttitreIds() == null ? List.<Long>of() : d.espaceAttitreIds()) {
+            attitres.add(espaces.findById(eid)
+                    .orElseThrow(() -> new RessourceIntrouvableException("Espace introuvable")));
         }
-        g.setEspaceAttitre(espace);
+        g.setEspacesAttitres(attitres);
         // Un référent est aussi un encadrant attitré : le planning ne lit que cette liste-là.
         Set<Utilisateur> referents = encadrantsActifs(d.referentIds());
         Set<Utilisateur> encadrants = new LinkedHashSet<>(referents);
@@ -238,9 +239,8 @@ public class GroupeEntrainementService {
     }
 
     private GroupeVue vue(GroupeEntrainement g) {
-        EspaceBassin e = g.getEspaceAttitre();
         return new GroupeVue(g.getId(), g.getSaison().getId(), g.getNom(), g.getOrdre(), g.getNiveauPrepare(),
-                e == null ? null : e.getId(), e == null ? null : e.getNom(),
+                g.espacesAttitresOrdonnes().stream().map(EspaceBassin::getId).toList(), g.libelleEspacesAttitres(),
                 g.getEncadrants().stream()
                         .map(u -> new EncadrantVue(u.getId(), u.nomComplet(),
                                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),

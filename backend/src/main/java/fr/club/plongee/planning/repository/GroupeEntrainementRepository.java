@@ -11,11 +11,14 @@ public interface GroupeEntrainementRepository extends JpaRepository<GroupeEntrai
 
     @Query("""
            select g from GroupeEntrainement g
-             left join fetch g.espaceAttitre
             where g.saison.id = :saisonId
             order by g.ordre, g.id
            """)
     List<GroupeEntrainement> parSaison(@Param("saisonId") Long saisonId);
 
-    boolean existsByEspaceAttitreId(Long espaceId);
+    @Query("""
+           select count(g) > 0 from GroupeEntrainement g join g.espacesAttitres e
+            where e.id = :espaceId
+           """)
+    boolean existsByEspaceAttitre(@Param("espaceId") Long espaceId);
 }

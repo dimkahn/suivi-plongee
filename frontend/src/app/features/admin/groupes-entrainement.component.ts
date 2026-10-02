@@ -15,7 +15,7 @@ interface FormulaireGroupe {
   id: number | null;
   nom: string;
   niveauPrepare: 'N1' | 'N2' | 'N3' | null;
-  espaceAttitreId: number | null;
+  espaceAttitreIds: number[];
   referentIds: number[];
   /** Encadrants attitrés qui ne sont pas référents. */
   encadrantIds: number[];
@@ -28,7 +28,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
 
 /**
  * Groupes d'entraînement de la saison (Débutants, Perfect N1, Prépa N2...) :
- * composition, référents et encadrants attitrés, ligne d'eau attitrée et rangement des
+ * composition, référents et encadrants attitrés, lignes d'eau attitrées et rangement des
  * élèves. Les espaces du bassin (lignes d'eau, fosse) se décrivent en bas de
  * page. Le planning des soirées (qui est où, quel lundi) vient ensuite.
  */
@@ -67,7 +67,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
               <div class="entete-groupe">
                 <span class="nom">{{ g.nom }}</span>
                 <span class="secondaire">
-                  {{ g.espaceAttitre ?? 'Sans ligne attitrée' }}
+                  {{ g.espacesAttitres ?? 'Sans ligne attitrée' }}
                   @if (g.niveauPrepare) { · prépare le {{ g.niveauPrepare }} }
                   · {{ g.eleves.length }} élève{{ g.eleves.length > 1 ? 's' : '' }}
                 </span>
@@ -194,11 +194,19 @@ interface FormulaireEspace extends DemandeEspaceBassin {
           <label for="nom-groupe">Nom du groupe</label>
           <input id="nom-groupe" type="text" [(ngModel)]="f.nom" placeholder="ex. Prépa N2">
 
-          <label for="espace-groupe">Ligne d'eau attitrée</label>
-          <select id="espace-groupe" [(ngModel)]="f.espaceAttitreId">
-            <option [ngValue]="null">Aucune</option>
-            @for (e of espacesActifs(); track e.id) { <option [ngValue]="e.id">{{ e.nom }}</option> }
-          </select>
+          <fieldset class="lignes-attitrees">
+            <legend class="etiquette">Lignes d'eau attitrées</legend>
+            <p class="secondaire aide">Un groupe nombreux peut en occuper plusieurs ; aucune : le groupe est à placer chaque soir.</p>
+            <div class="grille-lignes">
+              @for (e of espacesProposes(f); track e.id) {
+                <label class="case">
+                  <input type="checkbox" [checked]="f.espaceAttitreIds.includes(e.id)"
+                         (change)="basculerEspace(f, e.id)">
+                  {{ e.nom }}{{ e.actif ? '' : ' (désactivé)' }}
+                </label>
+              }
+            </div>
+          </fieldset>
 
           <label for="niveau-groupe">Niveau préparé</label>
           <select id="niveau-groupe" [(ngModel)]="f.niveauPrepare">
@@ -316,6 +324,8 @@ interface FormulaireEspace extends DemandeEspaceBassin {
     .case input { width: auto; }
     .eleve { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
     .eleve select { flex: 0 1 240px; margin: 0; }
+    .lignes-attitrees { border: none; margin: 0; padding: 0; }
+    .grille-lignes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0 var(--pas-2); }
     .bassin { margin-top: var(--pas-4); }
     .bassin summary { min-height: 44px; display: list-item; padding: 12px 0; font-weight: 700; cursor: pointer; }
     .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pas-2); }
@@ -341,7 +351,6 @@ export class GroupesEntrainementComponent {
   sansGroupeSeulement = signal(false);
   recherche = signal('');
 
-  espacesActifs = computed(() => this.espaces().filter(e => e.actif));
   nombreSansGroupe = computed(() => this.eleves().filter(e => e.groupeId === null).length);
   nombreSuggestions = computed(() => this.eleves().filter(e => e.groupeId === null && e.groupeSuggereId !== null).length);
   /** Élèves filtrés par la case « sans groupe » et la recherche (sans tenir compte des accents ni des majuscules). */
@@ -408,6 +417,15 @@ export class GroupesEntrainementComponent {
       .map(m => ({ id: m.id, libelle: m.nomComplet, detail: m.niveauEncadrement }));
   }
 
+  /** Espaces actifs, plus ceux déjà attitrés au groupe même désactivés, pour pouvoir les décocher. */
+  espacesProposes(f: FormulaireGroupe): EspaceBassinVue[] {
+    return this.espaces().filter(e => e.actif || f.espaceAttitreIds.includes(e.id));
+  }
+
+  basculerEspace(f: FormulaireGroupe, id: number): void {
+    f.espaceAttitreIds = f.espaceAttitreIds.includes(id) ? this.sans(f.espaceAttitreIds, id) : [...f.espaceAttitreIds, id];
+  }
+
   ajouterReferent(f: FormulaireGroupe, id: number | null): void {
     if (id !== null && !f.referentIds.includes(id)) f.referentIds = [...f.referentIds, id];
   }
@@ -423,14 +441,14 @@ export class GroupesEntrainementComponent {
   nouveau(): void {
     this.message.set(null);
     this.formulaire.set({
-      id: null, nom: '', niveauPrepare: null, espaceAttitreId: null, referentIds: [], encadrantIds: []
+      id: null, nom: '', niveauPrepare: null, espaceAttitreIds: [], referentIds: [], encadrantIds: []
     });
   }
 
   modifier(g: GroupeEntrainementVue): void {
     this.message.set(null);
     this.formulaire.set({
-      id: g.id, nom: g.nom, niveauPrepare: g.niveauPrepare, espaceAttitreId: g.espaceAttitreId,
+      id: g.id, nom: g.nom, niveauPrepare: g.niveauPrepare, espaceAttitreIds: [...g.espaceAttitreIds],
       referentIds: g.encadrants.filter(e => e.referent).map(e => e.id),
       encadrantIds: g.encadrants.filter(e => !e.referent).map(e => e.id)
     });
@@ -445,7 +463,7 @@ export class GroupesEntrainementComponent {
       return;
     }
     const demande = {
-      saisonId, nom: f.nom, niveauPrepare: f.niveauPrepare, espaceAttitreId: f.espaceAttitreId,
+      saisonId, nom: f.nom, niveauPrepare: f.niveauPrepare, espaceAttitreIds: f.espaceAttitreIds,
       encadrantIds: f.encadrantIds, referentIds: f.referentIds
     };
     this.envoi.set(true);

@@ -6,11 +6,12 @@ import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Groupe d'entraînement d'une saison (Débutants, Perfect N1, Prépa N2...) :
- * ses encadrants attitrés (dont ses référents), sa ligne d'eau attitrée et ses élèves, rangés par
+ * ses encadrants attitrés (dont ses référents), ses lignes d'eau attitrées et ses élèves, rangés par
  * l'admin. Sans rapport avec {@code GroupePlongeurs}, qui compose les
  * palanquées d'un séjour. Un élève est dans au plus un groupe par saison
  * (règle tenue par {@code GroupeEntrainementService}).
@@ -36,9 +37,17 @@ public class GroupeEntrainement {
     @Column(length = 2)
     private String niveauPrepare;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "espace_attitre_id")
-    private EspaceBassin espaceAttitre;
+    /**
+     * Lignes d'eau (ou fosse) attitrées : un groupe nombreux peut en occuper
+     * plusieurs. L'ancienne colonne {@code espace_attitre_id} reste en base,
+     * inutilisée (voir V37).
+     */
+    @ManyToMany
+    @JoinTable(name = "groupe_entrainement_espace",
+            joinColumns = @JoinColumn(name = "groupe_id"),
+            inverseJoinColumns = @JoinColumn(name = "espace_id"))
+    @OrderBy("ordre ASC, id ASC")
+    private Set<EspaceBassin> espacesAttitres = new LinkedHashSet<>();
 
     @ManyToMany
     @JoinTable(name = "groupe_entrainement_encadrant",
@@ -99,12 +108,26 @@ public class GroupeEntrainement {
         this.niveauPrepare = niveauPrepare;
     }
 
-    public EspaceBassin getEspaceAttitre() {
-        return espaceAttitre;
+    public Set<EspaceBassin> getEspacesAttitres() {
+        return espacesAttitres;
     }
 
-    public void setEspaceAttitre(EspaceBassin espaceAttitre) {
-        this.espaceAttitre = espaceAttitre;
+    public void setEspacesAttitres(Set<EspaceBassin> espacesAttitres) {
+        this.espacesAttitres = espacesAttitres;
+    }
+
+    /** Lignes attitrées dans l'ordre du bassin (ligne 1, ligne 2... puis la fosse). */
+    public List<EspaceBassin> espacesAttitresOrdonnes() {
+        return espacesAttitres.stream()
+                .sorted(java.util.Comparator.comparingInt(EspaceBassin::getOrdre).thenComparing(EspaceBassin::getId))
+                .toList();
+    }
+
+    /** « Ligne 5 + Ligne 6 » ; null sans ligne attitrée. */
+    public String libelleEspacesAttitres() {
+        List<EspaceBassin> liste = espacesAttitresOrdonnes();
+        return liste.isEmpty() ? null
+                : liste.stream().map(EspaceBassin::getNom).collect(java.util.stream.Collectors.joining(" + "));
     }
 
     public Set<Utilisateur> getEncadrants() {

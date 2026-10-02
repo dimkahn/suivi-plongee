@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PlanningServiceTest {
 
     private static final EspaceBassin LIGNE_3 = espace(3L, "Ligne 3", EspaceBassin.Type.LIGNE, null);
+    private static final EspaceBassin LIGNE_4 = espace(4L, "Ligne 4", EspaceBassin.Type.LIGNE, null);
     private static final EspaceBassin FOSSE = espace(7L, "Fosse", EspaceBassin.Type.FOSSE, 15);
     private static final Map<Long, Integer> CAPACITES = Map.of(7L, 15);
 
@@ -31,6 +32,32 @@ class PlanningServiceTest {
 
         assertThat(c.type()).isEqualTo("ATTITREE");
         assertThat(c.libelle()).isEqualTo("Ligne 3");
+    }
+
+    @Test
+    @DisplayName("Un groupe attitré à deux lignes les occupe toutes les deux, une consigne le met à un seul endroit")
+    void plusieursLignesAttitrees() {
+        GroupeEntrainement g = groupe(1L, "Débutants", "N1", LIGNE_4, 0);
+        g.getEspacesAttitres().add(LIGNE_3);
+
+        CaseVue c = PlanningService.caseVue(g, null);
+        assertThat(c.type()).isEqualTo("ATTITREE");
+        assertThat(c.libelle()).isEqualTo("Ligne 3 + Ligne 4");
+        assertThat(c.espaces()).extracting(PlanningService.EspaceCaseVue::id).containsExactly(3L, 4L);
+
+        assertThat(fosse(g, 6).espaces()).extracting(PlanningService.EspaceCaseVue::id).containsExactly(7L);
+    }
+
+    @Test
+    @DisplayName("Une seconde ligne attitrée déjà donnée à un autre groupe est signalée")
+    void secondeLigneEnDouble() {
+        GroupeEntrainement a = groupe(1L, "Débutants", "N1", LIGNE_3, 2);
+        a.getEspacesAttitres().add(LIGNE_4);
+        GroupeEntrainement b = groupe(2L, "Prépa N2", "N2", LIGNE_4, 2);
+        List<CaseVue> cases = List.of(PlanningService.caseVue(a, null), PlanningService.caseVue(b, null));
+
+        assertThat(PlanningService.avertissements(List.of(a, b), cases, CAPACITES))
+                .containsExactly("Ligne 4 donnée à plusieurs groupes : Débutants, Prépa N2.");
     }
 
     @Test
@@ -139,6 +166,7 @@ class PlanningServiceTest {
         e.setNom(nom);
         e.setType(type);
         e.setCapacite(capacite);
+        e.setOrdre(id.intValue());
         return e;
     }
 
@@ -148,7 +176,7 @@ class PlanningServiceTest {
         g.setId(id);
         g.setNom(nom);
         g.setNiveauPrepare(niveau);
-        g.setEspaceAttitre(attitre);
+        if (attitre != null) g.getEspacesAttitres().add(attitre);
         for (long i = 0; i < nbEleves; i++) {
             Eleve e = new Eleve();
             e.setId(id * 100 + i);

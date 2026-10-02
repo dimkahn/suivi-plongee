@@ -48,7 +48,9 @@ class GroupeEntrainementTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(groupes).extracting(g -> g.get("nom").asText())
                 .startsWith("Débutants", "Prépa N2", "N2+", "Prépa N3"); // saison 2026-2027 (V107)
-        assertThat(groupes.get(0).get("espaceAttitre").asText()).isEqualTo("Ligne 6");
+        // Les débutants occupent deux lignes (V111), dans l'ordre du bassin.
+        assertThat(groupes.get(0).get("espacesAttitres").asText()).isEqualTo("Ligne 5 + Ligne 6");
+        assertThat(groupes.get(0).get("espaceAttitreIds")).hasSize(2);
         assertThat(groupes.get(0).get("encadrants")).hasSize(2);
         // Le référent (V110) vient en tête des encadrants du groupe.
         assertThat(groupes.get(0).get("encadrants").get(0).get("referent").asBoolean()).isTrue();
