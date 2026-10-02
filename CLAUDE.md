@@ -155,8 +155,11 @@ Remplace le tableur « Planning » du lundi soir (groupes × dates, chaque case
 lignes 1 à 6 + fosse 10 m, 15 plongeurs encadrants compris). `GroupeEntrainement`
 (par saison) : encadrants attitrés, dont un ou plusieurs **référents** (V36,
 `groupe_entrainement_referent` ; un référent est toujours aussi encadrant
-attitré, règle du service, pour que le planning ne lise qu'une liste), ligne
-attitrée, élèves rangés **explicitement**
+attitré, règle du service, pour que le planning ne lise qu'une liste), une
+ou plusieurs **lignes attitrées** (V37, `groupe_entrainement_espace` : un
+groupe nombreux occupe par exemple les lignes 5 et 6 ; l'ancienne colonne
+`groupe_entrainement.espace_attitre_id` reste en base, inutilisée, parce
+que les démos V104/V107 l'écrivent — V111 recopie), élèves rangés **explicitement**
 par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
 `niveau_prepare` et du cursus en cours ; un élève dans au plus un groupe par
 saison (règle du service). Choix du club (2026) : le suivi d'un élève passe
@@ -169,7 +172,9 @@ date qui n'a que des séances en milieu naturel n'y figure pas (choix du
 club, 2026). `affectation_groupe` (V27) ne stocke que les **écarts** à
 la ligne attitrée (autre espace, fosse avec `profondeur_limitee` = le « F6 »,
 activité, absence) : changer la ligne attitrée suit sur toutes les dates non
-retouchées. `soiree_planning` porte le **responsable de séance**, distinct du
+retouchées. Un écart « espace » met le groupe à **un seul** endroit ce
+soir-là, à la place de toutes ses lignes attitrées (`CaseVue.espaces`
+liste tous les espaces occupés, lus par les avertissements). `soiree_planning` porte le **responsable de séance**, distinct du
 DP de la fiche de sécurité (E3 minimum, choisi à part ; `seance.dp_id` reste
 inutilisé). Avertissements calculés par le serveur, jamais bloquants : fosse
 au-delà de sa capacité (élèves + encadrants attitrés), groupe N1 ou encadré

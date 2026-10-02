@@ -57,19 +57,24 @@ public class PlanningService {
     public record EncadrantPlanningVue(Long id, String nomComplet, String niveauEncadrement, boolean referent) {}
 
     /** {@code effectif} : élèves du groupe et encadrants attitrés, pour la capacité de la fosse. */
-    public record GroupePlanningVue(Long id, String nom, String niveauPrepare, Long espaceAttitreId,
-                                    String espaceAttitre, int nombreEleves, int effectif,
+    public record GroupePlanningVue(Long id, String nom, String niveauPrepare, List<Long> espaceAttitreIds,
+                                    String espacesAttitres, int nombreEleves, int effectif,
                                     List<EncadrantPlanningVue> encadrants) {}
 
     public record EspacePlanningVue(Long id, String nom, String type, Integer profondeurMax, Integer capacite) {}
 
+    /** Un espace occupé par un groupe un soir donné. */
+    public record EspaceCaseVue(Long id, String nom, String type) {}
+
     /**
-     * Place d'un groupe un soir donné.
+     * Place d'un groupe un soir donné. {@code espaces} : tous les espaces
+     * occupés (plusieurs pour un groupe attitré à plusieurs lignes) ;
+     * {@code espaceId}, {@code espace}, {@code espaceType} : le premier.
      *
-     * @param libelle en clair : « Ligne 3 », « Fosse (limitée à 6 m) », « Baptêmes », « Absent »
+     * @param libelle en clair : « Ligne 3 », « Ligne 5 + Ligne 6 », « Fosse (limitée à 6 m) », « Baptêmes », « Absent »
      */
     public record CaseVue(Long groupeId, String type, Long espaceId, String espace, String espaceType,
-                          Integer profondeurLimitee, String activite, String libelle) {}
+                          List<EspaceCaseVue> espaces, Integer profondeurLimitee, String activite, String libelle) {}
 
     /** {@code presents}, {@code absents} : réponses des encadrants ; qui n'y figure pas n'a pas répondu. */
     public record SoireeVue(LocalDate date, Long responsableId, String responsable, String note,
@@ -324,22 +329,35 @@ public class PlanningService {
         return resultat;
     }
 
+    /**
+     * Sans consigne pour la soirée, le groupe est à toutes ses lignes
+     * attitrées ; une consigne « espace » le met ce soir-là à un seul endroit
+     * (la fosse, une autre ligne) à la place de toutes.
+     */
     static CaseVue caseVue(GroupeEntrainement g, AffectationGroupe a) {
         if (a == null) {
-            EspaceBassin e = g.getEspaceAttitre();
-            if (e == null) return new CaseVue(g.getId(), TypeCase.AUCUN.name(), null, null, null, null, null, "À placer");
+            List<EspaceBassin> attitres = g.espacesAttitresOrdonnes();
+            if (attitres.isEmpty()) {
+                return new CaseVue(g.getId(), TypeCase.AUCUN.name(), null, null, null, List.of(), null, null, "À placer");
+            }
+            EspaceBassin e = attitres.get(0);
             return new CaseVue(g.getId(), TypeCase.ATTITREE.name(), e.getId(), e.getNom(), e.getType().name(),
-                    null, null, e.getNom());
+                    attitres.stream().map(PlanningService::espaceCase).toList(),
+                    null, null, g.libelleEspacesAttitres());
         }
         return switch (a.getType()) {
             case ESPACE -> new CaseVue(g.getId(), TypeCase.ESPACE.name(), a.getEspace().getId(), a.getEspace().getNom(),
-                    a.getEspace().getType().name(), a.getProfondeurLimitee(), null,
+                    a.getEspace().getType().name(), List.of(espaceCase(a.getEspace())), a.getProfondeurLimitee(), null,
                     a.getEspace().getNom() + (a.getProfondeurLimitee() == null ? ""
                             : " (limitée à " + a.getProfondeurLimitee() + " m)"));
-            case ACTIVITE -> new CaseVue(g.getId(), TypeCase.ACTIVITE.name(), null, null, null, null,
+            case ACTIVITE -> new CaseVue(g.getId(), TypeCase.ACTIVITE.name(), null, null, null, List.of(), null,
                     a.getActivite(), a.getActivite());
-            case ABSENT -> new CaseVue(g.getId(), TypeCase.ABSENT.name(), null, null, null, null, null, "Absent");
+            case ABSENT -> new CaseVue(g.getId(), TypeCase.ABSENT.name(), null, null, null, List.of(), null, null, "Absent");
         };
+    }
+
+    private static EspaceCaseVue espaceCase(EspaceBassin e) {
+        return new EspaceCaseVue(e.getId(), e.getNom(), e.getType().name());
     }
 
     /**
@@ -353,40 +371,41 @@ public class PlanningService {
         Map<Long, GroupeEntrainement> parId = new HashMap<>();
         groupesSaison.forEach(g -> parId.put(g.getId(), g));
         Map<Long, List<GroupeEntrainement>> parEspace = new LinkedHashMap<>();
-        Map<Long, CaseVue> caseParEspace = new HashMap<>();
+        Map<Long, EspaceCaseVue> espaceParId = new HashMap<>();
         List<String> resultat = new ArrayList<>();
 
         for (CaseVue c : cases) {
-            if (c.espaceId() == null) continue;
             GroupeEntrainement g = parId.get(c.groupeId());
-            parEspace.computeIfAbsent(c.espaceId(), k -> new ArrayList<>()).add(g);
-            caseParEspace.putIfAbsent(c.espaceId(), c);
+            for (EspaceCaseVue espace : c.espaces()) {
+                parEspace.computeIfAbsent(espace.id(), k -> new ArrayList<>()).add(g);
+                espaceParId.putIfAbsent(espace.id(), espace);
 
-            boolean fosse = "FOSSE".equals(c.espaceType());
-            boolean limitee = c.profondeurLimitee() != null && c.profondeurLimitee() <= PROFONDEUR_LIMITEE_DEBUTANTS;
-            if (fosse && !limitee) {
-                if ("N1".equals(g.getNiveauPrepare())) {
-                    resultat.add(g.getNom() + " en " + c.espace() + " : limiter à "
-                            + PROFONDEUR_LIMITEE_DEBUTANTS + " m pour des débutants.");
-                } else if (g.getEncadrants().stream().anyMatch(u -> u.getNiveauEncadrement() == NiveauEncadrement.E1)) {
-                    resultat.add(g.getNom() + " en " + c.espace() + " : limiter à "
-                            + PROFONDEUR_LIMITEE_DEBUTANTS + " m, le groupe est encadré par un E1.");
+                boolean fosse = "FOSSE".equals(espace.type());
+                boolean limitee = c.profondeurLimitee() != null && c.profondeurLimitee() <= PROFONDEUR_LIMITEE_DEBUTANTS;
+                if (fosse && !limitee) {
+                    if ("N1".equals(g.getNiveauPrepare())) {
+                        resultat.add(g.getNom() + " en " + espace.nom() + " : limiter à "
+                                + PROFONDEUR_LIMITEE_DEBUTANTS + " m pour des débutants.");
+                    } else if (g.getEncadrants().stream().anyMatch(u -> u.getNiveauEncadrement() == NiveauEncadrement.E1)) {
+                        resultat.add(g.getNom() + " en " + espace.nom() + " : limiter à "
+                                + PROFONDEUR_LIMITEE_DEBUTANTS + " m, le groupe est encadré par un E1.");
+                    }
                 }
             }
         }
 
         for (Map.Entry<Long, List<GroupeEntrainement>> e : parEspace.entrySet()) {
-            CaseVue c = caseParEspace.get(e.getKey());
+            EspaceCaseVue espace = espaceParId.get(e.getKey());
             List<GroupeEntrainement> presents = e.getValue();
             String noms = presents.stream().map(GroupeEntrainement::getNom).collect(Collectors.joining(", "));
-            if ("LIGNE".equals(c.espaceType()) && presents.size() > 1) {
-                resultat.add(c.espace() + " donnée à plusieurs groupes : " + noms + ".");
+            if ("LIGNE".equals(espace.type()) && presents.size() > 1) {
+                resultat.add(espace.nom() + " donnée à plusieurs groupes : " + noms + ".");
             }
-            if ("FOSSE".equals(c.espaceType())) {
+            if ("FOSSE".equals(espace.type())) {
                 Integer capacite = capacites.get(e.getKey());
                 int plongeurs = presents.stream().mapToInt(PlanningService::effectif).sum();
                 if (capacite != null && plongeurs > capacite) {
-                    resultat.add(c.espace() + " : " + plongeurs + " plongeurs pour " + capacite
+                    resultat.add(espace.nom() + " : " + plongeurs + " plongeurs pour " + capacite
                             + " places (" + noms + ").");
                 }
             }
@@ -408,9 +427,8 @@ public class PlanningService {
     }
 
     private static GroupePlanningVue groupeVue(GroupeEntrainement g) {
-        EspaceBassin e = g.getEspaceAttitre();
         return new GroupePlanningVue(g.getId(), g.getNom(), g.getNiveauPrepare(),
-                e == null ? null : e.getId(), e == null ? null : e.getNom(),
+                g.espacesAttitresOrdonnes().stream().map(EspaceBassin::getId).toList(), g.libelleEspacesAttitres(),
                 g.getEleves().size(), effectif(g),
                 g.getEncadrants().stream()
                         .map(u -> encadrantVue(u, g.estReferent(u)))

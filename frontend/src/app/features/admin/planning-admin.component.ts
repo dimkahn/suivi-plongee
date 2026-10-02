@@ -198,7 +198,7 @@ interface EditionSoiree {
           <legend class="visuellement-cache">Place du groupe</legend>
           <label class="option">
             <input type="radio" name="choix" [checked]="e.choix === 'ATTITREE'" (change)="e.choix = 'ATTITREE'">
-            Sa ligne attitrée{{ e.groupe.espaceAttitre ? ' (' + e.groupe.espaceAttitre + ')' : ' (aucune)' }}
+            {{ e.groupe.espaceAttitreIds.length > 1 ? 'Ses lignes attitrées' : 'Sa ligne attitrée' }}{{ e.groupe.espacesAttitres ? ' (' + e.groupe.espacesAttitres + ')' : ' (aucune)' }}
           </label>
           @for (esp of espacesLignes(); track esp.id) {
             <label class="option">

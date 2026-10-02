@@ -9,15 +9,16 @@ export default {
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
-  async jouer({ page, pause, legende, toucher, saisir, choisir, administration, rechercherEtChoisir, defiler, vignette }) {
+  async jouer({ page, pause, legende, toucher, saisir, cocher, administration, rechercherEtChoisir, defiler, vignette }) {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await administration('Groupes d\'entraînement');
-    await legende('Chaque groupe : son niveau préparé, sa ligne d\'eau attitrée, ses référents et ses encadrants.', 4000);
+    await legende('Chaque groupe : son niveau préparé, ses lignes d\'eau attitrées, ses référents et ses encadrants.', 4000);
     await legende('Un nouveau groupe pour les N1 tout frais :', 0);
     await toucher(page.getByRole('button', { name: 'Nouveau groupe' }));
     await saisir('#nom-groupe', 'Perfect N1');
-    await choisir('#espace-groupe', 'Ligne 1', { exact: false });
+    await legende('Cochez sa ligne d\'eau attitrée ; un groupe nombreux peut en avoir plusieurs.', 0);
+    await cocher(page.locator('.lignes-attitrees').getByLabel('Ligne 1', { exact: true }));
     await legende('Le référent est un encadrant attitré qui suit, en plus, les élèves du groupe.', 0);
     await rechercherEtChoisir('ajout-referent', 'Tia', 'Tiago');
     await legende('Les autres encadrants attitrés viennent en renfort, chaque lundi.', 0);

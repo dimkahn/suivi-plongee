@@ -636,8 +636,10 @@ export interface GroupeEntrainementVue {
   nom: string;
   ordre: number;
   niveauPrepare: 'N1' | 'N2' | 'N3' | null;
-  espaceAttitreId: number | null;
-  espaceAttitre: string | null;
+  /** Lignes attitrées, dans l'ordre du bassin ; un groupe nombreux peut en occuper plusieurs. */
+  espaceAttitreIds: number[];
+  /** « Ligne 5 + Ligne 6 » ; null sans ligne attitrée. */
+  espacesAttitres: string | null;
   /** Référents d'abord : un référent est aussi un encadrant attitré. */
   encadrants: { id: number; nomComplet: string; niveauEncadrement: string | null; referent: boolean }[];
   eleves: { id: number; nom: string; prenom: string }[];
@@ -647,7 +649,7 @@ export interface DemandeGroupeEntrainement {
   saisonId: number;
   nom: string;
   niveauPrepare: 'N1' | 'N2' | 'N3' | null;
-  espaceAttitreId: number | null;
+  espaceAttitreIds: number[];
   /** Encadrants attitrés qui ne sont pas référents. */
   encadrantIds: number[];
   referentIds: number[];
@@ -672,9 +674,15 @@ export interface CasePlanningVue {
   espaceId: number | null;
   espace: string | null;
   espaceType: 'LIGNE' | 'FOSSE' | null;
+  /**
+   * Tous les espaces occupés ce soir-là (plusieurs pour un groupe attitré à
+   * plusieurs lignes) ; espaceId, espace et espaceType décrivent le premier.
+   * Peut manquer dans un planning mis en cache avant cette évolution.
+   */
+  espaces?: { id: number; nom: string; type: 'LIGNE' | 'FOSSE' }[];
   profondeurLimitee: number | null;
   activite: string | null;
-  /** En clair : « Ligne 3 », « Fosse (limitée à 6 m) », « Baptêmes », « Absent ». */
+  /** En clair : « Ligne 3 », « Ligne 5 + Ligne 6 », « Fosse (limitée à 6 m) », « Baptêmes », « Absent ». */
   libelle: string;
 }
 
@@ -703,8 +711,9 @@ export interface GroupePlanningVue {
   id: number;
   nom: string;
   niveauPrepare: string | null;
-  espaceAttitreId: number | null;
-  espaceAttitre: string | null;
+  espaceAttitreIds: number[];
+  /** « Ligne 5 + Ligne 6 » ; null sans ligne attitrée. */
+  espacesAttitres: string | null;
   nombreEleves: number;
   /** Élèves et encadrants attitrés : ce que le groupe pèse dans la fosse. */
   effectif: number;

@@ -67,7 +67,9 @@ class PlanningTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"type\":\"ATTITREE\"}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(soiree.get("cases").get(0).get("type").asText()).isEqualTo("ATTITREE");
-        assertThat(soiree.get("cases").get(0).get("libelle").asText()).isEqualTo("Ligne 6");
+        // Retour à ses deux lignes attitrées (V111).
+        assertThat(soiree.get("cases").get(0).get("libelle").asText()).isEqualTo("Ligne 5 + Ligne 6");
+        assertThat(soiree.get("cases").get(0).get("espaces")).hasSize(2);
     }
 
     @Test
