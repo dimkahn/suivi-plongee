@@ -246,6 +246,15 @@ l'année). Référence déjà présente = laissée telle quelle (réimport sans
 doublon). V33 a ajouté `proprietaire` (null = le club, sigle `CPPJVO`
 ignoré à l'import), `constructeur`, `ancienne_reference`, `numero_robinet`.
 Le fichier du club n'est pas dans le dépôt : le test fabrique le sien.
+**Export au même format** (bouton « Exporter le classeur Excel », `GET
+/api/materiel/export.xlsx`, `ExportMaterielService`) : feuilles « Blocs »
+et « Stabs » aux titres que lit l'import, réimportable sans perte (test
+d'aller-retour dans `ImportMaterielTest`). Seuls blocs et gilets y
+figurent ; seules les visites/requalifications conformes vont dans les
+colonnes par année (une colonne « Visite 2024 (2) » si deux la même
+année), les non conformes et le hors service dans « Commentaires ». Rebut :
+« VENDU »/« REFORME » dans une colonne « Sortie », la date en tête du
+commentaire ; l'import relit aussi ce rebut pour les gilets.
 **Fiche d'inspection TIV** (V34, `InspectionTiv`, `InspectionTivService`,
 écrans `/materiel/:id/tiv` (saisie) et `/materiel/tiv/:id` (compte rendu
 imprimable)) : l'onglet « FICHE D'EVALUATION ET DE SUIVI » du classeur,
