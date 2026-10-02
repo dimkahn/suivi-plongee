@@ -17,7 +17,7 @@ export default {
     await legende('Sa grille : niveau préparé, critères acquis, séances suivies.', 3500);
     await legende('La jauge descend vers la profondeur du brevet à mesure qu\'il progresse.', 3500);
 
-    await legende('Avant de noter, choisissez la séance du jour.', 0);
+    await legende('Sa dernière séance où il était présent est déjà choisie ; touchez-la pour en changer.', 0);
     await choisirDerniereSeance();
     await legende('Seules les séances où l\'élève est noté présent sont proposées : faites l\'appel d\'abord.', 4000);
 
