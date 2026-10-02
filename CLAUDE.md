@@ -270,6 +270,19 @@ la fiche de gestion.
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas
 introduire d'UPDATE ni de DELETE sur cette table.
+**Présence avant notation (choix du club, 2026).** Un élève ne se note sur
+une séance que s'il y est noté `PRESENT` (`EvaluationService.verifierSeance`,
+tous chemins : grille, synchronisation, notation groupée) ; une compétence
+transverse notée sans séance n'est pas concernée. Les présences se
+renseignent jusqu'à 7 jours avant la séance
+(`Seance.JOURS_ANTICIPATION_PRESENCE`), les notes et le profil réalisé
+attendent toujours le jour J. Une présence annoncée à l'avance ne compte ni
+dans les séances bloc/nage (`ParticipationRepository.compterAtelier`) ni
+comme plongée en milieu naturel pour la délivrance tant que la séance n'a pas
+eu lieu. La grille ne propose que les séances où l'élève est présent
+(`GrilleVue.seancesPresent`, recouvert par les présences en attente sur
+l'appareil) ; hors ligne, `FileAttenteService` envoie la file des présences
+avant les notes.
 **Notation groupée** (bouton « Noter les présents » de la feuille de
 présence, `NotationGroupeeService`, `POST /api/seances/{id}/notation-groupee`) :
 plusieurs élèves présents, un ou plusieurs critères, chacun avec son

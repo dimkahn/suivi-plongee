@@ -51,6 +51,7 @@ class EvaluationServiceTest {
     @Mock CritereRepository criteres;
     @Mock UtilisateurRepository utilisateurs;
     @Mock HabilitationService habilitation;
+    @Mock ParticipationRepository participations;
 
     EvaluationService service;
 
@@ -60,7 +61,7 @@ class EvaluationServiceTest {
     @BeforeEach
     void avantChaqueTest() {
         service = new EvaluationService(evaluations, validations, cursusRepository, seances,
-                criteres, utilisateurs, habilitation);
+                criteres, utilisateurs, habilitation, participations);
         moniteurPrincipal = new UtilisateurPrincipal(10L, "e2@club.fr", "x", true,
                 NiveauEncadrement.E2, List.of());
         moniteur = new Utilisateur();
@@ -237,6 +238,64 @@ class EvaluationServiceTest {
         assertThatThrownBy(() -> service.noter(100L, notation, moniteurPrincipal))
                 .isInstanceOf(RegleMetierException.class)
                 .hasMessageContaining("n'appartient pas a la saison");
+    }
+
+    @Test
+    @DisplayName("On ne note pas un eleve qui n'est pas note present a la seance")
+    void noter_eleveNonPresentRefuse() {
+        Referentiel ref = referentiel(false, 40);
+        Saison s = saison(1L);
+        Cursus c = cursus(ref, s, Cursus.Statut.EN_COURS);
+        Eleve eleve = new Eleve();
+        eleve.setNom("Durand");
+        eleve.setPrenom("Lou");
+        c.setEleve(eleve);
+        Critere critere = critere(bloc(ref, false, false));
+        Seance seance = seance(s, Milieu.ARTIFICIEL, null);
+
+        when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(c));
+        when(criteres.findById(5L)).thenReturn(Optional.of(critere));
+        when(seances.findById(7L)).thenReturn(Optional.of(seance));
+        var notation = new EvaluationService.Notation(5L, 7L, StatutAcquisition.ACQUIS, null, null, null);
+
+        // Aucune présence saisie, puis une absence : refus dans les deux cas.
+        when(participations.findByCursusIdAndSeanceId(100L, 7L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.noter(100L, notation, moniteurPrincipal))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("n'est pas noté présent");
+
+        Participation absent = new Participation();
+        absent.setStatut(Participation.Statut.ABSENT);
+        when(participations.findByCursusIdAndSeanceId(100L, 7L)).thenReturn(Optional.of(absent));
+        assertThatThrownBy(() -> service.noter(100L, notation, moniteurPrincipal))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("n'est pas noté présent");
+        verify(evaluations, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Un eleve present a la seance peut etre note sur cette seance")
+    void noter_elevePresentAccepte() {
+        Referentiel ref = referentiel(false, 40);
+        Saison s = saison(1L);
+        Cursus c = cursus(ref, s, Cursus.Statut.EN_COURS);
+        Critere critere = critere(bloc(ref, false, false));
+        Seance seance = seance(s, Milieu.ARTIFICIEL, null);
+        Participation present = new Participation();
+        present.setStatut(Participation.Statut.PRESENT);
+
+        when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(c));
+        when(criteres.findById(5L)).thenReturn(Optional.of(critere));
+        when(seances.findById(7L)).thenReturn(Optional.of(seance));
+        when(participations.findByCursusIdAndSeanceId(100L, 7L)).thenReturn(Optional.of(present));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur));
+        when(evaluations.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var notation = new EvaluationService.Notation(5L, 7L, StatutAcquisition.EN_COURS, null, null, null);
+        Evaluation resultat = service.noter(100L, notation, moniteurPrincipal);
+
+        assertThat(resultat.getSeance()).isSameAs(seance);
+        assertThat(resultat.getDateEvaluation()).isEqualTo(seance.getDateSeance());
     }
 
     @Test

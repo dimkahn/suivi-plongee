@@ -297,7 +297,7 @@ public class SeanceController {
     public void enregistrerPresences(@PathVariable Long seanceId,
                                      @Valid @RequestBody List<DemandePresence> demandes) {
         Seance seance = seance(seanceId);
-        seance.verifierQueLaSeanceAEuLieu("enregistrer les présences");
+        seance.verifierQueLesPresencesSontOuvertes();
         for (DemandePresence d : demandes) {
             Cursus c = cursus.findById(d.cursusId())
                     .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));

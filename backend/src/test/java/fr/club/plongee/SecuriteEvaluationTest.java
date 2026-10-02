@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -125,6 +126,13 @@ class SecuriteEvaluationTest {
         String seances = mvc.perform(get("/api/seances").header("Authorization", jeton("e2@club.fr")))
                 .andReturn().getResponse().getContentAsString();
         long seance = json.readTree(seances).get(0).get("id").asLong();
+        // On ne note qu'un élève présent à la séance.
+        mvc.perform(put("/api/seances/" + seance + "/presences")
+                        .header("Authorization", jeton("e2@club.fr"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 [{"cursusId":%d,"statut":"PRESENT","atelier":"BLOC"}]""".formatted(cursus)))
+                .andExpect(status().isOk());
 
         mvc.perform(post("/api/cursus/" + cursus + "/evaluations")
                         .header("Authorization", jeton("e2@club.fr"))

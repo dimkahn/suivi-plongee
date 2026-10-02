@@ -350,7 +350,15 @@ export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo
     await toucher(page.locator('button#seance'), { apres: 900 });
     const dialogue = page.locator('dialog[open]');
     const jours = dialogue.locator('button.jour[aria-label*="séance"]:not([disabled])');
-    await toucher(jours.last(), { apres: 900 });
+    // Les présences s'ouvrent une semaine à l'avance : on garde le dernier jour passé ou du jour.
+    const libelles = await jours.evaluateAll(boutons => boutons.map(b => b.getAttribute('aria-label') ?? ''));
+    const aujourdhui = new Date();
+    aujourdhui.setHours(0, 0, 0, 0);
+    const passes = libelles.map((l, i) => {
+      const [j, m, a] = l.slice(0, 10).split('/').map(Number);
+      return new Date(a, m - 1, j) <= aujourdhui ? i : -1;
+    }).filter(i => i >= 0);
+    await toucher(passes.length ? jours.nth(passes.at(-1)) : jours.last(), { apres: 900 });
     await toucher(dialogue.locator('.seances-du-jour button').first(), { apres: 1200 });
   };
 

@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileAttenteService } from '../../core/file-attente.service';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
@@ -209,7 +210,8 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
             @let duJour = seancesDuJour(j);
             @if (duJour.length === 0) {
               <p class="secondaire aucune">
-                Aucune séance ce jour-là{{ g.milieuNaturelExclusif ? ' en milieu naturel' : '' }}.
+                Aucune séance ce jour-là{{ g.milieuNaturelExclusif ? ' en milieu naturel' : '' }}
+                où l'élève est noté présent.
               </p>
             } @else {
               <ul class="seances-du-jour">
@@ -625,6 +627,7 @@ export class GrilleComponent implements OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private file = inject(FileAttenteService);
+  private ecritures = inject(FileEcrituresService);
   reseau = inject(ReseauService);
 
   id = input.required<string>();
@@ -780,7 +783,8 @@ export class GrilleComponent implements OnDestroy {
 
   /**
    * Séances sur lesquelles on peut noter : déjà passées (ou du jour) — le
-   * serveur refuse une séance à venir — et en milieu naturel si le niveau l'exige.
+   * serveur refuse une séance à venir —, en milieu naturel si le niveau
+   * l'exige, et où l'élève est noté présent.
    */
   seancesUtilisables = computed(() => {
     const g = this.grille();
@@ -788,8 +792,24 @@ export class GrilleComponent implements OnDestroy {
     const aujourdhui = dateDuJour();
     return this.seances()
       .filter(s => s.date <= aujourdhui)
-      .filter(s => !g.milieuNaturelExclusif || s.milieu === 'NATUREL');
+      .filter(s => !g.milieuNaturelExclusif || s.milieu === 'NATUREL')
+      .filter(s => this.estPresent(s.id));
   });
+
+  /**
+   * Présent selon le serveur, recouvert par les présences saisies sur cet
+   * appareil et pas encore parties (elles partent avant les notes). Une grille
+   * mise en cache avant cette règle ne connaît pas les présences : on laisse
+   * alors le serveur juger.
+   */
+  private estPresent(seanceId: number): boolean {
+    const g = this.grille();
+    if (!g?.seancesPresent) return true;
+    const cursusId = Number(this.id());
+    const enAttente = this.ecritures.pourSeance(seanceId, 'presence').find(p => p.cursusId === cursusId);
+    if (enAttente) return enAttente.statut === 'PRESENT';
+    return g.seancesPresent.includes(seanceId);
+  }
 
   seanceChoisie = computed(() => this.seances().find(s => s.id === this.seanceId()) ?? null);
 
@@ -998,6 +1018,9 @@ export class GrilleComponent implements OnDestroy {
 
     if (g.milieuNaturelExclusif && seance.milieu !== 'NATUREL') {
       return `Les compétences du ${g.niveau} ne peuvent pas être validées en milieu artificiel.`;
+    }
+    if (!this.estPresent(seance.id)) {
+      return `${g.eleve} n'est pas noté présent à cette séance : renseignez d'abord sa présence.`;
     }
     return null;
   }

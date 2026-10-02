@@ -69,11 +69,29 @@ public class Seance {
     }
 
     /**
+     * Les présences se renseignent jusqu'à une semaine avant la séance (élèves
+     * qui préviennent de leur venue) ; les évaluations et le profil réalisé
+     * attendent, eux, que la séance ait eu lieu.
+     */
+    public static final int JOURS_ANTICIPATION_PRESENCE = 7;
+
+    /**
      * Une séance à venir se prépare (création, fiche de sécurité prévue) mais
-     * ne se remplit pas : ni évaluation, ni présence, ni profil réalisé.
+     * ne se remplit pas : ni évaluation, ni profil réalisé. Les présences font
+     * exception, voir {@link #verifierQueLesPresencesSontOuvertes()}.
      */
     public boolean estAVenir() {
         return dateSeance.isAfter(Calendrier.aujourdhui());
+    }
+
+    /** Refuse les présences d'une séance qui a lieu dans plus d'une semaine. */
+    public void verifierQueLesPresencesSontOuvertes() {
+        if (dateSeance.isAfter(Calendrier.aujourdhui().plusDays(JOURS_ANTICIPATION_PRESENCE))) {
+            throw new RegleMetierException(
+                    "La séance du " + dateSeance.format(Calendrier.DATE_FR)
+                            + " a lieu dans plus d'une semaine : les présences se renseignent au plus "
+                            + JOURS_ANTICIPATION_PRESENCE + " jours à l'avance.");
+        }
     }
 
     /** Refuse de remplir une séance à venir ; {@code quoi} complète le message (« noter une compétence »). */

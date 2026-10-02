@@ -175,7 +175,9 @@ public class RegleDelivranceService {
     private boolean aPlongeEnMilieuNaturel(Long cursusId) {
         return participations.findByCursusId(cursusId).stream()
                 .anyMatch(p -> p.getStatut() == Participation.Statut.PRESENT
-                        && p.getSeance().getMilieu() == Milieu.NATUREL);
+                        && p.getSeance().getMilieu() == Milieu.NATUREL
+                        // Une présence annoncée à l'avance ne vaut pas plongée faite.
+                        && !p.getSeance().estAVenir());
     }
 
     private Utilisateur utilisateur(UtilisateurPrincipal p) {
