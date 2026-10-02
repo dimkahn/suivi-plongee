@@ -15,6 +15,7 @@ export default {
     await legende('D\'abord la séance. Touchez « Changer » pour ouvrir le calendrier.', 0);
     await choisirDerniereSeance();
     await legende('Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.', 4000);
+    await legende('Un élève prévient de sa venue ? Les présences s\'annoncent jusqu\'à une semaine avant la séance.', 4000);
 
     await legende('« Au programme » : ce que la progression du club prévoit ce mois-ci.', 3500);
 
@@ -29,6 +30,7 @@ export default {
     }
     await legende('Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».', 3500, { enHaut: true });
     await legende('Un élève sans choix est absent.', 3000, { enHaut: true });
+    await legende('L\'appel d\'abord : seul un élève noté présent peut être évalué sur la séance.', 3500, { enHaut: true });
 
     await legende('Erreur ? Touchez de nouveau le choix actif pour l\'effacer.', 0, { enHaut: true });
     await toucher(cartes.nth(3).locator('.zone-identite'), { apres: 600 });
