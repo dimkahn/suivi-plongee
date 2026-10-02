@@ -479,6 +479,11 @@ export class ApiService {
     return this.http.put<EleveVue>(`/api/eleves/${id}`, demande);
   }
 
+  /** Ouvert aux moniteurs : seules les tailles de gilet et de combinaison changent. */
+  modifierTaillesEleve(id: number, tailles: { tailleGilet: string | null; tailleCombinaison: string | null }): Observable<EleveVue> {
+    return this.http.put<EleveVue>(`/api/eleves/${id}/tailles`, tailles);
+  }
+
   archiverEleve(id: number): Observable<EleveVue> {
     return this.http.post<EleveVue>(`/api/eleves/${id}/archivage`, {});
   }

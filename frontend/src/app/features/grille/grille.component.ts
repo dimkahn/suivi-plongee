@@ -121,8 +121,32 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                   non renseigné
                 }
               </dd>
-              <dt>Taille de gilet</dt><dd>{{ g.tailleGilet || 'non renseignée' }}</dd>
-              <dt>Taille de combinaison</dt><dd>{{ g.tailleCombinaison || 'non renseignée' }}</dd>
+              @if (tailles(); as t) {
+                <dt><label for="taille-gilet">Taille de gilet</label></dt>
+                <dd><input id="taille-gilet" type="text" maxlength="20" placeholder="ex. M, XS, 12 ans" [(ngModel)]="t.tailleGilet"></dd>
+                <dt><label for="taille-combinaison">Taille de combinaison</label></dt>
+                <dd><input id="taille-combinaison" type="text" maxlength="20" placeholder="ex. T3, L" [(ngModel)]="t.tailleCombinaison"></dd>
+                <dd class="actions-tailles">
+                  <button type="button" class="bouton-principal" (click)="enregistrerTailles(g.eleveId)"
+                          [disabled]="enregistrementTailles() || !reseau.enLigne()">
+                    {{ enregistrementTailles() ? 'Enregistrement…' : 'Enregistrer' }}
+                  </button>
+                  <button type="button" class="bouton-discret" (click)="tailles.set(null)">Annuler</button>
+                  @if (!reseau.enLigne()) { <span class="secondaire">Enregistrement possible au retour du réseau.</span> }
+                </dd>
+              } @else {
+                <dt>Taille de gilet</dt><dd>{{ g.tailleGilet || 'non renseignée' }}</dd>
+                <dt>Taille de combinaison</dt>
+                <dd>
+                  {{ g.tailleCombinaison || 'non renseignée' }}
+                  @if (peutModifierTailles()) {
+                    <button type="button" class="lien-historique modifier-tailles"
+                            (click)="tailles.set({ tailleGilet: g.tailleGilet ?? '', tailleCombinaison: g.tailleCombinaison ?? '' })">
+                      Modifier les tailles
+                    </button>
+                  }
+                </dd>
+              }
               <dt>E-mail</dt><dd>{{ g.email || 'non renseigné' }}</dd>
               <dt>Téléphone</dt><dd>{{ g.telephone || 'non renseigné' }}</dd>
               <dt>Contact d'urgence</dt>
@@ -449,6 +473,11 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
     .infos-supplementaires dt { font-weight: 700; color: var(--craie); }
     .infos-supplementaires dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
     .infos-supplementaires .caci-expire { color: var(--en-cours); }
+    .infos-supplementaires label { margin: 0; font-weight: 700; }
+    .infos-supplementaires input { margin: 0; max-width: 200px; }
+    .actions-tailles { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
+    .actions-tailles .bouton-principal { width: auto; margin-top: 0; }
+    .modifier-tailles { display: block; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -650,6 +679,32 @@ export class GrilleComponent implements OnDestroy {
   /** E-mail, téléphone, contact d'urgence : masqués par défaut, hors du premier coup d'œil. */
   infosSupplementairesOuvertes = signal(false);
 
+  /** Tailles de gilet et de combinaison en cours de modification ; null : simple affichage. */
+  tailles = signal<{ tailleGilet: string; tailleCombinaison: string } | null>(null);
+  enregistrementTailles = signal(false);
+  peutModifierTailles = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
+
+  /** Demande le réseau : pas de file hors ligne pour le dossier de l'élève. */
+  enregistrerTailles(eleveId: number): void {
+    const t = this.tailles();
+    if (!t) return;
+    this.enregistrementTailles.set(true);
+    this.message.set(null);
+    this.api.modifierTaillesEleve(eleveId, {
+      tailleGilet: t.tailleGilet.trim() || null, tailleCombinaison: t.tailleCombinaison.trim() || null
+    }).subscribe({
+      next: async () => {
+        this.tailles.set(null);
+        await this.charger();
+        this.enregistrementTailles.set(false);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.enregistrementTailles.set(false);
+        this.message.set(e.error?.detail ?? "Les tailles n'ont pas pu être enregistrées.");
+      }
+    });
+  }
+
   readonly etats = [
     { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },
     { valeur: 'EN_COURS'   as Statut, libelle: 'En cours',   classe: 'encours' },
@@ -810,6 +865,7 @@ export class GrilleComponent implements OnDestroy {
     this.brouillons.set({});
     this.historiqueSaisonsOuvert.set(false);
     this.historiqueSaisons.set([]);
+    this.tailles.set(null);
     this.chargementHistoriqueSaisons.set(false);
   }
 

@@ -70,6 +70,39 @@ class TaillesEleveTest {
     }
 
     @Test
+    @DisplayName("Un moniteur met à jour les tailles depuis la fiche de suivi, sans toucher au reste du dossier")
+    void moniteurModifieLesTailles() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long id = json.readTree(mvc.perform(post("/api/eleves").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"nom":"Taille","prenom":"Sacha","autorisationLegale":true,
+                                 "telephone":"0600000000","tailleGilet":"S"}"""))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString())
+                .get("id").asLong();
+
+        String moniteur = jeton("e3@club.fr");
+        JsonNode modifie = json.readTree(mvc.perform(put("/api/eleves/" + id + "/tailles")
+                        .header("Authorization", moniteur).contentType(MediaType.APPLICATION_JSON).content("""
+                                {"tailleGilet":" M ","tailleCombinaison":"12 ans"}"""))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(modifie.get("tailleGilet").asText()).isEqualTo("M");
+        assertThat(modifie.get("tailleCombinaison").asText()).isEqualTo("12 ans");
+        assertThat(modifie.get("telephone").asText()).isEqualTo("0600000000");
+        assertThat(modifie.get("prenom").asText()).isEqualTo("Sacha");
+
+        // Le reste du dossier reste réservé aux ADMIN.
+        mvc.perform(put("/api/eleves/" + id).header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"nom":"Taille","prenom":"Autre","autorisationLegale":true}"""))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(put("/api/eleves/" + id + "/tailles").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"tailleGilet":"une taille beaucoup trop longue","tailleCombinaison":null}"""))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
     @DisplayName("Une taille de plus de 20 caractères est refusée")
     void tailleTropLongue() throws Exception {
         mvc.perform(post("/api/eleves").header("Authorization", jeton("presidente@club.fr"))
