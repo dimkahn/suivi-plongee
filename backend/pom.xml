@@ -134,6 +134,16 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
+      <plugin>
+        <!-- Tests à l'heure du club (Calendrier.ZONE_CLUB) : sur une machine en
+             UTC (CI), CURRENT_DATE des données de démo et LocalDate.now() des
+             tests tombaient la veille entre minuit et 2 h, heure de Paris. -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-Duser.timezone=Europe/Paris</argLine>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
