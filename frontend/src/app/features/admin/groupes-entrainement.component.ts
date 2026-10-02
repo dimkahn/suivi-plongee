@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
+import { normaliser } from '../../core/seance-lieu';
 import {
   DemandeEspaceBassin, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue, MoniteurOptionVue, SaisonVue
 } from '../../core/modeles';
@@ -102,6 +103,9 @@ interface FormulaireEspace extends DemandeEspaceBassin {
         Les élèves inscrits en formation ou adhérents sur la saison. La suggestion vient du niveau que
         prépare le groupe (Débutants → N1…) ; un adhérent sans formation se range à la main.
       </p>
+      <label for="recherche-eleve">Rechercher un élève</label>
+      <input id="recherche-eleve" type="search" class="recherche" placeholder="Prénom ou nom…" autocomplete="off"
+             [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
       <div class="barre-eleves">
         <label class="case">
           <input type="checkbox" [ngModel]="sansGroupeSeulement()" (ngModelChange)="sansGroupeSeulement.set($event)">
@@ -114,7 +118,9 @@ interface FormulaireEspace extends DemandeEspaceBassin {
         }
       </div>
       @if (elevesAffiches().length === 0) {
-        <div class="carte vide"><p>Aucun élève à afficher.</p></div>
+        <div class="carte vide">
+          <p>{{ recherche().trim() ? 'Aucun élève ne correspond à « ' + recherche().trim() + ' ».' : 'Aucun élève à afficher.' }}</p>
+        </div>
       }
       <ul class="eleves">
         @for (e of elevesAffiches(); track e.eleveId) {
@@ -262,7 +268,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
     h1 { margin-bottom: var(--pas); }
     h2 { margin: var(--pas-4) 0 var(--pas); font-size: 1.125rem; }
     label, .etiquette { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
-    .saison { max-width: 320px; }
+    .saison, .recherche { max-width: 320px; }
     ul { list-style: none; margin: 0 0 var(--pas-2); padding: 0; display: grid; gap: var(--pas-2); }
     .groupe, .eleve, .espace { padding: var(--pas-2); }
     .entete-groupe, .identite { display: flex; flex-direction: column; gap: 2px; }
@@ -308,12 +314,20 @@ export class GroupesEntrainementComponent {
   formulaire = signal<FormulaireGroupe | null>(null);
   formulaireEspace = signal<FormulaireEspace | null>(null);
   sansGroupeSeulement = signal(false);
+  recherche = signal('');
 
   espacesActifs = computed(() => this.espaces().filter(e => e.actif));
   nombreSansGroupe = computed(() => this.eleves().filter(e => e.groupeId === null).length);
   nombreSuggestions = computed(() => this.eleves().filter(e => e.groupeId === null && e.groupeSuggereId !== null).length);
-  elevesAffiches = computed(() => this.sansGroupeSeulement()
-    ? this.eleves().filter(e => e.groupeId === null) : this.eleves());
+  /** Élèves filtrés par la case « sans groupe » et la recherche (sans tenir compte des accents ni des majuscules). */
+  elevesAffiches = computed(() => {
+    const termes = normaliser(this.recherche()).split(/\s+/).filter(t => t);
+    return this.eleves().filter(e => {
+      if (this.sansGroupeSeulement() && e.groupeId !== null) return false;
+      const nom = normaliser(`${e.prenom} ${e.nom}`);
+      return termes.every(t => nom.includes(t));
+    });
+  });
 
   constructor() {
     void this.chargerTout();
