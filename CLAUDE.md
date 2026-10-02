@@ -164,7 +164,9 @@ par les référents de son groupe ; l'ancien « moniteur référent » propre à
 chaque cursus (`cursus.moniteur_referent_id`) a été supprimé par V36. **Sans rapport avec `GroupePlongeurs`** (V13), qui
 compose les palanquées d'un séjour. **Grille des soirées (lot 2)** :
 `/admin/planning`, `PlanningService`. Une soirée = une date de la saison qui
-porte des séances. `affectation_groupe` (V27) ne stocke que les **écarts** à
+porte au moins une séance en milieu **artificiel** (piscine, fosse) ; une
+date qui n'a que des séances en milieu naturel n'y figure pas (choix du
+club, 2026). `affectation_groupe` (V27) ne stocke que les **écarts** à
 la ligne attitrée (autre espace, fosse avec `profondeur_limitee` = le « F6 »,
 activité, absence) : changer la ligne attitrée suit sur toutes les dates non
 retouchées. `soiree_planning` porte le **responsable de séance**, distinct du
