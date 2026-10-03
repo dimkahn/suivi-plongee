@@ -136,6 +136,68 @@ export interface GrilleVue {
    * Peut manquer dans une grille mise en cache avant cette règle.
    */
   seancesPresent?: number[];
+  /**
+   * Programme d'exercices des séances de la saison (sa formation et les
+   * exercices communs). Peut manquer dans une grille mise en cache avant.
+   */
+  programmes?: ProgrammeGrilleVue[];
+}
+
+export interface ExerciceGrilleVue {
+  intitule: string;
+  consignes: string | null;
+  dureeMinutes: number | null;
+  critereIds: number[];
+}
+
+export interface ProgrammeGrilleVue {
+  seanceId: number;
+  exercices: ExerciceGrilleVue[];
+}
+
+// ----------------------------------------------------------------
+//  Programme d'exercices d'une séance, préparé par un moniteur.
+// ----------------------------------------------------------------
+
+export interface CritereExerciceVue {
+  id: number;
+  blocId: number;
+  bloc: string;
+  savoirFaire: string;
+}
+
+export interface ExerciceVue {
+  id: number;
+  ordre: number;
+  intitule: string;
+  consignes: string | null;
+  dureeMinutes: number | null;
+  /** Null : exercice commun (échauffement, nage), sans critère. */
+  referentielId: number | null;
+  niveau: 'N1' | 'N2' | 'N3' | null;
+  criteres: CritereExerciceVue[];
+}
+
+/** Formation proposée : celles des élèves de la saison (effectif), puis les versions actives du MFT. */
+export interface FormationProgrammeVue {
+  referentielId: number;
+  niveau: 'N1' | 'N2' | 'N3';
+  versionMft: string;
+  eleves: number;
+}
+
+export interface ProgrammeVue {
+  seanceId: number;
+  formations: FormationProgrammeVue[];
+  exercices: ExerciceVue[];
+}
+
+export interface DemandeExercice {
+  intitule: string;
+  consignes: string | null;
+  dureeMinutes: number | null;
+  referentielId: number | null;
+  critereIds: number[];
 }
 
 export interface SeanceVue {

@@ -11,7 +11,8 @@ import {
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
-  DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee
+  DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee,
+  DemandeExercice, ProgrammeVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -241,6 +242,16 @@ export class ApiService {
    */
   roster(): Promise<RosterVue> {
     return this.lireOuRetomber('roster', () => this.http.get<RosterVue>('/api/roster'));
+  }
+
+  /** Programme d'exercices d'une séance (encadrants). Nécessite le réseau. */
+  programmeSeance(seanceId: number): Observable<ProgrammeVue> {
+    return this.http.get<ProgrammeVue>(`/api/seances/${seanceId}/programme`);
+  }
+
+  /** Remplace tout le programme par la liste donnée, dans son ordre. */
+  enregistrerProgrammeSeance(seanceId: number, exercices: DemandeExercice[]): Observable<ProgrammeVue> {
+    return this.http.put<ProgrammeVue>(`/api/seances/${seanceId}/programme`, exercices);
   }
 
   /** Plusieurs élèves présents, un ou plusieurs critères, un même commentaire. Nécessite le réseau. */

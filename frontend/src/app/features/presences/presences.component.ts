@@ -8,8 +8,9 @@ import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { dateDansJours, dateDuJour, dateFr } from '../../core/date-fr';
 import {
-  Atelier, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
+  Atelier, ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
 } from '../../core/modeles';
+import { RouterLink } from '@angular/router';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
@@ -60,7 +61,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
+  imports: [FormsModule, RouterLink, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
             NotationGroupeeComponent],
   template: `
     <h1>Présences</h1>
@@ -121,6 +122,34 @@ function normaliser(texte: string): string {
       <div class="programme">
         <app-programme-seance [progressions]="progressionsAffichees()" [date]="s.date"/>
       </div>
+
+      <section class="exercices" aria-label="Exercices de la séance">
+        <div class="entete-exercices">
+          <h2>Exercices de la séance</h2>
+          <a class="bouton-discret" [routerLink]="['/seances', s.id, 'programme']">
+            {{ exercices().length > 0 ? 'Modifier le programme' : 'Préparer le programme' }}
+          </a>
+        </div>
+        @if (exercices().length > 0) {
+          <ol>
+            @for (e of exercices(); track e.id) {
+              <li>
+                @if (e.niveau) { <span class="niveau">{{ libellePreparation(e.niveau) }}</span> }
+                <strong>{{ e.intitule }}</strong>
+                @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
+                @if (e.criteres.length > 0) {
+                  <span class="secondaire"> · {{ e.criteres.length }} critère(s)</span>
+                }
+                @if (e.consignes) { <p class="secondaire consignes">{{ e.consignes }}</p> }
+              </li>
+            }
+          </ol>
+        } @else if (reseau.enLigne()) {
+          <p class="secondaire">Aucun exercice préparé pour cette séance.</p>
+        } @else {
+          <p class="secondaire">Le programme d'exercices s'affiche avec du réseau.</p>
+        }
+      </section>
     }
 
     @if (seanceId()) {
@@ -151,7 +180,7 @@ function normaliser(texte: string): string {
           @if (seanceChoisie(); as s) {
             <div class="notation-groupee">
               <app-notation-groupee [seance]="s" [presents]="presentsANoter()" [progressions]="progressions()"
-                                    (notee)="message.set($event)" />
+                                    [exercices]="exercices()" (notee)="message.set($event)" />
               <span class="secondaire">Les présents affichés, sur un ou plusieurs critères, chacun avec son commentaire.</span>
             </div>
           }
@@ -225,6 +254,16 @@ function normaliser(texte: string): string {
 
 
     .programme { margin-top: var(--pas-2); }
+    .exercices {
+      margin-top: var(--pas-2); padding: var(--pas-2); border: 1px solid var(--trait);
+      border-radius: var(--r-s); background: var(--fond);
+    }
+    .entete-exercices { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--pas); }
+    .entete-exercices h2 { margin: 0; font-size: 1rem; }
+    .exercices ol { margin: var(--pas) 0 0; padding-left: 1.5rem; display: grid; gap: 4px; }
+    .exercices p { margin: var(--pas) 0 0; }
+    .exercices .consignes { margin: 0; font-size: .875rem; white-space: pre-line; }
+    .exercices .niveau { margin-right: 4px; }
     .filtres {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
       margin: var(--pas-3) 0 var(--pas-2);
@@ -361,6 +400,8 @@ export class PresencesComponent implements OnDestroy {
 
   seances = signal<SeanceVue[]>([]);
   seanceId = signal<number | null>(null);
+  /** Programme d'exercices de la séance choisie. */
+  exercices = signal<ExerciceVue[]>([]);
 
   lignes = signal<LignePresence[]>([]);
   chargement = signal(false);
@@ -495,6 +536,17 @@ export class PresencesComponent implements OnDestroy {
     if (this.seanceId() === s.id) return;
     this.seanceId.set(s.id);
     void this.chargerFeuille(s.id);
+    this.chargerExercices(s.id);
+  }
+
+  /** Facultatif : sans réseau ou sans programme, la liste reste vide. */
+  private chargerExercices(seanceId: number): void {
+    this.exercices.set([]);
+    if (!this.reseau.enLigne()) return;
+    this.api.programmeSeance(seanceId).subscribe({
+      next: p => { if (this.seanceId() === seanceId) this.exercices.set(p.exercices); },
+      error: () => { /* le programme n'est qu'un complément de la feuille */ }
+    });
   }
 
   private async chargerFeuille(seanceId: number): Promise<void> {

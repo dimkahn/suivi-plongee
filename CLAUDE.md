@@ -322,6 +322,18 @@ cours (seul le commentaire s'ajoute), non abordé passe en cours. Élèves d'une
 même version du MFT à la fois, présence déjà enregistrée exigée, tout ou rien
 (un refus nomme l'élève), réseau obligatoire.
 
+**Programme d'exercices d'une séance (2026).** Un moniteur (ou un ADMIN)
+prépare la séance exercice par exercice (`/seances/:id/programme`,
+`ProgrammeSeanceService`, `exercice_seance` + `exercice_seance_critere`,
+V39), avant comme après la séance. Chaque exercice vise une formation
+(`referentiel_id`, null = exercice commun sans critère) et les critères qu'il
+fait travailler. Le programme ne note personne : il se remplace d'un bloc
+(PUT de la liste complète), sans historique, et disparaît avec la séance. La
+fiche de suivi le reçoit avec la grille (`GrilleVue.programmes`, donc
+embarqué hors ligne) et marque les critères travaillés à la séance choisie ;
+la notation groupée propose de cocher d'un coup les critères des exercices,
+chacun gardant son commentaire obligatoire.
+
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via
 `@habilitation.peutEvaluer(#cursusId, authentication)` qui compare le niveau

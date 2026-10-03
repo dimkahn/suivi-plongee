@@ -7,7 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { ReseauService } from '../../core/reseau.service';
-import { BlocReferentielVue, LignePresence, ProgressionVue, ReferentielVue, SeanceVue } from '../../core/modeles';
+import { BlocReferentielVue, ExerciceVue, LignePresence, ProgressionVue, ReferentielVue, SeanceVue } from '../../core/modeles';
 import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
 
@@ -94,8 +94,14 @@ import { periodeDuMois } from '../../core/progression';
           </ul>
 
           <h3>Critères ({{ criteresCoches().size }})</h3>
+          @if (criteresDesExercices().size > 0) {
+            <button type="button" class="bouton-discret reprise-exercices" (click)="cocherExercices()"
+                    [disabled]="exercicesTousCoches()">
+              Cocher les {{ criteresDesExercices().size }} critère(s) des exercices de la séance
+            </button>
+          }
           @for (b of blocs(); track b.id) {
-            <details class="bloc" [open]="auProgramme().has(b.id) || cochesDuBloc(b) > 0">
+            <details class="bloc" [open]="auProgramme().has(b.id) || blocsDesExercices().has(b.id) || cochesDuBloc(b) > 0">
               <summary>
                 <span class="intitule">
                   @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
@@ -112,6 +118,9 @@ import { periodeDuMois } from '../../core/progression';
                              (change)="basculer(criteresCoches, c.id)">
                       <!-- Le critère de réalisation, souvent commun à tout le bloc, alourdirait la liste. -->
                       <span [attr.title]="c.critereRealisation">{{ c.savoirFaire }}</span>
+                      @if (criteresDesExercices().get(c.id); as exercice) {
+                        <span class="programme" [attr.title]="exercice">Exercice</span>
+                      }
                     </label>
                     @if (criteresCoches().has(c.id)) {
                       <textarea class="commentaire" rows="2" required
@@ -182,6 +191,7 @@ import { periodeDuMois } from '../../core/progression';
       text-align: center; font-size: .8125rem; padding: 0 6px;
     }
 
+    .reprise-exercices { margin-bottom: var(--pas); }
     .commentaire {
       display: block; width: 100%; box-sizing: border-box; min-height: 44px;
       margin: 0 0 var(--pas); font: inherit;
@@ -203,6 +213,8 @@ export class NotationGroupeeComponent {
   /** Élèves notés présents (dans le filtre courant de la feuille) : tous cochés au départ. */
   presents = input.required<LignePresence[]>();
   progressions = input<ProgressionVue[]>([]);
+  /** Programme d'exercices de la séance : ses critères peuvent être cochés d'un coup. */
+  exercices = input<ExerciceVue[]>([]);
   /** Message de bilan, affiché par la feuille de présence une fois le dialogue fermé. */
   notee = output<string>();
 
@@ -243,10 +255,16 @@ export class NotationGroupeeComponent {
     const ref = this.referentiel();
     if (!ref) return [];
     const programme = this.auProgramme();
-    // Les blocs au programme du mois de la séance d'abord, dans l'ordre du référentiel.
+    const exercices = this.blocsDesExercices();
+    // Les blocs des exercices de la séance, puis ceux au programme du mois, dans l'ordre du référentiel.
     return [...ref.blocs].sort((a, b) =>
-      Number(programme.has(b.id)) - Number(programme.has(a.id)) || a.ordre - b.ordre);
+      Number(exercices.has(b.id)) - Number(exercices.has(a.id))
+      || Number(programme.has(b.id)) - Number(programme.has(a.id)) || a.ordre - b.ordre);
   });
+
+  blocsDesExercices = computed(() => new Set(this.exercices()
+    .filter(e => e.referentielId === this.referentielId())
+    .flatMap(e => e.criteres.map(c => c.blocId))));
 
   /** Blocs de la période de progression qui couvre le mois de la séance, pour cette formation. */
   auProgramme = computed(() => {
@@ -254,6 +272,29 @@ export class NotationGroupeeComponent {
     const periode = progression ? periodeDuMois(progression.periodes, this.seance().date) : null;
     return new Set(periode?.blocs.map(b => b.id) ?? []);
   });
+
+  /** Critères des exercices de la séance pour la formation affichée → intitulé(s) des exercices. */
+  criteresDesExercices = computed(() => {
+    const parCritere = new Map<number, string>();
+    for (const e of this.exercices()) {
+      if (e.referentielId !== this.referentielId()) continue;
+      for (const c of e.criteres) {
+        const deja = parCritere.get(c.id);
+        parCritere.set(c.id, deja ? `${deja}, ${e.intitule}` : e.intitule);
+      }
+    }
+    return parCritere;
+  });
+
+  exercicesTousCoches = computed(() => {
+    const coches = this.criteresCoches();
+    return [...this.criteresDesExercices().keys()].every(id => coches.has(id));
+  });
+
+  /** Ajoute les critères des exercices aux critères cochés ; chacun attend encore son commentaire. */
+  cocherExercices(): void {
+    this.criteresCoches.set(new Set([...this.criteresCoches(), ...this.criteresDesExercices().keys()]));
+  }
 
   commentairesManquants = computed(() =>
     [...this.criteresCoches()].filter(id => !this.commentaireDe(id).trim()).length);

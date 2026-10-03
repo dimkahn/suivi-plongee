@@ -264,6 +264,29 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
         </section>
       }
 
+      @if (exercicesSeance().length > 0) {
+        <section class="carte programme exercices-seance" aria-label="Exercices de la séance">
+          <p class="periode"><span class="etiquette-programme">Exercices de la séance</span></p>
+          <ol>
+            @for (e of exercicesSeance(); track $index) {
+              <li>
+                <strong>{{ e.intitule }}</strong>
+                @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
+                @if (e.critereIds.length > 0) {
+                  <span class="secondaire"> · {{ e.critereIds.length }} critère(s) travaillé(s)</span>
+                }
+                @if (e.consignes) { <span class="secondaire consignes">{{ e.consignes }}</span> }
+              </li>
+            }
+          </ol>
+          @if (blocsDesExercices().size > 0) {
+            <button type="button" class="bouton-discret" (click)="ouvrirBlocsDesExercices()">
+              Ouvrir les {{ blocsDesExercices().size }} bloc(s) travaillé(s)
+            </button>
+          }
+        </section>
+      }
+
       @for (groupe of groupesAffiches(); track groupe.regroupement ?? '') {
         @if (groupe.regroupement) {
           <h2 class="titre-groupe">{{ groupe.regroupement }}</h2>
@@ -278,8 +301,9 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
               <span class="chevron" aria-hidden="true">{{ blocsOuverts().has(bloc.id) ? '▾' : '▸' }}</span>
               <span class="texte-bloc">
               <span class="intitule">{{ bloc.intitule }}</span>
-              @if (blocsAuProgramme().has(bloc.id) || bloc.enRetard) {
+              @if (blocsAuProgramme().has(bloc.id) || blocsDesExercices().has(bloc.id) || bloc.enRetard) {
                 <span class="pastilles">
+                  @if (blocsDesExercices().has(bloc.id)) { <span class="pastille exercice">Travaillé à la séance</span> }
                   @if (blocsAuProgramme().has(bloc.id)) { <span class="pastille au-programme">Au programme</span> }
                   @if (bloc.enRetard) { <span class="pastille en-retard">En retard</span> }
                 </span>
@@ -345,6 +369,9 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                 <div class="ligne">
                   <div class="libelle">
                     <span>{{ critere.savoirFaire }}</span>
+                    @if (critereExercices().get(critere.id); as exercices) {
+                      <span class="exercice-critere">Exercice : {{ exercices }}</span>
+                    }
                     @if (critere.critereRealisation) {
                       <span class="secondaire">{{ critere.critereRealisation }}</span>
                     }
@@ -532,6 +559,14 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       font-size: .75rem; font-weight: 700; line-height: 1.5;
     }
     .pastille.au-programme { border: 1px solid var(--profond); color: var(--profond); }
+    .pastille.exercice { background: var(--profond); border: 1px solid var(--profond); color: #fff; }
+    /* Programme d'exercices de la séance choisie : ce qui a été travaillé, critère par critère. */
+    .exercices-seance ol { margin: 0; padding-left: 1.5rem; display: grid; gap: 4px; font-size: .9375rem; }
+    .exercices-seance .consignes { display: block; white-space: pre-line; }
+    .exercice-critere {
+      align-self: flex-start; padding: 0 8px; border-radius: var(--r-s);
+      background: var(--profond); color: #fff; font-size: .75rem; font-weight: 700;
+    }
     .pastille.en-retard { background: var(--en-cours-clair); border: 1px solid var(--en-cours); color: var(--en-cours); }
 
     /* Textes du MFT (révisions post-PE20) : la compétence attendue reste visible,
@@ -825,6 +860,39 @@ export class GrilleComponent implements OnDestroy {
   blocsAuProgramme = computed(() => new Set(this.periodeEnCours()?.blocIds ?? []));
   nombreEnRetard = computed(() => this.grille()?.blocs.filter(b => b.enRetard).length ?? 0);
   readonly plage = plageMois;
+
+  /**
+   * Exercices préparés pour la séance choisie, pour la formation de l'élève
+   * et les exercices communs. `programmes` peut manquer dans une grille mise
+   * en cache avant leur arrivée.
+   */
+  exercicesSeance = computed(() => {
+    const seanceId = this.seanceId();
+    return this.grille()?.programmes?.find(p => p.seanceId === seanceId)?.exercices ?? [];
+  });
+
+  /** Critère → intitulé(s) des exercices de la séance qui le travaillent. */
+  critereExercices = computed(() => {
+    const parCritere = new Map<number, string>();
+    for (const e of this.exercicesSeance()) {
+      for (const id of e.critereIds) {
+        const deja = parCritere.get(id);
+        parCritere.set(id, deja ? `${deja}, ${e.intitule}` : e.intitule);
+      }
+    }
+    return parCritere;
+  });
+
+  blocsDesExercices = computed(() => {
+    const criteres = this.critereExercices();
+    return new Set((this.grille()?.blocs ?? [])
+      .filter(b => b.criteres.some(c => criteres.has(c.id)))
+      .map(b => b.id));
+  });
+
+  ouvrirBlocsDesExercices(): void {
+    this.blocsOuverts.set(new Set([...this.blocsOuverts(), ...this.blocsDesExercices()]));
+  }
 
   /** Ajoute les blocs au programme aux blocs dépliés, sans refermer les autres. */
   ouvrirBlocsAuProgramme(): void {

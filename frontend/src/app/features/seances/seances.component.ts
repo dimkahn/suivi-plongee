@@ -301,6 +301,7 @@ function formulaireVide(): FormulaireSeance {
                   <button type="button" class="bouton-discret" (click)="commencerEdition(s)">
                     Modifier
                   </button>
+                  <a class="bouton-discret" [routerLink]="['/seances', s.id, 'programme']">Exercices</a>
                   @if (s.modifiable) {
                     <button type="button" class="bouton-discret danger" (click)="supprimer(s)">
                       Supprimer
