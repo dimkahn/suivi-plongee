@@ -7,7 +7,7 @@ export default {
   resume: 'La feuille de présence d\'une séance en moins d\'une minute : nage, bloc ou théorie pour chaque élève.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, menu, choisirDerniereSeance }) {
+  async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
     await legende('Au bord du bassin : menu, puis « Présences ».', 0);
@@ -19,6 +19,9 @@ export default {
     await legende('Un élève prévient de sa venue ? Les présences s\'annoncent jusqu\'à une semaine avant la séance.', 4000);
 
     await legende('« Au programme » : ce que la progression du club prévoit ce mois-ci.', 3500);
+    await legende('Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.', 0);
+    await page.locator('section.exercices').scrollIntoViewIfNeeded();
+    await pause(3000);
 
     await legende('Filtrez sur votre groupe d\'entraînement.', 0);
     await toucher(page.getByRole('button', { name: 'Débutants', exact: true }), { apres: 1200 });

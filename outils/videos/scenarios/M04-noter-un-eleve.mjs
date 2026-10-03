@@ -26,6 +26,7 @@ export default {
     await page.locator('section.programme').scrollIntoViewIfNeeded();
     await pause(3000);
     await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1200 });
+    await legende('Si son groupe a préparé la séance, ses exercices s\'affichent aussi, et les critères travaillés portent le nom de l\'exercice.', 4500);
 
     await legende('Chaque critère a trois états : non abordé, en cours, acquis.', 0);
     await critere(page, 'Palmage dorsal').scrollIntoViewIfNeeded();
