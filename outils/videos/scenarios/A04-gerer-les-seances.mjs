@@ -25,6 +25,7 @@ export default {
     await vignette();
     await toucher(page.getByRole('button', { name: 'Créer la séance' }), { apres: 1800 });
     await legende('Milieu et profondeur se figent dès qu\'une présence ou une note y est rattachée.', 4000);
+    await legende('« Exercices » ouvre le programme de la séance, préparé groupe par groupe par les encadrants.', 4000);
     await legende('La vue « Calendrier » montre le mois d\'un coup d\'œil.', 0);
     await toucher(page.getByRole('button', { name: 'Calendrier' }), { apres: 2500 });
     await legende('« Séjour de plongée » crée d\'un coup les plongées d\'un séjour (voir « Organiser une sortie »).', 4000);
