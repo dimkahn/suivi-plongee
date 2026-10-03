@@ -8,6 +8,8 @@ import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.domain.Evaluation;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.formation.domain.Cursus;
+import fr.club.plongee.formation.domain.ExerciceSeance;
+import fr.club.plongee.formation.repository.ExerciceSeanceRepository;
 import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.formation.domain.Participation;
 import fr.club.plongee.formation.repository.ParticipationRepository;
@@ -66,7 +68,15 @@ public class GrilleService {
                             /** Progression suivie par la saison pour ce referentiel ; null et liste vide sinon. */
                             String progression, List<PeriodeGrilleVue> periodes,
                             /** Seances ou l'eleve est note present : les seules proposees pour le noter. */
-                            List<Long> seancesPresent) {}
+                            List<Long> seancesPresent,
+                            /** Programme d'exercices des seances de la saison : sa formation et les exercices communs. */
+                            List<ProgrammeGrilleVue> programmes) {}
+
+    /** Un exercice du programme d'une seance, vu depuis la fiche d'un eleve. */
+    public record ExerciceGrilleVue(String intitule, String consignes, Integer dureeMinutes, List<Long> critereIds) {}
+
+    /** Seulement les seances qui ont au moins un exercice. */
+    public record ProgrammeGrilleVue(Long seanceId, List<ExerciceGrilleVue> exercices) {}
 
     /** Vue globale d'un élève : une colonne par séance, comme l'onglet individuel du tableur. */
     public record SeanceEnTeteVue(Long id, LocalDate date, String lieu, String milieu) {}
@@ -86,13 +96,15 @@ public class GrilleService {
     private final SeanceRepository seances;
     private final PhotoEleveRepository photos;
     private final ProgressionTypeRepository progressions;
+    private final ExerciceSeanceRepository exercices;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
                          ParticipationRepository participations,
                          SeanceRepository seances,
                          PhotoEleveRepository photos,
-                         ProgressionTypeRepository progressions) {
+                         ProgressionTypeRepository progressions,
+                         ExerciceSeanceRepository exercices) {
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
@@ -100,6 +112,7 @@ public class GrilleService {
         this.seances = seances;
         this.photos = photos;
         this.progressions = progressions;
+        this.exercices = exercices;
     }
 
     @Transactional(readOnly = true)
@@ -168,7 +181,20 @@ public class GrilleService {
                 acquisTotal, total, blocs,
                 progression == null ? null : progression.getNom(),
                 progression == null ? List.of() : periodesVue(progression),
-                participations.seancesOuPresent(cursusId));
+                participations.seancesOuPresent(cursusId),
+                programmes(cursus));
+    }
+
+    private List<ProgrammeGrilleVue> programmes(Cursus cursus) {
+        Map<Long, List<ExerciceGrilleVue>> parSeance = new java.util.LinkedHashMap<>();
+        for (ExerciceSeance e : exercices.pourLaFiche(cursus.getSaison().getId(), cursus.getReferentiel().getId())) {
+            parSeance.computeIfAbsent(e.getSeance().getId(), k -> new ArrayList<>())
+                    .add(new ExerciceGrilleVue(e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
+                            e.getCriteres().stream().map(Critere::getId).toList()));
+        }
+        return parSeance.entrySet().stream()
+                .map(en -> new ProgrammeGrilleVue(en.getKey(), en.getValue()))
+                .toList();
     }
 
     private static List<PeriodeGrilleVue> periodesVue(ProgressionType p) {

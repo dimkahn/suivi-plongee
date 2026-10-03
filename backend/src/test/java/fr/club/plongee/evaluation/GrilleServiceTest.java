@@ -41,12 +41,14 @@ class GrilleServiceTest {
     @Mock SeanceRepository seances;
     @Mock PhotoEleveRepository photos;
     @Mock ProgressionTypeRepository progressions;
+    @Mock ExerciceSeanceRepository exercices;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos, progressions);
+        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos,
+                progressions, exercices);
     }
 
     @Test

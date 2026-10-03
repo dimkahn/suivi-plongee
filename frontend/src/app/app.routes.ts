@@ -51,6 +51,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/presences/presences.component')
       .then(m => m.PresencesComponent)
   },
+  {
+    path: 'seances/:id/programme',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/seances/programme-exercices.component')
+      .then(m => m.ProgrammeExercicesComponent)
+  },
   // Anciennes adresses, avant le passage des séances dans l'administration.
   { path: 'seances', pathMatch: 'full', redirectTo: 'admin/seances' },
   { path: 'seances/generer', pathMatch: 'full', redirectTo: 'admin/seances/generer' },
