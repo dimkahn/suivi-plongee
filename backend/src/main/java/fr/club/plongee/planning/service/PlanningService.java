@@ -89,8 +89,12 @@ public class PlanningService {
                               List<EspacePlanningVue> espaces, List<SoireeVue> soirees, List<Long> mesGroupeIds,
                               Long utilisateurId) {}
 
-    public record DemandeCase(@NotNull TypeCase type, Long espaceId, @Min(1) Integer profondeurLimitee,
-                              @Size(max = 80) String activite) {}
+    /**
+     * {@code espaceIds} : une ou plusieurs lignes d'eau, ou la fosse seule ;
+     * {@code espaceId} reste accepté pour un seul espace.
+     */
+    public record DemandeCase(@NotNull TypeCase type, Long espaceId, List<Long> espaceIds,
+                              @Min(1) Integer profondeurLimitee, @Size(max = 80) String activite) {}
 
     public record DemandeSoiree(Long responsableId, @Size(max = 200) String note) {}
 
@@ -160,15 +164,15 @@ public class PlanningService {
             a.setGroupe(groupe);
             a.setDateSoiree(date);
             a.setEspace(null);
+            a.getLignesSupplementaires().clear();
             a.setProfondeurLimitee(null);
             a.setActivite(null);
             switch (demande.type()) {
                 case ESPACE -> {
-                    if (demande.espaceId() == null) throw new RegleMetierException("Choisissez une ligne d'eau ou la fosse.");
-                    EspaceBassin e = espaces.findById(demande.espaceId())
-                            .orElseThrow(() -> new RessourceIntrouvableException("Espace introuvable"));
+                    List<EspaceBassin> choisis = espacesDemandes(demande);
                     a.setType(AffectationGroupe.Type.ESPACE);
-                    a.setEspace(e);
+                    a.setEspace(choisis.get(0));
+                    a.getLignesSupplementaires().addAll(choisis.subList(1, choisis.size()));
                     a.setProfondeurLimitee(demande.profondeurLimitee());
                 }
                 case ACTIVITE -> {
@@ -183,6 +187,28 @@ public class PlanningService {
             affectations.save(a);
         }
         return soiree(contexte(saison), date);
+    }
+
+    /**
+     * Espaces d'une consigne « espace », dans l'ordre du bassin : une ou
+     * plusieurs lignes d'eau, ou la fosse seule (sa profondeur limitée ne
+     * vaut que pour elle).
+     */
+    private List<EspaceBassin> espacesDemandes(DemandeCase demande) {
+        Set<Long> ids = new LinkedHashSet<>();
+        if (demande.espaceIds() != null) demande.espaceIds().stream().filter(Objects::nonNull).forEach(ids::add);
+        if (ids.isEmpty() && demande.espaceId() != null) ids.add(demande.espaceId());
+        if (ids.isEmpty()) throw new RegleMetierException("Choisissez une ou plusieurs lignes d'eau, ou la fosse.");
+        List<EspaceBassin> choisis = new ArrayList<>();
+        for (Long id : ids) {
+            choisis.add(espaces.findById(id).orElseThrow(() -> new RessourceIntrouvableException("Espace introuvable")));
+        }
+        if (choisis.size() > 1 && choisis.stream().anyMatch(e -> e.getType() != EspaceBassin.Type.LIGNE)) {
+            throw new RegleMetierException("Plusieurs espaces ne se choisissent que parmi les lignes d'eau : "
+                    + "la fosse se donne seule.");
+        }
+        choisis.sort(Comparator.comparingInt(EspaceBassin::getOrdre).thenComparing(EspaceBassin::getId));
+        return choisis;
     }
 
     /** Responsable de séance et note de la soirée ; les deux vides effacent la soirée. */
@@ -331,8 +357,8 @@ public class PlanningService {
 
     /**
      * Sans consigne pour la soirée, le groupe est à toutes ses lignes
-     * attitrées ; une consigne « espace » le met ce soir-là à un seul endroit
-     * (la fosse, une autre ligne) à la place de toutes.
+     * attitrées ; une consigne « espace » le met ce soir-là à la place sur
+     * les espaces qu'elle désigne (la fosse, ou une ou plusieurs lignes).
      */
     static CaseVue caseVue(GroupeEntrainement g, AffectationGroupe a) {
         if (a == null) {
@@ -346,10 +372,16 @@ public class PlanningService {
                     null, null, g.libelleEspacesAttitres());
         }
         return switch (a.getType()) {
-            case ESPACE -> new CaseVue(g.getId(), TypeCase.ESPACE.name(), a.getEspace().getId(), a.getEspace().getNom(),
-                    a.getEspace().getType().name(), List.of(espaceCase(a.getEspace())), a.getProfondeurLimitee(), null,
-                    a.getEspace().getNom() + (a.getProfondeurLimitee() == null ? ""
-                            : " (limitée à " + a.getProfondeurLimitee() + " m)"));
+            case ESPACE -> {
+                List<EspaceBassin> occupes = a.espacesOrdonnes();
+                EspaceBassin premier = occupes.get(0);
+                yield new CaseVue(g.getId(), TypeCase.ESPACE.name(), premier.getId(), premier.getNom(),
+                        premier.getType().name(), occupes.stream().map(PlanningService::espaceCase).toList(),
+                        a.getProfondeurLimitee(), null,
+                        occupes.stream().map(EspaceBassin::getNom).collect(Collectors.joining(" + "))
+                                + (a.getProfondeurLimitee() == null ? ""
+                                : " (limitée à " + a.getProfondeurLimitee() + " m)"));
+            }
             case ACTIVITE -> new CaseVue(g.getId(), TypeCase.ACTIVITE.name(), null, null, null, List.of(), null,
                     a.getActivite(), a.getActivite());
             case ABSENT -> new CaseVue(g.getId(), TypeCase.ABSENT.name(), null, null, null, List.of(), null, null, "Absent");

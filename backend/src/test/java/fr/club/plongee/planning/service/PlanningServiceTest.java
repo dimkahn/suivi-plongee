@@ -61,6 +61,25 @@ class PlanningServiceTest {
     }
 
     @Test
+    @DisplayName("Une consigne peut mettre un groupe sur plusieurs lignes ce soir-là, signalées si déjà prises")
+    void consigneSurPlusieursLignes() {
+        GroupeEntrainement a = groupe(1L, "Débutants", "N1", FOSSE, 2);
+        GroupeEntrainement b = groupe(2L, "Prépa N2", "N2", LIGNE_4, 2);
+        AffectationGroupe consigne = new AffectationGroupe();
+        consigne.setType(AffectationGroupe.Type.ESPACE);
+        consigne.setEspace(LIGNE_4);
+        consigne.getLignesSupplementaires().add(LIGNE_3);
+
+        CaseVue c = PlanningService.caseVue(a, consigne);
+        assertThat(c.libelle()).isEqualTo("Ligne 3 + Ligne 4");
+        assertThat(c.espaceId()).isEqualTo(3L);
+        assertThat(c.espaces()).extracting(PlanningService.EspaceCaseVue::id).containsExactly(3L, 4L);
+
+        assertThat(PlanningService.avertissements(List.of(a, b), List.of(c, PlanningService.caseVue(b, null)), CAPACITES))
+                .containsExactly("Ligne 4 donnée à plusieurs groupes : Débutants, Prépa N2.");
+    }
+
+    @Test
     @DisplayName("Une consigne de fosse limitée s'affiche avec sa profondeur")
     void caseFosseLimitee() {
         GroupeEntrainement g = groupe(1L, "Débutants", "N1", LIGNE_3, 0);

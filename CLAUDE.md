@@ -172,9 +172,11 @@ date qui n'a que des séances en milieu naturel n'y figure pas (choix du
 club, 2026). `affectation_groupe` (V27) ne stocke que les **écarts** à
 la ligne attitrée (autre espace, fosse avec `profondeur_limitee` = le « F6 »,
 activité, absence) : changer la ligne attitrée suit sur toutes les dates non
-retouchées. Un écart « espace » met le groupe à **un seul** endroit ce
-soir-là, à la place de toutes ses lignes attitrées (`CaseVue.espaces`
-liste tous les espaces occupés, lus par les avertissements). `soiree_planning` porte le **responsable de séance**, distinct du
+retouchées. Un écart « espace » met le groupe ce soir-là, à la place de
+toutes ses lignes attitrées, soit sur **une ou plusieurs lignes** cochées
+(V38 : `espace_id` garde la première, `affectation_groupe_ligne` les
+autres), soit dans la fosse **seule** (règle du service) ; `CaseVue.espaces`
+liste tous les espaces occupés, lus par les avertissements. `soiree_planning` porte le **responsable de séance**, distinct du
 DP de la fiche de sécurité (E3 minimum, choisi à part ; `seance.dp_id` reste
 inutilisé). Avertissements calculés par le serveur, jamais bloquants : fosse
 au-delà de sa capacité (élèves + encadrants attitrés), groupe N1 ou encadré

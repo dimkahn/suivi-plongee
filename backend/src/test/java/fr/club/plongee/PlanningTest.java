@@ -73,6 +73,44 @@ class PlanningTest {
     }
 
     @Test
+    @DisplayName("Un soir donné, un groupe peut être mis sur plusieurs lignes d'eau, mais la fosse se donne seule")
+    void plusieursLignesUnSoir() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        JsonNode p = planning(admin);
+        long saison = p.get("saisonId").asLong();
+        String date = p.get("soirees").get(2).get("date").asText();
+        long groupe = p.get("groupes").get(0).get("id").asLong();
+        long ligne1 = 0, ligne2 = 0, fosse = 0;
+        for (JsonNode e : p.get("espaces")) {
+            switch (e.get("nom").asText()) {
+                case "Ligne 1" -> ligne1 = e.get("id").asLong();
+                case "Ligne 2" -> ligne2 = e.get("id").asLong();
+                default -> { if (e.get("type").asText().equals("FOSSE")) fosse = e.get("id").asLong(); }
+            }
+        }
+        String url = "/api/planning/saison/" + saison + "/soirees/" + date + "/groupes/" + groupe;
+
+        JsonNode soiree = json.readTree(mvc.perform(put(url).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"ESPACE\",\"espaceIds\":[" + ligne2 + "," + ligne1 + "]}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        JsonNode c = soiree.get("cases").get(0);
+        assertThat(c.get("type").asText()).isEqualTo("ESPACE");
+        assertThat(c.get("libelle").asText()).isEqualTo("Ligne 1 + Ligne 2");
+        assertThat(c.get("espaces")).hasSize(2);
+        assertThat(planning(admin).get("soirees").get(2).get("cases").get(0).get("libelle").asText())
+                .isEqualTo("Ligne 1 + Ligne 2");
+
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"ESPACE\",\"espaceIds\":[" + ligne1 + "," + fosse + "]}"))
+                .andExpect(status().isUnprocessableEntity());
+
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"ATTITREE\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("Le responsable de séance d'une soirée est un encadrant ; les encadrants consultent sans écrire")
     void responsableDeSeanceEtDroits() throws Exception {
         String admin = jeton("presidente@club.fr");

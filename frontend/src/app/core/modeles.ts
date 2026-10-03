@@ -737,6 +737,8 @@ export interface PlanningVue {
 export interface DemandeCasePlanning {
   type: 'ATTITREE' | 'ESPACE' | 'ACTIVITE' | 'ABSENT';
   espaceId?: number | null;
+  /** Une ou plusieurs lignes d'eau (la fosse se donne seule, par espaceId). */
+  espaceIds?: number[];
   profondeurLimitee?: number | null;
   activite?: string | null;
 }
