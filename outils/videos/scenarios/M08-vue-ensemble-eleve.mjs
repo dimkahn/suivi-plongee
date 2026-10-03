@@ -1,4 +1,5 @@
 // M8 — Vue d'ensemble d'un élève : matrice et fiche PDF.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille } from '../grille.mjs';
 
 export default {

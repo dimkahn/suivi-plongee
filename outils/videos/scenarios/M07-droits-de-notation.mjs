@@ -1,4 +1,5 @@
 // M7 — Ce qu'on a le droit de noter.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille } from '../grille.mjs';
 
 export default {

@@ -1,4 +1,5 @@
 // X1 — L'appli en 3 minutes.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere } from '../grille.mjs';
 

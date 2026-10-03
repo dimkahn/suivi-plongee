@@ -1,4 +1,5 @@
 // M6 — Valider une compétence (un bloc entier).
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, ouvrirBloc, bloc, critere, noter } from '../grille.mjs';
 
 export default {

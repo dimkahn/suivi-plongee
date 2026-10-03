@@ -1,4 +1,5 @@
 // D3 — La fiche de gestion d'un EPI.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

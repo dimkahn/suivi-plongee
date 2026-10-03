@@ -1,4 +1,5 @@
 // M3 — Faire l'appel d'une séance.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',

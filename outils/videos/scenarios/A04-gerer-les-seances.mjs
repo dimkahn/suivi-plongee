@@ -1,4 +1,5 @@
 // A4 — Gérer les séances à la main.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
