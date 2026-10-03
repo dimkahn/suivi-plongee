@@ -126,24 +126,28 @@ function normaliser(texte: string): string {
       <section class="exercices" aria-label="Exercices de la séance">
         <div class="entete-exercices">
           <h2>Exercices de la séance</h2>
-          <a class="bouton-discret" [routerLink]="['/seances', s.id, 'programme']">
-            {{ exercices().length > 0 ? 'Modifier le programme' : 'Préparer le programme' }}
+          <a class="bouton-discret" [routerLink]="['/seances', s.id, 'programme']"
+             [queryParams]="lienProgramme()">
+            Préparer le programme
           </a>
         </div>
-        @if (exercices().length > 0) {
-          <ol>
-            @for (e of exercices(); track e.id) {
-              <li>
-                @if (e.niveau) { <span class="niveau">{{ libellePreparation(e.niveau) }}</span> }
-                <strong>{{ e.intitule }}</strong>
-                @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
-                @if (e.criteres.length > 0) {
-                  <span class="secondaire"> · {{ e.criteres.length }} critère(s)</span>
-                }
-                @if (e.consignes) { <p class="secondaire consignes">{{ e.consignes }}</p> }
-              </li>
-            }
-          </ol>
+        @if (exercicesAffiches().length > 0) {
+          @for (p of programmesAffiches(); track p.groupeId) {
+            <h3>{{ p.titre }}</h3>
+            <ol>
+              @for (e of p.exercices; track e.id) {
+                <li>
+                  @if (e.niveau) { <span class="niveau">{{ libellePreparation(e.niveau) }}</span> }
+                  <strong>{{ e.intitule }}</strong>
+                  @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
+                  @if (e.criteres.length > 0) {
+                    <span class="secondaire"> · {{ e.criteres.length }} critère(s)</span>
+                  }
+                  @if (e.consignes) { <p class="secondaire consignes">{{ e.consignes }}</p> }
+                </li>
+              }
+            </ol>
+          }
         } @else if (reseau.enLigne()) {
           <p class="secondaire">Aucun exercice préparé pour cette séance.</p>
         } @else {
@@ -180,7 +184,7 @@ function normaliser(texte: string): string {
           @if (seanceChoisie(); as s) {
             <div class="notation-groupee">
               <app-notation-groupee [seance]="s" [presents]="presentsANoter()" [progressions]="progressions()"
-                                    [exercices]="exercices()" (notee)="message.set($event)" />
+                                    [exercices]="exercicesAffiches()" (notee)="message.set($event)" />
               <span class="secondaire">Les présents affichés, sur un ou plusieurs critères, chacun avec son commentaire.</span>
             </div>
           }
@@ -260,6 +264,7 @@ function normaliser(texte: string): string {
     }
     .entete-exercices { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--pas); }
     .entete-exercices h2 { margin: 0; font-size: 1rem; }
+    .exercices h3 { margin: var(--pas-2) 0 0; font-size: .9375rem; color: var(--profond); }
     .exercices ol { margin: var(--pas) 0 0; padding-left: 1.5rem; display: grid; gap: 4px; }
     .exercices p { margin: var(--pas) 0 0; }
     .exercices .consignes { margin: 0; font-size: .875rem; white-space: pre-line; }
@@ -400,8 +405,36 @@ export class PresencesComponent implements OnDestroy {
 
   seances = signal<SeanceVue[]>([]);
   seanceId = signal<number | null>(null);
-  /** Programme d'exercices de la séance choisie. */
+  /** Programmes d'exercices de la séance choisie : le commun et ceux des groupes. */
   exercices = signal<ExerciceVue[]>([]);
+
+  /** Filtrée sur un groupe : son programme et le commun ; sinon tous. */
+  exercicesAffiches = computed(() => {
+    const filtre = this.groupeFiltre();
+    return typeof filtre === 'number'
+      ? this.exercices().filter(e => e.groupeId == null || e.groupeId === filtre)
+      : this.exercices();
+  });
+
+  /** Le programme commun d'abord, puis un programme par groupe, dans l'ordre du planning. */
+  programmesAffiches = computed(() => {
+    const exercices = this.exercicesAffiches();
+    // Un groupe absent de la liste chargée (autre saison, liste indisponible) garde ses exercices.
+    const ids = new Set<number | null>([null, ...this.groupes().map(g => g.id), ...exercices.map(e => e.groupeId)]);
+    const programmes = [...ids].map(groupeId => ({
+      groupeId,
+      titre: groupeId == null ? 'Programme commun'
+        : this.groupes().find(g => g.id === groupeId)?.nom ?? 'Groupe',
+      exercices: exercices.filter(e => e.groupeId === groupeId)
+    }));
+    return programmes.filter(p => p.exercices.length > 0);
+  });
+
+  /** L'éditeur s'ouvre sur le groupe filtré. */
+  lienProgramme = computed(() => {
+    const filtre = this.groupeFiltre();
+    return typeof filtre === 'number' ? { groupe: filtre } : {};
+  });
 
   lignes = signal<LignePresence[]>([]);
   chargement = signal(false);

@@ -1,5 +1,6 @@
 package fr.club.plongee.formation.domain;
 
+import fr.club.plongee.planning.domain.GroupeEntrainement;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import jakarta.persistence.*;
@@ -11,7 +12,8 @@ import java.util.Set;
  * Un exercice du programme d'une séance. Rattaché à une formation (version
  * du MFT) et aux critères qu'il fait travailler, il éclaire la fiche de suivi
  * des élèves présents ; sans formation, c'est un exercice commun (échauffement,
- * nage) sans critère. Pas d'historique : le programme se remplace d'un bloc.
+ * nage) sans critère. Chaque groupe d'entraînement a son propre programme
+ * pour la séance. Pas d'historique : le programme se remplace d'un bloc.
  */
 @Entity
 public class ExerciceSeance {
@@ -23,6 +25,11 @@ public class ExerciceSeance {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "seance_id")
     private Seance seance;
+
+    /** Groupe d'entraînement qui prépare cet exercice ; null : programme commun à toute la séance. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "groupe_id")
+    private GroupeEntrainement groupe;
 
     /** Null : exercice commun à toutes les formations, sans critère. */
     @ManyToOne(fetch = FetchType.LAZY)
@@ -56,6 +63,14 @@ public class ExerciceSeance {
 
     public void setSeance(Seance seance) {
         this.seance = seance;
+    }
+
+    public GroupeEntrainement getGroupe() {
+        return groupe;
+    }
+
+    public void setGroupe(GroupeEntrainement groupe) {
+        this.groupe = groupe;
     }
 
     public Referentiel getReferentiel() {

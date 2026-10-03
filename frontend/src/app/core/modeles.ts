@@ -147,6 +147,8 @@ export interface ExerciceGrilleVue {
   intitule: string;
   consignes: string | null;
   dureeMinutes: number | null;
+  /** Groupe d'entraînement qui l'a préparé ; null : programme commun de la séance. */
+  groupe?: string | null;
   critereIds: number[];
 }
 
@@ -168,6 +170,8 @@ export interface CritereExerciceVue {
 
 export interface ExerciceVue {
   id: number;
+  /** Groupe d'entraînement qui l'a préparé ; null : programme commun de la séance. */
+  groupeId: number | null;
   ordre: number;
   intitule: string;
   consignes: string | null;
@@ -186,9 +190,24 @@ export interface FormationProgrammeVue {
   eleves: number;
 }
 
+/**
+ * Groupe d'entraînement de la saison de la séance. `modifiable` : l'utilisateur
+ * prépare son programme (encadrant attitré ou admin) ; `mien` : il l'encadre.
+ */
+export interface GroupeProgrammeVue {
+  id: number;
+  nom: string;
+  niveauPrepare: 'N1' | 'N2' | 'N3' | null;
+  eleves: number;
+  modifiable: boolean;
+  mien: boolean;
+}
+
 export interface ProgrammeVue {
   seanceId: number;
   formations: FormationProgrammeVue[];
+  groupes: GroupeProgrammeVue[];
+  /** Tous les programmes de la séance : le commun et ceux des groupes. */
   exercices: ExerciceVue[];
 }
 

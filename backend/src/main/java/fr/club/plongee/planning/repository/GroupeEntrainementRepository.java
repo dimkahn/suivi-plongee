@@ -16,6 +16,13 @@ public interface GroupeEntrainementRepository extends JpaRepository<GroupeEntrai
            """)
     List<GroupeEntrainement> parSaison(@Param("saisonId") Long saisonId);
 
+    /** Le groupe d'un élève sur une saison : au plus un (règle de GroupeEntrainementService). */
+    @Query("""
+           select g.id from GroupeEntrainement g join g.eleves e
+            where g.saison.id = :saisonId and e.id = :eleveId
+           """)
+    List<Long> groupeDeLEleve(@Param("saisonId") Long saisonId, @Param("eleveId") Long eleveId);
+
     @Query("""
            select count(g) > 0 from GroupeEntrainement g join g.espacesAttitres e
             where e.id = :espaceId
