@@ -28,8 +28,9 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           (Code du sport, annexe III-27) : à conserver trois ans après la mise au rebut.
         </p>
       </div>
-      @if (auth.gereMateriel()) {
       <div class="actions">
+        <a routerLink="/materiel/scanner" class="bouton-principal">Scanner une étiquette</a>
+      @if (auth.gereMateriel()) {
         <a routerLink="/materiel/prets" class="bouton-principal">Prêts</a>
         <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
         <a routerLink="/materiel/nouveau" class="bouton-discret">Ajouter un équipement</a>
@@ -42,8 +43,8 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
                 title="Blocs et gilets, au même format que le classeur importé">
           {{ exportEnCours() ? 'Export en cours…' : 'Exporter le classeur Excel' }}
         </button>
-      </div>
       }
+      </div>
     </div>
     @if (!auth.gereMateriel()) {
       <p class="secondaire">En tant que TIV, ouvrez un bloc pour remplir sa fiche d'inspection.</p>
@@ -126,6 +127,12 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           <input type="checkbox" [ngModel]="avecRebut()" (ngModelChange)="avecRebut.set($event)">
           Afficher le matériel au rebut
         </label>
+        @if (filtres().length > 0) {
+          <a routerLink="/materiel/etiquettes" [queryParams]="{ ids: idsFiltres() }" class="bouton-discret etiquettes"
+             title="Une étiquette par équipement affiché ci-dessous : filtrez d'abord pour n'imprimer que ceux-là">
+            Imprimer les étiquettes QR code ({{ filtres().length }})
+          </a>
+        }
       </div>
 
       @if (filtres().length === 0) {
@@ -196,6 +203,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
     .masque { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; }
     .case input { width: auto; }
+    .etiquettes { display: inline-flex; align-items: center; justify-self: start; text-decoration: none; color: var(--encre); }
 
     .liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
@@ -266,6 +274,8 @@ export class InventaireComponent {
       && (!r || [e.reference, e.ancienneReference, e.marque, e.modele, e.numeroSerie, e.taille, e.proprietaire]
         .some(v => v != null && normaliser(v).includes(r))));
   });
+
+  idsFiltres = computed(() => this.filtres().map(e => e.id).join(','));
 
   constructor() {
     void this.charger();

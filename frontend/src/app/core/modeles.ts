@@ -839,6 +839,17 @@ export interface RapportImportMateriel {
   remarques: string[];
 }
 
+/** Une étiquette à coller sur le matériel : son QR code ouvre la fiche. */
+export interface EtiquetteMateriel {
+  equipementId: number;
+  typeLibelle: string;
+  reference: string;
+  ancienneReference: string | null;
+  adresse: string;
+  /** Lignes du QR code, « 1 » = carré noir, sans marge autour. */
+  modules: string[];
+}
+
 export type TypeIntervention ='INSPECTION_VISUELLE' | 'REQUALIFICATION' | 'REVISION' | 'REPARATION'
   | 'REMPLACEMENT_PIECE' | 'CONTROLE' | 'DESINFECTION' | 'INCIDENT';
 

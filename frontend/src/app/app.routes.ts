@@ -169,6 +169,18 @@ export const routes: Routes = [
       .then(m => m.PretsComponent)
   },
   {
+    path: 'materiel/etiquettes',
+    canActivate: [gardeConnecte, gardeInspectionBlocs],
+    loadComponent: () => import('./features/materiel/etiquettes.component')
+      .then(m => m.EtiquettesMaterielComponent)
+  },
+  {
+    path: 'materiel/scanner',
+    canActivate: [gardeConnecte, gardeInspectionBlocs],
+    loadComponent: () => import('./features/materiel/scanner.component')
+      .then(m => m.ScannerMaterielComponent)
+  },
+  {
     path: 'materiel/tiv/:inspectionId',
     canActivate: [gardeConnecte, gardeInspectionBlocs],
     loadComponent: () => import('./features/materiel/rapport-inspection-tiv.component')

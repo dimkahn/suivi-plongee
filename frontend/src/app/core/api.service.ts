@@ -10,7 +10,7 @@ import {
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
-  FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
+  EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
@@ -903,6 +903,24 @@ export class ApiService {
   /** Blocs et gilets au format du classeur ci-dessus, réimportable. */
   exporterClasseurMateriel(): Observable<Blob> {
     return this.http.get('/api/materiel/export.xlsx', { responseType: 'blob' });
+  }
+
+  /** Les QR codes reprennent l'adresse du site telle que le navigateur la voit. */
+  etiquettesMateriel(ids: number[]): Observable<EtiquetteMateriel[]> {
+    return this.http.get<EtiquetteMateriel[]>('/api/materiel/etiquettes',
+      { params: { ids: ids.join(','), origine: window.location.origin } });
+  }
+
+  /** Le texte d'un QR code lu par le téléphone : adresse d'une fiche ou référence du club. */
+  retrouverEquipementParQrCode(contenu: string): Observable<{ equipementId: number }> {
+    return this.http.post<{ equipementId: number }>('/api/materiel/qr-code', { contenu });
+  }
+
+  /** Une photo de l'étiquette, lue par le serveur quand le navigateur ne sait pas lire un QR code. */
+  retrouverEquipementSurPhoto(fichier: File): Observable<{ equipementId: number }> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post<{ equipementId: number }>('/api/materiel/qr-code/photo', donnees);
   }
 
   // ----------------------------------------------------------------
