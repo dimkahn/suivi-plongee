@@ -271,6 +271,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
             @for (e of exercicesSeance(); track $index) {
               <li>
                 <strong>{{ e.intitule }}</strong>
+                <span class="secondaire"> · {{ e.groupe ?? 'programme commun' }}</span>
                 @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
                 @if (e.critereIds.length > 0) {
                   <span class="secondaire"> · {{ e.critereIds.length }} critère(s) travaillé(s)</span>
@@ -862,8 +863,9 @@ export class GrilleComponent implements OnDestroy {
   readonly plage = plageMois;
 
   /**
-   * Exercices préparés pour la séance choisie, pour la formation de l'élève
-   * et les exercices communs. `programmes` peut manquer dans une grille mise
+   * Exercices préparés pour la séance choisie par le groupe de l'élève et
+   * dans le programme commun (tri fait par le serveur), pour sa formation et
+   * les exercices communs. `programmes` peut manquer dans une grille mise
    * en cache avant leur arrivée.
    */
   exercicesSeance = computed(() => {

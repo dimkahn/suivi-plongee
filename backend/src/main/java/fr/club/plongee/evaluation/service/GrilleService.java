@@ -10,6 +10,7 @@ import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.ExerciceSeance;
 import fr.club.plongee.formation.repository.ExerciceSeanceRepository;
+import fr.club.plongee.planning.repository.GroupeEntrainementRepository;
 import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.formation.domain.Participation;
 import fr.club.plongee.formation.repository.ParticipationRepository;
@@ -73,7 +74,9 @@ public class GrilleService {
                             List<ProgrammeGrilleVue> programmes) {}
 
     /** Un exercice du programme d'une seance, vu depuis la fiche d'un eleve. */
-    public record ExerciceGrilleVue(String intitule, String consignes, Integer dureeMinutes, List<Long> critereIds) {}
+    public record ExerciceGrilleVue(String intitule, String consignes, Integer dureeMinutes,
+                                    /** Groupe d'entrainement qui l'a prepare ; null : programme commun. */
+                                    String groupe, List<Long> critereIds) {}
 
     /** Seulement les seances qui ont au moins un exercice. */
     public record ProgrammeGrilleVue(Long seanceId, List<ExerciceGrilleVue> exercices) {}
@@ -97,6 +100,7 @@ public class GrilleService {
     private final PhotoEleveRepository photos;
     private final ProgressionTypeRepository progressions;
     private final ExerciceSeanceRepository exercices;
+    private final GroupeEntrainementRepository groupes;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
@@ -104,7 +108,8 @@ public class GrilleService {
                          SeanceRepository seances,
                          PhotoEleveRepository photos,
                          ProgressionTypeRepository progressions,
-                         ExerciceSeanceRepository exercices) {
+                         ExerciceSeanceRepository exercices,
+                         GroupeEntrainementRepository groupes) {
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
@@ -113,6 +118,7 @@ public class GrilleService {
         this.photos = photos;
         this.progressions = progressions;
         this.exercices = exercices;
+        this.groupes = groupes;
     }
 
     @Transactional(readOnly = true)
@@ -185,13 +191,17 @@ public class GrilleService {
                 programmes(cursus));
     }
 
+    /** Programme commun de chaque séance, puis celui du groupe d'entraînement de l'élève. */
     private List<ProgrammeGrilleVue> programmes(Cursus cursus) {
+        Long saisonId = cursus.getSaison().getId();
+        Long groupeId = groupes.groupeDeLEleve(saisonId, cursus.getEleve().getId()).stream().findFirst().orElse(null);
         Map<Long, List<ExerciceGrilleVue>> parSeance = new java.util.LinkedHashMap<>();
-        for (ExerciceSeance e : exercices.pourLaFiche(cursus.getSaison().getId(), cursus.getReferentiel().getId())) {
-            parSeance.computeIfAbsent(e.getSeance().getId(), k -> new ArrayList<>())
-                    .add(new ExerciceGrilleVue(e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
-                            e.getCriteres().stream().map(Critere::getId).toList()));
-        }
+        exercices.pourLaFiche(saisonId, cursus.getReferentiel().getId(), groupeId).stream()
+                .sorted(java.util.Comparator.comparing((ExerciceSeance e) -> e.getGroupe() != null))
+                .forEach(e -> parSeance.computeIfAbsent(e.getSeance().getId(), k -> new ArrayList<>())
+                        .add(new ExerciceGrilleVue(e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
+                                e.getGroupe() == null ? null : e.getGroupe().getNom(),
+                                e.getCriteres().stream().map(Critere::getId).toList())));
         return parSeance.entrySet().stream()
                 .map(en -> new ProgrammeGrilleVue(en.getKey(), en.getValue()))
                 .toList();

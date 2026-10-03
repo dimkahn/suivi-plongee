@@ -6,7 +6,8 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import {
-  BlocReferentielVue, DemandeExercice, ExerciceVue, FormationProgrammeVue, ProgressionVue, ReferentielVue, SeanceVue
+  BlocReferentielVue, DemandeExercice, ExerciceVue, FormationProgrammeVue, GroupeProgrammeVue, ProgressionVue,
+  ReferentielVue, SeanceVue
 } from '../../core/modeles';
 import { dateFr } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
@@ -43,9 +44,10 @@ function versDemande(b: Brouillon): DemandeExercice {
 }
 
 /**
- * Programme d'exercices d'une séance, préparé par un moniteur : une liste
- * ordonnée d'exercices, chacun rattaché à une formation et aux critères
- * qu'il fait travailler. La fiche de suivi des élèves présents montre ensuite
+ * Programme d'exercices d'une séance, un par groupe d'entraînement (préparé
+ * par ses encadrants ou un admin, consulté par les autres) plus un programme
+ * commun : une liste ordonnée d'exercices, chacun rattaché à une formation et
+ * aux critères qu'il fait travailler. La fiche de suivi des élèves présents montre ensuite
  * ces exercices et marque leurs critères, et « Noter les présents » peut les
  * reprendre. Le programme ne note personne. Nécessite le réseau.
  */
@@ -67,9 +69,10 @@ function versDemande(b: Brouillon): DemandeExercice {
       </select>
     }
     <p class="secondaire">
-      Préparez la séance exercice par exercice. Rattachez chaque exercice à une formation et aux critères
-      qu'il fait travailler : la fiche de suivi des élèves présents les mettra en avant, et « Noter les
-      présents » pourra les cocher d'un coup. Préparer un programme ne note aucun élève.
+      Chaque groupe d'entraînement prépare sa séance exercice par exercice. Rattachez chaque exercice à
+      une formation et aux critères qu'il fait travailler : la fiche de suivi des élèves du groupe les
+      mettra en avant, et « Noter les présents » pourra les cocher d'un coup. Le programme commun sert
+      à toute la séance (échauffement, séance sans groupes). Préparer un programme ne note aucun élève.
     </p>
 
     @if (!reseau.enLigne()) {
@@ -81,8 +84,53 @@ function versDemande(b: Brouillon): DemandeExercice {
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (charge()) {
+      @if (choixProgrammes().length > 1) {
+        <h2 class="titre-choix">Programme du groupe</h2>
+        <div class="programmes" role="group" aria-label="Programme à préparer">
+          @for (p of choixProgrammes(); track p.groupeId) {
+            <button type="button" class="bouton-discret" [class.actif]="p.groupeId === groupeId()"
+                    [attr.aria-pressed]="p.groupeId === groupeId()" (click)="choisirProgramme(p.groupeId)">
+              {{ p.libelle }}
+              @if (p.nombre > 0) { <span class="compte">{{ p.nombre }}</span> }
+            </button>
+          }
+        </div>
+      }
+
+      @if (lectureSeule()) {
+        <div class="alerte" role="status">
+          Seuls les encadrants du groupe « {{ groupeChoisi()?.nom }} » et les administrateurs préparent son
+          programme : vous le consultez.
+        </div>
+        @if (exercicesDuProgramme().length === 0) {
+          <div class="carte vide"><p>Aucun exercice préparé par ce groupe pour cette séance.</p></div>
+        } @else {
+          <ol class="exercices">
+            @for (e of exercicesDuProgramme(); track e.id; let i = $index) {
+              <li class="carte exercice">
+                <div class="entete-exercice">
+                  <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
+                  <strong class="intitule-lu">{{ e.intitule }}</strong>
+                </div>
+                <p class="secondaire">
+                  {{ e.niveau ? libellePreparation(e.niveau) : 'Toutes formations' }}
+                  @if (e.dureeMinutes) { · {{ e.dureeMinutes }} min }
+                </p>
+                @if (e.consignes) { <p class="consignes-lues">{{ e.consignes }}</p> }
+                @if (e.criteres.length > 0) {
+                  <ul class="choisis">
+                    @for (c of e.criteres; track c.id) {
+                      <li><span><span class="bloc">{{ c.bloc }}</span> {{ c.savoirFaire }}</span></li>
+                    }
+                  </ul>
+                }
+              </li>
+            }
+          </ol>
+        }
+      } @else {
       @if (brouillons().length === 0) {
-        <div class="carte vide"><p>Aucun exercice pour cette séance.</p></div>
+        <div class="carte vide"><p>Aucun exercice dans ce programme pour l'instant.</p></div>
       }
       <ol class="exercices">
         @for (b of brouillons(); track b.cle; let i = $index, premier = $first, dernier = $last) {
@@ -202,6 +250,7 @@ function versDemande(b: Brouillon): DemandeExercice {
           <span class="secondaire">Modifications non enregistrées.</span>
         }
       </div>
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -209,6 +258,12 @@ function versDemande(b: Brouillon): DemandeExercice {
     .retour { display: inline-flex; align-items: center; min-height: 44px; }
     h1 { margin-bottom: var(--pas); }
     .choix-seance-programme { max-width: 560px; }
+    .titre-choix { margin: var(--pas-3) 0 var(--pas); font-size: 1rem; }
+    .programmes { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .programmes .actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .programmes .actif .compte { background: #fff; color: var(--profond); }
+    .intitule-lu { flex: 1; }
+    .consignes-lues { margin: 0 0 var(--pas); white-space: pre-line; }
     .alerte.succes { border-color: var(--acquis); color: var(--acquis); }
 
     .exercices { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas-2); }
@@ -284,6 +339,9 @@ export class ProgrammeExercicesComponent {
 
   /** Identifiant de la séance, tiré de l'adresse. */
   id = input.required<string>();
+  /** Programme à ouvrir d'emblée (?groupe=12 ou ?groupe=commun), depuis la feuille de présence filtrée sur un groupe. */
+  groupe = input<string>();
+  readonly libellePreparation = libellePreparation;
 
   chargement = signal(true);
   charge = signal(false);
@@ -293,6 +351,11 @@ export class ProgrammeExercicesComponent {
 
   seances = signal<SeanceVue[]>([]);
   formations = signal<FormationProgrammeVue[]>([]);
+  groupes = signal<GroupeProgrammeVue[]>([]);
+  /** Tous les programmes de la séance, tels qu'enregistrés. */
+  private tous = signal<ExerciceVue[]>([]);
+  /** Programme affiché : un groupe, ou null pour le programme commun. */
+  groupeId = signal<number | null>(null);
   brouillons = signal<Brouillon[]>([]);
   /** Dernière version enregistrée, pour savoir s'il reste des modifications. */
   private enregistre = signal('[]');
@@ -303,6 +366,26 @@ export class ProgrammeExercicesComponent {
 
   seance = computed(() => this.seances().find(s => s.id === Number(this.id())) ?? null);
   autresSeances = computed(() => [...this.seances()].filter(s => s.id !== Number(this.id())).reverse());
+
+  groupeChoisi = computed(() => this.groupes().find(g => g.id === this.groupeId()) ?? null);
+  /** Le programme d'un groupe se prépare par ses encadrants (ou un admin) ; le commun par tout encadrant. */
+  lectureSeule = computed(() => {
+    const g = this.groupeChoisi();
+    return !!g && !g.modifiable;
+  });
+  exercicesDuProgramme = computed(() => this.tous().filter(e => e.groupeId === this.groupeId()));
+
+  /** Mes groupes d'abord, puis les autres dans l'ordre du planning, puis le programme commun. */
+  choixProgrammes = computed(() => {
+    const tous = this.tous();
+    const nombre = (id: number | null) => tous.filter(e => e.groupeId === id).length;
+    const groupes = [...this.groupes()].sort((a, b) => Number(b.mien) - Number(a.mien));
+    return [
+      ...groupes.map(g => ({ groupeId: g.id as number | null, libelle: g.nom + (g.mien ? ' (mon groupe)' : ''),
+                             nombre: nombre(g.id) })),
+      { groupeId: null, libelle: 'Programme commun', nombre: nombre(null) }
+    ];
+  });
 
   constructor() {
     effect(() => {
@@ -320,6 +403,11 @@ export class ProgrammeExercicesComponent {
       this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
       const programme = await firstValueFrom(this.api.programmeSeance(seanceId));
       this.formations.set(programme.formations);
+      this.groupes.set(programme.groupes);
+      // Le programme demandé, sinon le premier groupe que j'encadre, sinon le programme commun.
+      const demande = programme.groupes.find(g => g.id === Number(this.groupe()));
+      this.groupeId.set(this.groupe() === 'commun' ? null
+        : (demande ?? programme.groupes.find(g => g.mien))?.id ?? null);
       this.appliquer(programme.exercices);
       this.charge.set(true);
     } catch (e) {
@@ -331,11 +419,24 @@ export class ProgrammeExercicesComponent {
     }
   }
 
+  /** Garde tous les programmes et met en édition celui du groupe affiché. */
   private appliquer(exercices: ExerciceVue[]): void {
-    const brouillons = exercices.map(versBrouillon);
+    this.tous.set(exercices);
+    const brouillons = this.exercicesDuProgramme().map(versBrouillon);
     this.brouillons.set(brouillons);
     this.enregistre.set(JSON.stringify(brouillons.map(versDemande)));
     this.choixOuvert.set(null);
+  }
+
+  choisirProgramme(groupeId: number | null): void {
+    if (groupeId === this.groupeId()) return;
+    if (this.modifie() && !confirm('Les modifications de ce programme ne sont pas enregistrées. Les abandonner ?')) {
+      return;
+    }
+    this.groupeId.set(groupeId);
+    this.message.set(null);
+    this.erreur.set(null);
+    this.appliquer(this.tous());
   }
 
   /** Comparé à chaque affichage : la liste reste courte. */
@@ -351,7 +452,9 @@ export class ProgrammeExercicesComponent {
       choix.value = this.id();
       return;
     }
-    void this.router.navigate(['/seances', seanceId, 'programme']);
+    // On reste sur le même programme (groupe ou commun) d'une séance à l'autre.
+    void this.router.navigate(['/seances', seanceId, 'programme'],
+      { queryParams: { groupe: this.groupeId() ?? 'commun' } });
   }
 
   libelleSeance(s: SeanceVue): string {
@@ -365,11 +468,13 @@ export class ProgrammeExercicesComponent {
   }
 
   ajouter(): void {
-    // Par défaut, la formation de l'exercice précédent : une séance en prépare souvent une seule.
+    // Par défaut, la formation de l'exercice précédent, sinon celle que prépare le groupe.
     const precedent = this.brouillons().at(-1);
+    const niveau = this.groupeChoisi()?.niveauPrepare;
+    const duGroupe = niveau ? this.formations().find(f => f.niveau === niveau) : null;
     const nouveau: Brouillon = {
       cle: prochaineCle++, intitule: '', consignes: '', dureeMinutes: null,
-      referentielId: precedent?.referentielId ?? this.formations().find(f => f.eleves > 0)?.referentielId ?? null,
+      referentielId: precedent ? precedent.referentielId : duGroupe?.referentielId ?? null,
       criteres: []
     };
     this.brouillons.set([...this.brouillons(), nouveau]);
@@ -451,23 +556,30 @@ export class ProgrammeExercicesComponent {
     this.brouillons.set([...this.brouillons()]);
   }
 
-  /** Ajoute à la suite les exercices d'une autre séance ; rien n'est enregistré avant « Enregistrer ». */
+  /**
+   * Ajoute à la suite les exercices du même groupe à une autre séance (à
+   * défaut, ceux de son programme commun) ; rien n'est enregistré avant
+   * « Enregistrer ».
+   */
   async reprendre(seanceId: number | null): Promise<void> {
     if (seanceId == null) return;
     this.erreur.set(null);
     try {
       const autre = await firstValueFrom(this.api.programmeSeance(seanceId));
-      if (autre.exercices.length === 0) {
-        this.message.set('Cette séance n\'a pas d\'exercice à reprendre.');
+      const duGroupe = autre.exercices.filter(e => e.groupeId === this.groupeId());
+      const repris = duGroupe.length > 0 ? duGroupe : autre.exercices.filter(e => e.groupeId == null);
+      if (repris.length === 0) {
+        this.message.set('Ni ce groupe ni le programme commun n\'ont d\'exercice à reprendre à cette séance.');
         return;
       }
       // Une formation absente de cette saison ne serait pas proposée dans la liste : on l'ajoute.
       const connues = new Set(this.formations().map(f => f.referentielId));
       const manquantes = autre.formations.filter(f => !connues.has(f.referentielId)
-        && autre.exercices.some(e => e.referentielId === f.referentielId));
+        && repris.some(e => e.referentielId === f.referentielId));
       if (manquantes.length > 0) this.formations.set([...this.formations(), ...manquantes.map(f => ({ ...f, eleves: 0 }))]);
-      this.brouillons.set([...this.brouillons(), ...autre.exercices.map(versBrouillon)]);
-      this.message.set(`${autre.exercices.length} exercice(s) repris : vérifiez-les puis enregistrez.`);
+      this.brouillons.set([...this.brouillons(), ...repris.map(versBrouillon)]);
+      this.message.set(`${repris.length} exercice(s) repris${duGroupe.length > 0 ? '' : ' du programme commun'} : `
+        + 'vérifiez-les puis enregistrez.');
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'Impossible de lire le programme de cette séance.');
     }
@@ -484,7 +596,7 @@ export class ProgrammeExercicesComponent {
     this.message.set(null);
     try {
       const programme = await firstValueFrom(
-        this.api.enregistrerProgrammeSeance(Number(this.id()), this.brouillons().map(versDemande)));
+        this.api.enregistrerProgrammeSeance(Number(this.id()), this.groupeId(), this.brouillons().map(versDemande)));
       this.appliquer(programme.exercices);
       this.message.set('Programme enregistré.');
     } catch (e) {

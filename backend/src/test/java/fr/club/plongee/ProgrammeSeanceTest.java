@@ -157,6 +157,78 @@ class ProgrammeSeanceTest {
     }
 
     @Test
+    @DisplayName("Chaque groupe prépare son programme ; la fiche montre le commun et celui du groupe de l'élève")
+    void programmeParGroupe() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String e1 = jeton("e1@club.fr");
+        long saisonId = saisonOuverte(admin);
+        long idE1 = -1;
+        long idE3 = -1;
+        for (JsonNode m : envoyer("GET", "/api/admin/moniteurs", admin, null, 200)) {
+            if (m.get("email").asText().equals("e1@club.fr")) idE1 = m.get("id").asLong();
+            if (m.get("email").asText().equals("e3@club.fr")) idE3 = m.get("id").asLong();
+        }
+        long seanceId = creerSeance(admin, 13);
+        long groupeE1 = envoyer("POST", "/api/groupes-entrainement", admin, """
+                {"saisonId":%d,"nom":"Groupe programme","niveauPrepare":"N1","encadrantIds":[%d]}"""
+                .formatted(saisonId, idE1), 201).get("id").asLong();
+        long groupeE3 = envoyer("POST", "/api/groupes-entrainement", admin, """
+                {"saisonId":%d,"nom":"Autre groupe","encadrantIds":[%d]}""".formatted(saisonId, idE3),
+                201).get("id").asLong();
+        long eleveId = envoyer("POST", "/api/eleves", admin, """
+                {"nom":"Groupe","prenom":"Programme","dateNaissance":"2000-01-01","autorisationLegale":true}""",
+                201).get("id").asLong();
+        try {
+            long cursusId = envoyer("POST", "/api/cursus", admin, """
+                    {"eleveId":%d,"saisonId":%d,"niveau":"N1"}""".formatted(eleveId, saisonId), 201)
+                    .get("id").asLong();
+            envoyer("PUT", "/api/groupes-entrainement/saison/" + saisonId + "/eleves/" + eleveId, admin,
+                    "{\"groupeId\":" + groupeE1 + "}", 200);
+            String url = "/api/seances/" + seanceId + "/programme";
+
+            // e1 encadre le premier groupe : il prépare son programme, pas celui de l'autre.
+            JsonNode lu = envoyer("GET", url, e1, null, 200);
+            for (JsonNode g : lu.get("groupes")) {
+                if (g.get("id").asLong() == groupeE1) {
+                    assertThat(g.get("modifiable").asBoolean()).isTrue();
+                    assertThat(g.get("mien").asBoolean()).isTrue();
+                }
+                if (g.get("id").asLong() == groupeE3) assertThat(g.get("modifiable").asBoolean()).isFalse();
+            }
+            envoyer("PUT", url + "?groupeId=" + groupeE1, e1,
+                    List.of(exercice("Palmage ventral", null, List.of())), 200);
+            JsonNode refus = envoyer("PUT", url + "?groupeId=" + groupeE3, e1,
+                    List.of(exercice("Intrus", null, List.of())), 422);
+            assertThat(refus.get("detail").asText()).contains("Seuls les encadrants du groupe");
+            envoyer("PUT", url + "?groupeId=" + groupeE3, admin,
+                    List.of(exercice("Remontée assistée", null, List.of())), 200);
+            envoyer("PUT", url, e1, List.of(exercice("Échauffement commun", null, List.of())), 200);
+
+            // Enregistrer un groupe ne touche ni aux autres ni au commun.
+            JsonNode tous = envoyer("GET", url, e1, null, 200).get("exercices");
+            assertThat(tous).hasSize(3);
+
+            // La fiche : le commun d'abord, puis le programme du groupe de l'élève, pas celui de l'autre groupe.
+            JsonNode grille = envoyer("GET", "/api/cursus/" + cursusId + "/grille", e1, null, 200);
+            JsonNode duJour = null;
+            for (JsonNode p : grille.get("programmes")) if (p.get("seanceId").asLong() == seanceId) duJour = p;
+            assertThat(duJour.get("exercices")).extracting(e -> e.get("intitule").asText())
+                    .containsExactly("Échauffement commun", "Palmage ventral");
+            assertThat(duJour.get("exercices").get(1).get("groupe").asText()).isEqualTo("Groupe programme");
+
+            // Supprimer un groupe emporte son programme.
+            envoyer("DELETE", "/api/groupes-entrainement/" + groupeE3, admin, null, 200);
+            assertThat(envoyer("GET", url, e1, null, 200).get("exercices")).hasSize(2);
+        } finally {
+            mvc.perform(post("/api/eleves/" + eleveId + "/archivage").header("Authorization", admin));
+            mvc.perform(delete("/api/eleves/" + eleveId).header("Authorization", admin));
+            mvc.perform(delete("/api/groupes-entrainement/" + groupeE1).header("Authorization", admin));
+            mvc.perform(delete("/api/groupes-entrainement/" + groupeE3).header("Authorization", admin));
+            mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
+        }
+    }
+
+    @Test
     @DisplayName("Supprimer une séance emporte son programme")
     void suppressionDeLaSeance() throws Exception {
         String admin = jeton("presidente@club.fr");

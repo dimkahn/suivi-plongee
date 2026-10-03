@@ -249,9 +249,14 @@ export class ApiService {
     return this.http.get<ProgrammeVue>(`/api/seances/${seanceId}/programme`);
   }
 
-  /** Remplace tout le programme par la liste donnée, dans son ordre. */
-  enregistrerProgrammeSeance(seanceId: number, exercices: DemandeExercice[]): Observable<ProgrammeVue> {
-    return this.http.put<ProgrammeVue>(`/api/seances/${seanceId}/programme`, exercices);
+  /**
+   * Remplace le programme d'un groupe (null : le programme commun) par la
+   * liste donnée, dans son ordre ; les autres programmes ne bougent pas.
+   */
+  enregistrerProgrammeSeance(seanceId: number, groupeId: number | null,
+                             exercices: DemandeExercice[]): Observable<ProgrammeVue> {
+    const params: Record<string, number> = groupeId == null ? {} : { groupeId };
+    return this.http.put<ProgrammeVue>(`/api/seances/${seanceId}/programme`, exercices, { params });
   }
 
   /** Plusieurs élèves présents, un ou plusieurs critères, un même commentaire. Nécessite le réseau. */

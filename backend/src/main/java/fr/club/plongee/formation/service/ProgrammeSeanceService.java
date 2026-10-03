@@ -8,6 +8,9 @@ import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.formation.repository.ExerciceSeanceRepository;
 import fr.club.plongee.formation.repository.SeanceRepository;
+import fr.club.plongee.planning.domain.GroupeEntrainement;
+import fr.club.plongee.planning.repository.GroupeEntrainementRepository;
+import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.CritereRepository;
@@ -30,7 +33,8 @@ import java.util.stream.Collectors;
  * Programme d'exercices d'une séance, préparé par un moniteur. Chaque
  * exercice vise une formation (version du MFT) et les critères qu'il fait
  * travailler : la fiche de suivi d'un élève présent les met en avant, et la
- * notation groupée peut les reprendre. Le programme ne note personne :
+ * notation groupée peut les reprendre. Chaque groupe d'entraînement prépare
+ * son propre programme ; un programme commun sert les séances sans groupe. Le programme ne note personne :
  * l'évaluation reste un geste du moniteur, critère par critère.
  */
 @Service
@@ -42,13 +46,24 @@ public class ProgrammeSeanceService {
 
     public record CritereExerciceVue(Long id, Long blocId, String bloc, String savoirFaire) {}
 
-    public record ExerciceVue(Long id, int ordre, String intitule, String consignes, Integer dureeMinutes,
-                              Long referentielId, String niveau, List<CritereExerciceVue> criteres) {}
+    /** {@code groupeId} null : exercice du programme commun à toute la séance. */
+    public record ExerciceVue(Long id, Long groupeId, int ordre, String intitule, String consignes,
+                              Integer dureeMinutes, Long referentielId, String niveau,
+                              List<CritereExerciceVue> criteres) {}
 
     /** Une formation proposée pour les exercices : celles des élèves de la saison, puis les versions actives. */
     public record FormationVue(Long referentielId, String niveau, String versionMft, int eleves) {}
 
-    public record ProgrammeVue(Long seanceId, List<FormationVue> formations, List<ExerciceVue> exercices) {}
+    /**
+     * Un groupe d'entraînement de la saison de la séance. {@code modifiable} :
+     * l'utilisateur peut préparer son programme (encadrant attitré ou admin) ;
+     * {@code mien} : il en est encadrant attitré.
+     */
+    public record GroupeProgrammeVue(Long id, String nom, String niveauPrepare, int eleves,
+                                     boolean modifiable, boolean mien) {}
+
+    public record ProgrammeVue(Long seanceId, List<FormationVue> formations, List<GroupeProgrammeVue> groupes,
+                               List<ExerciceVue> exercices) {}
 
     public record DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
                                   Long referentielId, List<Long> critereIds) {}
@@ -58,31 +73,56 @@ public class ProgrammeSeanceService {
     private final ReferentielRepository referentiels;
     private final CritereRepository criteres;
     private final CursusRepository cursus;
+    private final GroupeEntrainementRepository groupes;
 
     public ProgrammeSeanceService(SeanceRepository seances, ExerciceSeanceRepository exercices,
                                   ReferentielRepository referentiels, CritereRepository criteres,
-                                  CursusRepository cursus) {
+                                  CursusRepository cursus, GroupeEntrainementRepository groupes) {
         this.seances = seances;
         this.exercices = exercices;
         this.referentiels = referentiels;
         this.criteres = criteres;
         this.cursus = cursus;
+        this.groupes = groupes;
     }
 
     @Transactional(readOnly = true)
-    public ProgrammeVue programme(Long seanceId) {
+    public ProgrammeVue programme(Long seanceId, UtilisateurPrincipal moi) {
         Seance seance = seance(seanceId);
-        return new ProgrammeVue(seanceId, formations(seance),
+        List<GroupeProgrammeVue> groupesVue = groupes.parSaison(seance.getSaison().getId()).stream()
+                .map(g -> {
+                    boolean mien = estEncadrant(g, moi);
+                    return new GroupeProgrammeVue(g.getId(), g.getNom(), g.getNiveauPrepare(), g.getEleves().size(),
+                            mien || estAdmin(moi), mien);
+                })
+                .toList();
+        return new ProgrammeVue(seanceId, formations(seance), groupesVue,
                 exercices.deLaSeance(seanceId).stream().map(ProgrammeSeanceService::vue).toList());
     }
 
     /**
-     * Remplace tout le programme de la séance par la liste reçue, dans son
-     * ordre. Tout ou rien : une ligne refusée n'enregistre aucune des autres.
+     * Remplace le programme d'un groupe pour la séance ({@code groupeId}
+     * null : le programme commun) par la liste reçue, dans son ordre ; les
+     * programmes des autres groupes ne bougent pas. Tout ou rien : une ligne
+     * refusée n'enregistre aucune des autres. Le programme d'un groupe est
+     * préparé par ses encadrants attitrés (référents compris) ou un admin.
      */
     @Transactional
-    public ProgrammeVue enregistrer(Long seanceId, List<DemandeExercice> demandes) {
-        seance(seanceId);
+    public ProgrammeVue enregistrer(Long seanceId, Long groupeId, List<DemandeExercice> demandes,
+                                    UtilisateurPrincipal moi) {
+        Seance seanceAvant = seance(seanceId);
+        if (groupeId != null) {
+            GroupeEntrainement g = groupes.findById(groupeId)
+                    .orElseThrow(() -> new RessourceIntrouvableException("Groupe introuvable"));
+            if (!g.getSaison().getId().equals(seanceAvant.getSaison().getId())) {
+                throw new RegleMetierException("Le groupe « " + g.getNom()
+                        + " » n'appartient pas à la saison de cette séance.");
+            }
+            if (!estEncadrant(g, moi) && !estAdmin(moi)) {
+                throw new RegleMetierException("Seuls les encadrants du groupe « " + g.getNom()
+                        + " » et les administrateurs préparent son programme d'exercices.");
+            }
+        }
         List<DemandeExercice> liste = demandes == null ? List.of() : demandes;
         if (liste.size() > EXERCICES_MAX) {
             throw new RegleMetierException("Un programme compte au plus " + EXERCICES_MAX + " exercices.");
@@ -142,13 +182,27 @@ public class ProgrammeSeanceService {
             nouveaux.add(e);
         }
 
-        exercices.supprimerDeLaSeance(seanceId);
-        // Relue après la suppression, qui vide le contexte de persistance.
+        if (groupeId == null) exercices.supprimerProgrammeCommun(seanceId);
+        else exercices.supprimerProgrammeDuGroupe(seanceId, groupeId);
+        // Relus après la suppression, qui vide le contexte de persistance.
         Seance seance = seance(seanceId);
-        nouveaux.forEach(e -> e.setSeance(seance));
+        GroupeEntrainement groupe = groupeId == null ? null : groupes.getReferenceById(groupeId);
+        nouveaux.forEach(e -> {
+            e.setSeance(seance);
+            e.setGroupe(groupe);
+        });
         exercices.saveAll(nouveaux);
         exercices.flush();
-        return programme(seanceId);
+        return programme(seanceId, moi);
+    }
+
+    /** Encadrant attitré du groupe ; un référent l'est toujours aussi (règle de GroupeEntrainementService). */
+    private static boolean estEncadrant(GroupeEntrainement g, UtilisateurPrincipal moi) {
+        return moi != null && g.getEncadrants().stream().anyMatch(u -> u.getId().equals(moi.id()));
+    }
+
+    private static boolean estAdmin(UtilisateurPrincipal moi) {
+        return moi != null && moi.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
     /**
@@ -183,7 +237,7 @@ public class ProgrammeSeanceService {
                         c.getSavoirFaire()))
                 .toList();
         Referentiel r = e.getReferentiel();
-        return new ExerciceVue(e.getId(), e.getOrdre(), e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
+        return new ExerciceVue(e.getId(), e.getGroupe() == null ? null : e.getGroupe().getId(), e.getOrdre(), e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                 r == null ? null : r.getId(), r == null ? null : r.getNiveau().name(), criteres);
     }
 
