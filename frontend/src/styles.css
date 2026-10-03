@@ -162,3 +162,32 @@ input, select, textarea {
   body:has(app-etiquettes-materiel) app-racine > :not(main) { display: none !important; }
   body:has(app-etiquettes-materiel) main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
 }
+
+/* Menu « Actions » d'une ligne de liste (écrans Moniteurs et Élèves) :
+   un seul bouton qui déroule les gestes possibles, au lieu d'une rangée de boutons. */
+.menu-actions { position: relative; display: inline-block; }
+.menu-actions-liste {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 260px;
+  max-width: calc(100vw - 32px);
+  padding: 4px 0;
+  background: var(--carte);
+  border: 1px solid var(--trait);
+  border-radius: var(--r-s);
+  box-shadow: var(--ombre);
+}
+.menu-actions-liste button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+}
+.menu-actions-liste button:hover:not(:disabled) { background: var(--fond); }
+.menu-actions-liste button:disabled { opacity: .5; cursor: not-allowed; }
+.menu-actions-liste button.danger { color: #B3261E; border-top: 1px solid var(--trait); }

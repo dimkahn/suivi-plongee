@@ -320,32 +320,43 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
               <div class="actions">
                 <button type="button" class="bouton-discret" (click)="commencerEdition(e)">Modifier</button>
-                <button type="button" class="bouton-discret" (click)="changerAutorisationImage(e)">
-                  {{ e.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
-                </button>
-                @if (e.autorisationImage) {
-                  <label class="bouton-discret upload">
-                    {{ e.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
-                    <input type="file" accept="image/jpeg,image/png" hidden
-                           (change)="choisirPhoto(e, $event)">
-                  </label>
-                }
-                @if (filtreSaisonId() && !aCursus(e)) {
-                  @if (adhesionDe(e); as a) {
-                    <button type="button" class="bouton-discret" (click)="retirerDeLaSaison(a)">
-                      Retirer de la saison
-                    </button>
-                  } @else {
-                    <button type="button" class="bouton-discret" (click)="ajouterALaSaison(e)"
-                            [disabled]="envoiAdhesion() === e.id">
-                      {{ envoiAdhesion() === e.id ? 'Ajout…' : 'Ajouter à la saison (sans formation)' }}
-                    </button>
+                <div class="menu-actions">
+                  <button type="button" class="bouton-discret" (click)="basculerMenu(e.id)"
+                          aria-haspopup="menu" [attr.aria-expanded]="menuOuvert() === e.id">
+                    Actions ▾
+                  </button>
+                  @if (menuOuvert() === e.id) {
+                    <div class="menu-actions-liste" role="menu" (click)="menuOuvert.set(null)">
+                      <button type="button" role="menuitem" (click)="changerAutorisationImage(e)">
+                        {{ e.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
+                      </button>
+                      @if (e.autorisationImage) {
+                        <button type="button" role="menuitem" (click)="fichierPhoto.click()">
+                          {{ e.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
+                        </button>
+                      }
+                      @if (filtreSaisonId() && !aCursus(e)) {
+                        @if (adhesionDe(e); as a) {
+                          <button type="button" role="menuitem" (click)="retirerDeLaSaison(a)">
+                            Retirer de la saison
+                          </button>
+                        } @else {
+                          <button type="button" role="menuitem" (click)="ajouterALaSaison(e)"
+                                  [disabled]="envoiAdhesion() === e.id">
+                            {{ envoiAdhesion() === e.id ? 'Ajout…' : 'Ajouter à la saison (sans formation)' }}
+                          </button>
+                        }
+                      }
+                      <button type="button" role="menuitem" (click)="basculerHistorique(e)">
+                        {{ historiqueOuvert() === e.id ? 'Masquer l’historique' : 'Historique des saisons' }}
+                      </button>
+                      <button type="button" role="menuitem" class="danger" (click)="archiver(e)">Archiver</button>
+                    </div>
                   }
-                }
-                <button type="button" class="bouton-discret" (click)="basculerHistorique(e)">
-                  {{ historiqueOuvert() === e.id ? 'Masquer l’historique' : 'Historique des saisons' }}
-                </button>
-                <button type="button" class="bouton-discret danger" (click)="archiver(e)">Archiver</button>
+                </div>
+                <!-- Hors du menu : le menu se ferme avant que la photo soit choisie. -->
+                <input #fichierPhoto type="file" accept="image/jpeg,image/png" hidden
+                       (change)="choisirPhoto(e, $event)">
               </div>
 
               @if (historiqueOuvert() === e.id) {
@@ -421,6 +432,10 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:click)': 'fermerMenuSiAilleurs($event)',
+    '(document:keydown.escape)': 'menuOuvert.set(null)'
+  },
   styles: [`
     h1 { margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
@@ -1010,6 +1025,18 @@ export class ElevesComponent {
         this.message.set(err.error?.detail ?? "La suppression n'a pas pu être effectuée.");
       }
     });
+  }
+
+  /** Élève dont le menu « Actions » est déroulé (un seul à la fois). */
+  menuOuvert = signal<number | null>(null);
+
+  basculerMenu(id: number): void {
+    this.menuOuvert.set(this.menuOuvert() === id ? null : id);
+  }
+
+  /** Un clic hors du menu le referme. */
+  fermerMenuSiAilleurs(evenement: Event): void {
+    if (!(evenement.target as Element | null)?.closest?.('.menu-actions')) this.menuOuvert.set(null);
   }
 
   private remplacer(maj: EleveVue): void {

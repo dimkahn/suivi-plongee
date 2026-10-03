@@ -154,30 +154,41 @@ function aVerifier(m: MoniteurVue): boolean {
               <button type="button" class="bouton-discret" (click)="basculerEdition(m)">
                 Modifier
               </button>
-              <button type="button" class="bouton-discret" (click)="changerActivation(m)">
-                {{ m.actif ? 'Désactiver' : 'Activer' }}
-              </button>
-              <button type="button" class="bouton-discret" (click)="basculerMotDePasse(m.id)">
-                Changer le mot de passe
-              </button>
-              @if (m.actif) {
-                <button type="button" class="bouton-discret" (click)="envoyerLienReinitialisation(m)"
-                        [disabled]="envoiLien() === m.id">
-                  {{ envoiLien() === m.id ? 'Envoi…' : 'Envoyer un lien de réinitialisation' }}
+              <div class="menu-actions">
+                <button type="button" class="bouton-discret" (click)="basculerMenu(m.id)"
+                        aria-haspopup="menu" [attr.aria-expanded]="menuOuvert() === m.id">
+                  Actions ▾
                 </button>
-              }
-              <button type="button" class="bouton-discret" (click)="changerAutorisationImage(m)">
-                {{ m.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
-              </button>
-              @if (m.autorisationImage) {
-                <label class="bouton-discret upload">
-                  {{ m.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
-                  <input type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto(m, $event)">
-                </label>
-              }
-              <button type="button" class="bouton-discret danger" (click)="supprimer(m)">
-                Supprimer
-              </button>
+                @if (menuOuvert() === m.id) {
+                  <div class="menu-actions-liste" role="menu" (click)="menuOuvert.set(null)">
+                    <button type="button" role="menuitem" (click)="changerActivation(m)">
+                      {{ m.actif ? 'Désactiver' : 'Activer' }}
+                    </button>
+                    <button type="button" role="menuitem" (click)="basculerMotDePasse(m.id)">
+                      Changer le mot de passe
+                    </button>
+                    @if (m.actif) {
+                      <button type="button" role="menuitem" (click)="envoyerLienReinitialisation(m)"
+                              [disabled]="envoiLien() === m.id">
+                        {{ envoiLien() === m.id ? 'Envoi…' : 'Envoyer un lien de réinitialisation' }}
+                      </button>
+                    }
+                    <button type="button" role="menuitem" (click)="changerAutorisationImage(m)">
+                      {{ m.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
+                    </button>
+                    @if (m.autorisationImage) {
+                      <button type="button" role="menuitem" (click)="fichierPhoto.click()">
+                        {{ m.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
+                      </button>
+                    }
+                    <button type="button" role="menuitem" class="danger" (click)="supprimer(m)">
+                      Supprimer
+                    </button>
+                  </div>
+                }
+              </div>
+              <!-- Hors du menu : le menu se ferme avant que la photo soit choisie. -->
+              <input #fichierPhoto type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto(m, $event)">
             </div>
 
             @if (moniteurEdite() === m.id) {
@@ -273,6 +284,10 @@ function aVerifier(m: MoniteurVue): boolean {
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:click)': 'fermerMenuSiAilleurs($event)',
+    '(document:keydown.escape)': 'menuOuvert.set(null)'
+  },
   styles: [`
     h1 { margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
@@ -283,7 +298,6 @@ function aVerifier(m: MoniteurVue): boolean {
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; }
     .case input { width: auto; }
-    .upload { cursor: pointer; margin: 0; font-size: inherit; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     .filtres {
@@ -645,6 +659,18 @@ export class MoniteursComponent {
       error: (e: HttpErrorResponse) =>
         this.message.set(e.error?.detail ?? "La suppression n'a pas pu être enregistrée.")
     });
+  }
+
+  /** Moniteur dont le menu « Actions » est déroulé (un seul à la fois). */
+  menuOuvert = signal<number | null>(null);
+
+  basculerMenu(id: number): void {
+    this.menuOuvert.set(this.menuOuvert() === id ? null : id);
+  }
+
+  /** Un clic hors du menu le referme. */
+  fermerMenuSiAilleurs(evenement: Event): void {
+    if (!(evenement.target as Element | null)?.closest?.('.menu-actions')) this.menuOuvert.set(null);
   }
 
   private remplacer(maj: MoniteurVue): void {
