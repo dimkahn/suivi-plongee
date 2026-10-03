@@ -21,12 +21,15 @@ const PERIODES = [
 ];
 
 /** Choix proposés dans l'éditeur d'une case. */
-type ChoixCase = 'ATTITREE' | 'ESPACE' | 'FOSSE_LIMITEE' | 'ACTIVITE' | 'ABSENT';
+type ChoixCase = 'ATTITREE' | 'LIGNES' | 'FOSSE' | 'FOSSE_LIMITEE' | 'ACTIVITE' | 'ABSENT';
 
 interface EditionCase {
   groupe: GroupePlanningVue;
   date: string;
   choix: ChoixCase;
+  /** Lignes d'eau cochées (choix LIGNES), une ou plusieurs. */
+  lignes: number[];
+  /** Fosse choisie (choix FOSSE ou FOSSE_LIMITEE). */
   espaceId: number | null;
   profondeurLimitee: number;
   activite: string;
@@ -41,7 +44,7 @@ interface EditionSoiree {
 /**
  * Planning du bassin, tenu par l'admin : une ligne par groupe d'entraînement,
  * une colonne par soirée. Une case vaut la ligne attitrée du groupe tant
- * qu'on n'y touche pas ; on la change pour une autre ligne, la fosse (ou la
+ * qu'on n'y touche pas ; on la change pour une ou plusieurs autres lignes, la fosse (ou la
  * fosse limitée, le « F6 »), une activité ou une absence. Les avertissements
  * viennent du serveur et n'empêchent rien.
  */
@@ -204,17 +207,22 @@ interface EditionSoiree {
             <input type="radio" name="choix" [checked]="e.choix === 'ATTITREE'" (change)="e.choix = 'ATTITREE'">
             {{ e.groupe.espaceAttitreIds.length > 1 ? 'Ses lignes attitrées' : 'Sa ligne attitrée' }}{{ e.groupe.espacesAttitres ? ' (' + e.groupe.espacesAttitres + ')' : ' (aucune)' }}
           </label>
-          @for (esp of espacesLignes(); track esp.id) {
-            <label class="option">
-              <input type="radio" name="choix" [checked]="e.choix === 'ESPACE' && e.espaceId === esp.id"
-                     (change)="e.choix = 'ESPACE'; e.espaceId = esp.id">
-              {{ esp.nom }}
-            </label>
+          @if (espacesLignes().length > 0) {
+            <p class="sous-titre">Autres lignes d'eau ce soir-là (une ou plusieurs)</p>
+            <div class="lignes">
+              @for (esp of espacesLignes(); track esp.id) {
+                <label class="option">
+                  <input type="checkbox" [checked]="e.choix === 'LIGNES' && e.lignes.includes(esp.id)"
+                         (change)="basculerLigne(e, esp.id)">
+                  {{ esp.nom }}
+                </label>
+              }
+            </div>
           }
           @for (esp of espacesFosses(); track esp.id) {
             <label class="option">
-              <input type="radio" name="choix" [checked]="e.choix === 'ESPACE' && e.espaceId === esp.id"
-                     (change)="e.choix = 'ESPACE'; e.espaceId = esp.id">
+              <input type="radio" name="choix" [checked]="e.choix === 'FOSSE' && e.espaceId === esp.id"
+                     (change)="e.choix = 'FOSSE'; e.espaceId = esp.id">
               {{ esp.nom }}{{ esp.profondeurMax ? ' (' + esp.profondeurMax + ' m)' : '' }}
             </label>
             <label class="option">
@@ -238,7 +246,8 @@ interface EditionSoiree {
           </label>
         </fieldset>
         <div class="actions">
-          <button type="button" class="bouton-principal" (click)="enregistrerCase()" [disabled]="envoi()">
+          <button type="button" class="bouton-principal" (click)="enregistrerCase()"
+                  [disabled]="envoi() || (e.choix === 'LIGNES' && e.lignes.length === 0)">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="fermer()">Annuler</button>
@@ -345,7 +354,9 @@ interface EditionSoiree {
     .dialogue h2 { margin: 0 0 4px; font-size: 1.125rem; }
     .choix { border: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: 2px; }
     .option { display: flex; align-items: center; gap: var(--pas); min-height: 44px; flex-wrap: wrap; }
-    .option input[type="radio"] { width: auto; margin: 0; }
+    .option input[type="radio"], .option input[type="checkbox"] { width: auto; margin: 0; }
+    .sous-titre { margin: var(--pas) 0 0; font-size: .875rem; color: var(--craie); }
+    .lignes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0 var(--pas); }
     .profondeur { width: 64px; margin: 0; }
     .activite { flex: 1 1 140px; margin: 0; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
@@ -471,12 +482,14 @@ export class PlanningAdminComponent {
 
   editerCase(g: GroupePlanningVue, s: SoireePlanningVue, c: CasePlanningVue): void {
     this.message.set(null);
+    const fosse = c.espaceType === 'FOSSE';
     const choix: ChoixCase = c.type === 'ESPACE'
-      ? (c.profondeurLimitee !== null ? 'FOSSE_LIMITEE' : 'ESPACE')
+      ? (!fosse ? 'LIGNES' : c.profondeurLimitee !== null ? 'FOSSE_LIMITEE' : 'FOSSE')
       : c.type === 'ACTIVITE' || c.type === 'ABSENT' ? c.type : 'ATTITREE';
+    const lignes = choix !== 'LIGNES' ? [] : c.espaces?.length ? c.espaces.map(o => o.id) : [c.espaceId!];
     this.editionSoiree.set(null);
     this.editionCase.set({
-      groupe: g, date: s.date, choix, espaceId: c.type === 'ESPACE' ? c.espaceId : null,
+      groupe: g, date: s.date, choix, lignes, espaceId: fosse ? c.espaceId : null,
       profondeurLimitee: c.profondeurLimitee ?? 6, activite: c.activite ?? ''
     });
     this.dialogue().nativeElement.showModal();
@@ -501,12 +514,28 @@ export class PlanningAdminComponent {
     if (!e || saisonId === null) return;
     let demande: DemandeCasePlanning;
     switch (e.choix) {
-      case 'ESPACE': demande = { type: 'ESPACE', espaceId: e.espaceId }; break;
+      case 'LIGNES': {
+        // Exactement les lignes attitrées : rien à retenir, la case suit la ligne attitrée.
+        const attitrees = e.groupe.espaceAttitreIds;
+        demande = attitrees.length === e.lignes.length && attitrees.every(id => e.lignes.includes(id))
+          ? { type: 'ATTITREE' } : { type: 'ESPACE', espaceIds: e.lignes };
+        break;
+      }
+      case 'FOSSE': demande = { type: 'ESPACE', espaceId: e.espaceId }; break;
       case 'FOSSE_LIMITEE': demande = { type: 'ESPACE', espaceId: e.espaceId, profondeurLimitee: e.profondeurLimitee }; break;
       case 'ACTIVITE': demande = { type: 'ACTIVITE', activite: e.activite }; break;
       default: demande = { type: e.choix };
     }
     this.envoyer(this.api.definirCasePlanning(saisonId, e.date, e.groupe.id, demande));
+  }
+
+  /** Coche ou décoche une ligne d'eau ; cocher la première remplace le choix précédent (fosse, activité…). */
+  basculerLigne(e: EditionCase, id: number): void {
+    if (e.choix !== 'LIGNES') {
+      e.choix = 'LIGNES';
+      e.lignes = [];
+    }
+    e.lignes = e.lignes.includes(id) ? e.lignes.filter(l => l !== id) : [...e.lignes, id];
   }
 
   enregistrerSoiree(): void {

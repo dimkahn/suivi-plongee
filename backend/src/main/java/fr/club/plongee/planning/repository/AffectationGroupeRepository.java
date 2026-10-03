@@ -15,6 +15,7 @@ public interface AffectationGroupeRepository extends JpaRepository<AffectationGr
            select a from AffectationGroupe a
              join fetch a.groupe g
              left join fetch a.espace
+             left join fetch a.lignesSupplementaires
             where g.saison.id = :saisonId
            """)
     List<AffectationGroupe> parSaison(@Param("saisonId") Long saisonId);
