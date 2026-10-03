@@ -279,8 +279,9 @@ qu'un équipement est prêté, pas à qui, et pas l'historique des prêts
 (emprunteurs mineurs). Côté écrans : `AuthService.inspecteBlocs`,
 `gardeInspectionBlocs` ; boutons de gestion masqués si `!gereMateriel`.
 **Étiquettes QR code** (`QrCodeMaterielService`, ZXing, écrans
-`/materiel/etiquettes?ids=…` (planche imprimable, depuis l'inventaire
-filtré ou la fiche) et `/materiel/scanner`) : le QR code porte l'adresse
+`/materiel/etiquettes?ids=…` (planche imprimable, depuis les cases à
+cocher de l'inventaire — le choix survit aux changements de filtre — ou
+depuis la fiche) et `/materiel/scanner`) : le QR code porte l'adresse
 de la fiche, `origine` + `/materiel/{id}` (id et non référence, pour
 corriger une référence sans réimprimer ; `origine` = adresse vue par le
 navigateur, contrôlée par le serveur). L'appareil photo de n'importe quel

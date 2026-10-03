@@ -127,13 +127,35 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
           <input type="checkbox" [ngModel]="avecRebut()" (ngModelChange)="avecRebut.set($event)">
           Afficher le matériel au rebut
         </label>
-        @if (filtres().length > 0) {
-          <a routerLink="/materiel/etiquettes" [queryParams]="{ ids: idsFiltres() }" class="bouton-discret etiquettes"
-             title="Une étiquette par équipement affiché ci-dessous : filtrez d'abord pour n'imprimer que ceux-là">
-            Imprimer les étiquettes QR code ({{ filtres().length }})
-          </a>
+        @if (!choixEtiquettes()) {
+          <button type="button" class="bouton-discret etiquettes" (click)="choixEtiquettes.set(true)">
+            Choisir les étiquettes QR code à imprimer
+          </button>
         }
       </div>
+
+      @if (choixEtiquettes()) {
+        <section class="carte barre-choix" aria-label="Étiquettes à imprimer">
+          <p>
+            <strong>{{ choisis().size }} équipement(s) choisi(s).</strong>
+            <span class="secondaire"> Touchez un équipement pour le cocher ; le choix reste quand vous changez de filtre.</span>
+          </p>
+          <div class="actions">
+            <a routerLink="/materiel/etiquettes" [queryParams]="{ ids: idsChoisis() }" class="bouton-principal"
+               [class.inactif]="choisis().size === 0" [attr.aria-disabled]="choisis().size === 0"
+               (click)="choisis().size === 0 && $event.preventDefault()">
+              Imprimer {{ choisis().size }} étiquette(s)
+            </a>
+            <button type="button" class="bouton-discret" (click)="toutCocher()" [disabled]="filtres().length === 0">
+              Cocher les {{ filtres().length }} affichés
+            </button>
+            <button type="button" class="bouton-discret" (click)="toutDecocher()" [disabled]="choisis().size === 0">
+              Tout décocher
+            </button>
+            <button type="button" class="bouton-discret" (click)="fermerChoix()">Terminer</button>
+          </div>
+        </section>
+      }
 
       @if (filtres().length === 0) {
         <div class="carte vide">
@@ -142,7 +164,21 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
       } @else {
         <ul class="liste">
           @for (e of filtres(); track e.id) {
-            <li class="carte">
+            <li class="carte" [class.coche]="choixEtiquettes() && choisis().has(e.id)">
+              @if (choixEtiquettes()) {
+                <label class="equipement choix">
+                  <span class="ligne">
+                    <span class="identite">
+                      <span class="nom">
+                        <input type="checkbox" [checked]="choisis().has(e.id)" (change)="basculerChoix(e.id)">
+                        {{ e.typeLibelle }} {{ e.reference }}@if (e.ancienneReference) { <span class="ancien">· ancien n° {{ e.ancienneReference }}</span> }
+                      </span>
+                      @if (description(e); as d) { <span class="secondaire">{{ d }}</span> }
+                    </span>
+                    <span [class]="'etat statut-' + e.statut">{{ libelleStatut[e.statut] }}</span>
+                  </span>
+                </label>
+              } @else {
               <a [routerLink]="['/materiel', e.id]" class="equipement">
                 <div class="ligne">
                   <div class="identite">
@@ -162,6 +198,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
                   <span class="secondaire">{{ ec.libelle }} : {{ ec.date | dateFr }}</span>
                 }
               </a>
+              }
             </li>
           }
         </ul>
@@ -203,7 +240,17 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
     .masque { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; }
     .case input { width: auto; }
-    .etiquettes { display: inline-flex; align-items: center; justify-self: start; text-decoration: none; color: var(--encre); }
+    .etiquettes { justify-self: start; color: var(--encre); }
+    .barre-choix {
+      position: sticky; top: 0; z-index: 1; padding: var(--pas-2); margin-bottom: var(--pas-2);
+      border-left: 4px solid var(--profond);
+    }
+    .barre-choix p { margin: 0 0 var(--pas); }
+    .barre-choix .inactif { opacity: .5; cursor: not-allowed; }
+    .choix { cursor: pointer; }
+    .choix .nom { display: flex; align-items: center; gap: var(--pas); }
+    .choix input { width: 24px; height: 24px; flex: none; margin: 0; }
+    .liste li.coche { outline: 3px solid var(--profond); outline-offset: -1px; }
 
     .liste { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
@@ -275,7 +322,10 @@ export class InventaireComponent {
         .some(v => v != null && normaliser(v).includes(r))));
   });
 
-  idsFiltres = computed(() => this.filtres().map(e => e.id).join(','));
+  /** Choix des étiquettes QR code à imprimer : les cases à cocher n'apparaissent qu'à la demande. */
+  choixEtiquettes = signal(false);
+  choisis = signal<Set<number>>(new Set());
+  idsChoisis = computed(() => this.liste().filter(e => this.choisis().has(e.id)).map(e => e.id).join(','));
 
   constructor() {
     void this.charger();
@@ -315,6 +365,25 @@ export class InventaireComponent {
     } finally {
       this.exportEnCours.set(false);
     }
+  }
+
+  basculerChoix(id: number): void {
+    const choisis = new Set(this.choisis());
+    if (!choisis.delete(id)) choisis.add(id);
+    this.choisis.set(choisis);
+  }
+
+  toutCocher(): void {
+    this.choisis.set(new Set([...this.choisis(), ...this.filtres().map(e => e.id)]));
+  }
+
+  toutDecocher(): void {
+    this.choisis.set(new Set());
+  }
+
+  fermerChoix(): void {
+    this.choixEtiquettes.set(false);
+    this.toutDecocher();
   }
 
   basculerStatut(s: StatutEquipement): void {
