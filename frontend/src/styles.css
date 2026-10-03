@@ -156,3 +156,9 @@ input, select, textarea {
     transition-duration: .01ms !important;
   }
 }
+
+/* Planche d'étiquettes QR code du matériel : seules les étiquettes partent à l'impression. */
+@media print {
+  body:has(app-etiquettes-materiel) app-racine > :not(main) { display: none !important; }
+  body:has(app-etiquettes-materiel) main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+}

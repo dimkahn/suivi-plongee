@@ -299,6 +299,9 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
           <a [routerLink]="['/materiel/prets']" [queryParams]="{ equipement: e.id }" class="bouton-principal">Prêter</a>
         }
         <button type="button" class="bouton-discret" (click)="imprimer()">Imprimer la fiche</button>
+        <a [routerLink]="['/materiel/etiquettes']" [queryParams]="{ ids: e.id }" class="bouton-discret">
+          Étiquette QR code
+        </a>
       </div>
 
       <section class="carte bloc-fiche">

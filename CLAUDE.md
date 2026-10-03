@@ -278,6 +278,17 @@ sur ces seules méthodes, le reste du contrôleur reste DT/ADMIN). Il voit
 qu'un équipement est prêté, pas à qui, et pas l'historique des prêts
 (emprunteurs mineurs). Côté écrans : `AuthService.inspecteBlocs`,
 `gardeInspectionBlocs` ; boutons de gestion masqués si `!gereMateriel`.
+**Étiquettes QR code** (`QrCodeMaterielService`, ZXing, écrans
+`/materiel/etiquettes?ids=…` (planche imprimable, depuis l'inventaire
+filtré ou la fiche) et `/materiel/scanner`) : le QR code porte l'adresse
+de la fiche, `origine` + `/materiel/{id}` (id et non référence, pour
+corriger une référence sans réimprimer ; `origine` = adresse vue par le
+navigateur, contrôlée par le serveur). L'appareil photo de n'importe quel
+téléphone l'ouvre donc directement. Le scanner lit en direct avec
+`BarcodeDetector` (Chrome Android) ; sinon (iPhone) une photo de
+l'étiquette est lue par le serveur (`POST /api/materiel/qr-code/photo`).
+Un QR code qui ne porte qu'une référence (« B-12 ») est reconnu aussi.
+Ouvert au TIV comme l'inventaire.
 Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.

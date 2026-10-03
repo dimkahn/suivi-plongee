@@ -15,6 +15,8 @@ import fr.club.plongee.materiel.service.MaterielService.DemandeRebut;
 import fr.club.plongee.materiel.service.MaterielService.EquipementVue;
 import fr.club.plongee.materiel.service.MaterielService.InterventionVue;
 import fr.club.plongee.materiel.service.PretService;
+import fr.club.plongee.materiel.service.QrCodeMaterielService;
+import fr.club.plongee.materiel.service.QrCodeMaterielService.EtiquetteVue;
 import fr.club.plongee.materiel.service.PretService.DemandePret;
 import fr.club.plongee.materiel.service.PretService.DemandeRetour;
 import fr.club.plongee.materiel.service.PretService.EmprunteurVue;
@@ -67,16 +69,24 @@ public class MaterielController {
     private final ImportMaterielService imports;
     private final ExportMaterielService exports;
     private final InspectionTivService inspectionsTiv;
+    private final QrCodeMaterielService qrCodes;
+
+    /** Le texte lu par le téléphone dans un QR code. */
+    public record DemandeLectureQr(String contenu) {}
+
+    /** L'équipement retrouvé à partir d'un QR code. */
+    public record EquipementRetrouve(Long equipementId) {}
 
     public MaterielController(MaterielService materiel, PretService prets, PhotoPretService photos,
                               ImportMaterielService imports, ExportMaterielService exports,
-                              InspectionTivService inspectionsTiv) {
+                              InspectionTivService inspectionsTiv, QrCodeMaterielService qrCodes) {
         this.materiel = materiel;
         this.prets = prets;
         this.photos = photos;
         this.imports = imports;
         this.exports = exports;
         this.inspectionsTiv = inspectionsTiv;
+        this.qrCodes = qrCodes;
     }
 
     @GetMapping("/equipements")
@@ -241,6 +251,34 @@ public class MaterielController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + excel.nomFichier() + "\"")
                 .body(excel.contenu());
+    }
+
+    /**
+     * Les QR codes des étiquettes, pour les équipements demandés. {@code origine} :
+     * l'adresse du site vue par le navigateur (https://…), que le QR code reprend.
+     */
+    @GetMapping("/etiquettes")
+    @PreAuthorize(LECTURE_ET_INSPECTION)
+    public List<EtiquetteVue> etiquettes(@RequestParam List<Long> ids, @RequestParam String origine) {
+        return qrCodes.etiquettes(ids, origine);
+    }
+
+    /** Le texte d'un QR code lu par le téléphone lui-même. */
+    @PostMapping("/qr-code")
+    @PreAuthorize(LECTURE_ET_INSPECTION)
+    public EquipementRetrouve retrouverParQrCode(@RequestBody DemandeLectureQr demande) {
+        return new EquipementRetrouve(qrCodes.retrouver(demande.contenu()));
+    }
+
+    /** Multipart : {@code fichier}, une photo de l'étiquette, lue ici quand le téléphone ne sait pas le faire. */
+    @PostMapping("/qr-code/photo")
+    @PreAuthorize(LECTURE_ET_INSPECTION)
+    public EquipementRetrouve retrouverSurPhoto(@RequestParam("fichier") MultipartFile fichier) {
+        try {
+            return new EquipementRetrouve(qrCodes.retrouverSurPhoto(fichier.getBytes()));
+        } catch (IOException e) {
+            throw new RegleMetierException("La photo n'a pas pu être lue.");
+        }
     }
 
     @GetMapping("/emprunteurs")
