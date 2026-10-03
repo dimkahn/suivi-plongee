@@ -169,10 +169,9 @@ input, select, textarea {
 .menu-actions-liste {
   position: absolute;
   top: calc(100% + 4px);
-  right: 0;
+  left: 0;
   z-index: 20;
   min-width: 260px;
-  max-width: calc(100vw - 32px);
   padding: 4px 0;
   background: var(--carte);
   border: 1px solid var(--trait);
@@ -191,3 +190,10 @@ input, select, textarea {
 .menu-actions-liste button:hover:not(:disabled) { background: var(--fond); }
 .menu-actions-liste button:disabled { opacity: .5; cursor: not-allowed; }
 .menu-actions-liste button.danger { color: #B3261E; border-top: 1px solid var(--trait); }
+/* Sur téléphone, le menu prend toute la largeur de la rangée de boutons
+   plutôt que de partir du bouton, qui le ferait déborder de l'écran. */
+@media (max-width: 600px) {
+  .actions:has(> .menu-actions) { position: relative; }
+  .menu-actions { position: static; }
+  .menu-actions-liste { left: 0; right: 0; min-width: 0; }
+}
