@@ -1,4 +1,5 @@
 // A7 — Inscrire un élève en formation.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

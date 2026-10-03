@@ -1,4 +1,5 @@
 // A3 — Générer les séances de l'année.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

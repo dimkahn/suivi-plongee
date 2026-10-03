@@ -1,4 +1,5 @@
 // M13 — Consulter le planning du bassin.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',

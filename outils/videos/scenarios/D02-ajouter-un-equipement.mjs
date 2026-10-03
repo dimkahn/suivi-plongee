@@ -1,4 +1,5 @@
 // D2 — Ajouter un équipement.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

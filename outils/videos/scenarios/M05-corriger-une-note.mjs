@@ -1,4 +1,5 @@
 // M5 — Corriger une note et retrouver l'historique.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, ouvrirBloc, critere, noter } from '../grille.mjs';
 
 export default {

@@ -1,4 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere } from '../grille.mjs';
 

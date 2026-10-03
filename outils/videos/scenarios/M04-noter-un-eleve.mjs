@@ -1,4 +1,5 @@
 // M4 — Noter un élève pendant la séance.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter } from '../grille.mjs';
 
 export default {

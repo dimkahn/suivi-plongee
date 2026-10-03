@@ -1,4 +1,5 @@
 // M17 — Noter les présents en une fois, depuis la feuille de présence.
+// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : les présences y sont déjà
 // (données de démo), l'appel du 28 reste à M3.
 import { critere } from '../grille.mjs';

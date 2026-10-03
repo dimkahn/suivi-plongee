@@ -96,6 +96,13 @@ prédécesseur pour A7, D7 et D8). Un scénario en échec n'est retenté que
 quand son fichier change ; `~/suivi-plongee-videos/surveiller-scenarios.sh D10`
 le force. Journal : `~/suivi-plongee-videos/journal.log`.
 
+Pour faire retourner **toutes** les vidéos par la machine (après un
+changement d'écran qui touche plusieurs vidéos, par exemple), changer la
+date de la ligne « Tournage du … » en tête de chaque scénario : toutes les
+empreintes changent, et le premier passage après le déploiement du tag les
+retourne et les publie toutes (environ 30 minutes), y compris celles qui
+étaient en échec.
+
 ## La voix off
 
 Chaque phrase des scénarios (geste `legende`) est lue à voix haute par [Piper](https://github.com/OHF-Voice/piper1-gpl),
