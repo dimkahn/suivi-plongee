@@ -205,11 +205,19 @@ encore répondu, jamais supposé présent ni absent. Avertissements ajoutés :
 groupe ayant séance dont tous les encadrants attitrés ont répondu absent,
 DP fosse ou DP piscine absent, et, dès qu'un encadrant a répondu présent,
 aucun E3 parmi les présents (`FicheSecuriteService.NIVEAU_DP_MINIMUM`). La
-réponse demande le réseau (pas de file hors ligne). Les filtres des pages
+réponse demande le réseau (pas de file hors ligne). **Encadrant dans un
+autre groupe un soir** (V42, `affectation_encadrant`, une ligne au plus par
+encadrant et par soirée, saisie par un ADMIN dans le dialogue de la soirée) :
+comme `affectation_groupe`, seul l'écart est stocké ; ce soir-là l'encadrant
+n'encadre que ce groupe. `CaseVue.encadrants` donne les encadrants du soir
+(attitrés moins partis, plus venus, `affecteCeSoir`), et ce sont eux que lisent
+les avertissements (capacité de la fosse, E1, groupe sans encadrant présent).
+`mesGroupeIds` reste les groupes attitrés ; `/planning` met en tête les groupes
+du soir. Le programme d'exercices du groupe d'accueil est ouvert à l'encadrant
+pour les séances de ce jour-là (`ProgrammeSeanceService`). Les filtres des pages
 Infos élèves, Présences et Trombinoscope sont les groupes d'entraînement de
 la saison ouverte (`FiltreGroupeComponent`), et non plus les niveaux
-PN1/PN2/PN3. Suite possible : remplaçant d'un encadrant absent, rappel
-aux encadrants qui n'ont pas répondu.
+PN1/PN2/PN3. Suite possible : rappel aux encadrants qui n'ont pas répondu.
 
 **Matériel et prêts : le domaine du directeur technique (2026).** Rôle
 `DIRECTEUR_TECHNIQUE` (V29), cumulé avec MONITEUR, donné par un ADMIN dans

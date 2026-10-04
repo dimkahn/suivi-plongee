@@ -5,6 +5,7 @@ import fr.club.plongee.planning.service.PlanningService;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.planning.service.PlanningService.DemandeCase;
 import fr.club.plongee.planning.service.PlanningService.DemandeDisponibilite;
+import fr.club.plongee.planning.service.PlanningService.DemandeGroupeEncadrant;
 import fr.club.plongee.planning.service.PlanningService.DemandeSoiree;
 import fr.club.plongee.planning.service.PlanningService.PlanningVue;
 import fr.club.plongee.planning.service.PlanningService.SoireeVue;
@@ -19,7 +20,8 @@ import java.time.LocalDate;
 /**
  * Planning des soirées d'entraînement : consulté par les encadrants, tenu
  * par un admin, case par case (groupe × date) et soirée par soirée
- * (DP fosse, DP piscine, note). Chaque encadrant y annonce sa présence.
+ * (DP fosse, DP piscine, note, encadrant mis dans un autre groupe ce soir-là).
+ * Chaque encadrant y annonce sa présence.
  */
 @RestController
 @RequestMapping("/api/planning")
@@ -73,6 +75,18 @@ public class PlanningController {
                                           @PathVariable Long utilisateurId, @RequestBody DemandeDisponibilite demande,
                                           Authentication authentication) {
         return service.definirDisponibilite(saisonId, date, utilisateurId, demande.reponse(),
+                HabilitationService.principal(authentication).id());
+    }
+
+    /** Groupe d'un encadrant pour une soirée, à la place de ses groupes attitrés ; sans groupe, il y revient. */
+    @PutMapping("/saison/{saisonId}/soirees/{date}/encadrants/{utilisateurId}/groupe")
+    @PreAuthorize("hasRole('ADMIN')")
+    public SoireeVue definirGroupeEncadrant(@PathVariable Long saisonId,
+                                            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                            @PathVariable Long utilisateurId,
+                                            @RequestBody DemandeGroupeEncadrant demande,
+                                            Authentication authentication) {
+        return service.definirGroupeEncadrant(saisonId, date, utilisateurId, demande.groupeId(),
                 HabilitationService.principal(authentication).id());
     }
 }
