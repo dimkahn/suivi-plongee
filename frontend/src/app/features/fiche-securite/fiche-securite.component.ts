@@ -53,11 +53,26 @@ function profondeurMaxPourAptitude(aptitude: string | null): number | null {
   return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
 }
 
-/** Identifie un plongeur par son eleveId/utilisateurId, ou à défaut par son nom/prénom. */
-function cleIdentite(p: { eleveId: number | null; utilisateurId: number | null; nom: string; prenom: string }): string {
-  if (p.eleveId !== null) return 'E' + p.eleveId;
-  if (p.utilisateurId !== null) return 'U' + p.utilisateurId;
-  return 'N' + p.nom + '|' + p.prenom;
+type Identite = { eleveId: number | null; utilisateurId: number | null; nom: string; prenom: string };
+
+/** « Hélène » → « helene » : sans accents, sans majuscules, sans espaces autour. */
+function normaliser(texte: string | null): string {
+  return (texte ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+}
+
+/**
+ * Même plongeur : même dossier élève, sinon même compte encadrant, sinon
+ * mêmes nom et prénom sans tenir compte des accents ni des majuscules. Un
+ * plongeur lié à son dossier d'un côté et tapé à la main de l'autre est donc
+ * reconnu par son nom. Même règle que le serveur pour l'envoi des paramètres
+ * d'un séjour (EnvoiParametresSejourService.correspond).
+ */
+function memePlongeur(a: Identite, b: Identite): boolean {
+  if (a.eleveId !== null && b.eleveId !== null) return a.eleveId === b.eleveId;
+  if (a.utilisateurId !== null && b.utilisateurId !== null) return a.utilisateurId === b.utilisateurId;
+  const nomA = normaliser(a.nom), prenomA = normaliser(a.prenom);
+  if (!nomA && !prenomA) return false;
+  return nomA === normaliser(b.nom) && prenomA === normaliser(b.prenom);
 }
 
 interface FormulaireEntete {
@@ -553,15 +568,19 @@ export class FicheSecuriteComponent {
   });
 
   /** Plongeur déjà dans une palanquée d'une fiche liée → libellé de la séance et numéro de palanquée. */
-  placesSurFichesLiees = computed(() => {
-    const places = new Map<string, string>();
-    for (const l of this.seancesLiees()) {
-      for (const p of l.plongeursPlaces) {
-        places.set(cleIdentite(p), `${this.libelleSeance(l)}, palanquée ${p.palanquee}`);
-      }
-    }
-    return places;
-  });
+  placesSurFichesLiees = computed(() =>
+    this.seancesLiees().flatMap(l => l.plongeursPlaces.map(p => ({
+      plongeur: p, libelle: `${this.libelleSeance(l)}, palanquée ${p.palanquee}`
+    }))));
+
+  /** Où ce plongeur est déjà placé sur une fiche liée, null s'il n'y est pas. */
+  private placeSurFicheLiee(m: Identite): string | null {
+    return this.placesSurFichesLiees().find(x => memePlongeur(x.plongeur, m))?.libelle ?? null;
+  }
+
+  private placeSurCetteFiche(m: Identite): boolean {
+    return this.palanquees().some(p => p.membres.some(x => memePlongeur(x, m)));
+  }
 
   /**
    * Les membres du groupe déjà répartis dans une palanquée de cette fiche, ou
@@ -570,18 +589,14 @@ export class FicheSecuriteComponent {
   poolDisponible = computed(() => {
     const groupe = this.groupeSelectionne();
     if (!groupe) return [];
-    const dejaPlaces = new Set(this.palanquees().flatMap(p => p.membres.map(cleIdentite)));
-    const ailleurs = this.placesSurFichesLiees();
-    return groupe.membres.filter(m => !dejaPlaces.has(cleIdentite(m)) && !ailleurs.has(cleIdentite(m)));
+    return groupe.membres.filter(m => !this.placeSurCetteFiche(m) && this.placeSurFicheLiee(m) === null);
   });
 
   /** Membres du groupe retirés du pool parce qu'ils sont déjà sur une fiche liée (et pas sur celle-ci). */
   masquesParLiaison = computed(() => {
     const groupe = this.groupeSelectionne();
     if (!groupe) return 0;
-    const ici = new Set(this.palanquees().flatMap(p => p.membres.map(cleIdentite)));
-    const ailleurs = this.placesSurFichesLiees();
-    return groupe.membres.filter(m => !ici.has(cleIdentite(m)) && ailleurs.has(cleIdentite(m))).length;
+    return groupe.membres.filter(m => !this.placeSurCetteFiche(m) && this.placeSurFicheLiee(m) !== null).length;
   });
 
   /** Un id de dropList CDK par palanquée, pour connecter le pool du groupe et permettre le glisser-déposer entre elles. */
@@ -735,11 +750,12 @@ export class FicheSecuriteComponent {
       return;
     }
 
-    const membres = new Map<string, MembreGroupeVue>();
+    const membres: MembreGroupeVue[] = [];
     for (const p of this.palanquees()) {
       for (const m of p.membres) {
         if (!m.nom && !m.prenom) continue;
-        membres.set(cleIdentite(m), {
+        if (membres.some(x => memePlongeur(x, m))) continue;
+        membres.push({
           eleveId: m.eleveId, utilisateurId: m.utilisateurId, nom: m.nom, prenom: m.prenom,
           aptitude: m.aptitude, qualificationPreparee: m.qualificationPreparee
         });
@@ -839,7 +855,7 @@ export class FicheSecuriteComponent {
   /** Avertissement d'affichage : le même plongeur placé aussi sur une fiche liée. */
   aussiSurFicheLiee(m: PlongeurVue): string | null {
     if (!m.nom && !m.prenom && m.eleveId === null && m.utilisateurId === null) return null;
-    const ailleurs = this.placesSurFichesLiees().get(cleIdentite(m));
+    const ailleurs = this.placeSurFicheLiee(m);
     return ailleurs ? `Aussi placé sur la fiche liée (${ailleurs}).` : null;
   }
 
