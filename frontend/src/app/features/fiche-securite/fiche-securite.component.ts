@@ -195,17 +195,20 @@ interface FormulaireEntete {
               <p class="seance-liee">
                 🔗 Liée à <strong>{{ libelleSeance(l) }}</strong>
                 <span class="secondaire">
-                  — {{ l.ficheEtablie ? l.plongeursPlaces.length + ' plongeur(s) déjà placé(s)' : 'fiche pas encore établie' }}
+                  — {{ detailsSeance(l.seanceId) }}{{ detailsSeance(l.seanceId) ? ' · ' : '' }}{{
+                    l.ficheEtablie ? l.plongeursPlaces.length + ' plongeur(s) déjà placé(s)' : 'fiche pas encore établie' }}
                 </span>
               </p>
             }
             <div class="ligne-groupe">
               @if (seancesLiables().length > 0) {
-                <select [ngModel]="seanceALier()" (ngModelChange)="seanceALier.set($event)" name="seanceALier"
-                        aria-label="Séance du même jour à lier">
-                  <option [ngValue]="null">— Lier à une autre séance du jour —</option>
+                <select class="choix-seance" [ngModel]="seanceALier()" (ngModelChange)="seanceALier.set($event)"
+                        name="seanceALier" aria-label="Séance du même jour à lier">
+                  <option [ngValue]="null">— Lier à une autre séance du {{ seance()?.date | dateFr }} —</option>
                   @for (s of seancesLiables(); track s.id) {
-                    <option [ngValue]="s.id">{{ libelleSeance(s) }}</option>
+                    <option [ngValue]="s.id">
+                      {{ libelleSeance(s) }}{{ detailsSeance(s.id) ? ' — ' + detailsSeance(s.id) : '' }}
+                    </option>
                   }
                 </select>
                 <button type="button" class="bouton-discret" [disabled]="!seanceALier() || envoiLiaison()"
@@ -217,6 +220,15 @@ interface FormulaireEntete {
                 </button>
               }
             </div>
+            @if (seanceChoisiePourLien(); as s) {
+              <p class="detail-seance">
+                <strong>{{ libelleSeance(s) }}</strong><br>
+                {{ s.date | dateFr }} · {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}
+                {{ s.profondeurMax ? ' · ' + s.profondeurMax + ' m max' : '' }}
+                · {{ s.ficheSecurite ? 'fiche déjà établie' : 'fiche pas encore établie' }}
+                @if (s.commentaire) { <br>{{ s.commentaire }} }
+              </p>
+            }
           </div>
         }
 
@@ -403,6 +415,12 @@ interface FormulaireEntete {
     .liaison { border-top: 1px solid var(--trait); padding-top: var(--pas); margin-bottom: var(--pas-2); }
     .liaison .secondaire { margin: 0 0 var(--pas); }
     .seance-liee { margin: 0 0 var(--pas); }
+    /* Les options portent le lieu, le milieu et l'info complémentaire : plus large que le choix du groupe. */
+    .ligne-groupe select.choix-seance { flex: 1 1 320px; max-width: 100%; min-height: 44px; }
+    .detail-seance {
+      margin: 0; padding: var(--pas); font-size: .875rem;
+      border-left: 3px solid var(--profond); background: var(--brume, #eef4f5); border-radius: var(--r-s);
+    }
 
     .pool-plongeurs {
       display: flex; flex-wrap: wrap; gap: var(--pas); min-height: 44px;
@@ -762,6 +780,25 @@ export class FicheSecuriteComponent {
     const ou = lieuEtSite(s);
     return `Séance ${s.ordre ?? 1}${ou ? ' — ' + ou : ''}`;
   }
+
+  /**
+   * « Milieu naturel · 20 m max · Bateau 2 · fiche établie » : de quoi
+   * distinguer deux séances du même jour au même endroit.
+   */
+  detailsSeance(seanceId: number): string {
+    const s = this.toutesSeances().find(x => x.id === seanceId);
+    if (!s) return '';
+    return [
+      s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel',
+      s.profondeurMax ? s.profondeurMax + ' m max' : null,
+      s.commentaire?.trim() || null,
+      s.ficheSecurite ? 'fiche établie' : 'sans fiche'
+    ].filter(v => v).join(' · ');
+  }
+
+  /** La séance choisie dans la liste, détaillée sous celle-ci avant de confirmer le lien. */
+  seanceChoisiePourLien = computed(() =>
+    this.toutesSeances().find(s => s.id === this.seanceALier()) ?? null);
 
   /** Lier demande le réseau : la fiche liée doit être lue sur le serveur. */
   lier(): void {
