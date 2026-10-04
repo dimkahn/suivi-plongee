@@ -13,7 +13,10 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -82,11 +85,14 @@ public class SeanceController {
     private final FicheSecuriteRepository fichesSecurite;
     private final PhotoEleveRepository photos;
     private final GenerationSaisonService generationSaison;
+    private final FicheSecuriteService ficheSecuriteService;
 
     public SeanceController(SeanceRepository seances, SaisonRepository saisons,
                             CursusRepository cursus, ParticipationRepository participations,
                             EvaluationRepository evaluations, FicheSecuriteRepository fichesSecurite,
-                            PhotoEleveRepository photos, GenerationSaisonService generationSaison) {
+                            PhotoEleveRepository photos, GenerationSaisonService generationSaison,
+                            FicheSecuriteService ficheSecuriteService) {
+        this.ficheSecuriteService = ficheSecuriteService;
         this.seances = seances;
         this.saisons = saisons;
         this.cursus = cursus;
@@ -103,6 +109,16 @@ public class SeanceController {
         return seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
                 .map(this::vue)
                 .toList();
+    }
+
+    /** Toutes les fiches de sécurité d'une journée dans un seul PDF, une par page, pour les imprimer d'un coup. */
+    @GetMapping(value = "/fiches-securite.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public ResponseEntity<byte[]> fichesSecuriteDuJourPdf(@RequestParam LocalDate date) {
+        FicheSecuritePdfService.FichePdf pdf = ficheSecuriteService.genererPdfJour(date);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.nomFichier() + "\"")
+                .body(pdf.contenu());
     }
 
     @PostMapping

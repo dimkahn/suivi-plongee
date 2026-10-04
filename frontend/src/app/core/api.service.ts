@@ -308,6 +308,11 @@ export class ApiService {
     return this.http.get(`/api/sorties/${sortieId}/fiches-securite.pdf`, { responseType: 'blob' });
   }
 
+  /** Toutes les fiches de sécurité d'une journée dans un seul PDF, une par page. */
+  fichesSecuriteJourPdf(date: string): Observable<Blob> {
+    return this.http.get('/api/seances/fiches-securite.pdf', { params: { date }, responseType: 'blob' });
+  }
+
   ficheSecuriteExcel(seanceId: number): Observable<Blob> {
     return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.xlsx`, { responseType: 'blob' });
   }

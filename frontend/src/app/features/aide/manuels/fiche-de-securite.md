@@ -3,7 +3,7 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée
 questions:
 - Comment remplir une fiche de sécurité ?
 - Comment ajouter une palanquée ?
@@ -11,6 +11,7 @@ questions:
 - Comment saisir les paramètres réalisés après la plongée ?
 - Comment exporter une fiche de sécurité ?
 - Comment imprimer toutes les fiches de sécurité d'un séjour ?
+- Comment imprimer toutes les fiches palanquées d'un jour ?
 ---
 Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plongée, les conditions, puis composez les palanquées. Au retour, on complète les heures, profondeurs et paliers réalisés.
 
@@ -30,6 +31,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers.
 3. La fiche complète s'exporte en PDF ou en tableur pour les archives du club.
 4. Si la plongée fait partie d'une sortie (un séjour), « Toutes les fiches de … (PDF) » réunit les fiches de toutes ses plongées dans un seul PDF, une par page : tout s'imprime d'un coup. Les plongées sans fiche sont sautées.
+5. Pour imprimer toutes les fiches d'une journée (plusieurs plongées, plusieurs bateaux), choisissez la date dans la liste « Fiches de sécurité » puis « Imprimer les fiches du … (PDF) » : une fiche par page, dans l'ordre des plongées. Les séances sans fiche sont sautées ; une fiche saisie hors ligne n'y figure qu'une fois envoyée.
 
 ## Bon à savoir
 

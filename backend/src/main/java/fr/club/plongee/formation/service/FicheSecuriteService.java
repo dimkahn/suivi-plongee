@@ -357,6 +357,25 @@ public class FicheSecuriteService {
                 "fiches-securite-%s.pdf".formatted(sortie.getDateDebut()));
     }
 
+    /**
+     * Les fiches de toutes les séances d'une journée (plusieurs plongées,
+     * plusieurs bateaux…), dans un seul PDF, dans l'ordre des plongées. Même
+     * contrat que {@link #genererPdfSortie} : séances sans fiche sautées,
+     * aucune fiche du tout = refus explicite.
+     */
+    @Transactional(readOnly = true)
+    public FicheSecuritePdfService.FichePdf genererPdfJour(LocalDate jour) {
+        List<FicheSecurite> liste = seances.findByDateSeanceBetweenOrderByDateSeanceAscOrdreAsc(jour, jour).stream()
+                .sorted(Comparator.comparing((Seance s) -> s.getOrdre() == null ? 0 : s.getOrdre())
+                        .thenComparing(Seance::getId))
+                .flatMap(s -> fiches.findBySeanceId(s.getId()).stream())
+                .toList();
+        if (liste.isEmpty()) {
+            throw new RegleMetierException("Aucune fiche de sécurité n'est encore établie pour les séances de ce jour.");
+        }
+        return pdfService.genererPlusieurs(liste, "fiches-securite-%s.pdf".formatted(jour));
+    }
+
     /** Même contrat que {@link #genererPdf} : le rendu doit rester dans la transaction. */
     @Transactional(readOnly = true)
     public FicheSecuriteExcelService.FicheExcel genererExcel(Long seanceId) {
