@@ -173,6 +173,64 @@ class SortieTest {
     }
 
     @Test
+    @DisplayName("En fin de séjour, chaque plongeur du groupe reçoit par e-mail ses seules plongées")
+    void envoiDesParametresAuGroupe() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String admin = jeton("presidente@club.fr");
+        LocalDate samedi = AUJOURDHUI.plusDays(150).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        List<Long> plongees = creerPlongees(dt, samedi);
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour e-mails","dateDebut":"%s","dateFin":"%s"}"""
+                .formatted(samedi, samedi.plusDays(1)), 201).get("id").asLong();
+        envoyer("PUT", "/api/sorties/" + sortie + "/seances", dt,
+                "{\"seanceIds\":" + plongees.subList(0, 4) + "}", 200);
+
+        long saisonId = -1;
+        for (JsonNode s : envoyer("GET", "/api/saisons", admin, null, 200)) {
+            if (s.get("ouverte").asBoolean()) saisonId = s.get("id").asLong();
+        }
+        JsonNode groupe = envoyer("POST", "/api/groupes-plongeurs", dt, """
+                {"nom":"Groupe e-mails","saisonId":%d,"membres":[
+                  {"nom":"Dulac","prenom":"Anis","aptitude":"N2","email":"anis@exemple.fr"},
+                  {"nom":"Perrot","prenom":"Sonia","aptitude":"N1","email":"sonia@exemple.fr"},
+                  {"nom":"Sansmail","prenom":"Paul","aptitude":"N1"},
+                  {"nom":"Absente","prenom":"Zoé","aptitude":"N1","email":"zoe@exemple.fr"}]}"""
+                .formatted(saisonId), 200);
+        assertThat(groupe.get("membres").get(0).get("email").asText()).isEqualTo("anis@exemple.fr");
+        long groupeId = groupe.get("id").asLong();
+
+        // Pas encore de fiche : rien à envoyer.
+        envoyer("POST", "/api/groupes-plongeurs/" + groupeId + "/envoi-parametres", dt,
+                "{\"sortieId\":" + sortie + "}", 422);
+
+        long dpId = -1;
+        for (JsonNode m : envoyer("GET", "/api/admin/moniteurs", admin, null, 200)) {
+            if ("e3@club.fr".equals(m.get("email").asText())) dpId = m.get("id").asLong();
+        }
+        String anis = "{\"nom\":\"Dulac\",\"prenom\":\"Anis\",\"aptitude\":\"N2\",\"fonction\":\"GUIDE_PALANQUEE\"}";
+        String sonia = "{\"nom\":\"Perrot\",\"prenom\":\"Sonia\",\"aptitude\":\"N1\",\"fonction\":\"PLONGEUR\"}";
+        String paul = "{\"nom\":\"Sansmail\",\"prenom\":\"Paul\",\"aptitude\":\"N1\",\"fonction\":\"PLONGEUR\"}";
+        // Plongée 1 : Anis et Sonia ensemble ; plongée 2 : Anis avec Paul, Sonia seule dans une autre palanquée.
+        envoyer("PUT", "/api/seances/" + plongees.get(0) + "/fiche-securite", dt, """
+                {"dpId":%d,"palanquees":[{"numero":1,"membres":[%s,%s]}]}""".formatted(dpId, anis, sonia), 200);
+        envoyer("PUT", "/api/seances/" + plongees.get(1) + "/fiche-securite", dt, """
+                {"dpId":%d,"palanquees":[{"numero":1,"membres":[%s,%s]},{"numero":2,"membres":[%s]}]}"""
+                .formatted(dpId, anis, paul, sonia), 200);
+        envoyer("PUT", "/api/seances/" + plongees.get(2) + "/fiche-securite", dt, """
+                {"dpId":%d,"palanquees":[{"numero":1,"membres":[%s]}]}""".formatted(dpId, anis), 200);
+
+        JsonNode bilan = envoyer("POST", "/api/groupes-plongeurs/" + groupeId + "/envoi-parametres", dt,
+                "{\"sortieId\":" + sortie + "}", 200);
+        assertThat(bilan.get("envoyes")).hasSize(2);
+        for (JsonNode d : bilan.get("envoyes")) {
+            if (d.get("email").asText().equals("anis@exemple.fr")) assertThat(d.get("nombrePlongees").asInt()).isEqualTo(3);
+            else assertThat(d.get("nombrePlongees").asInt()).isEqualTo(2);
+        }
+        assertThat(bilan.get("sansEmail").get(0).asText()).isEqualTo("Paul Sansmail");
+        assertThat(bilan.get("sansPlongee").get(0).asText()).isEqualTo("Zoé Absente");
+    }
+
+    @Test
     @DisplayName("Un moniteur consulte les sorties mais ne les gère pas")
     void droits() throws Exception {
         String e1 = jeton("e1@club.fr");

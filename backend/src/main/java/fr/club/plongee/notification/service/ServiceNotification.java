@@ -19,4 +19,11 @@ public interface ServiceNotification {
      * il ne remplace pas un mot de passe oublie.
      */
     void envoyerLienInvitation(Utilisateur destinataire, String jeton);
+
+    /**
+     * Courriel en texte brut à une adresse qui n'est pas forcément celle d'un
+     * compte (plongeur d'un groupe de séjour, invité d'un autre club).
+     * Renvoie {@code false} si l'envoi a échoué, pour que l'appelant le signale.
+     */
+    boolean envoyerCourriel(String adresse, String sujet, String corps);
 }

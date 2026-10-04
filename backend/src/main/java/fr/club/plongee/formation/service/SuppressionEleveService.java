@@ -68,7 +68,7 @@ public class SuppressionEleveService {
         executer("DELETE FROM qualification WHERE eleve_id = :id", eleveId);
         executer("DELETE FROM photo_eleve WHERE eleve_id = :id", eleveId);
         executer("UPDATE membre_palanquee SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
-        executer("UPDATE membre_groupe_plongeurs SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
+        executer("UPDATE membre_groupe_plongeurs SET eleve_id = NULL, email = NULL WHERE eleve_id = :id", eleveId);
         executer("UPDATE pret SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
         executer("UPDATE pret_aud SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
 

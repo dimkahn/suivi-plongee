@@ -176,7 +176,10 @@ par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
 saison (règle du service). Choix du club (2026) : le suivi d'un élève passe
 par les référents de son groupe ; l'ancien « moniteur référent » propre à
 chaque cursus (`cursus.moniteur_referent_id`) a été supprimé par V36. **Sans rapport avec `GroupePlongeurs`** (V13), qui
-compose les palanquées d'un séjour (des séances du même jour peuvent être
+compose les palanquées d'un séjour (e-mail facultatif par membre, V44 —
+vide, celui du dossier ; en fin de séjour `EnvoiParametresSejourService`
+envoie à chacun les seules plongées de la sortie où il figure, lues sur les
+fiches de sécurité ; des séances du même jour peuvent être
 **liées**, V43 `LiaisonSeances`, depuis la fiche de sécurité : deux bateaux
 se partagent un groupe, chaque fiche ne propose que les plongeurs absents
 des palanquées des fiches liées ; `FicheSecuriteVue.seancesLiees`, simple

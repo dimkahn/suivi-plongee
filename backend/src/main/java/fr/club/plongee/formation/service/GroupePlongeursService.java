@@ -22,13 +22,17 @@ import java.util.List;
 @Service
 public class GroupePlongeursService {
 
+    /**
+     * {@code email} : celui saisi dans le groupe ; {@code emailDossier} : celui
+     * du dossier de l'élève ou de l'encadrant, utilisé quand le premier est vide.
+     */
     public record MembreVue(Long eleveId, Long utilisateurId, String nom, String prenom,
-                            String aptitude, String qualificationPreparee) {}
+                            String aptitude, String qualificationPreparee, String email, String emailDossier) {}
 
     public record GroupePlongeursVue(Long id, String nom, Long saisonId, List<MembreVue> membres) {}
 
     public record Membre(Long eleveId, Long utilisateurId, String nom, String prenom,
-                         String aptitude, String qualificationPreparee) {}
+                         String aptitude, String qualificationPreparee, String email) {}
 
     public record Saisie(String nom, Long saisonId, List<Membre> membres) {}
 
@@ -106,6 +110,7 @@ public class GroupePlongeursService {
             membre.setPrenom(m.prenom());
             membre.setAptitude(m.aptitude());
             membre.setQualificationPreparee(m.qualificationPreparee());
+            membre.setEmail(m.email() == null || m.email().isBlank() ? null : m.email().trim());
             groupe.getMembres().add(membre);
         }
     }
@@ -115,7 +120,9 @@ public class GroupePlongeursService {
                 .map(m -> new MembreVue(
                         m.getEleve() == null ? null : m.getEleve().getId(),
                         m.getUtilisateur() == null ? null : m.getUtilisateur().getId(),
-                        m.getNom(), m.getPrenom(), m.getAptitude(), m.getQualificationPreparee()))
+                        m.getNom(), m.getPrenom(), m.getAptitude(), m.getQualificationPreparee(), m.getEmail(),
+                        m.getEleve() != null ? m.getEleve().getEmail()
+                                : m.getUtilisateur() != null ? m.getUtilisateur().getEmail() : null))
                 .toList();
         return new GroupePlongeursVue(g.getId(), g.getNom(), g.getSaison().getId(), membres);
     }

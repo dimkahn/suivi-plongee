@@ -604,6 +604,18 @@ export interface MembreGroupeVue {
   prenom: string;
   aptitude: string | null;
   qualificationPreparee: string | null;
+  /** Pour l'envoi des paramètres en fin de séjour ; vide, `emailDossier` sert à la place. */
+  email?: string | null;
+  /** E-mail du dossier de l'élève ou de l'encadrant (lecture seule). */
+  emailDossier?: string | null;
+}
+
+/** Bilan de l'envoi par e-mail des paramètres d'un séjour aux plongeurs d'un groupe. */
+export interface BilanEnvoiParametres {
+  envoyes: { nom: string; email: string; nombrePlongees: number }[];
+  sansEmail: string[];
+  sansPlongee: string[];
+  echecs: string[];
 }
 
 /**

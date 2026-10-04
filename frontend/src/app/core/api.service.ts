@@ -11,7 +11,7 @@ import {
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
-  DemandeSortie, SeancePossibleVue, SortieVue, BilanNotationGroupee, DemandeNotationGroupee,
+  DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
   DemandeExercice, ProgrammeVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
@@ -331,6 +331,11 @@ export class ApiService {
   modifierGroupePlongeurs(id: number, demande: { nom: string; saisonId: number; membres: MembreGroupeVue[] }):
       Observable<GroupePlongeursVue> {
     return this.http.put<GroupePlongeursVue>(`/api/groupes-plongeurs/${id}`, demande);
+  }
+
+  /** Fin de séjour : chaque plongeur du groupe reçoit les paramètres de ses seules plongées de la sortie. */
+  envoyerParametresSejour(groupeId: number, sortieId: number): Observable<BilanEnvoiParametres> {
+    return this.http.post<BilanEnvoiParametres>(`/api/groupes-plongeurs/${groupeId}/envoi-parametres`, { sortieId });
   }
 
   supprimerGroupePlongeurs(id: number): Observable<void> {
