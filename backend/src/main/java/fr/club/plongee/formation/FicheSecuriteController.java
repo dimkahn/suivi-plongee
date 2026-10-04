@@ -58,6 +58,8 @@ public class FicheSecuriteController {
                                        Integer dureeRealisee, String paliers,
                                        LocalTime heureImmersion, LocalTime heureSortie) {}
 
+    public record DemandeLiaison(@NotNull Long seanceId) {}
+
     private final FicheSecuriteService service;
 
     public FicheSecuriteController(FicheSecuriteService service) {
@@ -97,6 +99,24 @@ public class FicheSecuriteController {
                         d.dureeRealisee(), d.paliers(), d.heureImmersion(), d.heureSortie()))
                 .toList();
         return service.enregistrerRealise(seanceId, profils);
+    }
+
+    /**
+     * Lie cette séance à une autre du même jour (deux bateaux, deux sites) :
+     * sur chaque fiche, le groupe ne propose plus les plongeurs déjà placés
+     * sur l'autre.
+     */
+    @PutMapping("/liaison")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public FicheSecuriteService.FicheSecuriteVue lier(@PathVariable Long seanceId,
+                                                      @Valid @RequestBody DemandeLiaison demande) {
+        return service.lier(seanceId, demande.seanceId());
+    }
+
+    @DeleteMapping("/liaison")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public FicheSecuriteService.FicheSecuriteVue delier(@PathVariable Long seanceId) {
+        return service.delier(seanceId);
     }
 
     /** Réservée à l'ADMIN, comme la suppression d'une séance : un geste rare, pour corriger une erreur. */

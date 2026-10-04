@@ -11,7 +11,7 @@ import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
   FicheSecuriteVue, GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
-  PlongeurVue, SeanceVue
+  PlongeurVue, SeanceLieeVue, SeanceVue
 } from '../../core/modeles';
 
 function plongeurVide(): PlongeurVue {
@@ -185,6 +185,41 @@ interface FormulaireEntete {
           <a routerLink="/groupes" class="bouton-discret">Gérer les groupes →</a>
         </div>
 
+        @if (seancesLiees().length > 0 || seancesLiables().length > 0) {
+          <div class="liaison">
+            <p class="secondaire">
+              Le même jour, un autre bateau ou un autre site ? Liez les deux séances : sur chaque fiche,
+              le groupe ne propose plus que les plongeurs qui ne sont pas déjà dans une palanquée de l'autre.
+            </p>
+            @for (l of seancesLiees(); track l.seanceId) {
+              <p class="seance-liee">
+                🔗 Liée à <strong>{{ libelleSeance(l) }}</strong>
+                <span class="secondaire">
+                  — {{ l.ficheEtablie ? l.plongeursPlaces.length + ' plongeur(s) déjà placé(s)' : 'fiche pas encore établie' }}
+                </span>
+              </p>
+            }
+            <div class="ligne-groupe">
+              @if (seancesLiables().length > 0) {
+                <select [ngModel]="seanceALier()" (ngModelChange)="seanceALier.set($event)" name="seanceALier"
+                        aria-label="Séance du même jour à lier">
+                  <option [ngValue]="null">— Lier à une autre séance du jour —</option>
+                  @for (s of seancesLiables(); track s.id) {
+                    <option [ngValue]="s.id">{{ libelleSeance(s) }}</option>
+                  }
+                </select>
+                <button type="button" class="bouton-discret" [disabled]="!seanceALier() || envoiLiaison()"
+                        (click)="lier()">Lier</button>
+              }
+              @if (seancesLiees().length > 0) {
+                <button type="button" class="bouton-discret danger" [disabled]="envoiLiaison()" (click)="delier()">
+                  Délier cette séance
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         @if (creationGroupeOuverte()) {
           <div class="ligne-groupe">
             <input type="text" placeholder="Nom du groupe (ex. Séjour Égypte mai 2026)"
@@ -217,6 +252,11 @@ interface FormulaireEntete {
               </p>
             }
           </div>
+          @if (masquesParLiaison() > 0) {
+            <p class="secondaire">
+              {{ masquesParLiaison() }} plongeur(s) du groupe déjà placé(s) sur la fiche liée, non proposé(s) ici.
+            </p>
+          }
         }
       </section>
 
@@ -269,6 +309,9 @@ interface FormulaireEntete {
                   <button type="button" class="bouton-discret danger" (click)="retirerMembre(iP, iM)">✕</button>
                 </div>
                 @if (alerteProfondeur(p, m); as alerte) {
+                  <p class="alerte-profondeur">⚠ {{ alerte }}</p>
+                }
+                @if (aussiSurFicheLiee(m); as alerte) {
                   <p class="alerte-profondeur">⚠ {{ alerte }}</p>
                 }
               </div>
@@ -357,6 +400,9 @@ interface FormulaireEntete {
     .ligne-groupe { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin-bottom: var(--pas-2); }
     .ligne-groupe select { max-width: 280px; }
     .ligne-groupe input[type="text"] { flex: 1 1 240px; }
+    .liaison { border-top: 1px solid var(--trait); padding-top: var(--pas); margin-bottom: var(--pas-2); }
+    .liaison .secondaire { margin: 0 0 var(--pas); }
+    .seance-liee { margin: 0 0 var(--pas); }
 
     .pool-plongeurs {
       display: flex; flex-wrap: wrap; gap: var(--pas); min-height: 44px;
@@ -470,12 +516,52 @@ export class FicheSecuriteComponent {
   nomNouveauGroupe = signal('');
   envoiGroupe = signal(false);
 
-  /** Les membres du groupe déjà répartis dans une palanquée de cette fiche ne se glissent plus depuis le pool. */
+  /** Toutes les séances connues, pour proposer celles du même jour à lier. */
+  toutesSeances = signal<SeanceVue[]>([]);
+  /** Séances du même jour liées à celle-ci (deux bateaux…), et les plongeurs déjà placés sur leurs fiches. */
+  seancesLiees = signal<SeanceLieeVue[]>([]);
+  seanceALier = signal<number | null>(null);
+  envoiLiaison = signal(false);
+
+  seancesLiables = computed(() => {
+    const courante = this.seance();
+    if (!courante) return [];
+    const liees = new Set(this.seancesLiees().map(l => l.seanceId));
+    return this.toutesSeances()
+      .filter(s => s.date === courante.date && s.id !== courante.id && !liees.has(s.id))
+      .sort((a, b) => a.ordre - b.ordre || a.id - b.id);
+  });
+
+  /** Plongeur déjà dans une palanquée d'une fiche liée → libellé de la séance et numéro de palanquée. */
+  placesSurFichesLiees = computed(() => {
+    const places = new Map<string, string>();
+    for (const l of this.seancesLiees()) {
+      for (const p of l.plongeursPlaces) {
+        places.set(cleIdentite(p), `${this.libelleSeance(l)}, palanquée ${p.palanquee}`);
+      }
+    }
+    return places;
+  });
+
+  /**
+   * Les membres du groupe déjà répartis dans une palanquée de cette fiche, ou
+   * d'une fiche liée, ne se glissent plus depuis le pool.
+   */
   poolDisponible = computed(() => {
     const groupe = this.groupeSelectionne();
     if (!groupe) return [];
     const dejaPlaces = new Set(this.palanquees().flatMap(p => p.membres.map(cleIdentite)));
-    return groupe.membres.filter(m => !dejaPlaces.has(cleIdentite(m)));
+    const ailleurs = this.placesSurFichesLiees();
+    return groupe.membres.filter(m => !dejaPlaces.has(cleIdentite(m)) && !ailleurs.has(cleIdentite(m)));
+  });
+
+  /** Membres du groupe retirés du pool parce qu'ils sont déjà sur une fiche liée (et pas sur celle-ci). */
+  masquesParLiaison = computed(() => {
+    const groupe = this.groupeSelectionne();
+    if (!groupe) return 0;
+    const ici = new Set(this.palanquees().flatMap(p => p.membres.map(cleIdentite)));
+    const ailleurs = this.placesSurFichesLiees();
+    return groupe.membres.filter(m => !ici.has(cleIdentite(m)) && ailleurs.has(cleIdentite(m))).length;
   });
 
   /** Un id de dropList CDK par palanquée, pour connecter le pool du groupe et permettre le glisser-déposer entre elles. */
@@ -499,6 +585,9 @@ export class FicheSecuriteComponent {
       const { fiche, enAttente } = this.file.ficheAJour(this.seanceId, ficheLue, moniteurs);
       this.enAttente.set(enAttente);
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
+      this.toutesSeances.set(seances);
+      // Une fiche gardée hors ligne avant l'arrivée des séances liées n'a pas ce champ.
+      this.seancesLiees.set(fiche.seancesLiees ?? []);
       this.moniteurs.set(moniteurs);
       this.plongeursConnus.set(plongeursConnus);
       this.ficheId.set(fiche.id);
@@ -666,6 +755,53 @@ export class FicheSecuriteComponent {
       },
       error: () => this.message.set('La suppression du groupe a échoué.')
     });
+  }
+
+  /** « Séance 2 — Carrière de Blaisy · La Vierge » : les séances liées sont du même jour, le rang suffit. */
+  libelleSeance(s: { ordre: number | null; lieu: string | null; site: string | null }): string {
+    const ou = lieuEtSite(s);
+    return `Séance ${s.ordre ?? 1}${ou ? ' — ' + ou : ''}`;
+  }
+
+  /** Lier demande le réseau : la fiche liée doit être lue sur le serveur. */
+  lier(): void {
+    const autre = this.seanceALier();
+    if (!autre) return;
+    this.envoiLiaison.set(true);
+    this.api.lierSeance(this.seanceId, autre).subscribe({
+      next: f => {
+        this.envoiLiaison.set(false);
+        this.seancesLiees.set(f.seancesLiees);
+        this.seanceALier.set(null);
+        this.message.set('Séances liées : les plongeurs déjà placés sur l\'autre fiche ne sont plus proposés.');
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiLiaison.set(false);
+        this.message.set(e.error?.detail ?? 'Impossible de lier les séances (réseau nécessaire).');
+      }
+    });
+  }
+
+  delier(): void {
+    this.envoiLiaison.set(true);
+    this.api.delierSeance(this.seanceId).subscribe({
+      next: f => {
+        this.envoiLiaison.set(false);
+        this.seancesLiees.set(f.seancesLiees);
+        this.message.set('Cette séance n\'est plus liée.');
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiLiaison.set(false);
+        this.message.set(e.error?.detail ?? 'Impossible de délier la séance (réseau nécessaire).');
+      }
+    });
+  }
+
+  /** Avertissement d'affichage : le même plongeur placé aussi sur une fiche liée. */
+  aussiSurFicheLiee(m: PlongeurVue): string | null {
+    if (!m.nom && !m.prenom && m.eleveId === null && m.utilisateurId === null) return null;
+    const ailleurs = this.placesSurFichesLiees().get(cleIdentite(m));
+    return ailleurs ? `Aussi placé sur la fiche liée (${ailleurs}).` : null;
   }
 
   /**

@@ -353,4 +353,65 @@ class FicheSecuriteTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").doesNotExist());
     }
+
+    @Test
+    @DisplayName("Deux séances du même jour liées : chaque fiche voit les plongeurs déjà placés sur l'autre")
+    void seancesLieesPartagentLesPlongeurs() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e2@club.fr");
+        long bateau1 = creerSeance(admin);
+        long bateau2 = creerSeance(admin);
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + bateau1 + "/fiche-securite").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
+                .andExpect(status().isOk());
+
+        mvc.perform(put("/api/seances/" + bateau2 + "/fiche-securite/liaison").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"seanceId\": " + bateau1 + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.seancesLiees.length()").value(1))
+                .andExpect(jsonPath("$.seancesLiees[0].seanceId").value(bateau1))
+                .andExpect(jsonPath("$.seancesLiees[0].ficheEtablie").value(true))
+                .andExpect(jsonPath("$.seancesLiees[0].plongeursPlaces.length()").value(2))
+                .andExpect(jsonPath("$.seancesLiees[0].plongeursPlaces[0].nom").value("Dulac"))
+                .andExpect(jsonPath("$.seancesLiees[0].plongeursPlaces[0].palanquee").value(1));
+
+        // Le lien vaut dans les deux sens.
+        mvc.perform(get("/api/seances/" + bateau1 + "/fiche-securite").header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.seancesLiees[0].seanceId").value(bateau2))
+                .andExpect(jsonPath("$.seancesLiees[0].ficheEtablie").value(false));
+
+        mvc.perform(delete("/api/seances/" + bateau2 + "/fiche-securite/liaison").header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.seancesLiees").isEmpty());
+        mvc.perform(get("/api/seances/" + bateau1 + "/fiche-securite").header("Authorization", moniteur))
+                .andExpect(jsonPath("$.seancesLiees").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Deux séances de jours différents ne se lient pas ; une séance liée reste supprimable")
+    void liaisonEntreJoursDifferentsRefusee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeance(admin);
+        long lendemain = json.readTree(mvc.perform(post("/api/seances").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dateSeance\":\"2026-06-02\",\"milieu\":\"NATUREL\",\"lieu\":\"Carriere de Blaisy\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite/liaison").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"seanceId\": " + lendemain + "}"))
+                .andExpect(status().isUnprocessableContent());
+
+        long memeJour = creerSeance(admin);
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite/liaison").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"seanceId\": " + memeJour + "}"))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/seances/" + memeJour).header("Authorization", admin))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin))
+                .andExpect(jsonPath("$.seancesLiees").isEmpty());
+    }
 }

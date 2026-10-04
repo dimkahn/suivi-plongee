@@ -176,7 +176,11 @@ par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
 saison (règle du service). Choix du club (2026) : le suivi d'un élève passe
 par les référents de son groupe ; l'ancien « moniteur référent » propre à
 chaque cursus (`cursus.moniteur_referent_id`) a été supprimé par V36. **Sans rapport avec `GroupePlongeurs`** (V13), qui
-compose les palanquées d'un séjour. **Grille des soirées (lot 2)** :
+compose les palanquées d'un séjour (des séances du même jour peuvent être
+**liées**, V43 `LiaisonSeances`, depuis la fiche de sécurité : deux bateaux
+se partagent un groupe, chaque fiche ne propose que les plongeurs absents
+des palanquées des fiches liées ; `FicheSecuriteVue.seancesLiees`, simple
+avertissement si un plongeur est sur les deux). **Grille des soirées (lot 2)** :
 `/admin/planning`, `PlanningService`. Une soirée = une date de la saison qui
 porte au moins une séance en milieu **artificiel** (piscine, fosse) ; une
 date qui n'a que des séances en milieu naturel n'y figure pas (choix du
