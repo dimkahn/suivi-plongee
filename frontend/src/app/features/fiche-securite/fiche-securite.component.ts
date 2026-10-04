@@ -77,7 +77,9 @@ interface FormulaireEntete {
   selector: 'app-fiche-securite',
   imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, ComboboxComponent],
   template: `
-    <a routerLink="/fiches-securite" class="bouton-discret">← Fiches de sécurité</a>
+    <!-- La liste rouvre sur la date de la séance, pas sur toutes les dates. -->
+    <a routerLink="/fiches-securite" [queryParams]="{ date: seance()?.date ?? null }"
+       class="bouton-discret">← Fiches de sécurité</a>
 
     <datalist id="plongeurs-club">
       @for (c of plongeursConnus(); track libellePlongeurConnu(c)) {

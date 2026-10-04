@@ -16,7 +16,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 ## Avant la mise à l'eau
 
 1. Menu, « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
-2. Retrouvez la séance par sa date.
+2. Retrouvez la séance par sa date. Le lien « ← Fiches de sécurité » d'une fiche ramène à la liste de ce même jour.
 3. Choisissez le directeur de plongée : seuls les E3 et E4 sont proposés.
 4. Renseignez les conditions du jour.
 5. Une palanquée est prête ; « + Palanquée » en ajoute d'autres.

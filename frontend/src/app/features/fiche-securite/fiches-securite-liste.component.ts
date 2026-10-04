@@ -1,6 +1,6 @@
-import { Component, ElementRef, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { SeanceVue } from '../../core/modeles';
@@ -163,7 +163,11 @@ export class FichesSecuriteListeComponent {
   chargement = signal(true);
   erreur = signal<string | null>(null);
 
-  filtreDate = signal('');
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  /** Lue dans l'adresse (?date=) : le retour d'une fiche rouvre la liste sur la date de sa séance. */
+  filtreDate = signal(this.route.snapshot.queryParamMap.get('date') ?? '');
   filtreLieu = signal('');
 
   tri = signal<Tri>('DATE_RECENTE');
@@ -203,6 +207,11 @@ export class FichesSecuriteListeComponent {
 
   constructor() {
     void this.charger();
+    // L'adresse suit la date choisie : le bouton « retour » du navigateur la retrouve aussi.
+    effect(() => {
+      const date = this.filtreDate();
+      void this.router.navigate([], { queryParams: { date: date || null }, replaceUrl: true });
+    });
   }
 
   aPlusieursCeJour(s: SeanceVue): boolean {
