@@ -39,3 +39,4 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 - La fiche s'enregistre même sans réseau ; le DP la retrouve.
 - Un séjour avec les mêmes plongeurs ? Saisissez-les une fois dans un groupe de plongeurs (voir « Groupes de plongeurs pour un séjour »).
 - Deux bateaux ou deux sites le même jour, avec un seul groupe ? Liez les deux séances depuis la fiche (« Lier à une autre séance du jour ») : la seconde fiche ne propose plus que les plongeurs qui ne sont pas déjà dans une palanquée de la première.
+- Un plongeur déjà placé n'est plus proposé dans le groupe, qu'il ait été posé depuis le groupe, choisi dans « Rechercher un nom… » ou tapé à la main : il est reconnu par son dossier, sinon par ses nom et prénom, sans tenir compte des accents ni des majuscules (« Hélène » = « HELENE »).
