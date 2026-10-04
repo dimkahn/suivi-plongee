@@ -176,7 +176,11 @@ retouchées. Un écart « espace » met le groupe ce soir-là, à la place de
 toutes ses lignes attitrées, soit sur **une ou plusieurs lignes** cochées
 (V38 : `espace_id` garde la première, `affectation_groupe_ligne` les
 autres), soit dans la fosse **seule** (règle du service) ; `CaseVue.espaces`
-liste tous les espaces occupés, lus par les avertissements. `soiree_planning` porte le **responsable de séance**, distinct du
+liste tous les espaces occupés, lus par les avertissements. `soiree_planning` porte le **DP fosse** et le
+**DP piscine** (V41, choix du club 2026 : ils remplacent l'ancien
+« responsable de séance » ; le DP fosse reste dans la colonne historique
+`responsable_id`, écrite par la démo V107, d'où la reprise des responsables
+déjà saisis comme DP fosse ; `dp_piscine_id` est nouvelle), distincts du
 DP de la fiche de sécurité (E3 minimum, choisi à part ; `seance.dp_id` reste
 inutilisé). Avertissements calculés par le serveur, jamais bloquants : fosse
 au-delà de sa capacité (élèves + encadrants attitrés), groupe N1 ou encadré
@@ -188,7 +192,7 @@ hors ligne). **Présences des encadrants (lot 3)** : `disponibilite_encadrant`
 `/planning` ou par un admin à sa place (`saisi_par_id`) ; pas de ligne = pas
 encore répondu, jamais supposé présent ni absent. Avertissements ajoutés :
 groupe ayant séance dont tous les encadrants attitrés ont répondu absent,
-responsable de séance absent, et, dès qu'un encadrant a répondu présent,
+DP fosse ou DP piscine absent, et, dès qu'un encadrant a répondu présent,
 aucun E3 parmi les présents (`FicheSecuriteService.NIVEAU_DP_MINIMUM`). La
 réponse demande le réseau (pas de file hors ligne). Les filtres des pages
 Infos élèves, Présences et Trombinoscope sont les groupes d'entraînement de

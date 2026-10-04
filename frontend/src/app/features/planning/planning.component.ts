@@ -14,7 +14,7 @@ const SOIREES_A_VENIR = 8;
 
 /**
  * Planning du bassin côté encadrant : où est chaque groupe ce soir (ou à la
- * prochaine soirée), qui est responsable de séance, qui vient, et les
+ * prochaine soirée), qui sont le DP fosse et le DP piscine, qui vient, et les
  * prochaines soirées des groupes qu'on encadre. L'encadrant y annonce sa
  * présence ou son absence, soirée par soirée. Pensé pour le téléphone, au
  * bord du bassin : la lecture est embarquée par « Préparer hors ligne », la
@@ -52,7 +52,8 @@ const SOIREES_A_VENIR = 8;
           </div>
 
           <p class="responsable">
-            Responsable de séance : <strong>{{ s.responsable ?? 'à désigner' }}</strong>
+            DP fosse : <strong>{{ s.dpFosse ?? 'à désigner' }}</strong>
+            · DP piscine : <strong>{{ s.dpPiscine ?? 'à désigner' }}</strong>
           </p>
           @if (s.note) { <p class="note">{{ s.note }}</p> }
 

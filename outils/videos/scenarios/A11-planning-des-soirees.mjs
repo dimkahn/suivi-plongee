@@ -6,7 +6,7 @@ export default {
   id: 'A11',
   titre: 'Tenir le planning des soirées',
   public: 'Administrateur',
-  resume: 'La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, responsable de séance.',
+  resume: 'La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, DP fosse et DP piscine.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -27,9 +27,9 @@ export default {
     await toucher(dialogue.locator('label.option').filter({ hasText: /^\s*Fosse/ }).first(), { apres: 600 });
     await toucher(dialogue.getByRole('button', { name: 'Enregistrer' }), { apres: 1500 });
 
-    await legende('La ligne « Responsable » : qui mène la séance, et une note pour tous.', 0);
-    await toucher(page.locator('button.case.responsable').nth(3), { apres: 900 });
-    await rechercherEtChoisir('responsable', 'Flo', 'Flora');
+    await legende('Les lignes « DP fosse » et « DP piscine » : le directeur de plongée de chaque bassin, et une note pour tous.', 0);
+    await toucher(page.locator('button.case.dp-piscine').nth(3), { apres: 900 });
+    await rechercherEtChoisir('dp-piscine', 'Flo', 'Flora');
     await saisir('#note', 'Piscine fermée à 21 h 30.');
     await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Enregistrer' }), { apres: 1500 });
     await legende('Les encadrants voient aussitôt leur soirée sur leur téléphone (« Planning »).', 4000);

@@ -778,8 +778,10 @@ export interface EncadrantPlanningVue {
 
 export interface SoireePlanningVue {
   date: string;
-  responsableId: number | null;
-  responsable: string | null;
+  dpFosseId: number | null;
+  dpFosse: string | null;
+  dpPiscineId: number | null;
+  dpPiscine: string | null;
   note: string | null;
   /** Réponses des encadrants ; qui n'est dans aucune des deux listes n'a pas répondu. */
   presents: EncadrantPlanningVue[];

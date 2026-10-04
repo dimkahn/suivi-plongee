@@ -31,7 +31,7 @@ export default {
     await legende('Un encadrant prévient par téléphone ? Répondez à sa place, dans la soirée.', 0);
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     await pause(700);
-    await toucher(page.locator('button.case.responsable').nth(5), { apres: 900 });
+    await toucher(page.locator('button.case.dp-fosse').nth(5), { apres: 900 });
     const soiree = page.locator('dialog[open]');
     await toucher(soiree.getByRole('button', { name: 'Tiago Nogueira présent' }), { apres: 800 });
     await toucher(soiree.getByRole('button', { name: 'Gwendoline Marchand présent' }), { apres: 1200 });

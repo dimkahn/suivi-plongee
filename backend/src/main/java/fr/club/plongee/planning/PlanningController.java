@@ -19,7 +19,7 @@ import java.time.LocalDate;
 /**
  * Planning des soirées d'entraînement : consulté par les encadrants, tenu
  * par un admin, case par case (groupe × date) et soirée par soirée
- * (responsable de séance, note). Chaque encadrant y annonce sa présence.
+ * (DP fosse, DP piscine, note). Chaque encadrant y annonce sa présence.
  */
 @RestController
 @RequestMapping("/api/planning")

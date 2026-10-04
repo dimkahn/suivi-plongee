@@ -221,12 +221,12 @@ Compte : `e2@club.fr` · format téléphone · 42 s
 
 ### M13 — Consulter le planning du bassin
 
-Où est mon groupe ce soir ? Ligne d'eau, fosse, responsable de séance et avertissements.
+Où est mon groupe ce soir ? Ligne d'eau, fosse, DP fosse et DP piscine, avertissements.
 
 Compte : `e2@club.fr` · format téléphone · 56 s
 
 1. Le planning remplace le tableur du lundi soir : menu, puis « Planning ».
-2. En haut, la prochaine soirée : son responsable de séance et une note éventuelle.
+2. En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.
 3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau, « 5+6 » pour un groupe sur deux lignes.
 4. Sous chaque groupe, ses encadrants attitrés, le référent en premier.
 5. En gras, ceux qui ont répondu présent ; rayés, ceux qui seront absents.
@@ -441,7 +441,7 @@ Compte : `presidente@club.fr` · format ordinateur · 39 s
 
 ### A11 — Tenir le planning des soirées
 
-La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, responsable de séance.
+La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, DP fosse et DP piscine.
 
 Compte : `presidente@club.fr` · format ordinateur · 36 s
 
@@ -450,7 +450,7 @@ Compte : `presidente@club.fr` · format ordinateur · 36 s
 3. Les débutants occupent deux lignes : « 5+6 ». Les sorties en milieu naturel n'y figurent pas.
 4. Un prénom rayé dans une case : un encadrant du groupe absent ce soir-là.
 5. Ce soir-là, la Prépa N2 descend en fosse :
-6. La ligne « Responsable » : qui mène la séance, et une note pour tous.
+6. Les lignes « DP fosse » et « DP piscine » : le directeur de plongée de chaque bassin, et une note pour tous.
 7. Les encadrants voient aussitôt leur soirée sur leur téléphone (« Planning »).
 
 ### A12 — Les avertissements du planning

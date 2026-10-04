@@ -13,7 +13,8 @@ public interface SoireePlanningRepository extends JpaRepository<SoireePlanning, 
 
     @Query("""
            select s from SoireePlanning s
-             left join fetch s.responsable
+             left join fetch s.dpFosse
+             left join fetch s.dpPiscine
             where s.saison.id = :saisonId
            """)
     List<SoireePlanning> parSaison(@Param("saisonId") Long saisonId);

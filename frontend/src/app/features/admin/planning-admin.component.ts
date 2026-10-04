@@ -37,7 +37,8 @@ interface EditionCase {
 
 interface EditionSoiree {
   date: string;
-  responsableId: number | null;
+  dpFosseId: number | null;
+  dpPiscineId: number | null;
   note: string;
 }
 
@@ -54,8 +55,8 @@ interface EditionSoiree {
   template: `
     <h1>Planning du bassin</h1>
     <p class="secondaire">
-      Touchez une case pour placer un groupe ce soir-là, ou la ligne « Responsable » pour choisir le
-      responsable de séance et les présences annoncées des encadrants. Une case en gris clair est la ligne
+      Touchez une case pour placer un groupe ce soir-là, ou les lignes « DP fosse » et « DP piscine » pour
+      choisir les directeurs de plongée et les présences annoncées des encadrants. Une case en gris clair est la ligne
       attitrée du groupe.
     </p>
     <p class="secondaire">
@@ -127,13 +128,24 @@ interface EditionSoiree {
             </thead>
             <tbody>
               <tr class="ligne-responsable">
-                <th scope="row" class="colonne-groupe">Responsable</th>
+                <th scope="row" class="colonne-groupe">DP fosse</th>
                 @for (s of soireesAffichees(); track s.date) {
                   <td>
-                    <button type="button" class="case responsable" (click)="editerSoiree(s)"
-                            [attr.aria-label]="'Responsable du ' + dateLongue(s.date) + ' : ' + (s.responsable ?? 'aucun')">
-                      {{ prenom(s.responsable) }}
+                    <button type="button" class="case responsable dp-fosse" (click)="editerSoiree(s)"
+                            [attr.aria-label]="'DP fosse du ' + dateLongue(s.date) + ' : ' + (s.dpFosse ?? 'aucun')">
+                      {{ prenom(s.dpFosse) }}
                       @if (s.note) { <span class="note-indicateur" aria-hidden="true">•</span> }
+                    </button>
+                  </td>
+                }
+              </tr>
+              <tr class="ligne-responsable">
+                <th scope="row" class="colonne-groupe">DP piscine</th>
+                @for (s of soireesAffichees(); track s.date) {
+                  <td>
+                    <button type="button" class="case responsable dp-piscine" (click)="editerSoiree(s)"
+                            [attr.aria-label]="'DP piscine du ' + dateLongue(s.date) + ' : ' + (s.dpPiscine ?? 'aucun')">
+                      {{ prenom(s.dpPiscine) }}
                     </button>
                   </td>
                 }
@@ -255,11 +267,14 @@ interface EditionSoiree {
       }
       @if (editionSoiree(); as e) {
         <h2 id="titre-dialogue">Soirée du {{ dateLongue(e.date) }}</h2>
-        <label for="responsable">Responsable de séance</label>
-        <app-combobox idChamp="responsable" [options]="optionsResponsables()" [(valeur)]="e.responsableId"
+        <label for="dp-fosse">DP fosse</label>
+        <app-combobox idChamp="dp-fosse" [options]="optionsResponsables()" [(valeur)]="e.dpFosseId"
+                      aide="Rechercher un encadrant…" texteVide="Aucun encadrant ne correspond." />
+        <label for="dp-piscine">DP piscine</label>
+        <app-combobox idChamp="dp-piscine" [options]="optionsResponsables()" [(valeur)]="e.dpPiscineId"
                       aide="Rechercher un encadrant…" texteVide="Aucun encadrant ne correspond." />
         <p class="secondaire">
-          Il organise la soirée ; le directeur de plongée de la fiche de sécurité se choisit à part (E3 minimum).
+          Le directeur de plongée de la fiche de sécurité de chaque séance se choisit à part (E3 minimum).
         </p>
         <label for="note">Note</label>
         <input id="note" type="text" [(ngModel)]="e.note" maxlength="200" placeholder="ex. Baptêmes, piscine fermée à 21 h">
@@ -498,7 +513,7 @@ export class PlanningAdminComponent {
   editerSoiree(s: SoireePlanningVue): void {
     this.message.set(null);
     this.editionCase.set(null);
-    this.editionSoiree.set({ date: s.date, responsableId: s.responsableId, note: s.note ?? '' });
+    this.editionSoiree.set({ date: s.date, dpFosseId: s.dpFosseId, dpPiscineId: s.dpPiscineId, note: s.note ?? '' });
     this.dialogue().nativeElement.showModal();
   }
 
@@ -543,7 +558,7 @@ export class PlanningAdminComponent {
     const saisonId = this.saisonId();
     if (!e || saisonId === null) return;
     this.envoyer(this.api.definirSoireePlanning(saisonId, e.date,
-      { responsableId: e.responsableId, note: e.note.trim() || null }));
+      { dpFosseId: e.dpFosseId, dpPiscineId: e.dpPiscineId, note: e.note.trim() || null }));
   }
 
   reponseDe(s: SoireePlanningVue, utilisateurId: number): ReponseDisponibilite | null {
