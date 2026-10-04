@@ -1,10 +1,13 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.formation.service.EnvoiParametresSejourService;
 import fr.club.plongee.formation.service.GroupePlongeursService;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,15 +25,31 @@ import java.util.List;
 public class GroupePlongeursController {
 
     public record DemandeMembre(Long eleveId, Long utilisateurId, @NotBlank String nom,
-                                @NotBlank String prenom, String aptitude, String qualificationPreparee) {}
+                                @NotBlank String prenom, String aptitude, String qualificationPreparee,
+                                @Email @Size(max = 255) String email) {}
 
     public record DemandeGroupePlongeurs(@NotBlank String nom, @NotNull Long saisonId,
                                          @NotNull List<@Valid DemandeMembre> membres) {}
 
-    private final GroupePlongeursService service;
+    public record DemandeEnvoiParametres(@NotNull Long sortieId) {}
 
-    public GroupePlongeursController(GroupePlongeursService service) {
+    private final GroupePlongeursService service;
+    private final EnvoiParametresSejourService envoi;
+
+    public GroupePlongeursController(GroupePlongeursService service, EnvoiParametresSejourService envoi) {
         this.service = service;
+        this.envoi = envoi;
+    }
+
+    /**
+     * Fin de séjour : chaque plongeur du groupe reçoit par courriel les
+     * paramètres des seules plongées de la sortie où il figure.
+     */
+    @PostMapping("/{id}/envoi-parametres")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public EnvoiParametresSejourService.BilanEnvoi envoyerParametres(@PathVariable Long id,
+                                                                     @Valid @RequestBody DemandeEnvoiParametres demande) {
+        return envoi.envoyer(id, demande.sortieId());
     }
 
     @GetMapping
@@ -63,7 +82,7 @@ public class GroupePlongeursController {
         return new GroupePlongeursService.Saisie(demande.nom(), demande.saisonId(),
                 demande.membres().stream()
                         .map(m -> new GroupePlongeursService.Membre(m.eleveId(), m.utilisateurId(),
-                                m.nom(), m.prenom(), m.aptitude(), m.qualificationPreparee()))
+                                m.nom(), m.prenom(), m.aptitude(), m.qualificationPreparee(), m.email()))
                         .toList());
     }
 }

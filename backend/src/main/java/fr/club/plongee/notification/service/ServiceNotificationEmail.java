@@ -52,16 +52,23 @@ public class ServiceNotificationEmail implements ServiceNotification {
                         + "Ce lien, valable une heure, vous permet de choisir votre mot de passe :\n" + lien);
     }
 
-    private void envoyer(Utilisateur destinataire, String sujet, String corps) {
+    @Override
+    public boolean envoyerCourriel(String adresse, String sujet, String corps) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(expediteur);
-        message.setTo(destinataire.getEmail());
+        message.setTo(adresse);
         message.setSubject(sujet);
         message.setText(corps);
         try {
             mailSender.send(message);
+            return true;
         } catch (Exception e) {
-            log.error("Échec de l'envoi du courriel à {}", destinataire.getEmail(), e);
+            log.error("Échec de l'envoi du courriel à {}", adresse, e);
+            return false;
         }
+    }
+
+    private void envoyer(Utilisateur destinataire, String sujet, String corps) {
+        envoyerCourriel(destinataire.getEmail(), sujet, corps);
     }
 }

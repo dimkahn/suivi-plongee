@@ -3,12 +3,13 @@ titre: Groupes de plongeurs pour un séjour
 rubrique: Moniteur
 videos: M12
 ecran: /groupes
-mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser
+mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée
 questions:
 - Comment éviter de ressaisir les plongeurs à chaque plongée d'un séjour ?
 - Comment créer un groupe de plongeurs ?
 - Comment ajouter des plongeurs d'un autre club ?
 - Comment répartir un même groupe sur deux bateaux le même jour ?
+- Comment envoyer à chaque plongeur les paramètres de ses plongées après un séjour ?
 ---
 Menu, « Groupes » : saisissez une fois la liste des plongeurs d'un séjour, puis choisissez ce groupe dans chaque fiche de sécurité : ses plongeurs arrivent d'un coup.
 
@@ -31,6 +32,17 @@ Deux bateaux, ou deux sites à la même heure : créez une séance pour chacun, 
 
 Lier ou délier demande le réseau.
 
+## En fin de séjour : envoyer les paramètres par e-mail
+
+Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, site, profondeur, durée, heures d'immersion et de sortie, paliers, et les membres de sa palanquée.
+
+1. Renseignez l'e-mail de chaque plongeur dans le groupe (« Modifier »). Pour un plongeur du club, laissez vide : l'e-mail de son dossier sert, il est rappelé en grisé dans le champ.
+2. Sur le groupe, « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».
+3. Le bilan indique qui l'a reçu, et qui n'a rien reçu faute d'e-mail ou parce qu'il n'était dans aucune palanquée de la sortie.
+
 ## Bon à savoir
 
 - Ces groupes ne servent qu'aux fiches de sécurité : ils n'ont rien à voir avec les groupes d'entraînement du lundi soir.
+- Chaque plongeur ne reçoit que les plongées où il figure sur une fiche de sécurité de la sortie. Les valeurs réalisées sont reprises ; à défaut, les valeurs prévues, marquées « (prévue) ». Complétez donc les paramètres réalisés avant l'envoi.
+- Un plongeur est retrouvé dans les palanquées par son dossier du club, sinon par ses nom et prénom.
+- L'envoi demande le réseau ; le refaire renvoie les mêmes e-mails.

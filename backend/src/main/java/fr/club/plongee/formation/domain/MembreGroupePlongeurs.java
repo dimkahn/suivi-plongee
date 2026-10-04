@@ -40,6 +40,9 @@ public class MembreGroupePlongeurs {
     private String aptitude;
     private String qualificationPreparee;
 
+    /** Pour l'envoi des paramètres en fin de séjour ; vide, l'e-mail du dossier sert à la place. */
+    private String email;
+
     public Long getId() {
         return id;
     }
@@ -102,5 +105,20 @@ public class MembreGroupePlongeurs {
 
     public void setQualificationPreparee(String qualificationPreparee) {
         this.qualificationPreparee = qualificationPreparee;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    /** L'e-mail saisi dans le groupe, sinon celui du dossier de l'élève ou de l'encadrant ; null si aucun. */
+    public String emailEffectif() {
+        if (email != null && !email.isBlank()) return email.trim();
+        String dossier = eleve != null ? eleve.getEmail() : utilisateur != null ? utilisateur.getEmail() : null;
+        return dossier == null || dossier.isBlank() ? null : dossier.trim();
     }
 }

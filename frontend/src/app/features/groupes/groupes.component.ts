@@ -3,7 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { GroupePlongeursVue, MembreGroupeVue, PlongeurConnuVue, SaisonVue } from '../../core/modeles';
+import {
+  BilanEnvoiParametres, GroupePlongeursVue, MembreGroupeVue, PlongeurConnuVue, SaisonVue, SortieVue
+} from '../../core/modeles';
+import { dateDuJour } from '../../core/date-fr';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 
 function membreVide(): MembreGroupeVue {
@@ -54,6 +57,8 @@ function membreVide(): MembreGroupeVue {
           <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude" [name]="'nv-aptitude-' + i">
           <input type="text" placeholder="Qualification préparée" [(ngModel)]="m.qualificationPreparee"
                  [name]="'nv-qualif-' + i">
+          <input type="email" [placeholder]="placeholderEmail(m)" [(ngModel)]="m.email" [name]="'nv-email-' + i"
+                 autocomplete="off">
           <button type="button" class="bouton-discret danger" (click)="retirerMembre(nouveauxMembres, i)">✕</button>
         </div>
       }
@@ -89,6 +94,8 @@ function membreVide(): MembreGroupeVue {
                          [name]="'ed-aptitude-' + g.id + '-' + i">
                   <input type="text" placeholder="Qualification préparée" [(ngModel)]="m.qualificationPreparee"
                          [name]="'ed-qualif-' + g.id + '-' + i">
+                  <input type="email" [placeholder]="placeholderEmail(m)" [(ngModel)]="m.email"
+                         [name]="'ed-email-' + g.id + '-' + i" autocomplete="off">
                   <button type="button" class="bouton-discret danger" (click)="retirerMembre(brouillonMembres, i)">
                     ✕
                   </button>
@@ -113,12 +120,62 @@ function membreVide(): MembreGroupeVue {
                       — {{ g.membres.map(m => m.prenom + ' ' + m.nom).join(', ') }}
                     }
                   </span>
+                  @if (sansEmail(g).length > 0) {
+                    <span class="secondaire">Sans e-mail : {{ sansEmail(g).join(', ') }}</span>
+                  }
                 </div>
               </div>
-              <div class="actions">
-                <button type="button" class="bouton-discret" (click)="commencerEdition(g)">Modifier</button>
-                <button type="button" class="bouton-discret danger" (click)="supprimer(g)">Supprimer</button>
-              </div>
+
+              @if (envoiOuvert() === g.id) {
+                <div class="envoi">
+                  <h3>Envoyer les paramètres par e-mail</h3>
+                  <p class="secondaire">
+                    En fin de séjour : chaque plongeur du groupe reçoit un e-mail avec ses seules plongées de la
+                    sortie (date, site, profondeur, durée, heures, paliers et membres de sa palanquée), relevées
+                    sur les fiches de sécurité.
+                  </p>
+                  <label [for]="'sortie-' + g.id">Sortie</label>
+                  <select [id]="'sortie-' + g.id" [(ngModel)]="sortieChoisie" [name]="'sortie-' + g.id">
+                    <option [ngValue]="null" disabled>Choisir la sortie…</option>
+                    @for (s of sorties(); track s.id) {
+                      <option [ngValue]="s.id">{{ s.nom }} ({{ s.nombrePlongees }} plongée{{ s.nombrePlongees > 1 ? 's' : '' }})</option>
+                    }
+                  </select>
+                  @if (sorties().length === 0) {
+                    <p class="vide">Aucune sortie récente : la sortie se crée dans « Sorties » (administration).</p>
+                  }
+                  @if (bilan(); as b) {
+                    <div class="alerte" role="status">
+                      @if (b.envoyes.length > 0) {
+                        <p>E-mail envoyé à {{ b.envoyes.length }} plongeur{{ b.envoyes.length > 1 ? 's' : '' }} :
+                          {{ libellesEnvoyes(b) }}.</p>
+                      } @else {
+                        <p>Aucun e-mail envoyé.</p>
+                      }
+                      @if (b.sansEmail.length > 0) { <p>Sans e-mail, rien envoyé : {{ b.sansEmail.join(', ') }}.</p> }
+                      @if (b.sansPlongee.length > 0) {
+                        <p>Dans aucune palanquée de la sortie : {{ b.sansPlongee.join(', ') }}.</p>
+                      }
+                      @if (b.echecs.length > 0) { <p>Échec de l'envoi : {{ b.echecs.join(', ') }}.</p> }
+                    </div>
+                  }
+                  <div class="actions">
+                    <button type="button" class="bouton-principal" [disabled]="envoiEmails() || sortieChoisie === null"
+                            (click)="envoyerParametres(g)">
+                      {{ envoiEmails() ? 'Envoi…' : 'Envoyer les e-mails' }}
+                    </button>
+                    <button type="button" class="bouton-discret" (click)="envoiOuvert.set(null)">Fermer</button>
+                  </div>
+                </div>
+              } @else {
+                <div class="actions">
+                  <button type="button" class="bouton-discret" (click)="commencerEdition(g)">Modifier</button>
+                  <button type="button" class="bouton-discret" (click)="ouvrirEnvoi(g)">
+                    Envoyer les paramètres par e-mail
+                  </button>
+                  <button type="button" class="bouton-discret danger" (click)="supprimer(g)">Supprimer</button>
+                </div>
+              }
             }
           </li>
         }
@@ -145,6 +202,10 @@ function membreVide(): MembreGroupeVue {
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
+    .envoi { margin-top: var(--pas-2); padding: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
+    .envoi h3 { margin-bottom: 4px; }
+    .envoi select { max-width: 420px; }
+    .envoi .alerte p { margin: 2px 0; }
 
     @media (max-width: 600px) {
       .ligne { flex-direction: column; }
@@ -170,8 +231,65 @@ export class GroupesComponent {
   nomEdition = '';
   brouillonMembres = signal<MembreGroupeVue[]>([]);
 
+  /** Groupe dont le panneau d'envoi des paramètres par e-mail est ouvert. */
+  envoiOuvert = signal<number | null>(null);
+  sorties = signal<SortieVue[]>([]);
+  sortieChoisie: number | null = null;
+  envoiEmails = signal(false);
+  bilan = signal<BilanEnvoiParametres | null>(null);
+
   constructor() {
     void this.initialiser();
+  }
+
+  /** L'e-mail du dossier en indication : vide, c'est lui qui sert à l'envoi. */
+  placeholderEmail(m: MembreGroupeVue): string {
+    if (m.emailDossier) return `E-mail (sinon ${m.emailDossier})`;
+    return m.eleveId !== null || m.utilisateurId !== null ? 'E-mail (sinon celui du dossier)' : 'E-mail';
+  }
+
+  sansEmail(g: GroupePlongeursVue): string[] {
+    return g.membres.filter(m => !m.email && !m.emailDossier).map(m => `${m.prenom} ${m.nom}`);
+  }
+
+  libellesEnvoyes(b: BilanEnvoiParametres): string {
+    return b.envoyes.map(d => `${d.nom} (${d.nombrePlongees} plongée${d.nombrePlongees > 1 ? 's' : ''})`).join(', ');
+  }
+
+  async ouvrirEnvoi(g: GroupePlongeursVue): Promise<void> {
+    this.message.set(null);
+    this.bilan.set(null);
+    this.annulerEdition();
+    try {
+      // À venir ou finies depuis peu : celle qui vient de se terminer en tête de liste.
+      const sorties = await firstValueFrom(this.api.sorties(true));
+      this.sorties.set(sorties.filter(s => s.nombrePlongees > 0));
+      const passees = this.sorties().filter(s => s.dateFin <= dateDuJour());
+      this.sortieChoisie = passees.at(-1)?.id ?? this.sorties()[0]?.id ?? null;
+      this.envoiOuvert.set(g.id);
+    } catch {
+      this.message.set('Impossible de charger les sorties (réseau nécessaire).');
+    }
+  }
+
+  envoyerParametres(g: GroupePlongeursVue): void {
+    const sortie = this.sorties().find(s => s.id === this.sortieChoisie);
+    if (!sortie) return;
+    if (!confirm(`Envoyer à chaque plongeur de « ${g.nom} » les paramètres de ses plongées de « ${sortie.nom} » ?`)) {
+      return;
+    }
+    this.envoiEmails.set(true);
+    this.bilan.set(null);
+    this.api.envoyerParametresSejour(g.id, sortie.id).subscribe({
+      next: b => {
+        this.envoiEmails.set(false);
+        this.bilan.set(b);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiEmails.set(false);
+        this.message.set(e.error?.detail ?? "L'envoi des e-mails a échoué.");
+      }
+    });
   }
 
   private async initialiser(): Promise<void> {
@@ -252,11 +370,12 @@ export class GroupesComponent {
   choisirPlongeurConnu(membres: WritableSignal<MembreGroupeVue[]>, index: number, choix: number | null): void {
     const candidat = choix === null ? null : this.plongeursConnus()[choix];
     if (!candidat) {
-      membres.set(membres().map((m, i) => i !== index ? m : { ...m, eleveId: null, utilisateurId: null }));
+      membres.set(membres().map((m, i) => i !== index ? m
+        : { ...m, eleveId: null, utilisateurId: null, emailDossier: null }));
       return;
     }
     membres.set(membres().map((m, i) => i !== index ? m : {
-      ...m, eleveId: candidat.eleveId, utilisateurId: candidat.utilisateurId,
+      ...m, eleveId: candidat.eleveId, utilisateurId: candidat.utilisateurId, emailDossier: null,
       nom: candidat.nom, prenom: candidat.prenom,
       aptitude: candidat.aptitude, qualificationPreparee: candidat.qualificationPreparee
     }));
