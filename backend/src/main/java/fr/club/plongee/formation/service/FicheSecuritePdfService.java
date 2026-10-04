@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * Génère la fiche de sécurité en PDF, pour l'impression ou l'archivage exigé
@@ -35,8 +36,21 @@ public class FicheSecuritePdfService {
     }
 
     public FichePdf generer(FicheSecurite fiche) {
-        String html = html(fiche);
+        Seance s = fiche.getSeance();
+        return new FichePdf(rendre(document(List.of(page(fiche)))),
+                "fiche-securite-%s.pdf".formatted(s.getDateSeance()));
+    }
 
+    /**
+     * Plusieurs fiches (toutes celles d'une sortie) dans un seul PDF, une par
+     * page, dans l'ordre donné : pour les imprimer d'un coup avant le départ
+     * ou les archiver ensemble.
+     */
+    public FichePdf genererPlusieurs(List<FicheSecurite> fiches, String nomFichier) {
+        return new FichePdf(rendre(document(fiches.stream().map(this::page).toList())), nomFichier);
+    }
+
+    private byte[] rendre(String html) {
         ByteArrayOutputStream sortie = new ByteArrayOutputStream();
         try {
             PdfRendererBuilder builder = new PdfRendererBuilder();
@@ -47,39 +61,15 @@ public class FicheSecuritePdfService {
         } catch (IOException e) {
             throw new IllegalStateException("Échec de la génération du PDF de la fiche de sécurité", e);
         }
-
-        Seance s = fiche.getSeance();
-        return new FichePdf(sortie.toByteArray(),
-                "fiche-securite-%s.pdf".formatted(s.getDateSeance()));
+        return sortie.toByteArray();
     }
 
-    private String html(FicheSecurite f) {
-        Seance s = f.getSeance();
-        FicheSecuriteGrille grille = FicheSecuriteGrille.depuis(f);
-
-        StringBuilder colonnesPalanquees = new StringBuilder();
-        for (int numero : grille.numerosColonnes()) {
-            colonnesPalanquees.append(
-                    "<th class=\"rotee palanquee\"><span class=\"libelle-rotee\">Palanquée %d</span></th>".formatted(numero));
+    /** Enveloppe commune (styles, format de page) autour d'une ou plusieurs fiches. */
+    private String document(List<String> pages) {
+        StringBuilder corps = new StringBuilder();
+        for (String page : pages) {
+            corps.append("<div class=\"page\">").append(page).append("</div>");
         }
-
-        StringBuilder lignesMembres = new StringBuilder();
-        int ligne = 1;
-        for (MembrePalanquee m : grille.membres()) {
-            String classeLigne = grille.estEncadrant(m) ? " class=\"encadrant\"" : "";
-            lignesMembres.append("<tr%s><td class=\"numero\">%d</td><td>%s</td><td>%s</td><td class=\"niveau\">%s</td><td>%s</td>"
-                    .formatted(classeLigne, ligne++, echapper(m.getNom()), echapper(m.getPrenom()), niveau(m),
-                            vide(m.getAptitudeDonneeParDp())));
-            for (int numero : grille.numerosColonnes()) {
-                lignesMembres.append(grille.appartient(numero, m) ? "<td class=\"croix\">X</td>" : "<td></td>");
-            }
-            lignesMembres.append("<td>%s</td></tr>".formatted(vide(m.getObservations())));
-        }
-        for (; ligne <= grille.nbLignesAffichees(); ligne++) {
-            lignesMembres.append("<tr><td class=\"numero\">%d</td><td></td><td></td><td></td><td></td>%s<td></td></tr>"
-                    .formatted(ligne, "<td></td>".repeat(grille.numerosColonnes().size())));
-        }
-
         return """
             <?xml version="1.0" encoding="UTF-8"?>
             <html xmlns="http://www.w3.org/1999/xhtml">
@@ -126,9 +116,44 @@ public class FicheSecuritePdfService {
                 tfoot td { font-weight: bold; background: #f4f7f8; }
                 tfoot td.libelle { text-align: left; }
                 .pied { margin-top: 10pt; font-size: 7pt; color: #7c8b90; }
+                /* Plusieurs fiches (une sortie) : chacune sur sa page. */
+                .page + .page { page-break-before: always; }
               </style>
             </head>
-            <body>
+            <body>%s</body>
+            </html>
+            """.formatted(corps);
+    }
+
+    /** Une fiche, sans l'enveloppe du document : voir {@link #document}. */
+    private String page(FicheSecurite f) {
+        Seance s = f.getSeance();
+        FicheSecuriteGrille grille = FicheSecuriteGrille.depuis(f);
+
+        StringBuilder colonnesPalanquees = new StringBuilder();
+        for (int numero : grille.numerosColonnes()) {
+            colonnesPalanquees.append(
+                    "<th class=\"rotee palanquee\"><span class=\"libelle-rotee\">Palanquée %d</span></th>".formatted(numero));
+        }
+
+        StringBuilder lignesMembres = new StringBuilder();
+        int ligne = 1;
+        for (MembrePalanquee m : grille.membres()) {
+            String classeLigne = grille.estEncadrant(m) ? " class=\"encadrant\"" : "";
+            lignesMembres.append("<tr%s><td class=\"numero\">%d</td><td>%s</td><td>%s</td><td class=\"niveau\">%s</td><td>%s</td>"
+                    .formatted(classeLigne, ligne++, echapper(m.getNom()), echapper(m.getPrenom()), niveau(m),
+                            vide(m.getAptitudeDonneeParDp())));
+            for (int numero : grille.numerosColonnes()) {
+                lignesMembres.append(grille.appartient(numero, m) ? "<td class=\"croix\">X</td>" : "<td></td>");
+            }
+            lignesMembres.append("<td>%s</td></tr>".formatted(vide(m.getObservations())));
+        }
+        for (; ligne <= grille.nbLignesAffichees(); ligne++) {
+            lignesMembres.append("<tr><td class=\"numero\">%d</td><td></td><td></td><td></td><td></td>%s<td></td></tr>"
+                    .formatted(ligne, "<td></td>".repeat(grille.numerosColonnes().size())));
+        }
+
+        return """
               <div class="entete">
                 <div class="bloc">
                   <p>Date : %s</p>
@@ -166,8 +191,6 @@ public class FicheSecuritePdfService {
                 </tfoot>
               </table>
               <p class="pied">Fiche à conserver un an par l'établissement (article A322-72 du Code du sport).</p>
-            </body>
-            </html>
             """.formatted(
                 s.getDateSeance().format(DATE),
                 echapper(s.getLieu()),

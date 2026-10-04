@@ -201,6 +201,12 @@ function sortieVide(): DemandeSortie {
               } @else {
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="ouvrirChoix(s)">Choisir les plongées</button>
+                  @if (s.nombrePlongees > 0) {
+                    <button type="button" class="bouton-discret" (click)="imprimerFiches(s)"
+                            [disabled]="impression() === s.id">
+                      {{ impression() === s.id ? 'Génération…' : 'Imprimer les fiches de sécurité' }}
+                    </button>
+                  }
                   <button type="button" class="bouton-discret" (click)="commencerEdition(s)">Modifier</button>
                   <button type="button" class="bouton-discret danger" (click)="supprimer(s)">Supprimer</button>
                 </div>
@@ -276,6 +282,8 @@ export class SortiesComponent {
   possibles = signal<SeancePossibleVue[]>([]);
   cochees = signal<Set<number>>(new Set());
   plongees = { parJour: 2, site: '', profondeurMax: null as number | null };
+  /** Sortie dont le PDF des fiches de sécurité est en cours de génération. */
+  impression = signal<number | null>(null);
 
   constructor() {
     void this.charger();
@@ -425,6 +433,30 @@ export class SortiesComponent {
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);
         this.message.set(e.error?.detail ?? "Les plongées n'ont pas pu être créées.");
+      }
+    });
+  }
+
+  /** Les fiches de sécurité de toutes les plongées de la sortie, une par page, dans un seul PDF. */
+  imprimerFiches(s: SortieVue): void {
+    this.impression.set(s.id);
+    this.message.set(null);
+    this.api.fichesSecuriteSortiePdf(s.id).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = `fiches-securite-${s.dateDebut}.pdf`;
+        lien.click();
+        URL.revokeObjectURL(url);
+        this.impression.set(null);
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.impression.set(null);
+        // Réponse en blob : le message du serveur est à relire comme du JSON.
+        let detail: string | null = null;
+        try { detail = JSON.parse(await (e.error as Blob).text()).detail ?? null; } catch { /* sans détail */ }
+        this.message.set(detail ?? "Le PDF des fiches de sécurité n'a pas pu être généré.");
       }
     });
   }

@@ -1,5 +1,7 @@
 package fr.club.plongee;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +22,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -125,6 +128,48 @@ class SortieTest {
         JsonNode refus = envoyer("PUT", "/api/sorties/" + id + "/seances", dt,
                 "{\"seanceIds\":[" + plongees.get(2) + "]}", 422);
         assertThat(refus.get("detail").asText()).contains("hors des dates de la sortie");
+    }
+
+    @Test
+    @DisplayName("Les fiches de sécurité d'une sortie s'impriment d'un coup, une par page")
+    void fichesSecuriteDeLaSortie() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String admin = jeton("presidente@club.fr");
+        LocalDate samedi = AUJOURDHUI.plusDays(120).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        List<Long> plongees = creerPlongees(dt, samedi);
+        long id = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Week-end fiches","dateDebut":"%s","dateFin":"%s"}"""
+                .formatted(samedi, samedi.plusDays(1)), 201).get("id").asLong();
+        envoyer("PUT", "/api/sorties/" + id + "/seances", dt,
+                "{\"seanceIds\":" + plongees.subList(0, 4) + "}", 200);
+
+        // Aucune fiche encore établie : refus explicite plutôt qu'un PDF vide.
+        JsonNode refus = envoyer("GET", "/api/sorties/" + id + "/fiches-securite.pdf", dt, null, 422);
+        assertThat(refus.get("detail").asText()).contains("Aucune fiche de sécurité");
+
+        long dpId = -1;
+        for (JsonNode m : envoyer("GET", "/api/admin/moniteurs", admin, null, 200)) {
+            if ("e3@club.fr".equals(m.get("email").asText())) dpId = m.get("id").asLong();
+        }
+        // Trois des quatre plongées ont leur fiche : la quatrième est sautée.
+        for (Long seance : plongees.subList(0, 3)) {
+            envoyer("PUT", "/api/seances/" + seance + "/fiche-securite", dt, """
+                    {"dpId":%d,"palanquees":[{"numero":1,"profondeurPrevue":20,"dureePrevue":40,
+                     "membres":[{"nom":"Dulac","prenom":"Anis","aptitude":"N2","fonction":"GUIDE_PALANQUEE"}]}]}"""
+                    .formatted(dpId), 200);
+        }
+        // La fiche d'une plongée connaît sa sortie, pour proposer d'imprimer toutes les autres.
+        JsonNode fiche = envoyer("GET", "/api/seances/" + plongees.get(0) + "/fiche-securite", dt, null, 200);
+        assertThat(fiche.get("sortie").get("nom").asText()).isEqualTo("Week-end fiches");
+
+        byte[] pdf = mvc.perform(get("/api/sorties/" + id + "/fiches-securite.pdf")
+                        .header("Authorization", jeton("e1@club.fr")))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "application/pdf"))
+                .andReturn().getResponse().getContentAsByteArray();
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            assertThat(document.getNumberOfPages()).isEqualTo(3);
+        }
     }
 
     @Test

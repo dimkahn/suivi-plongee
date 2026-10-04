@@ -8,6 +8,7 @@ questions:
 - Comment organiser un week-end en mer ?
 - Comment créer les plongées d'un séjour ?
 - Comment rattacher le matériel prêté à une sortie ?
+- Comment imprimer toutes les fiches de sécurité d'un séjour ?
 ---
 Administration, « Sorties » : nom, lieu, dates, puis les plongées de la sortie, créées et rattachées d'un geste. Les fiches de sécurité et les prêts de matériel s'y rattachent.
 
@@ -17,6 +18,7 @@ Administration, « Sorties » : nom, lieu, dates, puis les plongées de la sorti
 2. Créez la sortie : nom, lieu, dates.
 3. Ajoutez ses plongées, par exemple deux par jour sur le site prévu : elles sont créées et rattachées à la sortie.
 4. Les moniteurs y établissent les fiches de sécurité.
+5. « Imprimer les fiches de sécurité » télécharge toutes les fiches déjà établies de la sortie dans un seul PDF, une par page, à imprimer d'un coup.
 
 ## Bon à savoir
 

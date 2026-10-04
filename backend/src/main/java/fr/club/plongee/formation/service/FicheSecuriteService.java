@@ -74,7 +74,11 @@ public class FicheSecuriteService {
                                    String visibilite, String courant, String maree,
                                    String temperatureEau, String securiteSurface,
                                    String planSecours, String observations,
-                                   List<PalanqueeVue> palanquees, List<SeanceLieeVue> seancesLiees) {}
+                                   List<PalanqueeVue> palanquees, List<SeanceLieeVue> seancesLiees,
+                                   SortieFicheVue sortie) {}
+
+    /** La sortie (séjour) dont fait partie la séance, pour imprimer toutes ses fiches d'un coup ; null sinon. */
+    public record SortieFicheVue(Long id, String nom) {}
 
     /** Un plongeur déjà placé sur la fiche d'une séance liée, et dans quelle palanquée. */
     public record PlongeurPlaceVue(Long eleveId, Long utilisateurId, String nom, String prenom, int palanquee) {}
@@ -93,11 +97,13 @@ public class FicheSecuriteService {
     private final FicheSecuritePdfService pdfService;
     private final FicheSecuriteExcelService excelService;
     private final LiaisonSeancesRepository liaisons;
+    private final SortieRepository sorties;
 
     public FicheSecuriteService(FicheSecuriteRepository fiches, SeanceRepository seances,
                                 UtilisateurRepository utilisateurs, EleveRepository eleves,
                                 FicheSecuritePdfService pdfService, FicheSecuriteExcelService excelService,
-                                LiaisonSeancesRepository liaisons) {
+                                LiaisonSeancesRepository liaisons, SortieRepository sorties) {
+        this.sorties = sorties;
         this.fiches = fiches;
         this.seances = seances;
         this.utilisateurs = utilisateurs;
@@ -112,7 +118,12 @@ public class FicheSecuriteService {
     public FicheSecuriteVue consulter(Long seanceId) {
         return fiches.findBySeanceId(seanceId).map(this::vue).orElseGet(() -> new FicheSecuriteVue(
                 null, null, null, null, null, null, null, null, null, null, null, null,
-                List.of(), seancesLiees(seanceId)));
+                List.of(), seancesLiees(seanceId), sortie(seanceId)));
+    }
+
+    private SortieFicheVue sortie(Long seanceId) {
+        return sorties.contenant(List.of(seanceId)).stream().findFirst()
+                .map(s -> new SortieFicheVue(s.getId(), s.getNom())).orElse(null);
     }
 
     /**
@@ -323,6 +334,29 @@ public class FicheSecuriteService {
         return pdfService.generer(fiche);
     }
 
+    /**
+     * Les fiches de toutes les plongées d'une sortie, dans un seul PDF, dans
+     * l'ordre des plongées. Les plongées sans fiche sont sautées ; aucune
+     * fiche du tout = refus explicite plutôt qu'un PDF vide.
+     */
+    @Transactional(readOnly = true)
+    public FicheSecuritePdfService.FichePdf genererPdfSortie(Long sortieId) {
+        Sortie sortie = sorties.findById(sortieId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Sortie introuvable"));
+        List<FicheSecurite> liste = sortie.getSeances().stream()
+                .sorted(Comparator.comparing(Seance::getDateSeance)
+                        .thenComparing(s -> s.getOrdre() == null ? 0 : s.getOrdre())
+                        .thenComparing(Seance::getId))
+                .flatMap(s -> fiches.findBySeanceId(s.getId()).stream())
+                .toList();
+        if (liste.isEmpty()) {
+            throw new RegleMetierException(
+                    "Aucune fiche de sécurité n'est encore établie pour les plongées de cette sortie.");
+        }
+        return pdfService.genererPlusieurs(liste,
+                "fiches-securite-%s.pdf".formatted(sortie.getDateDebut()));
+    }
+
     /** Même contrat que {@link #genererPdf} : le rendu doit rester dans la transaction. */
     @Transactional(readOnly = true)
     public FicheSecuriteExcelService.FicheExcel genererExcel(Long seanceId) {
@@ -339,7 +373,7 @@ public class FicheSecuriteService {
         return new FicheSecuriteVue(f.getId(), f.getDp().getId(), f.getDp().nomComplet(),
                 f.getMeteo(), f.getEtatMer(), f.getVisibilite(), f.getCourant(), f.getMaree(),
                 f.getTemperatureEau(), f.getSecuriteSurface(), f.getPlanSecours(), f.getObservations(),
-                palanquees, seancesLiees(f.getSeance().getId()));
+                palanquees, seancesLiees(f.getSeance().getId()), sortie(f.getSeance().getId()));
     }
 
     private PalanqueeVue vue(Palanquee p) {
