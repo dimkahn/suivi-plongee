@@ -4,7 +4,7 @@ export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',
   public: 'Moniteur',
-  resume: 'Où est mon groupe ce soir ? Ligne d\'eau, fosse, responsable de séance et avertissements.',
+  resume: 'Où est mon groupe ce soir ? Ligne d\'eau, fosse, DP fosse et DP piscine, avertissements.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {
@@ -13,7 +13,7 @@ export default {
     await legende('Le planning remplace le tableur du lundi soir : menu, puis « Planning ».', 0);
     await menu('Planning');
 
-    await legende('En haut, la prochaine soirée : son responsable de séance et une note éventuelle.', 4000);
+    await legende('En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.', 4000);
     await legende('Puis chaque groupe et son espace : le chiffre est la ligne d\'eau, « 5+6 » pour un groupe sur deux lignes.', 4000);
     await page.locator('.soiree').getByText('Votre groupe').scrollIntoViewIfNeeded();
     await legende('Sous chaque groupe, ses encadrants attitrés, le référent en premier.', 3500);

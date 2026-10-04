@@ -7,8 +7,8 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 /**
- * Ce qui vaut pour toute une soirée du planning : le responsable de séance
- * (distinct du directeur de plongée de la fiche de sécurité) et une note.
+ * Ce qui vaut pour toute une soirée du planning : le DP fosse, le DP piscine
+ * (distincts du directeur de plongée de la fiche de sécurité) et une note.
  */
 @Entity
 public class SoireePlanning {
@@ -24,9 +24,14 @@ public class SoireePlanning {
     @Column(nullable = false)
     private LocalDate dateSoiree;
 
+    /** Colonne historique {@code responsable_id} : les anciens responsables de séance sont devenus DP fosse. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsable_id")
-    private Utilisateur responsable;
+    private Utilisateur dpFosse;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dp_piscine_id")
+    private Utilisateur dpPiscine;
 
     @Column(length = 200)
     private String note;
@@ -55,12 +60,20 @@ public class SoireePlanning {
         this.dateSoiree = dateSoiree;
     }
 
-    public Utilisateur getResponsable() {
-        return responsable;
+    public Utilisateur getDpFosse() {
+        return dpFosse;
     }
 
-    public void setResponsable(Utilisateur responsable) {
-        this.responsable = responsable;
+    public void setDpFosse(Utilisateur dpFosse) {
+        this.dpFosse = dpFosse;
+    }
+
+    public Utilisateur getDpPiscine() {
+        return dpPiscine;
+    }
+
+    public void setDpPiscine(Utilisateur dpPiscine) {
+        this.dpPiscine = dpPiscine;
     }
 
     public String getNote() {

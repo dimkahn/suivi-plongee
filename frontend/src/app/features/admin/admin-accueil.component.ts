@@ -30,7 +30,7 @@ import { RouterLink } from '@angular/router';
       <li class="carte">
         <a routerLink="/admin/planning">
           <span class="nom">Planning du bassin</span>
-          <span class="secondaire">Soir par soir : ligne d'eau ou fosse de chaque groupe, responsable de séance</span>
+          <span class="secondaire">Soir par soir : ligne d'eau ou fosse de chaque groupe, DP fosse et DP piscine</span>
         </a>
       </li>
       <li class="carte">

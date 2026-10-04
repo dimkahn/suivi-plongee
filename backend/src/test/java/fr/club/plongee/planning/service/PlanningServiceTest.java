@@ -144,13 +144,31 @@ class PlanningServiceTest {
         encadrant.setNom("Martin");
 
         assertThat(PlanningService.avertissementsEncadrants(List.of(g), List.of(PlanningService.caseVue(g, null)),
-                null, List.of(), List.of(encadrant)))
+                null, null, List.of(), List.of(encadrant)))
                 .containsExactly("Prépa N2 : aucun encadrant attitré présent (Samuel Martin absent).");
 
         AffectationGroupe absent = new AffectationGroupe();
         absent.setType(AffectationGroupe.Type.ABSENT);
         assertThat(PlanningService.avertissementsEncadrants(List.of(g), List.of(PlanningService.caseVue(g, absent)),
-                null, List.of(), List.of(encadrant))).isEmpty();
+                null, null, List.of(), List.of(encadrant))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("DP fosse ou DP piscine qui a répondu absent : signalé")
+    void dpAbsent() {
+        Utilisateur fosse = new Utilisateur();
+        fosse.setId(60L);
+        fosse.setPrenom("Gwendoline");
+        fosse.setNom("Marchand");
+        Utilisateur piscine = new Utilisateur();
+        piscine.setId(61L);
+        piscine.setPrenom("Flora");
+        piscine.setNom("Nguyen");
+
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), fosse, piscine,
+                List.of(), List.of(fosse, piscine)))
+                .containsExactly("Gwendoline Marchand, DP fosse, a répondu absent.",
+                        "Flora Nguyen, DP piscine, a répondu absent.");
     }
 
     @Test
@@ -163,11 +181,11 @@ class PlanningServiceTest {
         e3.setId(51L);
         e3.setNiveauEncadrement(NiveauEncadrement.E3);
 
-        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, List.of(e2), List.of()))
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, null, List.of(e2), List.of()))
                 .anyMatch(s -> s.contains("pas de directeur de plongée"));
-        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, List.of(e2, e3), List.of()))
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, null, List.of(e2, e3), List.of()))
                 .isEmpty();
-        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, List.of(), List.of()))
+        assertThat(PlanningService.avertissementsEncadrants(List.of(), List.of(), null, null, List.of(), List.of()))
                 .isEmpty();
     }
 

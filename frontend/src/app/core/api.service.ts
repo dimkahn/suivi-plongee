@@ -734,7 +734,7 @@ export class ApiService {
     return this.http.post<EleveSaisonGroupeVue[]>(`/api/groupes-entrainement/saison/${saisonId}/suggestions`, {});
   }
 
-  /** Planning des soirées d'une saison : où est chaque groupe, qui est responsable de séance. */
+  /** Planning des soirées d'une saison : où est chaque groupe, qui sont le DP fosse et le DP piscine. */
   planning(saisonId: number): Observable<PlanningVue> {
     return this.http.get<PlanningVue>('/api/planning', { params: { saisonId } });
   }
@@ -751,7 +751,8 @@ export class ApiService {
   }
 
   definirSoireePlanning(saisonId: number, date: string,
-                        demande: { responsableId: number | null; note: string | null }): Observable<SoireePlanningVue> {
+                        demande: { dpFosseId: number | null; dpPiscineId: number | null; note: string | null }
+  ): Observable<SoireePlanningVue> {
     return this.http.put<SoireePlanningVue>(`/api/planning/saison/${saisonId}/soirees/${date}`, demande);
   }
 

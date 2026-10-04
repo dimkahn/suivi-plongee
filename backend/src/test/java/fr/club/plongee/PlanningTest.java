@@ -111,8 +111,8 @@ class PlanningTest {
     }
 
     @Test
-    @DisplayName("Le responsable de séance d'une soirée est un encadrant ; les encadrants consultent sans écrire")
-    void responsableDeSeanceEtDroits() throws Exception {
+    @DisplayName("Le DP fosse et le DP piscine d'une soirée sont des encadrants ; les encadrants consultent sans écrire")
+    void dpFosseDpPiscineEtDroits() throws Exception {
         String admin = jeton("presidente@club.fr");
         String e1 = jeton("e1@club.fr");
         JsonNode p = planning(e1);
@@ -120,19 +120,25 @@ class PlanningTest {
         String date = p.get("soirees").get(1).get("date").asText();
         String url = "/api/planning/saison/" + saison + "/soirees/" + date;
         long e3 = 0;
+        long autre = 0;
         JsonNode moniteurs = json.readTree(mvc.perform(get("/api/moniteurs").header("Authorization", admin))
                 .andReturn().getResponse().getContentAsString());
-        for (JsonNode m : moniteurs) if (m.get("nomComplet").asText().equals("Gwendoline Marchand")) e3 = m.get("id").asLong();
+        for (JsonNode m : moniteurs) {
+            if (m.get("nomComplet").asText().equals("Gwendoline Marchand")) e3 = m.get("id").asLong();
+            else if (autre == 0) autre = m.get("id").asLong();
+        }
 
         mvc.perform(put(url).header("Authorization", e1).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"responsableId\":" + e3 + "}"))
+                        .content("{\"dpFosseId\":" + e3 + "}"))
                 .andExpect(status().isForbidden());
 
         JsonNode soiree = json.readTree(mvc.perform(put(url).header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"responsableId\":" + e3 + ",\"note\":\"Baptêmes en ligne 5\"}"))
+                        .content("{\"dpFosseId\":" + e3 + ",\"dpPiscineId\":" + autre
+                                + ",\"note\":\"Baptêmes en ligne 5\"}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
-        assertThat(soiree.get("responsable").asText()).isEqualTo("Gwendoline Marchand");
+        assertThat(soiree.get("dpFosse").asText()).isEqualTo("Gwendoline Marchand");
+        assertThat(soiree.get("dpPiscineId").asLong()).isEqualTo(autre);
         assertThat(soiree.get("note").asText()).isEqualTo("Baptêmes en ligne 5");
     }
 
