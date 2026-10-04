@@ -52,6 +52,17 @@ ni dans les images, Caddy les sert sous `/medias/videos/` depuis le dossier
 dans `~/suivi-plongee-videos/`) tourne et publie seul les scénarios nouveaux
 ou modifiés de la version en ligne.
 
+Aide et manuels : page publique `/aide` (`AideComponent`, sans connexion),
+des questions fréquentes qui renvoient chacune au manuel d'utilisation
+d'une fonctionnalité et à ses vidéos. Un manuel = un fichier Markdown de
+`frontend/src/app/features/aide/manuels/` (en-tête : titre, rubrique,
+codes des vidéos, écran, mots-clés, questions ; format dans le
+`LISEZ-MOI.md` du dossier), listé dans `manuels/index.ts` et embarqué dans
+l'appli (loader `.md` en texte, `angular.json`) : la recherche tourne dans
+le navigateur, sans serveur ni réseau, seules les vidéos viennent du
+catalogue publié. Changer un écran = mettre à jour son manuel au même
+commit ; un nouveau scénario de vidéo = le citer dans un manuel.
+
 Le frontend proxifie `/api` vers `localhost:8080` et `/medias/videos` vers
 `outils/videos/apercu.mjs` (port 4300) (`proxy.conf.json`).
 Comptes de démonstration dans le README, mot de passe `plongee2026`.

@@ -1,38 +1,9 @@
 import { Component, ElementRef, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
-
-/**
- * Fichiers des vidéos, hors de l'appli : servis par Caddy depuis un dossier
- * du serveur (VIDEOS dans le .env, voir docker-compose.prod.yml), publiés
- * par outils/videos/publier.sh. En développement, ng serve les sert depuis
- * outils/videos/sorties (angular.json, configuration development).
- */
-const DOSSIER_VIDEOS = '/medias/videos/';
-
-/** Une vidéo de catalogue.json, écrit par outils/videos/enregistrer.mjs. */
-interface Video {
-  id: string;
-  titre: string;
-  public: string;
-  resume: string;
-  format: 'telephone' | 'ordinateur';
-  webm: string | null;
-  mp4: string | null;
-  vignette: string | null;
-  duree: number | null;
-  /** Les sous-titres de la vidéo, dans l'ordre : sa transcription. */
-  texte?: string[];
-  /** Vrai si la vidéo porte la voix off (les sous-titres lus à voix haute). */
-  voix?: boolean;
-}
-
-interface Catalogue {
-  publics: string[];
-  videos: Video[];
-}
+import { manuelDeLaVideo } from '../aide/manuels';
+import { Catalogue, Video, chargerCatalogue, dureeVideo, urlVideo } from './catalogue';
 
 /** Ce qu'on dit de chaque rubrique, sous son titre. */
 const PRESENTATION: Record<string, string> = {
@@ -60,6 +31,7 @@ const PRESENTATION: Record<string, string> = {
       Une vidéo par geste, rangées par rôle. Elles sont tournées sur des données de démonstration :
       les élèves et les encadrants qu'on y voit sont fictifs.
     </p>
+    <p class="intro"><a routerLink="/aide">Une question ? Cherchez dans l'aide : le manuel de chaque écran, avec sa vidéo.</a></p>
 
     @if (etat() === 'chargement') {
       <p class="vide">Chargement…</p>
@@ -118,6 +90,9 @@ const PRESENTATION: Record<string, string> = {
           @if (v.webm) { <source [src]="url(v.webm)" type="video/webm"> }
         </video>
         <p class="secondaire">{{ v.resume }}</p>
+        @if (manuel(v); as m) {
+          <p><a class="lien-manuel" [routerLink]="['/aide']" [queryParams]="{ m: m.id }">Lire le manuel : {{ m.titre }}</a></p>
+        }
         @if (v.texte?.length) {
           <details class="transcription">
             <summary>Le texte de la vidéo</summary>
@@ -188,6 +163,7 @@ const PRESENTATION: Record<string, string> = {
       max-width: 100%; max-height: calc(100dvh - 200px);
     }
     video.ordinateur { width: 100%; }
+    .lien-manuel { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; }
     .transcription summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
     .transcription ol { margin: 0; padding-left: var(--pas-3); display: grid; gap: 4px; }
     @media (max-width: 600px) {
@@ -222,7 +198,7 @@ export class VideosComponent {
 
   private async charger(): Promise<void> {
     try {
-      const c = await firstValueFrom(this.http.get<Catalogue>(DOSSIER_VIDEOS + 'catalogue.json'));
+      const c = await chargerCatalogue(this.http);
       this.catalogue.set(c);
       this.etat.set('pret');
       // Lien direct vers une vidéo : /videos?v=M04
@@ -235,7 +211,11 @@ export class VideosComponent {
   }
 
   url(fichier: string): string {
-    return DOSSIER_VIDEOS + encodeURIComponent(fichier);
+    return urlVideo(fichier);
+  }
+
+  manuel(v: Video) {
+    return manuelDeLaVideo(v.id, v.public);
   }
 
   presentation(rubrique: string): string | null {
@@ -251,9 +231,7 @@ export class VideosComponent {
   }
 
   duree(secondes: number): string {
-    const m = Math.floor(secondes / 60);
-    const s = secondes % 60;
-    return m > 0 ? `${m} min ${String(s).padStart(2, '0')}` : `${s} s`;
+    return dureeVideo(secondes);
   }
 
   ouvrir(v: Video): void {

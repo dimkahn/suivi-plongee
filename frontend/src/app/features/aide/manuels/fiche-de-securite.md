@@ -1,0 +1,36 @@
+---
+titre: Établir et compléter une fiche de sécurité
+rubrique: Moniteur
+videos: M10, M11
+ecran: /fiches-securite
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives
+questions:
+- Comment remplir une fiche de sécurité ?
+- Comment ajouter une palanquée ?
+- Qui peut être directeur de plongée ?
+- Comment saisir les paramètres réalisés après la plongée ?
+- Comment exporter une fiche de sécurité ?
+---
+Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plongée, les conditions, puis composez les palanquées. Au retour, on complète les heures, profondeurs et paliers réalisés.
+
+## Avant la mise à l'eau
+
+1. Menu, « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
+2. Retrouvez la séance par sa date.
+3. Choisissez le directeur de plongée : seuls les E3 et E4 sont proposés.
+4. Renseignez les conditions du jour.
+5. Une palanquée est prête ; « + Palanquée » en ajoute d'autres.
+6. Ajoutez les plongeurs : pour un plongeur du club, son aptitude et son niveau préparé se remplissent seuls.
+7. Enregistrez.
+
+## Pendant et après la plongée
+
+1. « Marquer l'immersion » puis « Marquer la sortie » notent l'heure sur le moment.
+2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers.
+3. La fiche complète s'exporte en PDF ou en tableur pour les archives du club.
+
+## Bon à savoir
+
+- Le directeur de plongée est **E3 minimum**, quel que soit le milieu (choix du club).
+- La fiche s'enregistre même sans réseau ; le DP la retrouve.
+- Un séjour avec les mêmes plongeurs ? Saisissez-les une fois dans un groupe de plongeurs (voir « Groupes de plongeurs pour un séjour »).

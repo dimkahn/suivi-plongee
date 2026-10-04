@@ -66,6 +66,9 @@ declare const VERSION_APPLI: string;
                 Préparer hors ligne
               </button>
             }
+            <a routerLink="/aide" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+              Aide
+            </a>
             <a routerLink="/videos" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
               Vidéos d'aide
             </a>

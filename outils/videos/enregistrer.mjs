@@ -24,6 +24,8 @@ import { ouvrirTournage, ouvrirVoix, gestes } from './commun.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const SORTIES = join(ICI, 'sorties');
+/** Les manuels d'utilisation de la page Aide, qui citent les vidéos par leur code. */
+const MANUELS = join(ICI, '../../frontend/src/app/features/aide/manuels');
 
 /** Ordre des rubriques de la page publique. */
 const PUBLICS = ['Découverte', 'Moniteur', 'Administrateur', 'Directeur technique', 'Élève'];
@@ -151,14 +153,21 @@ async function ecrireScenarios(videos) {
     'dans le même ordre.',
     ''
   ];
+  const manuels = await manuelsParVideo();
+  const sansManuel = videos.filter(v => !manuels.has(v.id)).map(v => v.id);
+  if (sansManuel.length) {
+    console.warn(`Vidéos qu'aucun manuel ne cite (frontend/src/app/features/aide/manuels/) : ${sansManuel.join(', ')}`);
+  }
   for (const rubrique of PUBLICS) {
     const liste = videos.filter(v => v.public === rubrique);
     if (liste.length === 0) continue;
     lignes.push(`## ${rubrique}`, '');
     for (const v of liste) {
       const format = v.format === 'ordinateur' ? 'ordinateur' : 'téléphone';
+      const manuel = manuels.get(v.id);
       lignes.push(`### ${v.id} — ${v.titre}`, '', v.resume, '',
-        `Compte : \`${v.compte}\` · format ${format}` + (v.duree ? ` · ${v.duree} s` : ''), '');
+        `Compte : \`${v.compte}\` · format ${format}` + (v.duree ? ` · ${v.duree} s` : '')
+          + (manuel ? ` · manuel : \`${manuel}\`` : ''), '');
       if (v.texte.length === 0) {
         lignes.push('_Pas encore tournée : le texte viendra au premier enregistrement._', '');
       } else {
@@ -168,4 +177,17 @@ async function ecrireScenarios(videos) {
     }
   }
   await writeFile(join(ICI, 'SCENARIOS.md'), lignes.join('\n'));
+}
+
+/** Code de vidéo → fichier du premier manuel qui la cite (ligne « videos: » de son en-tête). */
+async function manuelsParVideo() {
+  const resultat = new Map();
+  const fichiers = await readdir(MANUELS).catch(() => []);
+  for (const f of fichiers.filter(f => f.endsWith('.md') && f !== 'LISEZ-MOI.md').sort()) {
+    const ligne = /^videos:(.*)$/m.exec(await readFile(join(MANUELS, f), 'utf8'));
+    for (const id of (ligne?.[1] ?? '').split(',').map(v => v.trim()).filter(Boolean)) {
+      if (!resultat.has(id)) resultat.set(id, f);
+    }
+  }
+  return resultat;
 }
