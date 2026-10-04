@@ -103,6 +103,32 @@ interface FormulaireEspace extends DemandeEspaceBassin {
         </button>
       }
 
+      <h2>Moniteurs sans groupe ({{ moniteursSansGroupe().length }})</h2>
+      <p class="secondaire">
+        Les moniteurs actifs qui n'encadrent encore aucun groupe de la saison. Choisissez un groupe pour
+        l'y ajouter comme encadrant attitré.
+      </p>
+      @if (moniteursSansGroupe().length === 0) {
+        <div class="carte vide"><p>Tous les moniteurs actifs ont un groupe.</p></div>
+      } @else {
+        <ul class="eleves">
+          @for (m of moniteursSansGroupe(); track m.id) {
+            <li class="carte eleve">
+              <div class="identite">
+                <span class="nom">{{ m.nomComplet }}</span>
+                @if (m.niveauEncadrement) { <span class="secondaire">{{ m.niveauEncadrement }}</span> }
+              </div>
+              <select [attr.aria-label]="'Groupe de ' + m.nomComplet" [ngModel]="null"
+                      (ngModelChange)="ajouterMoniteurAuGroupe(m, $event)"
+                      [disabled]="groupes().length === 0 || envoi() || formulaire() !== null">
+                <option [ngValue]="null">— Ajouter à un groupe —</option>
+                @for (g of groupes(); track g.id) { <option [ngValue]="g.id">{{ g.nom }}</option> }
+              </select>
+            </li>
+          }
+        </ul>
+      }
+
       <h2>Élèves de la saison</h2>
       <p class="secondaire">
         Les élèves inscrits en formation ou adhérents sur la saison. La suggestion vient du niveau que
@@ -351,6 +377,11 @@ export class GroupesEntrainementComponent {
   sansGroupeSeulement = signal(false);
   recherche = signal('');
 
+  /** Moniteurs actifs qui ne sont encadrant (ni référent) d'aucun groupe de la saison affichée. */
+  moniteursSansGroupe = computed(() => {
+    const pris = new Set(this.groupes().flatMap(g => g.encadrants.map(e => e.id)));
+    return this.moniteurs().filter(m => !pris.has(m.id));
+  });
   nombreSansGroupe = computed(() => this.eleves().filter(e => e.groupeId === null).length);
   nombreSuggestions = computed(() => this.eleves().filter(e => e.groupeId === null && e.groupeSuggereId !== null).length);
   /** Élèves filtrés par la case « sans groupe » et la recherche (sans tenir compte des accents ni des majuscules). */
@@ -411,10 +442,14 @@ export class GroupesEntrainementComponent {
     return m ? `${m.nomComplet}${m.niveauEncadrement ? ' · ' + m.niveauEncadrement : ''}` : 'Encadrant inactif';
   }
 
-  /** Moniteurs actifs ni référents ni attitrés au groupe en cours d'édition. */
+  /** Moniteurs actifs ni référents ni attitrés au groupe en cours d'édition ; ceux sans groupe sont signalés. */
   optionsEncadrants(f: FormulaireGroupe): OptionCombobox[] {
+    const sansGroupe = new Set(this.moniteursSansGroupe().map(m => m.id));
     return this.moniteurs().filter(m => !f.encadrantIds.includes(m.id) && !f.referentIds.includes(m.id))
-      .map(m => ({ id: m.id, libelle: m.nomComplet, detail: m.niveauEncadrement }));
+      .map(m => ({
+        id: m.id, libelle: m.nomComplet,
+        detail: [m.niveauEncadrement, sansGroupe.has(m.id) ? 'sans groupe' : null].filter(x => x).join(' · ') || null
+      }));
   }
 
   /** Espaces actifs, plus ceux déjà attitrés au groupe même désactivés, pour pouvoir les décocher. */
@@ -511,6 +546,31 @@ export class GroupesEntrainementComponent {
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);
         this.message.set(e.error?.detail ?? "L'ordre n'a pas pu être enregistré.");
+      }
+    });
+  }
+
+  /** Ajoute un moniteur sans groupe aux encadrants attitrés du groupe choisi, sans toucher au reste. */
+  ajouterMoniteurAuGroupe(m: MoniteurOptionVue, groupeId: number | null): void {
+    const saisonId = this.saisonId();
+    const g = this.groupes().find(x => x.id === groupeId);
+    if (saisonId === null || !g) return;
+    const demande = {
+      saisonId, nom: g.nom, niveauPrepare: g.niveauPrepare, espaceAttitreIds: g.espaceAttitreIds,
+      encadrantIds: [...g.encadrants.filter(e => !e.referent).map(e => e.id), m.id],
+      referentIds: g.encadrants.filter(e => e.referent).map(e => e.id)
+    };
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.modifierGroupeEntrainement(g.id, demande).subscribe({
+      next: maj => {
+        this.envoi.set(false);
+        this.groupes.set(this.groupes().map(x => x.id === maj.id ? maj : x));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(err.error?.detail ?? "Le moniteur n'a pas pu être ajouté au groupe.");
+        this.groupes.set([...this.groupes()]);
       }
     });
   }
