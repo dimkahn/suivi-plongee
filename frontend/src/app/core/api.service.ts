@@ -770,6 +770,13 @@ export class ApiService {
       `/api/planning/saison/${saisonId}/soirees/${date}/disponibilites/${utilisateurId}`, { reponse });
   }
 
+  /** Un admin met un encadrant dans un autre groupe pour une soirée ; null le rend à ses groupes attitrés. */
+  definirGroupeEncadrant(saisonId: number, date: string, utilisateurId: number,
+                         groupeId: number | null): Observable<SoireePlanningVue> {
+    return this.http.put<SoireePlanningVue>(
+      `/api/planning/saison/${saisonId}/soirees/${date}/encadrants/${utilisateurId}/groupe`, { groupeId });
+  }
+
   // ----------------------------------------------------------------
 
   /** Lecture facultative du préchargement : indisponible (droits, suppression), on passe à la suite. */

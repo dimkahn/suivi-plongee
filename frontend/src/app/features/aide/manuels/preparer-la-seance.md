@@ -24,7 +24,7 @@ Depuis « Présences », choisissez la séance puis « Préparer le programme »
 ## Bon à savoir
 
 - Préparer un programme **ne note aucun élève**.
-- Le programme d'un groupe est préparé par ses encadrants attitrés (ou un administrateur) ; les autres encadrants le consultent.
+- Le programme d'un groupe est préparé par ses encadrants attitrés (ou un administrateur) ; les autres encadrants le consultent. Un encadrant que le planning du bassin met dans ce groupe le jour de la séance le prépare aussi.
 - Le **programme commun** sert à toute la séance (échauffement, sortie sans groupes) : tout encadrant peut le préparer.
 - Dans la grille d'un élève, les critères travaillés à la séance portent le nom de l'exercice.
 - Dans « Noter les présents », un bouton coche d'un coup les critères des exercices.

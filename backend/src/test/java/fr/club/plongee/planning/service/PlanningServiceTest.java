@@ -1,6 +1,7 @@
 package fr.club.plongee.planning.service;
 
 import fr.club.plongee.formation.domain.Eleve;
+import fr.club.plongee.planning.domain.AffectationEncadrant;
 import fr.club.plongee.planning.domain.AffectationGroupe;
 import fr.club.plongee.planning.domain.EspaceBassin;
 import fr.club.plongee.planning.domain.GroupeEntrainement;
@@ -151,6 +152,39 @@ class PlanningServiceTest {
         absent.setType(AffectationGroupe.Type.ABSENT);
         assertThat(PlanningService.avertissementsEncadrants(List.of(g), List.of(PlanningService.caseVue(g, absent)),
                 null, null, List.of(), List.of(encadrant))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Un encadrant mis un soir dans un autre groupe y compte, et plus dans le sien")
+    void encadrantDansUnAutreGroupe() {
+        GroupeEntrainement a = groupe(1L, "Débutants", "N1", LIGNE_3, 3);
+        GroupeEntrainement b = groupe(2L, "Prépa N2", "N2", LIGNE_4, 13);
+        Utilisateur u = a.getEncadrants().iterator().next();
+        u.setPrenom("Paul");
+        u.setNom("Durand");
+        u.setNiveauEncadrement(NiveauEncadrement.E1);
+        AffectationEncadrant changement = new AffectationEncadrant();
+        changement.setUtilisateur(u);
+        changement.setGroupe(b);
+        Map<Long, AffectationEncadrant> changements = Map.of(u.getId(), changement);
+
+        List<PlanningService.EncadrantCaseVue> dansA = PlanningService.encadrantsDuSoir(a, changements);
+        List<PlanningService.EncadrantCaseVue> dansB = PlanningService.encadrantsDuSoir(b, changements);
+        assertThat(dansA).isEmpty();
+        assertThat(dansB).hasSize(2);
+        assertThat(dansB).filteredOn(PlanningService.EncadrantCaseVue::affecteCeSoir)
+                .extracting(PlanningService.EncadrantCaseVue::id).containsExactly(u.getId());
+
+        AffectationGroupe enFosse = new AffectationGroupe();
+        enFosse.setType(AffectationGroupe.Type.ESPACE);
+        enFosse.setEspace(FOSSE);
+        List<CaseVue> cases = List.of(PlanningService.caseVue(a, null, dansA),
+                PlanningService.caseVue(b, enFosse, dansB));
+        // 13 élèves + 2 encadrants ce soir : 15 places, pas de dépassement ; mais un E1 en fosse.
+        assertThat(PlanningService.avertissements(List.of(a, b), cases, CAPACITES))
+                .containsExactly("Prépa N2 en Fosse : limiter à 6 m, le groupe est encadré par un E1.");
+        assertThat(PlanningService.avertissementsEncadrants(List.of(a, b), cases, null, null, List.of(), List.of()))
+                .containsExactly("Débutants : plus d'encadrant ce soir, ses encadrants attitrés sont dans un autre groupe.");
     }
 
     @Test

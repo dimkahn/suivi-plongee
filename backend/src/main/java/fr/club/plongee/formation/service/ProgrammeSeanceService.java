@@ -9,6 +9,7 @@ import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.formation.repository.ExerciceSeanceRepository;
 import fr.club.plongee.formation.repository.SeanceRepository;
 import fr.club.plongee.planning.domain.GroupeEntrainement;
+import fr.club.plongee.planning.repository.AffectationEncadrantRepository;
 import fr.club.plongee.planning.repository.GroupeEntrainementRepository;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.referentiel.domain.Critere;
@@ -25,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,8 +58,10 @@ public class ProgrammeSeanceService {
 
     /**
      * Un groupe d'entraînement de la saison de la séance. {@code modifiable} :
-     * l'utilisateur peut préparer son programme (encadrant attitré ou admin) ;
-     * {@code mien} : il en est encadrant attitré.
+     * l'utilisateur peut préparer son programme (encadrant attitré, mis dans
+     * ce groupe ce soir-là par le planning du bassin, ou admin) ;
+     * {@code mien} : c'est son groupe ce soir-là (son groupe attitré, sauf si
+     * le planning l'a mis dans un autre).
      */
     public record GroupeProgrammeVue(Long id, String nom, String niveauPrepare, int eleves,
                                      boolean modifiable, boolean mien) {}
@@ -74,26 +78,31 @@ public class ProgrammeSeanceService {
     private final CritereRepository criteres;
     private final CursusRepository cursus;
     private final GroupeEntrainementRepository groupes;
+    private final AffectationEncadrantRepository changementsEncadrants;
 
     public ProgrammeSeanceService(SeanceRepository seances, ExerciceSeanceRepository exercices,
                                   ReferentielRepository referentiels, CritereRepository criteres,
-                                  CursusRepository cursus, GroupeEntrainementRepository groupes) {
+                                  CursusRepository cursus, GroupeEntrainementRepository groupes,
+                                  AffectationEncadrantRepository changementsEncadrants) {
         this.seances = seances;
         this.exercices = exercices;
         this.referentiels = referentiels;
         this.criteres = criteres;
         this.cursus = cursus;
         this.groupes = groupes;
+        this.changementsEncadrants = changementsEncadrants;
     }
 
     @Transactional(readOnly = true)
     public ProgrammeVue programme(Long seanceId, UtilisateurPrincipal moi) {
         Seance seance = seance(seanceId);
+        Optional<Long> groupeDuSoir = groupeDuSoir(seance, moi);
         List<GroupeProgrammeVue> groupesVue = groupes.parSaison(seance.getSaison().getId()).stream()
                 .map(g -> {
-                    boolean mien = estEncadrant(g, moi);
+                    boolean attitre = estEncadrant(g, moi);
+                    boolean mien = groupeDuSoir.map(g.getId()::equals).orElse(attitre);
                     return new GroupeProgrammeVue(g.getId(), g.getNom(), g.getNiveauPrepare(), g.getEleves().size(),
-                            mien || estAdmin(moi), mien);
+                            mien || attitre || estAdmin(moi), mien);
                 })
                 .toList();
         return new ProgrammeVue(seanceId, formations(seance), groupesVue,
@@ -105,7 +114,8 @@ public class ProgrammeSeanceService {
      * null : le programme commun) par la liste reçue, dans son ordre ; les
      * programmes des autres groupes ne bougent pas. Tout ou rien : une ligne
      * refusée n'enregistre aucune des autres. Le programme d'un groupe est
-     * préparé par ses encadrants attitrés (référents compris) ou un admin.
+     * préparé par ses encadrants attitrés (référents compris), un encadrant
+     * que le planning du bassin y met le jour de la séance, ou un admin.
      */
     @Transactional
     public ProgrammeVue enregistrer(Long seanceId, Long groupeId, List<DemandeExercice> demandes,
@@ -118,7 +128,8 @@ public class ProgrammeSeanceService {
                 throw new RegleMetierException("Le groupe « " + g.getNom()
                         + " » n'appartient pas à la saison de cette séance.");
             }
-            if (!estEncadrant(g, moi) && !estAdmin(moi)) {
+            boolean misCeSoir = groupeDuSoir(seanceAvant, moi).filter(g.getId()::equals).isPresent();
+            if (!estEncadrant(g, moi) && !misCeSoir && !estAdmin(moi)) {
                 throw new RegleMetierException("Seuls les encadrants du groupe « " + g.getNom()
                         + " » et les administrateurs préparent son programme d'exercices.");
             }
@@ -199,6 +210,16 @@ public class ProgrammeSeanceService {
     /** Encadrant attitré du groupe ; un référent l'est toujours aussi (règle de GroupeEntrainementService). */
     private static boolean estEncadrant(GroupeEntrainement g, UtilisateurPrincipal moi) {
         return moi != null && g.getEncadrants().stream().anyMatch(u -> u.getId().equals(moi.id()));
+    }
+
+    /**
+     * Groupe dans lequel le planning du bassin met l'utilisateur le jour de
+     * la séance, à la place de ses groupes attitrés ; vide sans changement.
+     */
+    private Optional<Long> groupeDuSoir(Seance seance, UtilisateurPrincipal moi) {
+        if (moi == null) return Optional.empty();
+        return changementsEncadrants.findByUtilisateurIdAndDateSoiree(moi.id(), seance.getDateSeance())
+                .map(a -> a.getGroupe().getId());
     }
 
     private static boolean estAdmin(UtilisateurPrincipal moi) {

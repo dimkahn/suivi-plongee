@@ -765,6 +765,26 @@ export interface CasePlanningVue {
   activite: string | null;
   /** En clair : « Ligne 3 », « Ligne 5 + Ligne 6 », « Fosse (limitée à 6 m) », « Baptêmes », « Absent ». */
   libelle: string;
+  /**
+   * Encadrants du groupe ce soir-là : les attitrés, moins ceux mis dans un
+   * autre groupe, plus ceux qu'on y a mis. Peut manquer dans un planning mis
+   * en cache avant cette évolution (on retombe alors sur les attitrés).
+   */
+  encadrants?: EncadrantCasePlanningVue[];
+}
+
+/** Un encadrant d'un groupe un soir donné. */
+export interface EncadrantCasePlanningVue extends EncadrantPlanningVue {
+  /** Pas encadrant attitré du groupe : l'admin l'y a mis pour cette soirée seulement. */
+  affecteCeSoir: boolean;
+}
+
+/** Un encadrant mis un soir dans un autre groupe que ses groupes attitrés. */
+export interface ChangementEncadrantVue {
+  utilisateurId: number;
+  nomComplet: string;
+  groupeId: number;
+  groupe: string;
 }
 
 /** Un encadrant tel que le planning l'affiche. */
@@ -788,6 +808,8 @@ export interface SoireePlanningVue {
   absents: EncadrantPlanningVue[];
   cases: CasePlanningVue[];
   avertissements: string[];
+  /** Encadrants mis ce soir-là dans un autre groupe ; peut manquer dans un planning mis en cache avant. */
+  changementsEncadrants?: ChangementEncadrantVue[];
 }
 
 export interface GroupePlanningVue {

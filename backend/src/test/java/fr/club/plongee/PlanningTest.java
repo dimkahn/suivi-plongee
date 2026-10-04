@@ -188,6 +188,67 @@ class PlanningTest {
     }
 
     @Test
+    @DisplayName("Un soir donné, l'admin met un encadrant dans un autre groupe ; il y prépare le programme")
+    void encadrantDansUnAutreGroupeUnSoir() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String e1 = jeton("e1@club.fr");
+        JsonNode p = planning(e1);
+        long saison = p.get("saisonId").asLong();
+        long moi = p.get("utilisateurId").asLong();
+        long debutants = p.get("mesGroupeIds").get(0).asLong();
+        int iDebutants = -1, iAutre = -1;
+        for (int i = 0; i < p.get("groupes").size(); i++) {
+            long id = p.get("groupes").get(i).get("id").asLong();
+            if (id == debutants) iDebutants = i;
+            else if (iAutre < 0) iAutre = i;
+        }
+        long autre = p.get("groupes").get(iAutre).get("id").asLong();
+        String date = p.get("soirees").get(3).get("date").asText();
+        String url = "/api/planning/saison/" + saison + "/soirees/" + date + "/encadrants/" + moi + "/groupe";
+
+        mvc.perform(put(url).header("Authorization", e1).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"groupeId\":" + autre + "}"))
+                .andExpect(status().isForbidden());
+        try {
+            JsonNode soiree = json.readTree(mvc.perform(put(url).header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"groupeId\":" + autre + "}"))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            assertThat(soiree.get("cases").get(iDebutants).get("encadrants").toString()).doesNotContain("\"id\":" + moi + ",");
+            JsonNode venu = null;
+            for (JsonNode e : soiree.get("cases").get(iAutre).get("encadrants")) if (e.get("id").asLong() == moi) venu = e;
+            assertThat(venu).isNotNull();
+            assertThat(venu.get("affecteCeSoir").asBoolean()).isTrue();
+            assertThat(soiree.get("changementsEncadrants").get(0).get("groupeId").asLong()).isEqualTo(autre);
+            // Les autres soirées ne bougent pas.
+            JsonNode suivante = planning(e1).get("soirees").get(4);
+            assertThat(suivante.get("cases").get(iDebutants).get("encadrants").toString()).contains("\"id\":" + moi + ",");
+
+            // Le programme du groupe d'accueil lui est ouvert pour une séance de ce soir-là.
+            long seanceId = -1;
+            for (JsonNode s : json.readTree(mvc.perform(get("/api/seances").header("Authorization", admin))
+                    .andReturn().getResponse().getContentAsString())) {
+                if (s.get("date").asText().equals(date)) seanceId = s.get("id").asLong();
+            }
+            JsonNode programme = json.readTree(mvc.perform(get("/api/seances/" + seanceId + "/programme")
+                            .header("Authorization", e1))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            for (JsonNode g : programme.get("groupes")) {
+                if (g.get("id").asLong() == autre) {
+                    assertThat(g.get("modifiable").asBoolean()).isTrue();
+                    assertThat(g.get("mien").asBoolean()).isTrue();
+                }
+                if (g.get("id").asLong() == debutants) assertThat(g.get("mien").asBoolean()).isFalse();
+            }
+        } finally {
+            JsonNode soiree = json.readTree(mvc.perform(put(url).header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"groupeId\":null}"))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            assertThat(soiree.get("changementsEncadrants")).isEmpty();
+            assertThat(soiree.get("cases").get(iDebutants).get("encadrants").toString()).contains("\"id\":" + moi + ",");
+        }
+    }
+
+    @Test
     @DisplayName("Une date sans séance est refusée avec un message pour l'utilisateur")
     void dateSansSeanceRefusee() throws Exception {
         String admin = jeton("presidente@club.fr");

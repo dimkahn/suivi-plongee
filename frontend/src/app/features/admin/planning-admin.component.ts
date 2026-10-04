@@ -177,10 +177,14 @@ interface EditionSoiree {
                       <button type="button" class="case" [class]="'case type-' + c.type + (c.espaceType === 'FOSSE' ? ' fosse' : '')"
                               (click)="editerCase(g, s, c)"
                               [attr.aria-label]="g.nom + ', ' + dateLongue(s.date) + ' : ' + c.libelle
-                                + (absentsDuGroupe(g, s).length ? ', absents : ' + absentsDuGroupe(g, s).join(', ') : '')">
+                                + (absentsDuGroupe(g, s).length ? ', absents : ' + absentsDuGroupe(g, s).join(', ') : '')
+                                + (venusCeSoir(c).length ? ', venus d\\'un autre groupe : ' + venusCeSoir(c).join(', ') : '')">
                         {{ code(c) }}
                         @for (nom of absentsDuGroupe(g, s); track nom) {
                           <s class="encadrant-absent" aria-hidden="true">{{ nom }}</s>
+                        }
+                        @for (nom of venusCeSoir(c); track nom) {
+                          <span class="encadrant-venu" aria-hidden="true">+{{ nom }}</span>
                         }
                       </button>
                     </td>
@@ -194,6 +198,7 @@ interface EditionSoiree {
         <p class="legende secondaire">
           Chiffre : ligne d'eau · F10 : fosse · F6 : fosse limitée à 6 m (débutants, groupes encadrés par un E1)
           · — : groupe absent · • : note sur la soirée · <s>Prénom</s> : encadrant du groupe absent ce soir-là
+          · +Prénom : encadrant venu d'un autre groupe ce soir-là
         </p>
 
         @if (avertissements().length > 0) {
@@ -212,7 +217,11 @@ interface EditionSoiree {
     <dialog #dialogue class="dialogue" (close)="fermer()" aria-labelledby="titre-dialogue">
       @if (editionCase(); as e) {
         <h2 id="titre-dialogue">{{ e.groupe.nom }}</h2>
-        <p class="secondaire">{{ dateLongue(e.date) }} · {{ e.groupe.effectif }} plongeurs (élèves et encadrants)</p>
+        <p class="secondaire">{{ dateLongue(e.date) }} · {{ e.groupe.nombreEleves }} élèves</p>
+        <p class="secondaire">
+          Encadrants ce soir : {{ encadrantsCase(e) || 'aucun' }}. Pour mettre un encadrant dans un autre groupe,
+          touchez la ligne « Encadrants » de la soirée.
+        </p>
         <fieldset class="choix">
           <legend class="visuellement-cache">Place du groupe</legend>
           <label class="option">
@@ -286,15 +295,26 @@ interface EditionSoiree {
         </div>
 
         @if (soireeEditee(); as s) {
-          <h3>Présences des encadrants</h3>
+          <h3>Présences et groupes des encadrants</h3>
           <p class="secondaire">
             Chacun répond depuis son planning ; touchez un bouton pour répondre à la place d'un encadrant
-            (enregistré aussitôt, toucher à nouveau l'efface).
+            (enregistré aussitôt, toucher à nouveau l'efface). Le menu met un encadrant dans un autre groupe
+            pour ce soir seulement (remplacer un collègue absent, renforcer un groupe).
           </p>
           <ul class="presences">
             @for (m of moniteurs(); track m.id) {
               <li>
-                <span>{{ m.nomComplet }} <span class="secondaire">{{ m.niveauEncadrement }}</span></span>
+                <span class="qui">
+                  {{ m.nomComplet }} <span class="secondaire">{{ m.niveauEncadrement }}</span>
+                  <select class="groupe-du-soir" [ngModel]="groupeDuSoir(s, m.id)" [disabled]="envoi()"
+                          (ngModelChange)="changerGroupe(s, m.id, $event)"
+                          [attr.aria-label]="'Groupe de ' + m.nomComplet + ' ce soir'">
+                    <option [ngValue]="null">{{ libelleGroupesAttitres(m.id) }}</option>
+                    @for (g of planning()?.groupes ?? []; track g.id) {
+                      <option [ngValue]="g.id">Ce soir : {{ g.nom }}</option>
+                    }
+                  </select>
+                </span>
                 <span class="boutons">
                   <button type="button" class="bouton-discret" [class.present]="reponseDe(s, m.id) === 'PRESENT'"
                           [attr.aria-pressed]="reponseDe(s, m.id) === 'PRESENT'" [disabled]="envoi()"
@@ -348,6 +368,9 @@ interface EditionSoiree {
     .nb-presents { color: var(--acquis); }
     .nb-absents { color: #B3261E; font-weight: 400; }
     .encadrant-absent { display: block; font-size: .6875rem; font-weight: 700; line-height: 1.2; }
+    .encadrant-venu { display: block; font-size: .6875rem; font-weight: 700; line-height: 1.2; color: var(--profond); }
+    .presences .qui { display: grid; gap: 2px; flex: 1; min-width: 0; }
+    .groupe-du-soir { margin: 0 0 4px; min-height: 44px; font-size: .875rem; }
     .dialogue h3 { margin: var(--pas-3) 0 4px; font-size: 1rem; }
     .presences { list-style: none; margin: var(--pas) 0 0; padding: 0; max-height: 40vh; overflow-y: auto; }
     .presences li {
@@ -490,9 +513,52 @@ export class PlanningAdminComponent {
     return g.encadrants.map(e => e.nomComplet.split(' ')[0]).join(' & ') || 'Sans encadrant';
   }
 
-  /** Prénoms des encadrants attitrés du groupe qui ont répondu absent à cette soirée, rayés dans la case. */
+  /** Prénoms des encadrants du groupe ce soir-là qui ont répondu absent, rayés dans la case. */
   absentsDuGroupe(g: GroupePlanningVue, s: SoireePlanningVue): string[] {
-    return g.encadrants.filter(e => s.absents.some(a => a.id === e.id)).map(e => e.nomComplet.split(' ')[0]);
+    const c = s.cases.find(x => x.groupeId === g.id);
+    return (c?.encadrants ?? g.encadrants).filter(e => s.absents.some(a => a.id === e.id))
+      .map(e => e.nomComplet.split(' ')[0]);
+  }
+
+  /** Prénoms des encadrants mis dans ce groupe pour la soirée, venus d'un autre groupe. */
+  venusCeSoir(c: CasePlanningVue): string[] {
+    return (c.encadrants ?? []).filter(e => e.affecteCeSoir).map(e => e.nomComplet.split(' ')[0]);
+  }
+
+  /** Encadrants du groupe ouvert dans le dialogue, pour la soirée choisie. */
+  encadrantsCase(e: EditionCase): string {
+    const c = this.planning()?.soirees.find(s => s.date === e.date)?.cases.find(x => x.groupeId === e.groupe.id);
+    return (c?.encadrants ?? e.groupe.encadrants)
+      .map(x => x.nomComplet + ('affecteCeSoir' in x && x.affecteCeSoir ? ' (ce soir)' : '')).join(', ');
+  }
+
+  /** Groupe où l'encadrant est mis ce soir-là ; null : avec ses groupes attitrés. */
+  groupeDuSoir(s: SoireePlanningVue, utilisateurId: number): number | null {
+    return s.changementsEncadrants?.find(c => c.utilisateurId === utilisateurId)?.groupeId ?? null;
+  }
+
+  libelleGroupesAttitres(utilisateurId: number): string {
+    const noms = (this.planning()?.groupes ?? []).filter(g => g.encadrants.some(e => e.id === utilisateurId))
+      .map(g => g.nom);
+    return noms.length ? `Son groupe : ${noms.join(', ')}` : 'Sans groupe';
+  }
+
+  /** Enregistré aussitôt ; le dialogue reste ouvert. */
+  changerGroupe(s: SoireePlanningVue, utilisateurId: number, groupeId: number | null): void {
+    const saisonId = this.saisonId();
+    if (saisonId === null) return;
+    this.envoi.set(true);
+    this.api.definirGroupeEncadrant(saisonId, s.date, utilisateurId, groupeId).subscribe({
+      next: soiree => {
+        this.envoi.set(false);
+        this.remplacerSoiree(soiree);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.fermer();
+        this.message.set(err.error?.detail ?? "Le changement de groupe n'a pas pu être enregistré.");
+      }
+    });
   }
 
   editerCase(g: GroupePlanningVue, s: SoireePlanningVue, c: CasePlanningVue): void {

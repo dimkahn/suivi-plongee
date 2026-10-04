@@ -3,8 +3,9 @@ titre: Tenir le planning des soirées
 rubrique: Administrateur
 videos: A11, A12
 ecran: /admin/planning
-mots: planning, soirée, lundi, grille, case, écart, fosse, F6, activité, absence, DP fosse, DP piscine, avertissement, capacité, E3, répondre à sa place
+mots: planning, soirée, lundi, grille, case, écart, fosse, F6, activité, absence, DP fosse, DP piscine, avertissement, capacité, E3, répondre à sa place, changer de groupe, remplacer, remplaçant, renfort, autre groupe
 questions:
+- Comment mettre un moniteur dans un autre groupe pour une séance ?
 - Comment envoyer un groupe en fosse un soir ?
 - Comment désigner le DP fosse et le DP piscine ?
 - Que veulent dire les avertissements du planning ?
@@ -18,14 +19,15 @@ Administration, « Planning du bassin » : une ligne par groupe, une colonne par
 1. Administration, puis « Planning du bassin ».
 2. Une case grisée = la ligne attitrée du groupe. Touchez une case pour noter un écart : autre ligne (une ou plusieurs), fosse, fosse limitée à 6 m (« F6 »), activité ou absence du groupe.
 3. Les lignes « DP fosse » et « DP piscine » désignent le directeur de plongée de chaque bassin, avec une note pour tous.
-4. Les encadrants voient aussitôt leur soirée dans « Planning ».
+4. La ligne « Encadrants » ouvre les présences de la soirée. Le menu sous le nom d'un encadrant le met dans un autre groupe pour ce soir seulement (remplacer un collègue absent, renforcer un groupe) ; « Son groupe » le remet dans ses groupes attitrés. Dans la grille, « +Prénom » signale l'encadrant venu d'un autre groupe.
+5. Les encadrants voient aussitôt leur soirée dans « Planning ».
 
 ## Les avertissements (⚠)
 
-- Fosse au-delà de sa capacité (élèves et encadrants attitrés).
-- Groupe N1, ou encadré par un E1, en fosse sans limite à 6 m.
+- Fosse au-delà de sa capacité (élèves et encadrants du soir).
+- Groupe N1, ou encadré ce soir-là par un E1, en fosse sans limite à 6 m.
 - Ligne donnée à deux groupes.
-- Tous les encadrants attitrés d'un groupe absents ; DP fosse ou DP piscine absent.
+- Tous les encadrants d'un groupe absents, ou partis dans un autre groupe ce soir-là ; DP fosse ou DP piscine absent.
 - Aucun E3 parmi les encadrants présents.
 
 Ils guident, ils ne bloquent jamais : la décision reste au club.
@@ -33,5 +35,6 @@ Ils guident, ils ne bloquent jamais : la décision reste au club.
 ## Bon à savoir
 
 - Changer la ligne attitrée d'un groupe suit sur toutes les soirées non retouchées.
+- Un encadrant mis dans un autre groupe un soir peut préparer le programme d'exercices de ce groupe pour les séances de ce jour-là.
 - Un prénom rayé : un encadrant absent ce soir-là. Un encadrant prévient par téléphone ? Répondez à sa place dans la soirée.
 - Seules les dates avec une séance en piscine ou en fosse forment une soirée : les sorties en milieu naturel n'y figurent pas.

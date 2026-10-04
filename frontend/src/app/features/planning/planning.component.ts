@@ -86,11 +86,13 @@ const SOIREES_A_VENIR = 8;
                 <span class="texte">
                   <span class="nom-groupe">
                     {{ l.groupe.nom }}
-                    @if (l.mien) { <span class="etiquette">Votre groupe</span> }
+                    @if (l.mien) {
+                      <span class="etiquette">{{ l.ceSoirSeulement ? 'Votre groupe ce soir' : 'Votre groupe' }}</span>
+                    }
                   </span>
                   <span class="place">{{ l.case.libelle }}</span>
                   <span class="secondaire encadrants-groupe">
-                    @for (e of l.groupe.encadrants; track e.id; let dernier = $last) {
+                    @for (e of l.encadrants; track e.id; let dernier = $last) {
                       @if (estAbsent(s, e.id)) {
                         <s class="nom-absent" [attr.aria-label]="e.nomComplet + ', absent'">{{ e.nomComplet }}</s>
                       } @else if (estPresent(s, e.id)) {
@@ -99,6 +101,7 @@ const SOIREES_A_VENIR = 8;
                         <span>{{ e.nomComplet }}</span>
                       }
                       @if (e.referent) { (référent) }
+                      @if (e.affecteCeSoir) { (ce soir) }
                       @if (!dernier) { & }
                     } @empty {
                       Sans encadrant
@@ -127,6 +130,7 @@ const SOIREES_A_VENIR = 8;
                 <tr>
                   <th scope="col">Date</th>
                   @for (g of mesGroupes(); track g.id) { <th scope="col">{{ g.nom }}</th> }
+                  @if (aVenirAilleurs()) { <th scope="col">Autre groupe</th> }
                   @if (auth.estMoniteur()) { <th scope="col">Ma présence</th> }
                 </tr>
               </thead>
@@ -134,7 +138,13 @@ const SOIREES_A_VENIR = 8;
                 @for (v of aVenir(); track v.soiree.date) {
                   <tr>
                     <th scope="row">{{ jourCourt(v.soiree.date) }} {{ dateCourte(v.soiree.date) }}</th>
-                    @for (c of v.cases; track c.groupeId) { <td>{{ c.libelle }}</td> }
+                    @for (c of v.cases; track c.groupeId) {
+                      <td>
+                        {{ c.libelle }}
+                        @if (!v.groupeIds.includes(c.groupeId)) { <span class="secondaire">(sans vous)</span> }
+                      </td>
+                    }
+                    @if (aVenirAilleurs()) { <td>{{ v.ailleurs }}</td> }
                     @if (auth.estMoniteur()) {
                       <td class="reponse-courte">
                         <button type="button" class="bouton-discret" [class.present]="maReponse(v.soiree) === 'PRESENT'"
@@ -242,12 +252,20 @@ export class PlanningComponent {
     return p ? p.groupes.filter(g => p.mesGroupeIds.includes(g.id)) : [];
   });
 
-  /** Groupes de la soirée affichée, ceux qu'on encadre en premier. */
+  /**
+   * Groupes de la soirée affichée, ceux qu'on encadre ce soir-là en premier
+   * (l'admin a pu mettre l'encadrant dans un autre groupe que le sien).
+   */
   lignesSoiree = computed(() => {
     const p = this.planning();
     const s = this.soiree();
     if (!p || !s) return [];
-    const lignes = p.groupes.map((groupe, i) => ({ groupe, case: s.cases[i], mien: p.mesGroupeIds.includes(groupe.id) }));
+    const miens = this.groupesDuSoir(s);
+    const lignes = p.groupes.map((groupe, i) => ({
+      groupe, case: s.cases[i], mien: miens.includes(groupe.id),
+      ceSoirSeulement: miens.includes(groupe.id) && !p.mesGroupeIds.includes(groupe.id),
+      encadrants: (s.cases[i].encadrants ?? groupe.encadrants.map(e => ({ ...e, affecteCeSoir: false })))
+    }));
     return [...lignes.filter(l => l.mien), ...lignes.filter(l => !l.mien)];
   });
 
@@ -262,8 +280,17 @@ export class PlanningComponent {
     if (!p) return [];
     const indices = p.groupes.map((g, i) => p.mesGroupeIds.includes(g.id) ? i : -1).filter(i => i >= 0);
     const soirees = this.touteLaSaison() ? this.soireesAVenir() : this.soireesAVenir().slice(0, SOIREES_A_VENIR);
-    return soirees.map(soiree => ({ soiree, cases: indices.map(i => soiree.cases[i]) }));
+    return soirees.map(soiree => {
+      const groupeIds = this.groupesDuSoir(soiree);
+      // Groupe où l'admin le met ce soir-là, hors de ses groupes attitrés.
+      const ailleurs = p.groupes.map((g, i) => ({ g, c: soiree.cases[i] }))
+        .filter(x => groupeIds.includes(x.g.id) && !p.mesGroupeIds.includes(x.g.id))
+        .map(x => `${x.g.nom} (${x.c.libelle})`).join(', ');
+      return { soiree, groupeIds, ailleurs, cases: indices.map(i => soiree.cases[i]) };
+    });
   });
+
+  aVenirAilleurs = computed(() => this.aVenir().some(v => v.ailleurs));
 
   resteAVenir = computed(() => Math.max(0, this.soireesAVenir().length - SOIREES_A_VENIR));
 
@@ -285,6 +312,17 @@ export class PlanningComponent {
     } finally {
       this.chargement.set(false);
     }
+  }
+
+  /**
+   * Groupes qu'on encadre ce soir-là. Un planning mis en cache avant que le
+   * serveur donne les encadrants de chaque soirée : les groupes attitrés.
+   */
+  private groupesDuSoir(s: SoireePlanningVue): number[] {
+    const p = this.planning();
+    if (!p) return [];
+    return s.cases.filter(c => c.encadrants ? c.encadrants.some(e => e.id === p.utilisateurId)
+      : p.mesGroupeIds.includes(c.groupeId)).map(c => c.groupeId);
   }
 
   maReponse(s: SoireePlanningVue): ReponseDisponibilite | null {
