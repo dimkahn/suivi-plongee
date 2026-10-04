@@ -1,5 +1,7 @@
 package fr.club.plongee;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -318,6 +320,51 @@ class FicheSecuriteTest {
         // Signature ZIP : un .xlsx est une archive ZIP (PK\x03\x04).
         assertThat(excel[0]).isEqualTo((byte) 'P');
         assertThat(excel[1]).isEqualTo((byte) 'K');
+    }
+
+    @Test
+    @DisplayName("Les fiches de sécurité d'une journée s'impriment d'un coup, une par page")
+    void fichesDuJourDansUnSeulPdf() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e1@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
+        String jour = "2026-06-17";
+        String adresse = "/api/seances/fiches-securite.pdf?date=" + jour;
+
+        // Aucune fiche ce jour-là : refus explicite plutôt qu'un PDF vide.
+        mvc.perform(get(adresse).header("Authorization", moniteur))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Aucune fiche de sécurité")));
+
+        // Trois plongées ce jour-là, deux avec leur fiche : la troisième est sautée.
+        for (int ordre = 1; ordre <= 3; ordre++) {
+            String reponse = mvc.perform(post("/api/seances").header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("""
+                                    {"dateSeance":"%s","ordre":%d,"milieu":"NATUREL","lieu":"Lac","profondeurMax":20}
+                                    """.formatted(jour, ordre)))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+            long seance = json.readTree(reponse).get("id").asLong();
+            if (ordre < 3) {
+                mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
+                                .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
+                        .andExpect(status().isOk());
+            }
+        }
+
+        byte[] pdf = mvc.perform(get(adresse).header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "application/pdf"))
+                .andExpect(header().string("Content-Disposition",
+                        org.hamcrest.Matchers.containsString("fiches-securite-" + jour + ".pdf")))
+                .andReturn().getResponse().getContentAsByteArray();
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            assertThat(document.getNumberOfPages()).isEqualTo(2);
+        }
+
+        // Un élève n'imprime pas les fiches.
+        mvc.perform(get(adresse).header("Authorization", jeton("eleve@club.fr")))
+                .andExpect(status().isForbidden());
     }
 
     @Test

@@ -1,5 +1,6 @@
 import { Component, ElementRef, computed, effect, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
@@ -50,6 +51,20 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
         <button type="button" class="bouton-discret" (click)="reinitialiserFiltres()">Réinitialiser</button>
       }
     </section>
+
+    @if (filtreDate() && fichesDuJour() > 0) {
+      <div class="impression-jour">
+        <button type="button" class="bouton-principal" (click)="imprimerFichesDuJour()" [disabled]="impressionEnCours()">
+          {{ impressionEnCours() ? 'Génération…' : 'Imprimer les fiches du ' + (filtreDate() | dateFr) + ' (PDF)' }}
+        </button>
+        <span class="secondaire">
+          {{ fichesDuJour() }} fiche{{ fichesDuJour() > 1 ? 's' : '' }}, une par page, dans l'ordre des plongées.
+        </span>
+      </div>
+    }
+    @if (messageImpression()) {
+      <p class="alerte" role="alert">{{ messageImpression() }}</p>
+    }
 
     <dialog #dialogueDate class="dialogue-seance" aria-labelledby="titre-dialogue-date"
             (close)="dialogueOuvert.set(false)">
@@ -134,6 +149,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
     .filtres input, .filtres select { margin: 0; width: 100%; }
     .filtres .choix-seance { max-width: none; }
     .toutes-dates { display: block; margin: var(--pas-2) auto 0; }
+    .impression-jour { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2); margin: var(--pas-2) 0; }
 
     ul { list-style: none; margin: var(--pas-3) 0 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -256,6 +272,45 @@ export class FichesSecuriteListeComponent {
   reinitialiserFiltres(): void {
     this.filtreDate.set('');
     this.filtreLieu.set('');
+  }
+
+  impressionEnCours = signal(false);
+  messageImpression = signal<string | null>(null);
+
+  /**
+   * Fiches déjà enregistrées sur le serveur pour la date choisie, toutes séances
+   * du jour confondues (le filtre lieu ne s'applique pas) : ce que contiendra le PDF.
+   */
+  fichesDuJour = computed(() => {
+    const date = this.filtreDate();
+    return this.toutes().filter(s => s.date === date && s.ficheSecurite).length;
+  });
+
+  /** Les fiches de toutes les séances du jour, une par page, dans un seul PDF à imprimer d'un coup. */
+  imprimerFichesDuJour(): void {
+    const date = this.filtreDate();
+    this.impressionEnCours.set(true);
+    this.messageImpression.set(null);
+    this.api.fichesSecuriteJourPdf(date).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = `fiches-securite-${date}.pdf`;
+        lien.click();
+        URL.revokeObjectURL(url);
+        this.impressionEnCours.set(false);
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.impressionEnCours.set(false);
+        // Réponse en blob : le message du serveur est à relire comme du JSON.
+        let detail: string | null = null;
+        try { detail = JSON.parse(await (e.error as Blob).text()).detail ?? null; } catch { /* sans détail */ }
+        this.messageImpression.set(detail ?? (navigator.onLine
+          ? "Le PDF des fiches du jour n'a pas pu être généré."
+          : 'Impression impossible hors ligne : reconnectez-vous pour générer le PDF.'));
+      }
+    });
   }
 
 }
