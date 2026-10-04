@@ -152,3 +152,10 @@ aussi le texte de la vidéo), `toucher`, `saisir`, `choisir`, `cocher`,
 `dater`, `menu`, `administration`, `reseau`, `vignette` (image d'aperçu)…
 et `grille.mjs` a des repères pour la grille de compétences. La vidéo
 apparaît dans `SCENARIOS.md` et sur la page au prochain enregistrement.
+
+Chaque vidéo va avec un **manuel d'utilisation** écrit, qui la cite par
+son code (`videos: M3`) : ce sont les réponses de la page **Aide** (`/aide`),
+embarquées dans l'appli. Écrire ou compléter le manuel de la
+fonctionnalité dans `frontend/src/app/features/aide/manuels/` (format dans
+le `LISEZ-MOI.md` de ce dossier) ; `node enregistrer.mjs` signale les
+vidéos qu'aucun manuel ne cite.

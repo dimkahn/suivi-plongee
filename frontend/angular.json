@@ -32,6 +32,9 @@
               }
             ],
             "serviceWorker": "ngsw-config.json",
+            "loader": {
+              ".md": "text"
+            },
             "define": {
               "VERSION_APPLI": "\"dev\""
             }

@@ -216,5 +216,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/videos/videos.component')
       .then(m => m.VideosComponent)
   },
+  // Page publique aussi : les questions fréquentes, un manuel par écran.
+  {
+    path: 'aide',
+    loadComponent: () => import('./features/aide/aide.component')
+      .then(m => m.AideComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

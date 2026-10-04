@@ -45,6 +45,7 @@ import { AuthService } from '../../core/auth.service';
           </button>
 
           <a routerLink="/videos" class="lien-oubli lien-videos">Vidéos d'aide : l'appli en images</a>
+          <a routerLink="/aide" class="lien-oubli lien-videos">Une question ? L'aide et les manuels</a>
         } @else {
           <p class="secondaire">
             Indiquez votre e-mail : si un compte lui correspond, un lien de
