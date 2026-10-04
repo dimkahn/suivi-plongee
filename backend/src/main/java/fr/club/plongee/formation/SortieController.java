@@ -1,12 +1,17 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.formation.service.FicheSecuritePdfService;
+import fr.club.plongee.formation.service.FicheSecuriteService;
 import fr.club.plongee.formation.service.SortieService;
 import fr.club.plongee.formation.service.SortieService.DemandeSortie;
 import fr.club.plongee.formation.service.SortieService.SeancePossibleVue;
 import fr.club.plongee.formation.service.SortieService.SortieVue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,9 +29,11 @@ public class SortieController {
     public record DemandeSeances(@NotNull List<Long> seanceIds) {}
 
     private final SortieService service;
+    private final FicheSecuriteService fichesSecurite;
 
-    public SortieController(SortieService service) {
+    public SortieController(SortieService service, FicheSecuriteService fichesSecurite) {
         this.service = service;
+        this.fichesSecurite = fichesSecurite;
     }
 
     /** {@code recentes} : à venir ou finies depuis peu (choix d'une sortie pour un prêt) ; sinon toutes. */
@@ -67,6 +74,16 @@ public class SortieController {
     @PreAuthorize("hasAnyRole('ADMIN','DIRECTEUR_TECHNIQUE')")
     public List<SeancePossibleVue> seancesPossibles(@PathVariable Long id) {
         return service.seancesPossibles(id);
+    }
+
+    /** Toutes les fiches de sécurité de la sortie dans un seul PDF, une par page, pour les imprimer d'un coup. */
+    @GetMapping(value = "/{id}/fiches-securite.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public ResponseEntity<byte[]> fichesSecuritePdf(@PathVariable Long id) {
+        FicheSecuritePdfService.FichePdf pdf = fichesSecurite.genererPdfSortie(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.nomFichier() + "\"")
+                .body(pdf.contenu());
     }
 
     @PutMapping("/{id}/seances")

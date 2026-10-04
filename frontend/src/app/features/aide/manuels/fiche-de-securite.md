@@ -10,6 +10,7 @@ questions:
 - Qui peut être directeur de plongée ?
 - Comment saisir les paramètres réalisés après la plongée ?
 - Comment exporter une fiche de sécurité ?
+- Comment imprimer toutes les fiches de sécurité d'un séjour ?
 ---
 Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plongée, les conditions, puis composez les palanquées. Au retour, on complète les heures, profondeurs et paliers réalisés.
 
@@ -28,6 +29,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 1. « Marquer l'immersion » puis « Marquer la sortie » notent l'heure sur le moment.
 2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers.
 3. La fiche complète s'exporte en PDF ou en tableur pour les archives du club.
+4. Si la plongée fait partie d'une sortie (un séjour), « Toutes les fiches de … (PDF) » réunit les fiches de toutes ses plongées dans un seul PDF, une par page : tout s'imprime d'un coup. Les plongées sans fiche sont sautées.
 
 ## Bon à savoir
 

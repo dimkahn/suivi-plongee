@@ -573,6 +573,8 @@ export interface FicheSecuriteVue {
   palanquees: PalanqueeVue[];
   /** Séances du même jour liées à celle-ci (deux bateaux…), qui se partagent les plongeurs d'un groupe. */
   seancesLiees: SeanceLieeVue[];
+  /** La sortie (séjour) dont fait partie la séance : ses fiches s'impriment toutes d'un coup. */
+  sortie?: { id: number; nom: string } | null;
 }
 
 /** Un plongeur déjà placé sur la fiche d'une séance liée. */

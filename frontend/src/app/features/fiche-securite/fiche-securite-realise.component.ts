@@ -118,6 +118,12 @@ import { lieuEtSite } from '../../core/seance-lieu';
         <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
           {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
         </button>
+        @if (sortie(); as so) {
+          <button type="button" class="bouton-discret" (click)="telechargerPdfSortie(so.id)"
+                  [disabled]="exportSortieEnCours()">
+            {{ exportSortieEnCours() ? 'Génération…' : 'Toutes les fiches de « ' + so.nom + ' » (PDF)' }}
+          </button>
+        }
       </div>
     }
   `,
@@ -177,8 +183,10 @@ export class FicheSecuriteRealiseComponent {
   envoiRealise = signal(false);
   exportEnCours = signal(false);
   exportExcelEnCours = signal(false);
+  exportSortieEnCours = signal(false);
 
   ficheEtablie = signal(false);
+  sortie = signal<{ id: number; nom: string } | null>(null);
   palanquees = signal<PalanqueeVue[]>([]);
 
   rechercheRealise = signal('');
@@ -207,6 +215,7 @@ export class FicheSecuriteRealiseComponent {
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
       this.ficheEtablie.set(etablie);
       this.palanquees.set(fiche.palanquees);
+      this.sortie.set(fiche.sortie ?? null);
     } catch {
       this.message.set(navigator.onLine
         ? 'Impossible de charger la fiche de sécurité.'
@@ -309,6 +318,26 @@ export class FicheSecuriteRealiseComponent {
       error: () => {
         this.message.set('Le PDF n’a pas pu être généré.');
         this.exportEnCours.set(false);
+      }
+    });
+  }
+
+  /** Les fiches de toutes les plongées du séjour, une par page, pour les imprimer d'un coup. */
+  telechargerPdfSortie(sortieId: number): void {
+    this.exportSortieEnCours.set(true);
+    this.api.fichesSecuriteSortiePdf(sortieId).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.download = `fiches-securite-sortie-${sortieId}.pdf`;
+        lien.click();
+        URL.revokeObjectURL(url);
+        this.exportSortieEnCours.set(false);
+      },
+      error: () => {
+        this.message.set('Le PDF des fiches de la sortie n’a pas pu être généré.');
+        this.exportSortieEnCours.set(false);
       }
     });
   }

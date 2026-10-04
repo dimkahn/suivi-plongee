@@ -303,6 +303,11 @@ export class ApiService {
     return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`, { responseType: 'blob' });
   }
 
+  /** Toutes les fiches de sécurité d'une sortie dans un seul PDF, une par page. */
+  fichesSecuriteSortiePdf(sortieId: number): Observable<Blob> {
+    return this.http.get(`/api/sorties/${sortieId}/fiches-securite.pdf`, { responseType: 'blob' });
+  }
+
   ficheSecuriteExcel(seanceId: number): Observable<Blob> {
     return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.xlsx`, { responseType: 'blob' });
   }
