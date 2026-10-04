@@ -47,12 +47,13 @@ class FicheSecuriteServiceTest {
     @Mock EleveRepository eleves;
     @Mock FicheSecuritePdfService pdfService;
     @Mock FicheSecuriteExcelService excelService;
+    @Mock LiaisonSeancesRepository liaisons;
 
     FicheSecuriteService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService, excelService);
+        service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService, excelService, liaisons);
     }
 
     /** E3 : niveau minimal d'un directeur de plongée. */

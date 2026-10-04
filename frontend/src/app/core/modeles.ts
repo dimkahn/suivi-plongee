@@ -571,6 +571,27 @@ export interface FicheSecuriteVue {
   planSecours: string | null;
   observations: string | null;
   palanquees: PalanqueeVue[];
+  /** Séances du même jour liées à celle-ci (deux bateaux…), qui se partagent les plongeurs d'un groupe. */
+  seancesLiees: SeanceLieeVue[];
+}
+
+/** Un plongeur déjà placé sur la fiche d'une séance liée. */
+export interface PlongeurPlaceVue {
+  eleveId: number | null;
+  utilisateurId: number | null;
+  nom: string;
+  prenom: string;
+  palanquee: number;
+}
+
+export interface SeanceLieeVue {
+  seanceId: number;
+  date: string;
+  ordre: number | null;
+  lieu: string | null;
+  site: string | null;
+  ficheEtablie: boolean;
+  plongeursPlaces: PlongeurPlaceVue[];
 }
 
 /** Un plongeur au sein d'un GroupePlongeursVue : même logique d'instantané éditable que PlongeurConnuVue. */

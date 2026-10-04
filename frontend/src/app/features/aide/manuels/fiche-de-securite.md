@@ -34,3 +34,4 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 - Le directeur de plongée est **E3 minimum**, quel que soit le milieu (choix du club).
 - La fiche s'enregistre même sans réseau ; le DP la retrouve.
 - Un séjour avec les mêmes plongeurs ? Saisissez-les une fois dans un groupe de plongeurs (voir « Groupes de plongeurs pour un séjour »).
+- Deux bateaux ou deux sites le même jour, avec un seul groupe ? Liez les deux séances depuis la fiche (« Lier à une autre séance du jour ») : la seconde fiche ne propose plus que les plongeurs qui ne sont pas déjà dans une palanquée de la première.

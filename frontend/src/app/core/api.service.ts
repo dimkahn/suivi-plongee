@@ -285,6 +285,16 @@ export class ApiService {
       () => this.http.get<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`));
   }
 
+  /** Lie la séance à une autre du même jour : leurs fiches se partagent les plongeurs d'un groupe. */
+  lierSeance(seanceId: number, autreSeanceId: number): Observable<FicheSecuriteVue> {
+    return this.http.put<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/liaison`,
+      { seanceId: autreSeanceId });
+  }
+
+  delierSeance(seanceId: number): Observable<FicheSecuriteVue> {
+    return this.http.delete<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/liaison`);
+  }
+
   supprimerFicheSecurite(seanceId: number): Observable<unknown> {
     return this.http.delete(`/api/seances/${seanceId}/fiche-securite`);
   }

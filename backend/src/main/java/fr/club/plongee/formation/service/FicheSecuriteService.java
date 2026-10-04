@@ -11,7 +11,9 @@ import fr.club.plongee.securite.repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -72,10 +74,17 @@ public class FicheSecuriteService {
                                    String visibilite, String courant, String maree,
                                    String temperatureEau, String securiteSurface,
                                    String planSecours, String observations,
-                                   List<PalanqueeVue> palanquees) {}
+                                   List<PalanqueeVue> palanquees, List<SeanceLieeVue> seancesLiees) {}
 
-    private static final FicheSecuriteVue VUE_VIDE = new FicheSecuriteVue(null, null, null, null,
-            null, null, null, null, null, null, null, null, List.of());
+    /** Un plongeur déjà placé sur la fiche d'une séance liée, et dans quelle palanquée. */
+    public record PlongeurPlaceVue(Long eleveId, Long utilisateurId, String nom, String prenom, int palanquee) {}
+
+    /**
+     * Une séance liée (voir {@link LiaisonSeances}) et les plongeurs déjà
+     * placés sur sa fiche : le formulaire les retire du groupe proposé.
+     */
+    public record SeanceLieeVue(Long seanceId, LocalDate date, Integer ordre, String lieu, String site,
+                                boolean ficheEtablie, List<PlongeurPlaceVue> plongeursPlaces) {}
 
     private final FicheSecuriteRepository fiches;
     private final SeanceRepository seances;
@@ -83,21 +92,104 @@ public class FicheSecuriteService {
     private final EleveRepository eleves;
     private final FicheSecuritePdfService pdfService;
     private final FicheSecuriteExcelService excelService;
+    private final LiaisonSeancesRepository liaisons;
 
     public FicheSecuriteService(FicheSecuriteRepository fiches, SeanceRepository seances,
                                 UtilisateurRepository utilisateurs, EleveRepository eleves,
-                                FicheSecuritePdfService pdfService, FicheSecuriteExcelService excelService) {
+                                FicheSecuritePdfService pdfService, FicheSecuriteExcelService excelService,
+                                LiaisonSeancesRepository liaisons) {
         this.fiches = fiches;
         this.seances = seances;
         this.utilisateurs = utilisateurs;
         this.eleves = eleves;
         this.pdfService = pdfService;
         this.excelService = excelService;
+        this.liaisons = liaisons;
     }
 
+    /** Sans fiche, une vue vide plutôt qu'une 404 (avec ses séances liées) pour amorcer le formulaire. */
     @Transactional(readOnly = true)
     public FicheSecuriteVue consulter(Long seanceId) {
-        return fiches.findBySeanceId(seanceId).map(this::vue).orElse(VUE_VIDE);
+        return fiches.findBySeanceId(seanceId).map(this::vue).orElseGet(() -> new FicheSecuriteVue(
+                null, null, null, null, null, null, null, null, null, null, null, null,
+                List.of(), seancesLiees(seanceId)));
+    }
+
+    /**
+     * Lie la séance à une autre du même jour (deux bateaux, deux sites à la
+     * même heure) qui se partagent les plongeurs d'un groupe. Si l'une des
+     * deux est déjà liée à d'autres, toutes se retrouvent dans la même liaison.
+     */
+    @Transactional
+    public FicheSecuriteVue lier(Long seanceId, Long autreSeanceId) {
+        Seance seance = seances.findById(seanceId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Séance introuvable"));
+        Seance autre = seances.findById(autreSeanceId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Séance à lier introuvable"));
+        if (seance.getId().equals(autre.getId())) {
+            throw new RegleMetierException("Une séance ne peut pas être liée à elle-même.");
+        }
+        if (!seance.getDateSeance().equals(autre.getDateSeance())) {
+            throw new RegleMetierException("Seules deux séances du même jour peuvent être liées.");
+        }
+
+        LiaisonSeances liaison = liaisons.findBySeancesId(seanceId).orElse(null);
+        LiaisonSeances liaisonAutre = liaisons.findBySeancesId(autreSeanceId).orElse(null);
+        if (liaison == null && liaisonAutre == null) {
+            liaison = new LiaisonSeances();
+            liaison.getSeances().add(seance);
+            liaison.getSeances().add(autre);
+            liaisons.save(liaison);
+        } else if (liaison == null) {
+            liaisonAutre.getSeances().add(seance);
+        } else if (liaisonAutre == null) {
+            liaison.getSeances().add(autre);
+        } else if (!liaison.getId().equals(liaisonAutre.getId())) {
+            // Vider l'autre liaison avant d'en reprendre les séances : une séance n'est que dans une liaison.
+            List<Seance> reprises = List.copyOf(liaisonAutre.getSeances());
+            liaisonAutre.getSeances().clear();
+            liaisons.delete(liaisonAutre);
+            liaisons.flush();
+            liaison.getSeances().addAll(reprises);
+        }
+        liaisons.flush();
+        return consulter(seanceId);
+    }
+
+    /** Retire la séance de sa liaison ; une liaison qui ne garde qu'une séance disparaît. */
+    @Transactional
+    public FicheSecuriteVue delier(Long seanceId) {
+        liaisons.findBySeancesId(seanceId).ifPresent(liaison -> {
+            liaison.getSeances().removeIf(s -> s.getId().equals(seanceId));
+            if (liaison.getSeances().size() < 2) {
+                liaisons.delete(liaison);
+            }
+            liaisons.flush();
+        });
+        return consulter(seanceId);
+    }
+
+    /** Les autres séances de la liaison, et les plongeurs déjà placés sur leurs fiches. */
+    private List<SeanceLieeVue> seancesLiees(Long seanceId) {
+        return liaisons.findBySeancesId(seanceId).stream()
+                .flatMap(l -> l.getSeances().stream())
+                .filter(s -> !s.getId().equals(seanceId))
+                .sorted(Comparator.comparing(Seance::getDateSeance)
+                        .thenComparing(s -> s.getOrdre() == null ? 1 : s.getOrdre())
+                        .thenComparing(Seance::getId))
+                .map(s -> {
+                    var fiche = fiches.findBySeanceId(s.getId());
+                    List<PlongeurPlaceVue> places = fiche.stream()
+                            .flatMap(f -> f.getPalanquees().stream())
+                            .flatMap(p -> p.getMembres().stream().map(m -> new PlongeurPlaceVue(
+                                    m.getEleve() == null ? null : m.getEleve().getId(),
+                                    m.getUtilisateur() == null ? null : m.getUtilisateur().getId(),
+                                    m.getNom(), m.getPrenom(), p.getNumero())))
+                            .toList();
+                    return new SeanceLieeVue(s.getId(), s.getDateSeance(), s.getOrdre(), s.getLieu(),
+                            s.getSite(), fiche.isPresent(), places);
+                })
+                .toList();
     }
 
     /**
@@ -247,7 +339,7 @@ public class FicheSecuriteService {
         return new FicheSecuriteVue(f.getId(), f.getDp().getId(), f.getDp().nomComplet(),
                 f.getMeteo(), f.getEtatMer(), f.getVisibilite(), f.getCourant(), f.getMaree(),
                 f.getTemperatureEau(), f.getSecuriteSurface(), f.getPlanSecours(), f.getObservations(),
-                palanquees);
+                palanquees, seancesLiees(f.getSeance().getId()));
     }
 
     private PalanqueeVue vue(Palanquee p) {
