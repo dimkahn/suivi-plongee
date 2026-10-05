@@ -1,5 +1,5 @@
 // M19 — N2 et N3 : l'entraînement en piscine et fosse, à part de l'évaluation en milieu naturel.
-// Tournage du 2026-10-05 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 // Camille (N2) : week-end à la Gravière du Fort les 26-27/09 (V107), fosse
 // les lundis de septembre, notée à l'entraînement par Gwendoline (V113).
 import { ouvrirGrille, ouvrirBloc, critere, noter } from '../grille.mjs';
@@ -49,6 +49,17 @@ export default {
     await pause(4000);
 
     await legende('Seul le milieu naturel valide une compétence et ouvre la délivrance du brevet.', 4000);
+
+    await legende('La vue globale sépare aussi les deux : « Vue globale (toutes les séances) ».', 0);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    await pause(800);
+    await toucher(page.getByRole('link', { name: 'Vue globale (toutes les séances)' }), { apres: 1800 });
+    await legende('Les colonnes de fosse sont marquées « entraînement », celles de la Gravière « validation ».', 4500);
+    await legende('Pour chaque critère : l\'état en milieu naturel, et celui du dernier entraînement.', 4000);
+    await legende('On peut n\'afficher que le milieu naturel…', 0);
+    await toucher(page.getByRole('button', { name: 'Milieu naturel (validation)' }), { apres: 2500 });
+    await legende('… ou que la piscine et la fosse.', 0);
+    await toucher(page.getByRole('button', { name: 'Piscine / fosse (entraînement)' }), { apres: 2500 });
     await legende('« Noter les présents » d\'une soirée en fosse va, lui aussi, au suivi d\'entraînement.', 4000);
     await legende(null, 0);
     await pause(500);

@@ -315,6 +315,8 @@ export interface CelluleMatrice {
   date: string;
   statut: Statut;
   parQui: string;
+  /** N2/N3 noté en piscine ou fosse : suivi d'entraînement, sans effet sur l'acquisition. */
+  entrainement?: boolean;
 }
 
 export interface LigneMatrice {
@@ -328,6 +330,8 @@ export interface LigneMatrice {
 export interface MatriceVue {
   eleve: string;
   niveau: 'N1' | 'N2' | 'N3';
+  /** N2/N3 : la vue sépare l'entraînement en piscine/fosse de la validation en milieu naturel. */
+  milieuNaturelExclusif?: boolean;
   seances: SeanceEnTete[];
   lignes: LigneMatrice[];
 }
