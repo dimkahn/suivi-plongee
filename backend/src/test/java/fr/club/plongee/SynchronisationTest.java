@@ -111,18 +111,18 @@ class SynchronisationTest {
     void refusIsole() throws Exception {
         String auth = jeton("e3@club.fr");
         long cursusN2 = cursusDuNiveau("N2", auth);
-        long piscine = seance("ARTIFICIEL", auth);
         long mer = seance("NATUREL", auth);
         long premierCritere = critere(cursusN2, 0, 0, auth);
-        long secondCritere = critere(cursusN2, 0, 1, auth);
+        // Un critère du N1 sur un cursus N2 : refusé.
+        long critereN1 = critere(cursusDuNiveau("N1", auth), 0, 0, auth);
 
         String lot = """
                 [{"referenceClient":"%s","cursusId":%d,"critereId":%d,"seanceId":%d,
                   "statut":"ACQUIS","dateEvaluation":"2025-10-11"},
                  {"referenceClient":"%s","cursusId":%d,"critereId":%d,"seanceId":%d,
-                  "statut":"ACQUIS","dateEvaluation":"2025-09-22"}]
+                  "statut":"ACQUIS","dateEvaluation":"2025-10-11"}]
                 """.formatted(UUID.randomUUID(), cursusN2, premierCritere, mer,
-                              UUID.randomUUID(), cursusN2, secondCritere, piscine);
+                              UUID.randomUUID(), cursusN2, critereN1, mer);
 
         String reponse = mvc.perform(post("/api/synchronisation/evaluations")
                         .header("Authorization", auth)
@@ -133,7 +133,7 @@ class SynchronisationTest {
         JsonNode resultats = json.readTree(reponse);
         assertThat(resultats.get(0).get("etat").asText()).isEqualTo("ACCEPTEE");
         assertThat(resultats.get(1).get("etat").asText()).isEqualTo("REFUSEE");
-        assertThat(resultats.get(1).get("raison").asText()).contains("milieu naturel");
+        assertThat(resultats.get(1).get("raison").asText()).contains("n'appartient pas au referentiel");
     }
 
     @Test

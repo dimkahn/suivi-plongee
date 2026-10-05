@@ -36,11 +36,18 @@ import java.util.stream.Collectors;
 public class GrilleService {
 
     public record CritereVue(Long id, int ordre, String savoirFaire, String critereRealisation,
-                             String statut, String parQui, LocalDate le, String commentaire) {}
+                             String statut, String parQui, LocalDate le, String commentaire,
+                             /** N2/N3 : derniere note prise en piscine ou fosse ; null sinon. */
+                             SuiviEntrainementVue entrainement) {}
+
+    /** Suivi d'entrainement d'un critere (N2/N3) : ne compte pas pour l'acquisition. */
+    public record SuiviEntrainementVue(String statut, String parQui, LocalDate le, String commentaire) {}
 
     public record BlocVue(Long id, String intitule,
                           boolean evaluationTransverse, boolean validerEnDernier,
                           int acquis, int total, boolean valide,
+                          /** Criteres acquis a l'entrainement en piscine ou fosse (N2/N3). */
+                          int acquisEntrainement,
                           LocalDate dateValidation, String valideePar,
                           /** Etiquette "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en qualifications. */
                           String regroupement,
@@ -127,6 +134,7 @@ public class GrilleService {
                 .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
 
         Map<Long, Evaluation> etat = evaluationService.etatCourant(cursusId);
+        Map<Long, Evaluation> entrainement = evaluationService.etatEntrainement(cursusId);
         Map<Long, ValidationCompetence> valide = validations.findByCursusId(cursusId).stream()
                 .collect(Collectors.toMap(v -> v.getBloc().getId(), v -> v));
 
@@ -145,7 +153,7 @@ public class GrilleService {
 
         for (BlocCompetence bloc : blocsGroupesParRegroupement(cursus.getReferentiel().getBlocs())) {
             List<CritereVue> criteres = bloc.getCriteres().stream()
-                    .map(c -> critereVue(c, etat.get(c.getId())))
+                    .map(c -> critereVue(c, etat.get(c.getId()), entrainement.get(c.getId())))
                     .toList();
             int acquis = (int) criteres.stream()
                     .filter(c -> StatutAcquisition.ACQUIS.name().equals(c.statut())).count();
@@ -156,6 +164,8 @@ public class GrilleService {
             blocs.add(new BlocVue(bloc.getId(), bloc.getIntitule(),
                     bloc.isEvaluationTransverse(), bloc.isValiderEnDernier(),
                     acquis, criteres.size(), v != null,
+                    (int) criteres.stream().filter(c -> c.entrainement() != null
+                            && StatutAcquisition.ACQUIS.name().equals(c.entrainement().statut())).count(),
                     v == null ? null : v.getDateValidation(),
                     v == null ? null : v.getMoniteur().nomComplet(),
                     bloc.getRegroupement(),
@@ -231,12 +241,15 @@ public class GrilleService {
         return parRegroupement.values().stream().flatMap(List::stream).toList();
     }
 
-    private CritereVue critereVue(Critere c, Evaluation e) {
+    private CritereVue critereVue(Critere c, Evaluation e, Evaluation entrainement) {
         return new CritereVue(c.getId(), c.getOrdre(), c.getSavoirFaire(), c.getCritereRealisation(),
                 e == null ? StatutAcquisition.NON_ABORDE.name() : e.getStatut().name(),
                 e == null ? null : e.getMoniteur().nomComplet(),
                 e == null ? null : e.getDateEvaluation(),
-                e == null ? null : e.getCommentaire());
+                e == null ? null : e.getCommentaire(),
+                entrainement == null ? null : new SuiviEntrainementVue(entrainement.getStatut().name(),
+                        entrainement.getMoniteur().nomComplet(), entrainement.getDateEvaluation(),
+                        entrainement.getCommentaire()));
     }
 
     /**

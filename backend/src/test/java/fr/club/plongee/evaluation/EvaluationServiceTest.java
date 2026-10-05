@@ -200,24 +200,33 @@ class EvaluationServiceTest {
     }
 
     @Test
-    @DisplayName("Les competences N2/N3 exclusivement en milieu naturel refusent une seance en piscine")
-    void noter_milieuNaturelExclusifRefuseArtificiel() {
+    @DisplayName("N2/N3 en piscine : la note est acceptee comme entrainement, en milieu naturel comme evaluation")
+    void noter_milieuNaturelExclusifPiscineEnEntrainement() {
         Referentiel ref = referentiel(true, 40);
         Saison s = saison(1L);
         Cursus c = cursus(ref, s, Cursus.Statut.EN_COURS);
         Critere critere = critere(bloc(ref, false, false));
-        Seance seance = seance(s, Milieu.ARTIFICIEL, null);
+        Seance piscine = seance(s, Milieu.ARTIFICIEL, null);
+        Participation present = new Participation();
+        present.setStatut(Participation.Statut.PRESENT);
 
         when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(c));
         when(criteres.findById(5L)).thenReturn(Optional.of(critere));
-        when(seances.findById(7L)).thenReturn(Optional.of(seance));
+        when(seances.findById(7L)).thenReturn(Optional.of(piscine));
+        when(participations.findByCursusIdAndSeanceId(100L, 7L)).thenReturn(Optional.of(present));
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur));
+        when(evaluations.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        var notation = new EvaluationService.Notation(5L, 7L, StatutAcquisition.ACQUIS, null,
-                LocalDate.now(), null);
+        var notation = new EvaluationService.Notation(5L, 7L, StatutAcquisition.ACQUIS, null, null, null);
+        assertThat(service.noter(100L, notation, moniteurPrincipal).isEntrainement()).isTrue();
 
-        assertThatThrownBy(() -> service.noter(100L, notation, moniteurPrincipal))
-                .isInstanceOf(RegleMetierException.class)
-                .hasMessageContaining("milieu naturel");
+        piscine.setMilieu(Milieu.NATUREL);
+        assertThat(service.noter(100L, notation, moniteurPrincipal).isEntrainement()).isFalse();
+
+        // Un N1 (pas de milieu naturel exclusif) noté en piscine : une évaluation ordinaire.
+        ref.setMilieuNaturelExclusif(false);
+        piscine.setMilieu(Milieu.ARTIFICIEL);
+        assertThat(service.noter(100L, notation, moniteurPrincipal).isEntrainement()).isFalse();
     }
 
     @Test

@@ -17,17 +17,32 @@ import { CalendrierSeancesComponent } from '../../core/calendrier-seances.compon
 import { lieuEtSite } from '../../core/seance-lieu';
 import { periodeDuMois, plageMois } from '../../core/progression';
 
-/** Un critère affiché, augmenté de l'information « pas encore envoyé ». */
-interface CritereAffiche extends CritereVue {
+/** Un suivi affiché (milieu naturel ou entraînement), augmenté de l'information « pas encore envoyé ». */
+interface SuiviAffiche {
+  statut: Statut;
+  parQui: string | null;
+  le: string | null;
+  commentaire: string | null;
   enAttente: boolean;
   /** Saisie en cours d'envoi au serveur (en ligne) : on affiche un indicateur. */
   enregistrement: boolean;
+}
+
+/**
+ * Les champs hérités portent l'évaluation (en milieu naturel pour un N2/N3),
+ * `entr` le suivi d'entraînement en piscine et fosse (N2/N3 seulement).
+ */
+interface CritereAffiche extends Omit<CritereVue, 'entrainement'>, SuiviAffiche {
+  entr: SuiviAffiche;
 }
 
 interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
   criteres: CritereAffiche[];
   attentes: number;
 }
+
+/** Clé d'une saisie en cours d'envoi : un critère peut avoir les deux suivis en vol. */
+const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' : 'n'}${critereId}`;
 
 @Component({
   selector: 'app-grille',
@@ -177,9 +192,15 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       }
 
       @if (g.milieuNaturelExclusif) {
-        <div class="alerte">
-          Les compétences du {{ g.niveau }} doivent être obtenues en milieu naturel.
-          Les séances en piscine et en fosse ne sont pas proposées ici.
+        <div class="alerte" [class.entrainement]="modeEntrainement()">
+          @if (modeEntrainement()) {
+            <strong>Séance en piscine ou fosse : suivi d'entraînement.</strong>
+            Vos notes montrent où en est l'élève dans les exercices, mais les compétences du
+            {{ g.niveau }} ne s'acquièrent qu'en milieu naturel : elles ne comptent pas pour la validation.
+          } @else {
+            Les compétences du {{ g.niveau }} s'évaluent en milieu naturel. Choisissez une séance
+            en piscine ou en fosse pour noter le suivi d'entraînement, qui reste à part.
+          }
         </div>
       }
 
@@ -210,8 +231,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
             @let duJour = seancesDuJour(j);
             @if (duJour.length === 0) {
               <p class="secondaire aucune">
-                Aucune séance ce jour-là{{ g.milieuNaturelExclusif ? ' en milieu naturel' : '' }}
-                où l'élève est noté présent.
+                Aucune séance ce jour-là où l'élève est noté présent.
               </p>
             } @else {
               <ul class="seances-du-jour">
@@ -220,7 +240,9 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                     <button type="button" class="bouton-discret" [class.actif]="s.id === seanceId()"
                             (click)="choisirDepuisDialogue(s)">
                       {{ libelleSeance(s) }}
-                      <span class="milieu">{{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
+                      <span class="milieu">
+                        {{ s.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}{{ g.milieuNaturelExclusif && s.milieu !== 'NATUREL' ? ' · entraînement' : '' }}
+                      </span>
                     </button>
                   </li>
                 }
@@ -311,6 +333,9 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
               }
               <span class="secondaire detail">
                 {{ bloc.acquis }} / {{ bloc.total }} acquis
+                @if (g.milieuNaturelExclusif) {
+                  en milieu naturel · {{ bloc.acquisEntrainement }} / {{ bloc.total }} en piscine / fosse
+                }
                 @if (bloc.enRetard && bloc.echeance) {
                   · prévu avant le {{ bloc.echeance | dateFr }}
                 }
@@ -366,6 +391,8 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
           }
           <ul [id]="'criteres-' + bloc.id">
             @for (critere of bloc.criteres; track critere.id) {
+              @let actif = suiviActif(critere);
+              @let rappel = suiviRappele(critere);
               <li>
                 <div class="ligne">
                   <div class="libelle">
@@ -376,17 +403,24 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                     @if (critere.critereRealisation) {
                       <span class="secondaire">{{ critere.critereRealisation }}</span>
                     }
-                    @if (critere.enregistrement) {
+                    @if (actif.enregistrement) {
                       <span class="enregistrement" role="status">
                         <span class="chargeur" aria-hidden="true"></span>Enregistrement…
                       </span>
-                    } @else if (critere.enAttente) {
+                    } @else if (actif.enAttente) {
                       <span class="attente">En attente d'envoi</span>
-                    } @else if (critere.parQui) {
-                      <span class="secondaire trace">{{ critere.parQui }} · {{ critere.le | dateFr }}</span>
+                    } @else if (actif.parQui) {
+                      <span class="secondaire trace">{{ actif.parQui }} · {{ actif.le | dateFr }}</span>
                     }
-                    @if (critere.commentaire) {
-                      <span class="dernier-commentaire">« {{ critere.commentaire }} »</span>
+                    @if (actif.commentaire) {
+                      <span class="dernier-commentaire">« {{ actif.commentaire }} »</span>
+                    }
+                    @if (g.milieuNaturelExclusif) {
+                      <span class="autre-suivi" [class.acquis]="rappel.statut === 'ACQUIS'">
+                        {{ modeEntrainement() ? 'Milieu naturel' : 'Piscine / fosse' }} :
+                        {{ libelleStatut(rappel.statut) }}@if (rappel.enAttente) { (en attente d'envoi)
+                        } @else if (rappel.le) { · {{ rappel.le | dateFr }} }
+                      </span>
                     }
                   </div>
 
@@ -394,10 +428,10 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                     @for (choix of etats; track choix.valeur) {
                       <button type="button"
                               [class]="'etat ' + choix.classe"
-                              [class.actif]="critere.statut === choix.valeur"
-                              [class.differe]="critere.enAttente && critere.statut === choix.valeur"
-                              [disabled]="!peutSaisir() || bloc.valide || critere.enregistrement"
-                              [attr.aria-pressed]="critere.statut === choix.valeur"
+                              [class.actif]="actif.statut === choix.valeur"
+                              [class.differe]="actif.enAttente && actif.statut === choix.valeur"
+                              [disabled]="!peutSaisir() || bloc.valide || actif.enregistrement"
+                              [attr.aria-pressed]="actif.statut === choix.valeur"
                               (click)="noter(bloc, critere, choix.valeur)">
                         {{ choix.libelle }}
                       </button>
@@ -448,6 +482,7 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
                           <div class="entree-historique">
                             <span class="secondaire">
                               {{ entree.dateEvaluation | dateFr }} · {{ entree.parQui }} · {{ libelleStatut(entree.statut) }}
+                              @if (entree.entrainement) { · <span class="etiquette-entrainement">piscine / fosse</span> }
                             </span>
                             @if (entree.commentaire) { <p>{{ entree.commentaire }}</p> }
                           </div>
@@ -622,6 +657,11 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
       color: var(--profond); font-size: .8125rem; text-decoration: underline;
     }
     .dernier-commentaire { font-size: .875rem; color: var(--encre); font-style: italic; }
+    /* N2/N3 : l'autre suivi (milieu naturel ou piscine / fosse), rappelé sous le critère. */
+    .autre-suivi { font-size: .8125rem; color: var(--craie); }
+    .autre-suivi.acquis { color: var(--acquis); }
+    .alerte.entrainement { background: #E0F2FE; border-left-color: var(--profond); }
+    .etiquette-entrainement { color: var(--profond); font-weight: 700; }
 
     .historique {
       margin-top: var(--pas); padding: var(--pas-2); border-radius: var(--r-s);
@@ -676,8 +716,8 @@ export class GrilleComponent implements OnDestroy {
   ageDuCache = signal<string | null>(null);
   urlPhoto = signal<string | null>(null);
   exportEnCours = signal(false);
-  /** Critères en cours d'enregistrement : id du critère → saisie envoyée. */
-  enregistrements = signal<Map<number, { statut: Statut; reference: string }>>(new Map());
+  /** Critères en cours d'enregistrement : `cle(critère, entraînement)` → saisie envoyée. */
+  enregistrements = signal<Map<string, { statut: Statut; reference: string }>>(new Map());
   validationEnCours = signal<number | null>(null);
 
   /** Historique des critères consultés, tenu par critereId. */
@@ -759,28 +799,36 @@ export class GrilleComponent implements OnDestroy {
     const g = this.grille();
     if (!g) return null;
 
-    const attentes = new Map(
-      this.file.pourCursus(Number(this.id())).map(s => [s.critereId, s]));
+    const attentes = new Map(this.file.pourCursus(Number(this.id()))
+      .map(s => [cle(s.critereId, this.estEntrainement(s.seanceId)), s]));
     const enregistrements = this.enregistrements();
+
+    const suivi = (base: Omit<SuiviAffiche, 'enAttente' | 'enregistrement'>, critereId: number,
+                   entrainement: boolean): SuiviAffiche => {
+      const enCours = enregistrements.get(cle(critereId, entrainement));
+      const differee = attentes.get(cle(critereId, entrainement));
+      // Pendant l'envoi puis le rechargement, on garde le statut choisi :
+      // sinon l'ancien réapparaîtrait entre la fin de l'envoi et la grille à jour.
+      if (enCours) return { ...base, statut: enCours.statut, enAttente: false, enregistrement: true };
+      return differee
+        ? { ...base, statut: differee.statut, enAttente: true, enregistrement: false, le: differee.dateEvaluation }
+        : { ...base, enAttente: false, enregistrement: false };
+    };
 
     let acquisTotal = 0;
     const blocs: BlocAffiche[] = g.blocs.map(bloc => {
-      const criteres: CritereAffiche[] = bloc.criteres.map(c => {
-        const enCours = enregistrements.get(c.id);
-        const differee = attentes.get(c.id);
-        // Pendant l'envoi puis le rechargement, on garde le statut choisi :
-        // sinon l'ancien réapparaîtrait entre la fin de l'envoi et la grille à jour.
-        if (enCours) return { ...c, statut: enCours.statut, enAttente: false, enregistrement: true };
-        return differee
-          ? { ...c, statut: differee.statut, enAttente: true, enregistrement: false, le: differee.dateEvaluation }
-          : { ...c, enAttente: false, enregistrement: false };
-      });
+      const criteres: CritereAffiche[] = bloc.criteres.map(({ entrainement, ...c }) => ({
+        ...c,
+        ...suivi(c, c.id, false),
+        entr: suivi(entrainement ?? { statut: 'NON_ABORDE', parQui: null, le: null, commentaire: null }, c.id, true)
+      }));
       const acquis = criteres.filter(c => c.statut === 'ACQUIS').length;
       acquisTotal += acquis;
       return {
         ...bloc,
         criteres,
         acquis,
+        acquisEntrainement: criteres.filter(c => c.entr.statut === 'ACQUIS').length,
         // Une saisie en cours d'envoi compte comme en attente : pas de validation du bloc avant.
         attentes: criteres.filter(c => c.enAttente || c.enregistrement).length
       };
@@ -819,18 +867,30 @@ export class GrilleComponent implements OnDestroy {
 
   /**
    * Séances sur lesquelles on peut noter : déjà passées (ou du jour) — le
-   * serveur refuse une séance à venir —, en milieu naturel si le niveau
-   * l'exige, et où l'élève est noté présent.
+   * serveur refuse une séance à venir — et où l'élève est noté présent.
+   * Pour un N2/N3, celles en piscine ou fosse notent l'entraînement.
    */
   seancesUtilisables = computed(() => {
-    const g = this.grille();
-    if (!g) return [];
+    if (!this.grille()) return [];
     const aujourdhui = dateDuJour();
     return this.seances()
       .filter(s => s.date <= aujourdhui)
-      .filter(s => !g.milieuNaturelExclusif || s.milieu === 'NATUREL')
       .filter(s => this.estPresent(s.id));
   });
+
+  /**
+   * N2/N3 : une note prise sur une séance en piscine ou en fosse va au suivi
+   * d'entraînement, à part de l'évaluation en milieu naturel (même règle que
+   * le serveur, `EvaluationService.estEntrainement`).
+   */
+  estEntrainement(seanceId: number | null): boolean {
+    if (!this.grille()?.milieuNaturelExclusif || seanceId === null) return false;
+    const milieu = this.seances().find(s => s.id === seanceId)?.milieu;
+    return !!milieu && milieu !== 'NATUREL';
+  }
+
+  /** Séance choisie en piscine ou fosse pour un N2/N3 : les boutons notent l'entraînement. */
+  modeEntrainement = computed(() => this.estEntrainement(this.seanceId()));
 
   /**
    * Présent selon le serveur, recouvert par les présences saisies sur cet
@@ -1041,9 +1101,10 @@ export class GrilleComponent implements OnDestroy {
    * n'est donc pas une condition pour que le geste soit pris en compte.
    */
   async noter(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): Promise<void> {
-    if (critere.statut === statut) return;
+    if (this.suiviActif(critere).statut === statut) return;
 
     const seance = this.seances().find(s => s.id === this.seanceId()) ?? null;
+    const entrainement = this.estEntrainement(seance?.id ?? null);
 
     if (!bloc.evaluationTransverse && !seance) {
       this.message.set('Choisissez d’abord la séance évaluée.');
@@ -1072,21 +1133,32 @@ export class GrilleComponent implements OnDestroy {
     if (!this.reseau.enLigne()) return;
 
     // En ligne : indicateur jusqu'à ce que la grille du serveur soit à jour.
-    this.marquerEnregistrement(critere.id, { statut, reference: saisie.referenceClient });
+    const enVol = cle(critere.id, entrainement);
+    this.marquerEnregistrement(enVol, { statut, reference: saisie.referenceClient });
     try {
       if (await this.file.attendreEnvoi(saisie.referenceClient)) await this.charger();
     } finally {
       // Seulement si aucune saisie plus récente n'a pris le relais sur ce critère.
-      if (this.enregistrements().get(critere.id)?.reference === saisie.referenceClient) {
-        this.marquerEnregistrement(critere.id, null);
+      if (this.enregistrements().get(enVol)?.reference === saisie.referenceClient) {
+        this.marquerEnregistrement(enVol, null);
       }
     }
   }
 
-  private marquerEnregistrement(critereId: number, valeur: { statut: Statut; reference: string } | null): void {
+  /** Le suivi que notent les boutons : l'entraînement si la séance choisie est en piscine ou fosse (N2/N3). */
+  suiviActif(critere: CritereAffiche): SuiviAffiche {
+    return this.modeEntrainement() ? critere.entr : critere;
+  }
+
+  /** L'autre suivi, rappelé sous le critère pour un N2/N3. */
+  suiviRappele(critere: CritereAffiche): SuiviAffiche {
+    return this.modeEntrainement() ? critere : critere.entr;
+  }
+
+  private marquerEnregistrement(enVol: string, valeur: { statut: Statut; reference: string } | null): void {
     const suivante = new Map(this.enregistrements());
-    if (valeur) suivante.set(critereId, valeur);
-    else suivante.delete(critereId);
+    if (valeur) suivante.set(enVol, valeur);
+    else suivante.delete(enVol);
     this.enregistrements.set(suivante);
   }
 
@@ -1094,9 +1166,6 @@ export class GrilleComponent implements OnDestroy {
     const g = this.grille();
     if (!g || !seance) return null;
 
-    if (g.milieuNaturelExclusif && seance.milieu !== 'NATUREL') {
-      return `Les compétences du ${g.niveau} ne peuvent pas être validées en milieu artificiel.`;
-    }
     if (!this.estPresent(seance.id)) {
       return `${g.eleve} n'est pas noté présent à cette séance : renseignez d'abord sa présence.`;
     }
@@ -1235,7 +1304,7 @@ export class GrilleComponent implements OnDestroy {
       cursusId: Number(this.id()),
       critereId: critere.id,
       seanceId: seance ? seance.id : null,
-      statut: critere.statut,
+      statut: this.suiviActif(critere).statut,
       commentaire: texte,
       dateEvaluation: seance ? seance.date : dateDuJour()
     });

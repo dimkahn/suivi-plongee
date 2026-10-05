@@ -330,6 +330,18 @@ la fiche de gestion.
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas
 introduire d'UPDATE ni de DELETE sur cette table.
+**N2/N3 : entraînement en piscine/fosse à part de l'évaluation (choix du
+club, 2026).** Pour un référentiel `milieu_naturel_exclusif`, une note prise
+sur une séance en milieu artificiel n'est plus refusée : elle est marquée
+`evaluation.entrainement` (V45, fixé à la saisie par
+`EvaluationService.estEntrainement`) et forme un second état courant
+(`EvaluationRepository.etatEntrainement`). `etatCourant` et
+`compterAcquisDuBloc` l'excluent : l'acquisition, la validation d'un bloc,
+le retard de progression et la délivrance ne lisent que le milieu naturel.
+La grille livre les deux (`CritereVue.entrainement`,
+`BlocVue.acquisEntrainement`) ; côté écran, la séance choisie décide du
+suivi que notent les boutons, l'autre est rappelé sous le critère. La
+notation groupée compare au suivi de la séance (rien ne recule non plus).
 **Présence avant notation (choix du club, 2026).** Un élève ne se note sur
 une séance que s'il y est noté `PRESENT` (`EvaluationService.verifierSeance`,
 tous chemins : grille, synchronisation, notation groupée) ; une compétence

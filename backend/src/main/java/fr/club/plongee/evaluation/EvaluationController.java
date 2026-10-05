@@ -32,7 +32,9 @@ public class EvaluationController {
     public record DemandeValidation(String commentaire) {}
 
     public record EvaluationVue(Long id, Long critereId, String statut, String commentaire,
-                                LocalDate dateEvaluation, String parQui) {}
+                                LocalDate dateEvaluation, String parQui,
+                                /** N2/N3 noté en piscine ou fosse : suivi d'entraînement. */
+                                boolean entrainement) {}
 
     private final EvaluationService evaluations;
     private final GrilleService grilles;
@@ -119,6 +121,7 @@ public class EvaluationController {
 
     private EvaluationVue vue(Evaluation e) {
         return new EvaluationVue(e.getId(), e.getCritere().getId(), e.getStatut().name(),
-                e.getCommentaire(), e.getDateEvaluation(), e.getMoniteur().nomComplet());
+                e.getCommentaire(), e.getDateEvaluation(), e.getMoniteur().nomComplet(),
+                e.isEntrainement());
     }
 }

@@ -98,27 +98,6 @@ class SecuriteEvaluationTest {
     }
 
     @Test
-    @DisplayName("Une competence de N2 ne peut pas etre validee en piscine")
-    void n2InterditEnMilieuArtificiel() throws Exception {
-        long cursus = cursusDuNiveau("N2");
-        long critere = premierCritere(cursus, "e3@club.fr");
-        String seances = mvc.perform(get("/api/seances").header("Authorization", jeton("e3@club.fr")))
-                .andReturn().getResponse().getContentAsString();
-        long piscine = -1;
-        for (JsonNode s : json.readTree(seances)) {
-            if ("ARTIFICIEL".equals(s.get("milieu").asText())) { piscine = s.get("id").asLong(); break; }
-        }
-
-        mvc.perform(post("/api/cursus/" + cursus + "/evaluations")
-                        .header("Authorization", jeton("e3@club.fr"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                 {"critereId":%d,"seanceId":%d,"statut":"ACQUIS"}"""
-                                .formatted(critere, piscine)))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
     @DisplayName("Un E2 peut noter un cursus N1")
     void e2PeutNoterUnN1() throws Exception {
         long cursus = cursusDuNiveau("N1");
