@@ -3,12 +3,13 @@ titre: Faire l'appel d'une séance
 rubrique: Moniteur
 videos: M3
 ecran: /presences
-mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, séance, émargement
+mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté
 questions:
 - Comment faire l'appel ?
 - Comment noter qu'un élève est présent ou absent ?
 - Comment annoncer qu'un élève viendra ?
 - Je me suis trompé de présence, comment corriger ?
+- Comment voir les élèves présents qui n'ont pas été évalués ?
 ---
 Menu, « Présences » : choisissez la séance, puis touchez chaque élève et ce qu'il a fait (nage, bloc ou théorie). Chaque choix est enregistré tout de suite.
 
@@ -23,6 +24,16 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 ## Corriger
 
 - Touchez de nouveau le choix actif pour l'effacer : l'élève redevient absent.
+
+## Qui n'a pas encore été évalué ?
+
+Une fois la séance passée, la feuille repère les présents qui n'ont reçu **aucune note** sur cette séance :
+
+- le bilan en haut de la liste les compte (« 3 présent(s) sans évaluation ») ;
+- leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève et le noter ;
+- le bouton « Voir les présents sans évaluation » n'affiche plus qu'eux, dans le groupe filtré. « Noter les présents » propose alors justement ces élèves.
+
+Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme une évaluation de la séance. Une note gardée sur le téléphone, pas encore envoyée, aussi.
 
 ## Bon à savoir
 

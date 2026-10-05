@@ -14,6 +14,14 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     boolean existsByMoniteurId(Long moniteurId);
     boolean existsByCursusId(Long cursusId);
     boolean existsBySeanceId(Long seanceId);
+
+    /** Feuille de présence : [cursusId, nombre de notes] des élèves notés sur cette séance. */
+    @Query("""
+           select e.cursus.id, count(e) from Evaluation e
+            where e.seance.id = :seanceId
+            group by e.cursus.id
+           """)
+    List<Object[]> compterParCursusPourSeance(@Param("seanceId") Long seanceId);
     boolean existsByCritereId(Long critereId);
     boolean existsByCritere_BlocId(Long blocId);
 

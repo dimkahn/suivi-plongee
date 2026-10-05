@@ -71,9 +71,12 @@ public class SeanceController {
     /**
      * Une ligne de la feuille de présence ; statut/atelier null : rien de saisi pour cette séance.
      * {@code referentielId} : version du MFT figée sur le cursus, pour la notation groupée des présents.
+     * {@code evaluations} : notes reçues sur cette séance (entraînement compris), pour repérer
+     * les présents que personne n'a encore évalués.
      */
     public record LignePresence(Long cursusId, Long eleveId, String eleve, String niveau, Long referentielId,
-                                String statut, String atelier, boolean aPhoto, boolean autorisationImage) {}
+                                String statut, String atelier, boolean aPhoto, boolean autorisationImage,
+                                long evaluations) {}
 
     public record FeuillePresence(SeanceVue seance, List<LignePresence> eleves) {}
 
@@ -290,6 +293,8 @@ public class SeanceController {
         Seance seance = seance(seanceId);
         Map<Long, Participation> saisies = participations.findBySeanceId(seanceId).stream()
                 .collect(Collectors.toMap(p -> p.getCursus().getId(), Function.identity(), (a, b) -> a));
+        Map<Long, Long> notes = evaluations.compterParCursusPourSeance(seanceId).stream()
+                .collect(Collectors.toMap(l -> (Long) l[0], l -> (Long) l[1]));
         List<LignePresence> lignes = cursus.parSaison(seance.getSaison().getId()).stream()
                 .filter(c -> c.getStatut() != Cursus.Statut.ABANDON || saisies.containsKey(c.getId()))
                 .map(c -> {
@@ -300,7 +305,8 @@ public class SeanceController {
                             p == null ? null : p.getStatut().name(),
                             p == null || p.getAtelier() == null ? null : p.getAtelier().name(),
                             e.isAutorisationImage() && photos.existsById(e.getId()),
-                            e.isAutorisationImage());
+                            e.isAutorisationImage(),
+                            notes.getOrDefault(c.getId(), 0L));
                 })
                 .toList();
         return new FeuillePresence(vue(seance), lignes);

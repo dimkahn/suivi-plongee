@@ -71,6 +71,17 @@ class EntrainementPiscineTest {
                 .andExpect(status().isCreated());
     }
 
+    /** Nombre de notes reçues sur la séance, tel que l'affiche la feuille de présence. */
+    private long notesSurLaFeuille(String moniteur, long seanceId, long cursusId) throws Exception {
+        String feuille = mvc.perform(get("/api/seances/" + seanceId + "/presences").header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        for (JsonNode l : json.readTree(feuille).get("eleves")) {
+            if (l.get("cursusId").asLong() == cursusId) return l.get("evaluations").asLong();
+        }
+        throw new AssertionError("Cursus absent de la feuille de presence");
+    }
+
     private JsonNode premierBloc(String moniteur, long cursusId) throws Exception {
         String grille = mvc.perform(get("/api/cursus/" + cursusId + "/grille").header("Authorization", moniteur))
                 .andExpect(status().isOk())
@@ -115,8 +126,13 @@ class EntrainementPiscineTest {
             long blocId = bloc.get("id").asLong();
             long critere = bloc.get("criteres").get(0).get("id").asLong();
 
+            // Feuille de présence : présent, mais pas encore noté sur cette séance.
+            assertThat(notesSurLaFeuille(moniteur, piscine, cursusId)).isZero();
+
             // Tous les critères du bloc acquis en piscine : rien d'acquis pour autant.
             for (JsonNode c : bloc.get("criteres")) noter(moniteur, cursusId, c.get("id").asLong(), piscine);
+            assertThat(notesSurLaFeuille(moniteur, piscine, cursusId)).isEqualTo(bloc.get("criteres").size());
+            assertThat(notesSurLaFeuille(moniteur, mer, cursusId)).isZero();
             bloc = premierBloc(moniteur, cursusId);
             assertThat(bloc.get("acquis").asInt()).isZero();
             assertThat(bloc.get("acquisEntrainement").asInt()).isEqualTo(bloc.get("total").asInt());
