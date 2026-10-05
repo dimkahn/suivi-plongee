@@ -1,7 +1,7 @@
 ---
 titre: Noter un élève pendant la séance
 rubrique: Moniteur
-videos: M4
+videos: M4, M19
 ecran: /eleves
 mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3
 questions:

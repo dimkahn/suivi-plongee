@@ -342,6 +342,7 @@ La grille livre les deux (`CritereVue.entrainement`,
 `BlocVue.acquisEntrainement`) ; côté écran, la séance choisie décide du
 suivi que notent les boutons, l'autre est rappelé sous le critère. La
 notation groupée compare au suivi de la séance (rien ne recule non plus).
+Démo : notes d'entraînement en fosse de Camille (N2), V113, vidéo M19.
 **Présence avant notation (choix du club, 2026).** Un élève ne se note sur
 une séance que s'il y est noté `PRESENT` (`EvaluationService.verifierSeance`,
 tous chemins : grille, synchronisation, notation groupée) ; une compétence
