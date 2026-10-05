@@ -6,6 +6,7 @@ import { libellePreparation } from '../../core/niveaux';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
+import { FileAttenteService } from '../../core/file-attente.service';
 import { dateDansJours, dateDuJour, dateFr } from '../../core/date-fr';
 import {
   Atelier, ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
@@ -174,7 +175,14 @@ function normaliser(texte: string): string {
         <p class="bilan" role="status">
           {{ bilan().presents }} présent(s) · {{ bilan().absents }} absent(s)
           @if (bilan().enAttente > 0) { · {{ bilan().enAttente }} en attente d'envoi }
+          @if (nonNotes().length > 0) { · <strong class="compte-non-notes">{{ nonNotes().length }} présent(s) sans évaluation</strong> }
         </p>
+        @if (nonNotes().length > 0 || seulementNonNotes()) {
+          <button type="button" class="bouton-discret filtre-non-notes" [class.actif]="seulementNonNotes()"
+                  [attr.aria-pressed]="seulementNonNotes()" (click)="seulementNonNotes.set(!seulementNonNotes())">
+            {{ seulementNonNotes() ? 'Voir tous les élèves' : 'Voir les présents sans évaluation' }}
+          </button>
+        }
 
         @if (seanceAVenir()) {
           <div class="alerte" role="status">
@@ -184,14 +192,16 @@ function normaliser(texte: string): string {
           @if (seanceChoisie(); as s) {
             <div class="notation-groupee">
               <app-notation-groupee [seance]="s" [presents]="presentsANoter()" [progressions]="progressions()"
-                                    [exercices]="exercicesAffiches()" (notee)="message.set($event)" />
+                                    [exercices]="exercicesAffiches()" (notee)="apresNotation($event)" />
               <span class="secondaire">Les présents affichés, sur un ou plusieurs critères, chacun avec son commentaire.</span>
             </div>
           }
         }
 
         @if (lignesFiltrees().length === 0) {
-          <div class="carte vide"><p>Aucun élève ne correspond aux filtres.</p></div>
+          <div class="carte vide">
+            <p>{{ seulementNonNotes() ? 'Tous les présents affichés ont reçu au moins une évaluation.' : 'Aucun élève ne correspond aux filtres.' }}</p>
+          </div>
         }
         <ul class="eleves">
           @for (l of lignesFiltrees(); track l.cursusId) {
@@ -218,6 +228,10 @@ function normaliser(texte: string): string {
                   }
                 </span>
               </button>
+              @if (estNonNote(l)) {
+                <a class="non-note" [routerLink]="['/cursus', l.cursusId]"
+                   [attr.aria-label]="l.eleve + ' : pas encore évalué, ouvrir sa grille'">Pas encore évalué</a>
+              }
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
                 @for (c of choix; track c.cle) {
                   <button type="button" [class]="'etat ' + c.classe"
@@ -276,6 +290,16 @@ function normaliser(texte: string): string {
     .recherche { max-width: 320px; margin: 0; }
 
     .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
+    .compte-non-notes { color: var(--en-cours); }
+    .filtre-non-notes { margin-bottom: var(--pas-2); }
+    .filtre-non-notes.actif { background: var(--profond); border-color: var(--profond); color: #fff; }
+    /* Présent sans aucune note sur la séance : un lien vers sa grille pour le noter. */
+    .non-note {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+      padding: 0 var(--pas); border: 1px dashed var(--en-cours); border-radius: var(--r-s);
+      background: var(--en-cours-clair); color: var(--en-cours); font-size: .8125rem; font-weight: 700;
+      text-decoration: none; text-align: center;
+    }
     .notation-groupee {
       display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2); margin-bottom: var(--pas-2);
     }
@@ -373,6 +397,7 @@ export class PresencesComponent implements OnDestroy {
   auth = inject(AuthService);
   reseau = inject(ReseauService);
   private file = inject(FileEcrituresService);
+  private notes = inject(FileAttenteService);
 
   /** Élèves de la séance affichée dont le dernier choix n'est pas encore parti. */
   enAttente = computed(() => {
@@ -490,10 +515,41 @@ export class PresencesComponent implements OnDestroy {
     const filtre = this.groupeFiltre();
     const groupes = this.groupes();
     const recherche = normaliser(this.rechercheEleve());
+    const seulementNonNotes = this.seulementNonNotes();
     return this.lignes().filter(l =>
       passeFiltreGroupe(l.eleveId, filtre, groupes)
-      && (!recherche || normaliser(l.eleve).includes(recherche)));
+      && (!recherche || normaliser(l.eleve).includes(recherche))
+      && (!seulementNonNotes || this.estNonNote(l)));
   });
+
+  /** Filtre « présents sans évaluation » : qui reste à noter après la séance. */
+  seulementNonNotes = signal(false);
+
+  /** Élèves de la séance affichée qui ont une note gardée sur l'appareil, pas encore partie. */
+  private notesEnAttente = computed(() => {
+    const seanceId = this.seanceId();
+    return new Set(this.notes.enAttente().filter(s => s.seanceId === seanceId).map(s => s.cursusId));
+  });
+
+  /**
+   * Présent à une séance passée (ou du jour), et aucune note reçue dessus, ni
+   * enregistrée par le serveur ni en attente sur l'appareil. Une feuille
+   * embarquée avant l'arrivée du compte ne dit rien (`evaluations` absent).
+   */
+  estNonNote(l: LignePresence): boolean {
+    return !this.seanceAVenir() && l.statut === 'PRESENT' && l.evaluations === 0
+      && !this.notesEnAttente().has(l.cursusId);
+  }
+
+  /** Tous les présents sans évaluation, quels que soient les filtres. */
+  nonNotes = computed(() => this.lignes().filter(l => this.estNonNote(l)));
+
+  /** Après une notation groupée, la feuille se recharge : les élèves notés ne sont plus « sans évaluation ». */
+  apresNotation(bilan: string): void {
+    const seanceId = this.seanceId();
+    if (seanceId) void this.chargerFeuille(seanceId).then(() => this.message.set(bilan));
+    else this.message.set(bilan);
+  }
 
   /**
    * Élèves proposés à la notation groupée : présents dans le filtre courant,

@@ -355,7 +355,11 @@ comme plongée en milieu naturel pour la délivrance tant que la séance n'a pas
 eu lieu. La grille ne propose que les séances où l'élève est présent
 (`GrilleVue.seancesPresent`, recouvert par les présences en attente sur
 l'appareil) ; hors ligne, `FileAttenteService` envoie la file des présences
-avant les notes.
+avant les notes. La feuille de présence compte les notes reçues par chaque
+élève sur la séance (`LignePresence.evaluations`, entraînement compris) :
+une séance passée signale les présents « pas encore évalués » (lien vers
+leur grille, filtre dédié), les notes en attente sur l'appareil comptant
+comme reçues.
 **Notation groupée** (bouton « Noter les présents » de la feuille de
 présence, `NotationGroupeeService`, `POST /api/seances/{id}/notation-groupee`) :
 plusieurs élèves présents, un ou plusieurs critères, chacun avec son

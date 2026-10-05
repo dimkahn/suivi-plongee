@@ -662,6 +662,11 @@ export interface LignePresence {
   atelier: Atelier | null;
   aPhoto: boolean;
   autorisationImage: boolean;
+  /**
+   * Notes reçues sur cette séance (entraînement compris) ; absent d'une
+   * feuille embarquée hors ligne avant son ajout : on ne dit alors rien.
+   */
+  evaluations?: number;
 }
 
 export interface FeuillePresence {

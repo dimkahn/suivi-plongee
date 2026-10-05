@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance en moins d\'une minute : nage, bloc ou théorie pour chaque élève.',
+  resume: 'La feuille de présence d\'une séance : nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -43,6 +43,14 @@ export default {
     await legende('Le compteur en haut de la liste fait le bilan.', 0);
     await page.locator('.bilan').scrollIntoViewIfNeeded();
     await pause(3000);
+
+    await legende('Séance passée : il compte aussi les présents qui n\'ont encore reçu aucune note.', 3500);
+    await legende('« Voir les présents sans évaluation » n\'affiche plus qu\'eux.', 0);
+    await toucher(page.getByRole('button', { name: 'Voir les présents sans évaluation' }), { apres: 1500 });
+    await legende('« Pas encore évalué » ouvre la grille de l\'élève, pour le noter avant de partir.', 0);
+    await cartes.first().locator('.non-note').scrollIntoViewIfNeeded();
+    await pause(3500);
+    await toucher(page.getByRole('button', { name: 'Voir tous les élèves' }), { apres: 1000 });
     await legende('Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.', 4000);
     await legende(null, 0);
     await pause(500);
