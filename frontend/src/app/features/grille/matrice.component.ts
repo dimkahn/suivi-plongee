@@ -30,31 +30,55 @@ const LIBELLES: Record<string, string> = {
         </label>
         <label class="case">
           <input type="checkbox" [ngModel]="seulementNonAcquis()" (ngModelChange)="seulementNonAcquis.set($event)">
-          Seulement les critères non acquis
+          Seulement les critères non acquis{{ m.milieuNaturelExclusif ? ' en milieu naturel' : '' }}
         </label>
       </div>
+      @if (m.milieuNaturelExclusif) {
+        <div class="milieux" role="group" aria-label="Séances affichées">
+          @for (choix of choixMilieux; track choix.valeur) {
+            <button type="button" class="bouton-discret" [class.actif]="milieuAffiche() === choix.valeur"
+                    [attr.aria-pressed]="milieuAffiche() === choix.valeur" (click)="milieuAffiche.set(choix.valeur)">
+              {{ choix.libelle }}
+            </button>
+          }
+        </div>
+        <p class="explication">
+          Au {{ m.niveau }}, seules les évaluations <strong>en milieu naturel</strong> valident les critères.
+          Les notes prises <span class="marque-entrainement">en piscine ou en fosse</span> sont un suivi
+          d'entraînement : elles montrent où en est l'élève, sans rien acquérir.
+        </p>
+      }
       <p class="legende secondaire">
         <span class="pastille acquis">A</span> acquis
         <span class="pastille encours">ECA</span> en cours d'acquisition
         <span class="pastille neant">NA</span> non abordé
+        @if (m.milieuNaturelExclusif) {
+          <span class="pastille acquis entrainement">A</span> case en pointillés : entraînement en piscine / fosse
+        }
         · {{ seancesAffichees().length }} séance(s) sur {{ m.seances.length }}
       </p>
 
       @if (lignesAffichees().length === 0) {
-        <div class="carte vide"><p>Tous les critères sont acquis.</p></div>
+        <div class="carte vide"><p>Tous les critères sont acquis{{ m.milieuNaturelExclusif ? ' en milieu naturel' : '' }}.</p></div>
       } @else {
       <div class="tableau-scroll">
         <table>
           <thead>
             <tr>
-              <th class="figee">Critère <span class="sous-titre">· état actuel</span></th>
+              <th class="figee">
+                Critère
+                <span class="sous-titre">· état actuel{{ m.milieuNaturelExclusif ? ' : milieu naturel / entraînement' : '' }}</span>
+              </th>
               @for (s of seancesAffichees(); track s.id) {
-                <th class="entete-seance">
+                <th class="entete-seance" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'">
                   <span class="date-seance">{{ s.date | dateFr }}</span>
                   @if (s.lieu) { <span class="lieu-seance">{{ s.lieu }}</span> }
                   <span class="milieu-seance" [class.naturel]="s.milieu === 'NATUREL'">
-                    {{ s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine' }}
+                    {{ s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine / fosse' }}
                   </span>
+                  @if (m.milieuNaturelExclusif) {
+                    <span class="role-seance">{{ s.milieu === 'NATUREL' ? 'validation' : 'entraînement' }}</span>
+                  }
                 </th>
               }
             </tr>
@@ -76,14 +100,26 @@ const LIBELLES: Record<string, string> = {
                   <div class="critere-etat">
                     <span>{{ item.ligne.savoirFaire }}</span>
                     @let actuel = etatActuel(item.ligne);
-                    <span [class]="'pastille ' + suffixe(actuel)" [title]="actuel ? 'Dernière saisie le ' + (actuel.date | dateFr) + ' par ' + actuel.parQui : 'Jamais noté'">
-                      {{ libelle(actuel) }}
+                    <span class="etats-actuels">
+                      <span [class]="'pastille ' + suffixe(actuel)"
+                            [attr.aria-label]="(m.milieuNaturelExclusif ? 'Milieu naturel : ' : '') + libelleLong(actuel)"
+                            [title]="(m.milieuNaturelExclusif ? 'Milieu naturel · ' : '') + (actuel ? 'dernière saisie le ' + (actuel.date | dateFr) + ' par ' + actuel.parQui : 'jamais noté')">
+                        @if (m.milieuNaturelExclusif) { <span class="prefixe">Nat.</span> }{{ libelle(actuel) }}
+                      </span>
+                      @if (m.milieuNaturelExclusif) {
+                        @let entr = etatEntrainement(item.ligne);
+                        <span [class]="'pastille entrainement ' + suffixe(entr)"
+                              [attr.aria-label]="'Piscine / fosse : ' + libelleLong(entr)"
+                              [title]="'Piscine / fosse · ' + (entr ? 'dernière saisie le ' + (entr.date | dateFr) + ' par ' + entr.parQui : 'jamais noté')">
+                          <span class="prefixe">Fosse</span>{{ libelle(entr) }}
+                        </span>
+                      }
                     </span>
                   </div>
                 </td>
                 @for (s of seancesAffichees(); track s.id) {
                   @let cellule = cellulePour(item.ligne, s.id);
-                  <td [class]="classe(cellule)">
+                  <td [class]="classe(cellule)" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'">
                     <span class="statut">{{ libelle(cellule) }}</span>
                     @if (cellule) {
                       <span class="moniteur">{{ cellule.parQui }}</span>
@@ -143,6 +179,21 @@ const LIBELLES: Record<string, string> = {
       background: var(--accent-clair); color: var(--encre); font-size: .6875rem; font-weight: 700;
     }
     .milieu-seance.naturel { background: var(--profond); color: #fff; }
+    /* N2/N3 : l'entraînement en piscine/fosse se lit à part de la validation en milieu naturel. */
+    .role-seance { display: block; margin-top: 2px; font-size: .6875rem; font-weight: 400; font-style: italic; }
+    .milieux { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas-2); }
+    .milieux .actif { background: var(--profond); border-color: var(--profond); color: #fff; }
+    .explication { margin: var(--pas-2) 0 0; font-size: .875rem; max-width: 70ch; }
+    .marque-entrainement { border-bottom: 2px dashed var(--accent); }
+    .etats-actuels { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; }
+    .prefixe { margin-right: 4px; font-weight: 400; font-size: .6875rem; }
+    .pastille.entrainement { outline: 1px dashed var(--accent); outline-offset: -1px; font-style: italic; }
+    th.colonne-entrainement { background: #FFF7ED; }
+    td.colonne-entrainement { border-left: 1px dashed var(--accent-clair); border-right: 1px dashed var(--accent-clair); }
+    td.colonne-entrainement .statut { font-style: italic; }
+    td.colonne-entrainement.cellule.acquis, td.colonne-entrainement.cellule.encours {
+      background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255,255,255,.7) 6px 9px);
+    }
     .critere-etat { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); }
     .critere-etat .pastille { flex: none; }
     table { border-collapse: collapse; white-space: nowrap; }
@@ -206,12 +257,23 @@ export class MatriceComponent {
   seulementNotees = signal(true);
   seulementNonAcquis = signal(false);
 
+  /** N2/N3 : toutes les séances, ou seulement la validation en milieu naturel, ou seulement l'entraînement. */
+  milieuAffiche = signal<'TOUS' | 'NATUREL' | 'ARTIFICIEL'>('TOUS');
+  readonly choixMilieux = [
+    { valeur: 'TOUS' as const, libelle: 'Toutes les séances' },
+    { valeur: 'NATUREL' as const, libelle: 'Milieu naturel (validation)' },
+    { valeur: 'ARTIFICIEL' as const, libelle: 'Piscine / fosse (entraînement)' }
+  ];
+
   seancesAffichees = computed<SeanceEnTete[]>(() => {
     const m = this.matrice();
     if (!m) return [];
-    if (!this.seulementNotees()) return m.seances;
+    const milieu = this.milieuAffiche();
+    const duMilieu = !m.milieuNaturelExclusif || milieu === 'TOUS' ? m.seances
+      : m.seances.filter(s => milieu === 'NATUREL' ? s.milieu === 'NATUREL' : s.milieu !== 'NATUREL');
+    if (!this.seulementNotees()) return duMilieu;
     const notees = new Set(m.lignes.flatMap(l => l.historique.map(c => c.seanceId)));
-    return m.seances.filter(s => notees.has(s.id));
+    return duMilieu.filter(s => notees.has(s.id));
   });
 
   lignesAffichees = computed(() => {
@@ -245,9 +307,23 @@ export class MatriceComponent {
     });
   }
 
-  /** État courant d'un critère : la dernière saisie, séance ou non (l'historique arrive trié par date de saisie). */
+  /**
+   * État courant d'un critère : la dernière saisie, séance ou non (l'historique
+   * arrive trié par date de saisie). Pour un N2/N3, l'entraînement en piscine
+   * ou fosse n'en fait pas partie : c'est le milieu naturel qui valide.
+   */
   etatActuel(ligne: LigneMatrice): CelluleMatrice | null {
-    return ligne.historique.at(-1) ?? null;
+    return ligne.historique.filter(c => !c.entrainement).at(-1) ?? null;
+  }
+
+  /** N2/N3 : dernière note d'entraînement en piscine ou fosse. */
+  etatEntrainement(ligne: LigneMatrice): CelluleMatrice | null {
+    return ligne.historique.filter(c => c.entrainement).at(-1) ?? null;
+  }
+
+  libelleLong(cellule: CelluleMatrice | null): string {
+    if (!cellule) return 'jamais noté';
+    return cellule.statut === 'ACQUIS' ? 'acquis' : cellule.statut === 'EN_COURS' ? 'en cours' : 'non abordé';
   }
 
   suffixe(cellule: CelluleMatrice | null): string {

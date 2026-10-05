@@ -91,13 +91,16 @@ public class GrilleService {
     /** Vue globale d'un élève : une colonne par séance, comme l'onglet individuel du tableur. */
     public record SeanceEnTeteVue(Long id, LocalDate date, String lieu, String milieu) {}
 
-    public record CelluleVue(Long seanceId, LocalDate date, String statut, String parQui) {}
+    /** {@code entrainement} : N2/N3 noté en piscine ou fosse, sans effet sur l'acquisition. */
+    public record CelluleVue(Long seanceId, LocalDate date, String statut, String parQui,
+                             boolean entrainement) {}
 
     public record LigneMatriceVue(Long critereId, String blocIntitule, String regroupement,
                                   String savoirFaire, List<CelluleVue> historique) {}
 
-    public record MatriceVue(String eleve, String niveau, List<SeanceEnTeteVue> seances,
-                             List<LigneMatriceVue> lignes) {}
+    /** {@code milieuNaturelExclusif} : N2/N3, la vue sépare entraînement et milieu naturel. */
+    public record MatriceVue(String eleve, String niveau, boolean milieuNaturelExclusif,
+                             List<SeanceEnTeteVue> seances, List<LigneMatriceVue> lignes) {}
 
     private final CursusRepository cursusRepository;
     private final EvaluationService evaluationService;
@@ -270,7 +273,8 @@ public class GrilleService {
             for (Critere c : bloc.getCriteres()) {
                 List<CelluleVue> historique = parCritere.getOrDefault(c.getId(), List.of()).stream()
                         .map(e -> new CelluleVue(e.getSeance() == null ? null : e.getSeance().getId(),
-                                e.getDateEvaluation(), e.getStatut().name(), e.getMoniteur().nomComplet()))
+                                e.getDateEvaluation(), e.getStatut().name(), e.getMoniteur().nomComplet(),
+                                e.isEntrainement()))
                         .toList();
                 lignes.add(new LigneMatriceVue(c.getId(), bloc.getIntitule(), bloc.getRegroupement(),
                         c.getSavoirFaire(), historique));
@@ -283,6 +287,6 @@ public class GrilleService {
                 .toList();
 
         return new MatriceVue(cursus.getEleve().nomComplet(), cursus.getReferentiel().getNiveau().name(),
-                entetes, lignes);
+                cursus.getReferentiel().isMilieuNaturelExclusif(), entetes, lignes);
     }
 }

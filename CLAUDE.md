@@ -340,7 +340,10 @@ sur une séance en milieu artificiel n'est plus refusée : elle est marquée
 le retard de progression et la délivrance ne lisent que le milieu naturel.
 La grille livre les deux (`CritereVue.entrainement`,
 `BlocVue.acquisEntrainement`) ; côté écran, la séance choisie décide du
-suivi que notent les boutons, l'autre est rappelé sous le critère. La
+suivi que notent les boutons, l'autre est rappelé sous le critère. La vue
+globale (`MatriceComponent`, `CelluleVue.entrainement`) marque les colonnes
+« validation »/« entraînement », donne les deux états actuels par critère
+et filtre par milieu ; la fiche PDF a une colonne « Piscine / fosse ». La
 notation groupée compare au suivi de la séance (rien ne recule non plus).
 Démo : notes d'entraînement en fosse de Camille (N2), V113, vidéo M19.
 **Présence avant notation (choix du club, 2026).** Un élève ne se note sur

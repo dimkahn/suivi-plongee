@@ -167,6 +167,16 @@ class EntrainementPiscineTest {
             List<Boolean> entrainements = json.readTree(historique).valueStream()
                     .map(e -> e.get("entrainement").asBoolean()).toList();
             assertThat(entrainements).containsExactly(true, true, false);
+
+            // Vue globale : chaque case dit si elle est de l'entraînement.
+            String matrice = mvc.perform(get("/api/cursus/" + cursusId + "/matrice").header("Authorization", moniteur))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+            JsonNode m = json.readTree(matrice);
+            assertThat(m.get("milieuNaturelExclusif").asBoolean()).isTrue();
+            List<Boolean> cases = m.get("lignes").get(0).get("historique").valueStream()
+                    .map(c -> c.get("entrainement").asBoolean()).toList();
+            assertThat(cases).containsExactly(true, true, false);
         } finally {
             // Les autres tests comptent les inscriptions de demonstration : on ne laisse rien derriere.
             mvc.perform(post("/api/eleves/" + eleveId + "/archivage").header("Authorization", admin));
