@@ -88,7 +88,7 @@ public class FichePdfService {
             }
             regroupementPrecedent = bloc.regroupement();
             premier = false;
-            blocs.append(blocHtml(bloc));
+            blocs.append(blocHtml(bloc, g.milieuNaturelExclusif()));
         }
         return """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -144,18 +144,27 @@ public class FichePdfService {
                 LocalDate.now().format(DATE));
     }
 
-    private String blocHtml(GrilleService.BlocVue bloc) {
+    /**
+     * {@code avecEntrainement} : N2/N3, une colonne de plus pour le suivi en
+     * piscine et fosse, à côté du statut obtenu en milieu naturel.
+     */
+    private String blocHtml(GrilleService.BlocVue bloc, boolean avecEntrainement) {
         StringBuilder lignes = new StringBuilder();
         for (GrilleService.CritereVue c : bloc.criteres()) {
+            String entrainement = !avecEntrainement ? ""
+                    : "<td>%s</td>".formatted(c.entrainement() == null ? "Non abordé"
+                            : libelleStatut(c.entrainement().statut()) + " (" + c.entrainement().le().format(DATE) + ")");
             lignes.append("""
                 <tr>
                   <td>%s</td>
+                  %s
                   <td>%s</td>
                   <td>%s</td>
                   <td>%s</td>
                 </tr>
                 """.formatted(
                     echapper(c.savoirFaire()),
+                    entrainement,
                     libelleStatut(c.statut()),
                     c.le() == null ? "" : c.le().format(DATE),
                     echapper(c.parQui() == null ? "" : c.parQui())));
@@ -169,14 +178,19 @@ public class FichePdfService {
 
         return """
             <div class="bloc-titre">%s</div>
-            <p class="bloc-sous-titre">%d / %d acquis</p>
+            <p class="bloc-sous-titre">%d / %d acquis%s</p>
             %s
             <table>
-              <thead><tr><th>Savoir-faire</th><th>Statut</th><th>Date</th><th>Par qui</th></tr></thead>
+              <thead><tr><th>Savoir-faire</th>%s<th>%s</th><th>Date</th><th>Par qui</th></tr></thead>
               <tbody>%s</tbody>
             </table>
             """.formatted(echapper(bloc.intitule()),
-                bloc.acquis(), bloc.total(), validation, lignes);
+                bloc.acquis(), bloc.total(),
+                avecEntrainement ? " en milieu naturel &#183; %d en piscine / fosse".formatted(bloc.acquisEntrainement()) : "",
+                validation,
+                avecEntrainement ? "<th>Piscine / fosse</th>" : "",
+                avecEntrainement ? "Milieu naturel" : "Statut",
+                lignes);
     }
 
     private String libelleStatut(String statut) {

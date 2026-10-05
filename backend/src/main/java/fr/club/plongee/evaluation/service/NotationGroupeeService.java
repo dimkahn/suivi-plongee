@@ -33,9 +33,10 @@ import java.util.stream.Collectors;
  * </ul>
  *
  * <p>Tout ou rien : si un seul élève est refusé (absent, cursus clos, niveau
- * d'encadrement insuffisant, séance en piscine pour un N2...), rien n'est
- * enregistré et le message nomme l'élève. Chaque ligne passe par
- * {@link EvaluationService#noter}, qui porte les règles du MFT.
+ * d'encadrement insuffisant...), rien n'est enregistré et le message nomme
+ * l'élève. Chaque ligne passe par {@link EvaluationService#noter}, qui porte
+ * les règles du MFT. Un N2/N3 noté en piscine ou en fosse l'est dans son suivi
+ * d'entraînement, qui ne recule pas non plus.
  */
 @Service
 public class NotationGroupeeService {
@@ -104,7 +105,10 @@ public class NotationGroupeeService {
                         + cursus.getReferentiel().getNiveauEncadrantValidation() + " et au-delà).");
             }
 
-            Map<Long, StatutAcquisition> etat = evaluations.etatCourant(cursusId).stream()
+            // N2/N3 en piscine ou fosse : on compare au suivi d'entrainement, pas aux acquis.
+            boolean entrainement = EvaluationService.estEntrainement(cursus.getReferentiel(), seance);
+            Map<Long, StatutAcquisition> etat = (entrainement
+                    ? evaluations.etatEntrainement(cursusId) : evaluations.etatCourant(cursusId)).stream()
                     .collect(Collectors.toMap(e -> e.getCritere().getId(), Evaluation::getStatut));
             for (Map.Entry<Long, String> critere : commentaires.entrySet()) {
                 Long critereId = critere.getKey();

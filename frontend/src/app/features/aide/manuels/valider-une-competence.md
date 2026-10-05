@@ -21,7 +21,7 @@ Quand tous les critères d'une compétence sont acquis, le bouton « Valider la 
 
 Le message dit pourquoi. Les causes les plus courantes :
 
-- au N2 et au N3, tout se valide **en milieu naturel** : pas sur une séance de piscine ;
+- au N2 et au N3, tout se valide **en milieu naturel** : les critères notés en piscine ou en fosse forment un suivi d'entraînement à part, qui ne compte pas ;
 - vous n'encadrez pas ce niveau (E1 → N1, E2 → jusqu'au N2, E3 → jusqu'au N3) ;
 - une règle d'ordre du MFT (par exemple, une compétence qui se valide en dernier).
 

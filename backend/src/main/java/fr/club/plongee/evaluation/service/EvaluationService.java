@@ -109,7 +109,16 @@ public class EvaluationService {
                 ? notation.dateEvaluation()
                 : (seance != null ? seance.getDateSeance() : LocalDate.now()));
         e.setReferenceClient(notation.referenceClient());
+        e.setEntrainement(estEntrainement(cursus.getReferentiel(), seance));
         return evaluations.save(e);
+    }
+
+    /**
+     * N2 et N3 : les competences s'obtiennent en milieu naturel ; une note prise
+     * en piscine ou en fosse n'est qu'un suivi d'entrainement, a part.
+     */
+    public static boolean estEntrainement(Referentiel ref, Seance seance) {
+        return ref.isMilieuNaturelExclusif() && seance != null && seance.getMilieu() != Milieu.NATUREL;
     }
 
     /** Empeche de noter un critere qui n'appartient pas au referentiel du cursus. */
@@ -125,22 +134,16 @@ public class EvaluationService {
 
     /**
      * Regles du MFT attachees a la seance :
-     *  - N2 et N3 : competences a obtenir en milieu naturel, piscines et fosses exclues ;
      *  - la seance doit appartenir a la saison du cursus ;
      *  - l'eleve doit y etre note present (choix du club, 2026).
+     * N2 et N3 en piscine ou en fosse : accepte, mais comme entrainement
+     * (voir {@link #estEntrainement}), sans effet sur l'acquisition.
      */
     private void verifierSeance(Cursus cursus, BlocCompetence bloc, Seance seance) {
-        Referentiel ref = cursus.getReferentiel();
-
         seance.verifierQueLaSeanceAEuLieu("noter une compétence");
 
         if (!seance.getSaison().getId().equals(cursus.getSaison().getId())) {
             throw new RegleMetierException("Cette seance n'appartient pas a la saison du cursus.");
-        }
-        if (ref.isMilieuNaturelExclusif() && seance.getMilieu() != Milieu.NATUREL) {
-            throw new RegleMetierException(
-                    "Les competences du " + ref.getNiveau() + " doivent etre obtenues en milieu naturel : "
-                            + "les piscines et fosses sont exclues quelle qu'en soit la profondeur.");
         }
         boolean present = participations.findByCursusIdAndSeanceId(cursus.getId(), seance.getId())
                 .map(p -> p.getStatut() == Participation.Statut.PRESENT)
@@ -214,6 +217,13 @@ public class EvaluationService {
     @Transactional(readOnly = true)
     public Map<Long, Evaluation> etatCourant(Long cursusId) {
         return evaluations.etatCourant(cursusId).stream()
+                .collect(Collectors.toMap(e -> e.getCritere().getId(), Function.identity()));
+    }
+
+    /** Suivi d'entrainement en piscine et fosse (N2/N3) : derniere note par critere. */
+    @Transactional(readOnly = true)
+    public Map<Long, Evaluation> etatEntrainement(Long cursusId) {
+        return evaluations.etatEntrainement(cursusId).stream()
                 .collect(Collectors.toMap(e -> e.getCritere().getId(), Function.identity()));
     }
 

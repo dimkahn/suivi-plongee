@@ -26,6 +26,7 @@ Depuis « Présences », le bouton « Noter les présents » note en une fois to
 - **Rien ne recule** : un critère acquis reste acquis, un critère en cours reste en cours ; un critère non abordé passe « en cours ». Le commentaire s'ajoute dans tous les cas.
 - Tant qu'un commentaire manque, « Valider la notation » reste grisé.
 - Les élèves doivent préparer la même version du MFT, et être notés présents.
+- N2 et N3 en piscine ou en fosse : la notation va au suivi d'entraînement, à part de l'évaluation en milieu naturel (voir « Noter un élève pendant la séance »).
 - Tout ou rien : si un élève est refusé, le message le nomme et personne n'est noté.
 - La notation groupée demande le réseau.
 - Pour passer un élève « acquis », passez par sa grille, comme d'habitude.

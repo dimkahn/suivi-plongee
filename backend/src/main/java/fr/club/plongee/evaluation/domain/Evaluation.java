@@ -63,6 +63,13 @@ public class Evaluation {
     @Column(unique = true, length = 36)
     private String referenceClient;
 
+    /**
+     * N2/N3 : note prise en piscine ou en fosse. Suivi d'entrainement, avec
+     * son propre etat courant : ne compte jamais pour l'acquisition.
+     */
+    @Column(nullable = false)
+    private boolean entrainement;
+
     public Long getId() {
         return id;
     }
@@ -141,5 +148,13 @@ public class Evaluation {
 
     public void setReferenceClient(String referenceClient) {
         this.referenceClient = referenceClient;
+    }
+
+    public boolean isEntrainement() {
+        return entrainement;
+    }
+
+    public void setEntrainement(boolean entrainement) {
+        this.entrainement = entrainement;
     }
 }

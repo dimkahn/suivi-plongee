@@ -70,8 +70,8 @@ import { periodeDuMois } from '../../core/progression';
             </div>
           } @else if (ref.milieuNaturelExclusif && seance().milieu !== 'NATUREL') {
             <div class="alerte" role="status">
-              Les compétences du {{ ref.niveau }} s'obtiennent en milieu naturel : cette séance en piscine ou
-              fosse ne permet pas de les noter.
+              Séance en piscine ou fosse : vous notez le <strong>suivi d'entraînement</strong> du {{ ref.niveau }}.
+              Il reste à part : les compétences ne s'acquièrent qu'en milieu naturel.
             </div>
           }
 
@@ -304,8 +304,7 @@ export class NotationGroupeeComponent {
     return !!ref && !this.envoi() && this.reseau.enLigne()
       && this.cursusCoches().size > 0 && this.criteresCoches().size > 0
       && this.commentairesManquants() === 0
-      && this.auth.peutValider(ref.niveauEncadrantValidation)
-      && !(ref.milieuNaturelExclusif && this.seance().milieu !== 'NATUREL');
+      && this.auth.peutValider(ref.niveauEncadrantValidation);
   });
 
   ouvrir(): void {

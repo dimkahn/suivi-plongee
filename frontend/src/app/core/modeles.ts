@@ -65,6 +65,19 @@ export interface CritereVue {
   parQui: string | null;
   le: string | null;
   commentaire: string | null;
+  /**
+   * N2/N3 : dernière note prise en piscine ou en fosse. Suivi d'entraînement,
+   * sans effet sur `statut` (obtenu en milieu naturel). Absent d'une grille
+   * mise en cache avant son arrivée.
+   */
+  entrainement?: SuiviEntrainementVue | null;
+}
+
+export interface SuiviEntrainementVue {
+  statut: Statut;
+  parQui: string;
+  le: string;
+  commentaire: string | null;
 }
 
 export interface BlocVue {
@@ -75,6 +88,8 @@ export interface BlocVue {
   acquis: number;
   total: number;
   valide: boolean;
+  /** Critères acquis à l'entraînement en piscine ou fosse (N2/N3). */
+  acquisEntrainement?: number;
   dateValidation: string | null;
   valideePar: string | null;
   /** "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en plusieurs qualifications. */
@@ -244,6 +259,8 @@ export interface EvaluationVue {
   commentaire: string | null;
   dateEvaluation: string;
   parQui: string;
+  /** N2/N3 noté en piscine ou en fosse : suivi d'entraînement. */
+  entrainement?: boolean;
 }
 
 export interface MoniteurVue {

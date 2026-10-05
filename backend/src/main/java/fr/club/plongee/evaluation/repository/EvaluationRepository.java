@@ -20,17 +20,28 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     /**
      * Etat courant de la grille : la derniere evaluation saisie pour chaque critere.
      * La table etant en ajout seul, le plus grand id est le plus recent.
+     * Les notes d'entrainement (N2/N3 en piscine ou fosse) n'en font pas partie.
      */
+    default List<Evaluation> etatCourant(Long cursusId) {
+        return derniereParCritere(cursusId, false);
+    }
+
+    /** Etat courant du suivi d'entrainement en piscine et fosse (N2/N3). */
+    default List<Evaluation> etatEntrainement(Long cursusId) {
+        return derniereParCritere(cursusId, true);
+    }
+
     @Query("""
            select e from Evaluation e
              join fetch e.critere c
              join fetch e.moniteur m
             where e.id in (
                   select max(e2.id) from Evaluation e2
-                   where e2.cursus.id = :cursusId
+                   where e2.cursus.id = :cursusId and e2.entrainement = :entrainement
                    group by e2.critere.id)
            """)
-    List<Evaluation> etatCourant(@Param("cursusId") Long cursusId);
+    List<Evaluation> derniereParCritere(@Param("cursusId") Long cursusId,
+                                        @Param("entrainement") boolean entrainement);
 
     /** Historique complet d'un critere, du plus ancien au plus recent. */
     @Query("""
@@ -62,7 +73,8 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
               and e.critere.bloc.id = :blocId
               and e.statut = fr.club.plongee.evaluation.domain.StatutAcquisition.ACQUIS
               and e.id in (select max(e2.id) from Evaluation e2
-                            where e2.cursus.id = :cursusId group by e2.critere.id)
+                            where e2.cursus.id = :cursusId and e2.entrainement = false
+                            group by e2.critere.id)
            """)
     long compterAcquisDuBloc(@Param("cursusId") Long cursusId, @Param("blocId") Long blocId);
 }
