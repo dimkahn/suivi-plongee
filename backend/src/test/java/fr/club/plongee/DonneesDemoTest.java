@@ -79,4 +79,26 @@ class DonneesDemoTest {
         // INSERT ... SELECT n'auraient silencieusement rien insere.
         assertThat(json.readTree(grille).get("criteresAcquis").asInt()).isGreaterThan(0);
     }
+
+    @Test
+    @DisplayName("Le suivi d'entrainement en fosse de Camille (N2) est seme a part du milieu naturel (V113, video M19)")
+    void entrainementEnFosseDeCamille() throws Exception {
+        String cursusReponse = mvc.perform(get("/api/cursus").header("Authorization", jeton("e3@club.fr")))
+                .andReturn().getResponse().getContentAsString();
+        long cursusN2 = -1;
+        for (JsonNode c : json.readTree(cursusReponse)) {
+            if ("Camille Berthier".equals(c.get("eleve").asText()) && "N2".equals(c.get("niveau").asText())) {
+                cursusN2 = c.get("id").asLong();
+            }
+        }
+        assertThat(cursusN2).isPositive();
+
+        String grille = mvc.perform(get("/api/cursus/" + cursusN2 + "/grille")
+                        .header("Authorization", jeton("e3@club.fr")))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        JsonNode capelage = json.readTree(grille).get("blocs").get(0).get("criteres").get(1);
+        assertThat(capelage.get("savoirFaire").asText()).isEqualTo("Capelage et décapelage");
+        assertThat(capelage.get("entrainement").get("statut").asText()).isEqualTo("ACQUIS");
+    }
 }
