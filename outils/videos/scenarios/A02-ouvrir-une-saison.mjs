@@ -1,5 +1,5 @@
 // A2 — Ouvrir une nouvelle saison.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -26,11 +26,12 @@ export default {
     await carte.scrollIntoViewIfNeeded();
     await legende('Chaque saison suit une progression type par niveau.', 0);
     await toucher(carte.getByRole('button', { name: 'Choisir les progressions' }), { apres: 900 });
-    for (const select of await carte.locator('select').all()) {
+    const dialogue = page.locator('dialog[open]');
+    for (const select of await dialogue.locator('select').all()) {
       await choisir(select, 'N', { exact: false });
     }
     await vignette();
-    await toucher(carte.getByRole('button', { name: 'Enregistrer' }), { apres: 1500 });
+    await toucher(dialogue.getByRole('button', { name: 'Enregistrer' }), { apres: 1500 });
     await legende('Une nouvelle saison est créée ouverte : elle devient la saison courante de toute l\'appli.', 4500);
     await legende('Préparée en avance ? Refermez-la jusqu\'à la rentrée ; « Rouvrir » le jour venu.', 0);
     await toucher(carte.getByRole('button', { name: 'Fermer' }), { apres: 1500 });

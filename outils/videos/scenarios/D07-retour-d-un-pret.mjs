@@ -1,5 +1,5 @@
 // D7 — Retour et annulation d'un prêt.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -15,11 +15,12 @@ export default {
     await legende('Camille rapporte le matériel de son week-end.', 0);
     const pret = page.locator('li, .carte').filter({ hasText: 'Camille Berthier' }).last();
     await toucher(pret.getByRole('button', { name: 'Enregistrer le retour' }), { apres: 1200 });
+    const dialogue = page.locator('dialog[open]');
     await legende('Pour chaque équipement : un incident éventuel.', 0);
-    await saisir(pret.locator('input[id^="incident-"]').nth(2), 'Purge basse qui colle');
+    await saisir(dialogue.locator('input[id^="incident-"]').nth(2), 'Purge basse qui colle');
     await legende('Et si besoin, hors service : il ne sera plus proposé au prêt.', 3500);
     await vignette();
-    await toucher(pret.getByRole('button', { name: 'Valider le retour' }), { apres: 2000 });
+    await toucher(dialogue.getByRole('button', { name: 'Valider le retour' }), { apres: 2000 });
     await legende('L\'incident est inscrit au journal de l\'équipement.', 3500);
     await toucher(page.getByRole('tab', { name: 'Rendus' }), { apres: 1500 });
     await legende('Les prêts rendus restent consultables, avec leurs photos.', 3500);

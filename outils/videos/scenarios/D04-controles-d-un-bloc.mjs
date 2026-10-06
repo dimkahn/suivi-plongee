@@ -1,5 +1,5 @@
 // D4 — Les contrôles d'un bloc.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -18,12 +18,14 @@ export default {
     await legende('Tant qu\'il l\'est, l\'appli refuse de le prêter.', 3500);
     await legende('Retour de requalification :', 0);
     await page.getByRole('heading', { name: 'Journal' }).scrollIntoViewIfNeeded();
+    await toucher(page.getByRole('button', { name: 'Ajouter une entrée au journal' }), { apres: 800 });
     await choisir('#typeIntervention', 'Requalification (épreuve hydraulique)');
     await dater('#dateIntervention', aujourdhui);
     await saisir('#intervenant', 'Centre de requalification agréé');
     await choisir('#resultat', 'Conforme');
     await toucher(page.getByRole('button', { name: 'Ajouter au journal' }), { apres: 1800 });
     await legende('Puis l\'inspection visuelle, par un TIV du club :', 0);
+    await toucher(page.getByRole('button', { name: 'Ajouter une entrée au journal' }), { apres: 800 });
     await choisir('#typeIntervention', 'Inspection visuelle (TIV)');
     await dater('#dateIntervention', aujourdhui);
     await saisir('#intervenant', 'TIV Gwendoline Marchand n° 12345');

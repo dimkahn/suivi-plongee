@@ -1,5 +1,5 @@
 // A9 — Clore une formation : brevet délivré.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -19,9 +19,10 @@ export default {
     await pause(800);
     const ligne = page.locator('main li, main .carte').filter({ hasText: 'Sonia Perrot' }).last();
     await toucher(ligne.getByRole('button', { name: 'Modifier' }));
-    await choisir(ligne.locator('select[id^="statut-"]'), 'Brevet délivré');
+    const dialogue = page.locator('dialog[open]');
+    await choisir(dialogue.locator('#statut-edition'), 'Brevet délivré');
     await vignette();
-    await toucher(ligne.getByRole('button', { name: 'Enregistrer' }), { apres: 2000 });
+    await toucher(dialogue.getByRole('button', { name: 'Enregistrer' }), { apres: 2000 });
     await legende('La formation est close : sa grille passe en lecture seule, telle qu\'elle a été validée.', 4000);
     await legende('Son dossier prend le niveau N3 : il sera proposé à sa prochaine inscription.', 4000);
     await legende('Autres statuts : suspendu (reprise la saison suivante), abandon.', 3500);

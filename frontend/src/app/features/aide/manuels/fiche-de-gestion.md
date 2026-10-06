@@ -14,7 +14,7 @@ La fiche d'un équipement tient lieu de fiche de gestion d'EPI (Code du sport) :
 ## Pas à pas
 
 1. Dans « Matériel », ouvrez l'équipement.
-2. Dans le journal, ajoutez l'intervention : type, date, conforme ou non, commentaire.
+2. Dans le journal, « Ajouter une entrée au journal » : dans la fenêtre, le type, la date, conforme ou non, un commentaire, puis « Ajouter au journal ».
 3. Les échéances se mettent à jour.
 4. « Imprimer la fiche » pour le classeur du club.
 
