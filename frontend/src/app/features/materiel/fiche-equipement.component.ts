@@ -12,6 +12,7 @@ import {
 } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { descriptionEquipement } from './materiel';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 function demandeVide(type: TypeEquipement): DemandeEquipement {
   return {
@@ -50,7 +51,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
  */
 @Component({
   selector: 'app-fiche-equipement',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
   template: `
     <a routerLink="/materiel" class="retour pas-imprime">← Matériel</a>
 
@@ -352,20 +353,21 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
           pas : une erreur se corrige par une nouvelle ligne.
         </p>
 
-        @if (e.statut !== 'REBUTE' && !ajoutJournal()) {
+        @if (e.statut !== 'REBUTE') {
           <div class="actions ouvrir-journal pas-imprime">
             @if (e.type === 'BLOC') {
               <a [routerLink]="['/materiel', e.id, 'tiv']" class="bouton-principal">Remplir la fiche d'inspection TIV</a>
             }
             @if (gere()) {
-              <button type="button" class="bouton-discret" (click)="ajoutJournal.set(true)">
+              <button type="button" class="bouton-discret" (click)="ouvrirAjoutJournal()">
                 Ajouter une entrée au journal
               </button>
             }
           </div>
         }
-        @if (e.statut !== 'REBUTE' && ajoutJournal()) {
-          <form class="ajout-journal pas-imprime" (ngSubmit)="ajouterIntervention()">
+        <app-dialogue [ouvert]="ajoutJournal()" titre="Ajouter une entrée au journal" [erreur]="message()"
+                      [large]="true" (fermer)="fermerAjoutJournal()">
+          <form (ngSubmit)="ajouterIntervention()">
             <div class="grille">
               <div>
                 <label for="typeIntervention">Intervention</label>
@@ -399,12 +401,12 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
                       [(ngModel)]="i.description"
                       [placeholder]="i.type === 'INCIDENT' ? 'Que s\\'est-il passé ? (obligatoire)' : 'Pièces changées, observations…'">
             </textarea>
-            <div class="actions">
+            <div class="actions-dialogue">
               <button type="submit" class="bouton-principal" [disabled]="envoi()">Ajouter au journal</button>
               <button type="button" class="bouton-discret" (click)="fermerAjoutJournal()">Annuler</button>
             </div>
           </form>
-        }
+        </app-dialogue>
 
         @if (fi.journal.length === 0) {
           <p class="vide">Aucune intervention enregistrée.</p>
@@ -525,8 +527,6 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
     dd { margin: 0; font-weight: 700; }
     .texte-libre { white-space: pre-line; margin: 4px 0; }
 
-    .ajout-journal { padding: var(--pas-2); margin-bottom: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
-    .ajout-journal .actions { margin-bottom: 0; }
     .ouvrir-journal { margin: 0 0 var(--pas-2); }
     .lien-tiv { display: inline-flex; align-items: center; min-height: 44px; }
     .ancien { margin: 0 0 4px; font-weight: 700; color: var(--craie); }
@@ -705,6 +705,11 @@ export class FicheEquipementComponent {
         this.message.set(err.error?.detail ?? "L'intervention n'a pas pu être enregistrée.");
       }
     });
+  }
+
+  ouvrirAjoutJournal(): void {
+    this.message.set(null);
+    this.ajoutJournal.set(true);
   }
 
   fermerAjoutJournal(): void {

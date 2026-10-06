@@ -12,6 +12,7 @@ import { DateFrPipe, dateDuJour, periode } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
 import { descriptionEquipement } from './materiel';
 import { PhotosPretComponent } from './photos-pret.component';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 /** Élèves et encadrants partagent la même liste : ids pairs pour les élèves, impairs pour les encadrants. */
 function cleEmprunteur(e: EmprunteurVue): number {
@@ -28,21 +29,19 @@ interface LigneRetour { incident: string; horsService: boolean; }
  */
 @Component({
   selector: 'app-prets',
-  imports: [FormsModule, RouterLink, DateFrPipe, ComboboxComponent, PhotosPretComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, ComboboxComponent, PhotosPretComponent, DialogueComponent],
   template: `
     <a routerLink="/materiel" class="retour">← Matériel</a>
     <div class="entete">
       <h1>Prêts de matériel</h1>
-      @if (!formulaireOuvert()) {
-        <button type="button" class="bouton-principal" (click)="ouvrirFormulaire()">Nouveau prêt</button>
-      }
+      <button type="button" class="bouton-principal" (click)="ouvrirFormulaire()">Nouveau prêt</button>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (formulaireOuvert()) {
-      <form class="carte formulaire" (ngSubmit)="preter()">
-        <h2>Nouveau prêt</h2>
+    <app-dialogue [ouvert]="formulaireOuvert()" titre="Nouveau prêt" [large]="true" [erreur]="message()"
+                  (fermer)="formulaireOuvert.set(false)">
+      <form (ngSubmit)="preter()">
 
         <label for="emprunteur">Emprunteur *</label>
         <app-combobox idChamp="emprunteur" [options]="optionsEmprunteurs()" [(valeur)]="emprunteur"
@@ -136,14 +135,14 @@ interface LigneRetour { incident: string; horsService: boolean; }
         <label for="remarquesPret">Remarques</label>
         <textarea id="remarquesPret" name="remarquesPret" rows="2" [(ngModel)]="remarques"></textarea>
 
-        <div class="actions">
+        <div class="actions-dialogue">
           <button type="submit" class="bouton-principal" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer le prêt' }}
           </button>
           <button type="button" class="bouton-discret" (click)="formulaireOuvert.set(false)">Annuler</button>
         </div>
       </form>
-    }
+    </app-dialogue>
 
     <div class="onglets" role="tablist">
       <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'EN_COURS'"
@@ -208,8 +207,20 @@ interface LigneRetour { incident: string; horsService: boolean; }
               }
 
               @if (!p.dateRetour) {
-                @if (retourOuvert() === p.id) {
-                  <div class="retour-form">
+                  <div class="actions">
+                    <button type="button" class="bouton-principal" (click)="ouvrirRetour(p)">Enregistrer le retour</button>
+                    <button type="button" class="bouton-discret" (click)="annuler(p)">Annuler le prêt</button>
+                  </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    <app-dialogue [ouvert]="pretEnRetour() !== null" [erreur]="message()" (fermer)="retourOuvert.set(null)"
+                  [titre]="'Retour du matériel de ' + (pretEnRetour()?.emprunteur ?? '')">
+      @if (pretEnRetour(); as p) {
                     <label [for]="'dateRetour-' + p.id">Date de retour</label>
                     <input [id]="'dateRetour-' + p.id" type="date" [min]="p.datePret" [max]="aujourdhui"
                            [(ngModel)]="dateRetour">
@@ -228,25 +239,14 @@ interface LigneRetour { incident: string; horsService: boolean; }
                     <app-photos-pret [pret]="p" (nombres)="majNombres(p.id, $event)" />
                     <label [for]="'remarquesRetour-' + p.id">Remarques</label>
                     <textarea [id]="'remarquesRetour-' + p.id" rows="2" [(ngModel)]="remarquesRetour"></textarea>
-                    <div class="actions">
+                    <div class="actions-dialogue">
                       <button type="button" class="bouton-principal" (click)="rendre(p)" [disabled]="envoi()">
                         {{ envoi() ? 'Enregistrement…' : 'Valider le retour' }}
                       </button>
                       <button type="button" class="bouton-discret" (click)="retourOuvert.set(null)">Annuler</button>
                     </div>
-                  </div>
-                } @else {
-                  <div class="actions">
-                    <button type="button" class="bouton-principal" (click)="ouvrirRetour(p)">Enregistrer le retour</button>
-                    <button type="button" class="bouton-discret" (click)="annuler(p)">Annuler le prêt</button>
-                  </div>
-                }
-              }
-            </li>
-          }
-        </ul>
       }
-    }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -254,8 +254,6 @@ interface LigneRetour { incident: string; horsService: boolean; }
     .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap;
               margin-bottom: var(--pas-2); }
-    .formulaire { padding: var(--pas-3); margin-bottom: var(--pas-3); max-width: 760px; }
-    .formulaire h2 { margin-bottom: var(--pas); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 var(--pas-2); }
     fieldset { border: none; padding: 0; margin: var(--pas-2) 0 0; }
@@ -290,15 +288,10 @@ interface LigneRetour { incident: string; horsService: boolean; }
     .dates { margin: var(--pas) 0; }
     .materiel-prete { margin: 0; padding-left: 1.25rem; display: grid; gap: 2px; }
     .texte-libre { white-space: pre-line; margin: var(--pas) 0 0; }
-    .retour-form { margin-top: var(--pas-2); padding: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
     .retour-equipement { border-top: 1px solid var(--trait); margin-top: var(--pas-2); }
     .bouton-photos { margin-top: var(--pas-2); }
     .galerie { margin-top: var(--pas); padding: var(--pas) var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
     .titre-photos { margin: var(--pas-2) 0 0; padding-top: var(--pas-2); border-top: 1px solid var(--trait); font-size: 1rem; }
-
-    @media (max-width: 600px) {
-      .formulaire { padding: var(--pas-2); }
-    }
   `]
 })
 export class PretsComponent {
@@ -334,6 +327,7 @@ export class PretsComponent {
   rechercheMateriel = signal('');
 
   retourOuvert = signal<number | null>(null);
+  pretEnRetour = computed(() => this.enCours().find(p => p.id === this.retourOuvert()) ?? null);
   photosOuvertes = signal<Set<number>>(new Set());
   dateRetour = dateDuJour();
   lignesRetour: Record<number, LigneRetour> = {};

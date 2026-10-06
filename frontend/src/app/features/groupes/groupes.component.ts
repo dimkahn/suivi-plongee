@@ -8,6 +8,7 @@ import {
 } from '../../core/modeles';
 import { dateDuJour } from '../../core/date-fr';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 function membreVide(): MembreGroupeVue {
   return { eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null };
@@ -22,7 +23,7 @@ function membreVide(): MembreGroupeVue {
  */
 @Component({
   selector: 'app-groupes',
-  imports: [FormsModule, ComboboxComponent],
+  imports: [FormsModule, ComboboxComponent, DialogueComponent],
   template: `
     <h1>Groupes de plongeurs</h1>
     <p class="secondaire">
@@ -41,8 +42,10 @@ function membreVide(): MembreGroupeVue {
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    <section class="carte panneau">
-      <h2>Nouveau groupe</h2>
+    <button type="button" class="bouton-principal nouveau" (click)="ouvrirCreation()">Nouveau groupe</button>
+
+    <app-dialogue [ouvert]="creationOuverte()" titre="Nouveau groupe" [large]="true" [erreur]="message()"
+                  (fermer)="creationOuverte.set(false)">
       <label for="nomNouveauGroupe">Nom du groupe</label>
       <input id="nomNouveauGroupe" type="text" name="nomNouveauGroupe" [(ngModel)]="nomNouveauGroupe"
              placeholder="ex. Séjour Égypte mai 2026">
@@ -62,13 +65,14 @@ function membreVide(): MembreGroupeVue {
           <button type="button" class="bouton-discret danger" (click)="retirerMembre(nouveauxMembres, i)">✕</button>
         </div>
       }
-      <div class="actions">
-        <button type="button" class="bouton-discret" (click)="ajouterMembre(nouveauxMembres)">+ Plongeur</button>
+      <button type="button" class="bouton-discret" (click)="ajouterMembre(nouveauxMembres)">+ Plongeur</button>
+      <div class="actions-dialogue">
         <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="creerGroupe()">
           {{ envoi() ? 'Création…' : 'Créer le groupe' }}
         </button>
+        <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
       </div>
-    </section>
+    </app-dialogue>
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -78,39 +82,6 @@ function membreVide(): MembreGroupeVue {
       <ul>
         @for (g of liste(); track g.id) {
           <li class="carte">
-            @if (enEditionId() === g.id) {
-              <label [for]="'nom-' + g.id">Nom du groupe</label>
-              <input [id]="'nom-' + g.id" type="text" [(ngModel)]="nomEdition" [name]="'nom-edit-' + g.id">
-
-              @for (m of brouillonMembres(); track m; let i = $index) {
-                <div class="ligne-membre">
-                  <app-combobox class="selecteur-connu" [idChamp]="'ed-connu-' + g.id + '-' + i"
-                                [options]="optionsConnus()" [valeur]="indexConnu(m)"
-                                (valeurChange)="choisirPlongeurConnu(brouillonMembres, i, $event)"
-                                aide="Rechercher un plongeur du club…" texteVide="Aucun plongeur ne correspond." />
-                  <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'ed-prenom-' + g.id + '-' + i">
-                  <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'ed-nom-' + g.id + '-' + i">
-                  <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
-                         [name]="'ed-aptitude-' + g.id + '-' + i">
-                  <input type="text" placeholder="Qualification préparée" [(ngModel)]="m.qualificationPreparee"
-                         [name]="'ed-qualif-' + g.id + '-' + i">
-                  <input type="email" [placeholder]="placeholderEmail(m)" [(ngModel)]="m.email"
-                         [name]="'ed-email-' + g.id + '-' + i" autocomplete="off">
-                  <button type="button" class="bouton-discret danger" (click)="retirerMembre(brouillonMembres, i)">
-                    ✕
-                  </button>
-                </div>
-              }
-              <div class="actions">
-                <button type="button" class="bouton-discret" (click)="ajouterMembre(brouillonMembres)">
-                  + Plongeur
-                </button>
-                <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer(g)">
-                  {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                </button>
-                <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
-              </div>
-            } @else {
               <div class="ligne">
                 <div class="identite">
                   <span class="nom">{{ g.nom }}</span>
@@ -126,16 +97,67 @@ function membreVide(): MembreGroupeVue {
                 </div>
               </div>
 
-              @if (envoiOuvert() === g.id) {
-                <div class="envoi">
-                  <h3>Envoyer les paramètres par e-mail</h3>
+                <div class="actions">
+                  <button type="button" class="bouton-discret" (click)="commencerEdition(g)">Modifier</button>
+                  <button type="button" class="bouton-discret" (click)="ouvrirEnvoi(g)">
+                    Envoyer les paramètres par e-mail
+                  </button>
+                  <button type="button" class="bouton-discret danger" (click)="supprimer(g)">Supprimer</button>
+                </div>
+          </li>
+        }
+      </ul>
+    }
+
+    <app-dialogue [ouvert]="groupeEnEdition() !== null" [large]="true" [erreur]="message()" (fermer)="annulerEdition()"
+                  [titre]="'Modifier « ' + (groupeEnEdition()?.nom ?? '') + ' »'">
+      @if (groupeEnEdition(); as g) {
+              <label for="nom-edition">Nom du groupe</label>
+              <input id="nom-edition" type="text" [(ngModel)]="nomEdition" name="nom-edition">
+
+              @for (m of brouillonMembres(); track m; let i = $index) {
+                <div class="ligne-membre">
+                  <app-combobox class="selecteur-connu" [idChamp]="'ed-connu-' + i"
+                                [options]="optionsConnus()" [valeur]="indexConnu(m)"
+                                (valeurChange)="choisirPlongeurConnu(brouillonMembres, i, $event)"
+                                aide="Rechercher un plongeur du club…" texteVide="Aucun plongeur ne correspond." />
+                  <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'ed-prenom-' + i">
+                  <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'ed-nom-' + i">
+                  <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
+                         [name]="'ed-aptitude-' + i">
+                  <input type="text" placeholder="Qualification préparée" [(ngModel)]="m.qualificationPreparee"
+                         [name]="'ed-qualif-' + i">
+                  <input type="email" [placeholder]="placeholderEmail(m)" [(ngModel)]="m.email"
+                         [name]="'ed-email-' + i" autocomplete="off">
+                  <button type="button" class="bouton-discret danger" (click)="retirerMembre(brouillonMembres, i)"
+                          aria-label="Retirer ce plongeur">
+                    ✕
+                  </button>
+                </div>
+              }
+              <button type="button" class="bouton-discret" (click)="ajouterMembre(brouillonMembres)">
+                + Plongeur
+              </button>
+              <div class="actions-dialogue">
+                <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer(g)">
+                  {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+                </button>
+                <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
+              </div>
+      }
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="groupeEnvoi() !== null" titre="Envoyer les paramètres par e-mail" [erreur]="message()"
+                  (fermer)="envoiOuvert.set(null)">
+      @if (groupeEnvoi(); as g) {
                   <p class="secondaire">
                     En fin de séjour : chaque plongeur du groupe reçoit un e-mail avec ses seules plongées de la
                     sortie (date, site, profondeur, durée, heures, paliers et membres de sa palanquée), relevées
                     sur les fiches de sécurité.
                   </p>
-                  <label [for]="'sortie-' + g.id">Sortie</label>
-                  <select [id]="'sortie-' + g.id" [(ngModel)]="sortieChoisie" [name]="'sortie-' + g.id">
+                  <p class="secondaire">Groupe « {{ g.nom }} ».</p>
+                  <label for="sortie-envoi">Sortie</label>
+                  <select id="sortie-envoi" [(ngModel)]="sortieChoisie" name="sortie-envoi">
                     <option [ngValue]="null" disabled>Choisir la sortie…</option>
                     @for (s of sorties(); track s.id) {
                       <option [ngValue]="s.id">{{ s.nom }} ({{ s.nombrePlongees }} plongée{{ s.nombrePlongees > 1 ? 's' : '' }})</option>
@@ -159,35 +181,21 @@ function membreVide(): MembreGroupeVue {
                       @if (b.echecs.length > 0) { <p>Échec de l'envoi : {{ b.echecs.join(', ') }}.</p> }
                     </div>
                   }
-                  <div class="actions">
+                  <div class="actions-dialogue">
                     <button type="button" class="bouton-principal" [disabled]="envoiEmails() || sortieChoisie === null"
                             (click)="envoyerParametres(g)">
                       {{ envoiEmails() ? 'Envoi…' : 'Envoyer les e-mails' }}
                     </button>
                     <button type="button" class="bouton-discret" (click)="envoiOuvert.set(null)">Fermer</button>
                   </div>
-                </div>
-              } @else {
-                <div class="actions">
-                  <button type="button" class="bouton-discret" (click)="commencerEdition(g)">Modifier</button>
-                  <button type="button" class="bouton-discret" (click)="ouvrirEnvoi(g)">
-                    Envoyer les paramètres par e-mail
-                  </button>
-                  <button type="button" class="bouton-discret danger" (click)="supprimer(g)">Supprimer</button>
-                </div>
-              }
-            }
-          </li>
-        }
-      </ul>
-    }
+      }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
     #saison { max-width: 320px; margin-bottom: var(--pas-2); }
-    .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
-    .panneau h2 { margin-bottom: 4px; }
+    .nouveau { margin-bottom: var(--pas-2); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
     .ligne-membre { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin: var(--pas) 0; }
@@ -202,10 +210,7 @@ function membreVide(): MembreGroupeVue {
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
-    .envoi { margin-top: var(--pas-2); padding: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
-    .envoi h3 { margin-bottom: 4px; }
-    .envoi select { max-width: 420px; }
-    .envoi .alerte p { margin: 2px 0; }
+    .alerte p { margin: 2px 0; }
 
     @media (max-width: 600px) {
       .ligne { flex-direction: column; }
@@ -224,15 +229,18 @@ export class GroupesComponent {
   message = signal<string | null>(null);
   envoi = signal(false);
 
+  creationOuverte = signal(false);
   nomNouveauGroupe = '';
   nouveauxMembres = signal<MembreGroupeVue[]>([membreVide()]);
 
   enEditionId = signal<number | null>(null);
+  groupeEnEdition = computed(() => this.liste().find(g => g.id === this.enEditionId()) ?? null);
   nomEdition = '';
   brouillonMembres = signal<MembreGroupeVue[]>([]);
 
   /** Groupe dont le panneau d'envoi des paramètres par e-mail est ouvert. */
   envoiOuvert = signal<number | null>(null);
+  groupeEnvoi = computed(() => this.liste().find(g => g.id === this.envoiOuvert()) ?? null);
   sorties = signal<SortieVue[]>([]);
   sortieChoisie: number | null = null;
   envoiEmails = signal(false);
@@ -381,6 +389,11 @@ export class GroupesComponent {
     }));
   }
 
+  ouvrirCreation(): void {
+    this.message.set(null);
+    this.creationOuverte.set(true);
+  }
+
   creerGroupe(): void {
     const saisonId = this.saisonId();
     if (!saisonId) return;
@@ -395,6 +408,7 @@ export class GroupesComponent {
     this.api.creerGroupePlongeurs({ nom: this.nomNouveauGroupe, saisonId, membres }).subscribe({
       next: groupe => {
         this.envoi.set(false);
+        this.creationOuverte.set(false);
         this.liste.set([...this.liste(), groupe]);
         this.nomNouveauGroupe = '';
         this.nouveauxMembres.set([membreVide()]);

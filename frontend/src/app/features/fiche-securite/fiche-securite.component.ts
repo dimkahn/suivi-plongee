@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
+import { DialogueComponent } from '../../core/dialogue.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
@@ -90,7 +91,7 @@ interface FormulaireEntete {
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, ComboboxComponent],
+  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, ComboboxComponent, DialogueComponent],
   template: `
     <!-- La liste rouvre sur la date de la séance, pas sur toutes les dates. -->
     <a routerLink="/fiches-securite" [queryParams]="{ date: seance()?.date ?? null }"
@@ -191,7 +192,7 @@ interface FormulaireEntete {
               <option [ngValue]="g.id">{{ g.nom }} ({{ g.membres.length }})</option>
             }
           </select>
-          <button type="button" class="bouton-discret" (click)="creationGroupeOuverte.set(!creationGroupeOuverte())">
+          <button type="button" class="bouton-discret" (click)="message.set(null); creationGroupeOuverte.set(true)">
             + Nouveau groupe
           </button>
           @if (groupeSelectionneId()) {
@@ -249,16 +250,19 @@ interface FormulaireEntete {
           </div>
         }
 
-        @if (creationGroupeOuverte()) {
-          <div class="ligne-groupe">
-            <input type="text" placeholder="Nom du groupe (ex. Séjour Égypte mai 2026)"
-                   [ngModel]="nomNouveauGroupe()" (ngModelChange)="nomNouveauGroupe.set($event)" name="nomGroupe">
+        <app-dialogue [ouvert]="creationGroupeOuverte()" titre="Nouveau groupe de plongeurs" [erreur]="message()"
+                      (fermer)="creationGroupeOuverte.set(false)">
+          <p class="secondaire">Le groupe reprend les plongeurs déjà placés dans les palanquées de cette fiche.</p>
+          <label for="nom-groupe">Nom du groupe</label>
+          <input id="nom-groupe" type="text" placeholder="ex. Séjour Égypte mai 2026"
+                 [ngModel]="nomNouveauGroupe()" (ngModelChange)="nomNouveauGroupe.set($event)" name="nomGroupe">
+          <div class="actions-dialogue">
             <button type="button" class="bouton-principal" [disabled]="envoiGroupe()" (click)="creerGroupe()">
               Créer à partir des plongeurs de cette fiche
             </button>
             <button type="button" class="bouton-discret" (click)="creationGroupeOuverte.set(false)">Annuler</button>
           </div>
-        }
+        </app-dialogue>
 
         @if (groupeSelectionne(); as g) {
           <div cdkDropList id="pool" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"

@@ -16,6 +16,7 @@ import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { periodeDuMois, plageMois } from '../../core/progression';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 /** Un suivi affiché (milieu naturel ou entraînement), augmenté de l'information « pas encore envoyé ». */
 interface SuiviAffiche {
@@ -47,7 +48,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 @Component({
   selector: 'app-grille',
   standalone: true,
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent],
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -137,32 +138,17 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   non renseigné
                 }
               </dd>
-              @if (tailles(); as t) {
-                <dt><label for="taille-gilet">Taille de gilet</label></dt>
-                <dd><input id="taille-gilet" type="text" maxlength="20" placeholder="ex. M, XS, 12 ans" [(ngModel)]="t.tailleGilet"></dd>
-                <dt><label for="taille-combinaison">Taille de combinaison</label></dt>
-                <dd><input id="taille-combinaison" type="text" maxlength="20" placeholder="ex. T3, L" [(ngModel)]="t.tailleCombinaison"></dd>
-                <dd class="actions-tailles">
-                  <button type="button" class="bouton-principal" (click)="enregistrerTailles(g.eleveId)"
-                          [disabled]="enregistrementTailles() || !reseau.enLigne()">
-                    {{ enregistrementTailles() ? 'Enregistrement…' : 'Enregistrer' }}
+              <dt>Taille de gilet</dt><dd>{{ g.tailleGilet || 'non renseignée' }}</dd>
+              <dt>Taille de combinaison</dt>
+              <dd>
+                {{ g.tailleCombinaison || 'non renseignée' }}
+                @if (peutModifierTailles()) {
+                  <button type="button" class="lien-historique modifier-tailles"
+                          (click)="ouvrirTailles(g.tailleGilet, g.tailleCombinaison)">
+                    Modifier les tailles
                   </button>
-                  <button type="button" class="bouton-discret" (click)="tailles.set(null)">Annuler</button>
-                  @if (!reseau.enLigne()) { <span class="secondaire">Enregistrement possible au retour du réseau.</span> }
-                </dd>
-              } @else {
-                <dt>Taille de gilet</dt><dd>{{ g.tailleGilet || 'non renseignée' }}</dd>
-                <dt>Taille de combinaison</dt>
-                <dd>
-                  {{ g.tailleCombinaison || 'non renseignée' }}
-                  @if (peutModifierTailles()) {
-                    <button type="button" class="lien-historique modifier-tailles"
-                            (click)="tailles.set({ tailleGilet: g.tailleGilet ?? '', tailleCombinaison: g.tailleCombinaison ?? '' })">
-                      Modifier les tailles
-                    </button>
-                  }
-                </dd>
-              }
+                }
+              </dd>
               <dt>E-mail</dt><dd>{{ g.email || 'non renseigné' }}</dd>
               <dt>Téléphone</dt><dd>{{ g.telephone || 'non renseigné' }}</dd>
               <dt>Contact d'urgence</dt>
@@ -175,6 +161,23 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 }
               </dd>
             </dl>
+            <app-dialogue [ouvert]="tailles() !== null" [titre]="'Tailles de ' + g.eleve" [erreur]="message()"
+                          (fermer)="tailles.set(null)">
+              @if (tailles(); as t) {
+                <label class="champ-taille" for="taille-gilet">Taille de gilet</label>
+                <input id="taille-gilet" type="text" maxlength="20" placeholder="ex. M, XS, 12 ans" [(ngModel)]="t.tailleGilet">
+                <label class="champ-taille" for="taille-combinaison">Taille de combinaison</label>
+                <input id="taille-combinaison" type="text" maxlength="20" placeholder="ex. T3, L" [(ngModel)]="t.tailleCombinaison">
+                @if (!reseau.enLigne()) { <p class="secondaire">Enregistrement possible au retour du réseau.</p> }
+                <div class="actions-dialogue">
+                  <button type="button" class="bouton-principal" (click)="enregistrerTailles(g.eleveId)"
+                          [disabled]="enregistrementTailles() || !reseau.enLigne()">
+                    {{ enregistrementTailles() ? 'Enregistrement…' : 'Enregistrer' }}
+                  </button>
+                  <button type="button" class="bouton-discret" (click)="tailles.set(null)">Annuler</button>
+                </div>
+              }
+            </app-dialogue>
           }
         </div>
       </div>
@@ -540,8 +543,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .infos-supplementaires .caci-expire { color: var(--en-cours); }
     .infos-supplementaires label { margin: 0; font-weight: 700; }
     .infos-supplementaires input { margin: 0; max-width: 200px; }
-    .actions-tailles { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
-    .actions-tailles .bouton-principal { width: auto; margin-top: 0; }
+    .champ-taille { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .modifier-tailles { display: block; }
 
     .barre-seance {
@@ -764,6 +766,11 @@ export class GrilleComponent implements OnDestroy {
   peutModifierTailles = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
 
   /** Demande le réseau : pas de file hors ligne pour le dossier de l'élève. */
+  ouvrirTailles(tailleGilet: string | null, tailleCombinaison: string | null): void {
+    this.message.set(null);
+    this.tailles.set({ tailleGilet: tailleGilet ?? '', tailleCombinaison: tailleCombinaison ?? '' });
+  }
+
   enregistrerTailles(eleveId: number): void {
     const t = this.tailles();
     if (!t) return;

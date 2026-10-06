@@ -8,6 +8,7 @@ import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -51,7 +52,8 @@ function formulaireVide(): FormulaireSeance {
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, ProgrammeSeanceComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, ProgrammeSeanceComponent,
+            DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -62,12 +64,10 @@ function formulaireVide(): FormulaireSeance {
           évaluation y est rattachée.
         </p>
       </div>
-      @if (!panneauOuvert()) {
-        <div class="boutons-entete">
-          <button type="button" class="bouton-principal" (click)="ouvrir('SEANCE')">Nouvelle séance</button>
-          <button type="button" class="bouton-discret" (click)="ouvrir('SEJOUR')">Séjour de plongée</button>
-        </div>
-      }
+      <div class="boutons-entete">
+        <button type="button" class="bouton-principal" (click)="ouvrir('SEANCE')">Nouvelle séance</button>
+        <button type="button" class="bouton-discret" (click)="ouvrir('SEJOUR')">Séjour de plongée</button>
+      </div>
     </div>
     <a routerLink="/admin/seances/generer" class="bouton-discret lien-generation">
       Générer toutes les séances d'une saison…
@@ -75,9 +75,8 @@ function formulaireVide(): FormulaireSeance {
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (panneauOuvert() === 'SEANCE') {
-    <section class="carte panneau" id="nouvelle-seance">
-      <h2>Nouvelle séance</h2>
+    <app-dialogue [ouvert]="panneauOuvert() === 'SEANCE'" titre="Nouvelle séance" [erreur]="message()"
+                  (fermer)="fermerPanneau('SEANCE')">
       @if (formulaireCreation(); as f) {
         <label for="date">Date</label>
         <input id="date" type="date" name="date" [(ngModel)]="f.dateSeance">
@@ -105,19 +104,17 @@ function formulaireVide(): FormulaireSeance {
         <textarea id="commentaire" name="commentaire" rows="2"
                   [(ngModel)]="f.commentaire" placeholder="Facultatif"></textarea>
 
-        <div class="actions">
+        <div class="actions-dialogue">
           <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
             {{ envoi() ? 'Création…' : 'Créer la séance' }}
           </button>
           <button type="button" class="bouton-discret" (click)="panneauOuvert.set(null)">Annuler</button>
         </div>
       }
-    </section>
-    }
+    </app-dialogue>
 
-    @if (panneauOuvert() === 'SEJOUR') {
-    <section class="carte panneau" id="sejour">
-      <h2>Séjour de plongée</h2>
+    <app-dialogue [ouvert]="panneauOuvert() === 'SEJOUR'" titre="Séjour de plongée" [erreur]="message()"
+                  (fermer)="fermerPanneau('SEJOUR')">
       <p class="secondaire">
         Crée d'un coup les séances d'un séjour : une par jour et par plongée.
         Chaque info complémentaire (bateau, groupe…) ajoute une série :
@@ -188,7 +185,7 @@ function formulaireVide(): FormulaireSeance {
           }
         </p>
 
-        <div class="actions">
+        <div class="actions-dialogue">
           <button type="button" class="bouton-principal" (click)="creerSejour()"
                   [disabled]="envoi() || a.total === 0">
             {{ envoi() ? 'Création…' : a.total > 0 ? 'Créer les ' + a.total + ' séances' : 'Créer les séances' }}
@@ -196,8 +193,7 @@ function formulaireVide(): FormulaireSeance {
           <button type="button" class="bouton-discret" (click)="panneauOuvert.set(null)">Annuler</button>
         </div>
       }
-    </section>
-    }
+    </app-dialogue>
 
     <div class="onglets" role="group" aria-label="Affichage des séances">
       <button type="button" class="bouton-discret" [class.actif]="vue() === 'LISTE'"
@@ -243,50 +239,6 @@ function formulaireVide(): FormulaireSeance {
       <ul>
         @for (s of seancesAffichees(); track s.id) {
           <li class="carte">
-            @if (edition() === s.id) {
-              @if (formulaireEdition(); as f) {
-                <label [for]="'date-' + s.id">Date</label>
-                <input [id]="'date-' + s.id" type="date" name="date" [(ngModel)]="f.dateSeance">
-
-                <label [for]="'ordre-' + s.id">N° de plongée dans la journée</label>
-                <input [id]="'ordre-' + s.id" type="number" min="1" name="ordre" [(ngModel)]="f.ordre">
-
-                <label [for]="'milieu-' + s.id">Milieu</label>
-                <select [id]="'milieu-' + s.id" name="milieu" [(ngModel)]="f.milieu" [disabled]="!s.modifiable">
-                  <option value="ARTIFICIEL">Piscine / fosse (artificiel)</option>
-                  <option value="NATUREL">Mer / lac / carrière (naturel)</option>
-                </select>
-
-                <label [for]="'lieu-' + s.id">Lieu</label>
-                <input [id]="'lieu-' + s.id" type="text" name="lieu" [(ngModel)]="f.lieu">
-
-                <label [for]="'site-' + s.id">Site de plongée</label>
-                <input [id]="'site-' + s.id" type="text" name="site" [(ngModel)]="f.site">
-
-                <label [for]="'profondeur-' + s.id">Profondeur max (m)</label>
-                <input [id]="'profondeur-' + s.id" type="number" min="0" name="profondeur"
-                       [(ngModel)]="f.profondeurMax" [disabled]="!s.modifiable">
-
-                <label [for]="'commentaire-' + s.id">Info complémentaire</label>
-                <textarea [id]="'commentaire-' + s.id" name="commentaire" rows="2"
-                          [(ngModel)]="f.commentaire"></textarea>
-
-                @if (!s.modifiable) {
-                  <p class="secondaire">
-                    Milieu et profondeur ne peuvent plus changer : des présences ou évaluations
-                    sont déjà rattachées à cette séance.
-                  </p>
-                }
-
-                <div class="actions">
-                  <button type="button" class="bouton-principal" (click)="enregistrer(s)"
-                          [disabled]="envoi()">
-                    {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                  </button>
-                  <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
-                </div>
-              }
-            } @else {
               <div class="ligne">
                 <div class="identite">
                   <span class="nom">{{ s.date | dateFr }}{{ ' (n° ' + s.ordre + ')' }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</span>
@@ -309,11 +261,56 @@ function formulaireVide(): FormulaireSeance {
                   }
                 </div>
               </div>
-            }
           </li>
         }
       </ul>
     }
+
+    <app-dialogue [ouvert]="seanceEnEdition() !== null" titre="Modifier la séance" [erreur]="message()"
+                  (fermer)="annulerEdition()">
+      @if (seanceEnEdition(); as s) {
+        @if (formulaireEdition(); as f) {
+          <label for="edition-date">Date</label>
+          <input id="edition-date" type="date" name="date" [(ngModel)]="f.dateSeance">
+
+          <label for="edition-ordre">N° de plongée dans la journée</label>
+          <input id="edition-ordre" type="number" min="1" name="ordre" [(ngModel)]="f.ordre">
+
+          <label for="edition-milieu">Milieu</label>
+          <select id="edition-milieu" name="milieu" [(ngModel)]="f.milieu" [disabled]="!s.modifiable">
+            <option value="ARTIFICIEL">Piscine / fosse (artificiel)</option>
+            <option value="NATUREL">Mer / lac / carrière (naturel)</option>
+          </select>
+
+          <label for="edition-lieu">Lieu</label>
+          <input id="edition-lieu" type="text" name="lieu" [(ngModel)]="f.lieu">
+
+          <label for="edition-site">Site de plongée</label>
+          <input id="edition-site" type="text" name="site" [(ngModel)]="f.site">
+
+          <label for="edition-profondeur">Profondeur max (m)</label>
+          <input id="edition-profondeur" type="number" min="0" name="profondeur"
+                 [(ngModel)]="f.profondeurMax" [disabled]="!s.modifiable">
+
+          <label for="edition-commentaire">Info complémentaire</label>
+          <textarea id="edition-commentaire" name="commentaire" rows="2" [(ngModel)]="f.commentaire"></textarea>
+
+          @if (!s.modifiable) {
+            <p class="secondaire">
+              Milieu et profondeur ne peuvent plus changer : des présences ou évaluations
+              sont déjà rattachées à cette séance.
+            </p>
+          }
+
+          <div class="actions-dialogue">
+            <button type="button" class="bouton-principal" (click)="enregistrer(s)" [disabled]="envoi()">
+              {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+            <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
+          </div>
+        }
+      }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -322,14 +319,12 @@ function formulaireVide(): FormulaireSeance {
     .entete > div:first-child { flex: 1 1 320px; }
     .boutons-entete { display: flex; gap: var(--pas); flex-wrap: wrap; }
     .lien-generation { display: inline-flex; align-items: center; text-decoration: none; }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-3) 0; }
     .deux-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--pas-2); }
     .infos { border: none; margin: var(--pas-2) 0 0; padding: 0; }
     .infos legend { font-weight: 700; font-size: .9375rem; margin-bottom: var(--pas); padding: 0; }
     .ligne-info { display: flex; gap: var(--pas); margin-bottom: var(--pas); }
     .ligne-info input { flex: 1; margin: 0; }
     .apercu { margin: var(--pas-2) 0 0; }
-    .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     textarea { resize: vertical; }
 
@@ -396,6 +391,7 @@ export class SeancesComponent {
   panneauOuvert = signal<'SEANCE' | 'SEJOUR' | null>(null);
 
   edition = signal<number | null>(null);
+  seanceEnEdition = computed(() => this.liste().find(s => s.id === this.edition()) ?? null);
   formulaireEdition = signal<FormulaireSeance | null>(null);
 
   constructor() {
@@ -420,11 +416,15 @@ export class SeancesComponent {
     this.panneauOuvert.set(panneau);
   }
 
-  /** Ouvre le formulaire de création, date pré-remplie, et le fait défiler à l'écran. */
+  /** Fermeture du dialogue (croix, Échap) : seulement s'il s'agit bien de celui qui est ouvert. */
+  fermerPanneau(panneau: 'SEANCE' | 'SEJOUR'): void {
+    if (this.panneauOuvert() === panneau) this.panneauOuvert.set(null);
+  }
+
+  /** Ouvre le formulaire de création, date pré-remplie. */
   preparerCreation(date: string): void {
     this.formulaireCreation.set({ ...formulaireVide(), dateSeance: date });
     this.ouvrir('SEANCE');
-    setTimeout(() => document.getElementById('nouvelle-seance')?.scrollIntoView({ behavior: 'smooth' }));
   }
 
   /** Recalculé à chaque rendu : le formulaire est un objet muté par ngModel, pas un signal. */
