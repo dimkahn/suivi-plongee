@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
 import { normaliser } from '../../core/seance-lieu';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 const LIBELLES_STATUT: Record<string, string> = {
@@ -14,7 +15,7 @@ const LIBELLES_STATUT: Record<string, string> = {
 
 @Component({
   selector: 'app-cursus-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -24,16 +25,13 @@ const LIBELLES_STATUT: Record<string, string> = {
           automatiquement, il ne bougera plus même si le MFT est révisé en cours de saison.
         </p>
       </div>
-      @if (!creationOuverte()) {
-        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle inscription</button>
-      }
+      <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle inscription</button>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (creationOuverte()) {
-    <section class="carte panneau">
-      <h2>Nouvelle inscription</h2>
+    <app-dialogue [ouvert]="creationOuverte()" titre="Nouvelle inscription" [erreur]="message()"
+                  (fermer)="creationOuverte.set(false)">
 
       <label for="saison">Saison</label>
       <select id="saison" name="saison" [ngModel]="saisonId()" (ngModelChange)="choisirSaison($event)">
@@ -142,14 +140,13 @@ const LIBELLES_STATUT: Record<string, string> = {
         }
       }
 
-      <div class="actions">
+      <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="inscrire()" [disabled]="envoi()">
           {{ envoi() ? 'Inscription…' : 'Inscrire' }}
         </button>
         <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
       </div>
-    </section>
-    }
+    </app-dialogue>
 
     <section class="filtres">
       <div>
@@ -169,35 +166,6 @@ const LIBELLES_STATUT: Record<string, string> = {
       <ul>
         @for (c of listeFiltree(); track c.id) {
           <li class="carte">
-            @if (edition() === c.id) {
-              @if (formulaireEdition(); as f) {
-                <span class="nom">{{ c.eleve }}</span><span class="secondaire">&nbsp;· {{ c.saison }}</span>
-                <label [for]="'niveau-' + c.id">Niveau préparé</label>
-                <select [id]="'niveau-' + c.id" name="niveauEdition" [(ngModel)]="f.niveau">
-                  @for (n of niveaux; track n) { <option [value]="n">{{ n }}</option> }
-                  <option value="MAINTIEN">Aucun — maintien, sans formation</option>
-                </select>
-                @if (f.niveau !== c.niveau) {
-                  <p class="secondaire">
-                    Possible seulement si aucune compétence n'a encore été notée
-                    @if (f.niveau === 'MAINTIEN') { ni aucune présence }
-                    pour cette formation.
-                  </p>
-                }
-                @if (f.niveau !== 'MAINTIEN') {
-                <label [for]="'statut-' + c.id">Statut</label>
-                <select [id]="'statut-' + c.id" name="statut" [(ngModel)]="f.statut">
-                  @for (s of statuts; track s) { <option [value]="s">{{ libelleStatut(s) }}</option> }
-                </select>
-                }
-                <div class="actions">
-                  <button type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
-                    {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                  </button>
-                  <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
-                </div>
-              }
-            } @else {
               <div class="ligne">
                 <div class="identite">
                   <span class="nom">{{ c.eleve }}</span>
@@ -210,11 +178,43 @@ const LIBELLES_STATUT: Record<string, string> = {
               <div class="actions">
                 <button type="button" class="bouton-discret" (click)="commencerEdition(c)">Modifier</button>
               </div>
-            }
           </li>
         }
       </ul>
     }
+
+    <app-dialogue [ouvert]="cursusEnEdition() !== null" [erreur]="message()" (fermer)="annulerEdition()"
+                  [titre]="'Modifier l’inscription de ' + (cursusEnEdition()?.eleve ?? '')">
+      @if (cursusEnEdition(); as c) {
+        @if (formulaireEdition(); as f) {
+          <p class="secondaire">{{ c.niveau }} · {{ c.saison }}</p>
+          <label for="niveau-edition">Niveau préparé</label>
+          <select id="niveau-edition" name="niveauEdition" [(ngModel)]="f.niveau">
+            @for (n of niveaux; track n) { <option [value]="n">{{ n }}</option> }
+            <option value="MAINTIEN">Aucun — maintien, sans formation</option>
+          </select>
+          @if (f.niveau !== c.niveau) {
+            <p class="secondaire">
+              Possible seulement si aucune compétence n'a encore été notée
+              @if (f.niveau === 'MAINTIEN') { ni aucune présence }
+              pour cette formation.
+            </p>
+          }
+          @if (f.niveau !== 'MAINTIEN') {
+            <label for="statut-edition">Statut</label>
+            <select id="statut-edition" name="statut" [(ngModel)]="f.statut">
+              @for (s of statuts; track s) { <option [value]="s">{{ libelleStatut(s) }}</option> }
+            </select>
+          }
+          <div class="actions-dialogue">
+            <button type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
+              {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+            <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
+          </div>
+        }
+      }
+    </app-dialogue>
 
     @if (adhesionsFiltrees().length > 0) {
       <h2 class="titre-maintien">Maintien, sans formation</h2>
@@ -241,8 +241,6 @@ const LIBELLES_STATUT: Record<string, string> = {
     h1 { margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete > div { flex: 1 1 320px; }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
-    .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
     .filtres { display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); margin-bottom: var(--pas-3); }
@@ -381,6 +379,7 @@ export class CursusAdminComponent {
     [...this.groupes()].sort((a, b) => a.ordre - b.ordre).find(g => g.niveauPrepare === this.niveauSignal()) ?? null);
 
   edition = signal<number | null>(null);
+  cursusEnEdition = computed(() => this.liste().find(c => c.id === this.edition()) ?? null);
   formulaireEdition = signal<{
     statut: string; niveau: 'N1' | 'N2' | 'N3' | 'MAINTIEN';
   } | null>(null);
@@ -482,6 +481,8 @@ export class CursusAdminComponent {
         this.choisirEleve(c);
       }
     } else if (ev.key === 'Escape') {
+      // Échap referme d'abord la liste, pas la fenêtre de dialogue.
+      if (this.comboboxOuvert()) ev.preventDefault();
       this.comboboxOuvert.set(false);
     }
   }

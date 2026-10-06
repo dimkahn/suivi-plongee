@@ -139,6 +139,8 @@ export class ComboboxComponent {
         this.choisir(o);
       }
     } else if (ev.key === 'Escape') {
+      // Dans une fenêtre de dialogue, Échap referme d'abord la liste, pas la fenêtre.
+      if (this.ouvert()) ev.preventDefault();
       this.ouvert.set(false);
     }
   }

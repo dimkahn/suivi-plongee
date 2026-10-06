@@ -1,10 +1,10 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
+import { DialogueComponent } from '../../core/dialogue.component';
 import { normaliser } from '../../core/seance-lieu';
 import {
   DemandeEspaceBassin, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue, MoniteurOptionVue, SaisonVue
@@ -34,7 +34,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
  */
 @Component({
   selector: 'app-groupes-entrainement',
-  imports: [FormsModule, NgTemplateOutlet, ComboboxComponent],
+  imports: [FormsModule, ComboboxComponent, DialogueComponent],
   template: `
     <h1>Groupes d'entraînement</h1>
     <p class="secondaire">
@@ -55,15 +55,12 @@ interface FormulaireEspace extends DemandeEspaceBassin {
     @if (chargement()) {
       <p class="secondaire">Chargement…</p>
     } @else {
-      @if (groupes().length === 0 && !formulaire()) {
+      @if (groupes().length === 0) {
         <div class="carte vide"><p>Aucun groupe pour cette saison.</p></div>
       }
       <ul class="groupes">
         @for (g of groupes(); track g.id; let premier = $first, dernier = $last, i = $index) {
           <li class="carte groupe">
-            @if (formulaire()?.id === g.id) {
-              <ng-container *ngTemplateOutlet="formulaireGroupe" />
-            } @else {
               <div class="entete-groupe">
                 <span class="nom">{{ g.nom }}</span>
                 <span class="secondaire">
@@ -83,25 +80,19 @@ interface FormulaireEspace extends DemandeEspaceBassin {
                 </span>
               </div>
               <div class="actions">
-                <button type="button" class="bouton-discret" (click)="modifier(g)" [disabled]="formulaire() !== null">Modifier</button>
+                <button type="button" class="bouton-discret" (click)="modifier(g)">Modifier</button>
                 <button type="button" class="bouton-discret" (click)="deplacer(i, -1)" [disabled]="premier || envoi()"
                         [attr.aria-label]="'Monter ' + g.nom">Monter</button>
                 <button type="button" class="bouton-discret" (click)="deplacer(i, 1)" [disabled]="dernier || envoi()"
                         [attr.aria-label]="'Descendre ' + g.nom">Descendre</button>
                 <button type="button" class="bouton-discret danger" (click)="supprimer(g)">Supprimer</button>
               </div>
-            }
           </li>
         }
-        @if (formulaire()?.id === null) {
-          <li class="carte groupe"><ng-container *ngTemplateOutlet="formulaireGroupe" /></li>
-        }
       </ul>
-      @if (formulaire() === null) {
-        <button type="button" class="bouton-discret" (click)="nouveau()" [disabled]="saisonId() === null">
-          Nouveau groupe
-        </button>
-      }
+      <button type="button" class="bouton-discret" (click)="nouveau()" [disabled]="saisonId() === null">
+        Nouveau groupe
+      </button>
 
       <h2>Moniteurs sans groupe ({{ moniteursSansGroupe().length }})</h2>
       <p class="secondaire">
@@ -120,7 +111,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
               </div>
               <select [attr.aria-label]="'Groupe de ' + m.nomComplet" [ngModel]="null"
                       (ngModelChange)="ajouterMoniteurAuGroupe(m, $event)"
-                      [disabled]="groupes().length === 0 || envoi() || formulaire() !== null">
+                      [disabled]="groupes().length === 0 || envoi()">
                 <option [ngValue]="null">— Ajouter à un groupe —</option>
                 @for (g of groupes(); track g.id) { <option [ngValue]="g.id">{{ g.nom }}</option> }
               </select>
@@ -185,9 +176,6 @@ interface FormulaireEspace extends DemandeEspaceBassin {
         <ul class="espaces">
           @for (e of espaces(); track e.id) {
             <li class="carte espace">
-              @if (formulaireEspace()?.id === e.id) {
-                <ng-container *ngTemplateOutlet="formulaireBassin" />
-              } @else {
                 <div class="identite">
                   <span class="nom">{{ e.nom }}{{ e.actif ? '' : ' (désactivé)' }}</span>
                   <span class="secondaire">
@@ -197,24 +185,18 @@ interface FormulaireEspace extends DemandeEspaceBassin {
                   </span>
                 </div>
                 <div class="actions">
-                  <button type="button" class="bouton-discret" (click)="modifierEspace(e)"
-                          [disabled]="formulaireEspace() !== null">Modifier</button>
+                  <button type="button" class="bouton-discret" (click)="modifierEspace(e)">Modifier</button>
                   <button type="button" class="bouton-discret danger" (click)="supprimerEspace(e)">Supprimer</button>
                 </div>
-              }
             </li>
           }
-          @if (formulaireEspace()?.id === null) {
-            <li class="carte espace"><ng-container *ngTemplateOutlet="formulaireBassin" /></li>
-          }
         </ul>
-        @if (formulaireEspace() === null) {
-          <button type="button" class="bouton-discret" (click)="nouvelEspace()">Ajouter un espace</button>
-        }
+        <button type="button" class="bouton-discret" (click)="nouvelEspace()">Ajouter un espace</button>
       </details>
     }
 
-    <ng-template #formulaireGroupe>
+    <app-dialogue [ouvert]="formulaire() !== null" [erreur]="message()" (fermer)="formulaire.set(null)"
+                  [titre]="formulaire()?.id === null ? 'Nouveau groupe' : 'Modifier le groupe'">
       @if (formulaire(); as f) {
         <div class="formulaire">
           <label for="nom-groupe">Nom du groupe</label>
@@ -277,7 +259,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
                         (valeurChange)="ajouterEncadrant(f, $event)"
                         aide="Rechercher un moniteur…" texteVide="Aucun moniteur ne correspond." />
 
-          <div class="actions">
+          <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
@@ -285,9 +267,10 @@ interface FormulaireEspace extends DemandeEspaceBassin {
           </div>
         </div>
       }
-    </ng-template>
+    </app-dialogue>
 
-    <ng-template #formulaireBassin>
+    <app-dialogue [ouvert]="formulaireEspace() !== null" [erreur]="message()" (fermer)="formulaireEspace.set(null)"
+                  [titre]="formulaireEspace()?.id === null ? 'Nouvel espace du bassin' : 'Modifier l’espace'">
       @if (formulaireEspace(); as f) {
         <div class="formulaire">
           <label for="nom-espace">Nom</label>
@@ -310,7 +293,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
           <label class="case">
             <input type="checkbox" [(ngModel)]="f.actif"> Proposé dans le planning
           </label>
-          <div class="actions">
+          <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="enregistrerEspace()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
@@ -318,7 +301,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
           </div>
         </div>
       }
-    </ng-template>
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`

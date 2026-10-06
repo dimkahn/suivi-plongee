@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { DemandeSortie, SeancePossibleVue, SeanceSortieVue, SortieVue } from '../../core/modeles';
 import { DateFrPipe, dateFr, periode } from '../../core/date-fr';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 const JOURS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
@@ -21,7 +22,7 @@ function sortieVide(): DemandeSortie {
  */
 @Component({
   selector: 'app-sorties',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
   template: `
     @if (auth.estAdmin()) {
       <a routerLink="/admin" class="retour">← Administration</a>
@@ -36,16 +37,14 @@ function sortieVide(): DemandeSortie {
           Les prêts de matériel se rattachent à la sortie entière.
         </p>
       </div>
-      @if (!creationOuverte()) {
-        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle sortie</button>
-      }
+      <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle sortie</button>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (creationOuverte()) {
-      <form class="carte panneau" (ngSubmit)="creer()">
-        <h2>Nouvelle sortie</h2>
+    <app-dialogue [ouvert]="creationOuverte()" titre="Nouvelle sortie" [erreur]="message()" [large]="true"
+                  (fermer)="creationOuverte.set(false)">
+      <form (ngSubmit)="creer()">
         <div class="grille">
           <div>
             <label for="nom">Nom *</label>
@@ -67,14 +66,14 @@ function sortieVide(): DemandeSortie {
         <label for="remarques">Remarques</label>
         <textarea id="remarques" name="remarques" rows="2" [(ngModel)]="nouvelle.remarques"
                   placeholder="Rendez-vous, hébergement…"></textarea>
-        <div class="actions">
+        <div class="actions-dialogue">
           <button type="submit" class="bouton-principal" [disabled]="envoi()">
             {{ envoi() ? 'Création…' : 'Créer puis choisir les plongées' }}
           </button>
           <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
         </div>
       </form>
-    }
+    </app-dialogue>
 
     <div class="onglets" role="tablist">
       <button type="button" role="tab" class="bouton-discret" [class.actif]="recentes()"
@@ -91,32 +90,6 @@ function sortieVide(): DemandeSortie {
       <ul class="sorties">
         @for (s of liste(); track s.id) {
           <li class="carte">
-            @if (edition() === s.id) {
-              <div class="grille">
-                <div>
-                  <label [for]="'nom-' + s.id">Nom</label>
-                  <input [id]="'nom-' + s.id" [(ngModel)]="brouillon.nom" maxlength="120">
-                </div>
-                <div>
-                  <label [for]="'lieu-' + s.id">Lieu</label>
-                  <input [id]="'lieu-' + s.id" [(ngModel)]="brouillon.lieu" maxlength="120">
-                </div>
-                <div>
-                  <label [for]="'debut-' + s.id">Du</label>
-                  <input [id]="'debut-' + s.id" type="date" [(ngModel)]="brouillon.dateDebut">
-                </div>
-                <div>
-                  <label [for]="'fin-' + s.id">Au</label>
-                  <input [id]="'fin-' + s.id" type="date" [min]="brouillon.dateDebut" [(ngModel)]="brouillon.dateFin">
-                </div>
-              </div>
-              <label [for]="'remarques-' + s.id">Remarques</label>
-              <textarea [id]="'remarques-' + s.id" rows="2" [(ngModel)]="brouillon.remarques"></textarea>
-              <div class="actions">
-                <button type="button" class="bouton-principal" (click)="enregistrer(s)" [disabled]="envoi()">Enregistrer</button>
-                <button type="button" class="bouton-discret" (click)="edition.set(null)">Annuler</button>
-              </div>
-            } @else {
               <div class="ligne">
                 <div class="identite">
                   <span class="nom">{{ s.nom }}</span>
@@ -129,15 +102,62 @@ function sortieVide(): DemandeSortie {
                 </span>
               </div>
               @if (s.remarques) { <p class="texte-libre secondaire">{{ s.remarques }}</p> }
-              @if (s.seances.length > 0 && choix() !== s.id) {
+              @if (s.seances.length > 0) {
                 <ul class="seances">
                   @for (se of s.seances; track se.id) { <li>{{ libelleSeance(se) }}</li> }
                 </ul>
               }
 
-              @if (choix() === s.id) {
-                <div class="choix">
-                  <h3>Plongées de la sortie</h3>
+                <div class="actions">
+                  <button type="button" class="bouton-principal" (click)="ouvrirChoix(s)">Choisir les plongées</button>
+                  @if (s.nombrePlongees > 0) {
+                    <button type="button" class="bouton-discret" (click)="imprimerFiches(s)"
+                            [disabled]="impression() === s.id">
+                      {{ impression() === s.id ? 'Génération…' : 'Imprimer les fiches de sécurité' }}
+                    </button>
+                  }
+                  <button type="button" class="bouton-discret" (click)="commencerEdition(s)">Modifier</button>
+                  <button type="button" class="bouton-discret danger" (click)="supprimer(s)">Supprimer</button>
+                </div>
+          </li>
+        }
+      </ul>
+    }
+
+    <app-dialogue [ouvert]="sortieEnEdition() !== null" titre="Modifier la sortie" [erreur]="message()" [large]="true"
+                  (fermer)="edition.set(null)">
+      <div class="grille">
+        <div>
+          <label for="edition-nom">Nom</label>
+          <input id="edition-nom" [(ngModel)]="brouillon.nom" maxlength="120">
+        </div>
+        <div>
+          <label for="edition-lieu">Lieu</label>
+          <input id="edition-lieu" [(ngModel)]="brouillon.lieu" maxlength="120">
+        </div>
+        <div>
+          <label for="edition-debut">Du</label>
+          <input id="edition-debut" type="date" [(ngModel)]="brouillon.dateDebut">
+        </div>
+        <div>
+          <label for="edition-fin">Au</label>
+          <input id="edition-fin" type="date" [min]="brouillon.dateDebut" [(ngModel)]="brouillon.dateFin">
+        </div>
+      </div>
+      <label for="edition-remarques">Remarques</label>
+      <textarea id="edition-remarques" rows="2" [(ngModel)]="brouillon.remarques"></textarea>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+          {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="edition.set(null)">Annuler</button>
+      </div>
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="sortieEnChoix() !== null" [large]="true"
+                  [titre]="'Plongées de « ' + (sortieEnChoix()?.nom ?? '') + ' »'"
+                  [erreur]="message()" (fermer)="choix.set(null)">
+      @if (sortieEnChoix(); as s) {
                   <p class="secondaire">
                     Les séances du {{ s.dateDebut | dateFr }} au {{ s.dateFin | dateFr }}. Cochez celles qui font partie
                     de la sortie ; une séance déjà prise par une autre sortie n'est pas proposée.
@@ -191,38 +211,20 @@ function sortieVide(): DemandeSortie {
                     </button>
                   </details>
 
-                  <div class="actions">
+                  <div class="actions-dialogue">
                     <button type="button" class="bouton-principal" (click)="enregistrerSeances(s)" [disabled]="envoi()">
                       {{ envoi() ? 'Enregistrement…' : 'Enregistrer les plongées' }}
                     </button>
-                    <button type="button" class="bouton-discret" (click)="choix.set(null)">Fermer</button>
+                    <button type="button" class="bouton-discret" (click)="choix.set(null)">Annuler</button>
                   </div>
-                </div>
-              } @else {
-                <div class="actions">
-                  <button type="button" class="bouton-principal" (click)="ouvrirChoix(s)">Choisir les plongées</button>
-                  @if (s.nombrePlongees > 0) {
-                    <button type="button" class="bouton-discret" (click)="imprimerFiches(s)"
-                            [disabled]="impression() === s.id">
-                      {{ impression() === s.id ? 'Génération…' : 'Imprimer les fiches de sécurité' }}
-                    </button>
-                  }
-                  <button type="button" class="bouton-discret" (click)="commencerEdition(s)">Modifier</button>
-                  <button type="button" class="bouton-discret danger" (click)="supprimer(s)">Supprimer</button>
-                </div>
-              }
-            }
-          </li>
-        }
-      </ul>
-    }
+      }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete h1 { margin-bottom: var(--pas); }
-    .panneau { padding: var(--pas-3); margin: var(--pas-2) 0; max-width: 760px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 var(--pas-2); }
     textarea { resize: vertical; }
@@ -241,8 +243,6 @@ function sortieVide(): DemandeSortie {
     .texte-libre { white-space: pre-line; margin: var(--pas) 0 0; }
     .seances { margin: var(--pas) 0 0; padding-left: 1.25rem; display: grid; gap: 2px; font-size: .9375rem; }
 
-    .choix { margin-top: var(--pas-2); padding: var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
-    .choix h3 { margin-bottom: 4px; }
     .possibles { list-style: none; margin: var(--pas) 0 0; padding: 0; border: 1px solid var(--trait);
                  border-radius: var(--r-s); background: var(--carte); }
     .possibles li { padding: 0 var(--pas-2); border-bottom: 1px solid var(--trait); }
@@ -254,10 +254,6 @@ function sortieVide(): DemandeSortie {
     .creation-plongees summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
     .creation-plongees .bouton-discret { margin-top: var(--pas-2); }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
-
-    @media (max-width: 600px) {
-      .panneau { padding: var(--pas-2); }
-    }
   `]
 })
 export class SortiesComponent {
@@ -276,9 +272,11 @@ export class SortiesComponent {
   nouvelle = sortieVide();
 
   edition = signal<number | null>(null);
+  sortieEnEdition = computed(() => this.liste().find(s => s.id === this.edition()) ?? null);
   brouillon = sortieVide();
 
   choix = signal<number | null>(null);
+  sortieEnChoix = computed(() => this.liste().find(s => s.id === this.choix()) ?? null);
   possibles = signal<SeancePossibleVue[]>([]);
   cochees = signal<Set<number>>(new Set());
   plongees = { parJour: 2, site: '', profondeurMax: null as number | null };
@@ -343,7 +341,9 @@ export class SortiesComponent {
     this.edition.set(s.id);
   }
 
-  enregistrer(s: SortieVue): void {
+  enregistrer(): void {
+    const s = this.sortieEnEdition();
+    if (!s) return;
     if (!this.brouillon.nom.trim() || !this.brouillon.dateDebut) {
       this.message.set('Le nom et la date de début sont obligatoires.');
       return;
