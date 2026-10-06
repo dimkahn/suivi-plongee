@@ -177,7 +177,7 @@ class MonCompteTest {
     }
 
     @Test
-    @DisplayName("L'admin saisit la fin de validite du CACI ; le moniteur la voit sans pouvoir la changer")
+    @DisplayName("L'admin saisit la date d'examen du CACI ; le moniteur voit la fin de validite sans pouvoir la changer")
     void caciEncadrant() throws Exception {
         String email = nouveauMoniteur();
         String admin = jeton("presidente@club.fr", "plongee2026");
@@ -195,8 +195,9 @@ class MonCompteTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                  {"email":"%s","nom":"Test","prenom":"Moniteur","niveauEncadrement":"E1",
-                                  "certificatValideJusquAu":"2027-06-30"}""".formatted(email)))
+                                  "caciDateExamen":"2026-06-30"}""".formatted(email)))
                 .andExpect(status().isOk())
+                // La fin de validité se déduit de l'examen : un an après.
                 .andExpect(jsonPath("$.certificatValideJusquAu").value("2027-06-30"));
 
         String moi = jeton(email, MOT_DE_PASSE);

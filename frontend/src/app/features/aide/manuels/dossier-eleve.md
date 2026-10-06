@@ -15,8 +15,8 @@ Administration, « Élèves » : identité, CACI (date de l'examen, fin de valid
 ## Pas à pas
 
 1. Administration, puis « Élèves ».
-2. Ajoutez un élève : identité, contact d'urgence, date de fin de validité du certificat médical.
-3. Recopiez la date de l'examen (la fin de validité se propose un an plus tard), le médecin signataire et les mêmes cases que sur le CACI FFESSM. « L'ensemble des activités » exclut les cases « ou bien seulement ». Les moniteurs voient tout cela en touchant la case CACI d'« Infos élèves ».
+2. Ajoutez un élève : identité, contact d'urgence.
+3. Recopiez la date de l'examen : la fin de validité se calcule seule, un an plus tard. Puis le médecin signataire et les mêmes cases que sur le CACI FFESSM. « L'ensemble des activités » exclut les cases « ou bien seulement ». Les moniteurs voient tout cela en touchant la case CACI d'« Infos élèves ».
 4. Pour un mineur, cochez l'autorisation du responsable légal : elle couvre la pratique.
 5. Le droit à l'image est un accord à part : sans lui, pas de photo.
 6. Enregistrez, puis inscrivez-le en formation (voir « Inscrire un élève en formation »).

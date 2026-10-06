@@ -50,16 +50,16 @@ class CaciMoniteurTest {
     @DisplayName("L'ADMIN saisit la date de l'examen, le médecin et les cases du CACI d'un moniteur")
     void saisieParLAdmin() throws Exception {
         String admin = jeton("presidente@club.fr");
-        String examen = LocalDate.now().minusMonths(1).toString();
-        String fin = LocalDate.now().plusMonths(11).toString();
+        LocalDate examen = LocalDate.now().minusMonths(1);
         JsonNode cree = json.readTree(mvc.perform(post("/api/admin/moniteurs").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("""
                                 {"email":"caci.moniteur@club.fr","nom":"Caci","prenom":"Moniteur",
-                                 "niveauEncadrement":"E2","certificatValideJusquAu":"%s","caciDateExamen":"%s",
+                                 "niveauEncadrement":"E2","caciDateExamen":"%s",
                                  "caciMedecin":"DU_SPORT","caciActivites":["LIMITES_PRECONISATIONS","ENSEMBLE_ACTIVITES"]}"""
-                                .formatted(fin, examen)))
+                                .formatted(examen)))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
-        assertThat(cree.get("caciDateExamen").asText()).isEqualTo(examen);
+        assertThat(cree.get("caciDateExamen").asText()).isEqualTo(examen.toString());
+        assertThat(cree.get("certificatValideJusquAu").asText()).isEqualTo(examen.plusYears(1).toString());
         assertThat(cree.get("caciMedecin").asText()).isEqualTo("DU_SPORT");
         assertThat(textes(cree.get("caciActivites"))).containsExactly("ENSEMBLE_ACTIVITES", "LIMITES_PRECONISATIONS");
 

@@ -1,6 +1,7 @@
 package fr.club.plongee.formation.domain;
 
 import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.Caci;
 import fr.club.plongee.commun.ConvertisseurActivitesCaci;
 import fr.club.plongee.commun.MedecinCaci;
 import fr.club.plongee.securite.domain.Utilisateur;
@@ -33,8 +34,8 @@ public class Eleve {
     private String numeroLicence;
 
     /**
-     * Donnee de sante : on ne conserve que la date de fin de validite,
-     * jamais le certificat medical lui-meme.
+     * Fin de validite du CACI, deduite de la date de l'examen (voir
+     * {@link Caci#finValidite}). Jamais le certificat medical lui-meme.
      */
     private LocalDate certificatValideJusquAu;
 
@@ -155,6 +156,19 @@ public class Eleve {
 
     public void setCertificatValideJusquAu(LocalDate certificatValideJusquAu) {
         this.certificatValideJusquAu = certificatValideJusquAu;
+    }
+
+    public Caci getCaci() {
+        return new Caci(caciDateExamen, caciMedecin, caciActivites);
+    }
+
+    /** Date de l'examen, médecin et cases, après vérification ; la fin de validité s'en déduit. */
+    public void setCaci(Caci caci) {
+        caci.verifier();
+        this.certificatValideJusquAu = caci.finValidite();
+        this.caciDateExamen = caci.dateExamen();
+        this.caciMedecin = caci.medecin();
+        setCaciActivites(caci.activites());
     }
 
     public LocalDate getCaciDateExamen() {

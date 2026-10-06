@@ -51,8 +51,8 @@ public class Utilisateur {
     private String numeroLicence;
 
     /**
-     * Fin de validite du CACI de l'encadrant. Donnee de sante : on ne stocke
-     * que cette date, jamais le certificat medical lui-meme.
+     * Fin de validite du CACI de l'encadrant, deduite de la date de l'examen
+     * (voir {@link Caci#finValidite}). Jamais le certificat medical lui-meme.
      */
     private LocalDate certificatValideJusquAu;
 
@@ -180,10 +180,10 @@ public class Utilisateur {
     }
 
     public Caci getCaci() {
-        return new Caci(certificatValideJusquAu, caciDateExamen, caciMedecin, caciActivites);
+        return new Caci(caciDateExamen, caciMedecin, caciActivites);
     }
 
-    /** Fin de validité, date de l'examen, médecin et cases, après vérification de la saisie. */
+    /** Date de l'examen, médecin et cases, après vérification ; la fin de validité s'en déduit. */
     public void setCaci(Caci caci) {
         caci.verifier();
         this.certificatValideJusquAu = caci.finValidite();

@@ -54,7 +54,7 @@ interface DemandeEleve {
   prenom: string;
   dateNaissance?: string | null;
   numeroLicence?: string | null;
-  certificatValideJusquAu?: string | null;
+  /** La fin de validité ne s'envoie pas : le serveur la déduit (examen + 1 an). */
   caciDateExamen?: string | null;
   caciMedecin?: string | null;
   caciActivites?: string[];
@@ -370,7 +370,6 @@ export class ApiService {
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
     niveauPlongeur?: string | null;
     numeroLicence?: string | null;
-    certificatValideJusquAu?: string | null;
     caciDateExamen?: string | null;
     caciMedecin?: string | null;
     caciActivites?: string[];
@@ -389,7 +388,6 @@ export class ApiService {
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
     niveauPlongeur: string | null;
     numeroLicence: string | null;
-    certificatValideJusquAu: string | null;
     caciDateExamen: string | null;
     caciMedecin: string | null;
     caciActivites: string[];

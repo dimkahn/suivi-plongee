@@ -1,23 +1,29 @@
-import { Component, input, model, ChangeDetectionStrategy } from '@angular/core';
-import { CACI_ENSEMBLE, CASES_CACI, MEDECINS_CACI } from './caci';
+import { Component, computed, input, model, ChangeDetectionStrategy } from '@angular/core';
+import { CACI_ENSEMBLE, CASES_CACI, MEDECINS_CACI, finValiditeCaci } from './caci';
+import { DateFrPipe, dateDuJour } from './date-fr';
 
 /**
  * Champs du CACI, communs au dossier d'un élève et à la fiche d'un moniteur :
- * fin de validité, date de l'examen, médecin signataire et cases cochées du
- * formulaire FFESSM. Chaque valeur se lie en double sens
- * (`[(finValidite)]`, `[(dateExamen)]`, `[(medecin)]`, `[(activites)]`).
+ * date de l'examen (la fin de validité, un an après, s'affiche sans se
+ * saisir), médecin signataire et cases cochées du formulaire FFESSM. Chaque
+ * valeur se lie en double sens (`[(dateExamen)]`, `[(medecin)]`, `[(activites)]`).
  * Les champs n'utilisent pas ngModel : ils ne s'inscrivent pas dans le
  * formulaire de l'écran parent.
  */
 @Component({
   selector: 'app-saisie-caci',
+  imports: [DateFrPipe],
   template: `
-    <label [for]="prefixe() + 'caci'">CACI valide jusqu'au</label>
-    <input [id]="prefixe() + 'caci'" type="date" [value]="finValidite()"
-           (change)="finValidite.set($any($event.target).value)">
     <label [for]="prefixe() + 'caciExamen'">Date de l'examen (CACI)</label>
-    <input [id]="prefixe() + 'caciExamen'" type="date" [value]="dateExamen()"
-           (change)="changerDateExamen($any($event.target).value)">
+    <input [id]="prefixe() + 'caciExamen'" type="date" [value]="dateExamen()" [max]="aujourdhui"
+           (input)="dateExamen.set($any($event.target).value)">
+    <p class="fin-validite" aria-live="polite">
+      @if (finValidite(); as fin) {
+        Valide jusqu'au <strong>{{ fin | dateFr }}</strong> (un an après l'examen).
+      } @else {
+        La fin de validité se calcule à partir de la date de l'examen.
+      }
+    </p>
     <label [for]="prefixe() + 'caciMedecin'">Médecin signataire</label>
     <select [id]="prefixe() + 'caciMedecin'" (change)="medecin.set($any($event.target).value)">
       <option value="" [selected]="!medecin()">Non renseigné</option>
@@ -47,6 +53,8 @@ import { CACI_ENSEMBLE, CASES_CACI, MEDECINS_CACI } from './caci';
     :host { display: block; }
     /* Mêmes étiquettes que les formulaires Élèves et Moniteurs. */
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
+    .fin-validite { margin: 4px 0 0; font-size: .875rem; color: var(--craie); }
+    .fin-validite strong { color: var(--encre); }
     .cases-caci { border: 1px solid var(--trait); border-radius: 8px; padding: var(--pas) var(--pas-2); margin: var(--pas) 0; }
     .cases-caci legend { font-weight: 700; padding: 0 4px; }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; margin: 0; font-weight: 400; }
@@ -58,7 +66,6 @@ import { CACI_ENSEMBLE, CASES_CACI, MEDECINS_CACI } from './caci';
 export class SaisieCaciComponent {
   /** Préfixe des identifiants, pour deux formulaires dans la même page. */
   prefixe = input('');
-  finValidite = model('');
   dateExamen = model('');
   medecin = model('');
   activites = model<string[]>([]);
@@ -78,14 +85,8 @@ export class SaisieCaciComponent {
     this.activites.set(cases);
   }
 
-  /** Le CACI vaut un an : la fin de validité se propose si elle est encore vide. */
-  changerDateExamen(date: string): void {
-    this.dateExamen.set(date);
-    if (date && !this.finValidite()) {
-      const fin = new Date(date + 'T12:00:00');
-      fin.setFullYear(fin.getFullYear() + 1);
-      fin.setDate(fin.getDate() - 1);
-      this.finValidite.set(`${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`);
-    }
-  }
+  /** Calculée, jamais saisie : le serveur fait le même calcul. */
+  finValidite = computed(() => finValiditeCaci(this.dateExamen()));
+  /** Pas d'examen dans le futur (le serveur le refuse aussi). */
+  readonly aujourdhui = dateDuJour();
 }

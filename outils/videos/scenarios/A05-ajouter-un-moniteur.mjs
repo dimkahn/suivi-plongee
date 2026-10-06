@@ -22,7 +22,8 @@ export default {
     await legende('Niveau d\'encadrement et niveau de plongeur sont distincts : un E1 peut n\'être que N2.', 0);
     await choisir('#niveau', 'E2', { exact: false });
     await choisir('#niveau-plongeur', 'N4', { exact: false });
-    await dater('#caci', '2027-08-31');
+    await legende('Pour le CACI, la date de l\'examen suffit : il vaut un an.', 0);
+    await dater('#caciExamen', '2026-08-31');
     await legende('Deux rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel).', 4000);
     await vignette();
     await toucher(page.getByRole('button', { name: 'Ajouter le moniteur' }), { apres: 2000 });
