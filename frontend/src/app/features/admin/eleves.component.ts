@@ -8,6 +8,8 @@ import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, SaisonVue } fr
 import { DateFrPipe } from '../../core/date-fr';
 import { etatCaci, libelleCaci } from '../../core/caci';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
+import { DialogueComponent } from '../../core/dialogue.component';
+import { NgTemplateOutlet } from '@angular/common';
 
 const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 
@@ -54,7 +56,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
 @Component({
   selector: 'app-eleves',
-  imports: [FormsModule, DateFrPipe, RecadragePhotoComponent],
+  imports: [FormsModule, NgTemplateOutlet, DateFrPipe, RecadragePhotoComponent, DialogueComponent],
   template: `
     <!-- Suggestions pour le gilet ; la taille reste libre. La combinaison n'en a pas : texte libre seulement. -->
     <datalist id="tailles-gilet">
@@ -65,56 +67,58 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         <h1>Élèves</h1>
         <p class="secondaire">Dossier, autorisation de pratiquer, droit à l'image et photo.</p>
       </div>
-      @if (!creationOuverte()) {
-        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvel élève</button>
-      }
+      <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvel élève</button>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (creationOuverte()) {
-    <section class="carte panneau">
-      <h2>Nouvel élève</h2>
-      @if (formulaireCreation(); as f) {
-        <label for="prenom">Prénom</label>
-        <input id="prenom" type="text" name="prenom" [(ngModel)]="f.prenom">
-        <label for="nom">Nom</label>
-        <input id="nom" type="text" name="nom" [(ngModel)]="f.nom">
-        <label for="naissance">Date de naissance</label>
-        <input id="naissance" type="date" name="naissance" [(ngModel)]="f.dateNaissance">
-        <label for="licence">N° de licence</label>
-        <input id="licence" type="text" name="licence" [(ngModel)]="f.numeroLicence" placeholder="Facultatif">
-        <label for="caci">CACI valide jusqu'au</label>
-        <input id="caci" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
-        <label for="niveau">Dernier niveau de plongée</label>
-        <input id="niveau" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
-               placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
-        <label for="email">E-mail</label>
-        <input id="email" type="email" name="email" [(ngModel)]="f.email" placeholder="Facultatif">
-        <label for="telephone">Téléphone</label>
-        <input id="telephone" type="tel" name="telephone" [(ngModel)]="f.telephone" placeholder="Facultatif">
-        <label for="contactUrgenceNom">Contact d'urgence — nom</label>
-        <input id="contactUrgenceNom" type="text" name="contactUrgenceNom" [(ngModel)]="f.contactUrgenceNom"
-               placeholder="Facultatif">
-        <label for="contactUrgenceTelephone">Contact d'urgence — téléphone</label>
-        <input id="contactUrgenceTelephone" type="tel" name="contactUrgenceTelephone"
-               [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
-        <div class="tailles">
-          <div>
-            <label for="tailleGilet">Taille de gilet stabilisateur</label>
-            <input id="tailleGilet" type="text" name="tailleGilet" [(ngModel)]="f.tailleGilet" maxlength="20"
-                   list="tailles-gilet" placeholder="Ex. M">
-          </div>
-          <div>
-            <label for="tailleCombinaison">Taille de combinaison</label>
-            <input id="tailleCombinaison" type="text" name="tailleCombinaison" [(ngModel)]="f.tailleCombinaison"
-                   maxlength="20" placeholder="Facultatif">
-          </div>
+    <!-- Champs du dossier, communs à la création (préfixe vide) et à la modification. -->
+    <ng-template #champsDossier let-f let-p="prefixe">
+      <label [for]="p + 'prenom'">Prénom</label>
+      <input [id]="p + 'prenom'" type="text" name="prenom" [(ngModel)]="f.prenom">
+      <label [for]="p + 'nom'">Nom</label>
+      <input [id]="p + 'nom'" type="text" name="nom" [(ngModel)]="f.nom">
+      <label [for]="p + 'naissance'">Date de naissance</label>
+      <input [id]="p + 'naissance'" type="date" name="naissance" [(ngModel)]="f.dateNaissance">
+      <label [for]="p + 'licence'">N° de licence</label>
+      <input [id]="p + 'licence'" type="text" name="licence" [(ngModel)]="f.numeroLicence" placeholder="Facultatif">
+      <label [for]="p + 'caci'">CACI valide jusqu'au</label>
+      <input [id]="p + 'caci'" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
+      <label [for]="p + 'niveau'">Dernier niveau de plongée</label>
+      <input [id]="p + 'niveau'" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
+             placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
+      <label [for]="p + 'email'">E-mail</label>
+      <input [id]="p + 'email'" type="email" name="email" [(ngModel)]="f.email" placeholder="Facultatif">
+      <label [for]="p + 'telephone'">Téléphone</label>
+      <input [id]="p + 'telephone'" type="tel" name="telephone" [(ngModel)]="f.telephone" placeholder="Facultatif">
+      <label [for]="p + 'contactUrgenceNom'">Contact d'urgence — nom</label>
+      <input [id]="p + 'contactUrgenceNom'" type="text" name="contactUrgenceNom" [(ngModel)]="f.contactUrgenceNom"
+             placeholder="Facultatif">
+      <label [for]="p + 'contactUrgenceTelephone'">Contact d'urgence — téléphone</label>
+      <input [id]="p + 'contactUrgenceTelephone'" type="tel" name="contactUrgenceTelephone"
+             [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
+      <div class="tailles">
+        <div>
+          <label [for]="p + 'tailleGilet'">Taille de gilet stabilisateur</label>
+          <input [id]="p + 'tailleGilet'" type="text" name="tailleGilet" [(ngModel)]="f.tailleGilet" maxlength="20"
+                 list="tailles-gilet" placeholder="Ex. M">
         </div>
-        <label class="case">
-          <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
-          Autorisation du responsable légal recueillie
-        </label>
+        <div>
+          <label [for]="p + 'tailleCombinaison'">Taille de combinaison</label>
+          <input [id]="p + 'tailleCombinaison'" type="text" name="tailleCombinaison" [(ngModel)]="f.tailleCombinaison"
+                 maxlength="20" placeholder="Facultatif">
+        </div>
+      </div>
+      <label class="case">
+        <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
+        Autorisation du responsable légal recueillie
+      </label>
+    </ng-template>
+
+    <app-dialogue [ouvert]="creationOuverte()" titre="Nouvel élève" [erreur]="message()"
+                  (fermer)="creationOuverte.set(false)">
+      @if (formulaireCreation(); as f) {
+        <ng-container *ngTemplateOutlet="champsDossier; context: { $implicit: f, prefixe: '' }" />
 
         <label for="saisonCreation">Saison</label>
         <select id="saisonCreation" name="saisonCreation" [ngModel]="saisonCreationId"
@@ -172,15 +176,34 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           <p class="secondaire">Pas de photo sans le droit à l'image.</p>
         }
 
-        <div class="actions">
+        <div class="actions-dialogue">
           <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
             {{ envoi() ? 'Création…' : "Ajouter l'élève" }}
           </button>
           <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
         </div>
       }
-    </section>
-    }
+      <!-- Dans le dialogue : le reste de la page est inerte tant qu'il est ouvert. -->
+      @if (recadrageCreation(); as fichier) {
+        <app-recadrage-photo [fichier]="fichier" [titre]="'Recadrer la photo du nouvel élève'"
+                             [enCours]="false" (valide)="garderPhotoCreation($event)"
+                             (annule)="recadrageCreation.set(null)" (illisible)="imageIllisibleCreation()" />
+      }
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="formulaireEdition() !== null"
+                  [titre]="'Modifier ' + (eleveEnEdition()?.prenom ?? '') + ' ' + (eleveEnEdition()?.nom ?? '')"
+                  [erreur]="message()" (fermer)="annulerEdition()">
+      @if (formulaireEdition(); as f) {
+        <ng-container *ngTemplateOutlet="champsDossier; context: { $implicit: f, prefixe: 'edition-' }" />
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+            {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
+        </div>
+      }
+    </app-dialogue>
 
     <section class="filtres">
       <div>
@@ -232,57 +255,6 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       <ul>
         @for (e of listeFiltree(); track e.id) {
           <li class="carte">
-            @if (edition() === e.id) {
-              @if (formulaireEdition(); as f) {
-                <label [for]="'prenom-' + e.id">Prénom</label>
-                <input [id]="'prenom-' + e.id" type="text" name="prenom" [(ngModel)]="f.prenom">
-                <label [for]="'nom-' + e.id">Nom</label>
-                <input [id]="'nom-' + e.id" type="text" name="nom" [(ngModel)]="f.nom">
-                <label [for]="'naissance-' + e.id">Date de naissance</label>
-                <input [id]="'naissance-' + e.id" type="date" name="naissance" [(ngModel)]="f.dateNaissance">
-                <label [for]="'licence-' + e.id">N° de licence</label>
-                <input [id]="'licence-' + e.id" type="text" name="licence" [(ngModel)]="f.numeroLicence">
-                <label [for]="'caci-' + e.id">CACI valide jusqu'au</label>
-                <input [id]="'caci-' + e.id" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
-                <label [for]="'niveau-' + e.id">Dernier niveau de plongée</label>
-                <input [id]="'niveau-' + e.id" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
-                       placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
-                <label [for]="'email-' + e.id">E-mail</label>
-                <input [id]="'email-' + e.id" type="email" name="email" [(ngModel)]="f.email"
-                       placeholder="Facultatif">
-                <label [for]="'telephone-' + e.id">Téléphone</label>
-                <input [id]="'telephone-' + e.id" type="tel" name="telephone" [(ngModel)]="f.telephone"
-                       placeholder="Facultatif">
-                <label [for]="'contactUrgenceNom-' + e.id">Contact d'urgence — nom</label>
-                <input [id]="'contactUrgenceNom-' + e.id" type="text" name="contactUrgenceNom"
-                       [(ngModel)]="f.contactUrgenceNom" placeholder="Facultatif">
-                <label [for]="'contactUrgenceTelephone-' + e.id">Contact d'urgence — téléphone</label>
-                <input [id]="'contactUrgenceTelephone-' + e.id" type="tel" name="contactUrgenceTelephone"
-                       [(ngModel)]="f.contactUrgenceTelephone" placeholder="Facultatif">
-                <div class="tailles">
-                  <div>
-                    <label [for]="'tailleGilet-' + e.id">Taille de gilet stabilisateur</label>
-                    <input [id]="'tailleGilet-' + e.id" type="text" name="tailleGilet" [(ngModel)]="f.tailleGilet"
-                           maxlength="20" list="tailles-gilet" placeholder="Ex. M">
-                  </div>
-                  <div>
-                    <label [for]="'tailleCombinaison-' + e.id">Taille de combinaison</label>
-                    <input [id]="'tailleCombinaison-' + e.id" type="text" name="tailleCombinaison"
-                           [(ngModel)]="f.tailleCombinaison" maxlength="20" placeholder="Facultatif">
-                  </div>
-                </div>
-                <label class="case">
-                  <input type="checkbox" name="autorisationLegale" [(ngModel)]="f.autorisationLegale">
-                  Autorisation du responsable légal recueillie
-                </label>
-                <div class="actions">
-                  <button type="button" class="bouton-principal" (click)="enregistrer(e)" [disabled]="envoi()">
-                    {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                  </button>
-                  <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
-                </div>
-              }
-            } @else {
               <div class="ligne">
                 @if (urlPhoto(e.id); as url) {
                   <img class="avatar" [src]="url" [alt]="e.prenom + ' ' + e.nom" width="56" height="56">
@@ -377,7 +349,6 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   }
                 </div>
               }
-            }
           </li>
         }
       </ul>
@@ -420,11 +391,6 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       }
     </section>
 
-    @if (recadrageCreation(); as fichier) {
-      <app-recadrage-photo [fichier]="fichier" [titre]="'Recadrer la photo du nouvel élève'"
-                           [enCours]="false" (valide)="garderPhotoCreation($event)"
-                           (annule)="recadrageCreation.set(null)" (illisible)="imageIllisibleCreation()" />
-    }
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.eleve.prenom + ' ' + r.eleve.nom"
                            [enCours]="recadrageEnCours()" (valide)="deposerPhoto($event)"
@@ -441,8 +407,6 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete > div { flex: 1 1 320px; }
     .entete .bouton-principal { width: auto; margin-top: 0; }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
-    .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; }
     .case input { width: auto; }
@@ -600,6 +564,7 @@ export class ElevesComponent {
   apercuCreation = signal<string | null>(null);
   recadrageCreation = signal<File | null>(null);
   edition = signal<number | null>(null);
+  eleveEnEdition = computed(() => this.liste().find(e => e.id === this.edition()) ?? null);
   formulaireEdition = signal<FormulaireEleve | null>(null);
 
   constructor() {
@@ -872,6 +837,8 @@ export class ElevesComponent {
   }
 
   annulerEdition(): void {
+    // Appelé aussi par la fermeture du dialogue qui suit un enregistrement : une seule fois.
+    if (this.edition() === null) return;
     this.edition.set(null);
     this.formulaireEdition.set(null);
     if (this.retour) void this.router.navigateByUrl(this.retour);
@@ -895,12 +862,12 @@ export class ElevesComponent {
     this.filtreStatut.set('TOUS');
     this.filtreCaci.set('TOUS');
     this.commencerEdition(e);
-    setTimeout(() => document.getElementById('prenom-' + e.id)?.scrollIntoView({ block: 'center' }));
   }
 
-  enregistrer(e: EleveVue): void {
+  enregistrer(): void {
+    const e = this.eleveEnEdition();
     const f = this.formulaireEdition();
-    if (!f) return;
+    if (!e || !f) return;
     this.envoi.set(true);
     this.api.modifierEleve(e.id, {
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,

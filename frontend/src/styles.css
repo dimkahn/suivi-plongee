@@ -150,6 +150,37 @@ input, select, textarea {
 .dialogue-seance .seances-du-jour button.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
 .dialogue-seance .seances-du-jour .milieu { font-size: .8125rem; font-weight: 400; }
 
+/* Créations et modifications (core/dialogue.component.ts) : le formulaire
+   s'ouvre devant la liste ; sur téléphone il prend tout l'écran et les
+   boutons restent visibles en bas, au-dessus du clavier. */
+.dialogue-formulaire {
+  width: min(520px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: 0 var(--pas-3) var(--pas-3);
+  border: none; border-radius: var(--r); box-shadow: var(--ombre); background: var(--carte); color: var(--encre);
+}
+.dialogue-formulaire.large { width: min(820px, calc(100vw - 16px)); }
+.dialogue-formulaire::backdrop { background: rgba(12, 53, 71, .5); }
+.dialogue-formulaire .entete-dialogue {
+  position: sticky; top: 0; z-index: 2; background: var(--carte);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--pas);
+  padding: var(--pas-2) 0 var(--pas); margin-bottom: var(--pas); border-bottom: 1px solid var(--trait);
+}
+.dialogue-formulaire .entete-dialogue h2 { margin: 0; }
+.dialogue-formulaire .fermer-dialogue { flex: none; min-width: 44px; padding: 0; }
+.dialogue-formulaire .actions-dialogue {
+  position: sticky; bottom: calc(-1 * var(--pas-3)); z-index: 2; background: var(--carte);
+  display: flex; gap: var(--pas); flex-wrap: wrap;
+  margin: var(--pas-3) 0 0; padding: var(--pas-2) 0 var(--pas-3); border-top: 1px solid var(--trait);
+}
+.dialogue-formulaire .actions-dialogue .bouton-principal { width: auto; margin-top: 0; }
+@media (max-width: 600px) {
+  .dialogue-formulaire, .dialogue-formulaire.large {
+    width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0;
+    padding: 0 var(--pas-2) var(--pas-2);
+  }
+  .dialogue-formulaire .actions-dialogue { bottom: calc(-1 * var(--pas-2)); padding-bottom: var(--pas-2); }
+  .dialogue-formulaire .actions-dialogue > button { flex: 1 1 auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
