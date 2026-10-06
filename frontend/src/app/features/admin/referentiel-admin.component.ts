@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DateFrPipe } from '../../core/date-fr';
+import { DialogueComponent } from '../../core/dialogue.component';
 import {
   BlocReferentielVue, CritereReferentielVue, DemandeBlocReferentiel, DemandeCritereReferentiel,
   DemandeReferentiel, ReferentielVue
@@ -61,7 +62,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
 
 @Component({
   selector: 'app-referentiel-admin',
-  imports: [FormsModule, DateFrPipe],
+  imports: [FormsModule, DateFrPipe, DialogueComponent],
   template: `
     <h1>Référentiel MFT</h1>
 
@@ -95,10 +96,114 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
         </button>
       </div>
 
-      @if (editionReferentiel(); as f) {
-        <section class="carte fiche formulaire">
-          <h2>{{ editionReferentielId() === 'nouveau' ? 'Nouvelle version' : 'Modifier la version' }}</h2>
+      @if (detail(); as r) {
+        <section class="carte fiche">
+          <div class="entete">
+            <span class="nom">
+              {{ r.niveau }} · MFT {{ r.versionMft }}
+              @if (!r.actif) { <span class="secondaire">(inactif)</span> }
+            </span>
+            <span class="secondaire">Source : {{ r.source ?? 'non renseignée' }}</span>
+          </div>
 
+          <div class="actions">
+            <button type="button" class="bouton-discret" (click)="commencerEditionReferentiel(r)">
+              Modifier cette version
+            </button>
+            <button type="button" class="bouton-discret danger" (click)="supprimerReferentiel(r)">
+              Supprimer cette version
+            </button>
+          </div>
+
+          <dl>
+            <dt>Âge minimum</dt><dd>{{ r.ageMinimum }} ans</dd>
+            <dt>Brevet prérequis</dt><dd>{{ r.niveauPrerequis ?? 'aucun' }}</dd>
+            <dt>Qualification requise</dt><dd>{{ r.qualificationRequise ?? 'aucune' }}</dd>
+            <dt>Milieu naturel exclusif</dt><dd>{{ r.milieuNaturelExclusif ? 'oui' : 'non' }}</dd>
+            <dt>Prérogative de profondeur</dt><dd>{{ r.prerogativeProfondeur }} m</dd>
+            <dt>Encadrant requis pour valider</dt><dd>{{ r.niveauEncadrantValidation }}</dd>
+            <dt>Encadrant requis pour délivrer</dt><dd>{{ r.niveauEncadrantDelivrance }}</dd>
+          </dl>
+
+          <h2>Blocs de compétences</h2>
+          <ul class="blocs">
+            @for (b of r.blocs; track b.id) {
+              <li class="carte bloc">
+                  <div class="entete-bloc">
+                    <span class="nom">
+                      {{ b.intitule }}
+                      @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
+                    </span>
+                    <span class="secondaire">
+                      {{ b.evaluationTransverse ? 'Évaluation transverse' : 'Évaluation par bloc' }}
+                      @if (b.validerEnDernier) { · à valider en dernier }
+                    </span>
+                  </div>
+
+                  @if (b.competenceAttendue) {
+                    <p class="competence-attendue">{{ b.competenceAttendue }}</p>
+                  }
+
+                  <ol>
+                    @for (c of b.criteres; track c.id) {
+                      <li>
+                          <span class="savoir-faire">{{ c.savoirFaire }}</span>
+                          @if (c.critereRealisation) {
+                            <span class="secondaire"> — {{ c.critereRealisation }}</span>
+                          }
+                          <button type="button" class="bouton-discret mini" (click)="commencerEditionCritere(b, c)">
+                            Modifier
+                          </button>
+                          <button type="button" class="bouton-discret mini danger"
+                                  (click)="supprimerCritere(r, b, c)">
+                            Supprimer
+                          </button>
+                      </li>
+                    }
+                  </ol>
+
+                  <button type="button" class="bouton-discret mini" (click)="commencerNouveauCritere(b)">
+                    Ajouter un critère
+                  </button>
+
+                  @if (b.comportement || b.theorie) {
+                    <dl class="matiere">
+                      @if (b.comportement) { <dt>Comportement</dt><dd>{{ b.comportement }}</dd> }
+                      @if (b.theorie) { <dt>Théorie</dt><dd>{{ b.theorie }}</dd> }
+                    </dl>
+                  }
+
+                  @if (b.modalitesEvaluation) {
+                    <p class="modalites">
+                      <span class="secondaire">Modalités d'évaluation —</span> {{ b.modalitesEvaluation }}
+                    </p>
+                  }
+
+                  <div class="actions">
+                    <button type="button" class="bouton-discret mini" (click)="commencerEditionBloc(b)">
+                      Modifier ce bloc
+                    </button>
+                    <button type="button" class="bouton-discret mini danger" (click)="supprimerBloc(r, b)">
+                      Supprimer ce bloc
+                    </button>
+                  </div>
+              </li>
+            }
+          </ul>
+
+          <button type="button" class="bouton-discret" (click)="commencerNouveauBloc(r)">
+            Ajouter un bloc
+          </button>
+        </section>
+      } @else {
+        <div class="carte vide"><p>Aucune version enregistrée pour ce niveau.</p></div>
+      }
+    }
+
+    <app-dialogue [ouvert]="editionReferentiel() !== null" [erreur]="message()" (fermer)="annulerEditionReferentiel()"
+                  [titre]="editionReferentielId() === 'nouveau' ? 'Nouvelle version ' + selectionNiveau() : 'Modifier la version'">
+      @if (editionReferentiel(); as f) {
+        <div class="formulaire">
           <label for="versionMft">Version MFT</label>
           <input id="versionMft" type="text" name="versionMft" [(ngModel)]="f.versionMft">
 
@@ -158,50 +263,22 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
           <input id="prerogativeProfondeur" type="number" min="0" name="prerogativeProfondeur"
                  [(ngModel)]="f.prerogativeProfondeur">
 
-          <div class="actions">
+          <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="enregistrerReferentiel()"
                     [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="annulerEditionReferentiel()">Annuler</button>
           </div>
-        </section>
+        </div>
       }
+    </app-dialogue>
 
+    <app-dialogue [ouvert]="editionBloc() !== null" [erreur]="message()" (fermer)="annulerEditionBloc()"
+                  [titre]="editionBlocId() === 'nouveau' ? 'Nouveau bloc' : 'Modifier le bloc'">
+      @let b = { id: editionBlocId() };
       @if (detail(); as r) {
-        <section class="carte fiche">
-          <div class="entete">
-            <span class="nom">
-              {{ r.niveau }} · MFT {{ r.versionMft }}
-              @if (!r.actif) { <span class="secondaire">(inactif)</span> }
-            </span>
-            <span class="secondaire">Source : {{ r.source ?? 'non renseignée' }}</span>
-          </div>
-
-          <div class="actions">
-            <button type="button" class="bouton-discret" (click)="commencerEditionReferentiel(r)">
-              Modifier cette version
-            </button>
-            <button type="button" class="bouton-discret danger" (click)="supprimerReferentiel(r)">
-              Supprimer cette version
-            </button>
-          </div>
-
-          <dl>
-            <dt>Âge minimum</dt><dd>{{ r.ageMinimum }} ans</dd>
-            <dt>Brevet prérequis</dt><dd>{{ r.niveauPrerequis ?? 'aucun' }}</dd>
-            <dt>Qualification requise</dt><dd>{{ r.qualificationRequise ?? 'aucune' }}</dd>
-            <dt>Milieu naturel exclusif</dt><dd>{{ r.milieuNaturelExclusif ? 'oui' : 'non' }}</dd>
-            <dt>Prérogative de profondeur</dt><dd>{{ r.prerogativeProfondeur }} m</dd>
-            <dt>Encadrant requis pour valider</dt><dd>{{ r.niveauEncadrantValidation }}</dd>
-            <dt>Encadrant requis pour délivrer</dt><dd>{{ r.niveauEncadrantDelivrance }}</dd>
-          </dl>
-
-          <h2>Blocs de compétences</h2>
-          <ul class="blocs">
-            @for (b of r.blocs; track b.id) {
-              <li class="carte bloc">
-                @if (editionBlocId() === b.id && editionBloc(); as fb) {
+                @if (editionBloc(); as fb) {
                   <div class="formulaire">
                     <label [for]="'bloc-intitule-' + b.id">Intitulé</label>
                     <input [id]="'bloc-intitule-' + b.id" type="text" name="intitule" [(ngModel)]="fb.intitule">
@@ -234,146 +311,45 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                     <textarea [id]="'bloc-modalites-' + b.id" rows="2" name="modalitesEvaluation"
                               [ngModel]="fb.modalitesEvaluation ?? ''"
                               (ngModelChange)="fb.modalitesEvaluation = $event || null"></textarea>
-                    <div class="actions">
-                      <button type="button" class="bouton-principal" (click)="enregistrerBloc(r, b.id)"
+                    <div class="actions-dialogue">
+                      <button type="button" class="bouton-principal" (click)="enregistrerBloc(r, b.id!)"
                               [disabled]="envoi()">
-                        {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+                        {{ envoi() ? 'Enregistrement…' : (b.id === 'nouveau' ? 'Ajouter' : 'Enregistrer') }}
                       </button>
                       <button type="button" class="bouton-discret" (click)="annulerEditionBloc()">Annuler</button>
                     </div>
                   </div>
-                } @else {
-                  <div class="entete-bloc">
-                    <span class="nom">
-                      {{ b.intitule }}
-                      @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
-                    </span>
-                    <span class="secondaire">
-                      {{ b.evaluationTransverse ? 'Évaluation transverse' : 'Évaluation par bloc' }}
-                      @if (b.validerEnDernier) { · à valider en dernier }
-                    </span>
-                  </div>
-
-                  @if (b.competenceAttendue) {
-                    <p class="competence-attendue">{{ b.competenceAttendue }}</p>
-                  }
-
-                  <ol>
-                    @for (c of b.criteres; track c.id) {
-                      <li>
-                        @if (editionCritereCle() === (b.id + ':' + c.id) && editionCritere(); as fc) {
-                          <div class="formulaire">
-                            <label [for]="'critere-savoir-' + c.id">Savoir-faire</label>
-                            <input [id]="'critere-savoir-' + c.id" type="text" name="savoirFaire"
-                                   [(ngModel)]="fc.savoirFaire">
-                            <label [for]="'critere-realisation-' + c.id">Critère de réalisation</label>
-                            <textarea [id]="'critere-realisation-' + c.id" rows="2" name="critereRealisation"
-                                      [ngModel]="fc.critereRealisation ?? ''"
-                                      (ngModelChange)="fc.critereRealisation = $event || null"></textarea>
-                            <label [for]="'critere-ordre-' + c.id">Ordre</label>
-                            <input [id]="'critere-ordre-' + c.id" type="number" name="ordre"
-                                   [(ngModel)]="fc.ordre">
-                            <div class="actions">
-                              <button type="button" class="bouton-principal"
-                                      (click)="enregistrerCritere(r, b, c.id)" [disabled]="envoi()">
-                                {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                              </button>
-                              <button type="button" class="bouton-discret" (click)="annulerEditionCritere()">
-                                Annuler
-                              </button>
-                            </div>
-                          </div>
-                        } @else {
-                          <span class="savoir-faire">{{ c.savoirFaire }}</span>
-                          @if (c.critereRealisation) {
-                            <span class="secondaire"> — {{ c.critereRealisation }}</span>
-                          }
-                          <button type="button" class="bouton-discret mini" (click)="commencerEditionCritere(b, c)">
-                            Modifier
-                          </button>
-                          <button type="button" class="bouton-discret mini danger"
-                                  (click)="supprimerCritere(r, b, c)">
-                            Supprimer
-                          </button>
-                        }
-                      </li>
-                    }
-                  </ol>
-
-                  @if (editionCritereCle() === (b.id + ':nouveau') && editionCritere(); as fc) {
-                    <div class="formulaire nouveau-critere">
-                      <label [for]="'nouveau-critere-savoir-' + b.id">Savoir-faire</label>
-                      <input [id]="'nouveau-critere-savoir-' + b.id" type="text" name="savoirFaire"
-                             [(ngModel)]="fc.savoirFaire">
-                      <label [for]="'nouveau-critere-realisation-' + b.id">Critère de réalisation</label>
-                      <textarea [id]="'nouveau-critere-realisation-' + b.id" rows="2" name="critereRealisation"
-                                [ngModel]="fc.critereRealisation ?? ''"
-                                (ngModelChange)="fc.critereRealisation = $event || null"></textarea>
-                      <div class="actions">
-                        <button type="button" class="bouton-principal" (click)="enregistrerCritere(r, b, null)"
-                                [disabled]="envoi()">
-                          {{ envoi() ? 'Enregistrement…' : 'Ajouter' }}
-                        </button>
-                        <button type="button" class="bouton-discret" (click)="annulerEditionCritere()">Annuler</button>
-                      </div>
-                    </div>
-                  } @else {
-                    <button type="button" class="bouton-discret mini" (click)="commencerNouveauCritere(b)">
-                      Ajouter un critère
-                    </button>
-                  }
-
-                  @if (b.comportement || b.theorie) {
-                    <dl class="matiere">
-                      @if (b.comportement) { <dt>Comportement</dt><dd>{{ b.comportement }}</dd> }
-                      @if (b.theorie) { <dt>Théorie</dt><dd>{{ b.theorie }}</dd> }
-                    </dl>
-                  }
-
-                  @if (b.modalitesEvaluation) {
-                    <p class="modalites">
-                      <span class="secondaire">Modalités d'évaluation —</span> {{ b.modalitesEvaluation }}
-                    </p>
-                  }
-
-                  <div class="actions">
-                    <button type="button" class="bouton-discret mini" (click)="commencerEditionBloc(b)">
-                      Modifier ce bloc
-                    </button>
-                    <button type="button" class="bouton-discret mini danger" (click)="supprimerBloc(r, b)">
-                      Supprimer ce bloc
-                    </button>
-                  </div>
                 }
-              </li>
-            }
-          </ul>
-
-          @if (editionBlocId() === 'nouveau' && editionBloc(); as fb) {
-            <section class="carte fiche formulaire">
-              <h2>Nouveau bloc</h2>
-              <label for="nouveau-bloc-intitule">Intitulé</label>
-              <input id="nouveau-bloc-intitule" type="text" name="intitule" [(ngModel)]="fb.intitule">
-              <label for="nouveau-bloc-ordre">Ordre</label>
-              <input id="nouveau-bloc-ordre" type="number" name="ordre" [(ngModel)]="fb.ordre">
-              <div class="actions">
-                <button type="button" class="bouton-principal" (click)="enregistrerBloc(r, 'nouveau')"
-                        [disabled]="envoi()">
-                  {{ envoi() ? 'Enregistrement…' : 'Ajouter' }}
-                </button>
-                <button type="button" class="bouton-discret" (click)="annulerEditionBloc()">Annuler</button>
-              </div>
-            </section>
-          } @else {
-            <button type="button" class="bouton-discret" (click)="commencerNouveauBloc(r)">
-              Ajouter un bloc
-            </button>
-          }
-        </section>
-      } @else if (!editionReferentiel()) {
-        <div class="carte vide"><p>Aucune version enregistrée pour ce niveau.</p></div>
       }
-    }
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="editionCritere() !== null" [erreur]="message()" (fermer)="annulerEditionCritere()"
+                  [titre]="critereEnEdition()?.critereId === null ? 'Nouveau critère' : 'Modifier le critère'">
+      @if (detail(); as r) {
+        @if (critereEnEdition(); as cible) {
+          @if (editionCritere(); as fc) {
+            <div class="formulaire">
+              <p class="secondaire">{{ cible.bloc.intitule }}</p>
+              <label for="critere-savoir">Savoir-faire</label>
+              <input id="critere-savoir" type="text" name="savoirFaire" [(ngModel)]="fc.savoirFaire">
+              <label for="critere-realisation">Critère de réalisation</label>
+              <textarea id="critere-realisation" rows="2" name="critereRealisation"
+                        [ngModel]="fc.critereRealisation ?? ''"
+                        (ngModelChange)="fc.critereRealisation = $event || null"></textarea>
+              <label for="critere-ordre">Ordre</label>
+              <input id="critere-ordre" type="number" name="ordre" [(ngModel)]="fc.ordre">
+              <div class="actions-dialogue">
+                <button type="button" class="bouton-principal"
+                        (click)="enregistrerCritere(r, cible.bloc, cible.critereId)" [disabled]="envoi()">
+                  {{ envoi() ? 'Enregistrement…' : (cible.critereId === null ? 'Ajouter' : 'Enregistrer') }}
+                </button>
+                <button type="button" class="bouton-discret" (click)="annulerEditionCritere()">Annuler</button>
+              </div>
+            </div>
+          }
+        }
+      }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -472,6 +448,12 @@ export class ReferentielAdminComponent {
   /** Clé "blocId:critereId" ou "blocId:nouveau" pour savoir quel critère est en édition. */
   editionCritereCle = signal<string | null>(null);
   editionCritere = signal<DemandeCritereReferentiel | null>(null);
+  /** Bloc et critère (null : nouveau) visés par le dialogue d'un critère. */
+  critereEnEdition = computed(() => {
+    const [blocId, critereId] = this.editionCritereCle()?.split(':') ?? [];
+    const bloc = this.detail()?.blocs.find(b => String(b.id) === blocId);
+    return bloc ? { bloc, critereId: critereId === 'nouveau' ? null : Number(critereId) } : null;
+  });
 
   constructor() {
     void this.charger();
