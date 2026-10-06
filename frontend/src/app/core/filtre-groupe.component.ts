@@ -1,20 +1,30 @@
 import { Component, ChangeDetectionStrategy, computed, input, model } from '@angular/core';
 import { GroupeEntrainementVue } from './modeles';
 
-/** Filtre d'élèves par groupe d'entraînement : tous, un groupe, ou ceux qui ne sont dans aucun groupe. */
+/** Filtre par groupe d'entraînement : tous, un groupe, ou ceux qui ne sont dans aucun groupe. */
 export type FiltreGroupe = 'TOUS' | 'SANS' | number;
 
-/** L'élève passe-t-il le filtre ? */
-export function passeFiltreGroupe(eleveId: number, filtre: FiltreGroupe, groupes: GroupeEntrainementVue[]): boolean {
+/** Ce que l'on filtre : les élèves rangés dans les groupes, ou leurs encadrants attitrés (référents compris). */
+export type MembresGroupe = 'ELEVES' | 'ENCADRANTS';
+
+function estMembre(g: GroupeEntrainementVue, id: number, membres: MembresGroupe): boolean {
+  return membres === 'ELEVES' ? g.eleves.some(e => e.id === id) : g.encadrants.some(e => e.id === id);
+}
+
+/** L'élève (ou l'encadrant, selon {@code membres}) passe-t-il le filtre ? */
+export function passeFiltreGroupe(id: number, filtre: FiltreGroupe, groupes: GroupeEntrainementVue[],
+                                  membres: MembresGroupe = 'ELEVES'): boolean {
   if (filtre === 'TOUS') return true;
-  if (filtre === 'SANS') return !groupes.some(g => g.eleves.some(e => e.id === eleveId));
-  return groupes.find(g => g.id === filtre)?.eleves.some(e => e.id === eleveId) ?? false;
+  if (filtre === 'SANS') return !groupes.some(g => estMembre(g, id, membres));
+  const groupe = groupes.find(g => g.id === filtre);
+  return groupe ? estMembre(groupe, id, membres) : false;
 }
 
 /**
  * Boutons de filtre par groupe d'entraînement (ceux du planning du bassin),
- * communs aux pages Infos élèves, Présences et Trombinoscope. « Sans groupe »
- * n'apparaît que si des élèves affichés ne sont rangés dans aucun groupe.
+ * communs aux pages Infos élèves, Présences et Trombinoscope (élèves et
+ * moniteurs). « Sans groupe » n'apparaît que si des personnes affichées ne
+ * sont rangées dans aucun groupe.
  */
 @Component({
   selector: 'app-filtre-groupe',
@@ -41,9 +51,10 @@ export function passeFiltreGroupe(eleveId: number, filtre: FiltreGroupe, groupes
 })
 export class FiltreGroupeComponent {
   readonly groupes = input.required<GroupeEntrainementVue[]>();
-  /** Élèves affichés par la page : sert à proposer « Sans groupe » seulement s'il y en a. */
-  readonly eleveIds = input.required<number[]>();
+  /** Personnes affichées par la page : sert à proposer « Sans groupe » seulement s'il y en a. */
+  readonly ids = input.required<number[]>();
+  readonly membres = input<MembresGroupe>('ELEVES');
   readonly valeur = model<FiltreGroupe>('TOUS');
 
-  sansGroupe = computed(() => this.eleveIds().some(id => passeFiltreGroupe(id, 'SANS', this.groupes())));
+  sansGroupe = computed(() => this.ids().some(id => passeFiltreGroupe(id, 'SANS', this.groupes(), this.membres())));
 }

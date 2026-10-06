@@ -224,7 +224,8 @@ du soir. Le programme d'exercices du groupe d'accueil est ouvert à l'encadrant
 pour les séances de ce jour-là (`ProgrammeSeanceService`). Les filtres des pages
 Infos élèves, Présences et Trombinoscope sont les groupes d'entraînement de
 la saison ouverte (`FiltreGroupeComponent`), et non plus les niveaux
-PN1/PN2/PN3. Suite possible : rappel aux encadrants qui n'ont pas répondu.
+PN1/PN2/PN3 ; l'onglet Moniteurs du trombinoscope filtre de même sur les
+encadrants attitrés (`membres="ENCADRANTS"`). Suite possible : rappel aux encadrants qui n'ont pas répondu.
 
 **Matériel et prêts : le domaine du directeur technique (2026).** Rôle
 `DIRECTEUR_TECHNIQUE` (V29), cumulé avec MONITEUR, donné par un ADMIN dans
