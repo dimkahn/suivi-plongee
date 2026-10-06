@@ -2,10 +2,11 @@ import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
-import { couleurCaci, libelleCaci } from '../../core/caci';
+import { CASES_CACI, couleurCaci, libelleCaci } from '../../core/caci';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
-import { GroupeEntrainementVue, RosterVue } from '../../core/modeles';
+import { GroupeEntrainementVue, LigneRoster, RosterVue } from '../../core/modeles';
+import { DialogueComponent } from '../../core/dialogue.component';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DateFrPipe } from '../../core/date-fr';
 
@@ -16,7 +17,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink, FormsModule, DateFrPipe, FiltreGroupeComponent],
+  imports: [RouterLink, FormsModule, DateFrPipe, FiltreGroupeComponent, DialogueComponent],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
@@ -82,8 +83,13 @@ const LIBELLES: Record<string, string> = {
                 </td>
                 <td>{{ libellePreparation(e.niveau) }}</td>
                 @let couleur = couleurCaci(e.caciFinValidite);
-                <td [class]="couleur ? 'caci-' + couleur : 'alerte-cellule'" [title]="libelleCaci(e.caciFinValidite)">
-                  {{ couleur ? 'OK' : '⚠' }}
+                <td class="cellule-caci">
+                  <button type="button" class="bouton-caci" [class]="couleur ? 'caci-' + couleur : 'alerte-cellule'"
+                          [title]="libelleCaci(e.caciFinValidite)"
+                          [attr.aria-label]="libelleCaci(e.caciFinValidite) + ' — détail du CACI de ' + e.eleve"
+                          (click)="caciOuvert.set(e)">
+                    {{ couleur ? 'OK' : '⚠' }}
+                  </button>
                 </td>
                 <td>{{ e.seancesBloc }}</td>
                 <td>{{ e.seancesNage }}</td>
@@ -99,6 +105,37 @@ const LIBELLES: Record<string, string> = {
       </div>
       }
     }
+
+    <!-- Détail du CACI : dates et cases cochées par le médecin, en lecture seule (saisie dans le dossier de l'élève). -->
+    <app-dialogue [ouvert]="caciOuvert() !== null" [titre]="'CACI de ' + (caciOuvert()?.eleve ?? '')"
+                  (fermer)="caciOuvert.set(null)">
+      @if (caciOuvert(); as e) {
+        @let couleur = couleurCaci(e.caciFinValidite);
+        <p class="etat-caci" [class]="couleur ? 'caci-' + couleur : 'alerte-cellule'">{{ libelleCaci(e.caciFinValidite) }}</p>
+        <p>
+          Date de l'examen :
+          <strong>{{ e.caciDateExamen ? (e.caciDateExamen | dateFr) : 'non renseignée' }}</strong>
+        </p>
+        @if (e.caciActivites.length === 0) {
+          <p class="secondaire">Les cases cochées sur le CACI n'ont pas été saisies dans le dossier.</p>
+        }
+        @for (g of casesCaci; track g.titre) {
+          <h3 class="titre-cases">{{ g.titre }}</h3>
+          <ul class="cases-caci">
+            @for (c of g.cases; track c.code) {
+              @let cochee = e.caciActivites.includes(c.code);
+              <li [class.cochee]="cochee">
+                <span class="marque" role="img" [attr.aria-label]="cochee ? 'cochée' : 'non cochée'">{{ cochee ? '☑' : '☐' }}</span>
+                {{ c.libelle }}
+              </li>
+            }
+          </ul>
+        }
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="caciOuvert.set(null)">Fermer</button>
+        </div>
+      }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -149,11 +186,27 @@ const LIBELLES: Record<string, string> = {
     .caci-orange { color: var(--en-cours); font-weight: 700; }
     .caci-rouge { color: #B3261E; font-weight: 700; }
     .absence { color: var(--craie); }
+    /* La case CACI ouvre le détail : toute la cellule est cliquable, 44 px au moins. */
+    td.cellule-caci { padding: 0; }
+    .bouton-caci {
+      min-width: 56px; min-height: 44px; padding: 8px 12px; border: 0; background: none;
+      font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline dotted;
+    }
+    .bouton-caci:hover, .bouton-caci:focus-visible { background: var(--fond); }
+    .etat-caci { font-weight: 700; }
+    .titre-cases { margin: var(--pas-2) 0 4px; font-size: 1rem; }
+    .cases-caci { list-style: none; margin: 0; padding: 0; }
+    .cases-caci li { padding: 4px 0; color: var(--craie); }
+    .cases-caci li.cochee { color: var(--encre); font-weight: 700; }
+    .marque { display: inline-block; width: 1.5em; font-size: 1.125rem; }
   `]
 })
 export class RosterComponent implements OnDestroy {
   readonly couleurCaci = couleurCaci;
   readonly libelleCaci = libelleCaci;
+  readonly casesCaci = CASES_CACI;
+  /** Élève dont on consulte le détail du CACI. */
+  caciOuvert = signal<LigneRoster | null>(null);
   private api = inject(ApiService);
   private reseau = inject(ReseauService);
 

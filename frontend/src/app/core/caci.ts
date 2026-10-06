@@ -37,6 +37,37 @@ export function couleurCaci(finValidite: string | null | undefined): CouleurCaci
   return jours <= JOURS_AVANT_ECHEANCE ? 'orange' : 'vert';
 }
 
+/**
+ * Cases à cocher du CACI FFESSM, dans l'ordre du formulaire (enum
+ * ActiviteCaci côté serveur) : ce que le certificat couvre, rien de plus —
+ * ni restriction, ni remarque du médecin.
+ */
+export const CASES_CACI: { titre: string; cases: { code: string; libelle: string }[] }[] = [
+  {
+    titre: 'Activités',
+    cases: [
+      { code: 'PLONGEE_SCAPHANDRE', libelle: 'Plongée en scaphandre' },
+      { code: 'APNEE', libelle: 'Apnée' },
+      { code: 'NAGE_AVEC_PALMES', libelle: 'Nage avec palmes' },
+      { code: 'PECHE_SOUS_MARINE', libelle: 'Pêche sous-marine' },
+      { code: 'HOCKEY_SUBAQUATIQUE', libelle: 'Hockey subaquatique' },
+      { code: 'TIR_SUR_CIBLE', libelle: 'Tir sur cible subaquatique' },
+      { code: 'ORIENTATION', libelle: 'Orientation subaquatique' },
+      { code: 'NAGE_EN_EAU_VIVE', libelle: 'Nage en eau vive' },
+      { code: 'PLONGEE_SPORTIVE_PISCINE', libelle: 'Plongée sportive en piscine' },
+      { code: 'RUGBY_SUBAQUATIQUE', libelle: 'Rugby subaquatique' }
+    ]
+  },
+  {
+    titre: 'Pratique',
+    cases: [
+      { code: 'LOISIR', libelle: 'En loisir' },
+      { code: 'COMPETITION', libelle: 'En compétition' },
+      { code: 'ENSEIGNEMENT_ENCADREMENT', libelle: 'Enseignement et encadrement' }
+    ]
+  }
+];
+
 export function libelleCaci(finValidite: string | null | undefined): string {
   switch (etatCaci(finValidite)) {
     case 'absent': return 'CACI non renseigné';

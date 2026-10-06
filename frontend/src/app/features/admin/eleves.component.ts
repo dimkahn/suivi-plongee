@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
-import { etatCaci, libelleCaci } from '../../core/caci';
+import { CASES_CACI, etatCaci, libelleCaci } from '../../core/caci';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { NgTemplateOutlet } from '@angular/common';
@@ -19,6 +19,8 @@ interface FormulaireEleve {
   dateNaissance: string;
   numeroLicence: string;
   certificatValideJusquAu: string;
+  caciDateExamen: string;
+  caciActivites: string[];
   dernierNiveau: string;
   email: string;
   telephone: string;
@@ -31,7 +33,7 @@ interface FormulaireEleve {
 
 function formulaireVide(): FormulaireEleve {
   return { nom: '', prenom: '', dateNaissance: '', numeroLicence: '',
-           certificatValideJusquAu: '', dernierNiveau: '', email: '', telephone: '',
+           certificatValideJusquAu: '', caciDateExamen: '', caciActivites: [], dernierNiveau: '', email: '', telephone: '',
            contactUrgenceNom: '', contactUrgenceTelephone: '', tailleGilet: '', tailleCombinaison: '',
            autorisationLegale: false };
 }
@@ -43,6 +45,7 @@ function depuis(e: EleveVue): FormulaireEleve {
   return {
     nom: e.nom, prenom: e.prenom, dateNaissance: e.dateNaissance ?? '',
     numeroLicence: e.numeroLicence ?? '', certificatValideJusquAu: e.certificatValideJusquAu ?? '',
+    caciDateExamen: e.caciDateExamen ?? '', caciActivites: [...(e.caciActivites ?? [])],
     dernierNiveau: e.dernierNiveau ?? '', email: e.email ?? '', telephone: e.telephone ?? '',
     contactUrgenceNom: e.contactUrgenceNom ?? '', contactUrgenceTelephone: e.contactUrgenceTelephone ?? '',
     tailleGilet: e.tailleGilet ?? '', tailleCombinaison: e.tailleCombinaison ?? '',
@@ -84,6 +87,22 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       <input [id]="p + 'licence'" type="text" name="licence" [(ngModel)]="f.numeroLicence" placeholder="Facultatif">
       <label [for]="p + 'caci'">CACI valide jusqu'au</label>
       <input [id]="p + 'caci'" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
+      <label [for]="p + 'caciExamen'">Date de l'examen (CACI)</label>
+      <input [id]="p + 'caciExamen'" type="date" name="caciExamen" [(ngModel)]="f.caciDateExamen">
+      <!-- Cases cochées par le médecin sur le CACI FFESSM : ce qu'il couvre, jamais de restriction ni de remarque. -->
+      <fieldset class="cases-caci">
+        <legend>Cases cochées sur le CACI</legend>
+        @for (g of casesCaci; track g.titre) {
+          <p class="titre-cases">{{ g.titre }}</p>
+          @for (c of g.cases; track c.code) {
+            <label class="case">
+              <input type="checkbox" [name]="p + 'caci-' + c.code" [checked]="f.caciActivites.includes(c.code)"
+                     (change)="basculerCaseCaci(f, c.code, $any($event.target).checked)">
+              {{ c.libelle }}
+            </label>
+          }
+        }
+      </fieldset>
       <label [for]="p + 'niveau'">Dernier niveau de plongée</label>
       <input [id]="p + 'niveau'" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
              placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
@@ -410,6 +429,10 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; }
     .case input { width: auto; }
+    .cases-caci { border: 1px solid var(--trait); border-radius: 8px; padding: var(--pas) var(--pas-2); margin: var(--pas) 0; }
+    .cases-caci legend { font-weight: 700; padding: 0 4px; }
+    .cases-caci .case { min-height: 44px; }
+    .titre-cases { margin: var(--pas) 0 0; font-size: .875rem; color: var(--craie); font-weight: 700; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     .filtres {
@@ -498,6 +521,13 @@ export class ElevesComponent {
 
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
+  readonly casesCaci = CASES_CACI;
+
+  basculerCaseCaci(f: FormulaireEleve, code: string, cochee: boolean): void {
+    f.caciActivites = cochee
+      ? [...f.caciActivites.filter(c => c !== code), code]
+      : f.caciActivites.filter(c => c !== code);
+  }
 
   /**
    * Seuls les élèves rattachés à la saison choisie (formation ou adhésion)
@@ -706,6 +736,7 @@ export class ElevesComponent {
       e = await firstValueFrom(this.api.creerEleve({
         nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
         numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
+        caciDateExamen: f.caciDateExamen || null, caciActivites: f.caciActivites,
         dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
         contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
         tailleGilet: f.tailleGilet || null, tailleCombinaison: f.tailleCombinaison || null,
@@ -872,6 +903,7 @@ export class ElevesComponent {
     this.api.modifierEleve(e.id, {
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
       numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
+      caciDateExamen: f.caciDateExamen || null, caciActivites: f.caciActivites,
       dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
       contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
       tailleGilet: f.tailleGilet || null, tailleCombinaison: f.tailleCombinaison || null,

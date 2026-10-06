@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -28,10 +29,13 @@ public class RosterController {
 
     /**
      * {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève.
-     * {@code caciFinValidite} : date seule (jamais le certificat), pour colorer l'échéance à l'écran.
+     * {@code caciFinValidite} : date seule (jamais le certificat), pour colorer l'échéance à l'écran ;
+     * {@code caciDateExamen} et {@code caciActivites} (cases cochées) s'affichent au clic sur la case CACI.
      */
     public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau,
-                             boolean caciValide, LocalDate caciFinValidite, long seancesBloc, long seancesNage,
+                             boolean caciValide, LocalDate caciFinValidite,
+                             LocalDate caciDateExamen, Set<ActiviteCaci> caciActivites,
+                             long seancesBloc, long seancesNage,
                              Map<Long, String> presencesParSeance, boolean aPhoto) {}
 
     public record RosterVue(List<SeanceEnTete> seances, List<LigneEleve> eleves) {}
@@ -73,6 +77,7 @@ public class RosterController {
                     c.getReferentiel().getNiveau().name(),
                     c.getEleve().certificatValideAu(aujourdhui),
                     e.getCertificatValideJusquAu(),
+                    e.getCaciDateExamen(), e.getCaciActivites(),
                     participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),
                     participations.compterAtelier(c.getId(), Participation.Atelier.NAGE),
                     presences,

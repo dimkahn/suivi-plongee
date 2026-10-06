@@ -55,6 +55,8 @@ interface DemandeEleve {
   dateNaissance?: string | null;
   numeroLicence?: string | null;
   certificatValideJusquAu?: string | null;
+  caciDateExamen?: string | null;
+  caciActivites?: string[];
   dernierNiveau?: string | null;
   email?: string | null;
   telephone?: string | null;
