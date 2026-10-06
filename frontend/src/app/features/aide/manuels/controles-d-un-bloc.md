@@ -14,7 +14,7 @@ Un bloc dont la TIV ou la requalification est dépassée est « à régulariser 
 ## Pas à pas
 
 1. Dans « Matériel », ouvrez le bloc à régulariser.
-2. Au retour de requalification, ajoutez la ligne « Requalification » au journal.
+2. Au retour de requalification, « Ajouter une entrée au journal » et choisissez « Requalification ».
 3. Après l'inspection visuelle par un TIV du club, ajoutez la ligne « Inspection visuelle » (ou remplissez la fiche d'inspection TIV complète).
 4. Le bloc est de nouveau disponible.
 

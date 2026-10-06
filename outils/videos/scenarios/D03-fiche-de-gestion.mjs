@@ -1,5 +1,5 @@
 // D3 — La fiche de gestion d'un EPI.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -17,6 +17,7 @@ export default {
     await legende('Sa fiche tient lieu de fiche de gestion d\'EPI (Code du sport) : à garder 3 ans après le rebut.', 4500);
     await legende('Il revient de révision : on l\'inscrit au journal.', 0);
     await page.getByRole('heading', { name: 'Journal' }).scrollIntoViewIfNeeded();
+    await toucher(page.getByRole('button', { name: 'Ajouter une entrée au journal' }), { apres: 800 });
     await choisir('#typeIntervention', 'Révision');
     await dater('#dateIntervention', new Date().toISOString().slice(0, 10));
     await saisir('#intervenant', 'Plongée Services');

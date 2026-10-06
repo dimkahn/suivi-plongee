@@ -468,6 +468,14 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
   champ `detail` du `ProblemDetail` tel quel.
 - Cibles tactiles d'au moins 44 px : l'appli se manipule avec les mains
   mouillées.
+- Créations et modifications dans une fenêtre de dialogue
+  (`core/dialogue.component.ts`, `<app-dialogue [ouvert] titre [erreur]
+  (fermer)>`, boutons dans `.actions-dialogue`), plein écran sur
+  téléphone, et non plus dans la liste. Restent des pages entières les
+  formulaires longs (fiche d'un équipement, inspection TIV, fiche de
+  sécurité, programme d'exercices, génération de saison). Un overlay
+  ouvert depuis un dialogue (recadrage photo) se place dans son contenu :
+  le reste de la page est inerte tant qu'il est ouvert.
 - Identité visuelle alignée sur celle du club (cppjvo.fr) : palette
   océan/corail, Poppins pour les titres, Nunito pour le texte courant.
   Jetons de design dans `frontend/src/styles.css`. Ne pas introduire de

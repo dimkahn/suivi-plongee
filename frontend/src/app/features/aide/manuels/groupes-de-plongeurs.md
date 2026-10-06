@@ -18,7 +18,7 @@ Menu, « Groupes » : saisissez une fois la liste des plongeurs d'un séjour, pu
 1. Menu, puis « Groupes ».
 2. « Nouveau groupe » : donnez-lui un nom (par exemple « Séjour Égypte mai 2026 »).
 3. « + Plongeur » pour chaque plongeur : cherchez-le parmi ceux du club, ou saisissez son prénom, son nom et son aptitude s'il vient d'ailleurs.
-4. Enregistrez, puis dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
+4. « Créer le groupe », puis dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
 5. Répartissez ensuite les plongeurs dans les palanquées.
 
 ## Un groupe réparti sur deux séances du même jour

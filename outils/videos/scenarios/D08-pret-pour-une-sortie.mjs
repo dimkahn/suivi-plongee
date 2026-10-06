@@ -1,5 +1,5 @@
 // D8 — Prêter pour une sortie.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -20,7 +20,7 @@ export default {
     await dater('#debut', '2026-10-24');
     await dater('#fin', '2026-10-25');
     await toucher(page.getByRole('button', { name: 'Créer puis choisir les plongées' }), { apres: 1500 });
-    await toucher(page.getByRole('button', { name: 'Fermer' }).first(), { apres: 800 });
+    await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Annuler' }), { apres: 800 });
 
     await page.goto(`${APPLI}/materiel/prets`);
     await pause(1200);
@@ -33,7 +33,7 @@ export default {
     await toucher(page.locator('form, main').getByRole('button', { name: 'Blocs' }).first(), { apres: 800 });
     await cocher(page.locator('label.case').filter({ hasText: 'B-02' }).locator('input'));
     await toucher(page.getByRole('button', { name: 'Enregistrer le prêt' }), { apres: 1200 });
-    await page.locator('main .alerte').first().scrollIntoViewIfNeeded();
+    await page.locator('dialog[open] .alerte').first().scrollIntoViewIfNeeded();
     await pause(800);
     await vignette();
     await legende('… l\'appli refuse, et dit pourquoi : l\'échéance doit couvrir tout le prêt.', 5000);

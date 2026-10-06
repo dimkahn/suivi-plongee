@@ -23,6 +23,8 @@ Un compte administrateur voit tout ce que voit un moniteur, plus « Administrati
 - **Sorties** : week-ends et séjours en milieu naturel.
 - **Référentiel MFT** et **Progressions types** : les compétences fédérales et l'année de chaque niveau.
 
+Sur chacun, « Nouveau… » ou « Modifier » ouvre une fenêtre devant la liste : « Enregistrer » en bas, « Annuler » ou la croix pour la refermer sans rien changer. Un refus (champ manquant, règle du club) s'affiche en haut de la fenêtre.
+
 ## La rentrée, dans l'ordre
 
 1. [Ouvrir la saison](/admin/saisons) et choisir ses progressions types.
