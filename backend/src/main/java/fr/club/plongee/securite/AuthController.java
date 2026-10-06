@@ -4,6 +4,8 @@ import fr.club.plongee.securite.domain.*;
 import fr.club.plongee.securite.repository.*;
 import fr.club.plongee.securite.service.*;
 
+import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.MedecinCaci;
 import fr.club.plongee.commun.RegleMetierException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Email;
@@ -30,6 +32,7 @@ import java.time.LocalDate;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -42,7 +45,9 @@ public class AuthController {
     public record Session(String jetonAcces, long expireDansSecondes, String nomComplet,
                           String email, List<String> roles, String niveauEncadrement,
                           String nom, String prenom, String numeroLicence,
-                          LocalDate certificatValideJusquAu) {}
+                          LocalDate certificatValideJusquAu,
+                          /** Détail du CACI, en lecture : saisi par un ADMIN dans l'écran Moniteurs. */
+                          LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites) {}
 
     public record DemandeMotDePasseOublie(@NotBlank @Email String email) {}
 
@@ -210,7 +215,8 @@ public class AuthController {
                 u.getNom(),
                 u.getPrenom(),
                 u.getNumeroLicence(),
-                u.getCertificatValideJusquAu());
+                u.getCertificatValideJusquAu(),
+                u.getCaci().dateExamen(), u.getCaci().medecin(), u.getCaci().activites());
     }
 
     /**

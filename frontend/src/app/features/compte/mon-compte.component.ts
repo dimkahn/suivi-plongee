@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { etatCaci, libelleCaci } from '../../core/caci';
+import { DetailCaciComponent } from '../../core/detail-caci.component';
 
 type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
 
@@ -17,7 +18,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
  */
 @Component({
   selector: 'app-mon-compte',
-  imports: [FormsModule, RecadragePhotoComponent],
+  imports: [FormsModule, RecadragePhotoComponent, DetailCaciComponent],
   template: `
     <h1>Mon compte</h1>
     @if (auth.niveau(); as n) {
@@ -31,6 +32,13 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
       {{ libelleCaci(auth.session()?.certificatValideJusquAu) }}
       <span class="secondaire">— date saisie par un administrateur, à qui remettre un nouveau certificat.</span>
     </p>
+    @if (auth.session(); as s) {
+      <details class="detail-caci">
+        <summary>Détail de mon CACI</summary>
+        <app-detail-caci [finValidite]="s.certificatValideJusquAu" [dateExamen]="s.caciDateExamen ?? null"
+                         [medecin]="s.caciMedecin ?? null" [activites]="s.caciActivites ?? []" />
+      </details>
+    }
 
     @if (auth.estMoniteur()) {
       <section class="carte panneau">
@@ -138,6 +146,8 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
     .caci { font-weight: 700; }
+    .detail-caci { margin-bottom: var(--pas-3); }
+    .detail-caci summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; color: var(--profond); }
     .caci .secondaire { font-weight: 400; }
     .caci-valide { color: var(--acquis); }
     .caci-bientot { color: var(--en-cours); }

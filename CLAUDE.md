@@ -486,13 +486,17 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
 
 Le club suit des mineurs. Le certificat médical n'est **jamais** stocké,
 seulement sa date de fin de validité (`eleve.certificat_valide_jusqu_au`).
-Pour un élève, V46 ajoute la date de l'examen (`caci_date_examen`), la
+Pour un élève (V46) comme pour un moniteur (V47, colonnes identiques sur
+`utilisateur`) s'ajoutent la date de l'examen (`caci_date_examen`), la
 qualité du médecin (`caci_medecin`, enum `MedecinCaci`) et les cases
 cochées du CACI FFESSM « Version Juin 2026 » (`caci_activites`, enum
 `ActiviteCaci`, libellés dans `core/caci.ts` : ensemble des activités, ou
 bien seulement scaphandre/apnée/apnée > 6 m/nage avec accessoires,
-compétition, limites et préconisations), saisis dans le dossier par un
-ADMIN, montrés aux encadrants au clic sur la case CACI d'« Infos élèves ».
+compétition, limites et préconisations). Types communs dans
+`fr.club.plongee.commun` (`Caci.verifier()` : contrôles de saisie) ; côté
+écran `SaisieCaciComponent` et `DetailCaciComponent` (`core/`). Saisis par
+un ADMIN (dossier élève, écran Moniteurs), montrés au clic sur la case CACI
+d'« Infos élèves » et sur le CACI d'un moniteur, et dans « Mon compte ».
 **Les cases seulement, jamais le texte écrit par le médecin** (activités en
 compétition, détail des limites) : la case « limites » renvoie l'encadrant
 au certificat papier. Ne pas ajouter de champ de santé, de pièce jointe médicale ni de commentaire

@@ -1,5 +1,6 @@
 package fr.club.plongee.admin.service;
 
+import fr.club.plongee.commun.Caci;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.delivrance.repository.DelivranceRepository;
@@ -78,7 +79,7 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
                              NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                             LocalDate certificatValideJusquAu, boolean admin, boolean directeurTechnique,
+                             Caci caci, boolean admin, boolean directeurTechnique,
                              boolean tiv) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
             throw new RegleMetierException("Un compte existe déjà avec cet e-mail.");
@@ -91,7 +92,7 @@ public class AdminMoniteurService {
         u.setNiveauEncadrement(niveauEncadrement);
         u.setNiveauPlongeur(vide(niveauPlongeur) ? null : niveauPlongeur);
         u.setNumeroLicence(numeroLicence);
-        u.setCertificatValideJusquAu(certificatValideJusquAu);
+        u.setCaci(caci);
         u.setActif(true);
         EnumSet<RoleNom> roles = EnumSet.of(RoleNom.MONITEUR);
         if (admin) roles.add(RoleNom.ADMIN);
@@ -126,7 +127,7 @@ public class AdminMoniteurService {
     @Transactional
     public Utilisateur modifier(Long id, Long auteurId, String email, String nom, String prenom,
                                 NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                                LocalDate certificatValideJusquAu, Boolean admin, Boolean directeurTechnique,
+                                Caci caci, Boolean admin, Boolean directeurTechnique,
                                 Boolean tiv) {
         Utilisateur u = moniteur(id);
         if (Boolean.FALSE.equals(admin) && u.getId().equals(auteurId) && u.getRoles().contains(RoleNom.ADMIN)) {
@@ -143,7 +144,7 @@ public class AdminMoniteurService {
         u.setNiveauEncadrement(niveauEncadrement);
         u.setNiveauPlongeur(vide(niveauPlongeur) ? null : niveauPlongeur);
         u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
-        u.setCertificatValideJusquAu(certificatValideJusquAu);
+        u.setCaci(caci);
         if (Boolean.TRUE.equals(admin)) u.getRoles().add(RoleNom.ADMIN);
         else if (Boolean.FALSE.equals(admin)) u.getRoles().remove(RoleNom.ADMIN);
         if (Boolean.TRUE.equals(directeurTechnique)) u.getRoles().add(RoleNom.DIRECTEUR_TECHNIQUE);

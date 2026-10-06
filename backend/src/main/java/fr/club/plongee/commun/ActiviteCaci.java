@@ -1,4 +1,4 @@
-package fr.club.plongee.formation.domain;
+package fr.club.plongee.commun;
 
 /**
  * Cases à cocher du CACI (certificat d'absence de contre-indication) de la

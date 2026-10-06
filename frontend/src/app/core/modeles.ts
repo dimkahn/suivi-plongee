@@ -12,6 +12,10 @@ export interface Session {
   numeroLicence: string | null;
   /** Fin de validité du CACI de l'encadrant (saisie par un admin). */
   certificatValideJusquAu: string | null;
+  /** Détail du CACI, saisi par un admin : date de l'examen, médecin, cases cochées. */
+  caciDateExamen?: string | null;
+  caciMedecin?: string | null;
+  caciActivites?: string[];
 }
 
 export interface CursusVue {
@@ -274,6 +278,10 @@ export interface MoniteurVue {
   niveauPlongeur: string | null;
   numeroLicence: string | null;
   certificatValideJusquAu: string | null;
+  /** Date de l'examen portée sur le CACI, médecin (MEDECINS_CACI) et cases cochées (CASES_CACI). */
+  caciDateExamen: string | null;
+  caciMedecin: string | null;
+  caciActivites: string[];
   admin: boolean;
   /** Gère le matériel du club et les prêts. */
   directeurTechnique: boolean;

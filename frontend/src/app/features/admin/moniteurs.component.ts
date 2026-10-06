@@ -7,7 +7,9 @@ import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { MoniteurVue } from '../../core/modeles';
-import { EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
+import { CACI_LIMITES, EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
+import { SaisieCaciComponent } from '../../core/saisie-caci.component';
+import { DetailCaciComponent } from '../../core/detail-caci.component';
 
 type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
 
@@ -17,7 +19,7 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent],
+  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
   template: `
     <div class="entete">
       <div>
@@ -65,8 +67,8 @@ function aVerifier(m: MoniteurVue): boolean {
       <label for="licence">N° de licence</label>
       <input id="licence" type="text" name="licence" [(ngModel)]="numeroLicence" placeholder="Facultatif">
 
-      <label for="caci">CACI valide jusqu'au</label>
-      <input id="caci" type="date" name="caci" [(ngModel)]="certificatValideJusquAu">
+      <app-saisie-caci [(finValidite)]="certificatValideJusquAu" [(dateExamen)]="caciDateExamen"
+                       [(medecin)]="caciMedecin" [(activites)]="caciActivites" />
 
       <label class="case">
         <input type="checkbox" name="admin" [(ngModel)]="admin">
@@ -133,9 +135,11 @@ function aVerifier(m: MoniteurVue): boolean {
                   {{ m.niveauEncadrement }}{{ m.niveauPlongeur ? ' · plongeur ' + m.niveauPlongeur : '' }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
                   · Droit à l'image {{ m.autorisationImage ? (m.aPhoto ? 'recueilli, photo déposée' : 'recueilli') : 'non recueilli' }}
                 </span>
-                <span [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)">
-                  {{ libelleCaci(m.certificatValideJusquAu) }}
-                </span>
+                <button type="button" [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)"
+                        [attr.aria-label]="libelleCaci(m.certificatValideJusquAu) + ' — détail du CACI de ' + m.prenom + ' ' + m.nom"
+                        (click)="caciOuvert.set(m)">
+                  {{ libelleCaci(m.certificatValideJusquAu) }}{{ m.caciActivites.includes(caciLimites) ? ' · limites' : '' }}
+                </button>
               </div>
               <div class="badges">
                 @if (m.admin) { <span class="etat admin">Admin</span> }
@@ -224,8 +228,9 @@ function aVerifier(m: MoniteurVue): boolean {
         <input id="edition-licence" type="text" name="editionLicence"
                [(ngModel)]="edition.numeroLicence" placeholder="Facultatif">
 
-        <label for="edition-caci">CACI valide jusqu'au</label>
-        <input id="edition-caci" type="date" name="editionCaci" [(ngModel)]="edition.certificatValideJusquAu">
+        <app-saisie-caci prefixe="edition-" [(finValidite)]="edition.certificatValideJusquAu"
+                         [(dateExamen)]="edition.caciDateExamen" [(medecin)]="edition.caciMedecin"
+                         [(activites)]="edition.caciActivites" />
 
         <label class="case">
           <input type="checkbox" name="editionAdmin" [(ngModel)]="edition.admin"
@@ -272,6 +277,19 @@ function aVerifier(m: MoniteurVue): boolean {
       }
     </app-dialogue>
 
+    <!-- Détail du CACI, en lecture : la saisie se fait par « Modifier ». -->
+    <app-dialogue [ouvert]="caciOuvert() !== null"
+                  [titre]="'CACI de ' + (caciOuvert()?.prenom ?? '') + ' ' + (caciOuvert()?.nom ?? '')"
+                  (fermer)="caciOuvert.set(null)">
+      @if (caciOuvert(); as m) {
+        <app-detail-caci [finValidite]="m.certificatValideJusquAu" [dateExamen]="m.caciDateExamen"
+                         [medecin]="m.caciMedecin" [activites]="m.caciActivites" />
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="caciOuvert.set(null)">Fermer</button>
+        </div>
+      }
+    </app-dialogue>
+
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.moniteur.prenom + ' ' + r.moniteur.nom"
                            [enCours]="recadrageEnCours()" (valide)="deposerPhoto($event)"
@@ -301,7 +319,11 @@ function aVerifier(m: MoniteurVue): boolean {
     .filtres label { margin: 0 0 4px; }
     .filtres input, .filtres select { margin: 0; }
 
-    .caci { font-size: .875rem; font-weight: 700; }
+    /* Le CACI ouvre son détail : un bouton à l'allure du texte, 44 px de haut. */
+    .caci {
+      align-self: flex-start; min-height: 44px; padding: 0; border: 0; background: none; text-align: left;
+      font: inherit; font-size: .875rem; font-weight: 700; cursor: pointer; text-decoration: underline dotted;
+    }
     .caci-valide { color: var(--acquis); }
     .caci-bientot { color: var(--en-cours); }
     .caci-expire, .caci-absent { color: #B3261E; }
@@ -366,6 +388,9 @@ export class MoniteursComponent {
   readonly niveauxPlongeur = ['N1', 'N2', 'N3', 'N4', 'N5'];
   numeroLicence = '';
   certificatValideJusquAu = '';
+  caciDateExamen = '';
+  caciMedecin = '';
+  caciActivites: string[] = [];
   admin = false;
   directeurTechnique = false;
   tiv = false;
@@ -375,7 +400,12 @@ export class MoniteursComponent {
   moniteurEdite = signal<number | null>(null);
   edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
               numeroLicence: '',
-              certificatValideJusquAu: '', admin: false, directeurTechnique: false, tiv: false };
+              certificatValideJusquAu: '', caciDateExamen: '', caciMedecin: '', caciActivites: [] as string[],
+              admin: false, directeurTechnique: false, tiv: false };
+
+  /** Moniteur dont on consulte le détail du CACI. */
+  caciOuvert = signal<MoniteurVue | null>(null);
+  readonly caciLimites = CACI_LIMITES;
   envoiEdition = signal(false);
 
   moniteurEnEdition = computed(() => this.liste().find(m => m.id === this.moniteurEdite()) ?? null);
@@ -460,6 +490,9 @@ export class MoniteursComponent {
       niveauPlongeur: this.niveauPlongeur || null,
       numeroLicence: this.numeroLicence || null,
       certificatValideJusquAu: this.certificatValideJusquAu || null,
+      caciDateExamen: this.caciDateExamen || null,
+      caciMedecin: this.caciMedecin || null,
+      caciActivites: this.caciActivites,
       admin: this.admin,
       directeurTechnique: this.directeurTechnique,
       tiv: this.tiv
@@ -474,6 +507,9 @@ export class MoniteursComponent {
         this.niveauPlongeur = '';
         this.numeroLicence = '';
         this.certificatValideJusquAu = '';
+        this.caciDateExamen = '';
+        this.caciMedecin = '';
+        this.caciActivites = [];
         this.admin = false;
         this.directeurTechnique = false;
         this.tiv = false;
@@ -506,6 +542,9 @@ export class MoniteursComponent {
       niveauPlongeur: m.niveauPlongeur ?? '',
       numeroLicence: m.numeroLicence ?? '',
       certificatValideJusquAu: m.certificatValideJusquAu ?? '',
+      caciDateExamen: m.caciDateExamen ?? '',
+      caciMedecin: m.caciMedecin ?? '',
+      caciActivites: [...(m.caciActivites ?? [])],
       admin: m.admin,
       directeurTechnique: m.directeurTechnique,
       tiv: m.tiv
@@ -523,7 +562,8 @@ export class MoniteursComponent {
     this.message.set(null);
     this.api.modifierMoniteur(m.id, {
       ...e, niveauPlongeur: e.niveauPlongeur || null, numeroLicence: e.numeroLicence || null,
-      certificatValideJusquAu: e.certificatValideJusquAu || null
+      certificatValideJusquAu: e.certificatValideJusquAu || null,
+      caciDateExamen: e.caciDateExamen || null, caciMedecin: e.caciMedecin || null
     }).subscribe({
       next: maj => {
         this.envoiEdition.set(false);
