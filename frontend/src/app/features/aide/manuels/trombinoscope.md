@@ -8,6 +8,7 @@ questions:
 - Comment mettre un nom sur un visage ?
 - Pourquoi un élève n'a pas de photo ?
 - Où voir les photos des moniteurs ?
+- Qui encadre tel groupe d'entraînement ?
 ---
 Menu, « Trombinoscope » : les élèves de la saison rangés par groupe d'entraînement, et un onglet « Moniteurs » pour les encadrants.
 
@@ -16,7 +17,7 @@ Menu, « Trombinoscope » : les élèves de la saison rangés par groupe d'entra
 1. Menu, puis « Trombinoscope ».
 2. Filtrez sur un groupe, ou cherchez un prénom.
 3. Touchez une carte pour ouvrir la grille de compétences de l'élève.
-4. L'onglet « Moniteurs » montre les encadrants du club.
+4. L'onglet « Moniteurs » montre les encadrants du club ; filtrez sur un groupe pour ne voir que ses encadrants attitrés (référents compris).
 
 ## Bon à savoir
 

@@ -23,7 +23,7 @@ const LIBELLES: Record<string, string> = {
 
     @if (roster(); as r) {
       @if (groupes().length > 0) {
-        <app-filtre-groupe class="filtres" [groupes]="groupes()" [eleveIds]="eleveIds()"
+        <app-filtre-groupe class="filtres" [groupes]="groupes()" [ids]="eleveIds()"
                            [(valeur)]="groupeFiltre" />
       }
 

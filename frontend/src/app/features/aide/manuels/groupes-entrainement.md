@@ -28,4 +28,4 @@ Administration, « Groupes d'entraînement » : chaque groupe de la saison a son
 - Un élève est dans un groupe au plus par saison.
 - Un adhérent sans formation (maintien) se range à la main.
 - Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
-- Ces groupes servent de filtres dans Infos élèves, Présences et Trombinoscope.
+- Ces groupes servent de filtres dans Infos élèves, Présences et Trombinoscope (élèves, et encadrants attitrés dans l'onglet « Moniteurs »).

@@ -44,11 +44,16 @@ function idCible(c: Cible): number {
       <p class="secondaire">Par groupe d'entraînement, saison courante. Sans photo si le droit à l'image n'a pas été recueilli.</p>
 
       @if (groupes().length > 0) {
-        <app-filtre-groupe class="filtres" [groupes]="groupes()" [eleveIds]="eleveIds()"
+        <app-filtre-groupe class="filtres" [groupes]="groupes()" [ids]="eleveIds()"
                            [(valeur)]="groupeFiltre" />
       }
     } @else {
-      <p class="secondaire">Encadrants actifs du club. Sans photo si le droit à l'image n'a pas été recueilli.</p>
+      <p class="secondaire">Encadrants actifs du club, filtrables par groupe d'entraînement de la saison courante. Sans photo si le droit à l'image n'a pas été recueilli.</p>
+
+      @if (groupes().length > 0) {
+        <app-filtre-groupe class="filtres" [groupes]="groupes()" [ids]="moniteurIds()" membres="ENCADRANTS"
+                           [(valeur)]="groupeFiltreMoniteurs" />
+      }
     }
 
     <label for="filtreNom" class="etiquette-recherche">Nom ou prénom</label>
@@ -62,7 +67,7 @@ function idCible(c: Cible): number {
       } @else if (erreurMoniteurs()) {
         <div class="carte vide"><p>{{ erreurMoniteurs() }}</p></div>
       } @else if (moniteursFiltres().length === 0) {
-        <div class="carte vide"><p>Aucun moniteur ne correspond à cette recherche.</p></div>
+        <div class="carte vide"><p>Aucun moniteur ne correspond à cette sélection.</p></div>
       } @else {
         <div class="grille">
           @for (m of moniteursFiltres(); track m.id) {
@@ -276,10 +281,15 @@ export class TrombinoscopeComponent implements OnDestroy {
   erreurMoniteurs = signal<string | null>(null);
   private urlsPhotosMoniteurs = signal<Map<number, string>>(new Map());
 
+  /** Filtre propre à l'onglet Moniteurs : on y retrouve les encadrants attitrés de chaque groupe. */
+  groupeFiltreMoniteurs = signal<FiltreGroupe>('TOUS');
+  moniteurIds = computed(() => (this.moniteurs() ?? []).map(m => m.id));
+
   moniteursFiltres = computed(() => {
+    const parGroupe = (this.moniteurs() ?? [])
+      .filter(m => passeFiltreGroupe(m.id, this.groupeFiltreMoniteurs(), this.groupes(), 'ENCADRANTS'));
     const recherche = this.normaliser(this.filtreNom());
-    const liste = this.moniteurs() ?? [];
-    return recherche ? liste.filter(m => this.normaliser(m.nomComplet).includes(recherche)) : liste;
+    return recherche ? parGroupe.filter(m => this.normaliser(m.nomComplet).includes(recherche)) : parGroupe;
   });
 
   afficherMoniteurs(): void {

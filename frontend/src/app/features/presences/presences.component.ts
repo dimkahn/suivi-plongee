@@ -160,7 +160,7 @@ function normaliser(texte: string): string {
     @if (seanceId()) {
       <div class="filtres">
         @if (groupes().length > 0) {
-          <app-filtre-groupe [groupes]="groupes()" [eleveIds]="eleveIds()" [(valeur)]="groupeFiltre" />
+          <app-filtre-groupe [groupes]="groupes()" [ids]="eleveIds()" [(valeur)]="groupeFiltre" />
         }
         <input type="search" class="recherche" aria-label="Rechercher un élève"
                placeholder="Rechercher un élève…"
