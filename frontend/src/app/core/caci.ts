@@ -37,36 +37,54 @@ export function couleurCaci(finValidite: string | null | undefined): CouleurCaci
   return jours <= JOURS_AVANT_ECHEANCE ? 'orange' : 'vert';
 }
 
+/** Case « de l'ensemble des activités subaquatiques fédérales », exclusive des cases « ou bien seulement ». */
+export const CACI_ENSEMBLE = 'ENSEMBLE_ACTIVITES';
+/** Case « avec les limites et préconisations suivantes » : le détail n'est que sur le papier. */
+export const CACI_LIMITES = 'LIMITES_PRECONISATIONS';
+
 /**
- * Cases à cocher du CACI FFESSM, dans l'ordre du formulaire (enum
- * ActiviteCaci côté serveur) : ce que le certificat couvre, rien de plus —
- * ni restriction, ni remarque du médecin.
+ * Cases à cocher du CACI FFESSM (modèle « Version Juin 2026 »), dans l'ordre
+ * du formulaire (enum ActiviteCaci côté serveur). On ne garde que les cases,
+ * jamais le texte écrit par le médecin à côté.
  */
-export const CASES_CACI: { titre: string; cases: { code: string; libelle: string }[] }[] = [
+export const CASES_CACI: { titre: string; seulement: boolean; cases: { code: string; libelle: string }[] }[] = [
   {
-    titre: 'Activités',
+    titre: 'Pratique autorisée',
+    seulement: false,
+    cases: [{ code: CACI_ENSEMBLE, libelle: "De l'ensemble des activités subaquatiques fédérales" }]
+  },
+  {
+    titre: 'Ou bien seulement',
+    seulement: true,
     cases: [
-      { code: 'PLONGEE_SCAPHANDRE', libelle: 'Plongée en scaphandre' },
-      { code: 'APNEE', libelle: 'Apnée' },
-      { code: 'NAGE_AVEC_PALMES', libelle: 'Nage avec palmes' },
-      { code: 'PECHE_SOUS_MARINE', libelle: 'Pêche sous-marine' },
-      { code: 'HOCKEY_SUBAQUATIQUE', libelle: 'Hockey subaquatique' },
-      { code: 'TIR_SUR_CIBLE', libelle: 'Tir sur cible subaquatique' },
-      { code: 'ORIENTATION', libelle: 'Orientation subaquatique' },
-      { code: 'NAGE_EN_EAU_VIVE', libelle: 'Nage en eau vive' },
-      { code: 'PLONGEE_SPORTIVE_PISCINE', libelle: 'Plongée sportive en piscine' },
-      { code: 'RUGBY_SUBAQUATIQUE', libelle: 'Rugby subaquatique' }
+      { code: 'PLONGEE_SCAPHANDRE', libelle: 'Des activités de plongée en scaphandre autonome' },
+      { code: 'APNEE', libelle: 'Des activités en apnée' },
+      { code: 'APNEE_PROFONDEUR_6M', libelle: "De l'apnée en profondeur au-delà de 6 m" },
+      { code: 'NAGE_AVEC_ACCESSOIRES', libelle: 'Des activités de nage avec accessoires' }
     ]
   },
   {
-    titre: 'Pratique',
+    titre: 'Autres cases',
+    seulement: false,
     cases: [
-      { code: 'LOISIR', libelle: 'En loisir' },
-      { code: 'COMPETITION', libelle: 'En compétition' },
-      { code: 'ENSEIGNEMENT_ENCADREMENT', libelle: 'Enseignement et encadrement' }
+      { code: 'COMPETITION', libelle: 'En compétition (activités écrites sur le certificat)' },
+      { code: CACI_LIMITES, libelle: 'Avec des limites et préconisations (détail sur le certificat)' }
     ]
   }
 ];
+
+/** Qualité du médecin signataire (enum MedecinCaci côté serveur). */
+export const MEDECINS_CACI: { code: string; libelle: string }[] = [
+  { code: 'GENERALISTE', libelle: 'Médecin généraliste' },
+  { code: 'DU_SPORT', libelle: 'Médecin du sport' },
+  { code: 'MEDECINE_SUBAQUATIQUE', libelle: 'Diplômé de médecine subaquatique' },
+  { code: 'FEDERAL', libelle: 'Médecin fédéral' },
+  { code: 'AUTRE', libelle: 'Autre médecin' }
+];
+
+export function libelleMedecinCaci(code: string | null | undefined): string {
+  return MEDECINS_CACI.find(m => m.code === code)?.libelle ?? 'non renseigné';
+}
 
 export function libelleCaci(finValidite: string | null | undefined): string {
   switch (etatCaci(finValidite)) {

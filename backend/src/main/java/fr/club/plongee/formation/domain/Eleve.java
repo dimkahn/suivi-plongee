@@ -38,6 +38,11 @@ public class Eleve {
     /** Date de l'examen médical portée sur le CACI. */
     private LocalDate caciDateExamen;
 
+    /** Qualité du médecin signataire du CACI. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private MedecinCaci caciMedecin;
+
     /** Cases cochées sur le CACI FFESSM : ce que le certificat couvre, rien de plus. */
     @Convert(converter = ConvertisseurActivitesCaci.class)
     @Column(length = 400)
@@ -155,6 +160,14 @@ public class Eleve {
 
     public void setCaciDateExamen(LocalDate caciDateExamen) {
         this.caciDateExamen = caciDateExamen;
+    }
+
+    public MedecinCaci getCaciMedecin() {
+        return caciMedecin;
+    }
+
+    public void setCaciMedecin(MedecinCaci caciMedecin) {
+        this.caciMedecin = caciMedecin;
     }
 
     public Set<ActiviteCaci> getCaciActivites() {
