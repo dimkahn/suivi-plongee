@@ -7,6 +7,8 @@ import org.hibernate.envers.Audited;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.EnumSet;
+import java.util.Set;
 
 /** Dossier élève : historisé via Envers (voir fr.club.plongee.audit), y compris les consentements. */
 @Entity
@@ -32,6 +34,14 @@ public class Eleve {
      * jamais le certificat medical lui-meme.
      */
     private LocalDate certificatValideJusquAu;
+
+    /** Date de l'examen médical portée sur le CACI. */
+    private LocalDate caciDateExamen;
+
+    /** Cases cochées sur le CACI FFESSM : ce que le certificat couvre, rien de plus. */
+    @Convert(converter = ConvertisseurActivitesCaci.class)
+    @Column(length = 400)
+    private Set<ActiviteCaci> caciActivites = EnumSet.noneOf(ActiviteCaci.class);
 
     /**
      * Dernier niveau de plongée connu (ex. « N2 »), déclaratif : sert à
@@ -137,6 +147,23 @@ public class Eleve {
 
     public void setCertificatValideJusquAu(LocalDate certificatValideJusquAu) {
         this.certificatValideJusquAu = certificatValideJusquAu;
+    }
+
+    public LocalDate getCaciDateExamen() {
+        return caciDateExamen;
+    }
+
+    public void setCaciDateExamen(LocalDate caciDateExamen) {
+        this.caciDateExamen = caciDateExamen;
+    }
+
+    public Set<ActiviteCaci> getCaciActivites() {
+        return caciActivites;
+    }
+
+    public void setCaciActivites(Set<ActiviteCaci> caciActivites) {
+        this.caciActivites = caciActivites == null || caciActivites.isEmpty()
+                ? EnumSet.noneOf(ActiviteCaci.class) : EnumSet.copyOf(caciActivites);
     }
 
     public String getDernierNiveau() {

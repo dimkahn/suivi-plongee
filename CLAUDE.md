@@ -486,7 +486,12 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
 
 Le club suit des mineurs. Le certificat médical n'est **jamais** stocké,
 seulement sa date de fin de validité (`eleve.certificat_valide_jusqu_au`).
-Ne pas ajouter de champ de santé, de pièce jointe médicale ni de commentaire
+Pour un élève, V46 ajoute la date de l'examen (`caci_date_examen`) et les
+cases cochées du CACI FFESSM (`caci_activites`, enum `ActiviteCaci`,
+libellés dans `core/caci.ts` ; activités et loisir/compétition/encadrement) :
+ce que le certificat **couvre**, saisi dans le dossier par un ADMIN, montré
+aux encadrants au clic sur la case CACI d'« Infos élèves ». Jamais de case
+« restriction » ni de remarque du médecin. Ne pas ajouter de champ de santé, de pièce jointe médicale ni de commentaire
 libre sur l'état de santé. `V100__donnees_demo.sql` ne contient que des noms
 fictifs et ne doit pas être chargé en production (profil `dev` uniquement).
 

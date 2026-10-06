@@ -298,6 +298,9 @@ export interface LigneRoster {
   caciValide: boolean;
   /** Fin de validité du certificat médical (AAAA-MM-JJ), null si non renseignée. */
   caciFinValidite: string | null;
+  /** Date de l'examen portée sur le CACI, et cases cochées (codes de CASES_CACI). */
+  caciDateExamen: string | null;
+  caciActivites: string[];
   seancesBloc: number;
   seancesNage: number;
   /** Clé = id de séance ; valeur = atelier (NAGE/BLOC/…) ou statut (ABSENT/EXCUSE). */
@@ -379,6 +382,9 @@ export interface EleveVue {
   dateNaissance: string | null;
   numeroLicence: string | null;
   certificatValideJusquAu: string | null;
+  /** Date de l'examen portée sur le CACI, et cases cochées (codes de CASES_CACI). */
+  caciDateExamen: string | null;
+  caciActivites: string[];
   /** Déclaratif : brevet obtenu avant l'outil ou dans un autre club, sans cursus DELIVRE dans l'app. */
   dernierNiveau: string | null;
   email: string | null;
