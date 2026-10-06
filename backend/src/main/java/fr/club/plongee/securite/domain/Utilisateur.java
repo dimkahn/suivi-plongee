@@ -1,5 +1,9 @@
 package fr.club.plongee.securite.domain;
 
+import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.Caci;
+import fr.club.plongee.commun.ConvertisseurActivitesCaci;
+import fr.club.plongee.commun.MedecinCaci;
 import jakarta.persistence.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
@@ -51,6 +55,19 @@ public class Utilisateur {
      * que cette date, jamais le certificat medical lui-meme.
      */
     private LocalDate certificatValideJusquAu;
+
+    /** Date de l'examen médical portée sur le CACI. */
+    private LocalDate caciDateExamen;
+
+    /** Qualité du médecin signataire du CACI. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private MedecinCaci caciMedecin;
+
+    /** Cases cochées sur le CACI FFESSM, comme pour un élève : jamais le texte écrit par le médecin. */
+    @Convert(converter = ConvertisseurActivitesCaci.class)
+    @Column(length = 400)
+    private Set<ActiviteCaci> caciActivites = EnumSet.noneOf(ActiviteCaci.class);
 
     /**
      * Droit à l'image pour le trombinoscope des moniteurs, recueilli par un
@@ -160,6 +177,20 @@ public class Utilisateur {
 
     public void setCertificatValideJusquAu(LocalDate certificatValideJusquAu) {
         this.certificatValideJusquAu = certificatValideJusquAu;
+    }
+
+    public Caci getCaci() {
+        return new Caci(certificatValideJusquAu, caciDateExamen, caciMedecin, caciActivites);
+    }
+
+    /** Fin de validité, date de l'examen, médecin et cases, après vérification de la saisie. */
+    public void setCaci(Caci caci) {
+        caci.verifier();
+        this.certificatValideJusquAu = caci.finValidite();
+        this.caciDateExamen = caci.dateExamen();
+        this.caciMedecin = caci.medecin();
+        this.caciActivites = caci.activites() == null || caci.activites().isEmpty()
+                ? EnumSet.noneOf(ActiviteCaci.class) : EnumSet.copyOf(caci.activites());
     }
 
     public boolean isAutorisationImage() {

@@ -2,7 +2,8 @@ import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
-import { CACI_LIMITES, CASES_CACI, couleurCaci, libelleCaci, libelleMedecinCaci } from '../../core/caci';
+import { couleurCaci, libelleCaci } from '../../core/caci';
+import { DetailCaciComponent } from '../../core/detail-caci.component';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { GroupeEntrainementVue, LigneRoster, RosterVue } from '../../core/modeles';
@@ -17,7 +18,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink, FormsModule, DateFrPipe, FiltreGroupeComponent, DialogueComponent],
+  imports: [RouterLink, FormsModule, DateFrPipe, FiltreGroupeComponent, DialogueComponent, DetailCaciComponent],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
@@ -110,33 +111,8 @@ const LIBELLES: Record<string, string> = {
     <app-dialogue [ouvert]="caciOuvert() !== null" [titre]="'CACI de ' + (caciOuvert()?.eleve ?? '')"
                   (fermer)="caciOuvert.set(null)">
       @if (caciOuvert(); as e) {
-        @let couleur = couleurCaci(e.caciFinValidite);
-        <p class="etat-caci" [class]="couleur ? 'caci-' + couleur : 'alerte-cellule'">{{ libelleCaci(e.caciFinValidite) }}</p>
-        <p>
-          Date de l'examen :
-          <strong>{{ e.caciDateExamen ? (e.caciDateExamen | dateFr) : 'non renseignée' }}</strong>
-          <br>Médecin : <strong>{{ libelleMedecinCaci(e.caciMedecin) }}</strong>
-        </p>
-        @if (e.caciActivites.includes(caciLimites)) {
-          <div class="alerte" role="note">
-            Le médecin a fixé des limites et préconisations : lisez le certificat papier avant la séance.
-          </div>
-        }
-        @if (e.caciActivites.length === 0) {
-          <p class="secondaire">Les cases cochées sur le CACI n'ont pas été saisies dans le dossier.</p>
-        }
-        @for (g of casesCaci; track g.titre) {
-          <h3 class="titre-cases">{{ g.titre }}</h3>
-          <ul class="cases-caci">
-            @for (c of g.cases; track c.code) {
-              @let cochee = e.caciActivites.includes(c.code);
-              <li [class.cochee]="cochee">
-                <span class="marque" role="img" [attr.aria-label]="cochee ? 'cochée' : 'non cochée'">{{ cochee ? '☑' : '☐' }}</span>
-                {{ c.libelle }}
-              </li>
-            }
-          </ul>
-        }
+        <app-detail-caci [finValidite]="e.caciFinValidite" [dateExamen]="e.caciDateExamen"
+                         [medecin]="e.caciMedecin" [activites]="e.caciActivites" />
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" (click)="caciOuvert.set(null)">Fermer</button>
         </div>
@@ -199,20 +175,11 @@ const LIBELLES: Record<string, string> = {
       font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline dotted;
     }
     .bouton-caci:hover, .bouton-caci:focus-visible { background: var(--fond); }
-    .etat-caci { font-weight: 700; }
-    .titre-cases { margin: var(--pas-2) 0 4px; font-size: 1rem; }
-    .cases-caci { list-style: none; margin: 0; padding: 0; }
-    .cases-caci li { padding: 4px 0; color: var(--craie); }
-    .cases-caci li.cochee { color: var(--encre); font-weight: 700; }
-    .marque { display: inline-block; width: 1.5em; font-size: 1.125rem; }
   `]
 })
 export class RosterComponent implements OnDestroy {
   readonly couleurCaci = couleurCaci;
   readonly libelleCaci = libelleCaci;
-  readonly casesCaci = CASES_CACI;
-  readonly caciLimites = CACI_LIMITES;
-  readonly libelleMedecinCaci = libelleMedecinCaci;
   /** Élève dont on consulte le détail du CACI. */
   caciOuvert = signal<LigneRoster | null>(null);
   private api = inject(ApiService);

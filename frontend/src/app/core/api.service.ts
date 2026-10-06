@@ -371,6 +371,9 @@ export class ApiService {
     niveauPlongeur?: string | null;
     numeroLicence?: string | null;
     certificatValideJusquAu?: string | null;
+    caciDateExamen?: string | null;
+    caciMedecin?: string | null;
+    caciActivites?: string[];
     admin?: boolean;
     directeurTechnique?: boolean;
     tiv?: boolean;
@@ -387,6 +390,9 @@ export class ApiService {
     niveauPlongeur: string | null;
     numeroLicence: string | null;
     certificatValideJusquAu: string | null;
+    caciDateExamen: string | null;
+    caciMedecin: string | null;
+    caciActivites: string[];
     admin: boolean;
     directeurTechnique: boolean;
     tiv: boolean;

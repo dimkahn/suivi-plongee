@@ -1,4 +1,4 @@
-package fr.club.plongee.formation.domain;
+package fr.club.plongee.commun;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
@@ -9,8 +9,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Cases cochées du CACI rangées dans une seule colonne (« APNEE,LOISIR ») :
- * une colonne simple que Envers historise comme les autres champs de l'élève,
+ * Cases cochées du CACI rangées dans une seule colonne (« APNEE,COMPETITION ») :
+ * une colonne simple que Envers historise comme les autres champs de l'élève
+ * ou du moniteur,
  * sans table d'association à auditer. Une valeur inconnue (case retirée
  * depuis) est ignorée à la lecture.
  */

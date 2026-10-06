@@ -1,4 +1,4 @@
-package fr.club.plongee.formation.domain;
+package fr.club.plongee.commun;
 
 /**
  * Qualité du médecin signataire du CACI (« rayez la mention inutile »).

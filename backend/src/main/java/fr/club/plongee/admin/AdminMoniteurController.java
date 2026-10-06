@@ -2,6 +2,9 @@ package fr.club.plongee.admin;
 
 import fr.club.plongee.admin.service.AdminMoniteurService;
 
+import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.Caci;
+import fr.club.plongee.commun.MedecinCaci;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.RoleNom;
@@ -22,6 +25,7 @@ import java.io.IOException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Gestion des comptes moniteurs, reservee aux ADMIN. Restreint par
@@ -35,7 +39,8 @@ public class AdminMoniteurController {
 
     public record MoniteurVue(Long id, String email, String nom, String prenom, boolean actif,
                               String niveauEncadrement, String niveauPlongeur, String numeroLicence,
-                              LocalDate certificatValideJusquAu, boolean admin, boolean directeurTechnique,
+                              LocalDate certificatValideJusquAu, LocalDate caciDateExamen, MedecinCaci caciMedecin,
+                              Set<ActiviteCaci> caciActivites, boolean admin, boolean directeurTechnique,
                               boolean tiv, boolean autorisationImage, boolean aPhoto) {}
 
     /** {@code admin}, {@code directeurTechnique} et {@code tiv} facultatifs : absents, le moniteur est cree sans ces roles. */
@@ -44,7 +49,13 @@ public class AdminMoniteurController {
                                           @NotNull NiveauEncadrement niveauEncadrement,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                           String numeroLicence, LocalDate certificatValideJusquAu,
-                                          Boolean admin, Boolean directeurTechnique, Boolean tiv) {}
+                                          LocalDate caciDateExamen, MedecinCaci caciMedecin,
+                                          Set<ActiviteCaci> caciActivites,
+                                          Boolean admin, Boolean directeurTechnique, Boolean tiv) {
+        Caci caci() {
+            return new Caci(certificatValideJusquAu, caciDateExamen, caciMedecin, caciActivites);
+        }
+    }
 
     /**
      * {@code admin}, {@code directeurTechnique} et {@code tiv} facultatifs : absents, le
@@ -56,7 +67,13 @@ public class AdminMoniteurController {
                                               @NotNull NiveauEncadrement niveauEncadrement,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                               String numeroLicence, LocalDate certificatValideJusquAu,
-                                              Boolean admin, Boolean directeurTechnique, Boolean tiv) {}
+                                              LocalDate caciDateExamen, MedecinCaci caciMedecin,
+                                              Set<ActiviteCaci> caciActivites,
+                                              Boolean admin, Boolean directeurTechnique, Boolean tiv) {
+        Caci caci() {
+            return new Caci(certificatValideJusquAu, caciDateExamen, caciMedecin, caciActivites);
+        }
+    }
 
     public record DemandeAutorisationImage(@NotNull Boolean autorisationImage) {}
 
@@ -84,7 +101,7 @@ public class AdminMoniteurController {
     public MoniteurVue creer(@Valid @RequestBody DemandeCreationMoniteur demande) {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
-                demande.certificatValideJusquAu(), Boolean.TRUE.equals(demande.admin()),
+                demande.caci(), Boolean.TRUE.equals(demande.admin()),
                 Boolean.TRUE.equals(demande.directeurTechnique()), Boolean.TRUE.equals(demande.tiv())));
     }
 
@@ -94,7 +111,7 @@ public class AdminMoniteurController {
                                 @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return vue(service.modifier(id, auteur.id(), demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
-                demande.certificatValideJusquAu(), demande.admin(), demande.directeurTechnique(), demande.tiv()));
+                demande.caci(), demande.admin(), demande.directeurTechnique(), demande.tiv()));
     }
 
     @PutMapping("/{id}/activation")
@@ -153,7 +170,9 @@ public class AdminMoniteurController {
     private MoniteurVue vue(fr.club.plongee.securite.domain.Utilisateur u) {
         return new MoniteurVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif(),
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
-                u.getNiveauPlongeur(), u.getNumeroLicence(), u.getCertificatValideJusquAu(), u.getRoles().contains(RoleNom.ADMIN),
+                u.getNiveauPlongeur(), u.getNumeroLicence(), u.getCertificatValideJusquAu(),
+                u.getCaci().dateExamen(), u.getCaci().medecin(), u.getCaci().activites(),
+                u.getRoles().contains(RoleNom.ADMIN),
                 u.getRoles().contains(RoleNom.DIRECTEUR_TECHNIQUE), u.getRoles().contains(RoleNom.TIV),
                 u.isAutorisationImage(), u.isAutorisationImage() && photos.existsById(u.getId()));
     }

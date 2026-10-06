@@ -15,7 +15,7 @@ questions:
 ## Pas à pas
 
 1. Menu, puis touchez votre nom.
-2. En haut : votre niveau d'encadrement et la date de fin de votre CACI.
+2. En haut : votre niveau d'encadrement et la date de fin de votre CACI ; « Détail de mon CACI » montre la date de l'examen, le médecin et les cases cochées.
 3. « Photo » : choisissez une photo, recadrez-la, validez. Elle apparaît dans le trombinoscope des moniteurs.
 4. Plus bas : numéro de licence, e-mail de connexion et mot de passe (10 caractères au moins).
 

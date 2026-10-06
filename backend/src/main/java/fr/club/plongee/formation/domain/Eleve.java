@@ -1,5 +1,8 @@
 package fr.club.plongee.formation.domain;
 
+import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.ConvertisseurActivitesCaci;
+import fr.club.plongee.commun.MedecinCaci;
 import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 import org.hibernate.envers.Audited;

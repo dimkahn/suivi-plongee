@@ -4,7 +4,9 @@ import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.formation.service.*;
 
-import fr.club.plongee.commun.Calendrier;
+import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.Caci;
+import fr.club.plongee.commun.MedecinCaci;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import jakarta.validation.Valid;
@@ -157,7 +159,8 @@ public class EleveController {
         e.setDateNaissance(demande.dateNaissance());
         e.setNumeroLicence(demande.numeroLicence());
         e.setCertificatValideJusquAu(demande.certificatValideJusquAu());
-        verifierCaci(demande);
+        new Caci(demande.certificatValideJusquAu(), demande.caciDateExamen(), demande.caciMedecin(),
+                demande.caciActivites()).verifier();
         e.setCaciDateExamen(demande.caciDateExamen());
         e.setCaciMedecin(demande.caciMedecin());
         e.setCaciActivites(demande.caciActivites());
@@ -169,29 +172,6 @@ public class EleveController {
         e.setTailleGilet(vide(demande.tailleGilet()) ? null : demande.tailleGilet().trim());
         e.setTailleCombinaison(vide(demande.tailleCombinaison()) ? null : demande.tailleCombinaison().trim());
         e.setAutorisationLegale(demande.autorisationLegale());
-    }
-
-    /**
-     * Erreurs de saisie : « l'ensemble des activités » cochée avec une case
-     * « ou bien seulement », date d'examen à venir ou postérieure à la fin
-     * de validité.
-     */
-    private static void verifierCaci(DemandeEleve demande) {
-        Set<ActiviteCaci> cases = demande.caciActivites();
-        if (cases != null && cases.contains(ActiviteCaci.ENSEMBLE_ACTIVITES)
-                && cases.stream().anyMatch(ActiviteCaci::seulement)) {
-            throw new RegleMetierException("CACI : « l'ensemble des activités subaquatiques fédérales » "
-                    + "exclut les cases « ou bien seulement ». Cochez l'une ou les autres, comme sur le certificat.");
-        }
-        LocalDate examen = demande.caciDateExamen();
-        if (examen == null) return;
-        if (examen.isAfter(Calendrier.aujourdhui())) {
-            throw new RegleMetierException("La date de l'examen du CACI ne peut pas être dans le futur.");
-        }
-        if (demande.certificatValideJusquAu() != null && examen.isAfter(demande.certificatValideJusquAu())) {
-            throw new RegleMetierException(
-                    "La date de l'examen du CACI est postérieure à sa fin de validité : vérifiez les deux dates.");
-        }
     }
 
     private static boolean vide(String texte) {

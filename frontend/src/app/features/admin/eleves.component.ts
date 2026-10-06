@@ -6,7 +6,8 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
-import { CACI_ENSEMBLE, CASES_CACI, MEDECINS_CACI, etatCaci, libelleCaci } from '../../core/caci';
+import { etatCaci, libelleCaci } from '../../core/caci';
+import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { NgTemplateOutlet } from '@angular/common';
@@ -60,7 +61,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
 @Component({
   selector: 'app-eleves',
-  imports: [FormsModule, NgTemplateOutlet, DateFrPipe, RecadragePhotoComponent, DialogueComponent],
+  imports: [FormsModule, NgTemplateOutlet, DateFrPipe, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent],
   template: `
     <!-- Suggestions pour le gilet ; la taille reste libre. La combinaison n'en a pas : texte libre seulement. -->
     <datalist id="tailles-gilet">
@@ -86,32 +87,8 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       <input [id]="p + 'naissance'" type="date" name="naissance" [(ngModel)]="f.dateNaissance">
       <label [for]="p + 'licence'">N° de licence</label>
       <input [id]="p + 'licence'" type="text" name="licence" [(ngModel)]="f.numeroLicence" placeholder="Facultatif">
-      <label [for]="p + 'caci'">CACI valide jusqu'au</label>
-      <input [id]="p + 'caci'" type="date" name="caci" [(ngModel)]="f.certificatValideJusquAu">
-      <label [for]="p + 'caciExamen'">Date de l'examen (CACI)</label>
-      <input [id]="p + 'caciExamen'" type="date" name="caciExamen" [ngModel]="f.caciDateExamen"
-             (ngModelChange)="changerDateExamen(f, $event)">
-      <label [for]="p + 'caciMedecin'">Médecin signataire</label>
-      <select [id]="p + 'caciMedecin'" name="caciMedecin" [(ngModel)]="f.caciMedecin">
-        <option value="">Non renseigné</option>
-        @for (m of medecinsCaci; track m.code) { <option [value]="m.code">{{ m.libelle }}</option> }
-      </select>
-      <!-- Cases du CACI FFESSM (version juin 2026) : les cases seulement, jamais le texte écrit par le médecin. -->
-      <fieldset class="cases-caci">
-        <legend>Cases cochées sur le CACI</legend>
-        @for (g of casesCaci; track g.titre) {
-          <p class="titre-cases">{{ g.titre }}</p>
-          @for (c of g.cases; track c.code) {
-            <label class="case">
-              <input type="checkbox" [name]="p + 'caci-' + c.code" [checked]="f.caciActivites.includes(c.code)"
-                     [disabled]="g.seulement && f.caciActivites.includes(caciEnsemble)"
-                     (change)="basculerCaseCaci(f, c.code, $any($event.target).checked)">
-              {{ c.libelle }}
-            </label>
-          }
-        }
-        <p class="aide-cases">Le texte écrit par le médecin (activités en compétition, limites) n'est pas recopié : il reste sur le certificat papier.</p>
-      </fieldset>
+      <app-saisie-caci [prefixe]="p" [(finValidite)]="f.certificatValideJusquAu" [(dateExamen)]="f.caciDateExamen"
+                       [(medecin)]="f.caciMedecin" [(activites)]="f.caciActivites" />
       <label [for]="p + 'niveau'">Dernier niveau de plongée</label>
       <input [id]="p + 'niveau'" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
              placeholder="Facultatif, ex. N2 — si obtenu avant l'outil ou dans un autre club">
@@ -438,11 +415,6 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; }
     .case input { width: auto; }
-    .cases-caci { border: 1px solid var(--trait); border-radius: 8px; padding: var(--pas) var(--pas-2); margin: var(--pas) 0; }
-    .cases-caci legend { font-weight: 700; padding: 0 4px; }
-    .cases-caci .case { min-height: 44px; }
-    .titre-cases { margin: var(--pas) 0 0; font-size: .875rem; color: var(--craie); font-weight: 700; }
-    .aide-cases { margin: var(--pas) 0 0; font-size: .8125rem; color: var(--craie); }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
 
     .filtres {
@@ -531,31 +503,6 @@ export class ElevesComponent {
 
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
-  readonly casesCaci = CASES_CACI;
-  readonly medecinsCaci = MEDECINS_CACI;
-  readonly caciEnsemble = CACI_ENSEMBLE;
-
-  /** « L'ensemble des activités » décoche les cases « ou bien seulement », comme sur le formulaire. */
-  basculerCaseCaci(f: FormulaireEleve, code: string, cochee: boolean): void {
-    const seulement = CASES_CACI.filter(g => g.seulement).flatMap(g => g.cases.map(c => c.code));
-    let cases = f.caciActivites.filter(c => c !== code);
-    if (cochee) {
-      if (code === CACI_ENSEMBLE) cases = cases.filter(c => !seulement.includes(c));
-      cases.push(code);
-    }
-    f.caciActivites = cases;
-  }
-
-  /** Le CACI vaut un an : la fin de validité se propose si elle est encore vide. */
-  changerDateExamen(f: FormulaireEleve, date: string): void {
-    f.caciDateExamen = date;
-    if (date && !f.certificatValideJusquAu) {
-      const fin = new Date(date + 'T12:00:00');
-      fin.setFullYear(fin.getFullYear() + 1);
-      fin.setDate(fin.getDate() - 1);
-      f.certificatValideJusquAu = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
-    }
-  }
 
   /**
    * Seuls les élèves rattachés à la saison choisie (formation ou adhésion)
