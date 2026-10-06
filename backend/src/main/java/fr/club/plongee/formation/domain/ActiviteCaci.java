@@ -2,29 +2,33 @@ package fr.club.plongee.formation.domain;
 
 /**
  * Cases à cocher du CACI (certificat d'absence de contre-indication) de la
- * FFESSM : les activités et les modes de pratique que le médecin a couverts.
- * Ce ne sont pas des données de santé (le CACI ne dit rien de la raison
- * d'une case non cochée) : on ne garde ni restriction, ni remarque du
- * médecin, ni le certificat lui-même. Les libellés sont repris à l'écran
- * dans {@code core/caci.ts}.
+ * FFESSM, modèle « Version Juin 2026 » de la commission médicale et de
+ * prévention nationale. Les libellés sont repris à l'écran dans
+ * {@code core/caci.ts}.
+ *
+ * On ne garde que les cases : ni le texte écrit par le médecin à côté (les
+ * activités en compétition, le détail des limites et préconisations), ni le
+ * certificat lui-même. {@link #LIMITES_PRECONISATIONS} dit seulement à
+ * l'encadrant qu'il doit lire le certificat papier avant la séance.
  *
  * Ajouter une case = ajouter une valeur ici et son libellé côté écran ; ne
  * jamais renommer une valeur existante (elle est enregistrée telle quelle).
  */
 public enum ActiviteCaci {
-    // Activités
+    /** « De l'ensemble des activités subaquatiques fédérales ». */
+    ENSEMBLE_ACTIVITES,
+    // « Ou bien seulement » : exclusives de ENSEMBLE_ACTIVITES
     PLONGEE_SCAPHANDRE,
     APNEE,
-    NAGE_AVEC_PALMES,
-    PECHE_SOUS_MARINE,
-    HOCKEY_SUBAQUATIQUE,
-    TIR_SUR_CIBLE,
-    ORIENTATION,
-    NAGE_EN_EAU_VIVE,
-    PLONGEE_SPORTIVE_PISCINE,
-    RUGBY_SUBAQUATIQUE,
-    // Modes de pratique
-    LOISIR,
+    APNEE_PROFONDEUR_6M,
+    NAGE_AVEC_ACCESSOIRES,
+    /** « De la ou des activité(s) suivante(s) en compétition ». */
     COMPETITION,
-    ENSEIGNEMENT_ENCADREMENT
+    /** « Avec les limites et préconisations suivantes » (encadrement, profondeur, gaz…). */
+    LIMITES_PRECONISATIONS;
+
+    public boolean seulement() {
+        return this == PLONGEE_SCAPHANDRE || this == APNEE
+                || this == APNEE_PROFONDEUR_6M || this == NAGE_AVEC_ACCESSOIRES;
+    }
 }

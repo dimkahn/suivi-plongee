@@ -57,13 +57,14 @@ class CaciEleveTest {
         JsonNode cree = json.readTree(mvc.perform(post("/api/eleves").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("""
                                 {"nom":"Caci","prenom":"Lou","autorisationLegale":true,
-                                 "certificatValideJusquAu":"%s","caciDateExamen":"%s",
-                                 "caciActivites":["LOISIR","PLONGEE_SCAPHANDRE"]}""".formatted(fin, examen)))
+                                 "certificatValideJusquAu":"%s","caciDateExamen":"%s","caciMedecin":"FEDERAL",
+                                 "caciActivites":["COMPETITION","APNEE_PROFONDEUR_6M"]}""".formatted(fin, examen)))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
         long id = cree.get("id").asLong();
         assertThat(cree.get("caciDateExamen").asText()).isEqualTo(examen);
+        assertThat(cree.get("caciMedecin").asText()).isEqualTo("FEDERAL");
         // Rendues dans l'ordre du formulaire, quel que soit l'ordre d'envoi.
-        assertThat(textes(cree.get("caciActivites"))).containsExactly("PLONGEE_SCAPHANDRE", "LOISIR");
+        assertThat(textes(cree.get("caciActivites"))).containsExactly("APNEE_PROFONDEUR_6M", "COMPETITION");
 
         JsonNode modifie = json.readTree(mvc.perform(put("/api/eleves/" + id).header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("""
@@ -71,13 +72,19 @@ class CaciEleveTest {
                                  "certificatValideJusquAu":"%s"}""".formatted(fin)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(modifie.get("caciDateExamen").isNull()).isTrue();
+        assertThat(modifie.get("caciMedecin").isNull()).isTrue();
         assertThat(modifie.get("caciActivites").size()).isZero();
     }
 
     @Test
-    @DisplayName("Une date d'examen à venir ou après la fin de validité est refusée")
+    @DisplayName("Saisies incohérentes refusées : « ensemble » avec « ou bien seulement », dates inversées")
     void datesIncoherentesRefusees() throws Exception {
         String admin = jeton("presidente@club.fr");
+        mvc.perform(post("/api/eleves").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"nom":"Caci","prenom":"Double","autorisationLegale":true,
+                                 "caciActivites":["ENSEMBLE_ACTIVITES","APNEE"]}"""))
+                .andExpect(status().isUnprocessableContent());
         mvc.perform(post("/api/eleves").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("""
                                 {"nom":"Caci","prenom":"Futur","autorisationLegale":true,

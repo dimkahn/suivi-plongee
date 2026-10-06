@@ -38,8 +38,8 @@ public class EleveController {
 
     public record EleveVue(Long id, String nom, String prenom, LocalDate dateNaissance,
                            String numeroLicence, LocalDate certificatValideJusquAu,
-                           LocalDate caciDateExamen, Set<ActiviteCaci> caciActivites, String dernierNiveau,
-                           String email, String telephone, String contactUrgenceNom,
+                           LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites,
+                           String dernierNiveau, String email, String telephone, String contactUrgenceNom,
                            String contactUrgenceTelephone, String tailleGilet, String tailleCombinaison,
                            boolean autorisationLegale, boolean autorisationImage, boolean archive,
                            /** Jamais vrai sans le droit à l'image. */
@@ -47,8 +47,9 @@ public class EleveController {
 
     public record DemandeEleve(@NotBlank String nom, @NotBlank String prenom, LocalDate dateNaissance,
                                String numeroLicence, LocalDate certificatValideJusquAu,
-                               /** Date de l'examen et cases cochées du CACI : facultatives. */
-                               LocalDate caciDateExamen, Set<ActiviteCaci> caciActivites, String dernierNiveau,
+                               /** Date de l'examen, médecin et cases cochées du CACI : facultatifs. */
+                               LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites,
+                               String dernierNiveau,
                                String email, String telephone, String contactUrgenceNom,
                                String contactUrgenceTelephone,
                                @Size(max = 20, message = "Taille de gilet : 20 caractères au plus.") String tailleGilet,
@@ -158,6 +159,7 @@ public class EleveController {
         e.setCertificatValideJusquAu(demande.certificatValideJusquAu());
         verifierCaci(demande);
         e.setCaciDateExamen(demande.caciDateExamen());
+        e.setCaciMedecin(demande.caciMedecin());
         e.setCaciActivites(demande.caciActivites());
         e.setDernierNiveau(demande.dernierNiveau());
         e.setEmail(demande.email());
@@ -169,8 +171,18 @@ public class EleveController {
         e.setAutorisationLegale(demande.autorisationLegale());
     }
 
-    /** Une date d'examen à venir, ou postérieure à la fin de validité, est une erreur de saisie. */
+    /**
+     * Erreurs de saisie : « l'ensemble des activités » cochée avec une case
+     * « ou bien seulement », date d'examen à venir ou postérieure à la fin
+     * de validité.
+     */
     private static void verifierCaci(DemandeEleve demande) {
+        Set<ActiviteCaci> cases = demande.caciActivites();
+        if (cases != null && cases.contains(ActiviteCaci.ENSEMBLE_ACTIVITES)
+                && cases.stream().anyMatch(ActiviteCaci::seulement)) {
+            throw new RegleMetierException("CACI : « l'ensemble des activités subaquatiques fédérales » "
+                    + "exclut les cases « ou bien seulement ». Cochez l'une ou les autres, comme sur le certificat.");
+        }
         LocalDate examen = demande.caciDateExamen();
         if (examen == null) return;
         if (examen.isAfter(Calendrier.aujourdhui())) {
@@ -193,7 +205,7 @@ public class EleveController {
     private EleveVue vue(Eleve e, boolean photoEnBase) {
         return new EleveVue(e.getId(), e.getNom(), e.getPrenom(), e.getDateNaissance(),
                 e.getNumeroLicence(), e.getCertificatValideJusquAu(),
-                e.getCaciDateExamen(), e.getCaciActivites(), e.getDernierNiveau(),
+                e.getCaciDateExamen(), e.getCaciMedecin(), e.getCaciActivites(), e.getDernierNiveau(),
                 e.getEmail(), e.getTelephone(), e.getContactUrgenceNom(), e.getContactUrgenceTelephone(),
                 e.getTailleGilet(), e.getTailleCombinaison(),
                 e.isAutorisationLegale(), e.isAutorisationImage(), e.getArchiveLe() != null,

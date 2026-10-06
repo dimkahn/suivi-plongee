@@ -30,11 +30,12 @@ public class RosterController {
     /**
      * {@code aPhoto} : jamais vrai sans le droit à l'image de l'élève.
      * {@code caciFinValidite} : date seule (jamais le certificat), pour colorer l'échéance à l'écran ;
-     * {@code caciDateExamen} et {@code caciActivites} (cases cochées) s'affichent au clic sur la case CACI.
+     * {@code caciDateExamen}, {@code caciMedecin} et {@code caciActivites} (cases cochées) s'affichent
+     * au clic sur la case CACI.
      */
     public record LigneEleve(Long cursusId, Long eleveId, String eleve, String niveau,
                              boolean caciValide, LocalDate caciFinValidite,
-                             LocalDate caciDateExamen, Set<ActiviteCaci> caciActivites,
+                             LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites,
                              long seancesBloc, long seancesNage,
                              Map<Long, String> presencesParSeance, boolean aPhoto) {}
 
@@ -77,7 +78,7 @@ public class RosterController {
                     c.getReferentiel().getNiveau().name(),
                     c.getEleve().certificatValideAu(aujourdhui),
                     e.getCertificatValideJusquAu(),
-                    e.getCaciDateExamen(), e.getCaciActivites(),
+                    e.getCaciDateExamen(), e.getCaciMedecin(), e.getCaciActivites(),
                     participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),
                     participations.compterAtelier(c.getId(), Participation.Atelier.NAGE),
                     presences,

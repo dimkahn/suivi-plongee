@@ -28,9 +28,10 @@ questions:
 - Rouge : moins de 15 jours.
 - ⚠ : expiré.
 
-Touchez la case CACI d'un élève : une fenêtre donne la date de l'examen, la fin de validité et les cases cochées par le médecin (plongée en scaphandre, apnée, loisir, compétition, encadrement…).
+Touchez la case CACI d'un élève : une fenêtre donne la date de l'examen, la fin de validité, le médecin et les cases cochées sur le certificat FFESSM (ensemble des activités, ou seulement scaphandre, apnée, apnée au-delà de 6 m, nage avec accessoires ; compétition ; limites et préconisations).
 
 ## Bon à savoir
 
-- Aucune donnée de santé n'est enregistrée : seules les dates du certificat médical et ce qu'il couvre, jamais de restriction ni de remarque du médecin.
+- Si la case « limites et préconisations » est cochée, un encadré le signale : lisez le certificat papier, le détail n'est pas dans l'appli.
+- Aucune donnée de santé n'est enregistrée : seules les dates, le médecin et les cases, jamais le texte écrit par le médecin.
 - Les cases se saisissent dans le dossier de l'élève, par un administrateur.

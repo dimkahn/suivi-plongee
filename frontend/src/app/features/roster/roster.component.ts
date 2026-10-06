@@ -2,7 +2,7 @@ import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
-import { CASES_CACI, couleurCaci, libelleCaci } from '../../core/caci';
+import { CACI_LIMITES, CASES_CACI, couleurCaci, libelleCaci, libelleMedecinCaci } from '../../core/caci';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { GroupeEntrainementVue, LigneRoster, RosterVue } from '../../core/modeles';
@@ -115,7 +115,13 @@ const LIBELLES: Record<string, string> = {
         <p>
           Date de l'examen :
           <strong>{{ e.caciDateExamen ? (e.caciDateExamen | dateFr) : 'non renseignée' }}</strong>
+          <br>Médecin : <strong>{{ libelleMedecinCaci(e.caciMedecin) }}</strong>
         </p>
+        @if (e.caciActivites.includes(caciLimites)) {
+          <div class="alerte" role="note">
+            Le médecin a fixé des limites et préconisations : lisez le certificat papier avant la séance.
+          </div>
+        }
         @if (e.caciActivites.length === 0) {
           <p class="secondaire">Les cases cochées sur le CACI n'ont pas été saisies dans le dossier.</p>
         }
@@ -205,6 +211,8 @@ export class RosterComponent implements OnDestroy {
   readonly couleurCaci = couleurCaci;
   readonly libelleCaci = libelleCaci;
   readonly casesCaci = CASES_CACI;
+  readonly caciLimites = CACI_LIMITES;
+  readonly libelleMedecinCaci = libelleMedecinCaci;
   /** Élève dont on consulte le détail du CACI. */
   caciOuvert = signal<LigneRoster | null>(null);
   private api = inject(ApiService);
