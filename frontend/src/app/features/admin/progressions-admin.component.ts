@@ -8,6 +8,7 @@ import {
   ReferentielVue
 } from '../../core/modeles';
 import { MOIS_SAISON, nomMois, plageMois } from '../../core/progression';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -40,7 +41,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
 
 @Component({
   selector: 'app-progressions-admin',
-  imports: [FormsModule],
+  imports: [FormsModule, DialogueComponent],
   template: `
     <h1>Progressions types</h1>
     <p class="secondaire">
@@ -80,9 +81,51 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
         </button>
       </div>
 
+      @if (detail(); as d) {
+        <section class="carte fiche">
+          <div class="entete">
+            <span class="nom">{{ d.nom }}</span>
+            <span class="secondaire">{{ d.niveau }} · MFT {{ d.versionMft }}</span>
+          </div>
+          @if (d.description) { <p>{{ d.description }}</p> }
+          <div class="actions">
+            <button type="button" class="bouton-discret" (click)="commencerEdition(d)">Modifier</button>
+            <button type="button" class="bouton-discret" (click)="copier(d)">Dupliquer</button>
+            <button type="button" class="bouton-discret danger" (click)="supprimer(d)">Supprimer</button>
+          </div>
+
+          @if (d.periodes.length === 0) {
+            <p class="secondaire">Aucune période : utilisez « Modifier » pour en ajouter.</p>
+          }
+          <ol class="periodes">
+            @for (p of d.periodes; track p.id) {
+              <li class="periode">
+                <div class="entete-periode">
+                  <span class="plage">{{ plage(p.moisDebut, p.moisFin) }}</span>
+                  @if (p.milieu) {
+                    <span class="milieu">{{ p.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
+                  }
+                </div>
+                <span class="intitule">{{ p.intitule }}</span>
+                @if (p.note) { <p class="note">{{ p.note }}</p> }
+                @if (p.blocs.length > 0) {
+                  <ul class="blocs">
+                    @for (b of p.blocs; track b.id) { <li>{{ b.intitule }}</li> }
+                  </ul>
+                } @else {
+                  <p class="secondaire">Aucun bloc désigné.</p>
+                }
+              </li>
+            }
+          </ol>
+        </section>
+      }
+    }
+
+    <app-dialogue [ouvert]="creation() !== null" [titre]="'Nouvelle progression ' + selectionNiveau()"
+                  [erreur]="message()" (fermer)="creation.set(null)">
       @if (creation(); as c) {
-        <section class="carte fiche formulaire">
-          <h2>Nouvelle progression {{ selectionNiveau() }}</h2>
+        <div class="formulaire">
           <label for="nouveau-referentiel">Référentiel</label>
           <select id="nouveau-referentiel" [(ngModel)]="c.referentielId">
             @for (r of referentielsDuNiveau(); track r.id) {
@@ -91,18 +134,20 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           </select>
           <label for="nouveau-nom">Nom</label>
           <input id="nouveau-nom" type="text" [(ngModel)]="c.nom" placeholder="ex. N1 – saison piscine">
-          <div class="actions">
+          <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
               {{ envoi() ? 'Création…' : 'Créer puis ajouter les périodes' }}
             </button>
             <button type="button" class="bouton-discret" (click)="creation.set(null)">Annuler</button>
           </div>
-        </section>
+        </div>
       }
+    </app-dialogue>
 
+    <app-dialogue [ouvert]="edition() !== null" titre="Modifier la progression" [large]="true"
+                  [erreur]="message()" (fermer)="edition.set(null)">
       @if (edition(); as f) {
-        <section class="carte fiche formulaire">
-          <h2>Modifier la progression</h2>
+        <div class="formulaire">
           <label for="nom">Nom</label>
           <input id="nom" type="text" [(ngModel)]="f.nom">
           <label for="description">Description</label>
@@ -172,53 +217,15 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
             Ajouter une période
           </button>
 
-          <div class="actions">
+          <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="edition.set(null)">Annuler</button>
           </div>
-        </section>
-      } @else if (detail(); as d) {
-        <section class="carte fiche">
-          <div class="entete">
-            <span class="nom">{{ d.nom }}</span>
-            <span class="secondaire">{{ d.niveau }} · MFT {{ d.versionMft }}</span>
-          </div>
-          @if (d.description) { <p>{{ d.description }}</p> }
-          <div class="actions">
-            <button type="button" class="bouton-discret" (click)="commencerEdition(d)">Modifier</button>
-            <button type="button" class="bouton-discret" (click)="copier(d)">Dupliquer</button>
-            <button type="button" class="bouton-discret danger" (click)="supprimer(d)">Supprimer</button>
-          </div>
-
-          @if (d.periodes.length === 0) {
-            <p class="secondaire">Aucune période : utilisez « Modifier » pour en ajouter.</p>
-          }
-          <ol class="periodes">
-            @for (p of d.periodes; track p.id) {
-              <li class="periode">
-                <div class="entete-periode">
-                  <span class="plage">{{ plage(p.moisDebut, p.moisFin) }}</span>
-                  @if (p.milieu) {
-                    <span class="milieu">{{ p.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
-                  }
-                </div>
-                <span class="intitule">{{ p.intitule }}</span>
-                @if (p.note) { <p class="note">{{ p.note }}</p> }
-                @if (p.blocs.length > 0) {
-                  <ul class="blocs">
-                    @for (b of p.blocs; track b.id) { <li>{{ b.intitule }}</li> }
-                  </ul>
-                } @else {
-                  <p class="secondaire">Aucun bloc désigné.</p>
-                }
-              </li>
-            }
-          </ol>
-        </section>
+        </div>
       }
-    }
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
