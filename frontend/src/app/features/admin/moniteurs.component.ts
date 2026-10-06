@@ -67,7 +67,7 @@ function aVerifier(m: MoniteurVue): boolean {
       <label for="licence">N° de licence</label>
       <input id="licence" type="text" name="licence" [(ngModel)]="numeroLicence" placeholder="Facultatif">
 
-      <app-saisie-caci [(finValidite)]="certificatValideJusquAu" [(dateExamen)]="caciDateExamen"
+      <app-saisie-caci [(dateExamen)]="caciDateExamen"
                        [(medecin)]="caciMedecin" [(activites)]="caciActivites" />
 
       <label class="case">
@@ -228,8 +228,7 @@ function aVerifier(m: MoniteurVue): boolean {
         <input id="edition-licence" type="text" name="editionLicence"
                [(ngModel)]="edition.numeroLicence" placeholder="Facultatif">
 
-        <app-saisie-caci prefixe="edition-" [(finValidite)]="edition.certificatValideJusquAu"
-                         [(dateExamen)]="edition.caciDateExamen" [(medecin)]="edition.caciMedecin"
+        <app-saisie-caci prefixe="edition-" [(dateExamen)]="edition.caciDateExamen" [(medecin)]="edition.caciMedecin"
                          [(activites)]="edition.caciActivites" />
 
         <label class="case">
@@ -387,7 +386,6 @@ export class MoniteursComponent {
   niveauPlongeur = '';
   readonly niveauxPlongeur = ['N1', 'N2', 'N3', 'N4', 'N5'];
   numeroLicence = '';
-  certificatValideJusquAu = '';
   caciDateExamen = '';
   caciMedecin = '';
   caciActivites: string[] = [];
@@ -400,7 +398,7 @@ export class MoniteursComponent {
   moniteurEdite = signal<number | null>(null);
   edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
               numeroLicence: '',
-              certificatValideJusquAu: '', caciDateExamen: '', caciMedecin: '', caciActivites: [] as string[],
+              caciDateExamen: '', caciMedecin: '', caciActivites: [] as string[],
               admin: false, directeurTechnique: false, tiv: false };
 
   /** Moniteur dont on consulte le détail du CACI. */
@@ -489,7 +487,6 @@ export class MoniteursComponent {
       niveauEncadrement: this.niveauEncadrement,
       niveauPlongeur: this.niveauPlongeur || null,
       numeroLicence: this.numeroLicence || null,
-      certificatValideJusquAu: this.certificatValideJusquAu || null,
       caciDateExamen: this.caciDateExamen || null,
       caciMedecin: this.caciMedecin || null,
       caciActivites: this.caciActivites,
@@ -506,7 +503,6 @@ export class MoniteursComponent {
         this.email = '';
         this.niveauPlongeur = '';
         this.numeroLicence = '';
-        this.certificatValideJusquAu = '';
         this.caciDateExamen = '';
         this.caciMedecin = '';
         this.caciActivites = [];
@@ -541,7 +537,6 @@ export class MoniteursComponent {
       niveauEncadrement: m.niveauEncadrement ?? 'E1',
       niveauPlongeur: m.niveauPlongeur ?? '',
       numeroLicence: m.numeroLicence ?? '',
-      certificatValideJusquAu: m.certificatValideJusquAu ?? '',
       caciDateExamen: m.caciDateExamen ?? '',
       caciMedecin: m.caciMedecin ?? '',
       caciActivites: [...(m.caciActivites ?? [])],
@@ -562,7 +557,6 @@ export class MoniteursComponent {
     this.message.set(null);
     this.api.modifierMoniteur(m.id, {
       ...e, niveauPlongeur: e.niveauPlongeur || null, numeroLicence: e.numeroLicence || null,
-      certificatValideJusquAu: e.certificatValideJusquAu || null,
       caciDateExamen: e.caciDateExamen || null, caciMedecin: e.caciMedecin || null
     }).subscribe({
       next: maj => {

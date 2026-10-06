@@ -18,8 +18,8 @@ export default {
     await saisir('#prenom', 'Nathan');
     await saisir('#nom', 'Petit');
     await dater('#naissance', '2011-02-17');
-    await legende('Du certificat médical, seule la date de fin de validité est gardée : aucune donnée de santé.', 0);
-    await dater('#caci', '2027-09-20');
+    await legende('Du CACI, la date de l\'examen suffit : il vaut un an. Aucune donnée de santé n\'est gardée.', 0);
+    await dater('#caciExamen', '2026-09-20');
     await saisir('#telephone', '06 00 00 00 51');
     await saisir('#contactUrgenceNom', 'Sophie Petit (mère)');
     await saisir('#contactUrgenceTelephone', '06 00 00 00 52');

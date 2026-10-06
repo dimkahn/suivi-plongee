@@ -48,8 +48,11 @@ public class EleveController {
                            boolean aPhoto) {}
 
     public record DemandeEleve(@NotBlank String nom, @NotBlank String prenom, LocalDate dateNaissance,
-                               String numeroLicence, LocalDate certificatValideJusquAu,
-                               /** Date de l'examen, médecin et cases cochées du CACI : facultatifs. */
+                               String numeroLicence,
+                               /**
+                                * Date de l'examen, médecin et cases cochées du CACI : facultatifs. La
+                                * fin de validité ne se saisit pas, elle se déduit de la date de l'examen.
+                                */
                                LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites,
                                String dernierNiveau,
                                String email, String telephone, String contactUrgenceNom,
@@ -158,12 +161,7 @@ public class EleveController {
         e.setPrenom(demande.prenom());
         e.setDateNaissance(demande.dateNaissance());
         e.setNumeroLicence(demande.numeroLicence());
-        e.setCertificatValideJusquAu(demande.certificatValideJusquAu());
-        new Caci(demande.certificatValideJusquAu(), demande.caciDateExamen(), demande.caciMedecin(),
-                demande.caciActivites()).verifier();
-        e.setCaciDateExamen(demande.caciDateExamen());
-        e.setCaciMedecin(demande.caciMedecin());
-        e.setCaciActivites(demande.caciActivites());
+        e.setCaci(new Caci(demande.caciDateExamen(), demande.caciMedecin(), demande.caciActivites()));
         e.setDernierNiveau(demande.dernierNiveau());
         e.setEmail(demande.email());
         e.setTelephone(demande.telephone());

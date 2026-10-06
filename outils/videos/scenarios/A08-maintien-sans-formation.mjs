@@ -19,7 +19,7 @@ export default {
     await saisir('#prenom', 'Inès');
     await saisir('#nom', 'Faure');
     await dater('#naissance', '1996-07-08');
-    await dater('#caci', '2027-06-30');
+    await dater('#caciExamen', '2026-06-30');
     await saisir('#niveau', 'N2');
     await cocher(page.locator('input[name="autorisationLegale"]').first());
     await legende('Pour cette saison : « Aucune formation — maintien », dans le groupe N2+.', 0);

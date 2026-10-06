@@ -48,12 +48,13 @@ public class AdminMoniteurController {
                                           @NotBlank String prenom,
                                           @NotNull NiveauEncadrement niveauEncadrement,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
-                                          String numeroLicence, LocalDate certificatValideJusquAu,
+                                          String numeroLicence,
+                                          /** La fin de validité du CACI se déduit de la date de l'examen. */
                                           LocalDate caciDateExamen, MedecinCaci caciMedecin,
                                           Set<ActiviteCaci> caciActivites,
                                           Boolean admin, Boolean directeurTechnique, Boolean tiv) {
         Caci caci() {
-            return new Caci(certificatValideJusquAu, caciDateExamen, caciMedecin, caciActivites);
+            return new Caci(caciDateExamen, caciMedecin, caciActivites);
         }
     }
 
@@ -66,12 +67,12 @@ public class AdminMoniteurController {
                                               @NotBlank String prenom,
                                               @NotNull NiveauEncadrement niveauEncadrement,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
-                                              String numeroLicence, LocalDate certificatValideJusquAu,
+                                              String numeroLicence,
                                               LocalDate caciDateExamen, MedecinCaci caciMedecin,
                                               Set<ActiviteCaci> caciActivites,
                                               Boolean admin, Boolean directeurTechnique, Boolean tiv) {
         Caci caci() {
-            return new Caci(certificatValideJusquAu, caciDateExamen, caciMedecin, caciActivites);
+            return new Caci(caciDateExamen, caciMedecin, caciActivites);
         }
     }
 

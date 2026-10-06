@@ -374,9 +374,10 @@ Compte : `presidente@club.fr` · format ordinateur · 42 s
 
 1. La liste des encadrants, avec l'état de leur CACI.
 2. Niveau d'encadrement et niveau de plongeur sont distincts : un E1 peut n'être que N2.
-3. Deux rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel).
-4. Julien reçoit un e-mail pour choisir son mot de passe.
-5. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
+3. Pour le CACI, la date de l'examen suffit : il vaut un an.
+4. Deux rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel).
+5. Julien reçoit un e-mail pour choisir son mot de passe.
+6. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
 
 ### A6 — Créer le dossier d'un élève
 
@@ -384,7 +385,7 @@ Le dossier d'un élève : identité, CACI, contact d'urgence, autorisation de pr
 
 Compte : `presidente@club.fr` · format ordinateur · 41 s
 
-1. Du certificat médical, seule la date de fin de validité est gardée : aucune donnée de santé.
+1. Du CACI, la date de l'examen suffit : il vaut un an. Aucune donnée de santé n'est gardée.
 2. Nathan est mineur : l'autorisation du responsable légal couvre la pratique…
 3. … le droit à l'image est un accord à part. Sans lui, pas de photo.
 4. Sa formation sera choisie à l'inscription (vidéo suivante).

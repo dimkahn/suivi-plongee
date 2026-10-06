@@ -52,32 +52,33 @@ class CaciEleveTest {
     @DisplayName("La date de l'examen et les cases cochées du CACI s'enregistrent et se modifient")
     void casesCocheesDuDossier() throws Exception {
         String admin = jeton("presidente@club.fr");
-        String examen = LocalDate.now().minusMonths(2).toString();
-        String fin = LocalDate.now().plusMonths(10).toString();
+        LocalDate examen = LocalDate.now().minusMonths(2);
+        // Une fin de validité envoyée par un ancien écran est ignorée : elle se déduit de l'examen.
         JsonNode cree = json.readTree(mvc.perform(post("/api/eleves").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("""
                                 {"nom":"Caci","prenom":"Lou","autorisationLegale":true,
-                                 "certificatValideJusquAu":"%s","caciDateExamen":"%s","caciMedecin":"FEDERAL",
-                                 "caciActivites":["COMPETITION","APNEE_PROFONDEUR_6M"]}""".formatted(fin, examen)))
+                                 "certificatValideJusquAu":"2099-01-01","caciDateExamen":"%s","caciMedecin":"FEDERAL",
+                                 "caciActivites":["COMPETITION","APNEE_PROFONDEUR_6M"]}""".formatted(examen)))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
         long id = cree.get("id").asLong();
-        assertThat(cree.get("caciDateExamen").asText()).isEqualTo(examen);
+        assertThat(cree.get("caciDateExamen").asText()).isEqualTo(examen.toString());
+        assertThat(cree.get("certificatValideJusquAu").asText()).isEqualTo(examen.plusYears(1).toString());
         assertThat(cree.get("caciMedecin").asText()).isEqualTo("FEDERAL");
         // Rendues dans l'ordre du formulaire, quel que soit l'ordre d'envoi.
         assertThat(textes(cree.get("caciActivites"))).containsExactly("APNEE_PROFONDEUR_6M", "COMPETITION");
 
         JsonNode modifie = json.readTree(mvc.perform(put("/api/eleves/" + id).header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("""
-                                {"nom":"Caci","prenom":"Lou","autorisationLegale":true,
-                                 "certificatValideJusquAu":"%s"}""".formatted(fin)))
+                                {"nom":"Caci","prenom":"Lou","autorisationLegale":true}"""))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(modifie.get("caciDateExamen").isNull()).isTrue();
+        assertThat(modifie.get("certificatValideJusquAu").isNull()).isTrue();
         assertThat(modifie.get("caciMedecin").isNull()).isTrue();
         assertThat(modifie.get("caciActivites").size()).isZero();
     }
 
     @Test
-    @DisplayName("Saisies incohérentes refusées : « ensemble » avec « ou bien seulement », dates inversées")
+    @DisplayName("Saisies incohérentes refusées : « ensemble » avec « ou bien seulement », examen à venir")
     void datesIncoherentesRefusees() throws Exception {
         String admin = jeton("presidente@club.fr");
         mvc.perform(post("/api/eleves").header("Authorization", admin)
@@ -91,12 +92,6 @@ class CaciEleveTest {
                                  "caciDateExamen":"%s"}""".formatted(LocalDate.now().plusDays(3))))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.detail").value("La date de l'examen du CACI ne peut pas être dans le futur."));
-        mvc.perform(post("/api/eleves").header("Authorization", admin)
-                        .contentType(MediaType.APPLICATION_JSON).content("""
-                                {"nom":"Caci","prenom":"Inverse","autorisationLegale":true,
-                                 "caciDateExamen":"%s","certificatValideJusquAu":"%s"}"""
-                                .formatted(LocalDate.now().minusDays(3), LocalDate.now().minusDays(10))))
-                .andExpect(status().isUnprocessableContent());
     }
 
     @Test

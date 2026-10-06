@@ -485,7 +485,11 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
 ## Données personnelles
 
 Le club suit des mineurs. Le certificat médical n'est **jamais** stocké,
-seulement sa date de fin de validité (`eleve.certificat_valide_jusqu_au`).
+seulement sa date de fin de validité (`eleve.certificat_valide_jusqu_au`),
+qui ne se saisit plus : seule la date de l'examen se saisit, la fin de
+validité en est déduite par le serveur (examen + 1 an, `Caci.finValidite`,
+choix du club 2026) ; V48 a repris la date d'examen (fin − 1 an) des
+dossiers qui n'avaient que la fin.
 Pour un élève (V46) comme pour un moniteur (V47, colonnes identiques sur
 `utilisateur`) s'ajoutent la date de l'examen (`caci_date_examen`), la
 qualité du médecin (`caci_medecin`, enum `MedecinCaci`) et les cases

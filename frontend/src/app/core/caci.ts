@@ -37,6 +37,19 @@ export function couleurCaci(finValidite: string | null | undefined): CouleurCaci
   return jours <= JOURS_AVANT_ECHEANCE ? 'orange' : 'vert';
 }
 
+/**
+ * Fin de validité d'un CACI : un an après l'examen, comme le calcule le
+ * serveur (Caci.finValidite). Sert à l'aperçu pendant la saisie.
+ */
+export function finValiditeCaci(dateExamen: string | null | undefined): string | null {
+  if (!dateExamen) return null;
+  const [annee, mois, jour] = dateExamen.split('-').map(Number);
+  // 29 février : le 28 l'année suivante, comme LocalDate.plusYears.
+  const fin = new Date(annee + 1, mois - 1, jour);
+  if (fin.getMonth() !== mois - 1) fin.setDate(0);
+  return `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
+}
+
 /** Case « de l'ensemble des activités subaquatiques fédérales », exclusive des cases « ou bien seulement ». */
 export const CACI_ENSEMBLE = 'ENSEMBLE_ACTIVITES';
 /** Case « avec les limites et préconisations suivantes » : le détail n'est que sur le papier. */

@@ -19,7 +19,6 @@ interface FormulaireEleve {
   prenom: string;
   dateNaissance: string;
   numeroLicence: string;
-  certificatValideJusquAu: string;
   caciDateExamen: string;
   caciMedecin: string;
   caciActivites: string[];
@@ -35,7 +34,7 @@ interface FormulaireEleve {
 
 function formulaireVide(): FormulaireEleve {
   return { nom: '', prenom: '', dateNaissance: '', numeroLicence: '',
-           certificatValideJusquAu: '', caciDateExamen: '', caciMedecin: '', caciActivites: [], dernierNiveau: '', email: '', telephone: '',
+           caciDateExamen: '', caciMedecin: '', caciActivites: [], dernierNiveau: '', email: '', telephone: '',
            contactUrgenceNom: '', contactUrgenceTelephone: '', tailleGilet: '', tailleCombinaison: '',
            autorisationLegale: false };
 }
@@ -46,7 +45,7 @@ type FormationCreation = 'MAINTIEN' | 'N1' | 'N2' | 'N3';
 function depuis(e: EleveVue): FormulaireEleve {
   return {
     nom: e.nom, prenom: e.prenom, dateNaissance: e.dateNaissance ?? '',
-    numeroLicence: e.numeroLicence ?? '', certificatValideJusquAu: e.certificatValideJusquAu ?? '',
+    numeroLicence: e.numeroLicence ?? '',
     caciDateExamen: e.caciDateExamen ?? '', caciMedecin: e.caciMedecin ?? '', caciActivites: [...(e.caciActivites ?? [])],
     dernierNiveau: e.dernierNiveau ?? '', email: e.email ?? '', telephone: e.telephone ?? '',
     contactUrgenceNom: e.contactUrgenceNom ?? '', contactUrgenceTelephone: e.contactUrgenceTelephone ?? '',
@@ -87,7 +86,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       <input [id]="p + 'naissance'" type="date" name="naissance" [(ngModel)]="f.dateNaissance">
       <label [for]="p + 'licence'">N° de licence</label>
       <input [id]="p + 'licence'" type="text" name="licence" [(ngModel)]="f.numeroLicence" placeholder="Facultatif">
-      <app-saisie-caci [prefixe]="p" [(finValidite)]="f.certificatValideJusquAu" [(dateExamen)]="f.caciDateExamen"
+      <app-saisie-caci [prefixe]="p" [(dateExamen)]="f.caciDateExamen"
                        [(medecin)]="f.caciMedecin" [(activites)]="f.caciActivites" />
       <label [for]="p + 'niveau'">Dernier niveau de plongée</label>
       <input [id]="p + 'niveau'" type="text" name="niveau" [(ngModel)]="f.dernierNiveau"
@@ -710,7 +709,7 @@ export class ElevesComponent {
     try {
       e = await firstValueFrom(this.api.creerEleve({
         nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
-        numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
+        numeroLicence: f.numeroLicence || null,
         caciDateExamen: f.caciDateExamen || null, caciMedecin: f.caciMedecin || null, caciActivites: f.caciActivites,
         dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
         contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,
@@ -877,7 +876,7 @@ export class ElevesComponent {
     this.envoi.set(true);
     this.api.modifierEleve(e.id, {
       nom: f.nom, prenom: f.prenom, dateNaissance: f.dateNaissance || null,
-      numeroLicence: f.numeroLicence || null, certificatValideJusquAu: f.certificatValideJusquAu || null,
+      numeroLicence: f.numeroLicence || null,
       caciDateExamen: f.caciDateExamen || null, caciMedecin: f.caciMedecin || null, caciActivites: f.caciActivites,
       dernierNiveau: f.dernierNiveau || null, email: f.email || null, telephone: f.telephone || null,
       contactUrgenceNom: f.contactUrgenceNom || null, contactUrgenceTelephone: f.contactUrgenceTelephone || null,

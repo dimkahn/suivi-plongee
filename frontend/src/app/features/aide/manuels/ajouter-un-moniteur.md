@@ -17,7 +17,7 @@ Administration, « Moniteurs » : créez le compte avec le niveau d'encadrement,
 
 1. Administration, puis « Moniteurs ».
 2. Ajoutez un moniteur : nom, e-mail, niveau d'encadrement, niveau de plongeur.
-3. CACI : fin de validité, date de l'examen (la fin se propose un an plus tard), médecin signataire et les mêmes cases que sur le certificat FFESSM.
+3. CACI : date de l'examen (la fin de validité se calcule seule, un an plus tard), médecin signataire et les mêmes cases que sur le certificat FFESSM.
 4. Cochez si besoin les rôles en plus : administrateur, directeur technique (matériel), TIV (inspection des blocs).
 5. Enregistrez : il reçoit un e-mail pour choisir son mot de passe.
 
