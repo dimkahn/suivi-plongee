@@ -5,10 +5,11 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ProgressionResume, ProgressionVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 @Component({
   selector: 'app-saisons',
-  imports: [FormsModule, DateFrPipe],
+  imports: [FormsModule, DateFrPipe, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -17,30 +18,10 @@ import { DateFrPipe } from '../../core/date-fr';
           Une saison fermée sort seulement des saisons proposées par défaut : rien n'est rétroactif.
         </p>
       </div>
-      @if (!creationOuverte()) {
-        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle saison</button>
-      }
+      <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle saison</button>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
-
-    @if (creationOuverte()) {
-      <section class="carte panneau">
-        <h2>Nouvelle saison</h2>
-        <label for="libelle">Libellé</label>
-        <input id="libelle" type="text" name="libelle" [(ngModel)]="libelle" placeholder="2026-2027">
-        <label for="debut">Début</label>
-        <input id="debut" type="date" name="debut" [(ngModel)]="dateDebut">
-        <label for="fin">Fin</label>
-        <input id="fin" type="date" name="fin" [(ngModel)]="dateFin">
-        <div class="actions">
-          <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
-            {{ envoi() ? 'Création…' : 'Créer la saison' }}
-          </button>
-          <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
-        </div>
-      </section>
-    }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -50,20 +31,6 @@ import { DateFrPipe } from '../../core/date-fr';
       <ul>
         @for (s of liste(); track s.id) {
           <li class="carte">
-            @if (enEdition() === s.id) {
-              <label [for]="'libelle-' + s.id">Libellé</label>
-              <input [id]="'libelle-' + s.id" type="text" [(ngModel)]="brouillon.libelle">
-              <label [for]="'debut-' + s.id">Début</label>
-              <input [id]="'debut-' + s.id" type="date" [(ngModel)]="brouillon.dateDebut">
-              <label [for]="'fin-' + s.id">Fin</label>
-              <input [id]="'fin-' + s.id" type="date" [(ngModel)]="brouillon.dateFin">
-              <div class="actions">
-                <button type="button" class="bouton-principal" (click)="enregistrer(s)" [disabled]="envoi()">
-                  {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                </button>
-                <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
-              </div>
-            } @else {
               <div class="ligne">
                 <div class="identite">
                   <span class="nom">{{ s.libelle }}</span>
@@ -84,27 +51,6 @@ import { DateFrPipe } from '../../core/date-fr';
 
               <div class="progressions">
                 <span class="titre-progressions">Progressions suivies</span>
-                @if (editionProgressions() === s.id) {
-                  @for (g of groupesProgressions(); track g.referentielId) {
-                    <label [for]="'progression-' + s.id + '-' + g.referentielId">{{ g.libelle }}</label>
-                    <select [id]="'progression-' + s.id + '-' + g.referentielId"
-                            [(ngModel)]="choixProgressions[g.referentielId]">
-                      <option [ngValue]="null">Aucune</option>
-                      @for (p of g.progressions; track p.id) { <option [ngValue]="p.id">{{ p.nom }}</option> }
-                    </select>
-                  } @empty {
-                    <p class="secondaire">Aucune progression type : créez-en depuis « Progressions types ».</p>
-                  }
-                  <div class="actions">
-                    <button type="button" class="bouton-principal" (click)="enregistrerProgressions(s)"
-                            [disabled]="envoi()">
-                      {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
-                    </button>
-                    <button type="button" class="bouton-discret" (click)="editionProgressions.set(null)">
-                      Annuler
-                    </button>
-                  </div>
-                } @else {
                   @let suivies = progressionsSuivies().get(s.id) ?? [];
                   @if (suivies.length === 0) {
                     <span class="secondaire">Aucune : les séances n'affichent pas de programme.</span>
@@ -120,21 +66,69 @@ import { DateFrPipe } from '../../core/date-fr';
                       Choisir les progressions
                     </button>
                   </div>
-                }
               </div>
-            }
           </li>
         }
       </ul>
     }
+
+    <app-dialogue [ouvert]="creationOuverte()" titre="Nouvelle saison" [erreur]="message()"
+                  (fermer)="creationOuverte.set(false)">
+      <label for="libelle">Libellé</label>
+      <input id="libelle" type="text" name="libelle" [(ngModel)]="libelle" placeholder="2026-2027">
+      <label for="debut">Début</label>
+      <input id="debut" type="date" name="debut" [(ngModel)]="dateDebut">
+      <label for="fin">Fin</label>
+      <input id="fin" type="date" name="fin" [(ngModel)]="dateFin">
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+          {{ envoi() ? 'Création…' : 'Créer la saison' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="saisonEnEdition() !== null" titre="Modifier la saison" [erreur]="message()"
+                  (fermer)="annulerEdition()">
+      <label for="libelle-edition">Libellé</label>
+      <input id="libelle-edition" type="text" [(ngModel)]="brouillon.libelle">
+      <label for="debut-edition">Début</label>
+      <input id="debut-edition" type="date" [(ngModel)]="brouillon.dateDebut">
+      <label for="fin-edition">Fin</label>
+      <input id="fin-edition" type="date" [(ngModel)]="brouillon.dateFin">
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+          {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
+      </div>
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="saisonProgressions() !== null"
+                  [titre]="'Progressions suivies · ' + (saisonProgressions()?.libelle ?? '')"
+                  [erreur]="message()" (fermer)="editionProgressions.set(null)">
+      @for (g of groupesProgressions(); track g.referentielId) {
+        <label [for]="'progression-' + g.referentielId">{{ g.libelle }}</label>
+        <select [id]="'progression-' + g.referentielId" [(ngModel)]="choixProgressions[g.referentielId]">
+          <option [ngValue]="null">Aucune</option>
+          @for (p of g.progressions; track p.id) { <option [ngValue]="p.id">{{ p.nom }}</option> }
+        </select>
+      } @empty {
+        <p class="secondaire">Aucune progression type : créez-en depuis « Progressions types ».</p>
+      }
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrerProgressions()" [disabled]="envoi()">
+          {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="editionProgressions.set(null)">Annuler</button>
+      </div>
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete > div { flex: 1 1 320px; }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
-    .panneau h2 { margin-bottom: 4px; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
@@ -171,12 +165,14 @@ export class SaisonsComponent {
   dateFin = '';
 
   enEdition = signal<number | null>(null);
+  saisonEnEdition = computed(() => this.liste().find(s => s.id === this.enEdition()) ?? null);
   brouillon = { libelle: '', dateDebut: '', dateFin: '' };
 
   /** Toutes les progressions types, et celles que suit chaque saison. */
   progressions = signal<ProgressionResume[]>([]);
   progressionsSuivies = signal<Map<number, ProgressionVue[]>>(new Map());
   editionProgressions = signal<number | null>(null);
+  saisonProgressions = computed(() => this.liste().find(s => s.id === this.editionProgressions()) ?? null);
   /** Progression choisie par référentiel pendant l'édition ; null = aucune. */
   choixProgressions: Record<number, number | null> = {};
 
@@ -231,7 +227,9 @@ export class SaisonsComponent {
     this.editionProgressions.set(s.id);
   }
 
-  enregistrerProgressions(s: SaisonVue): void {
+  enregistrerProgressions(): void {
+    const s = this.saisonProgressions();
+    if (!s) return;
     const ids = Object.values(this.choixProgressions).filter((id): id is number => id != null);
     this.envoi.set(true);
     this.message.set(null);
@@ -250,6 +248,9 @@ export class SaisonsComponent {
 
   ouvrirCreation(): void {
     this.message.set(null);
+    this.libelle = '';
+    this.dateDebut = '';
+    this.dateFin = '';
     this.creationOuverte.set(true);
   }
 
@@ -297,7 +298,9 @@ export class SaisonsComponent {
     this.enEdition.set(null);
   }
 
-  enregistrer(s: SaisonVue): void {
+  enregistrer(): void {
+    const s = this.saisonEnEdition();
+    if (!s) return;
     if (!this.brouillon.libelle || !this.brouillon.dateDebut || !this.brouillon.dateFin) {
       this.message.set('Libellé, début et fin sont obligatoires.');
       return;

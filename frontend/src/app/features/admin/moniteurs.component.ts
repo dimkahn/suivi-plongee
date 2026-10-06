@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
+import { DialogueComponent } from '../../core/dialogue.component';
 import { MoniteurVue } from '../../core/modeles';
 import { EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 
@@ -16,7 +17,7 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule, RecadragePhotoComponent],
+  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -26,16 +27,13 @@ function aVerifier(m: MoniteurVue): boolean {
           administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
         </p>
       </div>
-      @if (!creationOuverte()) {
-        <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouveau moniteur</button>
-      }
+      <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouveau moniteur</button>
     </div>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    @if (creationOuverte()) {
-    <section class="carte panneau">
-      <h2>Ajouter un moniteur</h2>
+    <app-dialogue [ouvert]="creationOuverte()" titre="Ajouter un moniteur" [erreur]="message()"
+                  (fermer)="creationOuverte.set(false)">
       <p class="secondaire">
         Le moniteur reçoit un lien pour définir lui-même son mot de passe :
         il ne transite jamais par vous.
@@ -83,14 +81,13 @@ function aVerifier(m: MoniteurVue): boolean {
         TIV (fiches d'inspection des blocs)
       </label>
 
-      <div class="actions">
+      <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
           {{ envoiCreation() ? 'Création…' : 'Ajouter le moniteur' }}
         </button>
         <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
       </div>
-    </section>
-    }
+    </app-dialogue>
 
     <div class="filtres">
       <div>
@@ -191,91 +188,89 @@ function aVerifier(m: MoniteurVue): boolean {
               <input #fichierPhoto type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto(m, $event)">
             </div>
 
-            @if (moniteurEdite() === m.id) {
-              <div class="mot-de-passe">
-                <label [for]="'prenom-' + m.id">Prénom</label>
-                <input [id]="'prenom-' + m.id" type="text" name="editionPrenom" [(ngModel)]="edition.prenom">
-
-                <label [for]="'nom-' + m.id">Nom</label>
-                <input [id]="'nom-' + m.id" type="text" name="editionNom" [(ngModel)]="edition.nom">
-
-                <label [for]="'email-' + m.id">E-mail</label>
-                <input [id]="'email-' + m.id" type="email" name="editionEmail" [(ngModel)]="edition.email">
-
-                <label [for]="'niveau-' + m.id">Niveau d'encadrement</label>
-                <select [id]="'niveau-' + m.id" name="editionNiveau" [(ngModel)]="edition.niveauEncadrement">
-                  <option value="E1">E1</option>
-                  <option value="E2">E2</option>
-                  <option value="E3">E3</option>
-                  <option value="E4">E4</option>
-                </select>
-
-                <label [for]="'niveau-plongeur-' + m.id">Niveau de plongeur</label>
-                <select [id]="'niveau-plongeur-' + m.id" name="editionNiveauPlongeur"
-                        [(ngModel)]="edition.niveauPlongeur">
-                  <option value="">Non renseigné</option>
-                  @for (n of niveauxPlongeur; track n) { <option [value]="n">{{ n }}</option> }
-                </select>
-
-                <label [for]="'licence-' + m.id">N° de licence</label>
-                <input [id]="'licence-' + m.id" type="text" name="editionLicence"
-                       [(ngModel)]="edition.numeroLicence" placeholder="Facultatif">
-
-                <label [for]="'caci-' + m.id">CACI valide jusqu'au</label>
-                <input [id]="'caci-' + m.id" type="date" name="editionCaci"
-                       [(ngModel)]="edition.certificatValideJusquAu">
-
-                <label class="case">
-                  <input type="checkbox" name="editionAdmin" [(ngModel)]="edition.admin"
-                         [disabled]="estMoi(m) && m.admin">
-                  Administrateur
-                </label>
-                @if (estMoi(m) && m.admin) {
-                  <p class="secondaire">
-                    Vous ne pouvez pas vous retirer vous-même ce rôle : demandez-le à un autre administrateur.
-                  </p>
-                }
-                <label class="case">
-                  <input type="checkbox" name="editionDirecteurTechnique" [(ngModel)]="edition.directeurTechnique">
-                  Directeur technique (matériel du club et prêts)
-                </label>
-                <label class="case">
-                  <input type="checkbox" name="editionTiv" [(ngModel)]="edition.tiv">
-                  TIV (fiches d'inspection des blocs)
-                </label>
-
-                <div class="actions">
-                  <button type="button" class="bouton-principal" (click)="modifier(m)"
-                          [disabled]="envoiEdition()">
-                    {{ envoiEdition() ? 'Enregistrement…' : 'Enregistrer' }}
-                  </button>
-                  <button type="button" class="bouton-discret" (click)="basculerEdition(m)">
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            }
-
-            @if (moniteurMotDePasse() === m.id) {
-              <div class="mot-de-passe">
-                <label [for]="'mdp-' + m.id">Nouveau mot de passe (10 caractères minimum)</label>
-                <input [id]="'mdp-' + m.id" type="password" name="nouveauMotDePasse"
-                       [(ngModel)]="nouveauMotDePasse">
-                <div class="actions">
-                  <button type="button" class="bouton-principal" (click)="changerMotDePasse(m)"
-                          [disabled]="envoiMotDePasse()">
-                    {{ envoiMotDePasse() ? 'Enregistrement…' : 'Enregistrer' }}
-                  </button>
-                  <button type="button" class="bouton-discret" (click)="basculerMotDePasse(m.id)">
-                    Annuler
-                  </button>
-                </div>
-              </div>
-            }
           </li>
         }
       </ul>
     }
+
+    <app-dialogue [ouvert]="moniteurEnEdition() !== null"
+                  [titre]="'Modifier ' + (moniteurEnEdition()?.prenom ?? '') + ' ' + (moniteurEnEdition()?.nom ?? '')"
+                  [erreur]="message()" (fermer)="moniteurEdite.set(null)">
+      @if (moniteurEnEdition(); as m) {
+        <label for="edition-prenom">Prénom</label>
+        <input id="edition-prenom" type="text" name="editionPrenom" [(ngModel)]="edition.prenom">
+
+        <label for="edition-nom">Nom</label>
+        <input id="edition-nom" type="text" name="editionNom" [(ngModel)]="edition.nom">
+
+        <label for="edition-email">E-mail</label>
+        <input id="edition-email" type="email" name="editionEmail" [(ngModel)]="edition.email">
+
+        <label for="edition-niveau">Niveau d'encadrement</label>
+        <select id="edition-niveau" name="editionNiveau" [(ngModel)]="edition.niveauEncadrement">
+          <option value="E1">E1</option>
+          <option value="E2">E2</option>
+          <option value="E3">E3</option>
+          <option value="E4">E4</option>
+        </select>
+
+        <label for="edition-niveau-plongeur">Niveau de plongeur</label>
+        <select id="edition-niveau-plongeur" name="editionNiveauPlongeur" [(ngModel)]="edition.niveauPlongeur">
+          <option value="">Non renseigné</option>
+          @for (n of niveauxPlongeur; track n) { <option [value]="n">{{ n }}</option> }
+        </select>
+
+        <label for="edition-licence">N° de licence</label>
+        <input id="edition-licence" type="text" name="editionLicence"
+               [(ngModel)]="edition.numeroLicence" placeholder="Facultatif">
+
+        <label for="edition-caci">CACI valide jusqu'au</label>
+        <input id="edition-caci" type="date" name="editionCaci" [(ngModel)]="edition.certificatValideJusquAu">
+
+        <label class="case">
+          <input type="checkbox" name="editionAdmin" [(ngModel)]="edition.admin"
+                 [disabled]="estMoi(m) && m.admin">
+          Administrateur
+        </label>
+        @if (estMoi(m) && m.admin) {
+          <p class="secondaire">
+            Vous ne pouvez pas vous retirer vous-même ce rôle : demandez-le à un autre administrateur.
+          </p>
+        }
+        <label class="case">
+          <input type="checkbox" name="editionDirecteurTechnique" [(ngModel)]="edition.directeurTechnique">
+          Directeur technique (matériel du club et prêts)
+        </label>
+        <label class="case">
+          <input type="checkbox" name="editionTiv" [(ngModel)]="edition.tiv">
+          TIV (fiches d'inspection des blocs)
+        </label>
+
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="modifier(m)" [disabled]="envoiEdition()">
+            {{ envoiEdition() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="moniteurEdite.set(null)">Annuler</button>
+        </div>
+      }
+    </app-dialogue>
+
+    <app-dialogue [ouvert]="moniteurPourMotDePasse() !== null"
+                  [titre]="'Mot de passe de ' + (moniteurPourMotDePasse()?.prenom ?? '') + ' ' + (moniteurPourMotDePasse()?.nom ?? '')"
+                  [erreur]="message()" (fermer)="moniteurMotDePasse.set(null)">
+      @if (moniteurPourMotDePasse(); as m) {
+        <label for="nouveau-mot-de-passe">Nouveau mot de passe (10 caractères minimum)</label>
+        <input id="nouveau-mot-de-passe" type="password" name="nouveauMotDePasse" autocomplete="new-password"
+               [(ngModel)]="nouveauMotDePasse">
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="changerMotDePasse(m)"
+                  [disabled]="envoiMotDePasse()">
+            {{ envoiMotDePasse() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="moniteurMotDePasse.set(null)">Annuler</button>
+        </div>
+      }
+    </app-dialogue>
 
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.moniteur.prenom + ' ' + r.moniteur.nom"
@@ -292,9 +287,7 @@ function aVerifier(m: MoniteurVue): boolean {
     h1 { margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete > div { flex: 1 1 320px; }
-    .entete .bouton-principal, .panneau .actions .bouton-principal { width: auto; margin-top: 0; }
-    .panneau { max-width: 480px; padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
-    .panneau h2 { margin-bottom: 4px; }
+    .entete .bouton-principal { width: auto; margin-top: 0; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; }
     .case input { width: auto; }
@@ -335,12 +328,6 @@ function aVerifier(m: MoniteurVue): boolean {
 
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .danger { color: #B3261E; border-color: #B3261E; }
-
-    .mot-de-passe {
-      margin-top: var(--pas-2); padding: var(--pas-2); border-radius: var(--r-s); background: var(--fond);
-    }
-    .mot-de-passe .actions { margin-top: var(--pas-2); }
-    .mot-de-passe .bouton-principal { width: auto; margin-top: 0; }
 
     @media (max-width: 600px) {
       .ligne { flex-wrap: wrap; }
@@ -391,7 +378,10 @@ export class MoniteursComponent {
               certificatValideJusquAu: '', admin: false, directeurTechnique: false, tiv: false };
   envoiEdition = signal(false);
 
+  moniteurEnEdition = computed(() => this.liste().find(m => m.id === this.moniteurEdite()) ?? null);
+
   moniteurMotDePasse = signal<number | null>(null);
+  moniteurPourMotDePasse = computed(() => this.liste().find(m => m.id === this.moniteurMotDePasse()) ?? null);
   nouveauMotDePasse = '';
   envoiMotDePasse = signal(false);
 
@@ -450,6 +440,8 @@ export class MoniteursComponent {
 
   ouvrirCreation(): void {
     this.message.set(null);
+    this.moniteurEdite.set(null);
+    this.moniteurMotDePasse.set(null);
     this.creationOuverte.set(true);
   }
 
@@ -504,10 +496,7 @@ export class MoniteursComponent {
   }
 
   basculerEdition(m: MoniteurVue): void {
-    if (this.moniteurEdite() === m.id) {
-      this.moniteurEdite.set(null);
-      return;
-    }
+    this.message.set(null);
     this.moniteurMotDePasse.set(null);
     this.edition = {
       prenom: m.prenom,
@@ -552,8 +541,9 @@ export class MoniteursComponent {
   }
 
   basculerMotDePasse(id: number): void {
+    this.message.set(null);
     this.moniteurEdite.set(null);
-    this.moniteurMotDePasse.set(this.moniteurMotDePasse() === id ? null : id);
+    this.moniteurMotDePasse.set(id);
     this.nouveauMotDePasse = '';
   }
 
