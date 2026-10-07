@@ -113,6 +113,34 @@ class AdminMoniteurTest {
     }
 
     @Test
+    @DisplayName("Le niveau d'encadrement prepare s'enregistre, toujours au-dessus du niveau detenu")
+    void niveauPrepare() throws Exception {
+        String admin = admin();
+        JsonNode m = nouveauMoniteur(admin);
+        long id = m.get("id").asLong();
+        String email = m.get("email").asText();
+
+        mvc.perform(put("/api/admin/moniteurs/" + id).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"email":"%s","nom":"Test","prenom":"Moniteur","niveauEncadrement":"E2",
+                                 "niveauEncadrementPrepare":"E3"}""".formatted(email)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.niveauEncadrementPrepare").value("E3"));
+
+        mvc.perform(put("/api/admin/moniteurs/" + id).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"email":"%s","nom":"Test","prenom":"Moniteur","niveauEncadrement":"E3",
+                                 "niveauEncadrementPrepare":"E3"}""".formatted(email)))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("au-dessus")));
+
+        // Sans le champ : ne prépare plus rien.
+        mvc.perform(put("/api/admin/moniteurs/" + id).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(modification(m, null)))
+                .andExpect(jsonPath("$.niveauEncadrementPrepare").doesNotExist());
+    }
+
+    @Test
     @DisplayName("Un ADMIN ne peut pas se retirer lui-meme le role administrateur")
     void pasDAutoDestitution() throws Exception {
         String admin = admin();

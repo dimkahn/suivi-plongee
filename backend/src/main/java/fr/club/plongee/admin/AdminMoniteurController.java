@@ -38,7 +38,8 @@ import java.util.Set;
 public class AdminMoniteurController {
 
     public record MoniteurVue(Long id, String email, String nom, String prenom, boolean actif,
-                              String niveauEncadrement, String niveauPlongeur, String numeroLicence,
+                              String niveauEncadrement, String niveauEncadrementPrepare, String niveauPlongeur,
+                              String numeroLicence,
                               LocalDate certificatValideJusquAu, LocalDate caciDateExamen, MedecinCaci caciMedecin,
                               Set<ActiviteCaci> caciActivites, boolean admin, boolean directeurTechnique,
                               boolean tiv, boolean autorisationImage, boolean aPhoto) {}
@@ -47,6 +48,8 @@ public class AdminMoniteurController {
     public record DemandeCreationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                           @NotBlank String prenom,
                                           @NotNull NiveauEncadrement niveauEncadrement,
+                                          /** Moniteur en formation (ex. stagiaire E3) ; null : ne prépare rien. */
+                                          NiveauEncadrement niveauEncadrementPrepare,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                           String numeroLicence,
                                           /** La fin de validité du CACI se déduit de la date de l'examen. */
@@ -66,6 +69,7 @@ public class AdminMoniteurController {
     public record DemandeModificationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                               @NotBlank String prenom,
                                               @NotNull NiveauEncadrement niveauEncadrement,
+                                              NiveauEncadrement niveauEncadrementPrepare,
                                           @Pattern(regexp = "N[1-5]", message = "Niveau de plongeur attendu : N1 à N5.") String niveauPlongeur,
                                               String numeroLicence,
                                               LocalDate caciDateExamen, MedecinCaci caciMedecin,
@@ -101,7 +105,7 @@ public class AdminMoniteurController {
     @PreAuthorize("hasRole('ADMIN')")
     public MoniteurVue creer(@Valid @RequestBody DemandeCreationMoniteur demande) {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
-                demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
+                demande.niveauEncadrement(), demande.niveauEncadrementPrepare(), demande.niveauPlongeur(), demande.numeroLicence(),
                 demande.caci(), Boolean.TRUE.equals(demande.admin()),
                 Boolean.TRUE.equals(demande.directeurTechnique()), Boolean.TRUE.equals(demande.tiv())));
     }
@@ -111,7 +115,7 @@ public class AdminMoniteurController {
     public MoniteurVue modifier(@PathVariable Long id, @Valid @RequestBody DemandeModificationMoniteur demande,
                                 @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return vue(service.modifier(id, auteur.id(), demande.email(), demande.nom(), demande.prenom(),
-                demande.niveauEncadrement(), demande.niveauPlongeur(), demande.numeroLicence(),
+                demande.niveauEncadrement(), demande.niveauEncadrementPrepare(), demande.niveauPlongeur(), demande.numeroLicence(),
                 demande.caci(), demande.admin(), demande.directeurTechnique(), demande.tiv()));
     }
 
@@ -171,6 +175,7 @@ public class AdminMoniteurController {
     private MoniteurVue vue(fr.club.plongee.securite.domain.Utilisateur u) {
         return new MoniteurVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif(),
                 u.getNiveauEncadrement() == null ? null : u.getNiveauEncadrement().name(),
+                u.getNiveauEncadrementPrepare() == null ? null : u.getNiveauEncadrementPrepare().name(),
                 u.getNiveauPlongeur(), u.getNumeroLicence(), u.getCertificatValideJusquAu(),
                 u.getCaci().dateExamen(), u.getCaci().medecin(), u.getCaci().activites(),
                 u.getRoles().contains(RoleNom.ADMIN),

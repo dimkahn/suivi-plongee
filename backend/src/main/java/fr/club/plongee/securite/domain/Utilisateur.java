@@ -48,6 +48,15 @@ public class Utilisateur {
     @Column(length = 2)
     private String niveauPlongeur;
 
+    /**
+     * Niveau d'encadrement préparé (moniteur en formation, ex. un E2
+     * stagiaire E3), toujours au-dessus de {@link #niveauEncadrement}. Null :
+     * ne prépare rien. Voir ProposeurPalanquees pour ce qu'il autorise.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private NiveauEncadrement niveauEncadrementPrepare;
+
     private String numeroLicence;
 
     /**
@@ -161,6 +170,14 @@ public class Utilisateur {
 
     public void setNiveauPlongeur(String niveauPlongeur) {
         this.niveauPlongeur = niveauPlongeur;
+    }
+
+    public NiveauEncadrement getNiveauEncadrementPrepare() {
+        return niveauEncadrementPrepare;
+    }
+
+    public void setNiveauEncadrementPrepare(NiveauEncadrement niveauEncadrementPrepare) {
+        this.niveauEncadrementPrepare = niveauEncadrementPrepare;
     }
 
     public void setNumeroLicence(String numeroLicence) {

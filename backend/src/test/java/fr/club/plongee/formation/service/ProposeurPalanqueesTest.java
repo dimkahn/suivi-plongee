@@ -26,11 +26,30 @@ class ProposeurPalanqueesTest {
 
     private static Candidat plongeur(String prenom, String aptitude, String formation) {
         return new Candidat(null, null, "Test", prenom, aptitude, formation,
-                AptitudePlongeur.lire(aptitude), false);
+                AptitudePlongeur.lire(aptitude), false, null);
     }
 
     private static Candidat encadrant(String prenom, String aptitude) {
-        return new Candidat(null, null, "Test", prenom, aptitude, null, AptitudePlongeur.lire(aptitude), true);
+        return new Candidat(null, null, "Test", prenom, aptitude, null, AptitudePlongeur.lire(aptitude), true, null);
+    }
+
+    /** Un E2 qui prépare le E3 : son aptitude compte le E3, comme le fait PropositionPalanqueesService. */
+    private static Candidat stagiaireE3(String prenom) {
+        return new Candidat(null, null, "Test", prenom, "E2", null,
+                AptitudePlongeur.lire("E2").avec(AptitudePlongeur.lire("E3")), true, NiveauEncadrement.E3);
+    }
+
+    @Test
+    @DisplayName("Un stagiaire E3 encadre un élève N3 comme un E3, avec un rappel de la présence du tuteur")
+    void stagiaireE3() {
+        List<Candidat> c = List.of(stagiaireE3("Stag"), plongeur("Eleve", "N2", "N3"));
+
+        Proposition r = ProposeurPalanquees.proposer(c,
+                new Criteres(30, TypePlongee.ENSEIGNEMENT, 4, true, false, List.of(), List.of()));
+
+        assertThat(prenoms(r.palanquees().getFirst())).containsExactly("Stag", "Eleve");
+        assertThat(r.avertissements()).singleElement().satisfies(a ->
+                assertThat(a).contains("stagiaire E3").contains("tuteur"));
     }
 
     private static Criteres exploration(int profondeur) {
@@ -223,7 +242,7 @@ class ProposeurPalanqueesTest {
     @Test
     @DisplayName("Un encadrant décoché plonge comme les autres, selon son niveau")
     void encadrantDecoche() {
-        Candidat e2 = new Candidat(null, null, "Test", "Libre", "E2", null, AptitudePlongeur.lire("E2"), false);
+        Candidat e2 = new Candidat(null, null, "Test", "Libre", "E2", null, AptitudePlongeur.lire("E2"), false, null);
         List<Candidat> c = List.of(e2, plongeur("A", "N3"));
 
         Proposition r = ProposeurPalanquees.proposer(c, exploration(40));

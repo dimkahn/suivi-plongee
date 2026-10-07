@@ -498,6 +498,34 @@ class FicheSecuriteTest {
     }
 
     @Test
+    @DisplayName("Proposition des palanquées : un E2 qui prépare le E3 encadre un élève N3")
+    void propositionStagiaireE3() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeance(admin);
+        long stagiaire = json.readTree(mvc.perform(post("/api/admin/moniteurs").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"email":"stagiaire-%s@club.fr","nom":"Stagiaire","prenom":"Sam",
+                                 "niveauEncadrement":"E2","niveauEncadrementPrepare":"E3"}"""
+                                .formatted(java.util.UUID.randomUUID())))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asLong();
+        String demande = """
+                {"profondeur": 30, "type": "ENSEIGNEMENT",
+                 "plongeurs": [
+                   {"utilisateurId": %d, "nom": "Stagiaire", "prenom": "Sam", "aptitude": "E2", "encadrant": true},
+                   {"nom": "Perrot", "prenom": "Sonia", "aptitude": "N2", "qualificationPreparee": "N3"}
+                 ]}
+                """.formatted(stagiaire);
+
+        mvc.perform(post("/api/seances/" + seance + "/fiche-securite/proposition").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demande))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.palanquees[0].membres[0].fonction").value("ENCADRANT"))
+                .andExpect(jsonPath("$.palanquees[0].membres.length()").value(2))
+                .andExpect(jsonPath("$.avertissements[0]").value(org.hamcrest.Matchers.containsString("stagiaire E3")));
+    }
+
+    @Test
     @DisplayName("Proposition des palanquées : refusée hors milieu naturel et pour un élève")
     void propositionRefusee() throws Exception {
         String admin = jeton("presidente@club.fr");

@@ -274,6 +274,8 @@ export interface MoniteurVue {
   prenom: string;
   actif: boolean;
   niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4' | null;
+  /** Niveau d'encadrement préparé (moniteur en formation) ; un stagiaire E3 encadre comme un E3. */
+  niveauEncadrementPrepare: 'E1' | 'E2' | 'E3' | 'E4' | null;
   /** Niveau de plongeur (N1 à N5), distinct de l'encadrement : un E1 peut n'être que N2. */
   niveauPlongeur: string | null;
   numeroLicence: string | null;
