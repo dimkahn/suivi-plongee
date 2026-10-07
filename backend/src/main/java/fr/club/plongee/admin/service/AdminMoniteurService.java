@@ -78,7 +78,8 @@ public class AdminMoniteurService {
      */
     @Transactional
     public Utilisateur creer(String email, String nom, String prenom,
-                             NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
+                             NiveauEncadrement niveauEncadrement, NiveauEncadrement niveauEncadrementPrepare,
+                             String niveauPlongeur, String numeroLicence,
                              Caci caci, boolean admin, boolean directeurTechnique,
                              boolean tiv) {
         if (utilisateurs.existsByEmailIgnoreCase(email)) {
@@ -90,6 +91,7 @@ public class AdminMoniteurService {
         u.setNom(nom);
         u.setPrenom(prenom);
         u.setNiveauEncadrement(niveauEncadrement);
+        u.setNiveauEncadrementPrepare(verifierPrepare(niveauEncadrement, niveauEncadrementPrepare));
         u.setNiveauPlongeur(vide(niveauPlongeur) ? null : niveauPlongeur);
         u.setNumeroLicence(numeroLicence);
         u.setCaci(caci);
@@ -126,7 +128,8 @@ public class AdminMoniteurService {
      */
     @Transactional
     public Utilisateur modifier(Long id, Long auteurId, String email, String nom, String prenom,
-                                NiveauEncadrement niveauEncadrement, String niveauPlongeur, String numeroLicence,
+                                NiveauEncadrement niveauEncadrement, NiveauEncadrement niveauEncadrementPrepare,
+                                String niveauPlongeur, String numeroLicence,
                                 Caci caci, Boolean admin, Boolean directeurTechnique,
                                 Boolean tiv) {
         Utilisateur u = moniteur(id);
@@ -142,6 +145,7 @@ public class AdminMoniteurService {
         u.setNom(nom.trim());
         u.setPrenom(prenom.trim());
         u.setNiveauEncadrement(niveauEncadrement);
+        u.setNiveauEncadrementPrepare(verifierPrepare(niveauEncadrement, niveauEncadrementPrepare));
         u.setNiveauPlongeur(vide(niveauPlongeur) ? null : niveauPlongeur);
         u.setNumeroLicence(numeroLicence == null || numeroLicence.isBlank() ? null : numeroLicence.trim());
         u.setCaci(caci);
@@ -244,5 +248,14 @@ public class AdminMoniteurService {
 
     private static boolean vide(String s) {
         return s == null || s.isBlank();
+    }
+
+    /** Le niveau préparé est toujours au-dessus du niveau détenu : un E2 prépare le E3, pas le E2. */
+    private static NiveauEncadrement verifierPrepare(NiveauEncadrement detenu, NiveauEncadrement prepare) {
+        if (prepare != null && detenu != null && detenu.auMoins(prepare)) {
+            throw new RegleMetierException("Le niveau préparé doit être au-dessus du niveau d'encadrement détenu ("
+                    + detenu + ").");
+        }
+        return prepare;
     }
 }

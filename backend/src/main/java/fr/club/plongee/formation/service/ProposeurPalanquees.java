@@ -47,17 +47,27 @@ public final class ProposeurPalanquees {
     public static final int MAX_AUTONOMES = 3;
     public static final int PROFONDEUR_MAX = 60;
 
+    /**
+     * Niveaux préparés qui donnent le droit d'encadrer comme si le niveau
+     * était acquis (choix du club, 2026 : le stagiaire E3, sous la
+     * responsabilité de son tuteur, rappelée par un avertissement).
+     */
+    public static final Set<NiveauEncadrement> NIVEAUX_STAGIAIRE_AUTORISES = Set.of(NiveauEncadrement.E3);
+
     public enum TypePlongee { EXPLORATION, ENSEIGNEMENT }
 
     /**
      * Un plongeur proposé : {@code aptitude} est déjà résolue (texte et
      * dossier) ; {@code encadrantDisponible} = coché comme encadrant pour
      * cette plongée (critère 6), sans effet s'il n'a aucune prérogative
-     * d'encadrement.
+     * d'encadrement. {@code stagiaire} : niveau d'encadrement préparé
+     * (voir {@link #NIVEAUX_STAGIAIRE_AUTORISES}), déjà compté dans
+     * {@code aptitude} ; null sinon.
      */
     public record Candidat(Long eleveId, Long utilisateurId, String nom, String prenom,
                            String aptitudeTexte, String qualificationPreparee,
-                           AptitudePlongeur aptitude, boolean encadrantDisponible) {
+                           AptitudePlongeur aptitude, boolean encadrantDisponible,
+                           NiveauEncadrement stagiaire) {
 
         String nomComplet() {
             return ((prenom == null ? "" : prenom) + " " + (nom == null ? "" : nom)).trim();
@@ -218,6 +228,12 @@ public final class ProposeurPalanquees {
 
         List<Palanquee> palanquees = new ArrayList<>();
         for (Lot lot : lotsEncadres) {
+            Candidat encadrant = candidats.get(lot.encadrant);
+            if (encadrant.stagiaire() != null) {
+                avertissements.add(encadrant.nomComplet() + " encadre la palanquée " + (palanquees.size() + 1)
+                        + " en tant que stagiaire " + encadrant.stagiaire()
+                        + " : son tuteur doit être présent sur le site.");
+            }
             List<Membre> membres = new ArrayList<>();
             membres.add(new Membre(candidats.get(lot.encadrant), criteres.type() == TypePlongee.ENSEIGNEMENT
                     ? FonctionPalanquee.ENCADRANT : FonctionPalanquee.GUIDE_PALANQUEE));

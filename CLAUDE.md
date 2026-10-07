@@ -154,7 +154,13 @@ travers de la proposition N1.
 **Encadrants : niveau d'encadrement et niveau de plongeur sont distincts.**
 `utilisateur.niveau_plongeur` (N1 à N5, V25, saisi par un ADMIN dans l'écran
 Moniteurs) n'est pas déduit de `niveau_encadrement` : un E1 peut n'être que
-N2. Le **directeur de plongée d'une fiche de sécurité est E3 minimum, quel
+N2. `utilisateur.niveau_encadrement_prepare` (V49, saisi par un ADMIN,
+toujours au-dessus du niveau détenu) : un moniteur en formation. Seul le
+stagiaire E3 en tire un droit (choix du club, 2026,
+`ProposeurPalanquees.NIVEAUX_STAGIAIRE_AUTORISES`) : il encadre comme un E3
+dans la proposition des palanquées, avec un avertissement sur la présence
+du tuteur ; la notation (`HabilitationService`) et le choix du DP n'en
+tiennent pas compte. Le **directeur de plongée d'une fiche de sécurité est E3 minimum, quel
 que soit le milieu** (choix du club, 2026 ; `FicheSecuriteService`,
 constante `NIVEAU_DP_MINIMUM` — règle de sécurité générale, pas du MFT,
 donc pas une colonne du référentiel).

@@ -35,7 +35,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 5. « Proposer » remplit les palanquées du formulaire. Un encadré liste les plongeurs non placés et pourquoi (aptitude trop juste, aucun encadrant du niveau requis…) et les encadrants restés sans palanquée.
 6. Relisez, déplacez si besoin, puis « Enregistrer la fiche » : rien n'est enregistré avant.
 
-Règles appliquées : jamais un plongeur au-delà de son aptitude ; en enseignement, l'encadrant a le niveau exigé par la profondeur (E2 jusqu'à 20 m, E3 jusqu'à 40 m, E4 au-delà) et par la formation (E2 pour un N2, E3 pour un N3) ; en exploration, un guide de palanquée (N4, ou E2 et plus) jusqu'à 40 m, un E4 au-delà. Le directeur de plongée reste seul juge. La proposition demande le réseau.
+Règles appliquées : jamais un plongeur au-delà de son aptitude ; en enseignement, l'encadrant a le niveau exigé par la profondeur (E2 jusqu'à 20 m, E3 jusqu'à 40 m, E4 au-delà) et par la formation (E2 pour un N2, E3 pour un N3) ; en exploration, un guide de palanquée (N4, ou E2 et plus) jusqu'à 40 m, un E4 au-delà. Un moniteur qui prépare le E3 (renseigné dans l'écran Moniteurs) encadre comme un E3 ; la proposition rappelle alors que son tuteur doit être présent. Le directeur de plongée reste seul juge. La proposition demande le réseau.
 
 ## Pendant et après la plongée
 

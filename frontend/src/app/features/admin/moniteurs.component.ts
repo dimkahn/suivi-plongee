@@ -58,6 +58,13 @@ function aVerifier(m: MoniteurVue): boolean {
         <option value="E4">E4</option>
       </select>
 
+      <label for="niveau-prepare">Niveau d'encadrement préparé</label>
+      <select id="niveau-prepare" name="niveauPrepare" [(ngModel)]="niveauEncadrementPrepare">
+        <option value="">Aucun</option>
+        @for (n of niveauxAuDessus(niveauEncadrement); track n) { <option [value]="n">{{ n }}</option> }
+      </select>
+      <p class="secondaire">Un stagiaire E3 encadre comme un E3 dans la proposition des palanquées, sous la responsabilité de son tuteur.</p>
+
       <label for="niveau-plongeur">Niveau de plongeur</label>
       <select id="niveau-plongeur" name="niveauPlongeur" [(ngModel)]="niveauPlongeur">
         <option value="">Non renseigné</option>
@@ -132,7 +139,7 @@ function aVerifier(m: MoniteurVue): boolean {
                 <span class="nom">{{ m.prenom }} {{ m.nom }}</span>
                 <span class="secondaire">{{ m.email }}</span>
                 <span class="secondaire">
-                  {{ m.niveauEncadrement }}{{ m.niveauPlongeur ? ' · plongeur ' + m.niveauPlongeur : '' }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
+                  {{ m.niveauEncadrement }}{{ m.niveauEncadrementPrepare ? ' (prépare ' + m.niveauEncadrementPrepare + ')' : '' }}{{ m.niveauPlongeur ? ' · plongeur ' + m.niveauPlongeur : '' }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
                   · Droit à l'image {{ m.autorisationImage ? (m.aPhoto ? 'recueilli, photo déposée' : 'recueilli') : 'non recueilli' }}
                 </span>
                 <button type="button" [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)"
@@ -217,6 +224,13 @@ function aVerifier(m: MoniteurVue): boolean {
           <option value="E3">E3</option>
           <option value="E4">E4</option>
         </select>
+
+        <label for="edition-niveau-prepare">Niveau d'encadrement préparé</label>
+        <select id="edition-niveau-prepare" name="editionNiveauPrepare" [(ngModel)]="edition.niveauEncadrementPrepare">
+          <option value="">Aucun</option>
+          @for (n of niveauxAuDessus(edition.niveauEncadrement); track n) { <option [value]="n">{{ n }}</option> }
+        </select>
+        <p class="secondaire">Un stagiaire E3 encadre comme un E3 dans la proposition des palanquées, sous la responsabilité de son tuteur.</p>
 
         <label for="edition-niveau-plongeur">Niveau de plongeur</label>
         <select id="edition-niveau-plongeur" name="editionNiveauPlongeur" [(ngModel)]="edition.niveauPlongeur">
@@ -382,6 +396,8 @@ export class MoniteursComponent {
   nom = '';
   email = '';
   niveauEncadrement: NiveauEncadrement = 'E1';
+  /** Moniteur en formation ; chaîne vide = ne prépare rien. */
+  niveauEncadrementPrepare = '';
   /** Distinct de l'encadrement : un E1 peut n'être que N2. Chaîne vide = non renseigné. */
   niveauPlongeur = '';
   readonly niveauxPlongeur = ['N1', 'N2', 'N3', 'N4', 'N5'];
@@ -396,7 +412,8 @@ export class MoniteursComponent {
   creationOuverte = signal(false);
 
   moniteurEdite = signal<number | null>(null);
-  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement, niveauPlongeur: '',
+  edition = { prenom: '', nom: '', email: '', niveauEncadrement: 'E1' as NiveauEncadrement,
+              niveauEncadrementPrepare: '', niveauPlongeur: '',
               numeroLicence: '',
               caciDateExamen: '', caciMedecin: '', caciActivites: [] as string[],
               admin: false, directeurTechnique: false, tiv: false };
@@ -485,6 +502,7 @@ export class MoniteursComponent {
       nom: this.nom,
       prenom: this.prenom,
       niveauEncadrement: this.niveauEncadrement,
+      niveauEncadrementPrepare: this.prepareAuDessus(this.niveauEncadrement, this.niveauEncadrementPrepare),
       niveauPlongeur: this.niveauPlongeur || null,
       numeroLicence: this.numeroLicence || null,
       caciDateExamen: this.caciDateExamen || null,
@@ -501,6 +519,7 @@ export class MoniteursComponent {
         this.prenom = '';
         this.nom = '';
         this.email = '';
+        this.niveauEncadrementPrepare = '';
         this.niveauPlongeur = '';
         this.numeroLicence = '';
         this.caciDateExamen = '';
@@ -527,6 +546,17 @@ export class MoniteursComponent {
     });
   }
 
+  /** Niveaux qu'un moniteur peut préparer : ceux au-dessus de celui qu'il détient. */
+  niveauxAuDessus(detenu: NiveauEncadrement): NiveauEncadrement[] {
+    const tous: NiveauEncadrement[] = ['E1', 'E2', 'E3', 'E4'];
+    return tous.slice(tous.indexOf(detenu) + 1);
+  }
+
+  /** Le niveau préparé n'est envoyé que s'il reste au-dessus du niveau détenu (qui a pu changer entre-temps). */
+  private prepareAuDessus(detenu: NiveauEncadrement, prepare: string): string | null {
+    return (this.niveauxAuDessus(detenu) as string[]).includes(prepare) ? prepare : null;
+  }
+
   basculerEdition(m: MoniteurVue): void {
     this.message.set(null);
     this.moniteurMotDePasse.set(null);
@@ -535,6 +565,7 @@ export class MoniteursComponent {
       nom: m.nom,
       email: m.email,
       niveauEncadrement: m.niveauEncadrement ?? 'E1',
+      niveauEncadrementPrepare: m.niveauEncadrementPrepare ?? '',
       niveauPlongeur: m.niveauPlongeur ?? '',
       numeroLicence: m.numeroLicence ?? '',
       caciDateExamen: m.caciDateExamen ?? '',
@@ -556,7 +587,8 @@ export class MoniteursComponent {
     this.envoiEdition.set(true);
     this.message.set(null);
     this.api.modifierMoniteur(m.id, {
-      ...e, niveauPlongeur: e.niveauPlongeur || null, numeroLicence: e.numeroLicence || null,
+      ...e, niveauEncadrementPrepare: this.prepareAuDessus(e.niveauEncadrement, e.niveauEncadrementPrepare),
+      niveauPlongeur: e.niveauPlongeur || null, numeroLicence: e.numeroLicence || null,
       caciDateExamen: e.caciDateExamen || null, caciMedecin: e.caciMedecin || null
     }).subscribe({
       next: maj => {

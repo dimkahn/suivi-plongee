@@ -374,6 +374,7 @@ export class ApiService {
     nom: string;
     prenom: string;
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
+    niveauEncadrementPrepare?: string | null;
     niveauPlongeur?: string | null;
     numeroLicence?: string | null;
     caciDateExamen?: string | null;
@@ -392,6 +393,7 @@ export class ApiService {
     nom: string;
     prenom: string;
     niveauEncadrement: 'E1' | 'E2' | 'E3' | 'E4';
+    niveauEncadrementPrepare: string | null;
     niveauPlongeur: string | null;
     numeroLicence: string | null;
     caciDateExamen: string | null;

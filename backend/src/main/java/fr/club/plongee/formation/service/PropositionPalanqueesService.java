@@ -6,6 +6,7 @@ import fr.club.plongee.formation.domain.Milieu;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.EleveRepository;
 import fr.club.plongee.formation.repository.SeanceRepository;
+import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,8 @@ import java.util.List;
  * <p>L'aptitude d'un plongeur est celle saisie dans le groupe, complétée par
  * le dossier quand il est lié à un compte : niveau d'encadrement et niveau de
  * plongeur (un encadrant dont le groupe ne porte que « E2 » est bien vu
- * guide de palanquée).
+ * guide de palanquée). Un moniteur qui prépare le E3 encadre comme un E3
+ * (stagiaire, voir {@link ProposeurPalanquees#NIVEAUX_STAGIAIRE_AUTORISES}).
  */
 @Service
 public class PropositionPalanqueesService {
@@ -62,8 +64,14 @@ public class PropositionPalanqueesService {
         }
 
         List<ProposeurPalanquees.Candidat> candidats = demande.plongeurs().stream()
-                .map(p -> new ProposeurPalanquees.Candidat(p.eleveId(), p.utilisateurId(), p.nom(), p.prenom(),
-                        p.aptitude(), p.qualificationPreparee(), aptitude(p), p.encadrant()))
+                .map(p -> {
+                    Utilisateur compte = compte(p);
+                    NiveauEncadrement stagiaire = stagiaire(compte);
+                    AptitudePlongeur aptitude = aptitude(p.aptitude(), compte);
+                    if (stagiaire != null) aptitude = aptitude.avec(AptitudePlongeur.lire(stagiaire.name()));
+                    return new ProposeurPalanquees.Candidat(p.eleveId(), p.utilisateurId(), p.nom(), p.prenom(),
+                            p.aptitude(), p.qualificationPreparee(), aptitude, p.encadrant(), stagiaire);
+                })
                 .toList();
         ProposeurPalanquees.Proposition proposition = ProposeurPalanquees.proposer(candidats,
                 new ProposeurPalanquees.Criteres(demande.profondeur(), demande.type(), demande.maxPlongeurs(),
@@ -85,11 +93,23 @@ public class PropositionPalanqueesService {
                 proposition.avertissements());
     }
 
-    private AptitudePlongeur aptitude(PlongeurPropose p) {
-        AptitudePlongeur a = AptitudePlongeur.lire(p.aptitude());
-        Utilisateur compte = p.utilisateurId() != null ? utilisateurs.findById(p.utilisateurId()).orElse(null)
+    /** Le compte lié au plongeur : le sien d'encadrant, ou celui rattaché à son dossier d'élève. */
+    private Utilisateur compte(PlongeurPropose p) {
+        return p.utilisateurId() != null ? utilisateurs.findById(p.utilisateurId()).orElse(null)
                 : p.eleveId() != null ? eleves.findById(p.eleveId()).map(e -> e.getUtilisateur()).orElse(null)
                 : null;
+    }
+
+    /** Le niveau préparé d'un moniteur actif, s'il donne le droit d'encadrer comme acquis (stagiaire E3). */
+    private static NiveauEncadrement stagiaire(Utilisateur compte) {
+        if (compte == null || !compte.isActif() || !compte.estMoniteur()) return null;
+        NiveauEncadrement prepare = compte.getNiveauEncadrementPrepare();
+        return prepare != null && ProposeurPalanquees.NIVEAUX_STAGIAIRE_AUTORISES.contains(prepare)
+                && !compte.getNiveauEncadrement().auMoins(prepare) ? prepare : null;
+    }
+
+    private static AptitudePlongeur aptitude(String texte, Utilisateur compte) {
+        AptitudePlongeur a = AptitudePlongeur.lire(texte);
         if (compte != null) {
             a = a.avec(AptitudePlongeur.lire(compte.getNiveauPlongeur()));
             if (compte.isActif() && compte.estMoniteur()) {
