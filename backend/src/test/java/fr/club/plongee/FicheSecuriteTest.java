@@ -461,4 +461,63 @@ class FicheSecuriteTest {
         mvc.perform(get("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin))
                 .andExpect(jsonPath("$.seancesLiees").isEmpty());
     }
+
+    @Test
+    @DisplayName("Proposition des palanquées : le niveau du compte encadrant est lu, rien n'est enregistré")
+    void propositionDesPalanquees() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e2@club.fr");
+        long seance = creerSeance(admin);
+        long e2 = moniteurId(admin, "e2@club.fr");
+        // Aptitude vide dans le groupe : le niveau d'encadrement vient du compte.
+        String demande = """
+                {"profondeur": 20, "type": "EXPLORATION", "maxPlongeurs": 4,
+                 "autonomesEnsemble": true, "regrouperParNiveau": false,
+                 "plongeurs": [
+                   {"utilisateurId": %d, "nom": "Moniteur", "prenom": "E2", "encadrant": true},
+                   {"nom": "Perrot", "prenom": "Sonia", "aptitude": "N1"},
+                   {"nom": "Dulac", "prenom": "Anis", "aptitude": "N1"},
+                   {"nom": "Roux", "prenom": "Lina", "aptitude": "N1"}
+                 ],
+                 "ensemble": [], "separes": [[1, 2]]}
+                """.formatted(e2);
+
+        mvc.perform(post("/api/seances/" + seance + "/fiche-securite/proposition")
+                        .header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content(demande))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.palanquees.length()").value(1))
+                .andExpect(jsonPath("$.palanquees[0].profondeurPrevue").value(20))
+                .andExpect(jsonPath("$.palanquees[0].membres[0].fonction").value("GUIDE_PALANQUEE"))
+                .andExpect(jsonPath("$.palanquees[0].membres.length()").value(3))
+                .andExpect(jsonPath("$.nonPlaces[0].raison").value(
+                        org.hamcrest.Matchers.containsString("Aucun encadrant")));
+
+        mvc.perform(get("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin))
+                .andExpect(jsonPath("$.id").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Proposition des palanquées : refusée hors milieu naturel et pour un élève")
+    void propositionRefusee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long piscine = json.readTree(mvc.perform(post("/api/seances").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dateSeance\":\"2026-06-01\",\"milieu\":\"ARTIFICIEL\",\"lieu\":\"Piscine\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString()).get("id").asLong();
+        String demande = """
+                {"profondeur": 6, "type": "ENSEIGNEMENT",
+                 "plongeurs": [{"nom": "Perrot", "prenom": "Sonia", "aptitude": "N1"}]}
+                """;
+
+        mvc.perform(post("/api/seances/" + piscine + "/fiche-securite/proposition").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demande))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("milieu naturel")));
+        mvc.perform(post("/api/seances/" + piscine + "/fiche-securite/proposition")
+                        .header("Authorization", jeton("eleve@club.fr"))
+                        .contentType(MediaType.APPLICATION_JSON).content(demande))
+                .andExpect(status().isForbidden());
+    }
 }

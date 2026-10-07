@@ -183,7 +183,19 @@ fiches de sécurité ; des séances du même jour peuvent être
 **liées**, V43 `LiaisonSeances`, depuis la fiche de sécurité : deux bateaux
 se partagent un groupe, chaque fiche ne propose que les plongeurs absents
 des palanquées des fiches liées ; `FicheSecuriteVue.seancesLiees`, simple
-avertissement si un plongeur est sur les deux). **Grille des soirées (lot 2)** :
+avertissement si un plongeur est sur les deux). **Proposition automatique
+des palanquées** (2026, milieu naturel seulement, choix du club) : bouton
+de la fiche de sécurité, `POST /api/seances/{id}/fiche-securite/proposition`,
+calcul pur dans `ProposeurPalanquees` (aptitudes lues par `AptitudePlongeur`
+dans le texte libre, complétées par le compte lié), à partir des membres du
+groupe absents des fiches liées et de critères (profondeur, exploration /
+enseignement, plongeurs par palanquée ≤ 4, autonomes par 2 ou 3, niveaux
+séparés, encadrants retenus, paires ensemble / séparées). **N'écrit rien** :
+remplit le formulaire, que le DP relit et enregistre ; ne place jamais un
+plongeur au-delà de son aptitude, renvoie les non placés avec leur raison.
+Lecture des annexes III-16/17 du Code du sport à confirmer par le club
+(exploration au-delà de 40 m : E4, choix prudent). Réseau obligatoire.
+**Grille des soirées (lot 2)** :
 `/admin/planning`, `PlanningService`. Une soirée = une date de la saison qui
 porte au moins une séance en milieu **artificiel** (piscine, fosse) ; une
 date qui n'a que des séances en milieu naturel n'y figure pas (choix du

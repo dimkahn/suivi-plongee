@@ -11,7 +11,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  FicheSecuriteVue, GroupePlongeursVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
+  DemandePropositionPalanquees, FicheSecuriteVue, GroupePlongeursVue, PropositionPalanqueesVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
   PlongeurVue, SeanceLieeVue, SeanceVue
 } from '../../core/modeles';
 
@@ -54,7 +54,19 @@ function profondeurMaxPourAptitude(aptitude: string | null): number | null {
   return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
 }
 
-type Identite = { eleveId: number | null; utilisateurId: number | null; nom: string; prenom: string };
+/** Aptitude d'un encadrant possible : E1 à E4 (mais pas « PE40 »), MF1/MF2, GP, N4, N5. */
+const APTITUDE_ENCADRANT = /(^|[^P])E[1-4]|MF[12]|GP|N[45]/i;
+
+/** Critères de la proposition automatique, modifiés en place par le formulaire. */
+interface CriteresProposition {
+  profondeur: number;
+  type: 'EXPLORATION' | 'ENSEIGNEMENT';
+  maxPlongeurs: number;
+  autonomesEnsemble: boolean;
+  regrouperParNiveau: boolean;
+}
+
+type Identite ={ eleveId: number | null; utilisateurId: number | null; nom: string; prenom: string };
 
 /** « Hélène » → « helene » : sans accents, sans majuscules, sans espaces autour. */
 function normaliser(texte: string | null): string {
@@ -290,8 +302,116 @@ interface FormulaireEntete {
               {{ masquesParLiaison() }} plongeur(s) du groupe déjà placé(s) sur la fiche liée, non proposé(s) ici.
             </p>
           }
+          @if (seance()?.milieu === 'NATUREL') {
+            <button type="button" class="bouton-principal bouton-proposer" (click)="ouvrirProposition()">
+              Proposer les palanquées automatiquement
+            </button>
+          }
         }
       </section>
+
+      <app-dialogue [ouvert]="propositionOuverte()" titre="Proposer les palanquées" [erreur]="erreurProposition()"
+                    (fermer)="propositionOuverte.set(false)">
+        @if (criteres(); as c) {
+          <p class="secondaire">
+            {{ proposables().length }} plongeur(s) du groupe. La proposition remplace les palanquées du
+            formulaire ; rien n'est enregistré avant que vous ne la relisiez et touchiez « Enregistrer la fiche ».
+          </p>
+
+          <div class="grille-conditions">
+            <div>
+              <label for="prop-profondeur">Profondeur visée (m)</label>
+              <input id="prop-profondeur" type="number" min="1" max="60" [(ngModel)]="c.profondeur"
+                     name="propProfondeur">
+            </div>
+            <div>
+              <label for="prop-type">Type de plongée</label>
+              <select id="prop-type" [(ngModel)]="c.type" name="propType">
+                <option value="EXPLORATION">Exploration</option>
+                <option value="ENSEIGNEMENT">Enseignement (formation)</option>
+              </select>
+            </div>
+            <div>
+              <label for="prop-max">Plongeurs par palanquée encadrée</label>
+              <select id="prop-max" [(ngModel)]="c.maxPlongeurs" name="propMax">
+                @for (n of [1, 2, 3, 4]; track n) { <option [ngValue]="n">{{ n }} + l'encadrant</option> }
+              </select>
+            </div>
+          </div>
+
+          <label class="case">
+            <input type="checkbox" [(ngModel)]="c.autonomesEnsemble" name="propAutonomes">
+            Regrouper les plongeurs autonomes entre eux (par 2 ou 3, sans guide)
+          </label>
+          <label class="case">
+            <input type="checkbox" [(ngModel)]="c.regrouperParNiveau" name="propNiveau">
+            Ne pas mélanger les niveaux (niveau préparé, sinon aptitude)
+          </label>
+
+          <h3 class="sous-titre">Encadrants disponibles</h3>
+          @if (encadrantsPossibles().length === 0) {
+            <p class="vide">Aucun encadrant reconnu dans ce groupe (aptitude E1 à E4, GP, N4, N5, ou compte moniteur).</p>
+          }
+          @for (i of encadrantsPossibles(); track i) {
+            <label class="case">
+              <input type="checkbox" [checked]="encadrantsCoches().has(i)" (change)="basculerEncadrant(i)">
+              {{ libelleProposable(i) }}
+            </label>
+          }
+
+          <h3 class="sous-titre">Binômes (facultatif)</h3>
+          <div class="ligne-groupe">
+            <select [ngModel]="paireA()" (ngModelChange)="paireA.set($event)" name="paireA" aria-label="Premier plongeur">
+              <option [ngValue]="null">— Plongeur —</option>
+              @for (m of proposables(); track $index) { <option [ngValue]="$index">{{ libelleProposable($index) }}</option> }
+            </select>
+            <select [ngModel]="paireB()" (ngModelChange)="paireB.set($event)" name="paireB" aria-label="Second plongeur">
+              <option [ngValue]="null">— Plongeur —</option>
+              @for (m of proposables(); track $index) { <option [ngValue]="$index">{{ libelleProposable($index) }}</option> }
+            </select>
+            <button type="button" class="bouton-discret" (click)="ajouterPaire(true)">Garder ensemble</button>
+            <button type="button" class="bouton-discret" (click)="ajouterPaire(false)">Séparer</button>
+          </div>
+          @for (p of paires(); track $index) {
+            <p class="paire">
+              {{ p.ensemble ? 'Ensemble' : 'Séparés' }} : {{ libelleProposable(p.a) }} et {{ libelleProposable(p.b) }}
+              <button type="button" class="bouton-discret danger" (click)="retirerPaire($index)"
+                      aria-label="Retirer ce binôme">✕</button>
+            </p>
+          }
+
+          <div class="actions-dialogue">
+            <button type="button" class="bouton-principal" [disabled]="envoiProposition()" (click)="proposer()">
+              {{ envoiProposition() ? 'Calcul…' : 'Proposer' }}
+            </button>
+            <button type="button" class="bouton-discret" (click)="propositionOuverte.set(false)">Annuler</button>
+          </div>
+        }
+      </app-dialogue>
+
+      @if (bilanProposition(); as b) {
+        <section class="carte panneau bilan-proposition" role="status">
+          <div class="ligne-titre">
+            <h3>Proposition automatique : à relire</h3>
+            <button type="button" class="bouton-discret" (click)="bilanProposition.set(null)">Fermer</button>
+          </div>
+          <p class="secondaire">
+            {{ b.palanquees.length }} palanquée(s) proposée(s). Vérifiez-les, ajustez-les si besoin,
+            puis enregistrez la fiche : le directeur de plongée reste seul juge.
+          </p>
+          @if (b.nonPlaces.length > 0) {
+            <p><strong>Non placés :</strong></p>
+            <ul>
+              @for (n of b.nonPlaces; track $index) { <li>{{ n.prenom }} {{ n.nom }} — {{ n.raison }}</li> }
+            </ul>
+          }
+          @if (b.encadrantsLibres.length > 0) {
+            <p><strong>Encadrants sans palanquée :</strong> {{ b.encadrantsLibres.join(', ') }}
+              (sécurité surface, serre-file…)</p>
+          }
+          @for (a of b.avertissements; track $index) { <p class="alerte-profondeur">⚠ {{ a }}</p> }
+        </section>
+      }
 
       @for (p of palanquees(); track p; let iP = $index) {
         <section class="carte panneau">
@@ -498,6 +618,14 @@ interface FormulaireEntete {
       .niveau-jeton { font-size: .75rem; }
       .pool-plongeurs .vide { grid-column: 1 / -1; }
     }
+
+    .bouton-proposer { width: auto; margin: var(--pas-2) 0 0; }
+    .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
+    .case input { width: 22px; height: 22px; }
+    .sous-titre { margin: var(--pas-3) 0 var(--pas); font-size: 1rem; }
+    .paire { display: flex; align-items: center; gap: var(--pas); margin: 0 0 var(--pas); }
+    .bilan-proposition { border-left: 4px solid var(--profond); }
+    .bilan-proposition ul { margin: 0 0 var(--pas); padding-left: var(--pas-3); }
 
     .cdk-drag-preview { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
     .cdk-drag-placeholder { opacity: 0.3; }
@@ -907,6 +1035,109 @@ export class FicheSecuriteComponent {
       })
     });
     this.palanquees.set(liste);
+  }
+
+  // --- Proposition automatique des palanquées (milieu naturel) -----------------------------------
+
+  propositionOuverte = signal(false);
+  erreurProposition = signal<string | null>(null);
+  envoiProposition = signal(false);
+  criteres = signal<CriteresProposition | null>(null);
+  /** Membres du groupe soumis à la proposition, figés à l'ouverture : les paires s'y réfèrent par indice. */
+  proposables = signal<MembreGroupeVue[]>([]);
+  encadrantsCoches = signal<Set<number>>(new Set());
+  paires = signal<{ a: number; b: number; ensemble: boolean }[]>([]);
+  paireA = signal<number | null>(null);
+  paireB = signal<number | null>(null);
+  bilanProposition = signal<PropositionPalanqueesVue | null>(null);
+
+  /** Indices des membres qui peuvent encadrer : compte moniteur ou aptitude d'encadrant. */
+  encadrantsPossibles = computed(() => this.proposables()
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => m.utilisateurId !== null || APTITUDE_ENCADRANT.test(m.aptitude ?? ''))
+    .map(({ i }) => i));
+
+  /**
+   * Toute la composition du groupe est proposée (sauf les plongeurs déjà sur
+   * une fiche liée) : la proposition remplace les palanquées du formulaire.
+   */
+  ouvrirProposition(): void {
+    const groupe = this.groupeSelectionne();
+    if (!groupe) return;
+    this.proposables.set(groupe.membres.filter(m => this.placeSurFicheLiee(m) === null));
+    this.encadrantsCoches.set(new Set(this.encadrantsPossibles()));
+    this.paires.set([]);
+    this.paireA.set(null);
+    this.paireB.set(null);
+    this.criteres.set({
+      profondeur: this.seance()?.profondeurMax ?? 20, type: 'EXPLORATION', maxPlongeurs: 4,
+      autonomesEnsemble: true, regrouperParNiveau: true
+    });
+    this.erreurProposition.set(null);
+    this.propositionOuverte.set(true);
+  }
+
+  libelleProposable(i: number): string {
+    const m = this.proposables()[i];
+    if (!m) return '';
+    return `${m.prenom} ${m.nom}${m.aptitude ? ' (' + m.aptitude + ')' : ''}`;
+  }
+
+  basculerEncadrant(i: number): void {
+    const coches = new Set(this.encadrantsCoches());
+    if (coches.has(i)) coches.delete(i); else coches.add(i);
+    this.encadrantsCoches.set(coches);
+  }
+
+  ajouterPaire(ensemble: boolean): void {
+    const a = this.paireA(), b = this.paireB();
+    if (a === null || b === null || a === b) {
+      this.erreurProposition.set('Choisissez deux plongeurs différents.');
+      return;
+    }
+    this.erreurProposition.set(null);
+    this.paires.set([...this.paires(), { a, b, ensemble }]);
+    this.paireA.set(null);
+    this.paireB.set(null);
+  }
+
+  retirerPaire(index: number): void {
+    this.paires.set(this.paires().filter((_, i) => i !== index));
+  }
+
+  /** Le calcul est fait par le serveur : réseau nécessaire. */
+  proposer(): void {
+    const c = this.criteres();
+    if (!c) return;
+    const demande: DemandePropositionPalanquees = {
+      ...c,
+      plongeurs: this.proposables().map((m, i) => ({
+        eleveId: m.eleveId, utilisateurId: m.utilisateurId, nom: m.nom, prenom: m.prenom,
+        aptitude: m.aptitude, qualificationPreparee: m.qualificationPreparee,
+        encadrant: this.encadrantsCoches().has(i)
+      })),
+      ensemble: this.paires().filter(p => p.ensemble).map(p => [p.a, p.b] as [number, number]),
+      separes: this.paires().filter(p => !p.ensemble).map(p => [p.a, p.b] as [number, number])
+    };
+    this.envoiProposition.set(true);
+    this.erreurProposition.set(null);
+    this.api.proposerPalanquees(this.seanceId, demande).subscribe({
+      next: r => {
+        this.envoiProposition.set(false);
+        const dejaSaisies = this.palanquees().some(p => p.membres.some(m => m.nom || m.prenom));
+        if (dejaSaisies && !confirm('Remplacer les palanquées déjà saisies sur cette fiche par la proposition ?')) {
+          return;
+        }
+        this.palanquees.set(r.palanquees.length > 0 ? r.palanquees : [palanqueeVide(1)]);
+        this.bilanProposition.set(r);
+        this.propositionOuverte.set(false);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiProposition.set(false);
+        this.erreurProposition.set(e.error?.detail
+          ?? 'La proposition demande le réseau : réessayez une fois connecté.');
+      }
+    });
   }
 
   /** Établissement : DP, conditions, composition des palanquées et profil prévu. */

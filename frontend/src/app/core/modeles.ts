@@ -614,6 +614,32 @@ export interface FicheSecuriteVue {
   sortie?: { id: number; nom: string } | null;
 }
 
+/**
+ * Critères de la proposition automatique des palanquées (milieu naturel) ;
+ * `ensemble` et `separes` : paires d'indices dans `plongeurs`.
+ */
+export interface DemandePropositionPalanquees {
+  profondeur: number;
+  type: 'EXPLORATION' | 'ENSEIGNEMENT';
+  maxPlongeurs: number;
+  autonomesEnsemble: boolean;
+  regrouperParNiveau: boolean;
+  plongeurs: {
+    eleveId: number | null; utilisateurId: number | null; nom: string; prenom: string;
+    aptitude: string | null; qualificationPreparee: string | null; encadrant: boolean;
+  }[];
+  ensemble: [number, number][];
+  separes: [number, number][];
+}
+
+/** Une proposition : rien n'est enregistré, les palanquées remplacent celles du formulaire. */
+export interface PropositionPalanqueesVue {
+  palanquees: PalanqueeVue[];
+  nonPlaces: { nom: string; prenom: string; raison: string }[];
+  encadrantsLibres: string[];
+  avertissements: string[];
+}
+
 /** Un plongeur déjà placé sur la fiche d'une séance liée. */
 export interface PlongeurPlaceVue {
   eleveId: number | null;

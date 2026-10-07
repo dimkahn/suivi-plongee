@@ -3,7 +3,8 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
-  EleveVue, EvaluationVue, FicheSecuriteVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
+  DemandePropositionPalanquees, PropositionPalanqueesVue,
+  EleveVue, EvaluationVue, FicheSecuriteVue,GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue,
@@ -296,6 +297,11 @@ export class ApiService {
 
   delierSeance(seanceId: number): Observable<FicheSecuriteVue> {
     return this.http.delete<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/liaison`);
+  }
+
+  /** Proposition automatique des palanquées (milieu naturel) : calculée par le serveur, rien n'est enregistré. */
+  proposerPalanquees(seanceId: number, demande: DemandePropositionPalanquees): Observable<PropositionPalanqueesVue> {
+    return this.http.post<PropositionPalanqueesVue>(`/api/seances/${seanceId}/fiche-securite/proposition`, demande);
   }
 
   supprimerFicheSecurite(seanceId: number): Observable<unknown> {
