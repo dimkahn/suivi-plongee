@@ -60,10 +60,46 @@ public class FicheSecuriteController {
 
     public record DemandeLiaison(@NotNull Long seanceId) {}
 
-    private final FicheSecuriteService service;
+    public record DemandePlongeurPropose(Long eleveId, Long utilisateurId, String nom, String prenom,
+                                         String aptitude, String qualificationPreparee, Boolean encadrant) {}
 
-    public FicheSecuriteController(FicheSecuriteService service) {
+    /** Les critères de la proposition ; {@code ensemble}/{@code separes} : paires d'indices dans {@code plongeurs}. */
+    public record DemandeProposition(@NotNull Integer profondeur, @NotNull ProposeurPalanquees.TypePlongee type,
+                                     Integer maxPlongeurs, Boolean autonomesEnsemble, Boolean regrouperParNiveau,
+                                     @NotNull List<DemandePlongeurPropose> plongeurs,
+                                     List<List<Integer>> ensemble, List<List<Integer>> separes) {}
+
+    private final FicheSecuriteService service;
+    private final PropositionPalanqueesService propositions;
+
+    public FicheSecuriteController(FicheSecuriteService service, PropositionPalanqueesService propositions) {
         this.service = service;
+        this.propositions = propositions;
+    }
+
+    /**
+     * Proposition automatique des palanquées, en milieu naturel : rien n'est
+     * enregistré, le formulaire de la fiche la reprend pour relecture.
+     */
+    @PostMapping("/proposition")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public PropositionPalanqueesService.PropositionVue proposer(@PathVariable Long seanceId,
+                                                                @Valid @RequestBody DemandeProposition demande) {
+        return propositions.proposer(seanceId, new PropositionPalanqueesService.Demande(
+                demande.profondeur(), demande.type(),
+                demande.maxPlongeurs() == null ? ProposeurPalanquees.MAX_PLONGEURS_ENCADRES : demande.maxPlongeurs(),
+                Boolean.TRUE.equals(demande.autonomesEnsemble()), Boolean.TRUE.equals(demande.regrouperParNiveau()),
+                demande.plongeurs().stream().map(p -> new PropositionPalanqueesService.PlongeurPropose(
+                        p.eleveId(), p.utilisateurId(), p.nom(), p.prenom(), p.aptitude(),
+                        p.qualificationPreparee(), Boolean.TRUE.equals(p.encadrant()))).toList(),
+                paires(demande.ensemble()), paires(demande.separes())));
+    }
+
+    private static List<int[]> paires(List<List<Integer>> paires) {
+        if (paires == null) return List.of();
+        return paires.stream()
+                .map(p -> p == null || p.contains(null) ? new int[0] : p.stream().mapToInt(Integer::intValue).toArray())
+                .toList();
     }
 
     @GetMapping

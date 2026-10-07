@@ -3,8 +3,9 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant
 questions:
+- Comment composer les palanquées automatiquement ?
 - Comment remplir une fiche de sécurité ?
 - Comment ajouter une palanquée ?
 - Qui peut être directeur de plongée ?
@@ -24,6 +25,17 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 5. Une palanquée est prête ; « + Palanquée » en ajoute d'autres.
 6. Ajoutez les plongeurs : pour un plongeur du club, son aptitude et son niveau préparé se remplissent seuls.
 7. Enregistrez.
+
+## Proposer les palanquées automatiquement (milieu naturel)
+
+1. Choisissez le groupe de plongeurs du jour, puis « Proposer les palanquées automatiquement ».
+2. Donnez les critères : profondeur visée, exploration ou enseignement, nombre de plongeurs par palanquée encadrée (4 au plus, plus l'encadrant), autonomes regroupés entre eux (par 2 ou 3), niveaux séparés ou non.
+3. Décochez les encadrants qui ne plongent pas aujourd'hui.
+4. Facultatif : choisissez deux plongeurs et « Garder ensemble » ou « Séparer » (un plongeur gardé avec un encadrant plonge dans sa palanquée).
+5. « Proposer » remplit les palanquées du formulaire. Un encadré liste les plongeurs non placés et pourquoi (aptitude trop juste, aucun encadrant du niveau requis…) et les encadrants restés sans palanquée.
+6. Relisez, déplacez si besoin, puis « Enregistrer la fiche » : rien n'est enregistré avant.
+
+Règles appliquées : jamais un plongeur au-delà de son aptitude ; en enseignement, l'encadrant a le niveau exigé par la profondeur (E2 jusqu'à 20 m, E3 jusqu'à 40 m, E4 au-delà) et par la formation (E2 pour un N2, E3 pour un N3) ; en exploration, un guide de palanquée (N4, ou E2 et plus) jusqu'à 40 m, un E4 au-delà. Le directeur de plongée reste seul juge. La proposition demande le réseau.
 
 ## Pendant et après la plongée
 
