@@ -63,7 +63,8 @@ function idCible(c: Cible): number {
            [placeholder]="population() === 'ELEVES' ? 'Rechercher un élève…' : 'Rechercher un moniteur…'"
            [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
 
-    @if (personnesExport().length > 0) {
+    <!-- Export réservé aux administrateurs (choix du club, 2026). -->
+    @if (auth.estAdmin() && personnesExport().length > 0) {
       <div class="barre-export">
         <button type="button" class="bouton-discret" (click)="ouvrirExport()">Exporter en image</button>
       </div>
@@ -532,6 +533,7 @@ export class TrombinoscopeComponent implements OnDestroy {
   masques = signal<Set<number>>(new Set());
 
   ouvrirExport(): void {
+    if (!this.auth.estAdmin()) return;
     const eleves = this.population() === 'ELEVES';
     const filtre = eleves ? this.groupeFiltre() : this.groupeFiltreMoniteurs();
     const groupe = typeof filtre === 'number' ? this.groupes().find(g => g.id === filtre) : undefined;
