@@ -131,42 +131,38 @@ public class EvaluationService {
         return evaluations.save(e);
     }
 
-    /** L'exercice noté doit travailler la compétence du critère. Un exercice désactivé depuis reste accepté (saisie hors ligne). */
+    /** L'exercice noté doit travailler le critère. Un exercice désactivé depuis reste accepté (saisie hors ligne). */
     private ExerciceCompetence exercice(Long exerciceId, Critere critere) {
         if (exerciceId == null) return null;
         ExerciceCompetence exercice = exercicesCompetence.findById(exerciceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Exercice introuvable"));
-        if (!exercice.getBloc().getId().equals(critere.getBloc().getId())) {
+        if (!exercice.travaille(critere)) {
             throw new RegleMetierException("L'exercice « " + exercice.libelle()
-                    + " » ne travaille pas la compétence « " + critere.getBloc().getIntitule() + " ».");
+                    + " » ne travaille pas le critère « " + critere.getSavoirFaire() + " ».");
         }
         return exercice;
     }
 
     /**
-     * Base d'exercices (choix du club, 2026) : un critère d'une compétence qui
-     * a des exercices ne passe à « acquis » que sur un exercice de maîtrise.
-     * Un critère déjà acquis peut recevoir une note acquise sans exercice
+     * Base d'exercices (choix du club, 2026) : un critère relié à des
+     * exercices de maîtrise ne passe à « acquis » que sur l'un d'eux. Un
+     * critère déjà acquis peut recevoir une note acquise sans exercice
      * (simple commentaire, notation groupée) : il ne change pas d'état.
      */
     private void verifierExerciceDeMaitrise(Cursus cursus, Critere critere, StatutAcquisition statut,
                                             boolean entrainement, ExerciceCompetence exercice) {
         if (statut != StatutAcquisition.ACQUIS) return;
         if (exercice != null && exercice.getPhase() == PhaseExercice.MAITRISE) return;
-        BlocCompetence bloc = critere.getBloc();
-        if (!exercicesCompetence.existsByBlocIdAndActifTrue(bloc.getId())) return;
+        List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuCritere(critere.getId());
+        if (deMaitrise.isEmpty()) return;
         boolean dejaAcquis = evaluations
                 .findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(cursus.getId(), critere.getId(), entrainement)
                 .map(e -> e.getStatut() == StatutAcquisition.ACQUIS)
                 .orElse(false);
         if (dejaAcquis) return;
 
-        String maitrise = exercicesCompetence.parReferentiel(bloc.getReferentiel().getId()).stream()
-                .filter(x -> x.getBloc().getId().equals(bloc.getId()))
-                .filter(x -> x.isActif() && x.getPhase() == PhaseExercice.MAITRISE)
-                .map(ExerciceCompetence::getNumero)
-                .collect(Collectors.joining(", "));
-        String lesquels = maitrise.isEmpty() ? "" : " (" + maitrise + ")";
+        String lesquels = " (" + deMaitrise.stream().map(ExerciceCompetence::getNumero)
+                .collect(Collectors.joining(", ")) + ")";
         if (exercice == null) {
             throw new RegleMetierException("« " + critere.getSavoirFaire()
                     + " » ne passe à acquis que sur un exercice de maîtrise" + lesquels

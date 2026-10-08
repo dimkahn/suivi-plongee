@@ -4,6 +4,7 @@ import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.repository.EvaluationRepository;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
+import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.repository.BlocCompetenceRepository;
@@ -35,18 +36,23 @@ public class ExerciceCompetenceController {
      */
     public record ExerciceVue(Long id, Long blocId, String numero, int ordre, String phase,
                               String intitule, String deroulement, String critereReussite, boolean actif,
-                              boolean aSchema) {
+                              boolean aSchema,
+                              /** Critères de la compétence que l'exercice fait travailler. */
+                              List<Long> critereIds) {
 
         public static ExerciceVue de(ExerciceCompetence e, Set<Long> avecSchema) {
             return new ExerciceVue(e.getId(), e.getBloc().getId(), e.getNumero(), e.getOrdre(),
                     e.getPhase().name(), e.getIntitule(), e.getDeroulement(), e.getCritereReussite(), e.isActif(),
-                    avecSchema.contains(e.getId()));
+                    avecSchema.contains(e.getId()),
+                    e.getCriteres().stream()
+                            .sorted(java.util.Comparator.comparingInt(Critere::getOrdre))
+                            .map(Critere::getId).toList());
         }
     }
 
     public record DemandeExercice(String numero, int ordre, @NotNull PhaseExercice phase,
                                   String intitule, String deroulement, String critereReussite,
-                                  boolean actif) {}
+                                  boolean actif, List<Long> critereIds) {}
 
     private final ReferentielRepository referentiels;
     private final BlocCompetenceRepository blocs;
@@ -135,6 +141,17 @@ public class ExerciceCompetenceController {
             throw new RegleMetierException("Le numéro « " + numero + " » est déjà pris dans la compétence « "
                     + e.getBloc().getIntitule() + " ».");
         }
+        List<Long> ids = d.critereIds() == null ? List.of() : d.critereIds();
+        if (ids.isEmpty()) {
+            throw new RegleMetierException("Cochez au moins un critère que l'exercice fait travailler.");
+        }
+        List<Critere> criteres = e.getBloc().getCriteres().stream().filter(c -> ids.contains(c.getId())).toList();
+        if (criteres.size() != new java.util.HashSet<>(ids).size()) {
+            throw new RegleMetierException("Les critères d'un exercice appartiennent à sa compétence « "
+                    + e.getBloc().getIntitule() + " ».");
+        }
+        e.getCriteres().clear();
+        e.getCriteres().addAll(criteres);
         e.setNumero(numero);
         e.setOrdre(d.ordre());
         e.setPhase(d.phase());

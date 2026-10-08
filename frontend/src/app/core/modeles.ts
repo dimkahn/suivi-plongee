@@ -108,6 +108,8 @@ export interface ExerciceBaseVue {
   actif: boolean;
   /** Un schéma se lit par `ApiService.schemaExercice`. Absent d'une grille mise en cache avant. */
   aSchema?: boolean;
+  /** Critères de la compétence que l'exercice fait travailler. Absent d'une grille mise en cache avant. */
+  critereIds?: number[];
 }
 
 /** L'exercice sur lequel une note a été prise. */
@@ -118,6 +120,8 @@ export interface ExerciceNoteVue {
   phase: PhaseExercice;
   /** Compétence travaillée. */
   blocId: number;
+  /** Critères travaillés : renseignés seulement dans le programme d'une séance. */
+  critereIds?: number[] | null;
 }
 
 export interface DemandeExerciceBase {
@@ -128,6 +132,8 @@ export interface DemandeExerciceBase {
   deroulement: string | null;
   critereReussite: string | null;
   actif: boolean;
+  /** Au moins un critère de la compétence. */
+  critereIds: number[];
 }
 
 export interface BlocVue {

@@ -288,14 +288,14 @@ export class NotationGroupeeComponent {
 
   /**
    * Critère → exercice de la base dont un exercice de la séance est tiré,
-   * pour les seuls critères de sa compétence : la note garde l'exercice.
+   * pour les seuls critères que cet exercice travaille : la note garde l'exercice.
    */
   exerciceBaseDesCriteres = computed(() => {
     const parCritere = new Map<number, number>();
     for (const e of this.exercices()) {
       const base = e.exerciceBase;
       if (e.referentielId !== this.referentielId() || !base) continue;
-      for (const c of e.criteres) if (c.blocId === base.blocId) parCritere.set(c.id, base.id);
+      for (const c of e.criteres) if ((base.critereIds ?? []).includes(c.id)) parCritere.set(c.id, base.id);
     }
     return parCritere;
   });

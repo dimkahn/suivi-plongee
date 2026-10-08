@@ -71,6 +71,7 @@ interface Formulaire extends DemandeExerciceBase {
                         @if (!e.actif) { <span class="secondaire">(désactivé)</span> }
                         @if (e.aSchema) { <span class="secondaire">· schéma</span> }
                       </span>
+                      <span class="criteres-exercice">Critère(s) : {{ libellesCriteres(bloc, e) }}</span>
                       @if (e.critereReussite) { <span class="secondaire">Réussite : {{ e.critereReussite }}</span> }
                     </div>
                     <div class="actions">
@@ -108,6 +109,15 @@ interface Formulaire extends DemandeExerciceBase {
         </div>
         <label for="intitule">Intitulé</label>
         <input id="intitule" type="text" maxlength="200" [(ngModel)]="f.intitule">
+        <fieldset class="criteres">
+          <legend>Critères travaillés</legend>
+          @for (c of criteresDuBloc(f.blocId); track c.id) {
+            <label class="case">
+              <input type="checkbox" [checked]="f.critereIds.includes(c.id)" (change)="basculerCritere(f, c.id)">
+              {{ c.savoirFaire }}
+            </label>
+          }
+        </fieldset>
         <label for="deroulement">Organisation et déroulement</label>
         <textarea id="deroulement" rows="5" [(ngModel)]="f.deroulement"></textarea>
         <label for="reussite">Critère de réussite</label>
@@ -169,6 +179,10 @@ interface Formulaire extends DemandeExerciceBase {
     textarea { width: 100%; box-sizing: border-box; font: inherit; resize: vertical; }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; }
     .case input { width: 22px; height: 22px; margin: 0; }
+    .criteres-exercice { font-size: .8125rem; color: var(--profond); }
+    fieldset.criteres { margin: var(--pas-2) 0 0; padding: var(--pas) var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s); }
+    fieldset.criteres legend { font-weight: 700; font-size: .9375rem; padding: 0 4px; }
+    fieldset.criteres .case { margin: 0; font-weight: 400; }
     .titre-schema { margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .actions-schema { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas); }
     .depot { position: relative; display: inline-flex; align-items: center; min-height: 44px; margin: 0; cursor: pointer; }
@@ -249,7 +263,9 @@ export class ExercicesAdminComponent {
     this.erreur.set(null);
     this.formulaire.set({
       id: null, blocId: bloc.id, numero: `${bloc.ordre}.${ordre}`, ordre, phase: 'INITIATION' as PhaseExercice,
-      intitule: '', deroulement: null, critereReussite: null, actif: true
+      intitule: '', deroulement: null, critereReussite: null, actif: true,
+      // Une compétence à un seul critère : il est coché d'office.
+      critereIds: bloc.criteres.length === 1 ? [bloc.criteres[0].id] : []
     });
   }
 
@@ -257,8 +273,25 @@ export class ExercicesAdminComponent {
     this.erreur.set(null);
     this.formulaire.set({
       id: e.id, blocId: e.blocId, numero: e.numero, ordre: e.ordre, phase: e.phase, intitule: e.intitule,
-      deroulement: e.deroulement, critereReussite: e.critereReussite, actif: e.actif
+      deroulement: e.deroulement, critereReussite: e.critereReussite, actif: e.actif,
+      critereIds: [...(e.critereIds ?? [])]
     });
+  }
+
+  criteresDuBloc(blocId: number): { id: number; savoirFaire: string }[] {
+    return this.detail()?.blocs.find(b => b.id === blocId)?.criteres ?? [];
+  }
+
+  /** « Gréage et dégréage, Capelage et décapelage » : les critères qu'un exercice fait travailler. */
+  libellesCriteres(bloc: BlocReferentielVue, e: ExerciceBaseVue): string {
+    const ids = e.critereIds ?? [];
+    return bloc.criteres.filter(c => ids.includes(c.id)).map(c => c.savoirFaire).join(', ') || 'aucun';
+  }
+
+  basculerCritere(f: Formulaire, critereId: number): void {
+    f.critereIds = f.critereIds.includes(critereId)
+      ? f.critereIds.filter(id => id !== critereId)
+      : [...f.critereIds, critereId];
   }
 
   async enregistrer(f: Formulaire): Promise<void> {

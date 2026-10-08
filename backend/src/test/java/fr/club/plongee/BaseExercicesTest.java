@@ -86,6 +86,10 @@ class BaseExercicesTest {
             if ("MAITRISE".equals(e.get("phase").asText())) maitriseParBloc.merge(e.get("blocId").asLong(), 1, Integer::sum);
         }
         assertThat(maitriseParBloc).hasSize(10).allSatisfy((bloc, n) -> assertThat(n).isEqualTo(3));
+        // Chaque exercice travaille au moins un critère de sa compétence (V54).
+        for (JsonNode e : exercices) {
+            assertThat(e.get("critereIds")).as("critères de l'exercice " + e.get("numero").asText()).isNotEmpty();
+        }
 
         // Le document numérote « 9 » Retourner en surface : rattaché au bon bloc du MFT.
         JsonNode detail = envoyer("GET", "/api/referentiels/" + ref, moniteur, null, 200);
@@ -125,19 +129,27 @@ class BaseExercicesTest {
             long critere = bloc.get("criteres").get(0).get("id").asLong();
             Map<String, Long> parNumero = new HashMap<>();
             for (JsonNode e : bloc.get("exercices")) parNumero.put(e.get("numero").asText(), e.get("id").asLong());
-            assertThat(parNumero).containsKeys("1.1", "1.4", "1.7");
-            long autreBloc = grille.get("blocs").get(1).get("exercices").get(6).get("id").asLong();
+            assertThat(parNumero).containsKeys("1.1", "1.6", "1.7", "1.8");
+            // « Gréage et dégréage » : 1.1, 1.3, 1.6 et 1.7 ; 1.8 travaille le capelage.
+            assertThat(bloc.get("criteres").get(0).get("savoirFaire").asText()).isEqualTo("Gréage et dégréage");
+            for (JsonNode e : bloc.get("exercices")) {
+                if (e.get("numero").asText().equals("1.8")) {
+                    assertThat(e.get("critereIds")).extracting(JsonNode::asLong)
+                            .containsExactly(bloc.get("criteres").get(1).get("id").asLong());
+                }
+            }
 
             String url = "/api/cursus/" + cursus + "/evaluations";
             String note = """
                     {"critereId":%d,"seanceId":%d,"statut":"%s","exerciceId":%s}""";
             JsonNode refus = envoyer("POST", url, moniteur, note.formatted(critere, seanceId, "ACQUIS", "null"), 422);
-            assertThat(refus.get("detail").asText()).contains("exercice de maîtrise").contains("1.7, 1.8, 1.9");
+            assertThat(refus.get("detail").asText()).contains("exercice de maîtrise").contains("(1.7)");
             refus = envoyer("POST", url, moniteur,
-                    note.formatted(critere, seanceId, "ACQUIS", parNumero.get("1.4")), 422);
+                    note.formatted(critere, seanceId, "ACQUIS", parNumero.get("1.6")), 422);
             assertThat(refus.get("detail").asText()).contains("perfectionnement");
-            refus = envoyer("POST", url, moniteur, note.formatted(critere, seanceId, "EN_COURS", autreBloc), 422);
-            assertThat(refus.get("detail").asText()).contains("ne travaille pas la compétence");
+            refus = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "ACQUIS", parNumero.get("1.8")), 422);
+            assertThat(refus.get("detail").asText()).contains("ne travaille pas le critère « Gréage et dégréage »");
 
             JsonNode enCours = envoyer("POST", url, moniteur,
                     note.formatted(critere, seanceId, "EN_COURS", parNumero.get("1.1")), 201);
@@ -190,6 +202,9 @@ class BaseExercicesTest {
             JsonNode lu = programme.get("exercices").get(0).get("exerciceBase");
             assertThat(lu.get("numero").asText()).isEqualTo("1.4");
             assertThat(lu.get("phase").asText()).isEqualTo("PERFECTIONNEMENT");
+            // 1.4 Test du lestage : « Choix de son matériel personnel ».
+            assertThat(lu.get("critereIds")).hasSize(1);
+            assertThat(lu.get("critereIds").get(0).asLong()).isEqualTo(base.get("critereIds").get(0).asLong());
         } finally {
             mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
         }
@@ -243,19 +258,28 @@ class BaseExercicesTest {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e1@club.fr");
         long ref = referentielN1(admin);
-        long bloc = envoyer("GET", "/api/referentiels/" + ref, admin, null, 200).get("blocs").get(0).get("id").asLong();
+        JsonNode blocs = envoyer("GET", "/api/referentiels/" + ref, admin, null, 200).get("blocs");
+        long bloc = blocs.get(0).get("id").asLong();
+        long greage = blocs.get(0).get("criteres").get(0).get("id").asLong();
+        long capelage = blocs.get(0).get("criteres").get(1).get("id").asLong();
+        long autreBloc = blocs.get(1).get("criteres").get(0).get("id").asLong();
         String url = "/api/referentiels/" + ref + "/blocs/" + bloc + "/exercices";
         String corps = """
-                {"numero":"%s","ordre":10,"phase":"MAITRISE","intitule":"Équipement de nuit","actif":%s}""";
+                {"numero":"%s","ordre":10,"phase":"MAITRISE","intitule":"Équipement de nuit","actif":%s,
+                 "critereIds":%s}""";
 
-        envoyer("POST", url, moniteur, corps.formatted("1.10", true), 403);
-        JsonNode doublon = envoyer("POST", url, admin, corps.formatted("1.7", true), 422);
+        envoyer("POST", url, moniteur, corps.formatted("1.10", true, "[" + greage + "]"), 403);
+        JsonNode doublon = envoyer("POST", url, admin, corps.formatted("1.7", true, "[" + greage + "]"), 422);
         assertThat(doublon.get("detail").asText()).contains("déjà pris");
+        JsonNode sansCritere = envoyer("POST", url, admin, corps.formatted("1.10", true, "[]"), 422);
+        assertThat(sansCritere.get("detail").asText()).contains("au moins un critère");
+        envoyer("POST", url, admin, corps.formatted("1.10", true, "[" + autreBloc + "]"), 422);
 
-        long id = envoyer("POST", url, admin, corps.formatted("1.10", true), 201).get("id").asLong();
+        long id = envoyer("POST", url, admin, corps.formatted("1.10", true, "[" + greage + "]"), 201).get("id").asLong();
         JsonNode modifie = envoyer("PUT", "/api/referentiels/" + ref + "/exercices/" + id, admin,
-                corps.formatted("1.10", false), 200);
+                corps.formatted("1.10", false, "[" + greage + "," + capelage + "]"), 200);
         assertThat(modifie.get("actif").asBoolean()).isFalse();
+        assertThat(modifie.get("critereIds")).hasSize(2);
         envoyer("DELETE", "/api/referentiels/" + ref + "/exercices/" + id, admin, null, 200);
         assertThat(envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200)).hasSize(90);
     }

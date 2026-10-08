@@ -51,11 +51,19 @@ public class GrilleService {
                                        ExerciceNoteVue exercice) {}
 
     /** L'exercice sur lequel une note a ete prise : de quoi afficher « M 1.7 » sans autre requete. */
-    public record ExerciceNoteVue(Long id, String numero, String intitule, String phase, Long blocId) {
+    /** {@code critereIds} : critères travaillés, renseignés seulement pour le programme d'une séance. */
+    public record ExerciceNoteVue(Long id, String numero, String intitule, String phase, Long blocId,
+                                  List<Long> critereIds) {
 
         public static ExerciceNoteVue de(ExerciceCompetence e) {
             return e == null ? null : new ExerciceNoteVue(e.getId(), e.getNumero(), e.getIntitule(),
-                    e.getPhase().name(), e.getBloc().getId());
+                    e.getPhase().name(), e.getBloc().getId(), null);
+        }
+
+        /** À appeler dans une transaction : lit les critères de l'exercice. */
+        public static ExerciceNoteVue avecCriteres(ExerciceCompetence e) {
+            return e == null ? null : new ExerciceNoteVue(e.getId(), e.getNumero(), e.getIntitule(),
+                    e.getPhase().name(), e.getBloc().getId(), e.getCriteres().stream().map(Critere::getId).toList());
         }
     }
 
@@ -256,7 +264,7 @@ public class GrilleService {
                         .add(new ExerciceGrilleVue(e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                                 e.getGroupe() == null ? null : e.getGroupe().getNom(),
                                 e.getCriteres().stream().map(Critere::getId).toList(),
-                                ExerciceNoteVue.de(e.getExerciceCompetence()))));
+                                ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()))));
         return parSeance.entrySet().stream()
                 .map(en -> new ProgrammeGrilleVue(en.getKey(), en.getValue()))
                 .toList();
