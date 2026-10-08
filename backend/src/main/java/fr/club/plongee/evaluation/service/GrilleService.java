@@ -139,7 +139,9 @@ public class GrilleService {
                              List<SeanceEnTeteVue> seances, List<LigneMatriceVue> lignes,
                              List<ExerciceCompetenceController.ExerciceVue> exercices,
                              /** Programme d'exercices de chaque séance : le commun et celui du groupe de l'élève. */
-                             List<ProgrammeGrilleVue> programmes) {}
+                             List<ProgrammeGrilleVue> programmes,
+                             /** Séances où l'élève est noté présent, même sans note : leur programme reste visible. */
+                             List<Long> seancesPresent) {}
 
     private final CursusRepository cursusRepository;
     private final EvaluationService evaluationService;
@@ -349,6 +351,7 @@ public class GrilleService {
                 exercicesBase.parReferentiel(cursus.getReferentiel().getId()).stream()
                         .map(e -> ExerciceCompetenceController.ExerciceVue.de(e, avecSchema))
                         .toList(),
-                programmes(cursus));
+                programmes(cursus),
+                participations.seancesOuPresent(cursusId));
     }
 }
