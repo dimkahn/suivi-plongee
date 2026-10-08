@@ -202,6 +202,10 @@ public class ProgrammeSeanceService {
                             + " » n'appartient pas à la formation choisie pour « " + intitule + " ».");
                 }
                 e.setExerciceCompetence(base);
+                // Exercice de la base des compétences : ses critères sont ceux de la base, pas une saisie libre.
+                e.getCriteres().addAll(base.getCriteres());
+                nouveaux.add(e);
+                continue;
             }
             for (Long id : ids) {
                 Critere c = criteresConnus.get(id);
