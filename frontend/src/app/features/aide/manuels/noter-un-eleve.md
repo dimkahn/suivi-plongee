@@ -20,16 +20,16 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 
 1. Dans « Infos élèves », touchez le nom de l'élève : sa grille s'ouvre.
 2. Choisissez la séance du jour en haut de la grille.
-3. Ouvrez la compétence : sous « Exercice réalisé », choisissez l'exercice fait par l'élève (déjà choisi s'il est au programme de la séance).
+3. Ouvrez la compétence : sous chaque critère, « Exercice » permet de choisir l'exercice fait par l'élève pour ce critère (déjà choisi s'il est au programme de la séance). Seuls les exercices qui travaillent ce critère sont proposés : « Gréage et dégréage » propose 1.1, 1.3, 1.6 et 1.7.
 4. Pour chaque critère travaillé, touchez son état : non abordé, en cours ou acquis.
 5. Votre nom, la date et l'exercice s'affichent sous le critère.
 6. Pour laisser un mot au prochain encadrant, écrivez un commentaire sur le critère : il reste affiché dessous.
 
 ## L'exercice réalisé : initiation, perfectionnement, maîtrise
 
-Chaque compétence du N1 a ses exercices, rangés en trois temps. Une pastille dit d'un coup d'œil où en est l'élève : **I** initiation (bleu), **P** perfectionnement (ambre), **M** maîtrise (vert), suivie du numéro (« M 1.7 »).
+Chaque critère du N1 a ses exercices, rangés en trois temps ; un exercice peut travailler plusieurs critères de la même compétence. Une pastille dit d'un coup d'œil où en est l'élève : **I** initiation (bleu), **P** perfectionnement (ambre), **M** maîtrise (vert), suivie du numéro (« M 1.7 »).
 
-- **Seul un exercice de maîtrise fait passer un critère à « Acquis ».** Si vous touchez « Acquis » sur un autre exercice, la liste des exercices s'ouvre : choisissez l'exercice de maîtrise réalisé, la note part aussitôt.
+- **Seul un exercice de maîtrise relié au critère le fait passer à « Acquis ».** Un critère qui n'a aucun exercice de maîtrise (aujourd'hui « Départ plage » et « Ventilation sur tuba ») s'acquiert comme avant. Si vous touchez « Acquis » sur un autre exercice, la liste des exercices s'ouvre : choisissez l'exercice de maîtrise réalisé, la note part aussitôt.
 - Un critère déjà acquis se commente sans redonner l'exercice.
 - « Voir le schéma » montre l'organisation dans l'eau, sous l'exercice choisi comme dans la liste. Après « Préparer hors ligne », les schémas restent visibles sans réseau.
 - Dans la vue globale, chaque case montre la pastille de l'exercice ; touchez une date pour voir les exercices de cette séance, leur déroulement et les critères notés.

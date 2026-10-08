@@ -658,8 +658,12 @@ export class ProgrammeExercicesComponent {
       return {
         cle: prochaineCle++, intitule: `${e.numero} ${e.intitule}`, consignes, dureeMinutes: null,
         referentielId: ref.id,
-        criteres: (bloc?.criteres ?? []).map(c => ({ id: c.id, bloc: bloc!.intitule, savoirFaire: c.savoirFaire })),
-        exerciceBase: { id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId }
+        criteres: (bloc?.criteres ?? []).filter(c => (e.critereIds ?? []).includes(c.id))
+          .map(c => ({ id: c.id, bloc: bloc!.intitule, savoirFaire: c.savoirFaire })),
+        exerciceBase: {
+          id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId,
+          critereIds: e.critereIds ?? []
+        }
       };
     });
     this.brouillons.set([...this.brouillons(), ...nouveaux]);

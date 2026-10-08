@@ -412,32 +412,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             </div>
           }
           @if (bloc.exercices?.length && peutSaisir() && !bloc.valide) {
-            @let choisi = exerciceChoisi(bloc);
-            <div class="choix-exercice">
-              <span class="titre-choix">Exercice réalisé</span>
-              <button type="button" class="choix-seance" aria-haspopup="dialog" (click)="ouvrirChoixExercice(bloc)">
-                @if (choisi) {
-                  <app-pastille-phase [phase]="choisi.phase" [numero]="choisi.numero" [intitule]="choisi.intitule" />
-                  <span class="libelle-choix">{{ choisi.intitule }}</span>
-                } @else {
-                  <span class="libelle-choix">Aucun exercice choisi</span>
-                }
-                <span class="changer">Changer</span>
-              </button>
-              @if (choisi?.critereReussite) {
-                <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
-              }
-              @if (choisi?.aSchema) {
-                <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(choisi!.id)"
-                        (click)="basculerSchema(choisi!.id)">
-                  {{ schemasOuverts().has(choisi!.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
-                </button>
-                @if (schemasOuverts().has(choisi!.id)) {
-                  <app-schema-exercice [exerciceId]="choisi!.id" [libelle]="choisi!.numero + ' ' + choisi!.intitule" />
-                }
-              }
-              <span class="secondaire">Seul un exercice de maîtrise fait passer un critère à « Acquis ».</span>
-            </div>
+            <p class="secondaire aide-exercice">
+              Choisissez sous chaque critère l'exercice réalisé : seul un exercice de maîtrise le fait passer à « Acquis ».
+            </p>
           }
           <ul [id]="'criteres-' + bloc.id">
             @for (critere of bloc.criteres; track critere.id) {
@@ -464,6 +441,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     }
                     @if (actif.exercice; as exo) {
                       <span class="exercice-note">
+                        <span class="secondaire">Noté sur</span>
                         <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
                         <span class="secondaire">{{ exo.intitule }}</span>
                       </span>
@@ -494,6 +472,36 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     }
                   </div>
                 </div>
+
+                @if (peutSaisir() && !bloc.valide && exercicesDuCritere(bloc, critere).length > 0) {
+                  @let choisi = exerciceChoisi(bloc, critere);
+                  <div class="choix-exercice">
+                    <button type="button" class="choix-seance" aria-haspopup="dialog"
+                            [attr.aria-label]="'Exercice réalisé pour ' + critere.savoirFaire"
+                            (click)="ouvrirChoixExercice(bloc, critere)">
+                      <span class="titre-choix">Exercice</span>
+                      @if (choisi) {
+                        <app-pastille-phase [phase]="choisi.phase" [numero]="choisi.numero" [intitule]="choisi.intitule" />
+                        <span class="libelle-choix">{{ choisi.intitule }}</span>
+                      } @else {
+                        <span class="libelle-choix">à choisir</span>
+                      }
+                      <span class="changer">Changer</span>
+                    </button>
+                    @if (choisi?.critereReussite) {
+                      <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
+                    }
+                    @if (choisi?.aSchema) {
+                      <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(choisi!.id)"
+                              (click)="basculerSchema(choisi!.id)">
+                        {{ schemasOuverts().has(choisi!.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                      </button>
+                      @if (schemasOuverts().has(choisi!.id)) {
+                        <app-schema-exercice [exerciceId]="choisi!.id" [libelle]="choisi!.numero + ' ' + choisi!.intitule" />
+                      }
+                    }
+                  </div>
+                }
 
                 <div class="liens-critere">
                   @if (peutSaisir() && !bloc.valide) {
@@ -562,18 +570,22 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
         }
       }
 
-      <app-dialogue [ouvert]="choixExercice() !== null" [titre]="'Exercice réalisé — ' + (choixExercice()?.intitule ?? '')"
+      <app-dialogue [ouvert]="choixExercice() !== null"
+                    [titre]="'Exercice réalisé — ' + (choixExercice()?.critere?.savoirFaire ?? '')"
                     [erreur]="erreurChoixExercice()" (fermer)="fermerChoixExercice()">
-        @if (choixExercice(); as bloc) {
+        @if (choixExercice(); as choix) {
+          @let bloc = choix.bloc;
+          @let critere = choix.critere;
           @for (phase of phases; track phase.valeur) {
-            @let duTemps = exercicesDeLaPhase(bloc, phase.valeur);
+            @let duTemps = exercicesDeLaPhase(bloc, critere, phase.valeur);
             @if (duTemps.length > 0) {
               <h3 class="titre-phase">{{ phase.libelle }}</h3>
               <ul class="liste-exercices">
                 @for (e of duTemps; track e.id) {
                   <li>
-                    <button type="button" class="choix-exo" [class.actif]="exerciceChoisi(bloc)?.id === e.id"
-                            [attr.aria-pressed]="exerciceChoisi(bloc)?.id === e.id" (click)="choisirExercice(bloc, e.id)">
+                    <button type="button" class="choix-exo" [class.actif]="exerciceChoisi(bloc, critere)?.id === e.id"
+                            [attr.aria-pressed]="exerciceChoisi(bloc, critere)?.id === e.id"
+                            (click)="choisirExercice(bloc, critere, e.id)">
                       <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
                       <span class="intitule-exo">{{ e.intitule }}</span>
                       @if (e.critereReussite) { <span class="secondaire">Réussite : {{ e.critereReussite }}</span> }
@@ -596,7 +608,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             }
           }
           <div class="actions-dialogue">
-            <button type="button" class="bouton-discret" (click)="choisirExercice(bloc, null)">Noter sans exercice</button>
+            <button type="button" class="bouton-discret" (click)="choisirExercice(bloc, critere, null)">Noter sans exercice</button>
           </div>
         }
       </app-dialogue>
@@ -706,9 +718,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .pastille.en-retard { background: var(--en-cours-clair); border: 1px solid var(--en-cours); color: var(--en-cours); }
 
     /* Base d'exercices : l'exercice réalisé s'applique aux notes de la compétence. */
-    .choix-exercice { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--pas-2); }
-    .choix-exercice .titre-choix { font-weight: 700; font-size: .9375rem; }
-    .choix-exercice .choix-seance { display: flex; align-items: center; gap: var(--pas); max-width: 520px; }
+    .aide-exercice { margin: 0 0 var(--pas); font-size: .8125rem; }
+    .choix-exercice { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: var(--pas); }
+    .choix-exercice .titre-choix { font-weight: 700; font-size: .875rem; }
+    .choix-exercice .choix-seance { display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 520px; }
     .choix-exercice .secondaire { font-size: .8125rem; }
     .exercice-note { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .titre-phase { margin: var(--pas-2) 0 var(--pas); font-size: 1rem; color: var(--profond); }
@@ -1075,27 +1088,32 @@ export class GrilleComponent implements OnDestroy {
   });
 
   // ----------------------------------------------------------------
-  //  Base d'exercices : l'exercice réalisé, choisi par compétence.
+  //  Base d'exercices : l'exercice réalisé, choisi critère par critère.
   // ----------------------------------------------------------------
 
   readonly phases = PHASES;
-  /** Choix explicites du moniteur pour la séance en cours : blocId → exercice (null : sans exercice). */
+  /** Choix explicites du moniteur pour la séance en cours : critereId → exercice (null : sans exercice). */
   exercicesChoisis = signal<Record<number, number | null>>({});
-  /** Compétence dont le dialogue de choix d'exercice est ouvert. */
-  choixExercice = signal<BlocAffiche | null>(null);
+  /** Critère dont le dialogue de choix d'exercice est ouvert. */
+  choixExercice = signal<{ bloc: BlocAffiche; critere: CritereAffiche } | null>(null);
   erreurChoixExercice = signal<string | null>(null);
   /** Note retenue en attendant le choix d'un exercice de maîtrise, rejouée une fois l'exercice choisi. */
   private noteEnSuspens: { critere: CritereAffiche; statut: Statut } | null = null;
 
+  /** Exercices actifs de la base qui travaillent ce critère. */
+  exercicesDuCritere(bloc: BlocVue | BlocAffiche, critere: { id: number }): ExerciceBaseVue[] {
+    return (bloc.exercices ?? []).filter(e => (e.critereIds ?? []).includes(critere.id));
+  }
+
   /**
-   * Exercice appliqué aux notes d'une compétence : le choix du moniteur,
-   * sinon l'exercice de la base le plus avancé que le programme de la séance
-   * prévoit pour cette compétence.
+   * Exercice appliqué aux notes d'un critère : le choix du moniteur, sinon
+   * l'exercice de la base le plus avancé que le programme de la séance
+   * prévoit pour ce critère.
    */
-  exerciceChoisi(bloc: BlocVue | BlocAffiche): ExerciceBaseVue | null {
-    const exercices = bloc.exercices ?? [];
+  exerciceChoisi(bloc: BlocVue | BlocAffiche, critere: { id: number }): ExerciceBaseVue | null {
+    const exercices = this.exercicesDuCritere(bloc, critere);
     const choix = this.exercicesChoisis();
-    if (bloc.id in choix) return exercices.find(e => e.id === choix[bloc.id]) ?? null;
+    if (critere.id in choix) return exercices.find(e => e.id === choix[critere.id]) ?? null;
     const prevus = new Set(this.exercicesSeance().map(e => e.exerciceBase?.id).filter(id => id != null));
     const rang = (e: ExerciceBaseVue) => PHASES.findIndex(p => p.valeur === e.phase);
     return exercices.filter(e => prevus.has(e.id)).sort((a, b) => rang(b) - rang(a))[0] ?? null;
@@ -1110,13 +1128,13 @@ export class GrilleComponent implements OnDestroy {
     this.schemasOuverts.set(ouverts);
   }
 
-  exercicesDeLaPhase(bloc: BlocAffiche, phase: string): ExerciceBaseVue[] {
-    return (bloc.exercices ?? []).filter(e => e.phase === phase);
+  exercicesDeLaPhase(bloc: BlocAffiche, critere: CritereAffiche, phase: string): ExerciceBaseVue[] {
+    return this.exercicesDuCritere(bloc, critere).filter(e => e.phase === phase);
   }
 
-  ouvrirChoixExercice(bloc: BlocAffiche, erreur: string | null = null): void {
+  ouvrirChoixExercice(bloc: BlocAffiche, critere: CritereAffiche, erreur: string | null = null): void {
     this.erreurChoixExercice.set(erreur);
-    this.choixExercice.set(bloc);
+    this.choixExercice.set({ bloc, critere });
   }
 
   fermerChoixExercice(): void {
@@ -1125,23 +1143,23 @@ export class GrilleComponent implements OnDestroy {
     this.noteEnSuspens = null;
   }
 
-  choisirExercice(bloc: BlocAffiche, exerciceId: number | null): void {
-    this.exercicesChoisis.set({ ...this.exercicesChoisis(), [bloc.id]: exerciceId });
+  choisirExercice(bloc: BlocAffiche, critere: CritereAffiche, exerciceId: number | null): void {
+    this.exercicesChoisis.set({ ...this.exercicesChoisis(), [critere.id]: exerciceId });
     const enSuspens = this.noteEnSuspens;
     this.fermerChoixExercice();
     if (enSuspens) void this.noter(bloc, enSuspens.critere, enSuspens.statut);
   }
 
   /**
-   * Même règle que le serveur : un critère d'une compétence qui a des
-   * exercices ne passe à « acquis » que sur un exercice de maîtrise.
+   * Même règle que le serveur : un critère relié à des exercices de
+   * maîtrise ne passe à « acquis » que sur l'un d'eux.
    */
   private refusMaitrise(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): string | null {
-    const exercices = bloc.exercices ?? [];
-    if (statut !== 'ACQUIS' || exercices.length === 0) return null;
-    if (this.exerciceChoisi(bloc)?.phase === 'MAITRISE') return null;
+    const maitrise = this.exercicesDuCritere(bloc, critere).filter(e => e.phase === 'MAITRISE');
+    if (statut !== 'ACQUIS' || maitrise.length === 0) return null;
+    if (this.exerciceChoisi(bloc, critere)?.phase === 'MAITRISE') return null;
     if (this.suiviActif(critere).statut === 'ACQUIS') return null;
-    const numeros = exercices.filter(e => e.phase === 'MAITRISE').map(e => e.numero).join(', ');
+    const numeros = maitrise.map(e => e.numero).join(', ');
     return `« ${critere.savoirFaire} » ne passe à acquis que sur un exercice de maîtrise (${numeros}) : `
       + 'choisissez l’exercice réalisé.';
   }
@@ -1151,7 +1169,7 @@ export class GrilleComponent implements OnDestroy {
     if (exerciceId == null) return null;
     for (const bloc of this.grille()?.blocs ?? []) {
       const e = bloc.exercices?.find(x => x.id === exerciceId);
-      if (e) return { id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId };
+      if (e) return { id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId, critereIds: null };
     }
     return null;
   }
@@ -1339,13 +1357,13 @@ export class GrilleComponent implements OnDestroy {
     // et la note part dès qu'un exercice de maîtrise est choisi.
     const sansMaitrise = this.refusMaitrise(bloc, critere, statut);
     if (sansMaitrise) {
-      this.ouvrirChoixExercice(bloc, sansMaitrise);
+      this.ouvrirChoixExercice(bloc, critere, sansMaitrise);
       this.noteEnSuspens = { critere, statut };
       return;
     }
 
     this.message.set(null);
-    const exercice = this.exerciceChoisi(bloc);
+    const exercice = this.exerciceChoisi(bloc, critere);
     const saisie = await this.file.empiler({
       cursusId: Number(this.id()),
       critereId: critere.id,
@@ -1536,7 +1554,7 @@ export class GrilleComponent implements OnDestroy {
       statut: this.suiviActif(critere).statut,
       commentaire: texte,
       dateEvaluation: seance ? seance.date : dateDuJour(),
-      exerciceId: this.exerciceChoisi(bloc)?.id ?? null
+      exerciceId: this.exerciceChoisi(bloc, critere)?.id ?? null
     });
 
     const restants = { ...this.brouillons() };

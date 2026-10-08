@@ -223,6 +223,9 @@ public class ProgrammeSeanceService {
         nouveaux.forEach(e -> {
             e.setSeance(seance);
             e.setGroupe(groupe);
+            if (e.getExerciceCompetence() != null) {
+                e.setExerciceCompetence(exercicesBase.getReferenceById(e.getExerciceCompetence().getId()));
+            }
         });
         exercices.saveAll(nouveaux);
         exercices.flush();
@@ -282,7 +285,7 @@ public class ProgrammeSeanceService {
         Referentiel r = e.getReferentiel();
         return new ExerciceVue(e.getId(), e.getGroupe() == null ? null : e.getGroupe().getId(), e.getOrdre(), e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                 r == null ? null : r.getId(), r == null ? null : r.getNiveau().name(), criteres,
-                GrilleService.ExerciceNoteVue.de(e.getExerciceCompetence()));
+                GrilleService.ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()));
     }
 
     private Seance seance(Long id) {

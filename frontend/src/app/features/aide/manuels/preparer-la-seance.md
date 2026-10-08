@@ -29,9 +29,9 @@ Depuis « Présences », choisissez la séance puis « Préparer le programme »
 1. Choisissez la formation, puis la compétence (celles au programme du mois en tête).
 2. Choisissez le temps : initiation, perfectionnement ou maîtrise.
 3. Cochez les exercices (« Voir le schéma » pour l'organisation dans l'eau), puis « Ajouter ».
-4. Chaque exercice arrive avec son numéro, son déroulement et son critère de réussite en consignes, et les critères de sa compétence. Tout reste modifiable avant d'enregistrer.
+4. Chaque exercice arrive avec son numéro, son déroulement et son critère de réussite en consignes, et les critères qu'il travaille. Tout reste modifiable avant d'enregistrer.
 
-Dans la grille des élèves, l'exercice de la séance est alors **déjà choisi** pour noter la compétence.
+Dans la grille des élèves, l'exercice de la séance est alors **déjà choisi** pour noter ses critères.
 
 ## Bon à savoir
 
