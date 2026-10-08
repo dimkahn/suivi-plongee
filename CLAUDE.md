@@ -469,9 +469,10 @@ libre sans phase ne fait qu'étiqueter le programme. Lecture : pastille I/P/M so
 dans l'historique et dans chaque case de la vue globale, dont un clic sur
 une séance montre le programme d'exercices préparé, exercices libres compris
 (`MatriceVue.programmes`, mêmes données que `GrilleVue.programmes`), puis
-les exercices notés (`MatriceVue.exercices`). Un exercice libre ne portant
-aucune note, la vue globale a une ligne « Programme d'exercices » en tête
-du tableau, et son filtre par défaut garde les séances où l'élève était
+les exercices notés (`MatriceVue.exercices`). La vue globale signale le
+programme sous chaque date (« programme : 3 » ; la ligne « Programme
+d'exercices » en tête du tableau a été retirée, jugée inutile par le club),
+et son filtre par défaut garde les séances où l'élève était
 présent (`MatriceVue.seancesPresent`) autant que celles où il a été noté. Pas de
 suivi séparé par phase : la phase ne fait que qualifier la note.
 **Schémas** (V52, table `schema_exercice` à part comme `photo_eleve`,

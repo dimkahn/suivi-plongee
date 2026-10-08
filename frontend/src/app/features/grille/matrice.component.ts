@@ -110,31 +110,6 @@ const LIBELLES: Record<string, string> = {
             </tr>
           </thead>
           <tbody>
-            @if (m.programmes?.length) {
-              <!-- Programme de chaque séance : exercices des compétences et exercices libres, notés ou non. -->
-              <tr class="ligne-programme">
-                <td class="figee"><strong>Programme d'exercices</strong></td>
-                @for (s of seancesAffichees(); track s.id) {
-                  @let prevus = programmeDe(s.id);
-                  <td class="cellule-programme" [class.cliquable]="prevus.length > 0"
-                      (click)="prevus.length > 0 && ouvrirSeance(s)">
-                    @for (p of prevus; track $index) {
-                      @if (p.exerciceBase; as base) {
-                        <app-pastille-phase [phase]="base.phase" [numero]="base.numero" [intitule]="base.intitule" />
-                      } @else if (p.phase) {
-                        <span class="libre-programme" [title]="'Exercice libre : ' + p.intitule">
-                          <app-pastille-phase [phase]="p.phase" [intitule]="'exercice libre : ' + p.intitule" />
-                        </span>
-                      } @else {
-                        <span class="libre" [title]="'Exercice libre : ' + p.intitule">Libre</span>
-                      }
-                    } @empty {
-                      <span class="secondaire">–</span>
-                    }
-                  </td>
-                }
-              </tr>
-            }
             @for (item of lignesAffichees(); track item.ligne.critereId) {
               @if (item.nouveauGroupe && item.ligne.regroupement) {
                 <tr class="groupe">
@@ -411,10 +386,6 @@ const LIBELLES: Record<string, string> = {
     .phase-texte { font-size: .8125rem; font-weight: 400; color: var(--craie); }
     .texte-exercice { margin: 0 0 var(--pas); font-size: .875rem; max-width: 70ch; }
     .schema-seance { margin-bottom: var(--pas); }
-    tr.ligne-programme td { background: #F1F8FA; vertical-align: top; }
-    .cellule-programme { white-space: normal; }
-    .cellule-programme app-pastille-phase, .cellule-programme .libre { display: inline-flex; margin: 0 4px 4px 0; }
-    .libre-programme { display: inline-flex; }
     .titre-section { margin: var(--pas-2) 0 var(--pas); font-size: 1rem; color: var(--profond); }
     .programme-seance { margin: 0 0 var(--pas-2); padding-left: 1.5rem; display: grid; gap: var(--pas); font-size: .875rem; }
     .programme-seance li { display: flex; flex-direction: column; gap: 2px; }
