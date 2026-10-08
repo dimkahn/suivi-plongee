@@ -22,6 +22,7 @@ import fr.club.plongee.progression.repository.ProgressionTypeRepository;
 import fr.club.plongee.progression.service.EcheancesProgression;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.ExerciceCompetenceController;
+import fr.club.plongee.referentiel.SchemaExerciceService;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
@@ -138,6 +139,7 @@ public class GrilleService {
     private final ExerciceSeanceRepository exercices;
     private final GroupeEntrainementRepository groupes;
     private final ExerciceCompetenceRepository exercicesBase;
+    private final SchemaExerciceService schemas;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
@@ -147,8 +149,10 @@ public class GrilleService {
                          ProgressionTypeRepository progressions,
                          ExerciceSeanceRepository exercices,
                          GroupeEntrainementRepository groupes,
-                         ExerciceCompetenceRepository exercicesBase) {
+                         ExerciceCompetenceRepository exercicesBase,
+                         SchemaExerciceService schemas) {
         this.exercicesBase = exercicesBase;
+        this.schemas = schemas;
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
@@ -179,10 +183,11 @@ public class GrilleService {
         boolean enCours = cursus.getStatut() == Cursus.Statut.EN_COURS;
         LocalDate aujourdhui = Calendrier.aujourdhui();
 
+        java.util.Set<Long> avecSchema = schemas.exercicesAvecSchema(cursus.getReferentiel().getId());
         Map<Long, List<ExerciceCompetenceController.ExerciceVue>> exercicesParBloc = exercicesBase
                 .parReferentiel(cursus.getReferentiel().getId()).stream()
                 .filter(ExerciceCompetence::isActif)
-                .map(ExerciceCompetenceController.ExerciceVue::de)
+                .map(e -> ExerciceCompetenceController.ExerciceVue.de(e, avecSchema))
                 .collect(Collectors.groupingBy(ExerciceCompetenceController.ExerciceVue::blocId));
 
         int acquisTotal = 0;
@@ -325,9 +330,11 @@ public class GrilleService {
                 .map(s -> new SeanceEnTeteVue(s.getId(), s.getDateSeance(), s.getLieu(), s.getMilieu().name()))
                 .toList();
 
+        java.util.Set<Long> avecSchema = schemas.exercicesAvecSchema(cursus.getReferentiel().getId());
         return new MatriceVue(cursus.getEleve().nomComplet(), cursus.getReferentiel().getNiveau().name(),
                 cursus.getReferentiel().isMilieuNaturelExclusif(), entetes, lignes,
                 exercicesBase.parReferentiel(cursus.getReferentiel().getId()).stream()
-                        .map(ExerciceCompetenceController.ExerciceVue::de).toList());
+                        .map(e -> ExerciceCompetenceController.ExerciceVue.de(e, avecSchema))
+                        .toList());
     }
 }

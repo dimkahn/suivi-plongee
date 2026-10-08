@@ -3,8 +3,9 @@ titre: La base d'exercices
 rubrique: Administrateur
 videos:
 ecran: /admin/exercices
-mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, déroulement, critère de réussite, désactiver, N1
+mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, déroulement, critère de réussite, désactiver, N1, schéma, dessin, image
 questions:
+- Comment changer le schéma d'un exercice ?
 - Comment modifier un exercice de la base ?
 - Comment ajouter un exercice à une compétence ?
 - Pourquoi je ne peux pas supprimer un exercice ?
@@ -18,6 +19,10 @@ Administration, « Base d'exercices » : pour chaque compétence, ses exercices 
 2. Choisissez la formation (le N1 est rempli d'après le document du club : 9 exercices par compétence).
 3. « + Ajouter un exercice » sous une compétence, ou « Modifier » sur un exercice : numéro, phase, intitulé, déroulement, critère de réussite.
 4. Enregistrez.
+
+## Les schémas
+
+Les schémas du document du club sont rattachés à leurs exercices (compétences 1 à 8 ; le document n'en a pas pour 9 et 10). Dans « Modifier », « Ajouter un schéma » ou « Remplacer le schéma » prend une image PNG ou JPEG (2 Mo au plus), « Retirer le schéma » l'enlève. Le changement est immédiat.
 
 ## Bon à savoir
 

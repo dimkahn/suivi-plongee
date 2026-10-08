@@ -11,6 +11,7 @@ import {
 } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
+import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { dateFr } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { libellePreparation } from '../../core/niveaux';
@@ -59,7 +60,7 @@ function versDemande(b: Brouillon): DemandeExercice {
  */
 @Component({
   selector: 'app-programme-exercices',
-  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent],
+  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     <a routerLink="/presences" class="retour">← Présences</a>
     <h1>Programme d'exercices</h1>
@@ -305,6 +306,15 @@ function versDemande(b: Brouillon): DemandeExercice {
                     @if (e.critereReussite) { <span class="secondaire reussite">Réussite : {{ e.critereReussite }}</span> }
                   </span>
                 </label>
+                @if (e.aSchema) {
+                  <button type="button" class="bouton-discret petit" (click)="basculerSchema(e.id)"
+                          [attr.aria-expanded]="schemaOuvert() === e.id">
+                    {{ schemaOuvert() === e.id ? 'Masquer le schéma' : 'Voir le schéma' }}
+                  </button>
+                  @if (schemaOuvert() === e.id) {
+                    <app-schema-exercice [exerciceId]="e.id" [libelle]="e.numero + ' ' + e.intitule" />
+                  }
+                }
               </li>
             }
           </ul>
@@ -575,6 +585,12 @@ export class ProgrammeExercicesComponent {
   baseBlocId = signal<number | null>(null);
   basePhase = signal<PhaseExercice>('INITIATION');
   baseCoches = signal<Set<number>>(new Set());
+  /** Exercice dont le schéma est déplié dans le dialogue. */
+  schemaOuvert = signal<number | null>(null);
+
+  basculerSchema(id: number): void {
+    this.schemaOuvert.set(this.schemaOuvert() === id ? null : id);
+  }
   /** Base d'exercices chargée par formation. */
   private bases = signal<Map<number, ExerciceBaseVue[]>>(new Map());
 

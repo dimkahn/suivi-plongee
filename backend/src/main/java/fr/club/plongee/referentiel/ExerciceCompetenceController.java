@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base d'exercices d'une version du MFT, compétence par compétence. Lue par
@@ -28,13 +29,18 @@ import java.util.List;
 @RequestMapping("/api/referentiels/{referentielId}")
 public class ExerciceCompetenceController {
 
-    /** Un exercice de la base ; {@code blocId} : la compétence qu'il travaille. */
+    /**
+     * Un exercice de la base ; {@code blocId} : la compétence qu'il travaille ;
+     * {@code aSchema} : un schéma se lit sur /api/exercices/{id}/schema.
+     */
     public record ExerciceVue(Long id, Long blocId, String numero, int ordre, String phase,
-                              String intitule, String deroulement, String critereReussite, boolean actif) {
+                              String intitule, String deroulement, String critereReussite, boolean actif,
+                              boolean aSchema) {
 
-        public static ExerciceVue de(ExerciceCompetence e) {
+        public static ExerciceVue de(ExerciceCompetence e, Set<Long> avecSchema) {
             return new ExerciceVue(e.getId(), e.getBloc().getId(), e.getNumero(), e.getOrdre(),
-                    e.getPhase().name(), e.getIntitule(), e.getDeroulement(), e.getCritereReussite(), e.isActif());
+                    e.getPhase().name(), e.getIntitule(), e.getDeroulement(), e.getCritereReussite(), e.isActif(),
+                    avecSchema.contains(e.getId()));
         }
     }
 
@@ -46,9 +52,12 @@ public class ExerciceCompetenceController {
     private final BlocCompetenceRepository blocs;
     private final ExerciceCompetenceRepository exercices;
     private final EvaluationRepository evaluations;
+    private final SchemaExerciceService schemas;
 
     public ExerciceCompetenceController(ReferentielRepository referentiels, BlocCompetenceRepository blocs,
-                                        ExerciceCompetenceRepository exercices, EvaluationRepository evaluations) {
+                                        ExerciceCompetenceRepository exercices, EvaluationRepository evaluations,
+                                        SchemaExerciceService schemas) {
+        this.schemas = schemas;
         this.referentiels = referentiels;
         this.blocs = blocs;
         this.exercices = exercices;
@@ -63,7 +72,8 @@ public class ExerciceCompetenceController {
         if (!referentiels.existsById(referentielId)) {
             throw new RessourceIntrouvableException("Referentiel introuvable");
         }
-        return exercices.parReferentiel(referentielId).stream().map(ExerciceVue::de).toList();
+        Set<Long> avecSchema = schemas.exercicesAvecSchema(referentielId);
+        return exercices.parReferentiel(referentielId).stream().map(e -> ExerciceVue.de(e, avecSchema)).toList();
     }
 
     @PostMapping("/blocs/{blocId}/exercices")
@@ -78,7 +88,7 @@ public class ExerciceCompetenceController {
         ExerciceCompetence e = new ExerciceCompetence();
         e.setBloc(bloc);
         appliquer(e, demande);
-        return ExerciceVue.de(exercices.save(e));
+        return ExerciceVue.de(exercices.save(e), Set.of());
     }
 
     @PutMapping("/exercices/{exerciceId}")
@@ -88,7 +98,7 @@ public class ExerciceCompetenceController {
                                 @Valid @RequestBody DemandeExercice demande) {
         ExerciceCompetence e = exercice(referentielId, exerciceId);
         appliquer(e, demande);
-        return ExerciceVue.de(exercices.save(e));
+        return ExerciceVue.de(exercices.save(e), schemas.exercicesAvecSchema(referentielId));
     }
 
     /** Bloqué si l'exercice porte déjà une note : la table evaluation est en ajout seul. */

@@ -21,7 +21,7 @@ Sous le nom de l'élève, « Vue globale (toutes les séances) » montre une col
 3. Une ligne par critère, une colonne par séance. Par défaut, seulement les séances où il a été noté.
 4. Pour préparer la prochaine séance, n'affichez que ce qui n'est pas encore acquis.
 5. Chaque case porte la pastille de l'exercice noté : **I** initiation, **P** perfectionnement, **M** maîtrise, avec son numéro.
-6. Touchez une date (ou une case) : les exercices de cette séance s'affichent, avec leur déroulement, leur critère de réussite et les critères notés.
+6. Touchez une date (ou une case) : les exercices de cette séance s'affichent, avec leur déroulement, leur critère de réussite, leur schéma et les critères notés.
 
 ## N2 et N3 : validation en milieu naturel, entraînement en piscine ou fosse
 

@@ -6,6 +6,7 @@ import { CelluleMatrice, ExerciceBaseVue, LigneMatrice, MatriceVue, SeanceEnTete
 import { DateFrPipe, dateFr } from '../../core/date-fr';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
+import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 
 const LIBELLES: Record<string, string> = {
   NON_ABORDE: 'NA', EN_COURS: 'ECA', ACQUIS: 'A'
@@ -13,7 +14,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-matrice',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, PastillePhaseComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     <a [routerLink]="['/cursus', id()]" class="retour">&larr; Retour à la grille</a>
 
@@ -169,6 +170,10 @@ const LIBELLES: Record<string, string> = {
               @if (d.exercice.critereReussite) {
                 <p class="texte-exercice"><strong>Réussite :</strong> {{ d.exercice.critereReussite }}</p>
               }
+              @if (d.exercice.aSchema) {
+                <app-schema-exercice class="schema-seance" [exerciceId]="d.exercice.id"
+                                     [libelle]="d.exercice.numero + ' ' + d.exercice.intitule" />
+              }
               <ul class="notes-seance">
                 @for (n of d.notes; track $index) {
                   <li>
@@ -308,6 +313,7 @@ const LIBELLES: Record<string, string> = {
     .exercice-seance h3 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); margin: 0 0 var(--pas); font-size: 1rem; }
     .phase-texte { font-size: .8125rem; font-weight: 400; color: var(--craie); }
     .texte-exercice { margin: 0 0 var(--pas); font-size: .875rem; max-width: 70ch; }
+    .schema-seance { margin-bottom: var(--pas); }
     .notes-seance { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .875rem; }
     .commentaire-note { display: block; font-style: italic; margin-left: 40px; }
 

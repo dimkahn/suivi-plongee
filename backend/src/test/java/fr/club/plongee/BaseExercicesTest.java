@@ -196,6 +196,48 @@ class BaseExercicesTest {
     }
 
     @Test
+    @DisplayName("Les schémas du document du club sont rattachés aux exercices ; un administrateur les remplace")
+    void schemas() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e1@club.fr");
+        long ref = referentielN1(moniteur);
+        Map<String, JsonNode> parNumero = new HashMap<>();
+        int avecSchema = 0;
+        for (JsonNode e : envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200)) {
+            parNumero.put(e.get("numero").asText(), e);
+            if (e.get("aSchema").asBoolean()) avecSchema++;
+        }
+        // 29 schémas dans le document, 5.3 et 5.4 partagent le même ; rien pour les compétences 9 et 10.
+        assertThat(avecSchema).isEqualTo(30);
+        assertThat(parNumero.get("5.4").get("aSchema").asBoolean()).isTrue();
+        assertThat(parNumero.get("10.1").get("aSchema").asBoolean()).isFalse();
+
+        long schema = parNumero.get("1.1").get("id").asLong();
+        byte[] png = mvc.perform(get("/api/exercices/" + schema + "/schema").header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .content().contentType("image/png"))
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(png[1]).isEqualTo((byte) 'P');
+
+        long sansSchema = parNumero.get("10.1").get("id").asLong();
+        String url = "/api/exercices/" + sansSchema + "/schema";
+        mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isNotFound());
+        var fichier = new org.springframework.mock.web.MockMultipartFile("fichier", "schema.png", "image/png", png);
+        var texte = new org.springframework.mock.web.MockMultipartFile("fichier", "schema.png", "image/png",
+                "pas une image".getBytes());
+        mvc.perform(multipart(url).file(fichier).with(r -> { r.setMethod("PUT"); return r; })
+                .header("Authorization", moniteur)).andExpect(status().isForbidden());
+        mvc.perform(multipart(url).file(texte).with(r -> { r.setMethod("PUT"); return r; })
+                .header("Authorization", admin)).andExpect(status().isUnprocessableContent());
+        mvc.perform(multipart(url).file(fichier).with(r -> { r.setMethod("PUT"); return r; })
+                .header("Authorization", admin)).andExpect(status().isOk());
+        mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isOk());
+        mvc.perform(delete(url).header("Authorization", admin)).andExpect(status().isOk());
+        mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isNotFound());
+    }
+
+    @Test
     @DisplayName("Un administrateur ajoute, modifie et supprime un exercice ; un moniteur ne peut que lire")
     void administration() throws Exception {
         String admin = jeton("presidente@club.fr");

@@ -15,6 +15,7 @@ import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.Niveau;
 import fr.club.plongee.referentiel.domain.Referentiel;
+import fr.club.plongee.referentiel.SchemaExerciceService;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.Utilisateur;
@@ -46,13 +47,14 @@ class GrilleServiceTest {
     @Mock ExerciceSeanceRepository exercices;
     @Mock GroupeEntrainementRepository groupes;
     @Mock ExerciceCompetenceRepository exercicesBase;
+    @Mock SchemaExerciceService schemas;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
         service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos,
-                progressions, exercices, groupes, exercicesBase);
+                progressions, exercices, groupes, exercicesBase, schemas);
     }
 
     @Test
