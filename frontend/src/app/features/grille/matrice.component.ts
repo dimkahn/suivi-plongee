@@ -70,6 +70,11 @@ const LIBELLES: Record<string, string> = {
           <app-pastille-phase phase="MAITRISE" /> maîtrise
           · touchez une date pour voir les exercices de la séance
         </p>
+        <p class="legende secondaire">
+          Une case donne l'état de l'exercice noté : « A » + <app-pastille-phase phase="INITIATION" /> = exercice
+          d'initiation acquis. Le critère n'est acquis qu'avec un exercice de maîtrise
+          <app-pastille-phase phase="MAITRISE" /> acquis ; sinon la case le rappelle (« critère en cours »).
+        </p>
       }
 
       @if (lignesAffichees().length === 0) {
@@ -163,11 +168,18 @@ const LIBELLES: Record<string, string> = {
                 </td>
                 @for (s of seancesAffichees(); track s.id) {
                   @let cellule = cellulePour(item.ligne, s.id);
-                  <td [class]="classe(cellule)" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'"
-                      [class.cliquable]="!!cellule" (click)="cellule && ouvrirSeance(s)">
-                    <span class="statut">{{ libelle(cellule) }}</span>
-                    @if (exerciceDe(cellule); as exo) {
-                      <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+                  <td [class]="classeCase(cellule)" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'"
+                      [class.cliquable]="!!cellule" (click)="cellule && ouvrirSeance(s)"
+                      [title]="titreCase(cellule)">
+                    <!-- Une note porte sur l'exercice : la case montre son état et sa phase (« A » + « I 1.1 »). -->
+                    <span class="statut">
+                      {{ libelleCase(cellule) }}
+                      @if (exerciceDe(cellule); as exo) {
+                        <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+                      }
+                    </span>
+                    @if (critereDifferent(cellule)) {
+                      <span class="critere-case">critère {{ libelleLong(cellule) }}</span>
                     }
                     @if (cellule) {
                       <span class="moniteur">{{ cellule.parQui }}</span>
@@ -244,8 +256,11 @@ const LIBELLES: Record<string, string> = {
               <ul class="notes-seance">
                 @for (n of d.notes; track $index) {
                   <li>
-                    <span [class]="'pastille ' + suffixe(n.cellule)">{{ libelle(n.cellule) }}</span>
+                    <span [class]="'pastille ' + suffixeCase(n.cellule)">{{ libelleCase(n.cellule) }}</span>
                     {{ n.critere }} <span class="secondaire">· {{ n.cellule.parQui }}</span>
+                    @if (critereDifferent(n.cellule)) {
+                      <span class="critere-case">exercice {{ libelleLong(etatExercice(n.cellule)) }}, critère {{ libelleLong(n.cellule) }}</span>
+                    }
                     @if (n.cellule.commentaire) { <span class="commentaire-note">« {{ n.cellule.commentaire }} »</span> }
                   </li>
                 }
@@ -368,7 +383,8 @@ const LIBELLES: Record<string, string> = {
     .cellule.acquis  { background: var(--acquis-clair); }
     .cellule.acquis  .statut { color: var(--acquis); font-weight: 700; }
     .cellule.neant   .statut { color: var(--craie); }
-    .cellule app-pastille-phase { margin-top: 2px; }
+    .cellule .statut { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .critere-case { display: block; margin-top: 2px; font-size: .6875rem; font-weight: 400; color: var(--en-cours); }
     td.cliquable { cursor: pointer; }
     .ouvrir-seance {
       display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 0;
@@ -601,5 +617,43 @@ export class MatriceComponent {
 
   classe(cellule: CelluleMatrice | null): string {
     return cellule ? 'cellule ' + this.suffixe(cellule) : 'cellule';
+  }
+
+  /**
+   * Une note sur un exercice dit d'abord où en est l'élève dans cet
+   * exercice : la case prend l'état de l'exercice (un exercice d'initiation
+   * peut être acquis), le critère n'étant acquis qu'avec un exercice de maîtrise.
+   */
+  private etatCase(cellule: CelluleMatrice): CelluleMatrice {
+    return cellule.statutExercice ? { ...cellule, statut: cellule.statutExercice } : cellule;
+  }
+
+  etatExercice(cellule: CelluleMatrice): CelluleMatrice {
+    return this.etatCase(cellule);
+  }
+
+  suffixeCase(cellule: CelluleMatrice): string {
+    return this.suffixe(this.etatCase(cellule));
+  }
+
+  libelleCase(cellule: CelluleMatrice | null): string {
+    return this.libelle(cellule ? this.etatCase(cellule) : null);
+  }
+
+  classeCase(cellule: CelluleMatrice | null): string {
+    return this.classe(cellule ? this.etatCase(cellule) : null);
+  }
+
+  /** L'exercice et le critère n'ont pas le même état (exercice d'initiation acquis, critère en cours). */
+  critereDifferent(cellule: CelluleMatrice | null): boolean {
+    return !!cellule?.statutExercice && cellule.statutExercice !== cellule.statut;
+  }
+
+  titreCase(cellule: CelluleMatrice | null): string {
+    if (!cellule) return '';
+    const exo = this.exerciceDe(cellule);
+    if (!exo || !cellule.statutExercice) return `Critère ${this.libelleLong(cellule)}`;
+    return `Exercice ${exo.numero} (${libellePhase(exo.phase).toLowerCase()}) ${this.libelleLong(this.etatCase(cellule))}`
+      + ` · critère ${this.libelleLong(cellule)}`;
   }
 }

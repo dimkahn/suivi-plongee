@@ -44,11 +44,13 @@ public class GrilleService {
                              /** N2/N3 : derniere note prise en piscine ou fosse ; null sinon. */
                              SuiviEntrainementVue entrainement,
                              /** Exercice de la derniere note ; null sans exercice. */
-                             ExerciceNoteVue exercice) {}
+                             ExerciceNoteVue exercice,
+                             /** Etat de cet exercice (statut : celui du critere qui en decoule). */
+                             String statutExercice) {}
 
     /** Suivi d'entrainement d'un critere (N2/N3) : ne compte pas pour l'acquisition. */
     public record SuiviEntrainementVue(String statut, String parQui, LocalDate le, String commentaire,
-                                       ExerciceNoteVue exercice) {}
+                                       ExerciceNoteVue exercice, String statutExercice) {}
 
     /** L'exercice sur lequel une note a ete prise : de quoi afficher « M 1.7 » sans autre requete. */
     /** {@code critereIds} : critères travaillés, renseignés seulement pour le programme d'une séance. */
@@ -126,7 +128,9 @@ public class GrilleService {
      * {@code exerciceId} : exercice de la base noté, détaillé dans {@link MatriceVue#exercices}.
      */
     public record CelluleVue(Long seanceId, LocalDate date, String statut, String parQui,
-                             boolean entrainement, Long exerciceId, String commentaire) {}
+                             boolean entrainement, Long exerciceId, String commentaire,
+                             /** Etat de l'exercice noté ; statut est celui du critère qui en découle. */
+                             String statutExercice) {}
 
     public record LigneMatriceVue(Long critereId, String blocIntitule, String regroupement,
                                   String savoirFaire, List<CelluleVue> historique) {}
@@ -309,8 +313,14 @@ public class GrilleService {
                 e == null ? null : e.getCommentaire(),
                 entrainement == null ? null : new SuiviEntrainementVue(entrainement.getStatut().name(),
                         entrainement.getMoniteur().nomComplet(), entrainement.getDateEvaluation(),
-                        entrainement.getCommentaire(), ExerciceNoteVue.de(entrainement.getExercice())),
-                e == null ? null : ExerciceNoteVue.de(e.getExercice()));
+                        entrainement.getCommentaire(), ExerciceNoteVue.de(entrainement.getExercice()),
+                        nom(entrainement.getStatutExercice())),
+                e == null ? null : ExerciceNoteVue.de(e.getExercice()),
+                e == null ? null : nom(e.getStatutExercice()));
+    }
+
+    private static String nom(StatutAcquisition statut) {
+        return statut == null ? null : statut.name();
     }
 
     /**
@@ -333,7 +343,7 @@ public class GrilleService {
                         .map(e -> new CelluleVue(e.getSeance() == null ? null : e.getSeance().getId(),
                                 e.getDateEvaluation(), e.getStatut().name(), e.getMoniteur().nomComplet(),
                                 e.isEntrainement(), e.getExercice() == null ? null : e.getExercice().getId(),
-                                e.getCommentaire()))
+                                e.getCommentaire(), nom(e.getStatutExercice())))
                         .toList();
                 lignes.add(new LigneMatriceVue(c.getId(), bloc.getIntitule(), bloc.getRegroupement(),
                         c.getSavoirFaire(), historique));

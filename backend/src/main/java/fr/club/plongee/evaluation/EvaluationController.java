@@ -38,7 +38,9 @@ public class EvaluationController {
                                 /** N2/N3 noté en piscine ou fosse : suivi d'entraînement. */
                                 boolean entrainement,
                                 /** Exercice noté ; null pour une note sans exercice. */
-                                GrilleService.ExerciceNoteVue exercice) {}
+                                GrilleService.ExerciceNoteVue exercice,
+                                /** État de l'exercice noté ; statut est celui du critère qui en découle. */
+                                String statutExercice) {}
 
     private final EvaluationService evaluations;
     private final GrilleService grilles;
@@ -126,6 +128,7 @@ public class EvaluationController {
     private EvaluationVue vue(Evaluation e) {
         return new EvaluationVue(e.getId(), e.getCritere().getId(), e.getStatut().name(),
                 e.getCommentaire(), e.getDateEvaluation(), e.getMoniteur().nomComplet(),
-                e.isEntrainement(), GrilleService.ExerciceNoteVue.de(e.getExercice()));
+                e.isEntrainement(), GrilleService.ExerciceNoteVue.de(e.getExercice()),
+                e.getStatutExercice() == null ? null : e.getStatutExercice().name());
     }
 }

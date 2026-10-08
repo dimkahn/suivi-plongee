@@ -30,6 +30,8 @@ interface SuiviAffiche {
   commentaire: string | null;
   /** Exercice de la base sur lequel la dernière note a été prise. */
   exercice: ExerciceNoteVue | null;
+  /** État de cet exercice ; `statut` est celui du critère qui en découle. */
+  statutExercice: Statut | null;
   enAttente: boolean;
   /** Saisie en cours d'envoi au serveur (en ligne) : on affiche un indicateur. */
   enregistrement: boolean;
@@ -39,7 +41,7 @@ interface SuiviAffiche {
  * Les champs hérités portent l'évaluation (en milieu naturel pour un N2/N3),
  * `entr` le suivi d'entraînement en piscine et fosse (N2/N3 seulement).
  */
-interface CritereAffiche extends Omit<CritereVue, 'entrainement' | 'exercice'>, SuiviAffiche {
+interface CritereAffiche extends Omit<CritereVue, 'entrainement' | 'exercice' | 'statutExercice'>, SuiviAffiche {
   entr: SuiviAffiche;
 }
 
@@ -53,6 +55,21 @@ interface EnVol {
   statut: Statut;
   reference: string;
   exercice: ExerciceNoteVue | null;
+}
+
+/**
+ * État du critère après une note sur un exercice, même règle que le serveur
+ * (EvaluationService.statutDuCritere) : un exercice d'initiation ou de
+ * perfectionnement, même acquis, laisse le critère en cours et ne fait
+ * jamais reculer un critère acquis ; seul un exercice de maîtrise fait
+ * l'état du critère.
+ */
+function statutDuCritere(demande: Statut, actuel: Statut, exercice: ExerciceNoteVue | null,
+                         critereAMaitrise: boolean): Statut {
+  if (!exercice || !critereAMaitrise || exercice.phase === 'MAITRISE') return demande;
+  if (actuel === 'ACQUIS') return 'ACQUIS';
+  if (demande === 'NON_ABORDE') return actuel;
+  return 'EN_COURS';
 }
 
 /** Clé d'une saisie en cours d'envoi : un critère peut avoir les deux suivis en vol. */
@@ -415,7 +432,8 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           }
           @if (bloc.exercices?.length && peutSaisir() && !bloc.valide) {
             <p class="secondaire aide-exercice">
-              Choisissez sous chaque critère l'exercice réalisé : seul un exercice de maîtrise le fait passer à « Acquis ».
+              Choisissez sous chaque critère l'exercice réalisé, puis notez cet exercice. Un exercice d'initiation ou de
+              perfectionnement peut être « Acquis » ; le critère, lui, n'est acquis qu'avec un exercice de maîtrise acquis.
             </p>
           }
           <ul [id]="'criteres-' + bloc.id">
@@ -446,6 +464,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                         <span class="secondaire">Noté sur</span>
                         <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
                         <span class="secondaire">{{ exo.intitule }}</span>
+                        @if (actif.statutExercice) {
+                          <span class="etat-exercice" [class.acquis]="actif.statutExercice === 'ACQUIS'">
+                            : exercice {{ libelleStatut(actif.statutExercice).toLowerCase() }}
+                          </span>
+                          @if (actif.statutExercice !== actif.statut) {
+                            <span class="critere-reste">· critère {{ libelleStatut(actif.statut).toLowerCase() }}
+                              (acquis avec un exercice de maîtrise)</span>
+                          }
+                        }
                       </span>
                     }
                     @if (actif.commentaire) {
@@ -554,6 +581,12 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                               <span class="exercice-note">
                                 <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
                                 {{ exo.intitule }}
+                                @if (entree.statutExercice && entree.statutExercice !== entree.statut) {
+                                  <span class="critere-reste">
+                                    (exercice {{ libelleStatut(entree.statutExercice).toLowerCase() }},
+                                    critère {{ libelleStatut(entree.statut).toLowerCase() }})
+                                  </span>
+                                }
                               </span>
                             }
                             @if (entree.commentaire) { <p>{{ entree.commentaire }}</p> }
@@ -726,6 +759,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .choix-exercice .choix-seance { display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 520px; }
     .choix-exercice .secondaire { font-size: .8125rem; }
     .exercice-note { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .etat-exercice { font-size: .8125rem; font-weight: 700; color: var(--en-cours); }
+    .etat-exercice.acquis { color: var(--acquis); }
+    .critere-reste { font-size: .8125rem; color: var(--craie); }
     .titre-phase { margin: var(--pas-2) 0 var(--pas); font-size: 1rem; color: var(--profond); }
     .liste-exercices { display: grid; gap: var(--pas); }
     .liste-exercices li { border: none; padding: 0; }
@@ -945,29 +981,38 @@ export class GrilleComponent implements OnDestroy {
     const enregistrements = this.enregistrements();
 
     const suivi = (base: Omit<SuiviAffiche, 'enAttente' | 'enregistrement'>, critereId: number,
-                   entrainement: boolean): SuiviAffiche => {
+                   entrainement: boolean, critereAMaitrise: boolean): SuiviAffiche => {
       const enCours = enregistrements.get(cle(critereId, entrainement));
       const differee = attentes.get(cle(critereId, entrainement));
       // Pendant l'envoi puis le rechargement, on garde le statut choisi :
       // sinon l'ancien réapparaîtrait entre la fin de l'envoi et la grille à jour.
+      // Le statut saisi est celui de l'exercice ; le critère en découle (même règle que le serveur).
       if (enCours) {
-        return { ...base, statut: enCours.statut, exercice: enCours.exercice, enAttente: false, enregistrement: true };
+        return { ...base, exercice: enCours.exercice, enAttente: false, enregistrement: true,
+                 statut: statutDuCritere(enCours.statut, base.statut, enCours.exercice, critereAMaitrise),
+                 statutExercice: enCours.exercice ? enCours.statut : null };
       }
-      return differee
-        ? { ...base, statut: differee.statut, enAttente: true, enregistrement: false, le: differee.dateEvaluation,
-            exercice: this.exerciceDeLaFile(differee.exerciceId) }
-        : { ...base, enAttente: false, enregistrement: false };
+      if (!differee) return { ...base, enAttente: false, enregistrement: false };
+      const exercice = this.exerciceDeLaFile(differee.exerciceId);
+      return { ...base, enAttente: true, enregistrement: false, le: differee.dateEvaluation, exercice,
+               statut: statutDuCritere(differee.statut, base.statut, exercice, critereAMaitrise),
+               statutExercice: exercice ? differee.statut : null };
     };
 
     let acquisTotal = 0;
     const blocs: BlocAffiche[] = g.blocs.map(bloc => {
-      const criteres: CritereAffiche[] = bloc.criteres.map(({ entrainement, exercice, ...c }) => ({
-        ...c,
-        ...suivi({ ...c, exercice: exercice ?? null }, c.id, false),
-        entr: suivi(entrainement
-          ? { ...entrainement, exercice: entrainement.exercice ?? null }
-          : { statut: 'NON_ABORDE', parQui: null, le: null, commentaire: null, exercice: null }, c.id, true)
-      }));
+      const criteres: CritereAffiche[] = bloc.criteres.map(({ entrainement, exercice, statutExercice, ...c }) => {
+        const aMaitrise = this.exercicesDuCritere(bloc, c).some(e => e.phase === 'MAITRISE');
+        return {
+          ...c,
+          ...suivi({ ...c, exercice: exercice ?? null, statutExercice: statutExercice ?? null }, c.id, false, aMaitrise),
+          entr: suivi(entrainement
+            ? { ...entrainement, exercice: entrainement.exercice ?? null,
+                statutExercice: entrainement.statutExercice ?? null }
+            : { statut: 'NON_ABORDE', parQui: null, le: null, commentaire: null, exercice: null, statutExercice: null },
+            c.id, true, aMaitrise)
+        };
+      });
       const acquis = criteres.filter(c => c.statut === 'ACQUIS').length;
       acquisTotal += acquis;
       return {
@@ -1156,12 +1201,14 @@ export class GrilleComponent implements OnDestroy {
 
   /**
    * Même règle que le serveur : un critère relié à des exercices de
-   * maîtrise ne passe à « acquis » que sur l'un d'eux.
+   * maîtrise ne passe pas à « acquis » sans exercice. Sur un exercice
+   * d'initiation ou de perfectionnement, « acquis » est accepté : c'est
+   * l'exercice qui est acquis, le critère reste en cours (statutDuCritere).
    */
   private refusMaitrise(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): string | null {
     const maitrise = this.exercicesDuCritere(bloc, critere).filter(e => e.phase === 'MAITRISE');
     if (statut !== 'ACQUIS' || maitrise.length === 0) return null;
-    if (this.exerciceChoisi(bloc, critere)?.phase === 'MAITRISE') return null;
+    if (this.exerciceChoisi(bloc, critere)) return null;
     if (this.suiviActif(critere).statut === 'ACQUIS') return null;
     const numeros = maitrise.map(e => e.numero).join(', ');
     return `« ${critere.savoirFaire} » ne passe à acquis que sur un exercice de maîtrise (${numeros}) : `
@@ -1351,7 +1398,12 @@ export class GrilleComponent implements OnDestroy {
    * n'est donc pas une condition pour que le geste soit pris en compte.
    */
   async noter(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): Promise<void> {
-    if (this.suiviActif(critere).statut === statut) return;
+    // Rien de nouveau : même état, sur le même exercice que la dernière note.
+    // (Un autre exercice, ou un exercice d'initiation acquis sur un critère en cours, se note toujours.)
+    const actif = this.suiviActif(critere);
+    const choisi = this.exerciceChoisi(bloc, critere);
+    if ((choisi?.id ?? null) === (actif.exercice?.id ?? null)
+        && (actif.statutExercice ?? actif.statut) === statut) return;
 
     const seance = this.seances().find(s => s.id === this.seanceId()) ?? null;
     const entrainement = this.estEntrainement(seance?.id ?? null);

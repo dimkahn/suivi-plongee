@@ -77,6 +77,8 @@ export interface CritereVue {
   entrainement?: SuiviEntrainementVue | null;
   /** Exercice de la base sur lequel la dernière note a été prise ; null sans exercice. */
   exercice?: ExerciceNoteVue | null;
+  /** État de cet exercice ; `statut` est celui du critère qui en découle. */
+  statutExercice?: Statut | null;
 }
 
 export interface SuiviEntrainementVue {
@@ -85,6 +87,7 @@ export interface SuiviEntrainementVue {
   le: string;
   commentaire: string | null;
   exercice?: ExerciceNoteVue | null;
+  statutExercice?: Statut | null;
 }
 
 // ----------------------------------------------------------------
@@ -332,6 +335,8 @@ export interface EvaluationVue {
   entrainement?: boolean;
   /** Exercice de la base noté ; null sans exercice. */
   exercice?: ExerciceNoteVue | null;
+  /** État de l'exercice noté ; `statut` est celui du critère qui en découle. */
+  statutExercice?: Statut | null;
 }
 
 export interface MoniteurVue {
@@ -401,6 +406,8 @@ export interface CelluleMatrice {
   /** Exercice de la base noté, détaillé dans `MatriceVue.exercices`. */
   exerciceId?: number | null;
   commentaire?: string | null;
+  /** État de l'exercice noté ; `statut` est celui du critère qui en découle. */
+  statutExercice?: Statut | null;
 }
 
 export interface LigneMatrice {

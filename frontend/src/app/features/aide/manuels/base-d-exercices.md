@@ -27,7 +27,7 @@ Les schémas du document du club sont rattachés à leurs exercices (compétence
 ## Bon à savoir
 
 - Un exercice est relié aux **critères** qu'il travaille (« 1.7 Gréage avec anomalie cachée » → « Gréage et dégréage »), pas à toute la compétence : dans la grille, on choisit l'exercice critère par critère.
-- **Seul un exercice de maîtrise relié au critère le fait passer à « Acquis ».** Un critère sans exercice de maîtrise s'acquiert comme avant : au N1, c'est le cas de « Départ plage » et de « Ventilation sur tuba et vidage du tuba », à compléter ici si le club le souhaite.
+- Chaque note porte sur un exercice, qui peut être acquis à toutes les phases. **Le critère n'est acquis qu'avec un exercice de maîtrise relié à lui et acquis.** Un critère sans exercice de maîtrise s'acquiert comme avant : au N1, c'est le cas de « Départ plage » et de « Ventilation sur tuba et vidage du tuba », à compléter ici si le club le souhaite.
 - Un exercice qui a déjà servi à noter un élève **ne se supprime pas** : décochez « Proposé aux moniteurs (actif) ». Il n'est plus proposé mais reste lisible sur les notes passées.
 - Le numéro est celui du document du club (« 1.7 »). Au N1, le document numérote 9 « Retourner en surface » et 10 « Évoluer en sécurité », dans l'ordre inverse du MFT : les exercices sont bien rattachés à la bonne compétence.
 - Les autres niveaux viendront ensuite : leurs compétences se notent sans exercice en attendant.

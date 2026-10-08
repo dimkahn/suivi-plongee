@@ -426,11 +426,17 @@ Ensuite la base se modifie depuis `/admin/exercices`
 noté ne se supprime pas, il se désactive. **Chaque note porte l'exercice
 réalisé** (`evaluation.exercice_id`, facultatif, qui doit travailler le
 critère noté ; choisi critère par critère dans la grille, présélectionné
-d'après le programme de la séance) et **seul un exercice de maîtrise relié au
-critère le fait passer à acquis** (choix du club,
-`EvaluationService.verifierExerciceDeMaitrise`, tous chemins) quand ce
-critère a au moins un exercice de maîtrise actif ; un critère déjà acquis se
-commente sans exercice, un critère sans exercice de maîtrise (au N1 :
+d'après le programme de la séance). **La note porte sur l'exercice** (choix
+du club, 2026) : V56 ajoute `evaluation.statut_exercice`, l'état saisi pour
+l'exercice (un exercice d'initiation peut être acquis), et `evaluation.statut`
+reste l'état du **critère** qui en découle, seul lu par la validation des
+blocs, le retard et la délivrance (`EvaluationService.statutDuCritere`, même
+règle côté écran dans la grille) : un exercice de maîtrise fait l'état du
+critère ; un exercice d'initiation ou de perfectionnement le laisse en cours
+et ne fait jamais reculer un critère acquis. Sans exercice, « acquis » est
+refusé pour un critère qui a un exercice de maîtrise actif
+(`verifierExerciceDeMaitrise`), sauf critère déjà acquis (commentaire) ; un
+critère sans exercice de maîtrise (au N1 :
 « Départ plage », « Ventilation sur tuba », bloc transverse ; N2/N3 pour
 l'instant) se note comme avant. Le programme d'une séance se construit
 d'abord avec la base (choix du club, 2026 : « + Ajouter des exercices des
