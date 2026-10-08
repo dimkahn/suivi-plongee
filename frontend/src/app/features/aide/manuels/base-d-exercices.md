@@ -1,10 +1,12 @@
 ---
 titre: La base d'exercices
 rubrique: Administrateur
-videos:
+videos: A16
 ecran: /admin/exercices
-mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, déroulement, critère de réussite, désactiver, N1, schéma, dessin, image
+mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, déroulement, critère de réussite, critères travaillés, désactiver, N1, schéma, dessin, image, aucun, rafraîchir
 questions:
+- Pourquoi « Critère(s) : aucun » s'affiche sous les exercices ?
+- Pourquoi ma modification disparaît quand je rafraîchis la page ?
 - Comment changer le schéma d'un exercice ?
 - Comment modifier un exercice de la base ?
 - Comment ajouter un exercice à une compétence ?
@@ -31,3 +33,4 @@ Les schémas du document du club sont rattachés à leurs exercices (compétence
 - Un exercice qui a déjà servi à noter un élève **ne se supprime pas** : décochez « Proposé aux moniteurs (actif) ». Il n'est plus proposé mais reste lisible sur les notes passées.
 - Le numéro est celui du document du club (« 1.7 »). Au N1, le document numérote 9 « Retourner en surface » et 10 « Évoluer en sécurité », dans l'ordre inverse du MFT : les exercices sont bien rattachés à la bonne compétence.
 - Les autres niveaux viendront ensuite : leurs compétences se notent sans exercice en attendant.
+- La page est toujours relue sur le serveur quand il y a du réseau : une modification apparaît dès qu'on rafraîchit. Si « Critère(s) : aucun » s'affiche partout ou qu'une modification semble disparaître, le téléphone montre une ancienne copie gardée par une version précédente de l'appli : fermez-la et rouvrez-la (une ou deux fois) pour qu'elle se mette à jour.
