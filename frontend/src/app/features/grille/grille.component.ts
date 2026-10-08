@@ -60,15 +60,15 @@ interface EnVol {
 /**
  * État du critère après une note sur un exercice, même règle que le serveur
  * (EvaluationService.statutDuCritere) : un exercice d'initiation ou de
- * perfectionnement, même acquis, laisse le critère en cours et ne fait
- * jamais reculer un critère acquis ; seul un exercice de maîtrise fait
- * l'état du critère.
+ * perfectionnement, même acquis, ou un exercice non abordé met le critère
+ * en cours et ne fait jamais reculer un critère acquis ; seul un exercice de
+ * maîtrise fait l'état du critère.
  */
 function statutDuCritere(demande: Statut, actuel: Statut, exercice: ExerciceNoteVue | null,
                          critereAMaitrise: boolean): Statut {
-  if (!exercice || !critereAMaitrise || exercice.phase === 'MAITRISE') return demande;
+  if (!exercice || !critereAMaitrise) return demande;
+  if (exercice.phase === 'MAITRISE' && demande !== 'NON_ABORDE') return demande;
   if (actuel === 'ACQUIS') return 'ACQUIS';
-  if (demande === 'NON_ABORDE') return actuel;
   return 'EN_COURS';
 }
 
@@ -643,7 +643,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             }
           }
           <div class="actions-dialogue">
-            <button type="button" class="bouton-discret" (click)="choisirExercice(bloc, critere, null)">Noter sans exercice</button>
+            @if (suiviActif(critere).statut === 'ACQUIS') {
+              <button type="button" class="bouton-discret" (click)="choisirExercice(bloc, critere, null)">Noter sans exercice</button>
+            } @else {
+              <button type="button" class="bouton-discret" (click)="fermerChoixExercice()">Annuler</button>
+            }
           </div>
         }
       </app-dialogue>
@@ -1200,19 +1204,25 @@ export class GrilleComponent implements OnDestroy {
   }
 
   /**
-   * Même règle que le serveur : un critère relié à des exercices de
-   * maîtrise ne passe pas à « acquis » sans exercice. Sur un exercice
-   * d'initiation ou de perfectionnement, « acquis » est accepté : c'est
-   * l'exercice qui est acquis, le critère reste en cours (statutDuCritere).
+   * La note porte sur un exercice (choix du club, 2026) : un critère relié à
+   * des exercices de la base se note sur l'un d'eux, pour qu'on lise ensuite
+   * s'il s'agissait d'une initiation, d'un perfectionnement ou d'une
+   * maîtrise. Seul un critère déjà acquis reçoit une note sans exercice
+   * (simple commentaire). Le serveur, lui, refuse « acquis » sans exercice
+   * de maîtrise (statutDuCritere).
    */
-  private refusMaitrise(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): string | null {
-    const maitrise = this.exercicesDuCritere(bloc, critere).filter(e => e.phase === 'MAITRISE');
-    if (statut !== 'ACQUIS' || maitrise.length === 0) return null;
-    if (this.exerciceChoisi(bloc, critere)) return null;
+  refusSansExercice(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): string | null {
+    const exercices = this.exercicesDuCritere(bloc, critere);
+    if (exercices.length === 0 || this.exerciceChoisi(bloc, critere)) return null;
     if (this.suiviActif(critere).statut === 'ACQUIS') return null;
-    const numeros = maitrise.map(e => e.numero).join(', ');
-    return `« ${critere.savoirFaire} » ne passe à acquis que sur un exercice de maîtrise (${numeros}) : `
-      + 'choisissez l’exercice réalisé.';
+    const maitrise = exercices.filter(e => e.phase === 'MAITRISE');
+    if (statut === 'ACQUIS' && maitrise.length > 0) {
+      const numeros = maitrise.map(e => e.numero).join(', ');
+      return `« ${critere.savoirFaire} » ne passe à acquis que sur un exercice de maîtrise (${numeros}) : `
+        + 'choisissez l’exercice réalisé.';
+    }
+    return `Choisissez l’exercice réalisé pour « ${critere.savoirFaire} » : `
+      + 'la note dit s’il s’agissait d’une initiation, d’un perfectionnement ou d’une maîtrise.';
   }
 
   /** Exercice d'une saisie en attente, retrouvé dans la base livrée avec la grille. */
@@ -1420,11 +1430,11 @@ export class GrilleComponent implements OnDestroy {
       this.message.set(refus);
       return;
     }
-    // « Acquis » sans exercice de maîtrise : on ouvre le choix de l'exercice,
-    // et la note part dès qu'un exercice de maîtrise est choisi.
-    const sansMaitrise = this.refusMaitrise(bloc, critere, statut);
-    if (sansMaitrise) {
-      this.ouvrirChoixExercice(bloc, critere, sansMaitrise);
+    // Note sans exercice sur un critère qui en a : on ouvre le choix de
+    // l'exercice, et la note part dès qu'un exercice est choisi.
+    const sansExercice = this.refusSansExercice(bloc, critere, statut);
+    if (sansExercice) {
+      this.ouvrirChoixExercice(bloc, critere, sansExercice);
       this.noteEnSuspens = { critere, statut };
       return;
     }

@@ -144,6 +144,10 @@ class BaseExercicesTest {
                     {"critereId":%d,"seanceId":%d,"statut":"%s","exerciceId":%s}""";
             JsonNode refus = envoyer("POST", url, moniteur, note.formatted(critere, seanceId, "ACQUIS", "null"), 422);
             assertThat(refus.get("detail").asText()).contains("exercice de maîtrise").contains("(1.7)");
+            // Une note sur un exercice, même « non abordé », met le critère en cours.
+            JsonNode nonAborde = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "NON_ABORDE", parNumero.get("1.1")), 201);
+            assertThat(nonAborde.get("statut").asText()).isEqualTo("EN_COURS");
             // Exercice de perfectionnement acquis : c'est l'exercice qui est acquis, le critère reste en cours.
             JsonNode perfectionnement = envoyer("POST", url, moniteur,
                     note.formatted(critere, seanceId, "ACQUIS", parNumero.get("1.6")), 201);
@@ -166,16 +170,16 @@ class BaseExercicesTest {
                     moniteur, null, 200);
             List<String> numeros = new ArrayList<>();
             for (JsonNode h : historique) numeros.add(h.get("exercice").isNull() ? "-" : h.get("exercice").get("numero").asText());
-            assertThat(numeros).containsExactly("1.6", "1.1", "1.7", "-");
+            assertThat(numeros).containsExactly("1.1", "1.6", "1.1", "1.7", "-");
 
             JsonNode matrice = envoyer("GET", "/api/cursus/" + cursus + "/matrice", moniteur, null, 200);
             assertThat(matrice.get("exercices")).hasSize(90);
             JsonNode cellules = null;
             for (JsonNode l : matrice.get("lignes")) if (l.get("critereId").asLong() == critere) cellules = l.get("historique");
-            assertThat(cellules.get(2).get("exerciceId").asLong()).isEqualTo(parNumero.get("1.7"));
+            assertThat(cellules.get(3).get("exerciceId").asLong()).isEqualTo(parNumero.get("1.7"));
             // La case garde l'état de l'exercice (P acquis) et celui du critère (en cours).
-            assertThat(cellules.get(0).get("statutExercice").asText()).isEqualTo("ACQUIS");
-            assertThat(cellules.get(0).get("statut").asText()).isEqualTo("EN_COURS");
+            assertThat(cellules.get(1).get("statutExercice").asText()).isEqualTo("ACQUIS");
+            assertThat(cellules.get(1).get("statut").asText()).isEqualTo("EN_COURS");
 
             // La vue globale porte aussi le programme de la séance : exercice libre et exercice de la base.
             Map<String, Object> libre = new HashMap<>();

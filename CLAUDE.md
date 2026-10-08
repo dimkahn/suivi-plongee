@@ -432,10 +432,16 @@ l'exercice (un exercice d'initiation peut être acquis), et `evaluation.statut`
 reste l'état du **critère** qui en découle, seul lu par la validation des
 blocs, le retard et la délivrance (`EvaluationService.statutDuCritere`, même
 règle côté écran dans la grille) : un exercice de maîtrise fait l'état du
-critère ; un exercice d'initiation ou de perfectionnement le laisse en cours
-et ne fait jamais reculer un critère acquis. Sans exercice, « acquis » est
+critère ; toute autre note sur un exercice (initiation, perfectionnement,
+exercice non abordé) le met en cours et ne fait jamais reculer un critère
+acquis. Sans exercice, « acquis » est
 refusé pour un critère qui a un exercice de maîtrise actif
-(`verifierExerciceDeMaitrise`), sauf critère déjà acquis (commentaire) ; un
+(`verifierExerciceDeMaitrise`), sauf critère déjà acquis (commentaire) ; la
+grille va plus loin (choix du club, 2026 : on doit lire la phase de chaque
+note) et exige un exercice pour toute note d'un critère qui en a, sauf
+critère déjà acquis (`refusSansExercice`) ; la notation groupée et les
+notes anciennes peuvent en être dépourvues, la vue globale les marque
+« sans exercice » ; un
 critère sans exercice de maîtrise (au N1 :
 « Départ plage », « Ventilation sur tuba », bloc transverse ; N2/N3 pour
 l'instant) se note comme avant. Le programme d'une séance se construit

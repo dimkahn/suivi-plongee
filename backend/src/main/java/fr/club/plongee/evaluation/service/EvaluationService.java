@@ -171,16 +171,17 @@ public class EvaluationService {
     /**
      * État du critère après une note sur un exercice (choix du club, 2026) :
      * la note dit où en est l'élève dans l'exercice, et seul un exercice de
-     * maîtrise fait l'état du critère. Un exercice d'initiation ou de
-     * perfectionnement, même acquis, laisse le critère en cours, et ne fait
-     * jamais reculer un critère déjà acquis. Sans exercice, ou pour un critère
-     * sans exercice de maîtrise, la note est l'état du critère, comme avant.
+     * maîtrise fait l'état du critère. Toute autre note sur un exercice
+     * (initiation ou perfectionnement même acquis, exercice non abordé) met le
+     * critère en cours, et ne fait jamais reculer un critère déjà acquis. Sans
+     * exercice, ou pour un critère sans exercice de maîtrise, la note est
+     * l'état du critère, comme avant.
      */
     static StatutAcquisition statutDuCritere(StatutAcquisition demande, StatutAcquisition actuel,
                                              ExerciceCompetence exercice, boolean critereAMaitrise) {
-        if (exercice == null || !critereAMaitrise || exercice.getPhase() == PhaseExercice.MAITRISE) return demande;
+        if (exercice == null || !critereAMaitrise) return demande;
+        if (exercice.getPhase() == PhaseExercice.MAITRISE && demande != StatutAcquisition.NON_ABORDE) return demande;
         if (actuel == StatutAcquisition.ACQUIS) return StatutAcquisition.ACQUIS;
-        if (demande == StatutAcquisition.NON_ABORDE) return actuel;
         return StatutAcquisition.EN_COURS;
     }
 

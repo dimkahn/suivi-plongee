@@ -74,6 +74,7 @@ const LIBELLES: Record<string, string> = {
           Une case donne l'état de l'exercice noté : « A » + <app-pastille-phase phase="INITIATION" /> = exercice
           d'initiation acquis. Le critère n'est acquis qu'avec un exercice de maîtrise
           <app-pastille-phase phase="MAITRISE" /> acquis ; sinon la case le rappelle (« critère en cours »).
+          Une note prise sans choisir d'exercice est marquée « sans exercice » : sa phase n'est pas connue.
         </p>
       }
 
@@ -178,6 +179,9 @@ const LIBELLES: Record<string, string> = {
                         <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
                       }
                     </span>
+                    @if (cellule && !exerciceDe(cellule) && criteresAvecExercices().has(item.ligne.critereId)) {
+                      <span class="sans-exercice">sans exercice</span>
+                    }
                     @if (critereDifferent(cellule)) {
                       <span class="critere-case">critère {{ libelleLong(cellule) }}</span>
                     }
@@ -384,6 +388,7 @@ const LIBELLES: Record<string, string> = {
     .cellule.acquis  .statut { color: var(--acquis); font-weight: 700; }
     .cellule.neant   .statut { color: var(--craie); }
     .cellule .statut { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+    .sans-exercice { display: block; margin-top: 2px; font-size: .6875rem; font-weight: 400; font-style: italic; color: var(--craie); }
     .critere-case { display: block; margin-top: 2px; font-size: .6875rem; font-weight: 400; color: var(--en-cours); }
     td.cliquable { cursor: pointer; }
     .ouvrir-seance {
@@ -522,6 +527,10 @@ export class MatriceComponent {
   basculerSchema(id: number): void {
     this.schemaOuvert.set(this.schemaOuvert() === id ? null : id);
   }
+
+  /** Critères reliés à la base d'exercices : une note sans exercice n'y dit pas sa phase, la case le signale. */
+  criteresAvecExercices = computed(() =>
+    new Set((this.matrice()?.exercices ?? []).flatMap(e => e.critereIds ?? [])));
 
   exerciceDe(cellule: CelluleMatrice | null): ExerciceBaseVue | null {
     return cellule?.exerciceId == null ? null : this.exercicesParId().get(cellule.exerciceId) ?? null;
