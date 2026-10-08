@@ -47,7 +47,9 @@ public class SynchronisationController {
     public record SaisieDifferee(@NotNull String referenceClient, @NotNull Long cursusId,
                                  @NotNull Long critereId, Long seanceId,
                                  @NotNull StatutAcquisition statut, String commentaire,
-                                 @NotNull LocalDate dateEvaluation) {}
+                                 @NotNull LocalDate dateEvaluation,
+                                 /** Exercice de la base noté ; absent des saisies mises en file avant son arrivée. */
+                                 Long exerciceId) {}
 
     public record Resultat(String referenceClient, Etat etat, String raison, Long evaluationId) {}
 
@@ -110,7 +112,7 @@ public class SynchronisationController {
             try {
                 Evaluation e = evaluations.noter(s.cursusId(),
                         new EvaluationService.Notation(s.critereId(), s.seanceId(), s.statut(),
-                                s.commentaire(), s.dateEvaluation(), s.referenceClient()),
+                                s.commentaire(), s.dateEvaluation(), s.referenceClient(), s.exerciceId()),
                         auteur);
                 resultats.add(new Resultat(s.referenceClient(), Etat.ACCEPTEE, null, e.getId()));
             } catch (RegleMetierException | RessourceIntrouvableException erreur) {

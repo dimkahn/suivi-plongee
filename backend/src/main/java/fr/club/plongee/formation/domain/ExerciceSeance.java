@@ -2,6 +2,7 @@ package fr.club.plongee.formation.domain;
 
 import fr.club.plongee.planning.domain.GroupeEntrainement;
 import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import jakarta.persistence.*;
 
@@ -46,6 +47,11 @@ public class ExerciceSeance {
     private String consignes;
 
     private Integer dureeMinutes;
+
+    /** Exercice de la base d'exercices dont celui-ci est tiré ; null pour un exercice libre. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exercice_competence_id")
+    private ExerciceCompetence exerciceCompetence;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "exercice_seance_critere",
@@ -111,6 +117,14 @@ public class ExerciceSeance {
 
     public void setDureeMinutes(Integer dureeMinutes) {
         this.dureeMinutes = dureeMinutes;
+    }
+
+    public ExerciceCompetence getExerciceCompetence() {
+        return exerciceCompetence;
+    }
+
+    public void setExerciceCompetence(ExerciceCompetence exerciceCompetence) {
+        this.exerciceCompetence = exerciceCompetence;
     }
 
     public Set<Critere> getCriteres() {

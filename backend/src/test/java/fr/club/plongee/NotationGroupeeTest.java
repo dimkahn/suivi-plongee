@@ -148,14 +148,20 @@ class NotationGroupeeTest {
         String grille = mvc.perform(get("/api/cursus/" + present + "/grille").header("Authorization", moniteur))
                 .andReturn().getResponse().getContentAsString();
         List<Long> ids = new ArrayList<>();
-        for (JsonNode c : json.readTree(grille).get("blocs").get(0).get("criteres")) ids.add(c.get("id").asLong());
+        JsonNode premierBloc = json.readTree(grille).get("blocs").get(0);
+        for (JsonNode c : premierBloc.get("criteres")) ids.add(c.get("id").asLong());
         long dejaAcquis = ids.get(0);
         long nonAborde = ids.get(1);
+        long maitrise = -1;
+        for (JsonNode e : premierBloc.get("exercices")) {
+            if ("MAITRISE".equals(e.get("phase").asText())) { maitrise = e.get("id").asLong(); break; }
+        }
 
         mvc.perform(post("/api/cursus/" + present + "/evaluations").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                 {"critereId":%d,"seanceId":%d,"statut":"ACQUIS"}""".formatted(dejaAcquis, seanceId)))
+                                 {"critereId":%d,"seanceId":%d,"statut":"ACQUIS","exerciceId":%d}"""
+                                .formatted(dejaAcquis, seanceId, maitrise)))
                 .andExpect(status().isCreated());
 
         JsonNode bilan = json.readTree(noterGroupe(moniteur, seanceId, List.of(present),

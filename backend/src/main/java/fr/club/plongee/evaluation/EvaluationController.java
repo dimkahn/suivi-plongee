@@ -9,7 +9,7 @@ import fr.club.plongee.evaluation.service.GrilleService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import fr.club.plongee.securite.UtilisateurPrincipal;
-    import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -27,14 +27,18 @@ public class EvaluationController {
     public record DemandeNotation(@NotNull Long critereId, Long seanceId,
                                   @NotNull StatutAcquisition statut,
                                   String commentaire, LocalDate dateEvaluation,
-                                  String referenceClient) {}
+                                  String referenceClient,
+                                  /** Exercice de la base sur lequel le critère est noté. */
+                                  Long exerciceId) {}
 
     public record DemandeValidation(String commentaire) {}
 
     public record EvaluationVue(Long id, Long critereId, String statut, String commentaire,
                                 LocalDate dateEvaluation, String parQui,
                                 /** N2/N3 noté en piscine ou fosse : suivi d'entraînement. */
-                                boolean entrainement) {}
+                                boolean entrainement,
+                                /** Exercice noté ; null pour une note sans exercice. */
+                                GrilleService.ExerciceNoteVue exercice) {}
 
     private final EvaluationService evaluations;
     private final GrilleService grilles;
@@ -76,7 +80,7 @@ public class EvaluationController {
         Evaluation e = evaluations.noter(cursusId,
                 new EvaluationService.Notation(demande.critereId(), demande.seanceId(),
                         demande.statut(), demande.commentaire(), demande.dateEvaluation(),
-                        demande.referenceClient()),
+                        demande.referenceClient(), demande.exerciceId()),
                 auteur);
         return vue(e);
     }
@@ -122,6 +126,6 @@ public class EvaluationController {
     private EvaluationVue vue(Evaluation e) {
         return new EvaluationVue(e.getId(), e.getCritere().getId(), e.getStatut().name(),
                 e.getCommentaire(), e.getDateEvaluation(), e.getMoniteur().nomComplet(),
-                e.isEntrainement());
+                e.isEntrainement(), GrilleService.ExerciceNoteVue.de(e.getExercice()));
     }
 }

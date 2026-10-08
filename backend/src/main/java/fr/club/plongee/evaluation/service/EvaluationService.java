@@ -13,7 +13,10 @@ import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.repository.CritereRepository;
+import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.UtilisateurPrincipal;
@@ -30,9 +33,16 @@ import java.util.stream.Collectors;
 @Service
 public class EvaluationService {
 
+    /** {@code exerciceId} : exercice de la base sur lequel le critère est noté, facultatif. */
     public record Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                            String commentaire, LocalDate dateEvaluation,
-                           String referenceClient) {}
+                           String referenceClient, Long exerciceId) {
+
+        public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
+                        String commentaire, LocalDate dateEvaluation, String referenceClient) {
+            this(critereId, seanceId, statut, commentaire, dateEvaluation, referenceClient, null);
+        }
+    }
 
     private final EvaluationRepository evaluations;
     private final ValidationCompetenceRepository validations;
@@ -42,6 +52,7 @@ public class EvaluationService {
     private final UtilisateurRepository utilisateurs;
     private final HabilitationService habilitation;
     private final ParticipationRepository participations;
+    private final ExerciceCompetenceRepository exercicesCompetence;
 
     public EvaluationService(EvaluationRepository evaluations,
                              ValidationCompetenceRepository validations,
@@ -50,7 +61,9 @@ public class EvaluationService {
                              CritereRepository criteres,
                              UtilisateurRepository utilisateurs,
                              HabilitationService habilitation,
-                             ParticipationRepository participations) {
+                             ParticipationRepository participations,
+                             ExerciceCompetenceRepository exercicesCompetence) {
+        this.exercicesCompetence = exercicesCompetence;
         this.evaluations = evaluations;
         this.validations = validations;
         this.cursusRepository = cursusRepository;
@@ -96,6 +109,10 @@ public class EvaluationService {
             throw new RegleMetierException("Une évaluation ne peut pas être datée dans le futur.");
         }
 
+        boolean entrainement = estEntrainement(cursus.getReferentiel(), seance);
+        ExerciceCompetence exercice = exercice(notation.exerciceId(), critere);
+        verifierExerciceDeMaitrise(cursus, critere, notation.statut(), entrainement, exercice);
+
         Utilisateur moniteur = utilisateurs.findById(auteur.id()).orElseThrow();
 
         Evaluation e = new Evaluation();
@@ -109,8 +126,55 @@ public class EvaluationService {
                 ? notation.dateEvaluation()
                 : (seance != null ? seance.getDateSeance() : LocalDate.now()));
         e.setReferenceClient(notation.referenceClient());
-        e.setEntrainement(estEntrainement(cursus.getReferentiel(), seance));
+        e.setEntrainement(entrainement);
+        e.setExercice(exercice);
         return evaluations.save(e);
+    }
+
+    /** L'exercice noté doit travailler la compétence du critère. Un exercice désactivé depuis reste accepté (saisie hors ligne). */
+    private ExerciceCompetence exercice(Long exerciceId, Critere critere) {
+        if (exerciceId == null) return null;
+        ExerciceCompetence exercice = exercicesCompetence.findById(exerciceId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Exercice introuvable"));
+        if (!exercice.getBloc().getId().equals(critere.getBloc().getId())) {
+            throw new RegleMetierException("L'exercice « " + exercice.libelle()
+                    + " » ne travaille pas la compétence « " + critere.getBloc().getIntitule() + " ».");
+        }
+        return exercice;
+    }
+
+    /**
+     * Base d'exercices (choix du club, 2026) : un critère d'une compétence qui
+     * a des exercices ne passe à « acquis » que sur un exercice de maîtrise.
+     * Un critère déjà acquis peut recevoir une note acquise sans exercice
+     * (simple commentaire, notation groupée) : il ne change pas d'état.
+     */
+    private void verifierExerciceDeMaitrise(Cursus cursus, Critere critere, StatutAcquisition statut,
+                                            boolean entrainement, ExerciceCompetence exercice) {
+        if (statut != StatutAcquisition.ACQUIS) return;
+        if (exercice != null && exercice.getPhase() == PhaseExercice.MAITRISE) return;
+        BlocCompetence bloc = critere.getBloc();
+        if (!exercicesCompetence.existsByBlocIdAndActifTrue(bloc.getId())) return;
+        boolean dejaAcquis = evaluations
+                .findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(cursus.getId(), critere.getId(), entrainement)
+                .map(e -> e.getStatut() == StatutAcquisition.ACQUIS)
+                .orElse(false);
+        if (dejaAcquis) return;
+
+        String maitrise = exercicesCompetence.parReferentiel(bloc.getReferentiel().getId()).stream()
+                .filter(x -> x.getBloc().getId().equals(bloc.getId()))
+                .filter(x -> x.isActif() && x.getPhase() == PhaseExercice.MAITRISE)
+                .map(ExerciceCompetence::getNumero)
+                .collect(Collectors.joining(", "));
+        String lesquels = maitrise.isEmpty() ? "" : " (" + maitrise + ")";
+        if (exercice == null) {
+            throw new RegleMetierException("« " + critere.getSavoirFaire()
+                    + " » ne passe à acquis que sur un exercice de maîtrise" + lesquels
+                    + " : indiquez l'exercice réalisé.");
+        }
+        throw new RegleMetierException("L'exercice « " + exercice.libelle() + " » est un exercice de "
+                + exercice.getPhase().libelle().toLowerCase() + " : seul un exercice de maîtrise" + lesquels
+                + " fait passer un critère à acquis. Notez-le « en cours ».");
     }
 
     /**

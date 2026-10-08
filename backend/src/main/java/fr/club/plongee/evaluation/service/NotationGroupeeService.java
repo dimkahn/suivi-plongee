@@ -43,8 +43,13 @@ public class NotationGroupeeService {
 
     public record NotationGroupee(List<Long> cursusIds, List<CritereCommente> criteres) {}
 
-    /** Un critère coché et le commentaire écrit pour lui. */
-    public record CritereCommente(Long critereId, String commentaire) {}
+    /** Un critère coché, le commentaire écrit pour lui et, facultatif, l'exercice de la base travaillé. */
+    public record CritereCommente(Long critereId, String commentaire, Long exerciceId) {
+
+        public CritereCommente(Long critereId, String commentaire) {
+            this(critereId, commentaire, null);
+        }
+    }
 
     /** Ce qui a été fait, pour le message affiché au moniteur. */
     public record BilanNotationGroupee(int eleves, int passesEnCours, int commentairesAjoutes) {}
@@ -78,14 +83,14 @@ public class NotationGroupeeService {
                 : demande.cursusIds().stream().distinct().toList();
         if (cursusIds.isEmpty()) throw new RegleMetierException("Choisissez au moins un élève.");
         // Un critère envoyé deux fois : on garde le dernier commentaire.
-        Map<Long, String> commentaires = new LinkedHashMap<>();
+        Map<Long, CritereCommente> commentaires = new LinkedHashMap<>();
         if (demande.criteres() != null) {
             for (CritereCommente c : demande.criteres()) {
                 if (c == null || c.critereId() == null) continue;
                 if (c.commentaire() == null || c.commentaire().isBlank()) {
                     throw new RegleMetierException("Écrivez un commentaire pour chaque critère coché.");
                 }
-                commentaires.put(c.critereId(), c.commentaire().trim());
+                commentaires.put(c.critereId(), new CritereCommente(c.critereId(), c.commentaire().trim(), c.exerciceId()));
             }
         }
         if (commentaires.isEmpty()) throw new RegleMetierException("Choisissez au moins un critère.");
@@ -110,13 +115,14 @@ public class NotationGroupeeService {
             Map<Long, StatutAcquisition> etat = (entrainement
                     ? evaluations.etatEntrainement(cursusId) : evaluations.etatCourant(cursusId)).stream()
                     .collect(Collectors.toMap(e -> e.getCritere().getId(), Evaluation::getStatut));
-            for (Map.Entry<Long, String> critere : commentaires.entrySet()) {
-                Long critereId = critere.getKey();
+            for (CritereCommente critere : commentaires.values()) {
+                Long critereId = critere.critereId();
                 StatutAcquisition avant = etat.getOrDefault(critereId, StatutAcquisition.NON_ABORDE);
                 StatutAcquisition apres = statutApres(avant);
                 try {
                     evaluationService.noter(cursusId, new EvaluationService.Notation(
-                            critereId, seanceId, apres, critere.getValue(), null, null), auteur);
+                            critereId, seanceId, apres, critere.commentaire(), null, null,
+                            critere.exerciceId()), auteur);
                 } catch (RegleMetierException refus) {
                     throw new RegleMetierException(eleve + " : " + refus.getMessage());
                 }
