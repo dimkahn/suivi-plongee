@@ -76,10 +76,11 @@ function versDemande(b: Brouillon): DemandeExercice {
       </select>
     }
     <p class="secondaire">
-      Chaque groupe d'entraînement prépare sa séance exercice par exercice. Rattachez chaque exercice à
-      une formation et aux critères qu'il fait travailler : la fiche de suivi des élèves du groupe les
-      mettra en avant, et « Noter les présents » pourra les cocher d'un coup. Le programme commun sert
-      à toute la séance (échauffement, séance sans groupes). Préparer un programme ne note aucun élève.
+      Chaque groupe d'entraînement prépare sa séance en choisissant les exercices des compétences
+      (initiation, perfectionnement, maîtrise) : chacun arrive avec les critères qu'il fait travailler,
+      la fiche de suivi des élèves du groupe les mettra en avant et l'exercice sera déjà choisi pour les
+      noter. Un exercice libre sert à l'échauffement ou à la nage. Le programme commun sert à toute la
+      séance (échauffement, séance sans groupes). Préparer un programme ne note aucun élève.
     </p>
 
     @if (!reseau.enLigne()) {
@@ -145,16 +146,41 @@ function versDemande(b: Brouillon): DemandeExercice {
       <ol class="exercices">
         @for (b of brouillons(); track b.cle; let i = $index, premier = $first, dernier = $last) {
           <li class="carte exercice">
+            @if (b.exerciceBase; as base) {
+              <!-- Exercice de la base des compétences : intitulé, formation et critères viennent de la base. -->
+              <div class="entete-exercice">
+                <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
+                <app-pastille-phase [phase]="base.phase" [numero]="base.numero" [intitule]="base.intitule" />
+                <strong class="intitule-lu">{{ base.intitule }}</strong>
+              </div>
+              <p class="secondaire">
+                {{ libelleFormationId(b.referentielId) }} · exercice de la base des compétences
+              </p>
+              @if (b.criteres.length > 0) {
+                <ul class="choisis">
+                  @for (c of b.criteres; track c.id) {
+                    <li><span><span class="bloc">{{ c.bloc }}</span> {{ c.savoirFaire }}</span></li>
+                  }
+                </ul>
+              }
+              <div class="champs">
+                <div class="duree">
+                  <label [for]="'duree-' + b.cle">Durée (min)</label>
+                  <input [id]="'duree-' + b.cle" type="number" min="1" max="600" inputmode="numeric"
+                         [(ngModel)]="b.dureeMinutes">
+                </div>
+              </div>
+              <label [for]="'consignes-' + b.cle">Consignes, déroulé</label>
+              <textarea [id]="'consignes-' + b.cle" rows="3" [(ngModel)]="b.consignes"></textarea>
+            } @else {
             <div class="entete-exercice">
               <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
-              @if (b.exerciceBase; as base) {
-                <app-pastille-phase [phase]="base.phase" [intitule]="'tiré de la base : ' + base.numero + ' ' + base.intitule" />
-              }
               <label class="visuellement-cache" [for]="'intitule-' + b.cle">Intitulé de l'exercice {{ i + 1 }}</label>
               <input [id]="'intitule-' + b.cle" type="text" maxlength="200" class="intitule"
-                     placeholder="ex. Vidage de masque en pleine eau" [(ngModel)]="b.intitule"
+                     placeholder="ex. Échauffement : 200 m de nage" [(ngModel)]="b.intitule"
                      [class.manquant]="!b.intitule.trim()">
             </div>
+            <p class="secondaire">Exercice libre</p>
 
             <div class="champs">
               <div>
@@ -229,6 +255,7 @@ function versDemande(b: Brouillon): DemandeExercice {
                 }
               </div>
             }
+            }
 
             <div class="actions-exercice">
               <button type="button" class="bouton-discret" [disabled]="premier" (click)="deplacer(i, -1)"
@@ -242,9 +269,11 @@ function versDemande(b: Brouillon): DemandeExercice {
       </ol>
 
       <div class="ajouts">
-        <button type="button" class="bouton-discret" (click)="ajouter()">+ Ajouter un exercice</button>
-        <button type="button" class="bouton-discret" (click)="ouvrirBase()" [disabled]="!reseau.enLigne()">
-          + Depuis la base d'exercices
+        <button type="button" class="bouton-principal ajout-base" (click)="ouvrirBase()" [disabled]="!reseau.enLigne()">
+          + Ajouter des exercices des compétences
+        </button>
+        <button type="button" class="bouton-discret" (click)="ajouter()">
+          + Exercice libre (échauffement, nage…)
         </button>
         <div class="reprise">
           <label for="reprise">Reprendre les exercices d'une autre séance</label>
@@ -267,7 +296,7 @@ function versDemande(b: Brouillon): DemandeExercice {
         }
       </div>
 
-      <app-dialogue [ouvert]="baseOuverte()" titre="Ajouter depuis la base d'exercices" [erreur]="erreurBase()"
+      <app-dialogue [ouvert]="baseOuverte()" titre="Ajouter des exercices des compétences" [erreur]="erreurBase()"
                     (fermer)="baseOuverte.set(false)">
         <label for="base-formation">Formation</label>
         <select id="base-formation" [ngModel]="baseReferentielId()" (ngModelChange)="choisirFormationBase($event)">
@@ -410,6 +439,7 @@ function versDemande(b: Brouillon): DemandeExercice {
     .phases { display: flex; flex-wrap: wrap; gap: var(--pas); margin: var(--pas-2) 0 var(--pas); }
     .phases .actif { background: var(--profond); color: #fff; border-color: var(--profond); }
     .reussite { display: block; font-size: .8125rem; }
+    .ajouts .ajout-base { width: auto; margin-top: 0; }
   `]
 })
 export class ProgrammeExercicesComponent {
@@ -541,6 +571,11 @@ export class ProgrammeExercicesComponent {
   libelleSeance(s: SeanceVue): string {
     const memeJour = this.seances().filter(x => x.date === s.date).length > 1;
     return `${dateFr(s.date)}${memeJour ? ' (séance ' + s.ordre + ')' : ''} — ${lieuEtSite(s) || 'lieu non précisé'}`;
+  }
+
+  libelleFormationId(referentielId: number | null): string {
+    const f = this.formations().find(x => x.referentielId === referentielId);
+    return f ? `${libellePreparation(f.niveau)} (MFT ${f.versionMft})` : 'Formation';
   }
 
   libelleFormation(f: FormationProgrammeVue): string {

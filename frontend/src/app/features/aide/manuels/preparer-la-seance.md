@@ -3,41 +3,39 @@ titre: Préparer la séance de son groupe
 rubrique: Moniteur
 videos: M18
 ecran: /presences
-mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, initiation, perfectionnement, maîtrise
+mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, exercices des compétences, initiation, perfectionnement, maîtrise, exercice libre
 questions:
 - Comment préparer le programme de ma séance ?
 - Comment ajouter des exercices à une séance ?
-- Comment construire une séance à partir de la base d'exercices ?
+- Comment construire une séance à partir des exercices des compétences ?
+- Comment ajouter un échauffement ?
 - Qui peut préparer le programme d'un groupe ?
 - Où voir ce que les autres groupes ont prévu ?
 ---
-Depuis « Présences », choisissez la séance puis « Préparer le programme » : une liste d'exercices, chacun avec ses consignes et les critères qu'il fait travailler. La fiche de chaque élève du groupe les reprend.
+Depuis « Présences », choisissez la séance puis « Préparer le programme », et ajoutez les exercices des compétences : chacun arrive avec ses critères, son déroulement et son critère de réussite. La fiche de chaque élève du groupe les reprend.
 
 ## Pas à pas
 
 1. Menu, « Présences », choisissez la séance et filtrez sur votre groupe.
 2. Sous le programme du mois, « Exercices de la séance » : touchez « Préparer le programme ».
-3. Votre groupe est déjà choisi. Ajoutez un exercice : intitulé, durée, consignes.
-4. La formation que prépare le groupe est proposée ; cochez les critères que l'exercice fait travailler.
-5. Ajoutez les exercices suivants ; « monter », « descendre » et « supprimer » règlent l'ordre de la séance.
-6. Enregistrez.
+3. Votre groupe est déjà choisi. Touchez « + Ajouter des exercices des compétences ».
+4. Choisissez la formation (celle que prépare le groupe est proposée), puis la compétence (celles au programme du mois en tête).
+5. Choisissez le temps : initiation, perfectionnement ou maîtrise, et cochez les exercices (« Voir le schéma » pour l'organisation dans l'eau). Vous pouvez passer d'une compétence à l'autre, les coches restent.
+6. « Ajouter » : les exercices arrivent dans la séance avec leur numéro, leurs critères, et leur déroulement et critère de réussite en consignes.
+7. Réglez la durée, complétez les consignes si besoin ; « monter », « descendre » et « supprimer » règlent l'ordre de la séance.
+8. Enregistrez.
 
-## Depuis la base d'exercices
+L'intitulé et les critères d'un exercice des compétences viennent de la base : pour les changer, voyez avec un administrateur (Administration, « Base d'exercices »).
 
-« + Depuis la base d'exercices » propose les exercices types de chaque compétence (le N1 pour commencer) :
+## Exercice libre
 
-1. Choisissez la formation, puis la compétence (celles au programme du mois en tête).
-2. Choisissez le temps : initiation, perfectionnement ou maîtrise.
-3. Cochez les exercices (« Voir le schéma » pour l'organisation dans l'eau), puis « Ajouter ».
-4. Chaque exercice arrive avec son numéro, son déroulement et son critère de réussite en consignes, et les critères qu'il travaille. Tout reste modifiable avant d'enregistrer.
-
-Dans la grille des élèves, l'exercice de la séance est alors **déjà choisi** pour noter ses critères.
+« + Exercice libre (échauffement, nage…) » ajoute un exercice qui n'est pas dans la base : vous écrivez son intitulé et ses consignes, et pouvez cocher des critères si besoin.
 
 ## Bon à savoir
 
+- Dans la grille des élèves, l'exercice de la séance est **déjà choisi** pour noter ses critères.
 - Préparer un programme **ne note aucun élève**.
 - Le programme d'un groupe est préparé par ses encadrants attitrés (ou un administrateur) ; les autres encadrants le consultent. Un encadrant que le planning du bassin met dans ce groupe le jour de la séance le prépare aussi.
 - Le **programme commun** sert à toute la séance (échauffement, sortie sans groupes) : tout encadrant peut le préparer.
-- Dans la grille d'un élève, les critères travaillés à la séance portent le nom de l'exercice.
 - Dans « Noter les présents », un bouton coche d'un coup les critères des exercices.
 - Le programme se prépare avant comme après la séance.

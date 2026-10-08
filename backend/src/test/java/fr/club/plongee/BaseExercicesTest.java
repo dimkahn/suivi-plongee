@@ -205,6 +205,10 @@ class BaseExercicesTest {
             // 1.4 Test du lestage : « Choix de son matériel personnel ».
             assertThat(lu.get("critereIds")).hasSize(1);
             assertThat(lu.get("critereIds").get(0).asLong()).isEqualTo(base.get("critereIds").get(0).asLong());
+            // Envoyé sans critère : l'exercice du programme reprend ceux de la base.
+            JsonNode criteres = programme.get("exercices").get(0).get("criteres");
+            assertThat(criteres).hasSize(1);
+            assertThat(criteres.get(0).get("id").asLong()).isEqualTo(base.get("critereIds").get(0).asLong());
         } finally {
             mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
         }
