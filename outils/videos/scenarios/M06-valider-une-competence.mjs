@@ -1,5 +1,5 @@
 // M6 — Valider une compétence (un bloc entier).
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09 (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, ouvrirBloc, bloc, critere, noter } from '../grille.mjs';
 
 export default {
@@ -20,7 +20,7 @@ export default {
     await legende('Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.', 4000);
 
     await legende('Anis a choisi et réglé son matériel seul : dernier critère acquis.', 0);
-    await noter(g, 'Choix de son matériel personnel', 'Acquis');
+    await noter(g, 'Choix de son matériel personnel', 'Acquis', 'Matériel personnel et lestage adapté');
 
     const b = bloc(page, 'S\'équiper et se déséquiper');
     await b.scrollIntoViewIfNeeded();

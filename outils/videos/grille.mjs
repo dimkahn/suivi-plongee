@@ -25,10 +25,30 @@ export async function ouvrirBloc({ page, toucher }, intitule) {
   }
 }
 
-/** Touche l'état voulu (« Non abordé », « En cours », « Acquis ») d'un critère et attend l'enregistrement. */
-export async function noter({ page, pause, toucher }, savoirFaire, etat) {
+/**
+ * Dans la fenêtre « Exercice réalisé », touche l'exercice dont l'intitulé
+ * contient `intitule`. La fenêtre ne s'ouvre que si aucun exercice n'est
+ * encore choisi pour ce critère : sinon, rien à faire.
+ */
+export async function choisirExercice({ page, pause, toucher }, intitule) {
+  const choix = page.locator('dialog[open] button.choix-exo').filter({ hasText: intitule });
+  const ouverte = await choix.first().waitFor({ timeout: 3000 }).then(() => true, () => false);
+  if (!ouverte) return;
+  await pause(1500);
+  await toucher(choix.first(), { apres: 300 });
+}
+
+/**
+ * Touche l'état voulu (« Non abordé », « En cours », « Acquis ») d'un critère
+ * et attend l'enregistrement. Au N1, la note porte sur un exercice (choix du
+ * club, 2026) : `exercice` est l'intitulé de l'exercice réalisé, choisi dans
+ * la fenêtre qui s'ouvre ; seul un exercice de maîtrise rend le critère acquis.
+ */
+export async function noter(g, savoirFaire, etat, exercice = null) {
+  const { page, pause, toucher } = g;
   const ligne = critere(page, savoirFaire);
   await toucher(ligne.locator('.etats').getByRole('button', { name: etat, exact: true }), { apres: 300 });
+  if (exercice) await choisirExercice(g, exercice);
   await ligne.locator('.enregistrement').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {});
   await pause(900);
 }

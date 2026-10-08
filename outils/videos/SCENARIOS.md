@@ -20,7 +20,7 @@ Compte : `e3@club.fr` · format téléphone · 70 s
 1. L'appli du club remplace le classeur partagé : elle se manie au téléphone, au bord du bassin.
 2. « Infos élèves » : toute la saison, CACI, séances suivies.
 3. Un nom ouvre la grille de compétences du MFT.
-4. Un toucher par critère ; les règles du MFT sont vérifiées par le serveur.
+4. Un toucher par critère, sur l'exercice réalisé ; les règles du MFT sont vérifiées par le serveur.
 5. « Présences » : l'appel de la séance.
 6. « Planning » : où va chaque groupe ce soir, et qui sera là.
 7. « Fiches de sécurité » : la fiche du directeur de plongée, prête avant la mise à l'eau.
@@ -100,13 +100,15 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 5. Seules les séances où l'élève est noté présent sont proposées : faites l'appel d'abord.
 6. « Au programme » : les compétences que la progression prévoit ce mois-ci.
 7. Chaque critère a trois états : non abordé, en cours, acquis.
-8. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, c'est acquis.
-9. Votre nom et la date s'affichent sous le critère.
-10. Le palmage de sustentation est en cours…
-11. … on laisse un mot pour le prochain encadrant.
-12. Le commentaire reste affiché sous le critère.
-13. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
-14. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
+8. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
+9. La note porte sur l'exercice réalisé : choisissez-le, l'appli le demande s'il manque.
+10. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
+11. Votre nom et la date s'affichent sous le critère.
+12. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
+13. … on laisse un mot pour le prochain encadrant.
+14. Le commentaire reste affiché sous le critère.
+15. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
+16. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 
@@ -116,11 +118,11 @@ Compte : `e2@club.fr` · format téléphone · 41 s
 
 1. Séance du jour choisie, comme d'habitude.
 2. Le vidage de masque était « en cours », avec un commentaire de Tiago.
-3. Anis l'a réussi ce soir : on le passe en acquis.
+3. Anis l'a réussi ce soir, en pleine eau : on le passe en acquis sur cet exercice de maîtrise.
 4. Rien n'est jamais effacé : chaque note s'ajoute à l'historique.
 5. Qui a noté quoi, et quand. Utile pour le suivi… et pour le prochain encadrant.
-6. Et si on se trompe de ligne ?
-7. Il suffit de toucher le bon état : la correction s'ajoute à la suite.
+6. Et si on se trompe d'état ?
+7. C'était encore hésitant : touchez le bon état, la correction s'ajoute à la suite.
 8. L'erreur et sa correction restent visibles : c'est voulu.
 
 ### M6 — Valider une compétence

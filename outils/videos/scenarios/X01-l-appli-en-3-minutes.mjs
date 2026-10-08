@@ -1,7 +1,7 @@
 // X1 — L'appli en 3 minutes.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
-import { critere } from '../grille.mjs';
+import { critere, choisirExercice } from '../grille.mjs';
 
 export default {
   id: 'X1',
@@ -10,7 +10,8 @@ export default {
   resume: 'Le tour de l\'appli pour qui la découvre : grille, présences, planning, fiches de sécurité, matériel.',
   compte: 'e3@club.fr',
 
-  async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, choisirDerniereSeance }) {
+  async jouer(g) {
+    const { page, pause, legende, toucher, menu, defiler, enHaut, vignette, choisirDerniereSeance } = g;
     await page.goto(`${APPLI}/eleves`);
     await pause(1200);
     await legende('L\'appli du club remplace le classeur partagé : elle se manie au téléphone, au bord du bassin.', 4000);
@@ -22,8 +23,10 @@ export default {
     await choisirDerniereSeance();
     await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1000 });
     const ligne = critere(page, 'Capelage et décapelage');
-    await toucher(ligne.locator('.etats').getByRole('button', { name: 'Acquis', exact: true }), { apres: 1500 });
-    await legende('Un toucher par critère ; les règles du MFT sont vérifiées par le serveur.', 3500);
+    await toucher(ligne.locator('.etats').getByRole('button', { name: 'Acquis', exact: true }), { apres: 300 });
+    await choisirExercice(g, 'Déséquipement et rééquipement en surface');
+    await pause(1200);
+    await legende('Un toucher par critère, sur l\'exercice réalisé ; les règles du MFT sont vérifiées par le serveur.', 4000);
 
     await legende('« Présences » : l\'appel de la séance.', 0);
     await menu('Présences');

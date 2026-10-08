@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09 (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
@@ -14,7 +14,7 @@ export default {
   compte: 'e2@club.fr',
 
   async jouer(g) {
-    const { page, pause, legende, toucher, saisir, menu, vignette } = g;
+    const { page, pause, legende, toucher, saisir, choisir, menu, vignette } = g;
 
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
@@ -31,26 +31,28 @@ export default {
 
     await legende('Votre groupe est déjà choisi. Les autres groupes et le programme commun sont à côté.', 4000);
 
-    await legende('Premier exercice : son intitulé, sa durée, les consignes.', 0);
-    await toucher(page.getByRole('button', { name: '+ Ajouter un exercice' }), { apres: 900 });
+    await legende('On part des exercices des compétences : « + Ajouter des exercices des compétences ».', 0);
+    await toucher(page.getByRole('button', { name: '+ Ajouter des exercices des compétences' }), { apres: 1200 });
+    const base = page.locator('dialog[open]');
+    await legende('La formation que prépare le groupe est proposée d\'office. Choisissez la compétence…', 0);
+    await choisir(base.locator('#base-competence'), 'Évoluer dans l\'eau - Se ventiler', { exact: false });
+    await legende('… puis le temps : initiation, perfectionnement ou maîtrise.', 0);
+    await toucher(base.getByRole('button', { name: 'Initiation', exact: true }), { apres: 900 });
+    await toucher(base.locator('label').filter({ hasText: 'Vidage de masque, paliers 1 à 3' }).locator('input'), { apres: 900 });
+    await toucher(base.getByRole('button', { name: /^Ajouter \d+ exercice/ }), { apres: 1500 });
     let exercice = page.locator('li.exercice').last();
-    await saisir(exercice.getByLabel('Intitulé de l\'exercice 1'), 'Vidage de masque');
+    await legende('L\'exercice arrive avec son numéro, ses critères, son déroulement et son critère de réussite.', 4000);
     await saisir(exercice.getByLabel('Durée (min)'), '15');
-    await saisir(exercice.getByLabel('Consignes, déroulé'), 'Par deux, à genoux au fond, puis en pleine eau.');
-    await legende('La formation que prépare le groupe est proposée d\'office.', 3000);
 
-    await legende('Puis les critères que l\'exercice fait travailler.', 0);
-    await toucher(exercice.getByRole('button', { name: 'Choisir les critères' }), { apres: 1200 });
-    await cocherCritere(g, exercice, 'Vidage du masque');
-    await legende('Les blocs « Au programme » du mois viennent en premier.', 3000);
-
-    await legende('Un deuxième exercice, même chose.', 0);
-    await toucher(page.getByRole('button', { name: '+ Ajouter un exercice' }), { apres: 900 });
+    await legende('Pour la nage ou l\'échauffement : un exercice libre.', 0);
+    await toucher(page.getByRole('button', { name: /^\+ Exercice libre/ }), { apres: 900 });
     exercice = page.locator('li.exercice').last();
     await saisir(exercice.getByLabel('Intitulé de l\'exercice 2'), 'Palmage 200 m');
+    await toucher(exercice.getByRole('button', { name: 'Perfectionnement', exact: true }), { apres: 700 });
     await toucher(exercice.getByRole('button', { name: 'Choisir les critères' }), { apres: 1200 });
     await cocherCritere(g, exercice, 'Palmage ventral en surface');
     await toucher(exercice.getByRole('button', { name: 'Fermer la liste des critères' }), { apres: 900 });
+    await legende('Avec une phase et des critères, il sert aussi à noter.', 3000);
     await legende('Monter, descendre, supprimer : l\'ordre est celui de la séance.', 3000);
     await vignette();
 
