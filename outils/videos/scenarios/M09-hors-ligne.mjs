@@ -1,7 +1,7 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09 (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
-import { critere } from '../grille.mjs';
+import { critere, choisirExercice } from '../grille.mjs';
 
 export default {
   id: 'M9',
@@ -35,7 +35,9 @@ export default {
     await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1000 });
     await legende('On note comme d\'habitude…', 0);
     const ligne = critere(page, 'Palmage dorsal');
-    await toucher(ligne.locator('.etats').getByRole('button', { name: 'Acquis', exact: true }), { apres: 1500 });
+    await toucher(ligne.locator('.etats').getByRole('button', { name: 'Acquis', exact: true }), { apres: 300 });
+    await choisirExercice(g, 'Parcours de surface en PMT');
+    await pause(1200);
     await legende('… la note attend sur le téléphone : « En attente d\'envoi ».', 3500);
     await vignette();
     await page.locator('app-bandeau-sync').scrollIntoViewIfNeeded().catch(() => {});
