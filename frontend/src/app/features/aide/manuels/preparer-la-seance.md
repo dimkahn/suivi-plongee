@@ -3,10 +3,11 @@ titre: Préparer la séance de son groupe
 rubrique: Moniteur
 videos: M18
 ecran: /presences
-mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun
+mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, initiation, perfectionnement, maîtrise
 questions:
 - Comment préparer le programme de ma séance ?
 - Comment ajouter des exercices à une séance ?
+- Comment construire une séance à partir de la base d'exercices ?
 - Qui peut préparer le programme d'un groupe ?
 - Où voir ce que les autres groupes ont prévu ?
 ---
@@ -20,6 +21,17 @@ Depuis « Présences », choisissez la séance puis « Préparer le programme »
 4. La formation que prépare le groupe est proposée ; cochez les critères que l'exercice fait travailler.
 5. Ajoutez les exercices suivants ; « monter », « descendre » et « supprimer » règlent l'ordre de la séance.
 6. Enregistrez.
+
+## Depuis la base d'exercices
+
+« + Depuis la base d'exercices » propose les exercices types de chaque compétence (le N1 pour commencer) :
+
+1. Choisissez la formation, puis la compétence (celles au programme du mois en tête).
+2. Choisissez le temps : initiation, perfectionnement ou maîtrise.
+3. Cochez les exercices, puis « Ajouter ».
+4. Chaque exercice arrive avec son numéro, son déroulement et son critère de réussite en consignes, et les critères de sa compétence. Tout reste modifiable avant d'enregistrer.
+
+Dans la grille des élèves, l'exercice de la séance est alors **déjà choisi** pour noter la compétence.
 
 ## Bon à savoir
 

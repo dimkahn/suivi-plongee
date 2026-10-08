@@ -11,7 +11,10 @@ import { AuthService } from '../../core/auth.service';
 import { FileAttenteService } from '../../core/file-attente.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
-import { BlocVue, CritereVue, CursusVue, EvaluationVue, GrilleVue, SeanceVue, Statut } from '../../core/modeles';
+import {
+  BlocVue, CritereVue, CursusVue, EvaluationVue, ExerciceBaseVue, ExerciceNoteVue, GrilleVue, SeanceVue, Statut
+} from '../../core/modeles';
+import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
@@ -24,6 +27,8 @@ interface SuiviAffiche {
   parQui: string | null;
   le: string | null;
   commentaire: string | null;
+  /** Exercice de la base sur lequel la dernière note a été prise. */
+  exercice: ExerciceNoteVue | null;
   enAttente: boolean;
   /** Saisie en cours d'envoi au serveur (en ligne) : on affiche un indicateur. */
   enregistrement: boolean;
@@ -33,7 +38,7 @@ interface SuiviAffiche {
  * Les champs hérités portent l'évaluation (en milieu naturel pour un N2/N3),
  * `entr` le suivi d'entraînement en piscine et fosse (N2/N3 seulement).
  */
-interface CritereAffiche extends Omit<CritereVue, 'entrainement'>, SuiviAffiche {
+interface CritereAffiche extends Omit<CritereVue, 'entrainement' | 'exercice'>, SuiviAffiche {
   entr: SuiviAffiche;
 }
 
@@ -42,13 +47,20 @@ interface BlocAffiche extends Omit<BlocVue, 'criteres'> {
   attentes: number;
 }
 
+/** Une saisie en cours d'envoi au serveur. */
+interface EnVol {
+  statut: Statut;
+  reference: string;
+  exercice: ExerciceNoteVue | null;
+}
+
 /** Clé d'une saisie en cours d'envoi : un critère peut avoir les deux suivis en vol. */
 const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' : 'n'}${critereId}`;
 
 @Component({
   selector: 'app-grille',
   standalone: true,
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent],
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -295,6 +307,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           <ol>
             @for (e of exercicesSeance(); track $index) {
               <li>
+                @if (e.exerciceBase; as base) {
+                  <app-pastille-phase [phase]="base.phase" [intitule]="base.intitule" />
+                }
                 <strong>{{ e.intitule }}</strong>
                 <span class="secondaire"> · {{ e.groupe ?? 'programme commun' }}</span>
                 @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
@@ -392,6 +407,25 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               }
             </div>
           }
+          @if (bloc.exercices?.length && peutSaisir() && !bloc.valide) {
+            @let choisi = exerciceChoisi(bloc);
+            <div class="choix-exercice">
+              <span class="titre-choix">Exercice réalisé</span>
+              <button type="button" class="choix-seance" aria-haspopup="dialog" (click)="ouvrirChoixExercice(bloc)">
+                @if (choisi) {
+                  <app-pastille-phase [phase]="choisi.phase" [numero]="choisi.numero" [intitule]="choisi.intitule" />
+                  <span class="libelle-choix">{{ choisi.intitule }}</span>
+                } @else {
+                  <span class="libelle-choix">Aucun exercice choisi</span>
+                }
+                <span class="changer">Changer</span>
+              </button>
+              @if (choisi?.critereReussite) {
+                <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
+              }
+              <span class="secondaire">Seul un exercice de maîtrise fait passer un critère à « Acquis ».</span>
+            </div>
+          }
           <ul [id]="'criteres-' + bloc.id">
             @for (critere of bloc.criteres; track critere.id) {
               @let actif = suiviActif(critere);
@@ -414,6 +448,12 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                       <span class="attente">En attente d'envoi</span>
                     } @else if (actif.parQui) {
                       <span class="secondaire trace">{{ actif.parQui }} · {{ actif.le | dateFr }}</span>
+                    }
+                    @if (actif.exercice; as exo) {
+                      <span class="exercice-note">
+                        <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+                        <span class="secondaire">{{ exo.intitule }}</span>
+                      </span>
                     }
                     @if (actif.commentaire) {
                       <span class="dernier-commentaire">« {{ actif.commentaire }} »</span>
@@ -487,6 +527,12 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                               {{ entree.dateEvaluation | dateFr }} · {{ entree.parQui }} · {{ libelleStatut(entree.statut) }}
                               @if (entree.entrainement) { · <span class="etiquette-entrainement">piscine / fosse</span> }
                             </span>
+                            @if (entree.exercice; as exo) {
+                              <span class="exercice-note">
+                                <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+                                {{ exo.intitule }}
+                              </span>
+                            }
                             @if (entree.commentaire) { <p>{{ entree.commentaire }}</p> }
                           </div>
                         }
@@ -502,6 +548,36 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
         </section>
         }
       }
+
+      <app-dialogue [ouvert]="choixExercice() !== null" [titre]="'Exercice réalisé — ' + (choixExercice()?.intitule ?? '')"
+                    [erreur]="erreurChoixExercice()" (fermer)="fermerChoixExercice()">
+        @if (choixExercice(); as bloc) {
+          @for (phase of phases; track phase.valeur) {
+            @let duTemps = exercicesDeLaPhase(bloc, phase.valeur);
+            @if (duTemps.length > 0) {
+              <h3 class="titre-phase">{{ phase.libelle }}</h3>
+              <ul class="liste-exercices">
+                @for (e of duTemps; track e.id) {
+                  <li>
+                    <button type="button" class="choix-exo" [class.actif]="exerciceChoisi(bloc)?.id === e.id"
+                            [attr.aria-pressed]="exerciceChoisi(bloc)?.id === e.id" (click)="choisirExercice(bloc, e.id)">
+                      <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
+                      <span class="intitule-exo">{{ e.intitule }}</span>
+                      @if (e.critereReussite) { <span class="secondaire">Réussite : {{ e.critereReussite }}</span> }
+                    </button>
+                    @if (e.deroulement) {
+                      <details class="deroulement"><summary>Déroulement</summary><p>{{ e.deroulement }}</p></details>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          }
+          <div class="actions-dialogue">
+            <button type="button" class="bouton-discret" (click)="choisirExercice(bloc, null)">Noter sans exercice</button>
+          </div>
+        }
+      </app-dialogue>
     } @else if (erreurChargement()) {
       <div class="carte vide">
         <p>Cette grille n'est pas disponible hors ligne.</p>
@@ -606,6 +682,25 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
       background: var(--profond); color: #fff; font-size: .75rem; font-weight: 700;
     }
     .pastille.en-retard { background: var(--en-cours-clair); border: 1px solid var(--en-cours); color: var(--en-cours); }
+
+    /* Base d'exercices : l'exercice réalisé s'applique aux notes de la compétence. */
+    .choix-exercice { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--pas-2); }
+    .choix-exercice .titre-choix { font-weight: 700; font-size: .9375rem; }
+    .choix-exercice .choix-seance { display: flex; align-items: center; gap: var(--pas); max-width: 520px; }
+    .choix-exercice .secondaire { font-size: .8125rem; }
+    .exercice-note { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .titre-phase { margin: var(--pas-2) 0 var(--pas); font-size: 1rem; color: var(--profond); }
+    .liste-exercices { display: grid; gap: var(--pas); }
+    .liste-exercices li { border: none; padding: 0; }
+    .choix-exo {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; min-height: 44px;
+      padding: var(--pas) var(--pas-2); text-align: left; border: 1px solid var(--trait); border-radius: var(--r-s);
+      background: var(--carte); color: var(--encre); font: inherit; cursor: pointer;
+    }
+    .choix-exo.actif { border: 2px solid var(--profond); background: #EEF6F8; }
+    .intitule-exo { font-weight: 700; }
+    .deroulement summary { padding: 12px var(--pas-2); line-height: 20px; color: var(--profond); font-size: .875rem; cursor: pointer; }
+    .deroulement p { margin: 0; padding: 0 var(--pas-2) var(--pas); font-size: .875rem; }
 
     /* Textes du MFT (révisions post-PE20) : la compétence attendue reste visible,
        le reste se déplie à la demande pour ne pas repousser les critères. */
@@ -719,7 +814,7 @@ export class GrilleComponent implements OnDestroy {
   urlPhoto = signal<string | null>(null);
   exportEnCours = signal(false);
   /** Critères en cours d'enregistrement : `cle(critère, entraînement)` → saisie envoyée. */
-  enregistrements = signal<Map<string, { statut: Statut; reference: string }>>(new Map());
+  enregistrements = signal<Map<string, EnVol>>(new Map());
   validationEnCours = signal<number | null>(null);
 
   /** Historique des critères consultés, tenu par critereId. */
@@ -816,18 +911,23 @@ export class GrilleComponent implements OnDestroy {
       const differee = attentes.get(cle(critereId, entrainement));
       // Pendant l'envoi puis le rechargement, on garde le statut choisi :
       // sinon l'ancien réapparaîtrait entre la fin de l'envoi et la grille à jour.
-      if (enCours) return { ...base, statut: enCours.statut, enAttente: false, enregistrement: true };
+      if (enCours) {
+        return { ...base, statut: enCours.statut, exercice: enCours.exercice, enAttente: false, enregistrement: true };
+      }
       return differee
-        ? { ...base, statut: differee.statut, enAttente: true, enregistrement: false, le: differee.dateEvaluation }
+        ? { ...base, statut: differee.statut, enAttente: true, enregistrement: false, le: differee.dateEvaluation,
+            exercice: this.exerciceDeLaFile(differee.exerciceId) }
         : { ...base, enAttente: false, enregistrement: false };
     };
 
     let acquisTotal = 0;
     const blocs: BlocAffiche[] = g.blocs.map(bloc => {
-      const criteres: CritereAffiche[] = bloc.criteres.map(({ entrainement, ...c }) => ({
+      const criteres: CritereAffiche[] = bloc.criteres.map(({ entrainement, exercice, ...c }) => ({
         ...c,
-        ...suivi(c, c.id, false),
-        entr: suivi(entrainement ?? { statut: 'NON_ABORDE', parQui: null, le: null, commentaire: null }, c.id, true)
+        ...suivi({ ...c, exercice: exercice ?? null }, c.id, false),
+        entr: suivi(entrainement
+          ? { ...entrainement, exercice: entrainement.exercice ?? null }
+          : { statut: 'NON_ABORDE', parQui: null, le: null, commentaire: null, exercice: null }, c.id, true)
       }));
       const acquis = criteres.filter(c => c.statut === 'ACQUIS').length;
       acquisTotal += acquis;
@@ -952,6 +1052,79 @@ export class GrilleComponent implements OnDestroy {
     return parCritere;
   });
 
+  // ----------------------------------------------------------------
+  //  Base d'exercices : l'exercice réalisé, choisi par compétence.
+  // ----------------------------------------------------------------
+
+  readonly phases = PHASES;
+  /** Choix explicites du moniteur pour la séance en cours : blocId → exercice (null : sans exercice). */
+  exercicesChoisis = signal<Record<number, number | null>>({});
+  /** Compétence dont le dialogue de choix d'exercice est ouvert. */
+  choixExercice = signal<BlocAffiche | null>(null);
+  erreurChoixExercice = signal<string | null>(null);
+  /** Note retenue en attendant le choix d'un exercice de maîtrise, rejouée une fois l'exercice choisi. */
+  private noteEnSuspens: { critere: CritereAffiche; statut: Statut } | null = null;
+
+  /**
+   * Exercice appliqué aux notes d'une compétence : le choix du moniteur,
+   * sinon l'exercice de la base le plus avancé que le programme de la séance
+   * prévoit pour cette compétence.
+   */
+  exerciceChoisi(bloc: BlocVue | BlocAffiche): ExerciceBaseVue | null {
+    const exercices = bloc.exercices ?? [];
+    const choix = this.exercicesChoisis();
+    if (bloc.id in choix) return exercices.find(e => e.id === choix[bloc.id]) ?? null;
+    const prevus = new Set(this.exercicesSeance().map(e => e.exerciceBase?.id).filter(id => id != null));
+    const rang = (e: ExerciceBaseVue) => PHASES.findIndex(p => p.valeur === e.phase);
+    return exercices.filter(e => prevus.has(e.id)).sort((a, b) => rang(b) - rang(a))[0] ?? null;
+  }
+
+  exercicesDeLaPhase(bloc: BlocAffiche, phase: string): ExerciceBaseVue[] {
+    return (bloc.exercices ?? []).filter(e => e.phase === phase);
+  }
+
+  ouvrirChoixExercice(bloc: BlocAffiche, erreur: string | null = null): void {
+    this.erreurChoixExercice.set(erreur);
+    this.choixExercice.set(bloc);
+  }
+
+  fermerChoixExercice(): void {
+    this.choixExercice.set(null);
+    this.erreurChoixExercice.set(null);
+    this.noteEnSuspens = null;
+  }
+
+  choisirExercice(bloc: BlocAffiche, exerciceId: number | null): void {
+    this.exercicesChoisis.set({ ...this.exercicesChoisis(), [bloc.id]: exerciceId });
+    const enSuspens = this.noteEnSuspens;
+    this.fermerChoixExercice();
+    if (enSuspens) void this.noter(bloc, enSuspens.critere, enSuspens.statut);
+  }
+
+  /**
+   * Même règle que le serveur : un critère d'une compétence qui a des
+   * exercices ne passe à « acquis » que sur un exercice de maîtrise.
+   */
+  private refusMaitrise(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): string | null {
+    const exercices = bloc.exercices ?? [];
+    if (statut !== 'ACQUIS' || exercices.length === 0) return null;
+    if (this.exerciceChoisi(bloc)?.phase === 'MAITRISE') return null;
+    if (this.suiviActif(critere).statut === 'ACQUIS') return null;
+    const numeros = exercices.filter(e => e.phase === 'MAITRISE').map(e => e.numero).join(', ');
+    return `« ${critere.savoirFaire} » ne passe à acquis que sur un exercice de maîtrise (${numeros}) : `
+      + 'choisissez l’exercice réalisé.';
+  }
+
+  /** Exercice d'une saisie en attente, retrouvé dans la base livrée avec la grille. */
+  private exerciceDeLaFile(exerciceId: number | null | undefined): ExerciceNoteVue | null {
+    if (exerciceId == null) return null;
+    for (const bloc of this.grille()?.blocs ?? []) {
+      const e = bloc.exercices?.find(x => x.id === exerciceId);
+      if (e) return { id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId };
+    }
+    return null;
+  }
+
   blocsDesExercices = computed(() => {
     const criteres = this.critereExercices();
     return new Set((this.grille()?.blocs ?? [])
@@ -1007,6 +1180,9 @@ export class GrilleComponent implements OnDestroy {
   private reinitialiser(): void {
     this.grille.set(null);
     this.seanceId.set(null);
+    this.exercicesChoisis.set({});
+    this.choixExercice.set(null);
+    this.noteEnSuspens = null;
     this.enregistrements.set(new Map());
     this.validationEnCours.set(null);
     this.dialogueSeanceOuvert.set(false);
@@ -1092,12 +1268,15 @@ export class GrilleComponent implements OnDestroy {
     if (duJour.length === 1) this.choisirDepuisDialogue(duJour[0]);
   }
 
+  /** Une autre séance, d'autres exercices : les choix repartent du programme de la séance. */
   choisirDepuisDialogue(s: SeanceVue): void {
+    if (s.id !== this.seanceId()) this.exercicesChoisis.set({});
     this.seanceId.set(s.id);
     this.fermerDialogueSeance();
   }
 
   retirerSeance(): void {
+    this.exercicesChoisis.set({});
     this.seanceId.set(null);
     this.fermerDialogueSeance();
   }
@@ -1125,15 +1304,25 @@ export class GrilleComponent implements OnDestroy {
       this.message.set(refus);
       return;
     }
+    // « Acquis » sans exercice de maîtrise : on ouvre le choix de l'exercice,
+    // et la note part dès qu'un exercice de maîtrise est choisi.
+    const sansMaitrise = this.refusMaitrise(bloc, critere, statut);
+    if (sansMaitrise) {
+      this.ouvrirChoixExercice(bloc, sansMaitrise);
+      this.noteEnSuspens = { critere, statut };
+      return;
+    }
 
     this.message.set(null);
+    const exercice = this.exerciceChoisi(bloc);
     const saisie = await this.file.empiler({
       cursusId: Number(this.id()),
       critereId: critere.id,
       seanceId: seance ? seance.id : null,
       statut,
       commentaire: null,
-      dateEvaluation: seance ? seance.date : dateDuJour()
+      dateEvaluation: seance ? seance.date : dateDuJour(),
+      exerciceId: exercice?.id ?? null
     });
 
     // Hors ligne : rien à attendre, le badge « En attente d'envoi » suffit.
@@ -1141,7 +1330,9 @@ export class GrilleComponent implements OnDestroy {
 
     // En ligne : indicateur jusqu'à ce que la grille du serveur soit à jour.
     const enVol = cle(critere.id, entrainement);
-    this.marquerEnregistrement(enVol, { statut, reference: saisie.referenceClient });
+    this.marquerEnregistrement(enVol, {
+      statut, reference: saisie.referenceClient, exercice: this.exerciceDeLaFile(exercice?.id)
+    });
     try {
       if (await this.file.attendreEnvoi(saisie.referenceClient)) await this.charger();
     } finally {
@@ -1162,7 +1353,7 @@ export class GrilleComponent implements OnDestroy {
     return this.modeEntrainement() ? critere : critere.entr;
   }
 
-  private marquerEnregistrement(enVol: string, valeur: { statut: Statut; reference: string } | null): void {
+  private marquerEnregistrement(enVol: string, valeur: EnVol | null): void {
     const suivante = new Map(this.enregistrements());
     if (valeur) suivante.set(enVol, valeur);
     else suivante.delete(enVol);
@@ -1313,7 +1504,8 @@ export class GrilleComponent implements OnDestroy {
       seanceId: seance ? seance.id : null,
       statut: this.suiviActif(critere).statut,
       commentaire: texte,
-      dateEvaluation: seance ? seance.date : dateDuJour()
+      dateEvaluation: seance ? seance.date : dateDuJour(),
+      exerciceId: this.exerciceChoisi(bloc)?.id ?? null
     });
 
     const restants = { ...this.brouillons() };

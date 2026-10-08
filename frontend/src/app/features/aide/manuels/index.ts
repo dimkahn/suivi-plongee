@@ -33,6 +33,7 @@ import groupesEntrainement from './groupes-entrainement.md';
 import planningDesSoirees from './planning-des-soirees.md';
 import progressionType from './progression-type.md';
 import referentielMft from './referentiel-mft.md';
+import baseDExercices from './base-d-exercices.md';
 import organiserUneSortie from './organiser-une-sortie.md';
 
 import inventaireMateriel from './inventaire-materiel.md';
@@ -87,6 +88,7 @@ const SOURCES: Record<string, string> = {
   'planning-des-soirees': planningDesSoirees,
   'progression-type': progressionType,
   'referentiel-mft': referentielMft,
+  'base-d-exercices': baseDExercices,
   'organiser-une-sortie': organiserUneSortie,
 
   'inventaire-materiel': inventaireMateriel,

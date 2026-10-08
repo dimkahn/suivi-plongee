@@ -6,9 +6,11 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import {
-  BlocReferentielVue, DemandeExercice, ExerciceVue, FormationProgrammeVue, GroupeProgrammeVue, ProgressionVue,
-  ReferentielVue, SeanceVue
+  BlocReferentielVue, DemandeExercice, ExerciceBaseVue, ExerciceNoteVue, ExerciceVue, FormationProgrammeVue,
+  GroupeProgrammeVue, PhaseExercice, ProgressionVue, ReferentielVue, SeanceVue
 } from '../../core/modeles';
+import { DialogueComponent } from '../../core/dialogue.component';
+import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { dateFr } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { libellePreparation } from '../../core/niveaux';
@@ -23,6 +25,8 @@ interface Brouillon {
   referentielId: number | null;
   /** Critères cochés, avec de quoi les afficher sans recharger le référentiel. */
   criteres: { id: number; bloc: string; savoirFaire: string }[];
+  /** Exercice de la base dont celui-ci est tiré ; null pour un exercice libre. */
+  exerciceBase: ExerciceNoteVue | null;
 }
 
 let prochaineCle = 1;
@@ -31,7 +35,8 @@ function versBrouillon(e: ExerciceVue): Brouillon {
   return {
     cle: prochaineCle++, intitule: e.intitule, consignes: e.consignes ?? '', dureeMinutes: e.dureeMinutes,
     referentielId: e.referentielId,
-    criteres: e.criteres.map(c => ({ id: c.id, bloc: c.bloc, savoirFaire: c.savoirFaire }))
+    criteres: e.criteres.map(c => ({ id: c.id, bloc: c.bloc, savoirFaire: c.savoirFaire })),
+    exerciceBase: e.exerciceBase ?? null
   };
 }
 
@@ -39,7 +44,8 @@ function versDemande(b: Brouillon): DemandeExercice {
   return {
     intitule: b.intitule.trim(), consignes: b.consignes.trim() || null,
     dureeMinutes: b.dureeMinutes || null, referentielId: b.referentielId,
-    critereIds: b.referentielId == null ? [] : b.criteres.map(c => c.id)
+    critereIds: b.referentielId == null ? [] : b.criteres.map(c => c.id),
+    exerciceBaseId: b.referentielId == null ? null : b.exerciceBase?.id ?? null
   };
 }
 
@@ -53,7 +59,7 @@ function versDemande(b: Brouillon): DemandeExercice {
  */
 @Component({
   selector: 'app-programme-exercices',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent],
   template: `
     <a routerLink="/presences" class="retour">← Présences</a>
     <h1>Programme d'exercices</h1>
@@ -110,6 +116,9 @@ function versDemande(b: Brouillon): DemandeExercice {
               <li class="carte exercice">
                 <div class="entete-exercice">
                   <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
+                  @if (e.exerciceBase; as base) {
+                    <app-pastille-phase [phase]="base.phase" [intitule]="base.intitule" />
+                  }
                   <strong class="intitule-lu">{{ e.intitule }}</strong>
                 </div>
                 <p class="secondaire">
@@ -137,6 +146,9 @@ function versDemande(b: Brouillon): DemandeExercice {
           <li class="carte exercice">
             <div class="entete-exercice">
               <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
+              @if (b.exerciceBase; as base) {
+                <app-pastille-phase [phase]="base.phase" [intitule]="'tiré de la base : ' + base.numero + ' ' + base.intitule" />
+              }
               <label class="visuellement-cache" [for]="'intitule-' + b.cle">Intitulé de l'exercice {{ i + 1 }}</label>
               <input [id]="'intitule-' + b.cle" type="text" maxlength="200" class="intitule"
                      placeholder="ex. Vidage de masque en pleine eau" [(ngModel)]="b.intitule"
@@ -230,6 +242,9 @@ function versDemande(b: Brouillon): DemandeExercice {
 
       <div class="ajouts">
         <button type="button" class="bouton-discret" (click)="ajouter()">+ Ajouter un exercice</button>
+        <button type="button" class="bouton-discret" (click)="ouvrirBase()" [disabled]="!reseau.enLigne()">
+          + Depuis la base d'exercices
+        </button>
         <div class="reprise">
           <label for="reprise">Reprendre les exercices d'une autre séance</label>
           <select id="reprise" [ngModel]="null" (ngModelChange)="reprendre($event)" [disabled]="!reseau.enLigne()">
@@ -250,6 +265,59 @@ function versDemande(b: Brouillon): DemandeExercice {
           <span class="secondaire">Modifications non enregistrées.</span>
         }
       </div>
+
+      <app-dialogue [ouvert]="baseOuverte()" titre="Ajouter depuis la base d'exercices" [erreur]="erreurBase()"
+                    (fermer)="baseOuverte.set(false)">
+        <label for="base-formation">Formation</label>
+        <select id="base-formation" [ngModel]="baseReferentielId()" (ngModelChange)="choisirFormationBase($event)">
+          @for (f of formations(); track f.referentielId) {
+            <option [ngValue]="f.referentielId">{{ libelleFormation(f) }}</option>
+          }
+        </select>
+        @if (baseReferentielId() != null && referentiels().get(baseReferentielId()!); as ref) {
+          <label for="base-competence">Compétence</label>
+          <select id="base-competence" [ngModel]="baseBlocId()" (ngModelChange)="baseBlocId.set($event)">
+            @for (bloc of blocsAvecExercices(ref); track bloc.id) {
+              <option [ngValue]="bloc.id">
+                {{ bloc.intitule }}{{ auProgramme(ref.id).has(bloc.id) ? ' — au programme' : '' }}
+              </option>
+            }
+          </select>
+          @if (blocsAvecExercices(ref).length === 0) {
+            <p class="secondaire">Pas encore de base d'exercices pour cette formation.</p>
+          }
+          <div class="phases" role="group" aria-label="Phase">
+            @for (p of phases; track p.valeur) {
+              <button type="button" class="bouton-discret" [class.actif]="basePhase() === p.valeur"
+                      [attr.aria-pressed]="basePhase() === p.valeur" (click)="basePhase.set(p.valeur)">
+                {{ p.libelle }}
+              </button>
+            }
+          </div>
+          <ul class="liste-coches">
+            @for (e of exercicesProposes(); track e.id) {
+              <li>
+                <label>
+                  <input type="checkbox" [checked]="baseCoches().has(e.id)" (change)="basculerBase(e.id)">
+                  <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
+                  <span>
+                    <strong>{{ e.intitule }}</strong>
+                    @if (e.critereReussite) { <span class="secondaire reussite">Réussite : {{ e.critereReussite }}</span> }
+                  </span>
+                </label>
+              </li>
+            }
+          </ul>
+        } @else if (baseReferentielId() != null) {
+          <p class="secondaire">Chargement de la base d'exercices…</p>
+        }
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" [disabled]="baseCoches().size === 0" (click)="ajouterDepuisBase()">
+            Ajouter {{ baseCoches().size > 0 ? baseCoches().size + ' exercice(s)' : '' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="baseOuverte.set(false)">Annuler</button>
+        </div>
+      </app-dialogue>
       }
     }
   `,
@@ -329,6 +397,9 @@ function versDemande(b: Brouillon): DemandeExercice {
       gap: var(--pas-2); margin-top: var(--pas-3); padding: var(--pas-2) 0; background: var(--fond);
     }
     .barre-enregistrement .bouton-principal { width: auto; margin-top: 0; }
+    .phases { display: flex; flex-wrap: wrap; gap: var(--pas); margin: var(--pas-2) 0 var(--pas); }
+    .phases .actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .reussite { display: block; font-size: .8125rem; }
   `]
 })
 export class ProgrammeExercicesComponent {
@@ -475,7 +546,7 @@ export class ProgrammeExercicesComponent {
     const nouveau: Brouillon = {
       cle: prochaineCle++, intitule: '', consignes: '', dureeMinutes: null,
       referentielId: precedent ? precedent.referentielId : duGroupe?.referentielId ?? null,
-      criteres: []
+      criteres: [], exerciceBase: null
     };
     this.brouillons.set([...this.brouillons(), nouveau]);
     this.message.set(null);
@@ -493,11 +564,100 @@ export class ProgrammeExercicesComponent {
     this.brouillons.set(liste);
   }
 
+  // ----------------------------------------------------------------
+  //  Base d'exercices : ajouter des exercices types au programme.
+  // ----------------------------------------------------------------
+
+  readonly phases = PHASES;
+  baseOuverte = signal(false);
+  erreurBase = signal<string | null>(null);
+  baseReferentielId = signal<number | null>(null);
+  baseBlocId = signal<number | null>(null);
+  basePhase = signal<PhaseExercice>('INITIATION');
+  baseCoches = signal<Set<number>>(new Set());
+  /** Base d'exercices chargée par formation. */
+  private bases = signal<Map<number, ExerciceBaseVue[]>>(new Map());
+
+  exercicesProposes = computed(() => {
+    const ref = this.baseReferentielId();
+    return (ref == null ? [] : this.bases().get(ref) ?? [])
+      .filter(e => e.actif && e.blocId === this.baseBlocId() && e.phase === this.basePhase());
+  });
+
+  /** Formation proposée d'emblée : celle que prépare le groupe, sinon la première de la liste. */
+  ouvrirBase(): void {
+    const niveau = this.groupeChoisi()?.niveauPrepare;
+    const defaut = (niveau ? this.formations().find(f => f.niveau === niveau) : null) ?? this.formations()[0];
+    this.erreurBase.set(null);
+    this.baseCoches.set(new Set());
+    this.baseOuverte.set(true);
+    if (this.baseReferentielId() == null && defaut) void this.choisirFormationBase(defaut.referentielId);
+  }
+
+  async choisirFormationBase(referentielId: number): Promise<void> {
+    this.baseReferentielId.set(referentielId);
+    this.baseCoches.set(new Set());
+    this.erreurBase.set(null);
+    try {
+      await this.chargerReferentiel(referentielId);
+      if (!this.bases().has(referentielId)) {
+        const liste = await firstValueFrom(this.api.exercicesBase(referentielId));
+        this.bases.set(new Map(this.bases()).set(referentielId, liste));
+      }
+      const ref = this.referentiels().get(referentielId);
+      const blocs = ref ? this.blocsAvecExercices(ref) : [];
+      this.baseBlocId.set(blocs[0]?.id ?? null);
+    } catch (e) {
+      this.erreurBase.set((e as HttpErrorResponse).error?.detail ?? 'Impossible de charger la base d\'exercices.');
+    }
+  }
+
+  /** Compétences qui ont des exercices, celles au programme du mois d'abord. */
+  blocsAvecExercices(ref: ReferentielVue): BlocReferentielVue[] {
+    const avec = new Set((this.bases().get(ref.id) ?? []).filter(e => e.actif).map(e => e.blocId));
+    return this.blocsTries(ref).filter(b => avec.has(b.id));
+  }
+
+  basculerBase(id: number): void {
+    const coches = new Set(this.baseCoches());
+    if (coches.has(id)) coches.delete(id); else coches.add(id);
+    this.baseCoches.set(coches);
+  }
+
+  /**
+   * Un exercice de la base devient un exercice du programme : son numéro et
+   * son intitulé, son déroulement et son critère de réussite en consignes,
+   * et tous les critères de sa compétence. Tout reste modifiable ensuite.
+   */
+  ajouterDepuisBase(): void {
+    const referentielId = this.baseReferentielId();
+    const ref = referentielId == null ? null : this.referentiels().get(referentielId);
+    if (!ref) return;
+    const coches = this.baseCoches();
+    const choisis = (this.bases().get(ref.id) ?? []).filter(e => coches.has(e.id));
+    const nouveaux: Brouillon[] = choisis.map(e => {
+      const bloc = ref.blocs.find(b => b.id === e.blocId);
+      const consignes = [e.deroulement, e.critereReussite ? 'Réussite : ' + e.critereReussite : null]
+        .filter(Boolean).join('\n');
+      return {
+        cle: prochaineCle++, intitule: `${e.numero} ${e.intitule}`, consignes, dureeMinutes: null,
+        referentielId: ref.id,
+        criteres: (bloc?.criteres ?? []).map(c => ({ id: c.id, bloc: bloc!.intitule, savoirFaire: c.savoirFaire })),
+        exerciceBase: { id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId }
+      };
+    });
+    this.brouillons.set([...this.brouillons(), ...nouveaux]);
+    this.baseCoches.set(new Set());
+    this.baseOuverte.set(false);
+    this.message.set(`${nouveaux.length} exercice(s) ajouté(s) depuis la base : vérifiez-les puis enregistrez.`);
+  }
+
   /** Changer de formation vide les critères : ils appartiennent à l'ancienne. */
   changerFormation(b: Brouillon, referentielId: number | null): void {
     if (b.referentielId === referentielId) return;
     b.referentielId = referentielId;
     b.criteres = [];
+    b.exerciceBase = null;
     this.brouillons.set([...this.brouillons()]);
     if (this.choixOuvert() === b.cle && referentielId != null) void this.chargerReferentiel(referentielId);
   }

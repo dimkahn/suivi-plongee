@@ -50,10 +50,11 @@ public class GrilleService {
                                        ExerciceNoteVue exercice) {}
 
     /** L'exercice sur lequel une note a ete prise : de quoi afficher « M 1.7 » sans autre requete. */
-    public record ExerciceNoteVue(Long id, String numero, String intitule, String phase) {
+    public record ExerciceNoteVue(Long id, String numero, String intitule, String phase, Long blocId) {
 
         public static ExerciceNoteVue de(ExerciceCompetence e) {
-            return e == null ? null : new ExerciceNoteVue(e.getId(), e.getNumero(), e.getIntitule(), e.getPhase().name());
+            return e == null ? null : new ExerciceNoteVue(e.getId(), e.getNumero(), e.getIntitule(),
+                    e.getPhase().name(), e.getBloc().getId());
         }
     }
 

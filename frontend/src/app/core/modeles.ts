@@ -75,6 +75,8 @@ export interface CritereVue {
    * mise en cache avant son arrivée.
    */
   entrainement?: SuiviEntrainementVue | null;
+  /** Exercice de la base sur lequel la dernière note a été prise ; null sans exercice. */
+  exercice?: ExerciceNoteVue | null;
 }
 
 export interface SuiviEntrainementVue {
@@ -82,6 +84,48 @@ export interface SuiviEntrainementVue {
   parQui: string;
   le: string;
   commentaire: string | null;
+  exercice?: ExerciceNoteVue | null;
+}
+
+// ----------------------------------------------------------------
+//  Base d'exercices par compétence (initiation, perfectionnement, maîtrise).
+// ----------------------------------------------------------------
+
+export type PhaseExercice = 'INITIATION' | 'PERFECTIONNEMENT' | 'MAITRISE';
+
+/** Un exercice de la base, rattaché à une compétence (bloc) d'une version du MFT. */
+export interface ExerciceBaseVue {
+  id: number;
+  blocId: number;
+  /** Numéro du document du club, « 1.7 ». */
+  numero: string;
+  ordre: number;
+  phase: PhaseExercice;
+  intitule: string;
+  deroulement: string | null;
+  critereReussite: string | null;
+  /** Désactivé : plus proposé, mais lisible sur les notes passées. */
+  actif: boolean;
+}
+
+/** L'exercice sur lequel une note a été prise. */
+export interface ExerciceNoteVue {
+  id: number;
+  numero: string;
+  intitule: string;
+  phase: PhaseExercice;
+  /** Compétence travaillée. */
+  blocId: number;
+}
+
+export interface DemandeExerciceBase {
+  numero: string;
+  ordre: number;
+  phase: PhaseExercice;
+  intitule: string;
+  deroulement: string | null;
+  critereReussite: string | null;
+  actif: boolean;
 }
 
 export interface BlocVue {
@@ -108,6 +152,8 @@ export interface BlocVue {
   /** Échéance passée, bloc non validé et critères pas tous acquis (calculé par le serveur). */
   enRetard: boolean;
   criteres: CritereVue[];
+  /** Base d'exercices de la compétence (actifs). Absent d'une grille mise en cache avant son arrivée. */
+  exercices?: ExerciceBaseVue[];
 }
 
 /** Une période de la progression suivie par le cursus. */
@@ -169,6 +215,8 @@ export interface ExerciceGrilleVue {
   /** Groupe d'entraînement qui l'a préparé ; null : programme commun de la séance. */
   groupe?: string | null;
   critereIds: number[];
+  /** Exercice de la base dont il est tiré ; null pour un exercice libre. */
+  exerciceBase?: ExerciceNoteVue | null;
 }
 
 export interface ProgrammeGrilleVue {
@@ -199,6 +247,8 @@ export interface ExerciceVue {
   referentielId: number | null;
   niveau: 'N1' | 'N2' | 'N3' | null;
   criteres: CritereExerciceVue[];
+  /** Exercice de la base dont il est tiré ; null pour un exercice libre. */
+  exerciceBase: ExerciceNoteVue | null;
 }
 
 /** Formation proposée : celles des élèves de la saison (effectif), puis les versions actives du MFT. */
@@ -236,6 +286,7 @@ export interface DemandeExercice {
   dureeMinutes: number | null;
   referentielId: number | null;
   critereIds: number[];
+  exerciceBaseId: number | null;
 }
 
 export interface SeanceVue {
@@ -265,6 +316,8 @@ export interface EvaluationVue {
   parQui: string;
   /** N2/N3 noté en piscine ou en fosse : suivi d'entraînement. */
   entrainement?: boolean;
+  /** Exercice de la base noté ; null sans exercice. */
+  exercice?: ExerciceNoteVue | null;
 }
 
 export interface MoniteurVue {
@@ -331,6 +384,9 @@ export interface CelluleMatrice {
   parQui: string;
   /** N2/N3 noté en piscine ou fosse : suivi d'entraînement, sans effet sur l'acquisition. */
   entrainement?: boolean;
+  /** Exercice de la base noté, détaillé dans `MatriceVue.exercices`. */
+  exerciceId?: number | null;
+  commentaire?: string | null;
 }
 
 export interface LigneMatrice {
@@ -348,6 +404,8 @@ export interface MatriceVue {
   milieuNaturelExclusif?: boolean;
   seances: SeanceEnTete[];
   lignes: LigneMatrice[];
+  /** Base d'exercices de la formation, pour détailler les exercices notés. */
+  exercices?: ExerciceBaseVue[];
 }
 
 export type JourSemaine = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
@@ -729,7 +787,8 @@ export interface FeuillePresence {
  */
 export interface DemandeNotationGroupee {
   cursusIds: number[];
-  criteres: { critereId: number; commentaire: string }[];
+  /** `exerciceId` : exercice de la base travaillé, facultatif. */
+  criteres: { critereId: number; commentaire: string; exerciceId?: number | null }[];
 }
 
 export interface BilanNotationGroupee {

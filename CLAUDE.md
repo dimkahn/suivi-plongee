@@ -409,6 +409,30 @@ critères travaillés à la séance choisie ; la notation groupée propose de
 cocher d'un coup les critères des exercices (du groupe filtré et du commun),
 chacun gardant son commentaire obligatoire.
 
+**Base d'exercices par compétence (2026, N1 d'abord).** `ExerciceCompetence`
+(paquet `referentiel`, table `exercice_competence`, V50) : des exercices types
+rattachés à un bloc d'une version du MFT, chacun avec un numéro (celui du
+document du club, « 1.7 »), une `PhaseExercice` (INITIATION, PERFECTIONNEMENT,
+MAITRISE), un déroulement et un critère de réussite. V51 installe les 90
+exercices du N1 PE20 (9 par compétence) ; attention, le document numérote
+« 9 » Retourner en surface et « 10 » Évoluer en sécurité, rangés dans l'ordre
+inverse par V7 : le rattachement se fait sur l'ordre du bloc, les numéros
+restent ceux du document. Ensuite la base se modifie depuis `/admin/exercices`
+(`ExerciceCompetenceController`, ADMIN ; lecture MONITEUR) ; un exercice déjà
+noté ne se supprime pas, il se désactive. **Chaque note porte l'exercice
+réalisé** (`evaluation.exercice_id`, facultatif, choisi par compétence dans la
+grille, présélectionné d'après le programme de la séance) et **seul un
+exercice de maîtrise fait passer un critère à acquis** (choix du club,
+`EvaluationService.verifierExerciceDeMaitrise`, tous chemins) pour une
+compétence qui a des exercices actifs ; un critère déjà acquis se commente
+sans exercice, une compétence sans exercice (N2/N3 pour l'instant, bloc
+transverse) se note comme avant. Le programme d'une séance peut piocher
+dans la base (`exercice_seance.exercice_competence_id`, « + Depuis la base
+d'exercices »). Lecture : pastille I/P/M sous chaque critère de la grille,
+dans l'historique et dans chaque case de la vue globale, dont un clic sur
+une séance détaille les exercices notés (`MatriceVue.exercices`). Pas de
+suivi séparé par phase : la phase ne fait que qualifier la note.
+
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via
 `@habilitation.peutEvaluer(#cursusId, authentication)` qui compare le niveau

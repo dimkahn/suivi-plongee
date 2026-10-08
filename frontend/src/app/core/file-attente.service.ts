@@ -15,6 +15,8 @@ export interface SaisieEnAttente {
   statut: Statut;
   commentaire: string | null;
   dateEvaluation: string;
+  /** Exercice de la base noté ; absent des saisies mises en file avant son arrivée. */
+  exerciceId?: number | null;
   creeLe: number;
   tentatives: number;
 }
@@ -149,7 +151,8 @@ export class FileAttenteService {
             seanceId: s.seanceId,
             statut: s.statut,
             commentaire: s.commentaire,
-            dateEvaluation: s.dateEvaluation
+            dateEvaluation: s.dateEvaluation,
+            exerciceId: s.exerciceId ?? null
           })))
       );
 
@@ -197,7 +200,8 @@ export class FileAttenteService {
       seanceId,
       statut: refus.statut,
       commentaire: refus.commentaire,
-      dateEvaluation: refus.dateEvaluation
+      dateEvaluation: refus.dateEvaluation,
+      exerciceId: refus.exerciceId ?? null
     });
   }
 

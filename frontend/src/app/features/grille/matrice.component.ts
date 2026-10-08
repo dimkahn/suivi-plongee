@@ -2,8 +2,10 @@ import { Component, computed, inject, input, signal, ChangeDetectionStrategy } f
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { CelluleMatrice, LigneMatrice, MatriceVue, SeanceEnTete } from '../../core/modeles';
-import { DateFrPipe } from '../../core/date-fr';
+import { CelluleMatrice, ExerciceBaseVue, LigneMatrice, MatriceVue, SeanceEnTete } from '../../core/modeles';
+import { DateFrPipe, dateFr } from '../../core/date-fr';
+import { DialogueComponent } from '../../core/dialogue.component';
+import { PHASES, PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
 
 const LIBELLES: Record<string, string> = {
   NON_ABORDE: 'NA', EN_COURS: 'ECA', ACQUIS: 'A'
@@ -11,7 +13,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-matrice',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, PastillePhaseComponent],
   template: `
     <a [routerLink]="['/cursus', id()]" class="retour">&larr; Retour à la grille</a>
 
@@ -57,6 +59,15 @@ const LIBELLES: Record<string, string> = {
         }
         · {{ seancesAffichees().length }} séance(s) sur {{ m.seances.length }}
       </p>
+      @if (m.exercices?.length) {
+        <p class="legende secondaire">
+          Exercice noté :
+          <app-pastille-phase phase="INITIATION" /> initiation
+          <app-pastille-phase phase="PERFECTIONNEMENT" /> perfectionnement
+          <app-pastille-phase phase="MAITRISE" /> maîtrise
+          · touchez une date pour voir les exercices de la séance
+        </p>
+      }
 
       @if (lignesAffichees().length === 0) {
         <div class="carte vide"><p>Tous les critères sont acquis{{ m.milieuNaturelExclusif ? ' en milieu naturel' : '' }}.</p></div>
@@ -71,7 +82,11 @@ const LIBELLES: Record<string, string> = {
               </th>
               @for (s of seancesAffichees(); track s.id) {
                 <th class="entete-seance" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'">
-                  <span class="date-seance">{{ s.date | dateFr }}</span>
+                  <button type="button" class="ouvrir-seance" (click)="ouvrirSeance(s)"
+                          [attr.aria-label]="'Exercices notés le ' + (s.date | dateFr)">
+                    <span class="date-seance">{{ s.date | dateFr }}</span>
+                    @if (nombreExercices(s.id); as n) { <span class="nb-exercices">{{ n }} exercice{{ n > 1 ? 's' : '' }}</span> }
+                  </button>
                   @if (s.lieu) { <span class="lieu-seance">{{ s.lieu }}</span> }
                   <span class="milieu-seance" [class.naturel]="s.milieu === 'NATUREL'">
                     {{ s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine / fosse' }}
@@ -119,8 +134,12 @@ const LIBELLES: Record<string, string> = {
                 </td>
                 @for (s of seancesAffichees(); track s.id) {
                   @let cellule = cellulePour(item.ligne, s.id);
-                  <td [class]="classe(cellule)" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'">
+                  <td [class]="classe(cellule)" [class.colonne-entrainement]="m.milieuNaturelExclusif && s.milieu !== 'NATUREL'"
+                      [class.cliquable]="!!cellule" (click)="cellule && ouvrirSeance(s)">
                     <span class="statut">{{ libelle(cellule) }}</span>
+                    @if (exerciceDe(cellule); as exo) {
+                      <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+                    }
                     @if (cellule) {
                       <span class="moniteur">{{ cellule.parQui }}</span>
                     }
@@ -132,6 +151,54 @@ const LIBELLES: Record<string, string> = {
         </table>
       </div>
       }
+
+      <app-dialogue [ouvert]="seanceOuverte() !== null" [titre]="titreSeance()" (fermer)="seanceOuverte.set(null)">
+        @if (seanceOuverte(); as s) {
+          @let detail = detailSeance(s.id);
+          @if (detail.exercices.length === 0 && detail.sansExercice.length === 0) {
+            <p class="secondaire">Aucune note pour {{ m.eleve }} à cette séance.</p>
+          }
+          @for (d of detail.exercices; track d.exercice.id) {
+            <section class="exercice-seance">
+              <h3>
+                <app-pastille-phase [phase]="d.exercice.phase" [numero]="d.exercice.numero" [intitule]="d.exercice.intitule" />
+                {{ d.exercice.intitule }}
+                <span class="phase-texte">{{ libellePhase(d.exercice.phase) }}</span>
+              </h3>
+              @if (d.exercice.deroulement) { <p class="texte-exercice">{{ d.exercice.deroulement }}</p> }
+              @if (d.exercice.critereReussite) {
+                <p class="texte-exercice"><strong>Réussite :</strong> {{ d.exercice.critereReussite }}</p>
+              }
+              <ul class="notes-seance">
+                @for (n of d.notes; track $index) {
+                  <li>
+                    <span [class]="'pastille ' + suffixe(n.cellule)">{{ libelle(n.cellule) }}</span>
+                    {{ n.critere }} <span class="secondaire">· {{ n.cellule.parQui }}</span>
+                    @if (n.cellule.commentaire) { <span class="commentaire-note">« {{ n.cellule.commentaire }} »</span> }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+          @if (detail.sansExercice.length > 0) {
+            <section class="exercice-seance">
+              <h3>Notes sans exercice</h3>
+              <ul class="notes-seance">
+                @for (n of detail.sansExercice; track $index) {
+                  <li>
+                    <span [class]="'pastille ' + suffixe(n.cellule)">{{ libelle(n.cellule) }}</span>
+                    {{ n.critere }} <span class="secondaire">· {{ n.cellule.parQui }}</span>
+                    @if (n.cellule.commentaire) { <span class="commentaire-note">« {{ n.cellule.commentaire }} »</span> }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+          <div class="actions-dialogue">
+            <button type="button" class="bouton-discret" (click)="seanceOuverte.set(null)">Fermer</button>
+          </div>
+        }
+      </app-dialogue>
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -229,6 +296,20 @@ const LIBELLES: Record<string, string> = {
     .cellule.acquis  { background: var(--acquis-clair); }
     .cellule.acquis  .statut { color: var(--acquis); font-weight: 700; }
     .cellule.neant   .statut { color: var(--craie); }
+    .cellule app-pastille-phase { margin-top: 2px; }
+    td.cliquable { cursor: pointer; }
+    .ouvrir-seance {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 44px; padding: 0;
+      background: none; border: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    }
+    .ouvrir-seance .date-seance { text-decoration: underline; }
+    .nb-exercices { font-size: .6875rem; font-weight: 400; color: var(--profond); }
+    .exercice-seance { margin-bottom: var(--pas-3); }
+    .exercice-seance h3 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); margin: 0 0 var(--pas); font-size: 1rem; }
+    .phase-texte { font-size: .8125rem; font-weight: 400; color: var(--craie); }
+    .texte-exercice { margin: 0 0 var(--pas); font-size: .875rem; max-width: 70ch; }
+    .notes-seance { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .875rem; }
+    .commentaire-note { display: block; font-style: italic; margin-left: 40px; }
 
     /* Sur téléphone, 240px de colonne figée ne laissaient presque plus de
        place aux séances. */
@@ -295,6 +376,64 @@ export class MatriceComponent {
 
   constructor() {
     queueMicrotask(() => this.charger());
+  }
+
+  // ----------------------------------------------------------------
+  //  Base d'exercices : l'exercice noté dans chaque case, et le détail
+  //  des exercices d'une séance au clic.
+  // ----------------------------------------------------------------
+
+  readonly libellePhase = libellePhase;
+  seanceOuverte = signal<SeanceEnTete | null>(null);
+
+  private exercicesParId = computed(() =>
+    new Map((this.matrice()?.exercices ?? []).map(e => [e.id, e] as const)));
+
+  exerciceDe(cellule: CelluleMatrice | null): ExerciceBaseVue | null {
+    return cellule?.exerciceId == null ? null : this.exercicesParId().get(cellule.exerciceId) ?? null;
+  }
+
+  /** Exercices différents notés à une séance, pour l'en-tête de colonne. */
+  nombreExercices(seanceId: number): number {
+    const ids = new Set<number>();
+    for (const l of this.matrice()?.lignes ?? []) {
+      for (const c of l.historique) if (c.seanceId === seanceId && c.exerciceId != null) ids.add(c.exerciceId);
+    }
+    return ids.size;
+  }
+
+  ouvrirSeance(s: SeanceEnTete): void {
+    this.seanceOuverte.set(s);
+  }
+
+  titreSeance(): string {
+    const s = this.seanceOuverte();
+    return s ? `Séance du ${dateFr(s.date)}${s.lieu ? ' — ' + s.lieu : ''}` : '';
+  }
+
+  /** Toutes les notes de la séance, regroupées par exercice (de l'initiation à la maîtrise), puis celles sans exercice. */
+  detailSeance(seanceId: number): {
+    exercices: { exercice: ExerciceBaseVue; notes: { critere: string; cellule: CelluleMatrice }[] }[];
+    sansExercice: { critere: string; cellule: CelluleMatrice }[];
+  } {
+    const parExercice = new Map<number, { critere: string; cellule: CelluleMatrice }[]>();
+    const sansExercice: { critere: string; cellule: CelluleMatrice }[] = [];
+    for (const l of this.matrice()?.lignes ?? []) {
+      for (const c of l.historique) {
+        if (c.seanceId !== seanceId) continue;
+        const note = { critere: l.savoirFaire, cellule: c };
+        if (c.exerciceId != null && this.exercicesParId().has(c.exerciceId)) {
+          parExercice.set(c.exerciceId, [...(parExercice.get(c.exerciceId) ?? []), note]);
+        } else {
+          sansExercice.push(note);
+        }
+      }
+    }
+    const rang = (e: ExerciceBaseVue) => PHASES.findIndex(p => p.valeur === e.phase);
+    const exercices = [...parExercice.entries()]
+      .map(([id, notes]) => ({ exercice: this.exercicesParId().get(id)!, notes }))
+      .sort((a, b) => rang(a.exercice) - rang(b.exercice) || a.exercice.ordre - b.exercice.ordre);
+    return { exercices, sansExercice };
   }
 
   private charger(): void {
