@@ -17,6 +17,7 @@ import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
+import fr.club.plongee.referentiel.SchemaExerciceService;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.CritereRepository;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
@@ -58,7 +59,14 @@ public class ProgrammeSeanceService {
                               Integer dureeMinutes, Long referentielId, String niveau,
                               List<CritereExerciceVue> criteres, GrilleService.ExerciceNoteVue exerciceBase,
                               /** Initiation, perfectionnement ou maîtrise ; null si non précisée. */
-                              String phase) {}
+                              String phase,
+                              /** Celui de la base, ou saisi pour un exercice libre ; null sinon. */
+                              String critereReussite,
+                              /**
+                               * Un schéma existe : celui de la base (/api/exercices/{id}/schema) ou,
+                               * pour un exercice libre, {@code schemaId} (…/programme/schemas/{id}).
+                               */
+                              boolean aSchema, Long schemaId) {}
 
     /** Une formation proposée pour les exercices : celles des élèves de la saison, puis les versions actives. */
     public record FormationVue(Long referentielId, String niveau, String versionMft, int eleves) {}
@@ -76,14 +84,18 @@ public class ProgrammeSeanceService {
     public record ProgrammeVue(Long seanceId, List<FormationVue> formations, List<GroupeProgrammeVue> groupes,
                                List<ExerciceVue> exercices) {}
 
-    /** {@code phase} : facultative, pour un exercice libre ; ignorée pour un exercice de la base. */
+    /**
+     * {@code phase}, {@code critereReussite}, {@code schemaId} (déposé avant par
+     * {@link SchemaProgrammeService#deposer}) : facultatifs, pour un exercice
+     * libre ; ignorés pour un exercice de la base, qui garde ceux de la base.
+     */
     public record DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
                                   Long referentielId, List<Long> critereIds, Long exerciceBaseId,
-                                  PhaseExercice phase) {
+                                  PhaseExercice phase, String critereReussite, Long schemaId) {
 
         public DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
                                Long referentielId, List<Long> critereIds) {
-            this(intitule, consignes, dureeMinutes, referentielId, critereIds, null, null);
+            this(intitule, consignes, dureeMinutes, referentielId, critereIds, null, null, null, null);
         }
     }
 
@@ -95,13 +107,18 @@ public class ProgrammeSeanceService {
     private final GroupeEntrainementRepository groupes;
     private final AffectationEncadrantRepository changementsEncadrants;
     private final ExerciceCompetenceRepository exercicesBase;
+    private final SchemaExerciceService schemasBase;
+    private final SchemaProgrammeService schemasProgramme;
 
     public ProgrammeSeanceService(SeanceRepository seances, ExerciceSeanceRepository exercices,
                                   ReferentielRepository referentiels, CritereRepository criteres,
                                   CursusRepository cursus, GroupeEntrainementRepository groupes,
                                   AffectationEncadrantRepository changementsEncadrants,
-                                  ExerciceCompetenceRepository exercicesBase) {
+                                  ExerciceCompetenceRepository exercicesBase,
+                                  SchemaExerciceService schemasBase, SchemaProgrammeService schemasProgramme) {
         this.exercicesBase = exercicesBase;
+        this.schemasBase = schemasBase;
+        this.schemasProgramme = schemasProgramme;
         this.seances = seances;
         this.exercices = exercices;
         this.referentiels = referentiels;
@@ -123,8 +140,11 @@ public class ProgrammeSeanceService {
                             mien || attitre || estAdmin(moi), mien);
                 })
                 .toList();
+        List<ExerciceSeance> liste = exercices.deLaSeance(seanceId);
+        Set<Long> avecSchema = schemasBase.avecSchema(liste.stream().map(ExerciceSeance::getExerciceCompetence)
+                .filter(Objects::nonNull).map(ExerciceCompetence::getId).collect(Collectors.toSet()));
         return new ProgrammeVue(seanceId, formations(seance), groupesVue,
-                exercices.deLaSeance(seanceId).stream().map(ProgrammeSeanceService::vue).toList());
+                liste.stream().map(e -> vue(e, avecSchema)).toList());
     }
 
     /**
@@ -213,6 +233,9 @@ public class ProgrammeSeanceService {
                 continue;
             }
             e.setPhase(d.phase());
+            e.setCritereReussite(d.critereReussite() == null || d.critereReussite().isBlank()
+                    ? null : d.critereReussite().trim());
+            if (d.schemaId() != null) e.setSchemaId(schemasProgramme.pourLaSeance(d.schemaId(), seanceId));
             for (Long id : ids) {
                 Critere c = criteresConnus.get(id);
                 if (c == null) throw new RessourceIntrouvableException("Critère introuvable");
@@ -239,6 +262,7 @@ public class ProgrammeSeanceService {
         });
         exercices.saveAll(nouveaux);
         exercices.flush();
+        schemasProgramme.nettoyer();
         return programme(seanceId, moi);
     }
 
@@ -286,7 +310,8 @@ public class ProgrammeSeanceService {
         return liste;
     }
 
-    private static ExerciceVue vue(ExerciceSeance e) {
+    /** {@code avecSchema} : les exercices de la base du programme qui ont un schéma. */
+    private static ExerciceVue vue(ExerciceSeance e, Set<Long> avecSchema) {
         List<CritereExerciceVue> criteres = e.getCriteres().stream()
                 .sorted(Comparator.comparingInt((Critere c) -> c.getBloc().getOrdre()).thenComparingInt(Critere::getOrdre))
                 .map(c -> new CritereExerciceVue(c.getId(), c.getBloc().getId(), c.getBloc().getIntitule(),
@@ -296,7 +321,16 @@ public class ProgrammeSeanceService {
         return new ExerciceVue(e.getId(), e.getGroupe() == null ? null : e.getGroupe().getId(), e.getOrdre(), e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                 r == null ? null : r.getId(), r == null ? null : r.getNiveau().name(), criteres,
                 GrilleService.ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()),
-                e.phaseEffective() == null ? null : e.phaseEffective().name());
+                e.phaseEffective() == null ? null : e.phaseEffective().name(),
+                e.critereReussiteEffectif(), aSchema(e, avecSchema),
+                e.getExerciceCompetence() == null ? e.getSchemaId() : null);
+    }
+
+    /** Schéma de la base pour un exercice qui en vient, sinon celui déposé pour l'exercice libre. */
+    public static boolean aSchema(ExerciceSeance e, Set<Long> avecSchema) {
+        return e.getExerciceCompetence() != null
+                ? avecSchema.contains(e.getExerciceCompetence().getId())
+                : e.getSchemaId() != null;
     }
 
     private Seance seance(Long id) {

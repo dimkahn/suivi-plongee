@@ -4,11 +4,14 @@ import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -65,7 +68,18 @@ public class SchemaExerciceService {
         jdbc.update("DELETE FROM schema_exercice WHERE exercice_id = ?", exerciceId);
     }
 
-    private static void verifierImage(byte[] contenu, String type) {
+    /** Parmi ces exercices de la base, ceux qui ont un schéma. */
+    @Transactional(readOnly = true)
+    public Set<Long> avecSchema(Collection<Long> exerciceIds) {
+        if (exerciceIds.isEmpty()) return Set.of();
+        NamedParameterJdbcTemplate requete = new NamedParameterJdbcTemplate(jdbc);
+        return new HashSet<>(requete.queryForList(
+                "SELECT exercice_id FROM schema_exercice WHERE exercice_id IN (:ids)",
+                Map.of("ids", exerciceIds), Long.class));
+    }
+
+    /** Refuse ce qui n'est pas une image JPEG ou PNG de 2 Mo au plus (aussi pour les schémas du programme). */
+    public static void verifierImage(byte[] contenu, String type) {
         if (contenu == null || contenu.length == 0) throw new RegleMetierException("Le fichier est vide.");
         if (contenu.length > TAILLE_MAX_OCTETS) {
             throw new RegleMetierException("Le schéma dépasse la taille maximale de 2 Mo.");

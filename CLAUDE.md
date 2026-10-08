@@ -465,7 +465,15 @@ critère sans exercice de maîtrise dans la base. Les vues le livrent comme
 un `ExerciceNoteVue` sans id ni numéro (`CelluleVue.exerciceLibre` /
 `phaseExercice` dans la vue globale) ; dans la grille, le choix de
 l'exercice le propose sous « Exercices libres du programme ». Un exercice
-libre sans phase ne fait qu'étiqueter le programme. Lecture : pastille I/P/M sous chaque critère de la grille,
+libre sans phase ne fait qu'étiqueter le programme. Un exercice du
+programme montre le critère de réussite et le schéma de la base ; un
+exercice libre reçoit les siens (V58, `exercice_seance.critere_reussite`
+et `schema_id` vers `schema_programme`, table rattachée à la séance et
+non à l'exercice puisque le programme se remplace d'un bloc ; image
+déposée d'abord par `POST …/programme/schemas`, copiée si l'exercice est
+repris d'une autre séance, effacée un jour après n'être plus citée,
+`SchemaProgrammeService`). Les vues portent `critereReussite`, `aSchema`
+et `schemaId` (exercice libre). Lecture : pastille I/P/M sous chaque critère de la grille,
 dans l'historique et dans chaque case de la vue globale, dont un clic sur
 une séance montre le programme d'exercices préparé, exercices libres compris
 (`MatriceVue.programmes`, mêmes données que `GrilleVue.programmes`), puis

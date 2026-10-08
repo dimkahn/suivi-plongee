@@ -184,7 +184,7 @@ const LIBELLES: Record<string, string> = {
             <p class="secondaire">Aucun programme préparé pour cette séance.</p>
           } @else {
             <ol class="programme-seance">
-              @for (p of prevus; track $index) {
+              @for (p of prevus; track $index; let i = $index) {
                 <li>
                   <span class="titre-prevu">
                     @if (p.exerciceBase; as base) {
@@ -202,13 +202,20 @@ const LIBELLES: Record<string, string> = {
                     <span class="criteres-prevus">Critères : {{ noms }}</span>
                   }
                   @if (p.consignes) { <span class="consignes-prevues">{{ p.consignes }}</span> }
-                  @if (p.exerciceBase && exercicesParIdPublic(p.exerciceBase.id)?.aSchema) {
-                    <button type="button" class="lien-schema" (click)="basculerSchema(p.exerciceBase.id)"
-                            [attr.aria-expanded]="schemaOuvert() === p.exerciceBase.id">
-                      {{ schemaOuvert() === p.exerciceBase.id ? 'Masquer le schéma' : 'Voir le schéma' }}
+                  @if (p.critereReussite) {
+                    <span class="consignes-prevues"><strong>Réussite :</strong> {{ p.critereReussite }}</span>
+                  }
+                  @if (p.aSchema || (p.exerciceBase && exercicesParIdPublic(p.exerciceBase.id)?.aSchema)) {
+                    <button type="button" class="lien-schema" (click)="basculerSchema(i)"
+                            [attr.aria-expanded]="schemaOuvert() === i">
+                      {{ schemaOuvert() === i ? 'Masquer le schéma' : 'Voir le schéma' }}
                     </button>
-                    @if (schemaOuvert() === p.exerciceBase.id) {
-                      <app-schema-exercice [exerciceId]="p.exerciceBase.id" [libelle]="p.intitule" />
+                    @if (schemaOuvert() === i) {
+                      @if (p.exerciceBase; as base) {
+                        <app-schema-exercice [exerciceId]="base.id" [libelle]="p.intitule" />
+                      } @else {
+                        <app-schema-exercice [seanceId]="s.id" [schemaId]="p.schemaId ?? null" [libelle]="p.intitule" />
+                      }
                     }
                   }
                 </li>
@@ -501,11 +508,11 @@ export class MatriceComponent {
     return this.exercicesParId().get(id);
   }
 
-  /** Schéma déplié dans le programme de la séance. */
+  /** Schéma déplié dans le programme de la séance : le rang de l'exercice. */
   schemaOuvert = signal<number | null>(null);
 
-  basculerSchema(id: number): void {
-    this.schemaOuvert.set(this.schemaOuvert() === id ? null : id);
+  basculerSchema(rang: number): void {
+    this.schemaOuvert.set(this.schemaOuvert() === rang ? null : rang);
   }
 
   /** Critères reliés à la base d'exercices : une note sans exercice n'y dit pas sa phase, la case le signale. */

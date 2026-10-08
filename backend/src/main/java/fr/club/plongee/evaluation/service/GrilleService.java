@@ -122,7 +122,11 @@ public class GrilleService {
                                     /** Exercice de la base dont il est tire ; null sinon. */
                                     ExerciceNoteVue exerciceBase,
                                     /** Phase (celle de la base, ou choisie pour un exercice libre) ; null sinon. */
-                                    String phase) {}
+                                    String phase,
+                                    /** Celui de la base, ou saisi pour un exercice libre ; null sinon. */
+                                    String critereReussite,
+                                    /** Schéma de la base, ou {@code schemaId} pour un exercice libre. */
+                                    boolean aSchema, Long schemaId) {}
 
     /** Seulement les seances qui ont au moins un exercice. */
     public record ProgrammeGrilleVue(Long seanceId, List<ExerciceGrilleVue> exercices) {}
@@ -269,11 +273,14 @@ public class GrilleService {
                 progression == null ? null : progression.getNom(),
                 progression == null ? List.of() : periodesVue(progression),
                 participations.seancesOuPresent(cursusId),
-                programmes(cursus));
+                programmes(cursus, avecSchema));
     }
 
-    /** Programme commun de chaque séance, puis celui du groupe d'entraînement de l'élève. */
-    private List<ProgrammeGrilleVue> programmes(Cursus cursus) {
+    /**
+     * Programme commun de chaque séance, puis celui du groupe d'entraînement de l'élève.
+     * {@code avecSchema} : exercices de la base de la formation du cursus qui ont un schéma.
+     */
+    private List<ProgrammeGrilleVue> programmes(Cursus cursus, java.util.Set<Long> avecSchema) {
         Long saisonId = cursus.getSaison().getId();
         Long groupeId = groupes.groupeDeLEleve(saisonId, cursus.getEleve().getId()).stream().findFirst().orElse(null);
         Map<Long, List<ExerciceGrilleVue>> parSeance = new java.util.LinkedHashMap<>();
@@ -284,7 +291,10 @@ public class GrilleService {
                                 e.getGroupe() == null ? null : e.getGroupe().getNom(),
                                 e.getCriteres().stream().map(Critere::getId).toList(),
                                 ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()),
-                                e.phaseEffective() == null ? null : e.phaseEffective().name())));
+                                e.phaseEffective() == null ? null : e.phaseEffective().name(),
+                                e.critereReussiteEffectif(),
+                                fr.club.plongee.formation.service.ProgrammeSeanceService.aSchema(e, avecSchema),
+                                e.getExerciceCompetence() == null ? e.getSchemaId() : null)));
         return parSeance.entrySet().stream()
                 .map(en -> new ProgrammeGrilleVue(en.getKey(), en.getValue()))
                 .toList();
@@ -372,7 +382,7 @@ public class GrilleService {
                 exercicesBase.parReferentiel(cursus.getReferentiel().getId()).stream()
                         .map(e -> ExerciceCompetenceController.ExerciceVue.de(e, avecSchema))
                         .toList(),
-                programmes(cursus),
+                programmes(cursus, avecSchema),
                 participations.seancesOuPresent(cursusId));
     }
 }
