@@ -2,9 +2,11 @@ import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject, input, s
 import { ApiService } from './api.service';
 
 /**
- * Schéma d'un exercice de la base : l'image demande le jeton d'accès, elle
- * est donc lue par l'API (et gardée sur l'appareil pour le hors ligne) puis
- * affichée par une adresse locale, libérée quand le composant disparaît.
+ * Schéma d'un exercice : celui de la base (`exerciceId`) ou celui d'un
+ * exercice libre du programme d'une séance (`seanceId` + `schemaId`).
+ * L'image demande le jeton d'accès, elle est donc lue par l'API (et gardée
+ * sur l'appareil pour le hors ligne) puis affichée par une adresse locale,
+ * libérée quand le composant disparaît.
  */
 @Component({
   selector: 'app-schema-exercice',
@@ -27,7 +29,11 @@ import { ApiService } from './api.service';
 export class SchemaExerciceComponent implements OnDestroy {
   private api = inject(ApiService);
 
-  exerciceId = input.required<number>();
+  /** Exercice de la base. */
+  exerciceId = input<number | null>(null);
+  /** Exercice libre du programme : sa séance et son schéma. */
+  seanceId = input<number | null>(null);
+  schemaId = input<number | null>(null);
   /** Numéro et intitulé, pour le texte de remplacement. */
   libelle = input<string | null>(null);
   /** Change après un nouveau dépôt, pour relire l'image. */
@@ -38,18 +44,28 @@ export class SchemaExerciceComponent implements OnDestroy {
 
   constructor() {
     effect(() => {
-      const id = this.exerciceId();
+      const cle = this.cle();
       this.version();
-      untracked(() => void this.charger(id));
+      untracked(() => void this.charger(cle));
     });
   }
 
-  private async charger(id: number): Promise<void> {
+  private cle(): string {
+    return `${this.exerciceId()}/${this.seanceId()}/${this.schemaId()}`;
+  }
+
+  private async charger(cle: string): Promise<void> {
     this.liberer();
     this.erreur.set(false);
+    const exerciceId = this.exerciceId();
+    const seanceId = this.seanceId();
+    const schemaId = this.schemaId();
     try {
-      const blob = await this.api.schemaExercice(id);
-      if (id === this.exerciceId()) this.url.set(URL.createObjectURL(blob));
+      const blob = exerciceId != null ? await this.api.schemaExercice(exerciceId)
+        : seanceId != null && schemaId != null ? await this.api.schemaProgramme(seanceId, schemaId)
+        : null;
+      if (!blob) { this.erreur.set(true); return; }
+      if (cle === this.cle()) this.url.set(URL.createObjectURL(blob));
     } catch {
       this.erreur.set(true);
     }

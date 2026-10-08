@@ -3,8 +3,9 @@ titre: Préparer la séance de son groupe
 rubrique: Moniteur
 videos: M18
 ecran: /presences
-mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, exercices des compétences, initiation, perfectionnement, maîtrise, exercice libre
+mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, exercices des compétences, initiation, perfectionnement, maîtrise, exercice libre, schéma, dessin, image, photo, critère de réussite
 questions:
+- Comment ajouter un schéma à un exercice libre ?
 - Comment préparer le programme de ma séance ?
 - Comment ajouter des exercices à une séance ?
 - Comment construire une séance à partir des exercices des compétences ?
@@ -21,15 +22,15 @@ Depuis « Présences », choisissez la séance puis « Préparer le programme »
 3. Votre groupe est déjà choisi. Touchez « + Ajouter des exercices des compétences ».
 4. Choisissez la formation (celle que prépare le groupe est proposée), puis la compétence (celles au programme du mois en tête).
 5. Choisissez le temps : initiation, perfectionnement ou maîtrise, et cochez les exercices (« Voir le schéma » pour l'organisation dans l'eau). Vous pouvez passer d'une compétence à l'autre, les coches restent.
-6. « Ajouter » : les exercices arrivent dans la séance avec leur numéro, leurs critères, et leur déroulement et critère de réussite en consignes.
+6. « Ajouter » : les exercices arrivent dans la séance avec leur numéro, leurs critères, leur critère de réussite et leur schéma (« Voir le schéma » sur la carte), et leur déroulement en consignes.
 7. Réglez la durée, complétez les consignes si besoin ; « monter », « descendre » et « supprimer » règlent l'ordre de la séance.
 8. Enregistrez.
 
-L'intitulé et les critères d'un exercice des compétences viennent de la base : pour les changer, voyez avec un administrateur (Administration, « Base d'exercices »).
+L'intitulé, les critères, le critère de réussite et le schéma d'un exercice des compétences viennent de la base : pour les changer, voyez avec un administrateur (Administration, « Base d'exercices »).
 
 ## Exercice libre
 
-« + Exercice libre (échauffement, nage…) » ajoute un exercice qui n'est pas dans la base : vous écrivez son intitulé et ses consignes, choisissez si vous le souhaitez sa phase (**initiation**, **perfectionnement** ou **maîtrise**, « Non précisée » pour un échauffement), et pouvez cocher des critères si besoin. La phase s'affiche en pastille dans le programme, la grille et la vue globale, comme pour un exercice de la base.
+« + Exercice libre (échauffement, nage…) » ajoute un exercice qui n'est pas dans la base : vous écrivez son intitulé, ses consignes et, si vous le voulez, son **critère de réussite** ; « Ajouter un schéma » y joint une image ou la photo d'un schéma dessiné (une grosse photo est réduite avant l'envoi, réseau nécessaire ; « Remplacer » ou « Retirer » ensuite). Le schéma n'est gardé qu'une fois le programme enregistré. Vous choisissez si vous le souhaitez sa phase (**initiation**, **perfectionnement** ou **maîtrise**, « Non précisée » pour un échauffement), et pouvez cocher des critères si besoin. La phase s'affiche en pastille dans le programme, la grille et la vue globale, comme pour un exercice de la base.
 
 Un exercice libre **avec une phase et des critères cochés** sert aussi à noter : dans la grille de l'élève, le choix de l'exercice le propose sous « Exercices libres du programme » pour chacun de ses critères. Comme pour la base, un exercice de maîtrise acquis fait passer le critère à « Acquis », une initiation ou un perfectionnement le laisse « En cours ». Sans phase, il ne fait qu'éclairer le programme. La note garde l'intitulé et la phase de l'exercice, même si le programme change ensuite.
 
@@ -41,3 +42,5 @@ Un exercice libre **avec une phase et des critères cochés** sert aussi à note
 - Le **programme commun** sert à toute la séance (échauffement, sortie sans groupes) : tout encadrant peut le préparer.
 - Dans « Noter les présents », un bouton coche d'un coup les critères des exercices.
 - Le programme se prépare avant comme après la séance.
+- Critère de réussite et schéma se retrouvent dans « Exercices de la séance » de la grille de l'élève et dans la vue globale ; « Préparer hors ligne » garde aussi les schémas des exercices libres.
+- Reprendre les exercices d'une autre séance reprend aussi leurs schémas.

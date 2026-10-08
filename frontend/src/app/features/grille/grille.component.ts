@@ -342,6 +342,23 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   <span class="secondaire"> · {{ e.critereIds.length }} critère(s) travaillé(s)</span>
                 }
                 @if (e.consignes) { <span class="secondaire consignes">{{ e.consignes }}</span> }
+                @if (e.critereReussite) {
+                  <span class="secondaire consignes"><strong>Réussite :</strong> {{ e.critereReussite }}</span>
+                }
+                @if (e.aSchema && seanceId(); as seance) {
+                  @let cle = cleSchema(e);
+                  <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(cle)"
+                          (click)="basculerSchema(cle)">
+                    {{ schemasOuverts().has(cle) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                  </button>
+                  @if (schemasOuverts().has(cle)) {
+                    @if (e.exerciceBase; as base) {
+                      <app-schema-exercice [exerciceId]="base.id" [libelle]="base.numero + ' ' + base.intitule" />
+                    } @else {
+                      <app-schema-exercice [seanceId]="seance" [schemaId]="e.schemaId ?? null" [libelle]="e.intitule" />
+                    }
+                  }
+                }
               </li>
             }
           </ol>
@@ -658,6 +675,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                       <app-pastille-phase [phase]="e.phase" [intitule]="'exercice libre : ' + e.intitule" />
                       <span class="intitule-exo">{{ e.intitule }}</span>
                       @if (e.consignes) { <span class="secondaire">{{ e.consignes }}</span> }
+                      @if (e.critereReussite) { <span class="secondaire">Réussite : {{ e.critereReussite }}</span> }
                     </button>
                   } @else {
                     <p class="secondaire">
@@ -1245,8 +1263,15 @@ export class GrilleComponent implements OnDestroy {
     return libre?.phase ? { id: null, numero: null, intitule: libre.intitule, phase: libre.phase, blocId: null, critereIds: null } : null;
   }
 
-  /** Schémas dépliés : chargés seulement à la demande. */
+  /**
+   * Schémas dépliés : chargés seulement à la demande. Clé : l'id de
+   * l'exercice de la base, ou l'opposé de l'id du schéma d'un exercice libre.
+   */
   schemasOuverts = signal<Set<number>>(new Set());
+
+  cleSchema(e: ExerciceGrilleVue): number {
+    return e.exerciceBase ? e.exerciceBase.id : -(e.schemaId ?? 0);
+  }
 
   basculerSchema(exerciceId: number): void {
     const ouverts = new Set(this.schemasOuverts());

@@ -205,6 +205,10 @@ export class ApiService {
     const schemas = new Set(paquet.grilles.flatMap(g => g.blocs.flatMap(b => b.exercices ?? []))
       .filter(e => e.aSchema).map(e => e.id));
     for (const id of schemas) await this.tenter(() => this.schemaExercice(id));
+    // Et ceux des exercices libres du programme des séances.
+    const schemasLibres = new Map(paquet.grilles.flatMap(g => (g.programmes ?? [])
+      .flatMap(p => p.exercices.filter(e => e.schemaId != null).map(e => [e.schemaId!, p.seanceId] as const))));
+    for (const [schemaId, seanceId] of schemasLibres) await this.tenter(() => this.schemaProgramme(seanceId, schemaId));
     return { grilles: paquet.grilles.length, feuilles, fiches, photos };
   }
 
@@ -287,6 +291,19 @@ export class ApiService {
   supprimerSchemaExercice(exerciceId: number): Observable<unknown> {
     void supprimer(MAGASIN_CACHE, `schema-exercice:${exerciceId}`);
     return this.http.delete(`/api/exercices/${exerciceId}/schema`);
+  }
+
+  /** Schéma d'un exercice libre du programme d'une séance ; gardé sur l'appareil (il ne change jamais). */
+  schemaProgramme(seanceId: number, schemaId: number): Promise<Blob> {
+    return this.lirePhoto(`schema-programme:${schemaId}`,
+      () => this.http.get(`/api/seances/${seanceId}/programme/schemas/${schemaId}`, { responseType: 'blob' }));
+  }
+
+  /** Dépose le schéma d'un exercice libre ; son id est à citer dans le programme enregistré. */
+  deposerSchemaProgramme(seanceId: number, fichier: File): Observable<{ id: number }> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.post<{ id: number }>(`/api/seances/${seanceId}/programme/schemas`, donnees);
   }
 
   /** Programme d'exercices d'une séance (encadrants). Nécessite le réseau. */

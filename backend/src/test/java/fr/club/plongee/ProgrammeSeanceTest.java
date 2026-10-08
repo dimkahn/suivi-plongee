@@ -229,6 +229,76 @@ class ProgrammeSeanceTest {
     }
 
     @Test
+    @DisplayName("Un exercice de la base garde schéma et réussite ; un exercice libre reçoit les siens")
+    void schemasEtReussite() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e1@club.fr");
+        long seanceId = creerSeance(admin, 14);
+        long autreSeanceId = creerSeance(admin, 15);
+        try {
+            long referentielN1 = -1;
+            for (JsonNode f : envoyer("GET", "/api/seances/" + seanceId + "/programme", moniteur, null, 200)
+                    .get("formations")) {
+                if (f.get("niveau").asText().equals("N1")) referentielN1 = f.get("referentielId").asLong();
+            }
+            JsonNode base = null;
+            for (JsonNode e : envoyer("GET", "/api/referentiels/" + referentielN1 + "/exercices", moniteur, null, 200)) {
+                if (e.get("aSchema").asBoolean() && e.get("actif").asBoolean() && !e.get("critereReussite").isNull()) {
+                    base = e;
+                    break;
+                }
+            }
+            assertThat(base).as("un exercice N1 avec schéma dans la base").isNotNull();
+
+            String url = "/api/seances/" + seanceId + "/programme";
+            byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0};
+            String reponse = mvc.perform(multipart(url + "/schemas")
+                            .file(new org.springframework.mock.web.MockMultipartFile("fichier", "s.png", "image/png", png))
+                            .header("Authorization", moniteur))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            long schemaId = json.readTree(reponse).get("id").asLong();
+            mvc.perform(multipart(url + "/schemas")
+                            .file(new org.springframework.mock.web.MockMultipartFile("fichier", "s.txt", "image/png",
+                                    "pas une image".getBytes()))
+                            .header("Authorization", moniteur))
+                    .andExpect(status().is(422));
+
+            Map<String, Object> deLaBase = exercice("ignoré", referentielN1, List.of());
+            deLaBase.put("exerciceBaseId", base.get("id").asLong());
+            deLaBase.put("critereReussite", "ignoré aussi");
+            Map<String, Object> libre = exercice("Parcours lesté", null, List.of());
+            libre.put("critereReussite", "  Trois passages sans toucher le fond  ");
+            libre.put("schemaId", schemaId);
+            JsonNode programme = envoyer("PUT", url, moniteur, List.of(deLaBase, libre), 200).get("exercices");
+            assertThat(programme.get(0).get("aSchema").asBoolean()).isTrue();
+            assertThat(programme.get(0).get("schemaId").isNull()).isTrue();
+            assertThat(programme.get(0).get("critereReussite").asText()).isEqualTo(base.get("critereReussite").asText());
+            assertThat(programme.get(1).get("aSchema").asBoolean()).isTrue();
+            assertThat(programme.get(1).get("schemaId").asLong()).isEqualTo(schemaId);
+            assertThat(programme.get(1).get("critereReussite").asText()).isEqualTo("Trois passages sans toucher le fond");
+            mvc.perform(get(url + "/schemas/" + schemaId).header("Authorization", moniteur))
+                    .andExpect(status().isOk());
+            // Le schéma se lit par sa séance seulement.
+            mvc.perform(get("/api/seances/" + autreSeanceId + "/programme/schemas/" + schemaId)
+                            .header("Authorization", moniteur))
+                    .andExpect(status().isNotFound());
+
+            // Réenregistrer garde le schéma ; le reprendre sur une autre séance en fait une copie.
+            programme = envoyer("PUT", url, moniteur, List.of(libre), 200).get("exercices");
+            assertThat(programme.get(0).get("schemaId").asLong()).isEqualTo(schemaId);
+            long copie = envoyer("PUT", "/api/seances/" + autreSeanceId + "/programme", moniteur, List.of(libre), 200)
+                    .get("exercices").get(0).get("schemaId").asLong();
+            assertThat(copie).isNotEqualTo(schemaId);
+            mvc.perform(get("/api/seances/" + autreSeanceId + "/programme/schemas/" + copie)
+                            .header("Authorization", moniteur))
+                    .andExpect(status().isOk());
+        } finally {
+            mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
+            mvc.perform(delete("/api/seances/" + autreSeanceId).header("Authorization", admin));
+        }
+    }
+
+    @Test
     @DisplayName("Supprimer une séance emporte son programme")
     void suppressionDeLaSeance() throws Exception {
         String admin = jeton("presidente@club.fr");

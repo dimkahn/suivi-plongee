@@ -59,6 +59,38 @@ public class ExerciceSeance {
     @Column(length = 20)
     private PhaseExercice phase;
 
+    /** Critère de réussite d'un exercice libre ; celui d'un exercice de la base vient de la base. */
+    @Column(columnDefinition = "text")
+    private String critereReussite;
+
+    /**
+     * Schéma d'un exercice libre (table schema_programme, lu à part) ;
+     * celui d'un exercice de la base est le schéma de la base.
+     */
+    @Column(name = "schema_id")
+    private Long schemaId;
+
+    /** Le critère de réussite affiché : celui de la base pour un exercice qui en vient, sinon celui saisi. */
+    public String critereReussiteEffectif() {
+        return exerciceCompetence != null ? exerciceCompetence.getCritereReussite() : critereReussite;
+    }
+
+    public String getCritereReussite() {
+        return critereReussite;
+    }
+
+    public void setCritereReussite(String critereReussite) {
+        this.critereReussite = critereReussite;
+    }
+
+    public Long getSchemaId() {
+        return schemaId;
+    }
+
+    public void setSchemaId(Long schemaId) {
+        this.schemaId = schemaId;
+    }
+
     /** La phase affichée : celle de la base pour un exercice qui en vient, sinon celle choisie. */
     public PhaseExercice phaseEffective() {
         return exerciceCompetence != null ? exerciceCompetence.getPhase() : phase;

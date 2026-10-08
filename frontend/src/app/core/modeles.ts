@@ -234,6 +234,11 @@ export interface ExerciceGrilleVue {
   exerciceBase?: ExerciceBaseNoteVue | null;
   /** Phase : celle de la base, ou choisie pour un exercice libre ; null si non précisée. */
   phase?: PhaseExercice | null;
+  /** Celui de la base, ou saisi pour un exercice libre. Absent d'une grille mise en cache avant. */
+  critereReussite?: string | null;
+  /** Un schéma existe : celui de la base (`exerciceBase.id`) ou celui de l'exercice libre (`schemaId`). */
+  aSchema?: boolean;
+  schemaId?: number | null;
 }
 
 export interface ProgrammeGrilleVue {
@@ -268,6 +273,11 @@ export interface ExerciceVue {
   exerciceBase: ExerciceBaseNoteVue | null;
   /** Phase : celle de la base, ou choisie pour un exercice libre ; null si non précisée. */
   phase: PhaseExercice | null;
+  /** Celui de la base, ou saisi pour un exercice libre. */
+  critereReussite: string | null;
+  /** Un schéma existe : celui de la base (`exerciceBase.id`) ou celui de l'exercice libre (`schemaId`). */
+  aSchema: boolean;
+  schemaId: number | null;
 }
 
 /** Formation proposée : celles des élèves de la saison (effectif), puis les versions actives du MFT. */
@@ -308,6 +318,10 @@ export interface DemandeExercice {
   exerciceBaseId: number | null;
   /** Exercice libre : initiation, perfectionnement ou maîtrise, facultatif. */
   phase: PhaseExercice | null;
+  /** Exercice libre, facultatifs ; un exercice de la base garde ceux de la base. */
+  critereReussite: string | null;
+  /** Déposé avant par `ApiService.deposerSchemaProgramme`. */
+  schemaId: number | null;
 }
 
 export interface SeanceVue {

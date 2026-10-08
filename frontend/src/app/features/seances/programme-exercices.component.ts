@@ -16,6 +16,7 @@ import { dateFr } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
+import { reduirePhoto } from '../../core/reduire-photo';
 
 /** Un exercice en cours d'édition ; `cle` ne sert qu'au suivi de la liste à l'écran. */
 interface Brouillon {
@@ -30,28 +31,50 @@ interface Brouillon {
   exerciceBase: ExerciceNoteVue | null;
   /** Exercice libre : phase choisie (facultative). */
   phase: PhaseExercice | null;
+  /** Saisi pour un exercice libre ; celui de la base, en lecture, pour un exercice qui en vient. */
+  critereReussite: string;
+  /** Exercice de la base : il a un schéma (celui de la base). */
+  aSchemaBase: boolean;
+  /**
+   * Exercice libre : son schéma déposé, avec la séance où il est rangé (une
+   * autre pour un exercice repris : le serveur en fait une copie).
+   */
+  schema: { seanceId: number; schemaId: number } | null;
 }
 
 let prochaineCle = 1;
 
-function versBrouillon(e: ExerciceVue): Brouillon {
+/** {@code seanceId} : la séance dont vient l'exercice. */
+function versBrouillon(e: ExerciceVue, seanceId: number): Brouillon {
   return {
     cle: prochaineCle++, intitule: e.intitule, consignes: e.consignes ?? '', dureeMinutes: e.dureeMinutes,
     referentielId: e.referentielId,
     criteres: e.criteres.map(c => ({ id: c.id, bloc: c.bloc, savoirFaire: c.savoirFaire })),
     exerciceBase: e.exerciceBase ?? null,
-    phase: e.exerciceBase ? null : e.phase ?? null
+    phase: e.exerciceBase ? null : e.phase ?? null,
+    critereReussite: e.critereReussite ?? '',
+    aSchemaBase: !!e.exerciceBase && e.aSchema,
+    schema: e.schemaId != null ? { seanceId, schemaId: e.schemaId } : null
   };
 }
 
 function versDemande(b: Brouillon): DemandeExercice {
+  const base = b.referentielId == null ? null : b.exerciceBase;
   return {
     intitule: b.intitule.trim(), consignes: b.consignes.trim() || null,
     dureeMinutes: b.dureeMinutes || null, referentielId: b.referentielId,
     critereIds: b.referentielId == null ? [] : b.criteres.map(c => c.id),
-    exerciceBaseId: b.referentielId == null ? null : b.exerciceBase?.id ?? null,
-    phase: b.exerciceBase ? null : b.phase
+    exerciceBaseId: base?.id ?? null,
+    phase: base ? null : b.phase,
+    critereReussite: base ? null : b.critereReussite.trim() || null,
+    schemaId: base ? null : b.schema?.schemaId ?? null
   };
+}
+
+/** Une image PNG ou JPEG de 2 Mo au plus part telle quelle ; une photo plus lourde est réduite. */
+async function imageAEnvoyer(fichier: File): Promise<File> {
+  const accepte = ['image/png', 'image/jpeg'].includes(fichier.type) && fichier.size <= 2 * 1024 * 1024;
+  return accepte ? fichier : reduirePhoto(fichier);
 }
 
 /**
@@ -134,6 +157,20 @@ function versDemande(b: Brouillon): DemandeExercice {
                   @if (e.dureeMinutes) { · {{ e.dureeMinutes }} min }
                 </p>
                 @if (e.consignes) { <p class="consignes-lues">{{ e.consignes }}</p> }
+                @if (e.critereReussite) { <p class="consignes-lues"><strong>Réussite :</strong> {{ e.critereReussite }}</p> }
+                @if (e.aSchema) {
+                  <button type="button" class="bouton-discret petit" (click)="basculerSchemaCarte('e' + e.id)"
+                          [attr.aria-expanded]="schemasCartes().has('e' + e.id)">
+                    {{ schemasCartes().has('e' + e.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                  </button>
+                  @if (schemasCartes().has('e' + e.id)) {
+                    @if (e.exerciceBase; as base) {
+                      <app-schema-exercice [exerciceId]="base.id" [libelle]="base.numero + ' ' + base.intitule" />
+                    } @else {
+                      <app-schema-exercice [seanceId]="Number(id())" [schemaId]="e.schemaId" [libelle]="e.intitule" />
+                    }
+                  }
+                }
                 @if (e.criteres.length > 0) {
                   <ul class="choisis">
                     @for (c of e.criteres; track c.id) {
@@ -168,6 +205,16 @@ function versDemande(b: Brouillon): DemandeExercice {
                     <li><span><span class="bloc">{{ c.bloc }}</span> {{ c.savoirFaire }}</span></li>
                   }
                 </ul>
+              }
+              @if (b.critereReussite) { <p class="consignes-lues"><strong>Réussite :</strong> {{ b.critereReussite }}</p> }
+              @if (b.aSchemaBase) {
+                <button type="button" class="bouton-discret petit" (click)="basculerSchemaCarte('b' + b.cle)"
+                        [attr.aria-expanded]="schemasCartes().has('b' + b.cle)">
+                  {{ schemasCartes().has('b' + b.cle) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                </button>
+                @if (schemasCartes().has('b' + b.cle)) {
+                  <app-schema-exercice [exerciceId]="base.id" [libelle]="base.numero + ' ' + base.intitule" />
+                }
               }
               <div class="champs">
                 <div class="duree">
@@ -221,6 +268,27 @@ function versDemande(b: Brouillon): DemandeExercice {
             <textarea [id]="'consignes-' + b.cle" rows="2"
                       placeholder="ex. Par deux, à 3 m ; un vidage complet puis un partiel"
                       [(ngModel)]="b.consignes"></textarea>
+
+            <label [for]="'reussite-' + b.cle">Critère de réussite</label>
+            <textarea [id]="'reussite-' + b.cle" rows="2"
+                      placeholder="ex. Vidage complet sans remonter, trois fois de suite"
+                      [(ngModel)]="b.critereReussite"></textarea>
+
+            <span class="titre-phase-libre">Schéma</span>
+            @if (b.schema; as s) {
+              <app-schema-exercice [seanceId]="s.seanceId" [schemaId]="s.schemaId" [libelle]="b.intitule" />
+            }
+            <div class="actions-schema">
+              <label class="bouton-discret depot" [class.inactif]="envoiSchema() || !reseau.enLigne()">
+                {{ b.schema ? 'Remplacer le schéma' : 'Ajouter un schéma' }}
+                <input type="file" accept="image/*" (change)="deposerSchema(b, $event)"
+                       [disabled]="envoiSchema() || !reseau.enLigne()">
+              </label>
+              @if (b.schema) {
+                <button type="button" class="bouton-discret danger" (click)="retirerSchema(b)">Retirer le schéma</button>
+              }
+            </div>
+            <p class="secondaire">Une image ou la photo d'un schéma dessiné ; enregistrée avec le programme.</p>
 
             @if (b.referentielId != null) {
               <div class="criteres">
@@ -458,6 +526,11 @@ function versDemande(b: Brouillon): DemandeExercice {
     .reussite { display: block; font-size: .8125rem; }
     .ajouts .ajout-base { width: auto; margin-top: 0; }
     .titre-phase-libre { display: block; margin-top: var(--pas); font-weight: 700; font-size: .9375rem; }
+    .actions-schema { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas); }
+    .depot { position: relative; display: inline-flex; align-items: center; min-height: 44px; margin: 0; cursor: pointer; }
+    .depot input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .depot.inactif { opacity: .5; cursor: default; }
+    app-schema-exercice { margin: var(--pas) 0; }
   `]
 })
 export class ProgrammeExercicesComponent {
@@ -551,7 +624,8 @@ export class ProgrammeExercicesComponent {
   /** Garde tous les programmes et met en édition celui du groupe affiché. */
   private appliquer(exercices: ExerciceVue[]): void {
     this.tous.set(exercices);
-    const brouillons = this.exercicesDuProgramme().map(versBrouillon);
+    const seanceId = Number(this.id());
+    const brouillons = this.exercicesDuProgramme().map(e => versBrouillon(e, seanceId));
     this.brouillons.set(brouillons);
     this.enregistre.set(JSON.stringify(brouillons.map(versDemande)));
     this.choixOuvert.set(null);
@@ -609,10 +683,45 @@ export class ProgrammeExercicesComponent {
     const nouveau: Brouillon = {
       cle: prochaineCle++, intitule: '', consignes: '', dureeMinutes: null,
       referentielId: precedent ? precedent.referentielId : duGroupe?.referentielId ?? null,
-      criteres: [], exerciceBase: null, phase: null
+      criteres: [], exerciceBase: null, phase: null, critereReussite: '', aSchemaBase: false, schema: null
     };
     this.brouillons.set([...this.brouillons(), nouveau]);
     this.message.set(null);
+  }
+
+  /** Schémas dépliés sur les cartes : 'b' + clé d'un brouillon, 'e' + id d'un exercice en lecture. */
+  schemasCartes = signal<Set<string>>(new Set());
+  envoiSchema = signal(false);
+
+  basculerSchemaCarte(cle: string): void {
+    const ouverts = new Set(this.schemasCartes());
+    if (ouverts.has(cle)) ouverts.delete(cle); else ouverts.add(cle);
+    this.schemasCartes.set(ouverts);
+  }
+
+  /** Le schéma part tout de suite ; l'exercice ne le cite qu'une fois le programme enregistré. */
+  async deposerSchema(b: Brouillon, evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    if (!fichier) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      const seanceId = Number(this.id());
+      const { id } = await firstValueFrom(this.api.deposerSchemaProgramme(seanceId, await imageAEnvoyer(fichier)));
+      b.schema = { seanceId, schemaId: id };
+      this.brouillons.set([...this.brouillons()]);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'Le schéma n\'a pas pu être envoyé.');
+    } finally {
+      this.envoiSchema.set(false);
+    }
+  }
+
+  retirerSchema(b: Brouillon): void {
+    b.schema = null;
+    this.brouillons.set([...this.brouillons()]);
   }
 
   retirer(index: number): void {
@@ -695,8 +804,8 @@ export class ProgrammeExercicesComponent {
 
   /**
    * Un exercice de la base devient un exercice du programme : son numéro et
-   * son intitulé, son déroulement et son critère de réussite en consignes,
-   * et tous les critères de sa compétence. Tout reste modifiable ensuite.
+   * son intitulé, son déroulement en consignes (modifiables), et, tels que
+   * dans la base, ses critères, son critère de réussite et son schéma.
    */
   ajouterDepuisBase(): void {
     const referentielId = this.baseReferentielId();
@@ -706,10 +815,8 @@ export class ProgrammeExercicesComponent {
     const choisis = (this.bases().get(ref.id) ?? []).filter(e => coches.has(e.id));
     const nouveaux: Brouillon[] = choisis.map(e => {
       const bloc = ref.blocs.find(b => b.id === e.blocId);
-      const consignes = [e.deroulement, e.critereReussite ? 'Réussite : ' + e.critereReussite : null]
-        .filter(Boolean).join('\n');
       return {
-        cle: prochaineCle++, intitule: `${e.numero} ${e.intitule}`, consignes, dureeMinutes: null,
+        cle: prochaineCle++, intitule: `${e.numero} ${e.intitule}`, consignes: e.deroulement ?? '', dureeMinutes: null,
         referentielId: ref.id,
         criteres: (bloc?.criteres ?? []).filter(c => (e.critereIds ?? []).includes(c.id))
           .map(c => ({ id: c.id, bloc: bloc!.intitule, savoirFaire: c.savoirFaire })),
@@ -717,7 +824,10 @@ export class ProgrammeExercicesComponent {
           id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId,
           critereIds: e.critereIds ?? []
         },
-        phase: null
+        phase: null,
+        critereReussite: e.critereReussite ?? '',
+        aSchemaBase: !!e.aSchema,
+        schema: null
       };
     });
     this.brouillons.set([...this.brouillons(), ...nouveaux]);
@@ -816,7 +926,7 @@ export class ProgrammeExercicesComponent {
       const manquantes = autre.formations.filter(f => !connues.has(f.referentielId)
         && repris.some(e => e.referentielId === f.referentielId));
       if (manquantes.length > 0) this.formations.set([...this.formations(), ...manquantes.map(f => ({ ...f, eleves: 0 }))]);
-      this.brouillons.set([...this.brouillons(), ...repris.map(versBrouillon)]);
+      this.brouillons.set([...this.brouillons(), ...repris.map(e => versBrouillon(e, seanceId))]);
       this.message.set(`${repris.length} exercice(s) repris${duGroupe.length > 0 ? '' : ' du programme commun'} : `
         + 'vérifiez-les puis enregistrez.');
     } catch (e) {
