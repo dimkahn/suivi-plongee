@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
+import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import {
   BlocReferentielVue, DemandeExerciceBase, ExerciceBaseVue, PhaseExercice, ReferentielVue
 } from '../../core/modeles';
@@ -23,7 +24,7 @@ interface Formulaire extends DemandeExerciceBase {
  */
 @Component({
   selector: 'app-exercices-admin',
-  imports: [FormsModule, DialogueComponent, PastillePhaseComponent],
+  imports: [FormsModule, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     <h1>Base d'exercices</h1>
     <p class="secondaire">
@@ -68,6 +69,7 @@ interface Formulaire extends DemandeExerciceBase {
                         <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
                         <strong>{{ e.intitule }}</strong>
                         @if (!e.actif) { <span class="secondaire">(désactivé)</span> }
+                        @if (e.aSchema) { <span class="secondaire">· schéma</span> }
                       </span>
                       @if (e.critereReussite) { <span class="secondaire">Réussite : {{ e.critereReussite }}</span> }
                     </div>
@@ -113,6 +115,28 @@ interface Formulaire extends DemandeExerciceBase {
         <label class="case">
           <input type="checkbox" [(ngModel)]="f.actif"> Proposé aux moniteurs (actif)
         </label>
+        @if (f.id != null) {
+          <p class="titre-schema">Schéma</p>
+          @if (aSchema(f.id)) {
+            <app-schema-exercice [exerciceId]="f.id" [libelle]="f.numero + ' ' + f.intitule" [version]="versionSchema()" />
+          } @else {
+            <p class="secondaire">Pas de schéma pour cet exercice.</p>
+          }
+          <div class="actions-schema">
+            <label class="bouton-discret depot">
+              {{ aSchema(f.id) ? 'Remplacer le schéma' : 'Ajouter un schéma' }}
+              <input type="file" accept="image/png,image/jpeg" (change)="deposerSchema(f.id, $event)"
+                     [disabled]="envoiSchema()">
+            </label>
+            @if (aSchema(f.id)) {
+              <button type="button" class="bouton-discret danger" [disabled]="envoiSchema()"
+                      (click)="retirerSchema(f.id)">Retirer le schéma</button>
+            }
+          </div>
+          <p class="secondaire">Image PNG ou JPEG, 2 Mo au plus.</p>
+        } @else {
+          <p class="secondaire">Le schéma s'ajoute une fois l'exercice enregistré.</p>
+        }
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer(f)">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
@@ -145,6 +169,10 @@ interface Formulaire extends DemandeExerciceBase {
     textarea { width: 100%; box-sizing: border-box; font: inherit; resize: vertical; }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; }
     .case input { width: 22px; height: 22px; margin: 0; }
+    .titre-schema { margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
+    .actions-schema { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas); }
+    .depot { position: relative; display: inline-flex; align-items: center; min-height: 44px; margin: 0; cursor: pointer; }
+    .depot input { position: absolute; width: 1px; height: 1px; opacity: 0; }
   `]
 })
 export class ExercicesAdminComponent {
@@ -253,6 +281,54 @@ export class ExercicesAdminComponent {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'L\'exercice n\'a pas pu être enregistré.');
     } finally {
       this.envoi.set(false);
+    }
+  }
+
+  // ----------------------------------------------------------------
+  //  Schéma de l'exercice : déposé ou retiré tout de suite, sans attendre « Enregistrer ».
+  // ----------------------------------------------------------------
+
+  envoiSchema = signal(false);
+  /** Incrémentée après un dépôt : l'aperçu relit l'image. */
+  versionSchema = signal(0);
+
+  aSchema(exerciceId: number): boolean {
+    return !!this.exercices().find(e => e.id === exerciceId)?.aSchema;
+  }
+
+  private marquerSchema(exerciceId: number, aSchema: boolean): void {
+    this.exercices.set(this.exercices().map(e => e.id === exerciceId ? { ...e, aSchema } : e));
+  }
+
+  async deposerSchema(exerciceId: number, evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    if (!fichier) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      await firstValueFrom(this.api.deposerSchemaExercice(exerciceId, fichier));
+      this.marquerSchema(exerciceId, true);
+      this.versionSchema.set(this.versionSchema() + 1);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'Le schéma n\'a pas pu être enregistré.');
+    } finally {
+      this.envoiSchema.set(false);
+    }
+  }
+
+  async retirerSchema(exerciceId: number): Promise<void> {
+    if (!confirm('Retirer le schéma de cet exercice ?')) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      await firstValueFrom(this.api.supprimerSchemaExercice(exerciceId));
+      this.marquerSchema(exerciceId, false);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'Le schéma n\'a pas pu être retiré.');
+    } finally {
+      this.envoiSchema.set(false);
     }
   }
 

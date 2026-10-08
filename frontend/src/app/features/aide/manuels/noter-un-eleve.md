@@ -31,6 +31,7 @@ Chaque compétence du N1 a ses exercices, rangés en trois temps. Une pastille d
 
 - **Seul un exercice de maîtrise fait passer un critère à « Acquis ».** Si vous touchez « Acquis » sur un autre exercice, la liste des exercices s'ouvre : choisissez l'exercice de maîtrise réalisé, la note part aussitôt.
 - Un critère déjà acquis se commente sans redonner l'exercice.
+- « Voir le schéma » montre l'organisation dans l'eau, sous l'exercice choisi comme dans la liste. Après « Préparer hors ligne », les schémas restent visibles sans réseau.
 - Dans la vue globale, chaque case montre la pastille de l'exercice ; touchez une date pour voir les exercices de cette séance, leur déroulement et les critères notés.
 
 ## N2 et N3 : entraînement en piscine, évaluation en milieu naturel

@@ -15,6 +15,7 @@ import {
   BlocVue, CritereVue, CursusVue, EvaluationVue, ExerciceBaseVue, ExerciceNoteVue, GrilleVue, SeanceVue, Statut
 } from '../../core/modeles';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
+import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
@@ -60,7 +61,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 @Component({
   selector: 'app-grille',
   standalone: true,
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent],
+  imports: [
+    FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
+    SchemaExerciceComponent
+  ],
   template: `
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -423,6 +427,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               @if (choisi?.critereReussite) {
                 <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
               }
+              @if (choisi?.aSchema) {
+                <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(choisi!.id)"
+                        (click)="basculerSchema(choisi!.id)">
+                  {{ schemasOuverts().has(choisi!.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                </button>
+                @if (schemasOuverts().has(choisi!.id)) {
+                  <app-schema-exercice [exerciceId]="choisi!.id" [libelle]="choisi!.numero + ' ' + choisi!.intitule" />
+                }
+              }
               <span class="secondaire">Seul un exercice de maîtrise fait passer un critère à « Acquis ».</span>
             </div>
           }
@@ -567,6 +580,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     </button>
                     @if (e.deroulement) {
                       <details class="deroulement"><summary>Déroulement</summary><p>{{ e.deroulement }}</p></details>
+                    }
+                    @if (e.aSchema) {
+                      <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(e.id)"
+                              (click)="basculerSchema(e.id)">
+                        {{ schemasOuverts().has(e.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                      </button>
+                      @if (schemasOuverts().has(e.id)) {
+                        <app-schema-exercice [exerciceId]="e.id" [libelle]="e.numero + ' ' + e.intitule" />
+                      }
                     }
                   </li>
                 }
@@ -1077,6 +1099,15 @@ export class GrilleComponent implements OnDestroy {
     const prevus = new Set(this.exercicesSeance().map(e => e.exerciceBase?.id).filter(id => id != null));
     const rang = (e: ExerciceBaseVue) => PHASES.findIndex(p => p.valeur === e.phase);
     return exercices.filter(e => prevus.has(e.id)).sort((a, b) => rang(b) - rang(a))[0] ?? null;
+  }
+
+  /** Schémas dépliés : chargés seulement à la demande. */
+  schemasOuverts = signal<Set<number>>(new Set());
+
+  basculerSchema(exerciceId: number): void {
+    const ouverts = new Set(this.schemasOuverts());
+    if (ouverts.has(exerciceId)) ouverts.delete(exerciceId); else ouverts.add(exerciceId);
+    this.schemasOuverts.set(ouverts);
   }
 
   exercicesDeLaPhase(bloc: BlocAffiche, phase: string): ExerciceBaseVue[] {

@@ -200,6 +200,11 @@ export class ApiService {
       if (!p.aPhoto) await supprimer(MAGASIN_CACHE, p.cle);
       else if (await this.tenter(p.lire)) photos++;
     }
+
+    // Schémas des exercices de la base, pour les montrer au bord du bassin.
+    const schemas = new Set(paquet.grilles.flatMap(g => g.blocs.flatMap(b => b.exercices ?? []))
+      .filter(e => e.aSchema).map(e => e.id));
+    for (const id of schemas) await this.tenter(() => this.schemaExercice(id));
     return { grilles: paquet.grilles.length, feuilles, fiches, photos };
   }
 
@@ -264,6 +269,24 @@ export class ApiService {
   /** Refusé si l'exercice a déjà servi à noter un élève : le désactiver plutôt. */
   supprimerExerciceBase(referentielId: number, exerciceId: number): Observable<unknown> {
     return this.http.delete(`/api/referentiels/${referentielId}/exercices/${exerciceId}`);
+  }
+
+  /** Schéma d'un exercice de la base ; gardé sur l'appareil pour le bord du bassin. */
+  schemaExercice(exerciceId: number): Promise<Blob> {
+    return this.lirePhoto(`schema-exercice:${exerciceId}`,
+      () => this.http.get(`/api/exercices/${exerciceId}/schema`, { responseType: 'blob' }));
+  }
+
+  deposerSchemaExercice(exerciceId: number, fichier: File): Observable<unknown> {
+    void supprimer(MAGASIN_CACHE, `schema-exercice:${exerciceId}`);
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    return this.http.put(`/api/exercices/${exerciceId}/schema`, donnees);
+  }
+
+  supprimerSchemaExercice(exerciceId: number): Observable<unknown> {
+    void supprimer(MAGASIN_CACHE, `schema-exercice:${exerciceId}`);
+    return this.http.delete(`/api/exercices/${exerciceId}/schema`);
   }
 
   /** Programme d'exercices d'une séance (encadrants). Nécessite le réseau. */

@@ -432,6 +432,14 @@ d'exercices »). Lecture : pastille I/P/M sous chaque critère de la grille,
 dans l'historique et dans chaque case de la vue globale, dont un clic sur
 une séance détaille les exercices notés (`MatriceVue.exercices`). Pas de
 suivi séparé par phase : la phase ne fait que qualifier la note.
+**Schémas** (V52, table `schema_exercice` à part comme `photo_eleve`,
+PNG/JPEG vérifiés par leur signature, `SchemaExerciceService`,
+`/api/exercices/{id}/schema`, dépôt ADMIN) : V53 est une **migration Java**
+(`backend/src/main/java/db/migration/`) qui charge les images de
+`db/schemas/n1/`, découpées exercice par exercice dans le document du club
+(compétences 1 à 8 seulement ; 5.3 et 5.4 partagent le même). Les vues ne
+portent que `aSchema` ; l'image se lit à part (`SchemaExerciceComponent`),
+gardée sur l'appareil et embarquée par « Préparer hors ligne ».
 
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via

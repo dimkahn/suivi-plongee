@@ -106,6 +106,8 @@ export interface ExerciceBaseVue {
   critereReussite: string | null;
   /** Désactivé : plus proposé, mais lisible sur les notes passées. */
   actif: boolean;
+  /** Un schéma se lit par `ApiService.schemaExercice`. Absent d'une grille mise en cache avant. */
+  aSchema?: boolean;
 }
 
 /** L'exercice sur lequel une note a été prise. */
