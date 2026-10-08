@@ -60,6 +60,17 @@ class SynchronisationTest {
         return json.readTree(grille).get("blocs").get(bloc).get("criteres").get(index).get("id").asLong();
     }
 
+    /** Un critère ne passe à acquis que sur un exercice de maîtrise de sa compétence. */
+    private long exerciceDeMaitrise(long cursusId, int bloc, String auth) throws Exception {
+        String grille = mvc.perform(get("/api/cursus/" + cursusId + "/grille")
+                        .header("Authorization", auth))
+                .andReturn().getResponse().getContentAsString();
+        for (JsonNode e : json.readTree(grille).get("blocs").get(bloc).get("exercices")) {
+            if ("MAITRISE".equals(e.get("phase").asText())) return e.get("id").asLong();
+        }
+        throw new IllegalStateException("Aucun exercice de maîtrise dans le bloc " + bloc);
+    }
+
     private long seance(String milieu, String auth) throws Exception {
         String seances = mvc.perform(get("/api/seances").header("Authorization", auth))
                 .andReturn().getResponse().getContentAsString();
@@ -76,6 +87,7 @@ class SynchronisationTest {
         long cursus = cursusDuNiveau("N1", auth);
         long critere = critere(cursus, 1, 0, auth);
         long seance = seance("ARTIFICIEL", auth);
+        long exercice = exerciceDeMaitrise(cursus, 1, auth);
         String reference = UUID.randomUUID().toString();
         // On ne note qu'un élève présent à la séance.
         mvc.perform(put("/api/seances/" + seance + "/presences").header("Authorization", auth)
@@ -86,8 +98,8 @@ class SynchronisationTest {
 
         String lot = """
                 [{"referenceClient":"%s","cursusId":%d,"critereId":%d,"seanceId":%d,
-                  "statut":"ACQUIS","dateEvaluation":"2025-09-22"}]
-                """.formatted(reference, cursus, critere, seance);
+                  "statut":"ACQUIS","dateEvaluation":"2025-09-22","exerciceId":%d}]
+                """.formatted(reference, cursus, critere, seance, exercice);
 
         String premier = mvc.perform(post("/api/synchronisation/evaluations")
                         .header("Authorization", auth)

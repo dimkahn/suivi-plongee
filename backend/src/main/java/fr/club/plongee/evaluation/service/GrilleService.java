@@ -21,7 +21,10 @@ import fr.club.plongee.progression.domain.ProgressionType;
 import fr.club.plongee.progression.repository.ProgressionTypeRepository;
 import fr.club.plongee.progression.service.EcheancesProgression;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
+import fr.club.plongee.referentiel.ExerciceCompetenceController;
 import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
+import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,10 +41,21 @@ public class GrilleService {
     public record CritereVue(Long id, int ordre, String savoirFaire, String critereRealisation,
                              String statut, String parQui, LocalDate le, String commentaire,
                              /** N2/N3 : derniere note prise en piscine ou fosse ; null sinon. */
-                             SuiviEntrainementVue entrainement) {}
+                             SuiviEntrainementVue entrainement,
+                             /** Exercice de la derniere note ; null sans exercice. */
+                             ExerciceNoteVue exercice) {}
 
     /** Suivi d'entrainement d'un critere (N2/N3) : ne compte pas pour l'acquisition. */
-    public record SuiviEntrainementVue(String statut, String parQui, LocalDate le, String commentaire) {}
+    public record SuiviEntrainementVue(String statut, String parQui, LocalDate le, String commentaire,
+                                       ExerciceNoteVue exercice) {}
+
+    /** L'exercice sur lequel une note a ete prise : de quoi afficher « M 1.7 » sans autre requete. */
+    public record ExerciceNoteVue(Long id, String numero, String intitule, String phase) {
+
+        public static ExerciceNoteVue de(ExerciceCompetence e) {
+            return e == null ? null : new ExerciceNoteVue(e.getId(), e.getNumero(), e.getIntitule(), e.getPhase().name());
+        }
+    }
 
     public record BlocVue(Long id, String intitule,
                           boolean evaluationTransverse, boolean validerEnDernier,
@@ -56,7 +70,9 @@ public class GrilleService {
                           String theorie, String modalitesEvaluation,
                           /** Fin de la derniere periode de la progression suivie qui contient le bloc ; null sinon. */
                           LocalDate echeance, boolean enRetard,
-                          List<CritereVue> criteres) {}
+                          List<CritereVue> criteres,
+                          /** Base d'exercices de la competence (actifs), proposes a la notation. */
+                          List<ExerciceCompetenceController.ExerciceVue> exercices) {}
 
     /** Une periode de la progression suivie par le cursus : le front en tire les blocs « au programme ». */
     public record PeriodeGrilleVue(String intitule, int moisDebut, int moisFin, String milieu, String note,
@@ -83,7 +99,9 @@ public class GrilleService {
     /** Un exercice du programme d'une seance, vu depuis la fiche d'un eleve. */
     public record ExerciceGrilleVue(String intitule, String consignes, Integer dureeMinutes,
                                     /** Groupe d'entrainement qui l'a prepare ; null : programme commun. */
-                                    String groupe, List<Long> critereIds) {}
+                                    String groupe, List<Long> critereIds,
+                                    /** Exercice de la base dont il est tire ; null sinon. */
+                                    ExerciceNoteVue exerciceBase) {}
 
     /** Seulement les seances qui ont au moins un exercice. */
     public record ProgrammeGrilleVue(Long seanceId, List<ExerciceGrilleVue> exercices) {}
@@ -91,16 +109,23 @@ public class GrilleService {
     /** Vue globale d'un élève : une colonne par séance, comme l'onglet individuel du tableur. */
     public record SeanceEnTeteVue(Long id, LocalDate date, String lieu, String milieu) {}
 
-    /** {@code entrainement} : N2/N3 noté en piscine ou fosse, sans effet sur l'acquisition. */
+    /**
+     * {@code entrainement} : N2/N3 noté en piscine ou fosse, sans effet sur l'acquisition ;
+     * {@code exerciceId} : exercice de la base noté, détaillé dans {@link MatriceVue#exercices}.
+     */
     public record CelluleVue(Long seanceId, LocalDate date, String statut, String parQui,
-                             boolean entrainement) {}
+                             boolean entrainement, Long exerciceId, String commentaire) {}
 
     public record LigneMatriceVue(Long critereId, String blocIntitule, String regroupement,
                                   String savoirFaire, List<CelluleVue> historique) {}
 
-    /** {@code milieuNaturelExclusif} : N2/N3, la vue sépare entraînement et milieu naturel. */
+    /**
+     * {@code milieuNaturelExclusif} : N2/N3, la vue sépare entraînement et milieu naturel ;
+     * {@code exercices} : les exercices de la base notés pour cet élève, avec leur détail.
+     */
     public record MatriceVue(String eleve, String niveau, boolean milieuNaturelExclusif,
-                             List<SeanceEnTeteVue> seances, List<LigneMatriceVue> lignes) {}
+                             List<SeanceEnTeteVue> seances, List<LigneMatriceVue> lignes,
+                             List<ExerciceCompetenceController.ExerciceVue> exercices) {}
 
     private final CursusRepository cursusRepository;
     private final EvaluationService evaluationService;
@@ -111,6 +136,7 @@ public class GrilleService {
     private final ProgressionTypeRepository progressions;
     private final ExerciceSeanceRepository exercices;
     private final GroupeEntrainementRepository groupes;
+    private final ExerciceCompetenceRepository exercicesBase;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
@@ -119,7 +145,9 @@ public class GrilleService {
                          PhotoEleveRepository photos,
                          ProgressionTypeRepository progressions,
                          ExerciceSeanceRepository exercices,
-                         GroupeEntrainementRepository groupes) {
+                         GroupeEntrainementRepository groupes,
+                         ExerciceCompetenceRepository exercicesBase) {
+        this.exercicesBase = exercicesBase;
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
@@ -150,6 +178,12 @@ public class GrilleService {
         boolean enCours = cursus.getStatut() == Cursus.Statut.EN_COURS;
         LocalDate aujourdhui = Calendrier.aujourdhui();
 
+        Map<Long, List<ExerciceCompetenceController.ExerciceVue>> exercicesParBloc = exercicesBase
+                .parReferentiel(cursus.getReferentiel().getId()).stream()
+                .filter(ExerciceCompetence::isActif)
+                .map(ExerciceCompetenceController.ExerciceVue::de)
+                .collect(Collectors.groupingBy(ExerciceCompetenceController.ExerciceVue::blocId));
+
         int acquisTotal = 0;
         int total = 0;
         List<BlocVue> blocs = new java.util.ArrayList<>();
@@ -177,7 +211,8 @@ public class GrilleService {
                     echeances.get(bloc.getId()),
                     enCours && EcheancesProgression.enRetard(echeances.get(bloc.getId()), aujourdhui,
                             v != null, acquis, criteres.size()),
-                    criteres));
+                    criteres,
+                    exercicesParBloc.getOrDefault(bloc.getId(), List.of())));
         }
 
         Long eleveId = cursus.getEleve().getId();
@@ -214,7 +249,8 @@ public class GrilleService {
                 .forEach(e -> parSeance.computeIfAbsent(e.getSeance().getId(), k -> new ArrayList<>())
                         .add(new ExerciceGrilleVue(e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                                 e.getGroupe() == null ? null : e.getGroupe().getNom(),
-                                e.getCriteres().stream().map(Critere::getId).toList())));
+                                e.getCriteres().stream().map(Critere::getId).toList(),
+                                ExerciceNoteVue.de(e.getExerciceCompetence()))));
         return parSeance.entrySet().stream()
                 .map(en -> new ProgrammeGrilleVue(en.getKey(), en.getValue()))
                 .toList();
@@ -252,7 +288,8 @@ public class GrilleService {
                 e == null ? null : e.getCommentaire(),
                 entrainement == null ? null : new SuiviEntrainementVue(entrainement.getStatut().name(),
                         entrainement.getMoniteur().nomComplet(), entrainement.getDateEvaluation(),
-                        entrainement.getCommentaire()));
+                        entrainement.getCommentaire(), ExerciceNoteVue.de(entrainement.getExercice())),
+                e == null ? null : ExerciceNoteVue.de(e.getExercice()));
     }
 
     /**
@@ -274,7 +311,8 @@ public class GrilleService {
                 List<CelluleVue> historique = parCritere.getOrDefault(c.getId(), List.of()).stream()
                         .map(e -> new CelluleVue(e.getSeance() == null ? null : e.getSeance().getId(),
                                 e.getDateEvaluation(), e.getStatut().name(), e.getMoniteur().nomComplet(),
-                                e.isEntrainement()))
+                                e.isEntrainement(), e.getExercice() == null ? null : e.getExercice().getId(),
+                                e.getCommentaire()))
                         .toList();
                 lignes.add(new LigneMatriceVue(c.getId(), bloc.getIntitule(), bloc.getRegroupement(),
                         c.getSavoirFaire(), historique));
@@ -287,6 +325,8 @@ public class GrilleService {
                 .toList();
 
         return new MatriceVue(cursus.getEleve().nomComplet(), cursus.getReferentiel().getNiveau().name(),
-                cursus.getReferentiel().isMilieuNaturelExclusif(), entetes, lignes);
+                cursus.getReferentiel().isMilieuNaturelExclusif(), entetes, lignes,
+                exercicesBase.parReferentiel(cursus.getReferentiel().getId()).stream()
+                        .map(ExerciceCompetenceController.ExerciceVue::de).toList());
     }
 }

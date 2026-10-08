@@ -3,6 +3,7 @@ package fr.club.plongee.evaluation.domain;
 import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 
@@ -69,6 +70,14 @@ public class Evaluation {
      */
     @Column(nullable = false)
     private boolean entrainement;
+
+    /**
+     * Exercice de la base sur lequel le critère a été noté (initiation,
+     * perfectionnement ou maîtrise) ; null pour une note sans exercice.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exercice_id")
+    private ExerciceCompetence exercice;
 
     public Long getId() {
         return id;
@@ -156,5 +165,13 @@ public class Evaluation {
 
     public void setEntrainement(boolean entrainement) {
         this.entrainement = entrainement;
+    }
+
+    public ExerciceCompetence getExercice() {
+        return exercice;
+    }
+
+    public void setExercice(ExerciceCompetence exercice) {
+        this.exercice = exercice;
     }
 }

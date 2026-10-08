@@ -15,6 +15,7 @@ import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.Niveau;
 import fr.club.plongee.referentiel.domain.Referentiel;
+import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.Utilisateur;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,13 +45,14 @@ class GrilleServiceTest {
     @Mock ProgressionTypeRepository progressions;
     @Mock ExerciceSeanceRepository exercices;
     @Mock GroupeEntrainementRepository groupes;
+    @Mock ExerciceCompetenceRepository exercicesBase;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
         service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos,
-                progressions, exercices, groupes);
+                progressions, exercices, groupes, exercicesBase);
     }
 
     @Test

@@ -12,7 +12,10 @@ import fr.club.plongee.planning.domain.GroupeEntrainement;
 import fr.club.plongee.planning.repository.AffectationEncadrantRepository;
 import fr.club.plongee.planning.repository.GroupeEntrainementRepository;
 import fr.club.plongee.securite.UtilisateurPrincipal;
+import fr.club.plongee.evaluation.service.GrilleService;
 import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
+import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.CritereRepository;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
@@ -49,9 +52,10 @@ public class ProgrammeSeanceService {
     public record CritereExerciceVue(Long id, Long blocId, String bloc, String savoirFaire) {}
 
     /** {@code groupeId} null : exercice du programme commun à toute la séance. */
+    /** {@code exerciceBase} : exercice de la base d'exercices dont il est tiré ; null pour un exercice libre. */
     public record ExerciceVue(Long id, Long groupeId, int ordre, String intitule, String consignes,
                               Integer dureeMinutes, Long referentielId, String niveau,
-                              List<CritereExerciceVue> criteres) {}
+                              List<CritereExerciceVue> criteres, GrilleService.ExerciceNoteVue exerciceBase) {}
 
     /** Une formation proposée pour les exercices : celles des élèves de la saison, puis les versions actives. */
     public record FormationVue(Long referentielId, String niveau, String versionMft, int eleves) {}
@@ -70,7 +74,13 @@ public class ProgrammeSeanceService {
                                List<ExerciceVue> exercices) {}
 
     public record DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
-                                  Long referentielId, List<Long> critereIds) {}
+                                  Long referentielId, List<Long> critereIds, Long exerciceBaseId) {
+
+        public DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
+                               Long referentielId, List<Long> critereIds) {
+            this(intitule, consignes, dureeMinutes, referentielId, critereIds, null);
+        }
+    }
 
     private final SeanceRepository seances;
     private final ExerciceSeanceRepository exercices;
@@ -79,11 +89,14 @@ public class ProgrammeSeanceService {
     private final CursusRepository cursus;
     private final GroupeEntrainementRepository groupes;
     private final AffectationEncadrantRepository changementsEncadrants;
+    private final ExerciceCompetenceRepository exercicesBase;
 
     public ProgrammeSeanceService(SeanceRepository seances, ExerciceSeanceRepository exercices,
                                   ReferentielRepository referentiels, CritereRepository criteres,
                                   CursusRepository cursus, GroupeEntrainementRepository groupes,
-                                  AffectationEncadrantRepository changementsEncadrants) {
+                                  AffectationEncadrantRepository changementsEncadrants,
+                                  ExerciceCompetenceRepository exercicesBase) {
+        this.exercicesBase = exercicesBase;
         this.seances = seances;
         this.exercices = exercices;
         this.referentiels = referentiels;
@@ -181,6 +194,15 @@ public class ProgrammeSeanceService {
             e.setIntitule(intitule);
             e.setConsignes(d.consignes() == null || d.consignes().isBlank() ? null : d.consignes().trim());
             e.setDureeMinutes(d.dureeMinutes());
+            if (d.exerciceBaseId() != null) {
+                ExerciceCompetence base = exercicesBase.findById(d.exerciceBaseId())
+                        .orElseThrow(() -> new RessourceIntrouvableException("Exercice introuvable"));
+                if (ref == null || !base.getBloc().getReferentiel().getId().equals(ref.getId())) {
+                    throw new RegleMetierException("L'exercice « " + base.libelle()
+                            + " » n'appartient pas à la formation choisie pour « " + intitule + " ».");
+                }
+                e.setExerciceCompetence(base);
+            }
             for (Long id : ids) {
                 Critere c = criteresConnus.get(id);
                 if (c == null) throw new RessourceIntrouvableException("Critère introuvable");
@@ -259,7 +281,8 @@ public class ProgrammeSeanceService {
                 .toList();
         Referentiel r = e.getReferentiel();
         return new ExerciceVue(e.getId(), e.getGroupe() == null ? null : e.getGroupe().getId(), e.getOrdre(), e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
-                r == null ? null : r.getId(), r == null ? null : r.getNiveau().name(), criteres);
+                r == null ? null : r.getId(), r == null ? null : r.getNiveau().name(), criteres,
+                GrilleService.ExerciceNoteVue.de(e.getExerciceCompetence()));
     }
 
     private Seance seance(Long id) {

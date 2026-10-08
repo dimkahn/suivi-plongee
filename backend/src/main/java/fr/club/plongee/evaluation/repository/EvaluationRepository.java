@@ -24,6 +24,11 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     List<Object[]> compterParCursusPourSeance(@Param("seanceId") Long seanceId);
     boolean existsByCritereId(Long critereId);
     boolean existsByCritere_BlocId(Long blocId);
+    boolean existsByExerciceId(Long exerciceId);
+
+    /** Dernière note d'un critère dans un suivi (milieu naturel ou entraînement). */
+    java.util.Optional<Evaluation> findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(
+            Long cursusId, Long critereId, boolean entrainement);
 
     /**
      * Etat courant de la grille : la derniere evaluation saisie pour chaque critere.
@@ -43,6 +48,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
            select e from Evaluation e
              join fetch e.critere c
              join fetch e.moniteur m
+             left join fetch e.exercice x
             where e.id in (
                   select max(e2.id) from Evaluation e2
                    where e2.cursus.id = :cursusId and e2.entrainement = :entrainement
@@ -55,6 +61,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     @Query("""
            select e from Evaluation e
              join fetch e.moniteur m
+             left join fetch e.exercice x
             where e.cursus.id = :cursusId and e.critere.id = :critereId
             order by e.saisiLe
            """)
@@ -70,6 +77,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
            select e from Evaluation e
              join fetch e.moniteur m
              left join fetch e.seance s
+             left join fetch e.exercice x
             where e.cursus.id = :cursusId
             order by e.critere.id, e.saisiLe
            """)
