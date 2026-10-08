@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Statut } from './modeles';
+import { PhaseExercice, Statut } from './modeles';
 import {
   MAGASIN_ATTENTE, MAGASIN_REFUS, ecrire, lireTout, nouvelleReference, supprimer
 } from './base-locale';
@@ -17,6 +17,9 @@ export interface SaisieEnAttente {
   dateEvaluation: string;
   /** Exercice de la base noté ; absent des saisies mises en file avant son arrivée. */
   exerciceId?: number | null;
+  /** À défaut, exercice libre du programme de la séance : son intitulé, et sa phase pour l'affichage local. */
+  exerciceLibre?: string | null;
+  phaseLibre?: PhaseExercice | null;
   creeLe: number;
   tentatives: number;
 }
@@ -152,7 +155,8 @@ export class FileAttenteService {
             statut: s.statut,
             commentaire: s.commentaire,
             dateEvaluation: s.dateEvaluation,
-            exerciceId: s.exerciceId ?? null
+            exerciceId: s.exerciceId ?? null,
+            exerciceLibre: s.exerciceLibre ?? null
           })))
       );
 
@@ -201,7 +205,9 @@ export class FileAttenteService {
       statut: refus.statut,
       commentaire: refus.commentaire,
       dateEvaluation: refus.dateEvaluation,
-      exerciceId: refus.exerciceId ?? null
+      exerciceId: refus.exerciceId ?? null,
+      exerciceLibre: refus.exerciceLibre ?? null,
+      phaseLibre: refus.phaseLibre ?? null
     });
   }
 

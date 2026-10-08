@@ -29,7 +29,9 @@ public class EvaluationController {
                                   String commentaire, LocalDate dateEvaluation,
                                   String referenceClient,
                                   /** Exercice de la base sur lequel le critère est noté. */
-                                  Long exerciceId) {}
+                                  Long exerciceId,
+                                  /** À défaut, intitulé d'un exercice libre du programme de la séance. */
+                                  String exerciceLibre) {}
 
     public record DemandeValidation(String commentaire) {}
 
@@ -82,7 +84,7 @@ public class EvaluationController {
         Evaluation e = evaluations.noter(cursusId,
                 new EvaluationService.Notation(demande.critereId(), demande.seanceId(),
                         demande.statut(), demande.commentaire(), demande.dateEvaluation(),
-                        demande.referenceClient(), demande.exerciceId()),
+                        demande.referenceClient(), demande.exerciceId(), demande.exerciceLibre()),
                 auteur);
         return vue(e);
     }
@@ -128,7 +130,7 @@ public class EvaluationController {
     private EvaluationVue vue(Evaluation e) {
         return new EvaluationVue(e.getId(), e.getCritere().getId(), e.getStatut().name(),
                 e.getCommentaire(), e.getDateEvaluation(), e.getMoniteur().nomComplet(),
-                e.isEntrainement(), GrilleService.ExerciceNoteVue.de(e.getExercice()),
+                e.isEntrainement(), GrilleService.ExerciceNoteVue.de(e),
                 e.getStatutExercice() == null ? null : e.getStatutExercice().name());
     }
 }

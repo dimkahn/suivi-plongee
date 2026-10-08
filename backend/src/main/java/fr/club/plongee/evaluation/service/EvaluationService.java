@@ -33,14 +33,22 @@ import java.util.stream.Collectors;
 @Service
 public class EvaluationService {
 
-    /** {@code exerciceId} : exercice de la base sur lequel le critère est noté, facultatif. */
+    /**
+     * {@code exerciceId} : exercice de la base sur lequel le critère est noté, facultatif ;
+     * {@code exerciceLibre} : à défaut, intitulé d'un exercice libre du programme de la séance.
+     */
     public record Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                            String commentaire, LocalDate dateEvaluation,
-                           String referenceClient, Long exerciceId) {
+                           String referenceClient, Long exerciceId, String exerciceLibre) {
 
         public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                         String commentaire, LocalDate dateEvaluation, String referenceClient) {
-            this(critereId, seanceId, statut, commentaire, dateEvaluation, referenceClient, null);
+            this(critereId, seanceId, statut, commentaire, dateEvaluation, referenceClient, null, null);
+        }
+
+        public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
+                        String commentaire, LocalDate dateEvaluation, String referenceClient, Long exerciceId) {
+            this(critereId, seanceId, statut, commentaire, dateEvaluation, referenceClient, exerciceId, null);
         }
     }
 
@@ -53,6 +61,7 @@ public class EvaluationService {
     private final HabilitationService habilitation;
     private final ParticipationRepository participations;
     private final ExerciceCompetenceRepository exercicesCompetence;
+    private final ExerciceSeanceRepository exercicesSeance;
 
     public EvaluationService(EvaluationRepository evaluations,
                              ValidationCompetenceRepository validations,
@@ -62,8 +71,10 @@ public class EvaluationService {
                              UtilisateurRepository utilisateurs,
                              HabilitationService habilitation,
                              ParticipationRepository participations,
-                             ExerciceCompetenceRepository exercicesCompetence) {
+                             ExerciceCompetenceRepository exercicesCompetence,
+                             ExerciceSeanceRepository exercicesSeance) {
         this.exercicesCompetence = exercicesCompetence;
+        this.exercicesSeance = exercicesSeance;
         this.evaluations = evaluations;
         this.validations = validations;
         this.cursusRepository = cursusRepository;
@@ -111,12 +122,14 @@ public class EvaluationService {
 
         boolean entrainement = estEntrainement(cursus.getReferentiel(), seance);
         ExerciceCompetence exercice = exercice(notation.exerciceId(), critere);
+        ExerciceSeance libre = exercice == null ? exerciceLibre(notation.exerciceLibre(), seance, critere) : null;
+        PhaseExercice phase = exercice != null ? exercice.getPhase() : libre != null ? libre.getPhase() : null;
         StatutAcquisition actuel = evaluations
                 .findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(cursus.getId(), critere.getId(), entrainement)
                 .map(Evaluation::getStatut)
                 .orElse(StatutAcquisition.NON_ABORDE);
         List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuCritere(critere.getId());
-        verifierExerciceDeMaitrise(critere, notation.statut(), actuel, exercice, deMaitrise);
+        verifierExerciceDeMaitrise(critere, notation.statut(), actuel, phase, deMaitrise);
 
         Utilisateur moniteur = utilisateurs.findById(auteur.id()).orElseThrow();
 
@@ -125,8 +138,14 @@ public class EvaluationService {
         e.setCritere(critere);
         e.setSeance(seance);
         e.setMoniteur(moniteur);          // jamais un id transmis par le client
-        e.setStatut(statutDuCritere(notation.statut(), actuel, exercice, !deMaitrise.isEmpty()));
-        e.setStatutExercice(exercice == null ? null : notation.statut());
+        // Un exercice libre suit toujours la règle des phases : le moniteur
+        // l'a relié au critère et lui a donné sa phase.
+        e.setStatut(statutDuCritere(notation.statut(), actuel, phase, !deMaitrise.isEmpty() || libre != null));
+        e.setStatutExercice(phase == null ? null : notation.statut());
+        if (libre != null) {
+            e.setExerciceLibre(libre.getIntitule());
+            e.setPhaseExercice(libre.getPhase());
+        }
         e.setCommentaire(notation.commentaire());
         e.setDateEvaluation(notation.dateEvaluation() != null
                 ? notation.dateEvaluation()
@@ -150,16 +169,45 @@ public class EvaluationService {
     }
 
     /**
+     * Exercice libre du programme de la séance (choix du club, 2026),
+     * retrouvé par son intitulé : le programme se remplace d'un bloc, et une
+     * note prise hors ligne doit survivre à ce remplacement. Il doit
+     * travailler le critère noté et avoir une phase.
+     */
+    private ExerciceSeance exerciceLibre(String intitule, Seance seance, Critere critere) {
+        if (intitule == null || intitule.isBlank()) return null;
+        if (seance == null) {
+            throw new RegleMetierException("Un exercice libre se note sur la séance de son programme.");
+        }
+        List<ExerciceSeance> candidats = exercicesSeance.deLaSeance(seance.getId()).stream()
+                .filter(x -> x.getExerciceCompetence() == null && x.getIntitule().equals(intitule.trim()))
+                .toList();
+        if (candidats.isEmpty()) {
+            throw new RegleMetierException("L'exercice « " + intitule.trim()
+                    + " » n'est plus au programme de la séance.");
+        }
+        ExerciceSeance libre = candidats.stream().filter(x -> x.getCriteres().stream().anyMatch(c -> c.getId().equals(critere.getId()))).findFirst()
+                .orElseThrow(() -> new RegleMetierException("L'exercice « " + intitule.trim()
+                        + " » ne travaille pas le critère « " + critere.getSavoirFaire() + " »."));
+        if (libre.getPhase() == null) {
+            throw new RegleMetierException("Donnez une phase (initiation, perfectionnement ou maîtrise) à l'exercice « "
+                    + libre.getIntitule() + " » dans le programme de la séance avant de noter dessus.");
+        }
+        return libre;
+    }
+
+    /**
      * Base d'exercices (choix du club, 2026) : un critère relié à des
      * exercices de maîtrise ne passe pas à « acquis » sans exercice. Un
      * critère déjà acquis peut recevoir une note acquise sans exercice
      * (simple commentaire, notation groupée) : il ne change pas d'état.
-     * Sur un exercice d'initiation ou de perfectionnement, « acquis » est
-     * accepté : c'est l'exercice qui est acquis (voir {@link #statutDuCritere}).
+     * Sur un exercice (de la base ou libre) d'initiation ou de
+     * perfectionnement, « acquis » est accepté : c'est l'exercice qui est
+     * acquis (voir {@link #statutDuCritere}).
      */
     private void verifierExerciceDeMaitrise(Critere critere, StatutAcquisition statut, StatutAcquisition actuel,
-                                            ExerciceCompetence exercice, List<ExerciceCompetence> deMaitrise) {
-        if (statut != StatutAcquisition.ACQUIS || exercice != null) return;
+                                            PhaseExercice phase, List<ExerciceCompetence> deMaitrise) {
+        if (statut != StatutAcquisition.ACQUIS || phase != null) return;
         if (deMaitrise.isEmpty() || actuel == StatutAcquisition.ACQUIS) return;
         String lesquels = " (" + deMaitrise.stream().map(ExerciceCompetence::getNumero)
                 .collect(Collectors.joining(", ")) + ")";
@@ -174,13 +222,13 @@ public class EvaluationService {
      * maîtrise fait l'état du critère. Toute autre note sur un exercice
      * (initiation ou perfectionnement même acquis, exercice non abordé) met le
      * critère en cours, et ne fait jamais reculer un critère déjà acquis. Sans
-     * exercice, ou pour un critère sans exercice de maîtrise, la note est
-     * l'état du critère, comme avant.
+     * exercice, ou pour un critère sans exercice de maîtrise noté sur la base,
+     * la note est l'état du critère, comme avant.
      */
     static StatutAcquisition statutDuCritere(StatutAcquisition demande, StatutAcquisition actuel,
-                                             ExerciceCompetence exercice, boolean critereAMaitrise) {
-        if (exercice == null || !critereAMaitrise) return demande;
-        if (exercice.getPhase() == PhaseExercice.MAITRISE && demande != StatutAcquisition.NON_ABORDE) return demande;
+                                             PhaseExercice phase, boolean regleDesPhases) {
+        if (phase == null || !regleDesPhases) return demande;
+        if (phase == PhaseExercice.MAITRISE && demande != StatutAcquisition.NON_ABORDE) return demande;
         if (actuel == StatutAcquisition.ACQUIS) return StatutAcquisition.ACQUIS;
         return StatutAcquisition.EN_COURS;
     }

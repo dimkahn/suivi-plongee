@@ -4,6 +4,7 @@ import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.ExerciceCompetence;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 
@@ -87,6 +88,39 @@ public class Evaluation {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private StatutAcquisition statutExercice;
+
+    /**
+     * Exercice libre du programme de la séance sur lequel le critère a été
+     * noté : une copie de son intitulé et de sa phase, le programme pouvant
+     * être remplacé ensuite. Null sinon.
+     */
+    @Column(length = 200)
+    private String exerciceLibre;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private PhaseExercice phaseExercice;
+
+    /** Phase de l'exercice noté, de la base ou libre ; null sans exercice. */
+    public PhaseExercice phaseDeLExercice() {
+        return exercice != null ? exercice.getPhase() : phaseExercice;
+    }
+
+    public String getExerciceLibre() {
+        return exerciceLibre;
+    }
+
+    public void setExerciceLibre(String exerciceLibre) {
+        this.exerciceLibre = exerciceLibre;
+    }
+
+    public PhaseExercice getPhaseExercice() {
+        return phaseExercice;
+    }
+
+    public void setPhaseExercice(PhaseExercice phaseExercice) {
+        this.phaseExercice = phaseExercice;
+    }
 
     public StatutAcquisition getStatutExercice() {
         return statutExercice;

@@ -216,6 +216,88 @@ class BaseExercicesTest {
     }
 
     @Test
+    @DisplayName("Un exercice libre du programme, relié au critère et avec une phase, sert à noter")
+    void notationSurExerciceLibre() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e1@club.fr");
+
+        long eleveId = envoyer("POST", "/api/eleves", admin, """
+                {"nom":"Libre","prenom":"Test","dateNaissance":"2000-01-01","autorisationLegale":true}""",
+                201).get("id").asLong();
+        long seanceId = envoyer("POST", "/api/seances", admin, """
+                {"dateSeance":"%s","ordre":9,"milieu":"ARTIFICIEL","lieu":"Piscine exercices libres"}"""
+                .formatted(Calendrier.aujourdhui()), 201).get("id").asLong();
+        try {
+            long cursus = envoyer("POST", "/api/cursus", admin, """
+                    {"eleveId":%d,"saisonId":%d,"niveau":"N1"}""".formatted(eleveId, saisonOuverte(admin)),
+                    201).get("id").asLong();
+            envoyer("PUT", "/api/seances/" + seanceId + "/presences", moniteur, """
+                    [{"cursusId":%d,"statut":"PRESENT","atelier":"BLOC"}]""".formatted(cursus), 200);
+            JsonNode bloc = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200).get("blocs").get(0);
+            long critere = bloc.get("criteres").get(0).get("id").asLong();
+
+            long ref = referentielN1(moniteur);
+            Map<String, Object> initiation = new HashMap<>();
+            initiation.put("intitule", "Gréage en binôme");
+            initiation.put("referentielId", ref);
+            initiation.put("critereIds", List.of(critere));
+            initiation.put("phase", "INITIATION");
+            Map<String, Object> maitrise = new HashMap<>(initiation);
+            maitrise.put("intitule", "Gréage seul, yeux fermés");
+            maitrise.put("phase", "MAITRISE");
+            Map<String, Object> sansPhase = new HashMap<>(initiation);
+            sansPhase.put("intitule", "Gréage libre");
+            sansPhase.remove("phase");
+            envoyer("PUT", "/api/seances/" + seanceId + "/programme", moniteur,
+                    List.of(initiation, maitrise, sansPhase), 200);
+
+            String url = "/api/cursus/" + cursus + "/evaluations";
+            String note = """
+                    {"critereId":%d,"seanceId":%d,"statut":"%s","exerciceLibre":"%s"}""";
+            // Exercice libre d'initiation acquis : le critère reste en cours.
+            JsonNode n = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "ACQUIS", "Gréage en binôme"), 201);
+            assertThat(n.get("statut").asText()).isEqualTo("EN_COURS");
+            assertThat(n.get("statutExercice").asText()).isEqualTo("ACQUIS");
+            assertThat(n.get("exercice").get("intitule").asText()).isEqualTo("Gréage en binôme");
+            assertThat(n.get("exercice").get("phase").asText()).isEqualTo("INITIATION");
+            assertThat(n.get("exercice").get("id").isNull()).isTrue();
+
+            JsonNode refus = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "ACQUIS", "Gréage libre"), 422);
+            assertThat(refus.get("detail").asText()).contains("Donnez une phase");
+            refus = envoyer("POST", url, moniteur, note.formatted(critere, seanceId, "ACQUIS", "Inconnu"), 422);
+            assertThat(refus.get("detail").asText()).contains("n'est plus au programme");
+            long autreCritere = bloc.get("criteres").get(1).get("id").asLong();
+            refus = envoyer("POST", url, moniteur,
+                    note.formatted(autreCritere, seanceId, "ACQUIS", "Gréage en binôme"), 422);
+            assertThat(refus.get("detail").asText()).contains("ne travaille pas le critère");
+
+            // Exercice libre de maîtrise acquis : le critère est acquis.
+            n = envoyer("POST", url, moniteur, note.formatted(critere, seanceId, "ACQUIS", "Gréage seul, yeux fermés"), 201);
+            assertThat(n.get("statut").asText()).isEqualTo("ACQUIS");
+
+            JsonNode matrice = envoyer("GET", "/api/cursus/" + cursus + "/matrice", moniteur, null, 200);
+            JsonNode cellules = null;
+            for (JsonNode l : matrice.get("lignes")) if (l.get("critereId").asLong() == critere) cellules = l.get("historique");
+            assertThat(cellules.get(0).get("exerciceLibre").asText()).isEqualTo("Gréage en binôme");
+            assertThat(cellules.get(0).get("phaseExercice").asText()).isEqualTo("INITIATION");
+            assertThat(cellules.get(1).get("phaseExercice").asText()).isEqualTo("MAITRISE");
+
+            // Le programme remplacé, la note garde l'intitulé et la phase de l'exercice.
+            envoyer("PUT", "/api/seances/" + seanceId + "/programme", moniteur, List.of(), 200);
+            JsonNode critereVu = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200)
+                    .get("blocs").get(0).get("criteres").get(0);
+            assertThat(critereVu.get("exercice").get("intitule").asText()).isEqualTo("Gréage seul, yeux fermés");
+            assertThat(critereVu.get("statut").asText()).isEqualTo("ACQUIS");
+        } finally {
+            mvc.perform(post("/api/eleves/" + eleveId + "/archivage").header("Authorization", admin));
+            mvc.perform(delete("/api/eleves/" + eleveId).header("Authorization", admin));
+            mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
+        }
+    }
+
+    @Test
     @DisplayName("Le programme d'une séance se construit à partir des exercices de la base")
     void programmeDepuisLaBase() throws Exception {
         String admin = jeton("presidente@club.fr");

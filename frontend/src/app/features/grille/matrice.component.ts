@@ -74,7 +74,8 @@ const LIBELLES: Record<string, string> = {
           Une case donne l'état de l'exercice noté : « A » + <app-pastille-phase phase="INITIATION" /> = exercice
           d'initiation acquis. Le critère n'est acquis qu'avec un exercice de maîtrise
           <app-pastille-phase phase="MAITRISE" /> acquis ; sinon la case le rappelle (« critère en cours »).
-          Une note prise sans choisir d'exercice est marquée « sans exercice » : sa phase n'est pas connue.
+          Une pastille sans numéro : exercice libre du programme. Une note prise sans choisir d'exercice est
+          marquée « sans exercice » : sa phase n'est pas connue.
         </p>
       }
 
@@ -177,9 +178,11 @@ const LIBELLES: Record<string, string> = {
                       {{ libelleCase(cellule) }}
                       @if (exerciceDe(cellule); as exo) {
                         <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+                      } @else if (cellule?.exerciceLibre && cellule?.phaseExercice) {
+                        <app-pastille-phase [phase]="cellule!.phaseExercice!" [intitule]="'exercice libre : ' + cellule!.exerciceLibre" />
                       }
                     </span>
-                    @if (cellule && !exerciceDe(cellule) && criteresAvecExercices().has(item.ligne.critereId)) {
+                    @if (cellule && !exerciceDe(cellule) && !cellule.exerciceLibre && criteresAvecExercices().has(item.ligne.critereId)) {
                       <span class="sans-exercice">sans exercice</span>
                     }
                     @if (critereDifferent(cellule)) {
@@ -273,12 +276,18 @@ const LIBELLES: Record<string, string> = {
           }
           @if (detail.sansExercice.length > 0) {
             <section class="exercice-seance">
-              <h3>Notes sans exercice</h3>
+              <h3>Notes sans exercice de la base</h3>
               <ul class="notes-seance">
                 @for (n of detail.sansExercice; track $index) {
                   <li>
-                    <span [class]="'pastille ' + suffixe(n.cellule)">{{ libelle(n.cellule) }}</span>
+                    <span [class]="'pastille ' + suffixeCase(n.cellule)">{{ libelleCase(n.cellule) }}</span>
                     {{ n.critere }} <span class="secondaire">· {{ n.cellule.parQui }}</span>
+                    @if (n.cellule.exerciceLibre && n.cellule.phaseExercice) {
+                      <span class="critere-case">
+                        <app-pastille-phase [phase]="n.cellule.phaseExercice" [intitule]="'exercice libre'" />
+                        exercice libre « {{ n.cellule.exerciceLibre }} »@if (critereDifferent(n.cellule)) {, critère {{ libelleLong(n.cellule) }}}
+                      </span>
+                    }
                     @if (n.cellule.commentaire) { <span class="commentaire-note">« {{ n.cellule.commentaire }} »</span> }
                   </li>
                 }
@@ -661,6 +670,10 @@ export class MatriceComponent {
   titreCase(cellule: CelluleMatrice | null): string {
     if (!cellule) return '';
     const exo = this.exerciceDe(cellule);
+    if (!exo && cellule.exerciceLibre && cellule.phaseExercice && cellule.statutExercice) {
+      return `Exercice libre « ${cellule.exerciceLibre} » (${libellePhase(cellule.phaseExercice).toLowerCase()}) `
+        + `${this.libelleLong(this.etatCase(cellule))} · critère ${this.libelleLong(cellule)}`;
+    }
     if (!exo || !cellule.statutExercice) return `Critère ${this.libelleLong(cellule)}`;
     return `Exercice ${exo.numero} (${libellePhase(exo.phase).toLowerCase()}) ${this.libelleLong(this.etatCase(cellule))}`
       + ` · critère ${this.libelleLong(cellule)}`;
