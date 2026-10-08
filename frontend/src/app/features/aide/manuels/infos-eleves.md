@@ -10,6 +10,7 @@ questions:
 - Que veulent dire les couleurs du CACI ?
 - Quelles activités le CACI d'un élève couvre-t-il ?
 - Comment trouver le contact d'urgence d'un élève ?
+- Comment noter un élève sur une séance depuis Infos élèves ?
 ---
 « Infos élèves » est la page d'accueil : chaque élève de la saison avec son niveau préparé, son CACI et ses séances suivies.
 
@@ -19,7 +20,9 @@ questions:
 2. Les boutons filtrent par groupe d'entraînement ; la recherche retrouve un nom ou un prénom.
 3. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.
 4. Touchez un nom pour ouvrir la fiche de l'élève.
-5. « Informations supplémentaires » : téléphone et contact d'urgence.
+5. Touchez la case d'un élève sous une date : sa grille s'ouvre, **cette séance déjà choisie**, prête à noter.
+6. Touchez une date en haut de colonne : la feuille de cette séance s'ouvre (présences, programme d'exercices, « Noter les présents »).
+7. « Informations supplémentaires » : téléphone et contact d'urgence.
 
 ## Les couleurs du CACI
 
@@ -35,3 +38,4 @@ Touchez la case CACI d'un élève : une fenêtre donne la date de l'examen, la f
 - Si la case « limites et préconisations » est cochée, un encadré le signale : lisez le certificat papier, le détail n'est pas dans l'appli.
 - Aucune donnée de santé n'est enregistrée : seules les dates, le médecin et les cases, jamais le texte écrit par le médecin.
 - Les cases se saisissent dans le dossier de l'élève, par un administrateur.
+- Un élève ne se note que sur une séance passée où il est noté présent : sinon la grille le dit et propose sa dernière séance.

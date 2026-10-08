@@ -58,11 +58,14 @@ const LIBELLES: Record<string, string> = {
               <th>Nage</th>
               @for (s of r.seances; track s.id) {
                 <th class="entete-seance">
-                  <span class="date-seance">{{ s.date | dateFr }}</span>
-                  @if (s.lieu) { <span class="lieu-seance">{{ s.lieu }}</span> }
-                  <span class="milieu-seance" [class.naturel]="s.milieu === 'NATUREL'">
-                    {{ s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine' }}
-                  </span>
+                  <a class="lien-seance" [routerLink]="['/presences']" [queryParams]="{ seance: s.id }"
+                     [attr.aria-label]="'Feuille et notation de la séance du ' + (s.date | dateFr)">
+                    <span class="date-seance">{{ s.date | dateFr }}</span>
+                    @if (s.lieu) { <span class="lieu-seance">{{ s.lieu }}</span> }
+                    <span class="milieu-seance" [class.naturel]="s.milieu === 'NATUREL'">
+                      {{ s.milieu === 'NATUREL' ? 'Naturel' : 'Piscine' }}
+                    </span>
+                  </a>
                 </th>
               }
             </tr>
@@ -95,8 +98,11 @@ const LIBELLES: Record<string, string> = {
                 <td>{{ e.seancesBloc }}</td>
                 <td>{{ e.seancesNage }}</td>
                 @for (s of r.seances; track s.id) {
-                  <td [class.absence]="e.presencesParSeance[s.id] === 'ABSENT'">
-                    {{ libelle(e.presencesParSeance[s.id]) }}
+                  <td [class.absence]="e.presencesParSeance[s.id] === 'ABSENT'" class="cellule-seance">
+                    <a class="lien-notation" [routerLink]="['/cursus', e.cursusId]" [queryParams]="{ seance: s.id }"
+                       [attr.aria-label]="'Noter ' + e.eleve + ' sur la séance du ' + (s.date | dateFr)">
+                      {{ libelle(e.presencesParSeance[s.id]) }}
+                    </a>
                   </td>
                 }
               </tr>
@@ -135,6 +141,15 @@ const LIBELLES: Record<string, string> = {
     /* Date, lieu et milieu empilés ; le lieu passe à la ligne plutôt que
        d'élargir la colonne. Mêmes couleurs de milieu que le calendrier. */
     .entete-seance { white-space: normal; min-width: 88px; max-width: 120px; }
+    /* Date : feuille de la séance (présences, « Noter les présents ») ; case : grille de l'élève sur cette séance. */
+    .lien-seance { display: block; min-height: 44px; color: inherit; text-decoration: none; }
+    .lien-seance .date-seance { text-decoration: underline; }
+    .cellule-seance { padding: 0; }
+    .lien-notation {
+      display: flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px;
+      padding: 0 8px; color: inherit; text-decoration: none;
+    }
+    .lien-notation:hover { background: var(--fond); text-decoration: underline; }
     .date-seance { display: block; color: var(--encre); }
     .lieu-seance { display: block; font-weight: 400; font-size: .75rem; overflow-wrap: anywhere; }
     .milieu-seance {

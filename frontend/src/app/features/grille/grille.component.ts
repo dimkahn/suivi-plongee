@@ -839,6 +839,8 @@ export class GrilleComponent implements OnDestroy {
   reseau = inject(ReseauService);
 
   id = input.required<string>();
+  /** Séance à choisir d'emblée, tirée de l'adresse (?seance=12). */
+  seance = input<string>();
 
   grille = signal<GrilleVue | null>(null);
   seances = signal<SeanceVue[]>([]);
@@ -1263,7 +1265,18 @@ export class GrilleComponent implements OnDestroy {
       this.seances.set(await this.api.seances());
       // Sans présences connues (grille en cache d'avant la règle), toute
       // séance passée semblerait utilisable : pas de présélection.
-      if (premier && g.seancesPresent) this.seanceId.set(this.seancesUtilisables().at(-1)?.id ?? null);
+      if (premier && g.seancesPresent) {
+        // Séance demandée par l'adresse (?seance=12, depuis « Infos élèves »), sinon la dernière où il est présent.
+        const demandee = this.seance() ? Number(this.seance()) : null;
+        const utilisable = this.seancesUtilisables().find(s => s.id === demandee);
+        this.seanceId.set(utilisable?.id ?? this.seancesUtilisables().at(-1)?.id ?? null);
+        const s = this.seances().find(x => x.id === demandee);
+        if (s && !utilisable) {
+          this.message.set(s.date > this.aujourdhui
+            ? `La séance du ${dateFr(s.date)} n'a pas encore eu lieu : on ne note pas à l'avance.`
+            : `${g.eleve} n'est pas noté présent à la séance du ${dateFr(s.date)} : faites d'abord l'appel.`);
+        }
+      }
       this.erreurChargement.set(false);
       if (!this.reseau.enLigne()) await this.afficherAgeDuCache();
       else this.ageDuCache.set(null);
