@@ -29,7 +29,9 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 
 Chaque critère du N1 a ses exercices, rangés en trois temps ; un exercice peut travailler plusieurs critères de la même compétence. Une pastille dit d'un coup d'œil où en est l'élève : **I** initiation (bleu), **P** perfectionnement (ambre), **M** maîtrise (vert), suivie du numéro (« M 1.7 »).
 
-- **Seul un exercice de maîtrise relié au critère le fait passer à « Acquis ».** Un critère qui n'a aucun exercice de maîtrise (aujourd'hui « Départ plage » et « Ventilation sur tuba ») s'acquiert comme avant. Si vous touchez « Acquis » sur un autre exercice, la liste des exercices s'ouvre : choisissez l'exercice de maîtrise réalisé, la note part aussitôt.
+- **On note l'exercice.** « En cours » ou « Acquis » disent où en est l'élève dans l'exercice choisi : un exercice d'initiation ou de perfectionnement peut être acquis. Sous le critère : « Noté sur I 1.1 : exercice acquis · critère en cours ».
+- **Le critère n'est acquis qu'avec un exercice de maîtrise acquis.** Un exercice d'initiation ou de perfectionnement laisse le critère en cours, et ne fait jamais reculer un critère déjà acquis. Un critère qui n'a aucun exercice de maîtrise (aujourd'hui « Départ plage » et « Ventilation sur tuba ») s'acquiert comme avant.
+- Sans exercice choisi, « Acquis » ouvre la liste des exercices : choisissez celui réalisé, la note part aussitôt.
 - Un critère déjà acquis se commente sans redonner l'exercice.
 - « Voir le schéma » montre l'organisation dans l'eau, sous l'exercice choisi comme dans la liste. Après « Préparer hors ligne », les schémas restent visibles sans réseau.
 - Dans la vue globale, chaque case montre la pastille de l'exercice ; touchez une date pour voir les exercices de cette séance, leur déroulement et les critères notés.

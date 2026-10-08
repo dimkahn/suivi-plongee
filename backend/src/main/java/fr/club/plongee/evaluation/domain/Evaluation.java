@@ -79,6 +79,23 @@ public class Evaluation {
     @JoinColumn(name = "exercice_id")
     private ExerciceCompetence exercice;
 
+    /**
+     * État de l'exercice noté, tel que saisi par le moniteur ; null sans
+     * exercice. {@link #statut} est l'état du critère qui en découle : un
+     * exercice d'initiation acquis laisse le critère en cours.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private StatutAcquisition statutExercice;
+
+    public StatutAcquisition getStatutExercice() {
+        return statutExercice;
+    }
+
+    public void setStatutExercice(StatutAcquisition statutExercice) {
+        this.statutExercice = statutExercice;
+    }
+
     public Long getId() {
         return id;
     }

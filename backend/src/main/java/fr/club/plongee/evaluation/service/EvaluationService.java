@@ -111,7 +111,12 @@ public class EvaluationService {
 
         boolean entrainement = estEntrainement(cursus.getReferentiel(), seance);
         ExerciceCompetence exercice = exercice(notation.exerciceId(), critere);
-        verifierExerciceDeMaitrise(cursus, critere, notation.statut(), entrainement, exercice);
+        StatutAcquisition actuel = evaluations
+                .findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(cursus.getId(), critere.getId(), entrainement)
+                .map(Evaluation::getStatut)
+                .orElse(StatutAcquisition.NON_ABORDE);
+        List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuCritere(critere.getId());
+        verifierExerciceDeMaitrise(critere, notation.statut(), actuel, exercice, deMaitrise);
 
         Utilisateur moniteur = utilisateurs.findById(auteur.id()).orElseThrow();
 
@@ -120,7 +125,8 @@ public class EvaluationService {
         e.setCritere(critere);
         e.setSeance(seance);
         e.setMoniteur(moniteur);          // jamais un id transmis par le client
-        e.setStatut(notation.statut());
+        e.setStatut(statutDuCritere(notation.statut(), actuel, exercice, !deMaitrise.isEmpty()));
+        e.setStatutExercice(exercice == null ? null : notation.statut());
         e.setCommentaire(notation.commentaire());
         e.setDateEvaluation(notation.dateEvaluation() != null
                 ? notation.dateEvaluation()
@@ -145,32 +151,37 @@ public class EvaluationService {
 
     /**
      * Base d'exercices (choix du club, 2026) : un critère relié à des
-     * exercices de maîtrise ne passe à « acquis » que sur l'un d'eux. Un
+     * exercices de maîtrise ne passe pas à « acquis » sans exercice. Un
      * critère déjà acquis peut recevoir une note acquise sans exercice
      * (simple commentaire, notation groupée) : il ne change pas d'état.
+     * Sur un exercice d'initiation ou de perfectionnement, « acquis » est
+     * accepté : c'est l'exercice qui est acquis (voir {@link #statutDuCritere}).
      */
-    private void verifierExerciceDeMaitrise(Cursus cursus, Critere critere, StatutAcquisition statut,
-                                            boolean entrainement, ExerciceCompetence exercice) {
-        if (statut != StatutAcquisition.ACQUIS) return;
-        if (exercice != null && exercice.getPhase() == PhaseExercice.MAITRISE) return;
-        List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuCritere(critere.getId());
-        if (deMaitrise.isEmpty()) return;
-        boolean dejaAcquis = evaluations
-                .findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(cursus.getId(), critere.getId(), entrainement)
-                .map(e -> e.getStatut() == StatutAcquisition.ACQUIS)
-                .orElse(false);
-        if (dejaAcquis) return;
-
+    private void verifierExerciceDeMaitrise(Critere critere, StatutAcquisition statut, StatutAcquisition actuel,
+                                            ExerciceCompetence exercice, List<ExerciceCompetence> deMaitrise) {
+        if (statut != StatutAcquisition.ACQUIS || exercice != null) return;
+        if (deMaitrise.isEmpty() || actuel == StatutAcquisition.ACQUIS) return;
         String lesquels = " (" + deMaitrise.stream().map(ExerciceCompetence::getNumero)
                 .collect(Collectors.joining(", ")) + ")";
-        if (exercice == null) {
-            throw new RegleMetierException("« " + critere.getSavoirFaire()
-                    + " » ne passe à acquis que sur un exercice de maîtrise" + lesquels
-                    + " : indiquez l'exercice réalisé.");
-        }
-        throw new RegleMetierException("L'exercice « " + exercice.libelle() + " » est un exercice de "
-                + exercice.getPhase().libelle().toLowerCase() + " : seul un exercice de maîtrise" + lesquels
-                + " fait passer un critère à acquis. Notez-le « en cours ».");
+        throw new RegleMetierException("« " + critere.getSavoirFaire()
+                + " » ne passe à acquis que sur un exercice de maîtrise" + lesquels
+                + " : indiquez l'exercice réalisé.");
+    }
+
+    /**
+     * État du critère après une note sur un exercice (choix du club, 2026) :
+     * la note dit où en est l'élève dans l'exercice, et seul un exercice de
+     * maîtrise fait l'état du critère. Un exercice d'initiation ou de
+     * perfectionnement, même acquis, laisse le critère en cours, et ne fait
+     * jamais reculer un critère déjà acquis. Sans exercice, ou pour un critère
+     * sans exercice de maîtrise, la note est l'état du critère, comme avant.
+     */
+    static StatutAcquisition statutDuCritere(StatutAcquisition demande, StatutAcquisition actuel,
+                                             ExerciceCompetence exercice, boolean critereAMaitrise) {
+        if (exercice == null || !critereAMaitrise || exercice.getPhase() == PhaseExercice.MAITRISE) return demande;
+        if (actuel == StatutAcquisition.ACQUIS) return StatutAcquisition.ACQUIS;
+        if (demande == StatutAcquisition.NON_ABORDE) return actuel;
+        return StatutAcquisition.EN_COURS;
     }
 
     /**
