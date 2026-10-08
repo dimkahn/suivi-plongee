@@ -15,6 +15,7 @@ import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.evaluation.service.GrilleService;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.ExerciceCompetence;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.CritereRepository;
@@ -55,7 +56,9 @@ public class ProgrammeSeanceService {
     /** {@code exerciceBase} : exercice de la base d'exercices dont il est tiré ; null pour un exercice libre. */
     public record ExerciceVue(Long id, Long groupeId, int ordre, String intitule, String consignes,
                               Integer dureeMinutes, Long referentielId, String niveau,
-                              List<CritereExerciceVue> criteres, GrilleService.ExerciceNoteVue exerciceBase) {}
+                              List<CritereExerciceVue> criteres, GrilleService.ExerciceNoteVue exerciceBase,
+                              /** Initiation, perfectionnement ou maîtrise ; null si non précisée. */
+                              String phase) {}
 
     /** Une formation proposée pour les exercices : celles des élèves de la saison, puis les versions actives. */
     public record FormationVue(Long referentielId, String niveau, String versionMft, int eleves) {}
@@ -73,12 +76,14 @@ public class ProgrammeSeanceService {
     public record ProgrammeVue(Long seanceId, List<FormationVue> formations, List<GroupeProgrammeVue> groupes,
                                List<ExerciceVue> exercices) {}
 
+    /** {@code phase} : facultative, pour un exercice libre ; ignorée pour un exercice de la base. */
     public record DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
-                                  Long referentielId, List<Long> critereIds, Long exerciceBaseId) {
+                                  Long referentielId, List<Long> critereIds, Long exerciceBaseId,
+                                  PhaseExercice phase) {
 
         public DemandeExercice(String intitule, String consignes, Integer dureeMinutes,
                                Long referentielId, List<Long> critereIds) {
-            this(intitule, consignes, dureeMinutes, referentielId, critereIds, null);
+            this(intitule, consignes, dureeMinutes, referentielId, critereIds, null, null);
         }
     }
 
@@ -207,6 +212,7 @@ public class ProgrammeSeanceService {
                 nouveaux.add(e);
                 continue;
             }
+            e.setPhase(d.phase());
             for (Long id : ids) {
                 Critere c = criteresConnus.get(id);
                 if (c == null) throw new RessourceIntrouvableException("Critère introuvable");
@@ -289,7 +295,8 @@ public class ProgrammeSeanceService {
         Referentiel r = e.getReferentiel();
         return new ExerciceVue(e.getId(), e.getGroupe() == null ? null : e.getGroupe().getId(), e.getOrdre(), e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                 r == null ? null : r.getId(), r == null ? null : r.getNiveau().name(), criteres,
-                GrilleService.ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()));
+                GrilleService.ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()),
+                e.phaseEffective() == null ? null : e.phaseEffective().name());
     }
 
     private Seance seance(Long id) {

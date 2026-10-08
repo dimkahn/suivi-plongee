@@ -172,6 +172,7 @@ const LIBELLES: Record<string, string> = {
                       <app-pastille-phase [phase]="base.phase" [numero]="base.numero" [intitule]="base.intitule" />
                     } @else {
                       <span class="libre">Libre</span>
+                      @if (p.phase) { <app-pastille-phase [phase]="p.phase" [intitule]="'exercice libre'" /> }
                     }
                     <strong>{{ p.intitule }}</strong>
                   </span>

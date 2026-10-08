@@ -28,6 +28,8 @@ interface Brouillon {
   criteres: { id: number; bloc: string; savoirFaire: string }[];
   /** Exercice de la base dont celui-ci est tiré ; null pour un exercice libre. */
   exerciceBase: ExerciceNoteVue | null;
+  /** Exercice libre : phase choisie (facultative). */
+  phase: PhaseExercice | null;
 }
 
 let prochaineCle = 1;
@@ -37,7 +39,8 @@ function versBrouillon(e: ExerciceVue): Brouillon {
     cle: prochaineCle++, intitule: e.intitule, consignes: e.consignes ?? '', dureeMinutes: e.dureeMinutes,
     referentielId: e.referentielId,
     criteres: e.criteres.map(c => ({ id: c.id, bloc: c.bloc, savoirFaire: c.savoirFaire })),
-    exerciceBase: e.exerciceBase ?? null
+    exerciceBase: e.exerciceBase ?? null,
+    phase: e.exerciceBase ? null : e.phase ?? null
   };
 }
 
@@ -46,7 +49,8 @@ function versDemande(b: Brouillon): DemandeExercice {
     intitule: b.intitule.trim(), consignes: b.consignes.trim() || null,
     dureeMinutes: b.dureeMinutes || null, referentielId: b.referentielId,
     critereIds: b.referentielId == null ? [] : b.criteres.map(c => c.id),
-    exerciceBaseId: b.referentielId == null ? null : b.exerciceBase?.id ?? null
+    exerciceBaseId: b.referentielId == null ? null : b.exerciceBase?.id ?? null,
+    phase: b.exerciceBase ? null : b.phase
   };
 }
 
@@ -120,6 +124,8 @@ function versDemande(b: Brouillon): DemandeExercice {
                   <span class="numero" aria-hidden="true">{{ i + 1 }}</span>
                   @if (e.exerciceBase; as base) {
                     <app-pastille-phase [phase]="base.phase" [intitule]="base.intitule" />
+                  } @else if (e.phase) {
+                    <app-pastille-phase [phase]="e.phase" [intitule]="'exercice libre'" />
                   }
                   <strong class="intitule-lu">{{ e.intitule }}</strong>
                 </div>
@@ -181,6 +187,17 @@ function versDemande(b: Brouillon): DemandeExercice {
                      [class.manquant]="!b.intitule.trim()">
             </div>
             <p class="secondaire">Exercice libre</p>
+            <span class="titre-phase-libre" [id]="'phase-' + b.cle">Phase</span>
+            <div class="phases" role="group" [attr.aria-labelledby]="'phase-' + b.cle">
+              <button type="button" class="bouton-discret" [class.actif]="b.phase === null"
+                      [attr.aria-pressed]="b.phase === null" (click)="changerPhase(b, null)">Non précisée</button>
+              @for (p of phases; track p.valeur) {
+                <button type="button" class="bouton-discret" [class.actif]="b.phase === p.valeur"
+                        [attr.aria-pressed]="b.phase === p.valeur" (click)="changerPhase(b, p.valeur)">
+                  {{ p.libelle }}
+                </button>
+              }
+            </div>
 
             <div class="champs">
               <div>
@@ -440,6 +457,7 @@ function versDemande(b: Brouillon): DemandeExercice {
     .phases .actif { background: var(--profond); color: #fff; border-color: var(--profond); }
     .reussite { display: block; font-size: .8125rem; }
     .ajouts .ajout-base { width: auto; margin-top: 0; }
+    .titre-phase-libre { display: block; margin-top: var(--pas); font-weight: 700; font-size: .9375rem; }
   `]
 })
 export class ProgrammeExercicesComponent {
@@ -591,7 +609,7 @@ export class ProgrammeExercicesComponent {
     const nouveau: Brouillon = {
       cle: prochaineCle++, intitule: '', consignes: '', dureeMinutes: null,
       referentielId: precedent ? precedent.referentielId : duGroupe?.referentielId ?? null,
-      criteres: [], exerciceBase: null
+      criteres: [], exerciceBase: null, phase: null
     };
     this.brouillons.set([...this.brouillons(), nouveau]);
     this.message.set(null);
@@ -698,13 +716,19 @@ export class ProgrammeExercicesComponent {
         exerciceBase: {
           id: e.id, numero: e.numero, intitule: e.intitule, phase: e.phase, blocId: e.blocId,
           critereIds: e.critereIds ?? []
-        }
+        },
+        phase: null
       };
     });
     this.brouillons.set([...this.brouillons(), ...nouveaux]);
     this.baseCoches.set(new Set());
     this.baseOuverte.set(false);
     this.message.set(`${nouveaux.length} exercice(s) ajouté(s) depuis la base : vérifiez-les puis enregistrez.`);
+  }
+
+  changerPhase(b: Brouillon, phase: PhaseExercice | null): void {
+    b.phase = phase;
+    this.brouillons.set([...this.brouillons()]);
   }
 
   /** Changer de formation vide les critères : ils appartiennent à l'ancienne. */
