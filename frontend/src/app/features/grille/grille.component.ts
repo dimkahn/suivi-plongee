@@ -313,6 +313,8 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               <li>
                 @if (e.exerciceBase; as base) {
                   <app-pastille-phase [phase]="base.phase" [intitule]="base.intitule" />
+                } @else if (e.phase) {
+                  <app-pastille-phase [phase]="e.phase" [intitule]="'exercice libre'" />
                 }
                 <strong>{{ e.intitule }}</strong>
                 <span class="secondaire"> · {{ e.groupe ?? 'programme commun' }}</span>

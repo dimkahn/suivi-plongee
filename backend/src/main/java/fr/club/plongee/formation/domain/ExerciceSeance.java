@@ -3,6 +3,7 @@ package fr.club.plongee.formation.domain;
 import fr.club.plongee.planning.domain.GroupeEntrainement;
 import fr.club.plongee.referentiel.domain.Critere;
 import fr.club.plongee.referentiel.domain.ExerciceCompetence;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import jakarta.persistence.*;
 
@@ -52,6 +53,24 @@ public class ExerciceSeance {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "exercice_competence_id")
     private ExerciceCompetence exerciceCompetence;
+
+    /** Phase d'un exercice libre (facultative) ; celle d'un exercice de la base vient de la base. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private PhaseExercice phase;
+
+    /** La phase affichée : celle de la base pour un exercice qui en vient, sinon celle choisie. */
+    public PhaseExercice phaseEffective() {
+        return exerciceCompetence != null ? exerciceCompetence.getPhase() : phase;
+    }
+
+    public PhaseExercice getPhase() {
+        return phase;
+    }
+
+    public void setPhase(PhaseExercice phase) {
+        this.phase = phase;
+    }
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "exercice_seance_critere",

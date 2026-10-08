@@ -111,7 +111,9 @@ public class GrilleService {
                                     /** Groupe d'entrainement qui l'a prepare ; null : programme commun. */
                                     String groupe, List<Long> critereIds,
                                     /** Exercice de la base dont il est tire ; null sinon. */
-                                    ExerciceNoteVue exerciceBase) {}
+                                    ExerciceNoteVue exerciceBase,
+                                    /** Phase (celle de la base, ou choisie pour un exercice libre) ; null sinon. */
+                                    String phase) {}
 
     /** Seulement les seances qui ont au moins un exercice. */
     public record ProgrammeGrilleVue(Long seanceId, List<ExerciceGrilleVue> exercices) {}
@@ -266,7 +268,8 @@ public class GrilleService {
                         .add(new ExerciceGrilleVue(e.getIntitule(), e.getConsignes(), e.getDureeMinutes(),
                                 e.getGroupe() == null ? null : e.getGroupe().getNom(),
                                 e.getCriteres().stream().map(Critere::getId).toList(),
-                                ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()))));
+                                ExerciceNoteVue.avecCriteres(e.getExerciceCompetence()),
+                                e.phaseEffective() == null ? null : e.phaseEffective().name())));
         return parSeance.entrySet().stream()
                 .map(en -> new ProgrammeGrilleVue(en.getKey(), en.getValue()))
                 .toList();

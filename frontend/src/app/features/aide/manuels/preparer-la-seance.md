@@ -29,7 +29,9 @@ L'intitulé et les critères d'un exercice des compétences viennent de la base 
 
 ## Exercice libre
 
-« + Exercice libre (échauffement, nage…) » ajoute un exercice qui n'est pas dans la base : vous écrivez son intitulé et ses consignes, et pouvez cocher des critères si besoin.
+« + Exercice libre (échauffement, nage…) » ajoute un exercice qui n'est pas dans la base : vous écrivez son intitulé et ses consignes, choisissez si vous le souhaitez sa phase (**initiation**, **perfectionnement** ou **maîtrise**, « Non précisée » pour un échauffement), et pouvez cocher des critères si besoin. La phase s'affiche en pastille dans le programme, la grille et la vue globale, comme pour un exercice de la base.
+
+Un exercice libre ne sert pas à noter : seul un exercice de maîtrise de la base fait passer un critère à « Acquis ». Pour qu'un exercice libre compte, faites-le ajouter à la base (Administration, « Base d'exercices »).
 
 ## Bon à savoir
 

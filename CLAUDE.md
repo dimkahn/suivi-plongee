@@ -438,7 +438,10 @@ compétences », `exercice_seance.exercice_competence_id`) : un tel exercice
 garde l'intitulé de la base et **reçoit les critères de la base**
 (`ProgrammeSeanceService`, ceux envoyés par le client sont ignorés) ; seuls
 durée et consignes se retouchent. L'« exercice libre » (échauffement, nage)
-reste la saisie d'avant. Lecture : pastille I/P/M sous chaque critère de la grille,
+reste la saisie d'avant, avec une phase facultative (V55,
+`exercice_seance.phase`, choix du club 2026 ; `phaseEffective()` = celle de
+la base pour un exercice qui en vient) : elle ne fait qu'étiqueter le
+programme, un exercice libre ne sert jamais à noter. Lecture : pastille I/P/M sous chaque critère de la grille,
 dans l'historique et dans chaque case de la vue globale, dont un clic sur
 une séance montre le programme d'exercices préparé, exercices libres compris
 (`MatriceVue.programmes`, mêmes données que `GrilleVue.programmes`), puis

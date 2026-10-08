@@ -225,6 +225,8 @@ export interface ExerciceGrilleVue {
   critereIds: number[];
   /** Exercice de la base dont il est tiré ; null pour un exercice libre. */
   exerciceBase?: ExerciceNoteVue | null;
+  /** Phase : celle de la base, ou choisie pour un exercice libre ; null si non précisée. */
+  phase?: PhaseExercice | null;
 }
 
 export interface ProgrammeGrilleVue {
@@ -257,6 +259,8 @@ export interface ExerciceVue {
   criteres: CritereExerciceVue[];
   /** Exercice de la base dont il est tiré ; null pour un exercice libre. */
   exerciceBase: ExerciceNoteVue | null;
+  /** Phase : celle de la base, ou choisie pour un exercice libre ; null si non précisée. */
+  phase: PhaseExercice | null;
 }
 
 /** Formation proposée : celles des élèves de la saison (effectif), puis les versions actives du MFT. */
@@ -295,6 +299,8 @@ export interface DemandeExercice {
   referentielId: number | null;
   critereIds: number[];
   exerciceBaseId: number | null;
+  /** Exercice libre : initiation, perfectionnement ou maîtrise, facultatif. */
+  phase: PhaseExercice | null;
 }
 
 export interface SeanceVue {

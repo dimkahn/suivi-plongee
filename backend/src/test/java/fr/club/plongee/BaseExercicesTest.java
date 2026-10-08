@@ -176,6 +176,7 @@ class BaseExercicesTest {
             Map<String, Object> libre = new HashMap<>();
             libre.put("intitule", "Échauffement : 200 m");
             libre.put("critereIds", List.of());
+            libre.put("phase", "INITIATION");
             Map<String, Object> deLaBase = new HashMap<>();
             deLaBase.put("intitule", "1.7 Gréage avec anomalie cachée");
             deLaBase.put("referentielId", referentielN1(moniteur));
@@ -189,6 +190,9 @@ class BaseExercicesTest {
             assertThat(programme).hasSize(2);
             assertThat(programme.get(0).get("exerciceBase").isNull()).isTrue();
             assertThat(programme.get(1).get("exerciceBase").get("numero").asText()).isEqualTo("1.7");
+            // Phase choisie pour l'exercice libre ; celle de la base pour l'autre.
+            assertThat(programme.get(0).get("phase").asText()).isEqualTo("INITIATION");
+            assertThat(programme.get(1).get("phase").asText()).isEqualTo("MAITRISE");
 
             JsonNode apres = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200);
             JsonNode critereApres = apres.get("blocs").get(0).get("criteres").get(0);
