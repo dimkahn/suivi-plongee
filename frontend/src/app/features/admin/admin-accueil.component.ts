@@ -64,6 +64,12 @@ import { RouterLink } from '@angular/router';
         </a>
       </li>
       <li class="carte">
+        <a routerLink="/admin/exercices">
+          <span class="nom">Base d'exercices</span>
+          <span class="secondaire">Exercices d'initiation, de perfectionnement et de maîtrise de chaque compétence</span>
+        </a>
+      </li>
+      <li class="carte">
         <a routerLink="/admin/progressions">
           <span class="nom">Progressions types</span>
           <span class="secondaire">L'année de chaque niveau découpée en périodes, avec les blocs travaillés</span>

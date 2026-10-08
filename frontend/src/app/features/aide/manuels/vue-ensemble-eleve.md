@@ -3,8 +3,9 @@ titre: Vue d'ensemble d'un élève et fiche PDF
 rubrique: Moniteur
 videos: M8, M19
 ecran: /eleves
-mots: vue globale, tableau, matrice, toutes les séances, tableur, PDF, imprimer, exporter, fiche de suivi, télécharger, milieu naturel, piscine, fosse, entraînement, validation, N2, N3
+mots: vue globale, tableau, matrice, toutes les séances, tableur, PDF, imprimer, exporter, fiche de suivi, télécharger, milieu naturel, piscine, fosse, entraînement, validation, N2, N3, exercice, initiation, perfectionnement, maîtrise
 questions:
+- Quels exercices l'élève a-t-il faits à une séance ?
 - Comment voir toutes les séances d'un élève d'un coup ?
 - Comment imprimer la fiche de suivi d'un élève ?
 - Comment exporter la grille en PDF ?
@@ -19,6 +20,8 @@ Sous le nom de l'élève, « Vue globale (toutes les séances) » montre une col
 2. Touchez « Vue globale (toutes les séances) », sous son nom.
 3. Une ligne par critère, une colonne par séance. Par défaut, seulement les séances où il a été noté.
 4. Pour préparer la prochaine séance, n'affichez que ce qui n'est pas encore acquis.
+5. Chaque case porte la pastille de l'exercice noté : **I** initiation, **P** perfectionnement, **M** maîtrise, avec son numéro.
+6. Touchez une date (ou une case) : les exercices de cette séance s'affichent, avec leur déroulement, leur critère de réussite et les critères notés.
 
 ## N2 et N3 : validation en milieu naturel, entraînement en piscine ou fosse
 

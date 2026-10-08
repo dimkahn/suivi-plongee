@@ -286,6 +286,20 @@ export class NotationGroupeeComponent {
     return parCritere;
   });
 
+  /**
+   * Critère → exercice de la base dont un exercice de la séance est tiré,
+   * pour les seuls critères de sa compétence : la note garde l'exercice.
+   */
+  exerciceBaseDesCriteres = computed(() => {
+    const parCritere = new Map<number, number>();
+    for (const e of this.exercices()) {
+      const base = e.exerciceBase;
+      if (e.referentielId !== this.referentielId() || !base) continue;
+      for (const c of e.criteres) if (c.blocId === base.blocId) parCritere.set(c.id, base.id);
+    }
+    return parCritere;
+  });
+
   exercicesTousCoches = computed(() => {
     const coches = this.criteresCoches();
     return [...this.criteresDesExercices().keys()].every(id => coches.has(id));
@@ -376,7 +390,10 @@ export class NotationGroupeeComponent {
       const bilan = await firstValueFrom(this.api.noterGroupe(this.seance().id, {
         // Seuls les élèves de la formation affichée : une coche d'une autre formation ne part pas.
         cursusIds: this.elevesFormation().map(l => l.cursusId).filter(id => this.cursusCoches().has(id)),
-        criteres: [...this.criteresCoches()].map(id => ({ critereId: id, commentaire: this.commentaireDe(id).trim() }))
+        criteres: [...this.criteresCoches()].map(id => ({
+          critereId: id, commentaire: this.commentaireDe(id).trim(),
+          exerciceId: this.exerciceBaseDesCriteres().get(id) ?? null
+        }))
       }));
       const morceaux = [];
       if (bilan.passesEnCours > 0) morceaux.push(`${bilan.passesEnCours} critère(s) passé(s) en cours`);

@@ -13,7 +13,7 @@ import {
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
-  DemandeExercice, ProgrammeVue
+  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -246,6 +246,24 @@ export class ApiService {
    */
   roster(): Promise<RosterVue> {
     return this.lireOuRetomber('roster', () => this.http.get<RosterVue>('/api/roster'));
+  }
+
+  /** Base d'exercices d'une version du MFT, désactivés compris. Nécessite le réseau. */
+  exercicesBase(referentielId: number): Observable<ExerciceBaseVue[]> {
+    return this.http.get<ExerciceBaseVue[]>(`/api/referentiels/${referentielId}/exercices`);
+  }
+
+  creerExerciceBase(referentielId: number, blocId: number, demande: DemandeExerciceBase): Observable<ExerciceBaseVue> {
+    return this.http.post<ExerciceBaseVue>(`/api/referentiels/${referentielId}/blocs/${blocId}/exercices`, demande);
+  }
+
+  modifierExerciceBase(referentielId: number, exerciceId: number, demande: DemandeExerciceBase): Observable<ExerciceBaseVue> {
+    return this.http.put<ExerciceBaseVue>(`/api/referentiels/${referentielId}/exercices/${exerciceId}`, demande);
+  }
+
+  /** Refusé si l'exercice a déjà servi à noter un élève : le désactiver plutôt. */
+  supprimerExerciceBase(referentielId: number, exerciceId: number): Observable<unknown> {
+    return this.http.delete(`/api/referentiels/${referentielId}/exercices/${exerciceId}`);
   }
 
   /** Programme d'exercices d'une séance (encadrants). Nécessite le réseau. */
