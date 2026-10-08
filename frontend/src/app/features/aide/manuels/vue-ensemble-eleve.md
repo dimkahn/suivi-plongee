@@ -19,7 +19,7 @@ Sous le nom de l'élève, « Vue globale (toutes les séances) » montre une col
 
 1. Ouvrez la grille de l'élève.
 2. Touchez « Vue globale (toutes les séances) », sous son nom.
-3. Une ligne par critère, une colonne par séance. Par défaut, seulement les séances où il a été noté.
+3. Une ligne par critère, une colonne par séance. Par défaut, seulement les séances où il était présent ou a été noté. La première ligne, « Programme d'exercices », montre sous chaque date les exercices prévus : pastille I/P/M avec le numéro pour un exercice des compétences, pastille seule pour un exercice libre avec une phase, « Libre » sinon.
 4. Pour préparer la prochaine séance, n'affichez que ce qui n'est pas encore acquis.
 5. Chaque case porte la pastille de l'exercice noté : **I** initiation, **P** perfectionnement, **M** maîtrise, avec son numéro.
 6. Touchez une date (ou une case) : d'abord le **programme d'exercices** préparé pour la séance (le programme commun et celui du groupe de l'élève), avec pour chaque exercice sa pastille s'il vient de la base des compétences ou « Libre » sinon, sa durée, ses consignes, les critères qu'il travaille et son schéma ; puis les notes de l'élève, exercice par exercice, avec leur déroulement et leur critère de réussite.

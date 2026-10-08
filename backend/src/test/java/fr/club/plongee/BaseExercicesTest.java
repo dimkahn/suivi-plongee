@@ -184,9 +184,11 @@ class BaseExercicesTest {
             deLaBase.put("exerciceBaseId", parNumero.get("1.7"));
             envoyer("PUT", "/api/seances/" + seanceId + "/programme", moniteur, List.of(libre, deLaBase), 200);
             JsonNode programme = null;
-            for (JsonNode p : envoyer("GET", "/api/cursus/" + cursus + "/matrice", moniteur, null, 200).get("programmes")) {
+            JsonNode vueGlobale = envoyer("GET", "/api/cursus/" + cursus + "/matrice", moniteur, null, 200);
+            for (JsonNode p : vueGlobale.get("programmes")) {
                 if (p.get("seanceId").asLong() == seanceId) programme = p.get("exercices");
             }
+            assertThat(vueGlobale.get("seancesPresent")).extracting(JsonNode::asLong).contains(seanceId);
             assertThat(programme).hasSize(2);
             assertThat(programme.get(0).get("exerciceBase").isNull()).isTrue();
             assertThat(programme.get(1).get("exerciceBase").get("numero").asText()).isEqualTo("1.7");

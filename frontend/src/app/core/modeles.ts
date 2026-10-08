@@ -422,6 +422,8 @@ export interface MatriceVue {
   exercices?: ExerciceBaseVue[];
   /** Programme d'exercices des séances (commun et groupe de l'élève), exercices libres compris. */
   programmes?: ProgrammeGrilleVue[];
+  /** Séances où l'élève est noté présent, même sans note. */
+  seancesPresent?: number[];
 }
 
 export type JourSemaine = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
