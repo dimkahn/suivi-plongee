@@ -24,13 +24,14 @@
   ],
   "dataGroups": [
     {
-      "comment": "Le référentiel MFT ne change qu'à une révision fédérale : il peut vivre longtemps en cache.",
+      "comment": "Référentiel et base d'exercices se modifient depuis l'administration : le réseau prime (sinon une modification n'apparaît pas au rafraîchissement), le cache ne sert que de filet hors ligne.",
       "name": "referentiel",
       "urls": ["/api/referentiels", "/api/referentiels/**"],
       "cacheConfig": {
-        "strategy": "performance",
-        "maxSize": 20,
-        "maxAge": "30d"
+        "strategy": "freshness",
+        "maxSize": 50,
+        "maxAge": "30d",
+        "timeout": "3s"
       }
     },
     {
