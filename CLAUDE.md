@@ -452,8 +452,20 @@ garde l'intitulé de la base et **reçoit les critères de la base**
 durée et consignes se retouchent. L'« exercice libre » (échauffement, nage)
 reste la saisie d'avant, avec une phase facultative (V55,
 `exercice_seance.phase`, choix du club 2026 ; `phaseEffective()` = celle de
-la base pour un exercice qui en vient) : elle ne fait qu'étiqueter le
-programme, un exercice libre ne sert jamais à noter. Lecture : pastille I/P/M sous chaque critère de la grille,
+la base pour un exercice qui en vient). **Choix révisé (2026) : un exercice
+libre qui a une phase et des critères sert aussi à noter** ces critères
+(`Notation.exerciceLibre`, son intitulé, retrouvé par
+`EvaluationService.exerciceLibre` dans le programme de la séance notée ;
+refus s'il n'y est plus, ne travaille pas le critère ou n'a pas de phase).
+Le programme se remplaçant d'un bloc, la note n'y fait pas de lien : V57
+copie l'intitulé et la phase dans `evaluation.exercice_libre` et
+`evaluation.phase_exercice` ; un exercice libre suit toujours la règle des
+phases (seule la maîtrise acquise rend le critère acquis), même pour un
+critère sans exercice de maîtrise dans la base. Les vues le livrent comme
+un `ExerciceNoteVue` sans id ni numéro (`CelluleVue.exerciceLibre` /
+`phaseExercice` dans la vue globale) ; dans la grille, le choix de
+l'exercice le propose sous « Exercices libres du programme ». Un exercice
+libre sans phase ne fait qu'étiqueter le programme. Lecture : pastille I/P/M sous chaque critère de la grille,
 dans l'historique et dans chaque case de la vue globale, dont un clic sur
 une séance montre le programme d'exercices préparé, exercices libres compris
 (`MatriceVue.programmes`, mêmes données que `GrilleVue.programmes`), puis

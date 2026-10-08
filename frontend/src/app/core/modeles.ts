@@ -116,16 +116,20 @@ export interface ExerciceBaseVue {
 }
 
 /** L'exercice sur lequel une note a été prise. */
+/** Exercice d'une note : de la base, ou libre (programme de la séance) : alors sans id ni numéro. */
 export interface ExerciceNoteVue {
-  id: number;
-  numero: string;
+  id: number | null;
+  numero: string | null;
   intitule: string;
   phase: PhaseExercice;
-  /** Compétence travaillée. */
-  blocId: number;
+  /** Compétence travaillée ; null pour un exercice libre. */
+  blocId: number | null;
   /** Critères travaillés : renseignés seulement dans le programme d'une séance. */
   critereIds?: number[] | null;
 }
+
+/** Exercice de la base dont un exercice du programme est tiré : toujours un id et un numéro. */
+export type ExerciceBaseNoteVue = ExerciceNoteVue & { id: number; numero: string; blocId: number };
 
 export interface DemandeExerciceBase {
   numero: string;
@@ -227,7 +231,7 @@ export interface ExerciceGrilleVue {
   groupe?: string | null;
   critereIds: number[];
   /** Exercice de la base dont il est tiré ; null pour un exercice libre. */
-  exerciceBase?: ExerciceNoteVue | null;
+  exerciceBase?: ExerciceBaseNoteVue | null;
   /** Phase : celle de la base, ou choisie pour un exercice libre ; null si non précisée. */
   phase?: PhaseExercice | null;
 }
@@ -261,7 +265,7 @@ export interface ExerciceVue {
   niveau: 'N1' | 'N2' | 'N3' | null;
   criteres: CritereExerciceVue[];
   /** Exercice de la base dont il est tiré ; null pour un exercice libre. */
-  exerciceBase: ExerciceNoteVue | null;
+  exerciceBase: ExerciceBaseNoteVue | null;
   /** Phase : celle de la base, ou choisie pour un exercice libre ; null si non précisée. */
   phase: PhaseExercice | null;
 }
@@ -408,6 +412,9 @@ export interface CelluleMatrice {
   commentaire?: string | null;
   /** État de l'exercice noté ; `statut` est celui du critère qui en découle. */
   statutExercice?: Statut | null;
+  /** Exercice libre du programme noté (intitulé et phase copiés sur la note). */
+  exerciceLibre?: string | null;
+  phaseExercice?: PhaseExercice | null;
 }
 
 export interface LigneMatrice {
