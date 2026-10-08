@@ -504,6 +504,14 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 2. Elles sont créées et rattachées à la sortie, en un geste.
 3. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
 
+### A16 — La base d'exercices
+
+Les exercices de chaque compétence, par phase, et les critères qu'ils font travailler.
+
+Compte : `presidente@club.fr` · format ordinateur
+
+_Pas encore tournée : le texte viendra au premier enregistrement._
+
 ## Directeur technique
 
 ### D1 — L'inventaire du matériel
