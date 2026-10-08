@@ -135,7 +135,9 @@ public class GrilleService {
      */
     public record MatriceVue(String eleve, String niveau, boolean milieuNaturelExclusif,
                              List<SeanceEnTeteVue> seances, List<LigneMatriceVue> lignes,
-                             List<ExerciceCompetenceController.ExerciceVue> exercices) {}
+                             List<ExerciceCompetenceController.ExerciceVue> exercices,
+                             /** Programme d'exercices de chaque séance : le commun et celui du groupe de l'élève. */
+                             List<ProgrammeGrilleVue> programmes) {}
 
     private final CursusRepository cursusRepository;
     private final EvaluationService evaluationService;
@@ -343,6 +345,7 @@ public class GrilleService {
                 cursus.getReferentiel().isMilieuNaturelExclusif(), entetes, lignes,
                 exercicesBase.parReferentiel(cursus.getReferentiel().getId()).stream()
                         .map(e -> ExerciceCompetenceController.ExerciceVue.de(e, avecSchema))
-                        .toList());
+                        .toList(),
+                programmes(cursus));
     }
 }

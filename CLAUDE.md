@@ -440,7 +440,9 @@ garde l'intitulé de la base et **reçoit les critères de la base**
 durée et consignes se retouchent. L'« exercice libre » (échauffement, nage)
 reste la saisie d'avant. Lecture : pastille I/P/M sous chaque critère de la grille,
 dans l'historique et dans chaque case de la vue globale, dont un clic sur
-une séance détaille les exercices notés (`MatriceVue.exercices`). Pas de
+une séance montre le programme d'exercices préparé, exercices libres compris
+(`MatriceVue.programmes`, mêmes données que `GrilleVue.programmes`), puis
+les exercices notés (`MatriceVue.exercices`). Pas de
 suivi séparé par phase : la phase ne fait que qualifier la note.
 **Schémas** (V52, table `schema_exercice` à part comme `photo_eleve`,
 PNG/JPEG vérifiés par leur signature, `SchemaExerciceService`,
