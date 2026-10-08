@@ -6,6 +6,7 @@ ecran: /eleves
 mots: vue globale, tableau, matrice, toutes les séances, tableur, PDF, imprimer, exporter, fiche de suivi, télécharger, milieu naturel, piscine, fosse, entraînement, validation, N2, N3, exercice, initiation, perfectionnement, maîtrise
 questions:
 - Quels exercices l'élève a-t-il faits à une séance ?
+- Quel était le programme d'exercices d'une séance ?
 - Comment voir toutes les séances d'un élève d'un coup ?
 - Comment imprimer la fiche de suivi d'un élève ?
 - Comment exporter la grille en PDF ?
@@ -21,7 +22,8 @@ Sous le nom de l'élève, « Vue globale (toutes les séances) » montre une col
 3. Une ligne par critère, une colonne par séance. Par défaut, seulement les séances où il a été noté.
 4. Pour préparer la prochaine séance, n'affichez que ce qui n'est pas encore acquis.
 5. Chaque case porte la pastille de l'exercice noté : **I** initiation, **P** perfectionnement, **M** maîtrise, avec son numéro.
-6. Touchez une date (ou une case) : les exercices de cette séance s'affichent, avec leur déroulement, leur critère de réussite, leur schéma et les critères notés.
+6. Touchez une date (ou une case) : d'abord le **programme d'exercices** préparé pour la séance (le programme commun et celui du groupe de l'élève), avec pour chaque exercice sa pastille s'il vient de la base des compétences ou « Libre » sinon, sa durée, ses consignes, les critères qu'il travaille et son schéma ; puis les notes de l'élève, exercice par exercice, avec leur déroulement et leur critère de réussite.
+7. Sous chaque date, « programme : 3 » dit combien d'exercices étaient prévus, et « 2 exercices notés » combien ont servi à noter l'élève.
 
 ## N2 et N3 : validation en milieu naturel, entraînement en piscine ou fosse
 

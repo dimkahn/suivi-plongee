@@ -414,6 +414,8 @@ export interface MatriceVue {
   lignes: LigneMatrice[];
   /** Base d'exercices de la formation, pour détailler les exercices notés. */
   exercices?: ExerciceBaseVue[];
+  /** Programme d'exercices des séances (commun et groupe de l'élève), exercices libres compris. */
+  programmes?: ProgrammeGrilleVue[];
 }
 
 export type JourSemaine = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';

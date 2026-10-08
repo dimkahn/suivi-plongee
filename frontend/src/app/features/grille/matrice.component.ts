@@ -2,7 +2,9 @@ import { Component, computed, inject, input, signal, ChangeDetectionStrategy } f
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
-import { CelluleMatrice, ExerciceBaseVue, LigneMatrice, MatriceVue, SeanceEnTete } from '../../core/modeles';
+import {
+  CelluleMatrice, ExerciceBaseVue, ExerciceGrilleVue, LigneMatrice, MatriceVue, SeanceEnTete
+} from '../../core/modeles';
 import { DateFrPipe, dateFr } from '../../core/date-fr';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
@@ -86,7 +88,8 @@ const LIBELLES: Record<string, string> = {
                   <button type="button" class="ouvrir-seance" (click)="ouvrirSeance(s)"
                           [attr.aria-label]="'Exercices notés le ' + (s.date | dateFr)">
                     <span class="date-seance">{{ s.date | dateFr }}</span>
-                    @if (nombreExercices(s.id); as n) { <span class="nb-exercices">{{ n }} exercice{{ n > 1 ? 's' : '' }}</span> }
+                    @if (programmeDe(s.id).length; as n) { <span class="nb-exercices">programme : {{ n }}</span> }
+                    @if (nombreExercices(s.id); as n) { <span class="nb-exercices">{{ n }} exercice{{ n > 1 ? 's' : '' }} noté{{ n > 1 ? 's' : '' }}</span> }
                   </button>
                   @if (s.lieu) { <span class="lieu-seance">{{ s.lieu }}</span> }
                   <span class="milieu-seance" [class.naturel]="s.milieu === 'NATUREL'">
@@ -156,6 +159,44 @@ const LIBELLES: Record<string, string> = {
       <app-dialogue [ouvert]="seanceOuverte() !== null" [titre]="titreSeance()" (fermer)="seanceOuverte.set(null)">
         @if (seanceOuverte(); as s) {
           @let detail = detailSeance(s.id);
+          @let prevus = programmeDe(s.id);
+          <h3 class="titre-section">Programme d'exercices</h3>
+          @if (prevus.length === 0) {
+            <p class="secondaire">Aucun programme préparé pour cette séance.</p>
+          } @else {
+            <ol class="programme-seance">
+              @for (p of prevus; track $index) {
+                <li>
+                  <span class="titre-prevu">
+                    @if (p.exerciceBase; as base) {
+                      <app-pastille-phase [phase]="base.phase" [numero]="base.numero" [intitule]="base.intitule" />
+                    } @else {
+                      <span class="libre">Libre</span>
+                    }
+                    <strong>{{ p.intitule }}</strong>
+                  </span>
+                  <span class="secondaire">
+                    {{ p.groupe ?? 'programme commun' }}@if (p.dureeMinutes) { · {{ p.dureeMinutes }} min }
+                  </span>
+                  @if (nomsCriteres(p.critereIds); as noms) {
+                    <span class="criteres-prevus">Critères : {{ noms }}</span>
+                  }
+                  @if (p.consignes) { <span class="consignes-prevues">{{ p.consignes }}</span> }
+                  @if (p.exerciceBase && exercicesParIdPublic(p.exerciceBase.id)?.aSchema) {
+                    <button type="button" class="lien-schema" (click)="basculerSchema(p.exerciceBase.id)"
+                            [attr.aria-expanded]="schemaOuvert() === p.exerciceBase.id">
+                      {{ schemaOuvert() === p.exerciceBase.id ? 'Masquer le schéma' : 'Voir le schéma' }}
+                    </button>
+                    @if (schemaOuvert() === p.exerciceBase.id) {
+                      <app-schema-exercice [exerciceId]="p.exerciceBase.id" [libelle]="p.intitule" />
+                    }
+                  }
+                </li>
+              }
+            </ol>
+          }
+
+          <h3 class="titre-section">Notes de {{ m.eleve }}</h3>
           @if (detail.exercices.length === 0 && detail.sansExercice.length === 0) {
             <p class="secondaire">Aucune note pour {{ m.eleve }} à cette séance.</p>
           }
@@ -314,6 +355,20 @@ const LIBELLES: Record<string, string> = {
     .phase-texte { font-size: .8125rem; font-weight: 400; color: var(--craie); }
     .texte-exercice { margin: 0 0 var(--pas); font-size: .875rem; max-width: 70ch; }
     .schema-seance { margin-bottom: var(--pas); }
+    .titre-section { margin: var(--pas-2) 0 var(--pas); font-size: 1rem; color: var(--profond); }
+    .programme-seance { margin: 0 0 var(--pas-2); padding-left: 1.5rem; display: grid; gap: var(--pas); font-size: .875rem; }
+    .programme-seance li { display: flex; flex-direction: column; gap: 2px; }
+    .titre-prevu { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
+    .libre {
+      padding: 0 6px; border: 1px solid var(--trait); border-radius: var(--r-s);
+      font-size: .75rem; font-weight: 700; color: var(--craie);
+    }
+    .criteres-prevus { color: var(--profond); }
+    .consignes-prevues { white-space: pre-line; }
+    .lien-schema {
+      align-self: flex-start; min-height: 44px; padding: 0; background: none; border: none;
+      color: var(--profond); font-size: .8125rem; text-decoration: underline; cursor: pointer;
+    }
     .notes-seance { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .875rem; }
     .commentaire-note { display: block; font-style: italic; margin-left: 40px; }
 
@@ -394,6 +449,29 @@ export class MatriceComponent {
 
   private exercicesParId = computed(() =>
     new Map((this.matrice()?.exercices ?? []).map(e => [e.id, e] as const)));
+
+  /** Programme d'exercices préparé pour une séance (commun puis groupe de l'élève). */
+  programmeDe(seanceId: number): ExerciceGrilleVue[] {
+    return this.matrice()?.programmes?.find(p => p.seanceId === seanceId)?.exercices ?? [];
+  }
+
+  private nomsDesCriteres = computed(() =>
+    new Map((this.matrice()?.lignes ?? []).map(l => [l.critereId, l.savoirFaire] as const)));
+
+  nomsCriteres(ids: number[]): string {
+    return ids.map(id => this.nomsDesCriteres().get(id)).filter(Boolean).join(', ');
+  }
+
+  exercicesParIdPublic(id: number): ExerciceBaseVue | undefined {
+    return this.exercicesParId().get(id);
+  }
+
+  /** Schéma déplié dans le programme de la séance. */
+  schemaOuvert = signal<number | null>(null);
+
+  basculerSchema(id: number): void {
+    this.schemaOuvert.set(this.schemaOuvert() === id ? null : id);
+  }
 
   exerciceDe(cellule: CelluleMatrice | null): ExerciceBaseVue | null {
     return cellule?.exerciceId == null ? null : this.exercicesParId().get(cellule.exerciceId) ?? null;

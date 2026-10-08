@@ -172,6 +172,24 @@ class BaseExercicesTest {
             for (JsonNode l : matrice.get("lignes")) if (l.get("critereId").asLong() == critere) cellules = l.get("historique");
             assertThat(cellules.get(1).get("exerciceId").asLong()).isEqualTo(parNumero.get("1.7"));
 
+            // La vue globale porte aussi le programme de la séance : exercice libre et exercice de la base.
+            Map<String, Object> libre = new HashMap<>();
+            libre.put("intitule", "Échauffement : 200 m");
+            libre.put("critereIds", List.of());
+            Map<String, Object> deLaBase = new HashMap<>();
+            deLaBase.put("intitule", "1.7 Gréage avec anomalie cachée");
+            deLaBase.put("referentielId", referentielN1(moniteur));
+            deLaBase.put("critereIds", List.of());
+            deLaBase.put("exerciceBaseId", parNumero.get("1.7"));
+            envoyer("PUT", "/api/seances/" + seanceId + "/programme", moniteur, List.of(libre, deLaBase), 200);
+            JsonNode programme = null;
+            for (JsonNode p : envoyer("GET", "/api/cursus/" + cursus + "/matrice", moniteur, null, 200).get("programmes")) {
+                if (p.get("seanceId").asLong() == seanceId) programme = p.get("exercices");
+            }
+            assertThat(programme).hasSize(2);
+            assertThat(programme.get(0).get("exerciceBase").isNull()).isTrue();
+            assertThat(programme.get(1).get("exerciceBase").get("numero").asText()).isEqualTo("1.7");
+
             JsonNode apres = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200);
             JsonNode critereApres = apres.get("blocs").get(0).get("criteres").get(0);
             assertThat(critereApres.get("statut").asText()).isEqualTo("ACQUIS");
