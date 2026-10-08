@@ -1,4 +1,6 @@
-import { Component, ElementRef, OnDestroy, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component, ElementRef, OnDestroy, computed, inject, input, signal, viewChild, ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -430,6 +432,8 @@ export class PresencesComponent implements OnDestroy {
 
   seances = signal<SeanceVue[]>([]);
   seanceId = signal<number | null>(null);
+  /** Séance à ouvrir d'emblée, tirée de l'adresse (?seance=12). */
+  seance = input<string>();
   /** Programmes d'exercices de la séance choisie : le commun et ceux des groupes. */
   exercices = signal<ExerciceVue[]>([]);
 
@@ -581,8 +585,9 @@ export class PresencesComponent implements OnDestroy {
       this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
       // Facultatif aussi : sans groupe (ou hors ligne sans cache), pas de filtre.
       this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
-      // Par défaut : la dernière séance passée ou du jour.
-      const derniere = this.seancesPassees().at(-1);
+      // La séance demandée (?seance=12, depuis « Infos élèves »), sinon la dernière passée ou du jour.
+      const demandee = this.seancesOuvertes().find(s => s.id === Number(this.seance()));
+      const derniere = demandee ?? this.seancesPassees().at(-1);
       if (derniere) this.choisirSeance(derniere);
     } catch {
       this.message.set('Impossible de charger les séances.');
