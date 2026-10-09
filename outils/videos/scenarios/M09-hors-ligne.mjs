@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -21,7 +21,7 @@ export default {
 
     // Ouvre une fois les écrans en ligne : le code de chaque écran est ainsi
     // déjà chargé quand le réseau disparaît (comme après une première visite).
-    await toucher(page.getByRole('link', { name: 'Léa Morel' }), { apres: 1200 });
+    await toucher(page.getByRole('link', { name: 'Léa Morel', exact: true }), { apres: 1200 });
     await page.goBack();
     await pause(800);
 
@@ -29,7 +29,7 @@ export default {
     await reseau(false);
     await pause(1500);
     await legende('L\'appli s\'ouvre quand même : on retrouve la grille de Léa.', 0);
-    await toucher(page.getByRole('link', { name: 'Léa Morel' }), { apres: 1800 });
+    await toucher(page.getByRole('link', { name: 'Léa Morel', exact: true }), { apres: 1800 });
     await legende('« Grille consultée hors ligne » : la version embarquée avant de partir.', 3500);
     await choisirDerniereSeance();
     await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1000 });

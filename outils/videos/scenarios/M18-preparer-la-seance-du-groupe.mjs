@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
@@ -14,7 +14,7 @@ export default {
   compte: 'e2@club.fr',
 
   async jouer(g) {
-    const { page, pause, legende, toucher, saisir, choisir, menu, vignette } = g;
+    const { page, pause, legende, toucher, saisir, choisir, menu, vignette, choisirSeanceDu } = g;
 
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
@@ -22,7 +22,7 @@ export default {
     await menu('Présences');
 
     await legende('Choisissez la séance : ici, la piscine du lundi 21 septembre.', 0);
-    await choisirLe21(g);
+    await choisirSeanceDu('21/09/2026');
     await legende('Filtrez sur votre groupe.', 0);
     await toucher(page.getByRole('button', { name: 'Débutants', exact: true }), { apres: 1200 });
 
@@ -67,7 +67,7 @@ export default {
 
     await legende('Dans la fiche de Hugo, du groupe Débutants, choisissez la séance du 21 septembre.', 0);
     await ouvrirGrille(g, 'Hugo Lemaire');
-    await choisirLe21(g);
+    await choisirSeanceDu('21/09/2026');
     await legende('Les exercices de son groupe s\'affichent avec la séance.', 0);
     await page.locator('section.exercices-seance').scrollIntoViewIfNeeded();
     await pause(3000);
@@ -81,21 +81,6 @@ export default {
     await pause(500);
   }
 };
-
-/**
- * Dans le calendrier « Séance », le lundi 21 ; s'il porte plusieurs séances
- * (piscine et fosse), la première : la piscine.
- */
-async function choisirLe21({ page, toucher }) {
-  await toucher(page.locator('button#seance'), { apres: 900 });
-  const calendrier = page.locator('dialog[open]');
-  const jour = calendrier.locator('button.jour:not(.hors-mois)')
-    .filter({ has: page.locator('.numero').getByText('21', { exact: true }) });
-  await toucher(jour, { apres: 900 });
-  if (await calendrier.isVisible()) {
-    await toucher(calendrier.locator('.seances-du-jour button').first(), { apres: 1200 });
-  }
-}
 
 /** Coche un critère dans la liste de l'exercice, en ouvrant son bloc s'il est fermé. */
 async function cocherCritere({ page, toucher }, exercice, savoirFaire) {

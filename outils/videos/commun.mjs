@@ -362,8 +362,32 @@ export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo
     await toucher(dialogue.locator('.seances-du-jour button').first(), { apres: 1200 });
   };
 
+  /**
+   * Dans le calendrier « Séance », touche le jour `date` (JJ/MM/AAAA), en
+   * changeant de mois s'il le faut (le calendrier s'ouvre sur le mois de la
+   * séance déjà choisie, qui dépend du jour du tournage), puis, s'il porte
+   * plusieurs séances, la première (le lundi : la piscine).
+   */
+  const choisirSeanceDu = async date => {
+    await toucher(page.locator('button#seance'), { apres: 900 });
+    const dialogue = page.locator('dialog[open]');
+    const jour = dialogue.locator(`button.jour:not(.hors-mois)[aria-label^="${date}"]`);
+    const [, m, a] = date.split('/').map(Number);
+    for (let i = 0; i < 24 && !(await jour.isVisible()); i++) {
+      // Premier jour du mois affiché, lu sur le premier jour qui n'est pas hors du mois.
+      const affiche = (await dialogue.locator('button.jour:not(.hors-mois)').first().getAttribute('aria-label')) ?? '';
+      const [, ma, aa] = affiche.slice(0, 10).split('/').map(Number);
+      const sens = aa * 12 + ma > a * 12 + m ? 'Mois précédent' : 'Mois suivant';
+      await toucher(dialogue.getByRole('button', { name: sens }), { apres: 500 });
+    }
+    await toucher(jour, { apres: 900 });
+    if (await dialogue.isVisible()) {
+      await toucher(dialogue.locator('.seances-du-jour button').first(), { apres: 1200 });
+    }
+  };
+
   return {
     page, pause, legende, attendreVoix, pistes, toucher, saisir, defiler, enHaut, menu, administration,
-    choisir, cocher, dater, reseau, vignette, choisirDerniereSeance, rechercherEtChoisir, suggestion
+    choisir, cocher, dater, reseau, vignette, choisirDerniereSeance, choisirSeanceDu, rechercherEtChoisir, suggestion
   };
 }

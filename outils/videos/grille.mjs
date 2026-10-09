@@ -4,7 +4,8 @@
 export async function ouvrirGrille({ page, pause, toucher }, eleve) {
   await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
   await pause(1200);
-  await toucher(page.getByRole('link', { name: eleve }), { apres: 1800 });
+  // exact : chaque case séance de la ligne est aussi un lien « Noter <élève> sur la séance du… ».
+  await toucher(page.getByRole('link', { name: eleve, exact: true }), { apres: 1800 });
 }
 
 /** Le bloc dont l'intitulé est exactement `intitule`. */
