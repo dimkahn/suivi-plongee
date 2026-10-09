@@ -106,6 +106,42 @@ class BaseExercicesTest {
     }
 
     @Test
+    @DisplayName("La base du N2 PA20 | PE40 compte 99 exercices ; chaque critère a un exercice de maîtrise")
+    void contenuN2() throws Exception {
+        String moniteur = jeton("e3@club.fr");
+        long ref = -1;
+        for (JsonNode r : envoyer("GET", "/api/referentiels", moniteur, null, 200)) {
+            if ("N2".equals(r.get("niveau").asText()) && r.get("versionMft").asText().startsWith("PA20")) {
+                ref = r.get("id").asLong();
+            }
+        }
+        JsonNode exercices = envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200);
+        assertThat(exercices).hasSize(99);
+
+        Map<Long, List<String>> maitriseParCritere = new HashMap<>();
+        Map<Long, Integer> maitriseParBloc = new HashMap<>();
+        for (JsonNode e : exercices) {
+            assertThat(e.get("critereIds")).as("critères de l'exercice " + e.get("numero").asText()).isNotEmpty();
+            if (!"MAITRISE".equals(e.get("phase").asText())) continue;
+            maitriseParBloc.merge(e.get("blocId").asLong(), 1, Integer::sum);
+            for (JsonNode c : e.get("critereIds")) {
+                maitriseParCritere.computeIfAbsent(c.asLong(), k -> new ArrayList<>()).add(e.get("numero").asText());
+            }
+        }
+        assertThat(maitriseParBloc).hasSize(11).allSatisfy((bloc, n) -> assertThat(n).isEqualTo(3));
+
+        // Seules les connaissances théoriques (transverses) n'ont pas d'exercice.
+        JsonNode detail = envoyer("GET", "/api/referentiels/" + ref, moniteur, null, 200);
+        for (JsonNode b : detail.get("blocs")) {
+            if (b.get("evaluationTransverse").asBoolean()) continue;
+            for (JsonNode c : b.get("criteres")) {
+                assertThat(maitriseParCritere).as("exercice de maîtrise pour « " + c.get("savoirFaire").asText() + " »")
+                        .containsKey(c.get("id").asLong());
+            }
+        }
+    }
+
+    @Test
     @DisplayName("Un critère ne passe à acquis que sur un exercice de maîtrise de sa compétence")
     void notationSurExercice() throws Exception {
         String admin = jeton("presidente@club.fr");

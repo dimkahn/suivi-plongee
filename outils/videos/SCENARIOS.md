@@ -512,7 +512,7 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 
 ### A16 — La base d'exercices
 
-Les exercices de chaque compétence, par phase, et les critères qu'ils font travailler.
+Les exercices de chaque compétence du N1 et du N2, par phase, et les critères qu'ils font travailler.
 
 Compte : `presidente@club.fr` · format ordinateur
 

@@ -213,7 +213,7 @@ export class ExercicesAdminComponent {
     void this.demarrer();
   }
 
-  /** La version active du N1 d'abord : c'est la première à avoir sa base d'exercices. */
+  /** La version active du N1 d'abord : c'est la première à avoir eu sa base d'exercices (le N2 a suivi, V59). */
   private async demarrer(): Promise<void> {
     try {
       const tous = await firstValueFrom(this.api.referentielsTous());
