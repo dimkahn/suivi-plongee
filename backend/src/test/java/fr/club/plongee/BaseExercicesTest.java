@@ -108,15 +108,34 @@ class BaseExercicesTest {
     @Test
     @DisplayName("La base du N2 PA20 | PE40 compte 99 exercices ; chaque critère a un exercice de maîtrise")
     void contenuN2() throws Exception {
+        List<String> avecSchema = verifierBase("N2", "PA20", 11);
+        // Schémas dessinés pour 31 exercices (V60).
+        assertThat(avecSchema).hasSize(31).contains("2.9", "7.7", "11.7").doesNotContain("1.1", "10.9");
+    }
+
+    @Test
+    @DisplayName("La base du N3 PA40 | PE60 compte 63 exercices ; chaque critère a un exercice de maîtrise")
+    void contenuN3() throws Exception {
+        List<String> avecSchema = verifierBase("N3", "PA40", 7);
+        // Schémas dessinés pour 20 exercices (V62).
+        assertThat(avecSchema).hasSize(20).contains("3.7", "4.8", "6.9").doesNotContain("5.1", "7.9");
+    }
+
+    /**
+     * 9 exercices par compétence dont 3 de maîtrise, chacun relié à au moins
+     * un critère, et chaque critère non transverse a un exercice de maîtrise.
+     * Rend les numéros des exercices qui ont un schéma.
+     */
+    private List<String> verifierBase(String niveau, String version, int competences) throws Exception {
         String moniteur = jeton("e3@club.fr");
         long ref = -1;
         for (JsonNode r : envoyer("GET", "/api/referentiels", moniteur, null, 200)) {
-            if ("N2".equals(r.get("niveau").asText()) && r.get("versionMft").asText().startsWith("PA20")) {
+            if (niveau.equals(r.get("niveau").asText()) && r.get("versionMft").asText().startsWith(version)) {
                 ref = r.get("id").asLong();
             }
         }
         JsonNode exercices = envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200);
-        assertThat(exercices).hasSize(99);
+        assertThat(exercices).hasSize(9 * competences);
 
         Map<Long, List<String>> maitriseParCritere = new HashMap<>();
         Map<Long, Integer> maitriseParBloc = new HashMap<>();
@@ -128,12 +147,7 @@ class BaseExercicesTest {
                 maitriseParCritere.computeIfAbsent(c.asLong(), k -> new ArrayList<>()).add(e.get("numero").asText());
             }
         }
-        assertThat(maitriseParBloc).hasSize(11).allSatisfy((bloc, n) -> assertThat(n).isEqualTo(3));
-
-        // Schémas dessinés pour 31 exercices (V60).
-        List<String> avecSchema = new ArrayList<>();
-        for (JsonNode e : exercices) if (e.get("aSchema").asBoolean()) avecSchema.add(e.get("numero").asText());
-        assertThat(avecSchema).hasSize(31).contains("2.9", "7.7", "11.7").doesNotContain("1.1", "10.9");
+        assertThat(maitriseParBloc).hasSize(competences).allSatisfy((bloc, n) -> assertThat(n).isEqualTo(3));
 
         // Seules les connaissances théoriques (transverses) n'ont pas d'exercice.
         JsonNode detail = envoyer("GET", "/api/referentiels/" + ref, moniteur, null, 200);
@@ -144,6 +158,10 @@ class BaseExercicesTest {
                         .containsKey(c.get("id").asLong());
             }
         }
+
+        List<String> avecSchema = new ArrayList<>();
+        for (JsonNode e : exercices) if (e.get("aSchema").asBoolean()) avecSchema.add(e.get("numero").asText());
+        return avecSchema;
     }
 
     @Test

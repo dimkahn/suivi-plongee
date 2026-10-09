@@ -1,12 +1,12 @@
 // A16 — La base d'exercices.
-// Tournage du 2026-10-09, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A16',
   titre: 'La base d\'exercices',
   public: 'Administrateur',
-  resume: 'Les exercices de chaque compétence du N1 et du N2, par phase, et les critères qu\'ils font travailler.',
+  resume: 'Les exercices de chaque compétence du N1 au N3, par phase, et les critères qu\'ils font travailler.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -27,6 +27,9 @@ export default {
     await page.locator('select#version').selectOption({ label: 'N2 · MFT PA20 | PE40 (2026-05)' });
     await pause(2500);
     await legende('Au N2, les exercices de maîtrise se font en milieu naturel : en fosse, ils ne comptent qu\'à l\'entraînement.', 5000);
+    await legende('Le N3 aussi : PA40, PE60 et compétences N3, entre 0 et 40 m, et de 40 à 60 m avec un E4.', 0);
+    await page.locator('select#version').selectOption({ label: 'N3 · MFT PA40 | PE60 (2025-12)' });
+    await pause(4000);
     await legende(null, 0);
     await pause(500);
   }
