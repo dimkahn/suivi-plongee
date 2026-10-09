@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter ».',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter », d\'où l\'on revient à la feuille.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -61,8 +61,15 @@ export default {
     await toucher(page.getByRole('button', { name: 'Voir tous les élèves' }), { apres: 1000 });
     await legende('Un présent déjà noté a un bouton « Noter » : sa grille s\'ouvre sur cette séance.', 0);
     const noter = page.locator('ul.eleves .noter');
-    if (await noter.count() > 0) await noter.first().scrollIntoViewIfNeeded();
-    await pause(3500);
+    if (await noter.count() > 0) {
+      await noter.first().scrollIntoViewIfNeeded();
+      await pause(2000);
+      await toucher(noter.first(), { apres: 2500 });
+      await legende('Une fois l\'élève noté, « Retour à la feuille de présence » ramène sur la même séance.', 0, { enHaut: true });
+      await toucher(page.locator('.retour-presences'), { apres: 2500 });
+    } else {
+      await pause(3500);
+    }
     await legende('Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.', 4000);
     await legende(null, 0);
     await pause(500);

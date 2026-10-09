@@ -294,10 +294,10 @@ function normaliser(texte: string): string {
                 </span>
               </button>
               @if (estNonNote(l)) {
-                <a class="non-note" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId() }"
+                <a class="non-note" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId(), depuis: 'presences' }"
                    [attr.aria-label]="l.eleve + ' : pas encore évalué, ouvrir sa grille'">Pas encore évalué</a>
               } @else if (peutNoter(l)) {
-                <a class="noter" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId() }"
+                <a class="noter" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId(), depuis: 'presences' }"
                    [attr.aria-label]="'Noter ' + l.eleve + ' sur cette séance, ouvrir sa grille'">Noter</a>
               }
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
