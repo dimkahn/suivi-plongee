@@ -54,7 +54,8 @@ export interface OptionCombobox {
       background: none; border: none; color: var(--craie); font-size: 1.25rem; cursor: pointer;
     }
     .options {
-      position: absolute; z-index: 2; top: 100%; left: 0; right: 0; margin: 2px 0 0; padding: 0;
+      /* Au-dessus de la barre « Enregistrer / Annuler » d'une fenêtre (sticky, z-index 2). */
+      position: absolute; z-index: 3; top: 100%; left: 0; right: 0; margin: 2px 0 0; padding: 0;
       list-style: none; max-height: 280px; overflow-y: auto; background: var(--carte);
       border: 1px solid var(--trait); border-radius: var(--r-s); box-shadow: 0 4px 12px rgba(0,0,0,.12);
     }

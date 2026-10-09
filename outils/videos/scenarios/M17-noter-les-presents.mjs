@@ -1,5 +1,5 @@
 // M17 — Noter les présents en une fois, depuis la feuille de présence.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : les présences y sont déjà
 // (données de démo), l'appel du 28 reste à M3.
 import { critere } from '../grille.mjs';
@@ -12,7 +12,7 @@ export default {
   compte: 'e2@club.fr',
 
   async jouer(g) {
-    const { page, pause, legende, toucher, saisir, menu, vignette } = g;
+    const { page, pause, legende, toucher, saisir, menu, vignette, choisirSeanceDu } = g;
 
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
@@ -20,12 +20,7 @@ export default {
     await menu('Présences');
 
     await legende('Choisissez la séance : ici, la piscine du lundi 21 septembre.', 0);
-    await toucher(page.locator('button#seance'), { apres: 900 });
-    const calendrier = page.locator('dialog[open]');
-    const jour = calendrier.locator('button.jour:not(.hors-mois)')
-      .filter({ has: page.locator('.numero').getByText('21', { exact: true }) });
-    await toucher(jour, { apres: 900 });
-    await toucher(calendrier.locator('.seances-du-jour button').first(), { apres: 1200 });
+    await choisirSeanceDu('21/09/2026');
 
     await legende('Filtrez sur votre groupe, puis faites l\'appel si ce n\'est pas déjà fait.', 0);
     await toucher(page.getByRole('button', { name: 'Débutants', exact: true }), { apres: 1500 });
@@ -61,7 +56,7 @@ export default {
     await legende('Dans la fiche de Hugo, le vidage de masque est passé « en cours », avec le commentaire.', 0);
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1200);
-    await toucher(page.getByRole('link', { name: 'Hugo Lemaire' }), { apres: 1800 });
+    await toucher(page.getByRole('link', { name: 'Hugo Lemaire', exact: true }), { apres: 1800 });
     await toucher(page.getByRole('button', { name: 'Tout ouvrir' }), { apres: 1200 });
     await critere(page, 'Vidage du masque').scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy({ top: 150, behavior: 'smooth' }));

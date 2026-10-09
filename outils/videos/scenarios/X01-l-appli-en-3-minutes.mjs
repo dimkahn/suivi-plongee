@@ -1,5 +1,5 @@
 // X1 — L'appli en 3 minutes.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -19,7 +19,7 @@ export default {
     await vignette();
 
     await legende('Un nom ouvre la grille de compétences du MFT.', 0);
-    await toucher(page.getByRole('link', { name: 'Chloé Garnier' }), { apres: 1800 });
+    await toucher(page.getByRole('link', { name: 'Chloé Garnier', exact: true }), { apres: 1800 });
     await choisirDerniereSeance();
     await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1000 });
     const ligne = critere(page, 'Capelage et décapelage');

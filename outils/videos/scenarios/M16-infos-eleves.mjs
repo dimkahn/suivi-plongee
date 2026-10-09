@@ -1,5 +1,5 @@
 // M16 — Infos élèves.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M16',
   titre: 'Infos élèves',
@@ -33,7 +33,7 @@ export default {
     await pause(1200);
 
     await legende('Touchez son nom pour ouvrir sa fiche.', 0);
-    await toucher(page.getByRole('link', { name: 'Léa Morel' }), { apres: 1800 });
+    await toucher(page.getByRole('link', { name: 'Léa Morel', exact: true }), { apres: 1800 });
     await legende('« Informations supplémentaires » : téléphone et contact d\'urgence.', 0);
     await toucher(page.getByRole('button', { name: 'Informations supplémentaires' }), { apres: 1200 });
     await page.locator('.infos-supplementaires').scrollIntoViewIfNeeded();
