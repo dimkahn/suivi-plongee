@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

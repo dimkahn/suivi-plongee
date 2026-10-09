@@ -1,5 +1,5 @@
 // E1 — Compte élève : consulter sa propre grille.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

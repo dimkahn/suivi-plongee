@@ -1,5 +1,5 @@
 // D6 — Photos avant et après le prêt.
-// Tournage du 2026-10-03 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-09 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
