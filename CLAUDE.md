@@ -431,8 +431,7 @@ exercices du N1 PE20 (9 par compétence) ; attention, le document numérote
 inverse par V7 : le rattachement se fait sur l'ordre du bloc, les numéros
 restent ceux du document. V59 installe les 99 exercices du N2 PA20 | PE40
 (9 par compétence, numérotés dans l'ordre des blocs de V8, rédigés d'après
-le MFT de mai 2026 ; rien pour les deux blocs transverses de théorie, pas
-de schéma) : chaque critère y a au moins un exercice de maîtrise, toujours
+le MFT de mai 2026 ; rien pour les deux blocs transverses de théorie) : chaque critère y a au moins un exercice de maîtrise, toujours
 décrit **en milieu naturel** — une note en piscine/fosse, même sur un
 exercice de maîtrise, reste un suivi d'entraînement (`estEntrainement`) et
 ne fait rien acquérir (rappel du club, 2026). **Un exercice est relié aux critères qu'il
@@ -506,7 +505,12 @@ PNG/JPEG vérifiés par leur signature, `SchemaExerciceService`,
 `/api/exercices/{id}/schema`, dépôt ADMIN) : V53 est une **migration Java**
 (`backend/src/main/java/db/migration/`) qui charge les images de
 `db/schemas/n1/`, découpées exercice par exercice dans le document du club
-(compétences 1 à 8 seulement ; 5.3 et 5.4 partagent le même). Les vues ne
+(compétences 1 à 8 seulement ; 5.3 et 5.4 partagent le même). V60 fait de
+même pour 31 exercices du N2 (`db/schemas/n2/`), dessinés en Java2D par
+l'outil `backend/src/test/java/fr/club/plongee/outils/SchemasExercicesN2.java`
+(hors de `mvn test` : son nom ne finit pas par `Test` et il exige
+`-Dschemas.n2=<dossier>`) ; ne pas le relancer pour corriger un schéma
+déjà en base, passer par l'écran d'admin. Les vues ne
 portent que `aSchema` ; l'image se lit à part (`SchemaExerciceComponent`),
 gardée sur l'appareil et embarquée par « Préparer hors ligne ».
 

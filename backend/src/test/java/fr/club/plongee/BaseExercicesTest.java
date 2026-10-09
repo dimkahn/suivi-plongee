@@ -130,6 +130,11 @@ class BaseExercicesTest {
         }
         assertThat(maitriseParBloc).hasSize(11).allSatisfy((bloc, n) -> assertThat(n).isEqualTo(3));
 
+        // Schémas dessinés pour 31 exercices (V60).
+        List<String> avecSchema = new ArrayList<>();
+        for (JsonNode e : exercices) if (e.get("aSchema").asBoolean()) avecSchema.add(e.get("numero").asText());
+        assertThat(avecSchema).hasSize(31).contains("2.9", "7.7", "11.7").doesNotContain("1.1", "10.9");
+
         // Seules les connaissances théoriques (transverses) n'ont pas d'exercice.
         JsonNode detail = envoyer("GET", "/api/referentiels/" + ref, moniteur, null, 200);
         for (JsonNode b : detail.get("blocs")) {

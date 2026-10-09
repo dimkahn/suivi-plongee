@@ -1,5 +1,5 @@
 // A16 — La base d'exercices.
-// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -23,9 +23,9 @@ export default {
     await legende('Seul un exercice de maîtrise fait passer ses critères à « Acquis ».', 4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }).first(), { apres: 1000 });
     await legende('Un exercice déjà noté ne se supprime pas : on le désactive.', 3500);
-    await legende('Le N2 a aussi sa base : 9 exercices par compétence, PA20 et PE40.', 0);
+    await legende('Le N2 a aussi sa base : 9 exercices par compétence, PA20 et PE40, avec leurs schémas.', 0);
     await page.locator('select#version').selectOption({ label: 'N2 · MFT PA20 | PE40 (2026-05)' });
-    await pause(2000);
+    await pause(2500);
     await legende('Au N2, les exercices de maîtrise se font en milieu naturel : en fosse, ils ne comptent qu\'à l\'entraînement.', 5000);
     await legende(null, 0);
     await pause(500);
