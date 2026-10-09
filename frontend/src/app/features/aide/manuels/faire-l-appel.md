@@ -36,7 +36,7 @@ Une fois la séance passée, la feuille repère les présents qui n'ont reçu **
 - le bilan en haut de la liste les compte (« 3 présent(s) sans évaluation ») ;
 - leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève, sur cette séance, et le noter ;
 - les présents déjà notés ont à la place un bouton « Noter », qui ouvre de même leur grille sur la séance pour ajouter ou corriger une note ;
-- une fois l'élève noté, « ← Retour à la feuille de présence », en haut de sa grille, ramène à la feuille sur la même séance, pour passer à l'élève suivant ;
+- une fois l'élève noté, « ← Retour à la feuille de présence », en haut de sa grille, ramène à la feuille sur la même séance, filtrée sur le même groupe, pour passer à l'élève suivant ;
 - le bouton « Voir les présents sans évaluation » n'affiche plus qu'eux, dans le groupe filtré. « Noter les présents » propose alors justement ces élèves.
 
 Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme une évaluation de la séance. Une note gardée sur le téléphone, pas encore envoyée, aussi.

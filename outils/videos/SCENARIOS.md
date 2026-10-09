@@ -92,7 +92,7 @@ Compte : `e2@club.fr` · format téléphone · 1 min 05
 17. « Voir les présents sans évaluation » n'affiche plus qu'eux.
 18. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
 19. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-20. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance.
+20. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
 21. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance

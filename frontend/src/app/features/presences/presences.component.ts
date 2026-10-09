@@ -294,10 +294,10 @@ function normaliser(texte: string): string {
                 </span>
               </button>
               @if (estNonNote(l)) {
-                <a class="non-note" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId(), depuis: 'presences' }"
+                <a class="non-note" [routerLink]="['/cursus', l.cursusId]" [queryParams]="lienGrille()"
                    [attr.aria-label]="l.eleve + ' : pas encore évalué, ouvrir sa grille'">Pas encore évalué</a>
               } @else if (peutNoter(l)) {
-                <a class="noter" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId(), depuis: 'presences' }"
+                <a class="noter" [routerLink]="['/cursus', l.cursusId]" [queryParams]="lienGrille()"
                    [attr.aria-label]="'Noter ' + l.eleve + ' sur cette séance, ouvrir sa grille'">Noter</a>
               }
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
@@ -526,6 +526,8 @@ export class PresencesComponent implements OnDestroy {
   seanceId = signal<number | null>(null);
   /** Séance à ouvrir d'emblée, tirée de l'adresse (?seance=12). */
   seance = input<string>();
+  /** Groupe à filtrer d'emblée, tiré de l'adresse (?groupe=3 ou ?groupe=SANS), au retour de la grille. */
+  groupe = input<string>();
   /** Programmes d'exercices de la séance choisie : le commun et ceux des groupes. */
   exercices = signal<ExerciceVue[]>([]);
   /** Le bloc « Exercices de la séance » se replie pour laisser la place à l'appel. */
@@ -575,6 +577,12 @@ export class PresencesComponent implements OnDestroy {
   lienProgramme = computed(() => {
     const filtre = this.groupeFiltre();
     return typeof filtre === 'number' ? { groupe: filtre } : {};
+  });
+
+  /** La grille d'un élève garde la séance et le groupe filtré, pour revenir à la feuille telle quelle. */
+  lienGrille = computed(() => {
+    const filtre = this.groupeFiltre();
+    return { seance: this.seanceId(), depuis: 'presences', groupe: filtre === 'TOUS' ? null : filtre };
   });
 
   lignes = signal<LignePresence[]>([]);
@@ -701,6 +709,10 @@ export class PresencesComponent implements OnDestroy {
   private async charger(): Promise<void> {
     try {
       this.seances.set(await this.api.seances());
+      // Le groupe filtré avant d'ouvrir la grille d'un élève (?groupe=3 ou ?groupe=SANS).
+      const groupe = this.groupe();
+      if (groupe === 'SANS') this.groupeFiltre.set('SANS');
+      else if (groupe && Number.isInteger(Number(groupe))) this.groupeFiltre.set(Number(groupe));
       // Facultatif : sans progression rattachée à la saison, pas de programme affiché.
       this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
       // Facultatif aussi : sans groupe (ou hors ligne sans cache), pas de filtre.
