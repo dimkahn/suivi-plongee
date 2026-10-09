@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09 (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer.',
+  resume: 'La feuille de présence d\'une séance : nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter ».',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -51,6 +51,10 @@ export default {
     await cartes.first().locator('.non-note').scrollIntoViewIfNeeded();
     await pause(3500);
     await toucher(page.getByRole('button', { name: 'Voir tous les élèves' }), { apres: 1000 });
+    await legende('Un présent déjà noté a un bouton « Noter » : sa grille s\'ouvre sur cette séance.', 0);
+    const noter = page.locator('ul.eleves .noter');
+    if (await noter.count() > 0) await noter.first().scrollIntoViewIfNeeded();
+    await pause(3500);
     await legende('Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.', 4000);
     await legende(null, 0);
     await pause(500);

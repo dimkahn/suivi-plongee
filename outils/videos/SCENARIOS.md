@@ -85,7 +85,8 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 10. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
 11. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
 12. Le compteur en haut de la liste fait le bilan.
-13. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+13. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+14. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 
