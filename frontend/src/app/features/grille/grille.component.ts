@@ -85,6 +85,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     SchemaExerciceComponent
   ],
   template: `
+    @if (depuis() === 'presences') {
+      <a class="retour-presences" [routerLink]="['/presences']" [queryParams]="{ seance: seance() }">
+        &larr; Retour à la feuille de présence
+      </a>
+    }
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
         @if (urlPhoto(); as photo) {
@@ -710,6 +715,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .retour-presences {
+      display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas);
+      font-size: .9375rem; text-decoration: none;
+    }
     .entete { display: flex; gap: var(--pas-3); align-items: center; padding: var(--pas-3); }
     .avatar { flex: none; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--fond); }
     .silhouette {
@@ -928,6 +937,8 @@ export class GrilleComponent implements OnDestroy {
   id = input.required<string>();
   /** Séance à choisir d'emblée, tirée de l'adresse (?seance=12). */
   seance = input<string>();
+  /** Page d'où vient le moniteur (?depuis=presences) : propose d'y revenir sur la même séance. */
+  depuis = input<string>();
 
   grille = signal<GrilleVue | null>(null);
   seances = signal<SeanceVue[]>([]);

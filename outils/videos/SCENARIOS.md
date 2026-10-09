@@ -69,7 +69,7 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 ### M3 — Faire l'appel d'une séance
 
-La feuille de présence d'une séance : le détail des exercices préparés, puis nage, bloc ou théorie pour chaque élève.
+La feuille de présence d'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter », d'où l'on revient à la feuille.
 
 Compte : `e2@club.fr` · format téléphone · 1 min 05
 
@@ -88,8 +88,12 @@ Compte : `e2@club.fr` · format téléphone · 1 min 05
 13. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
 14. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
 15. Le compteur en haut de la liste fait le bilan.
-16. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-17. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+16. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
+17. « Voir les présents sans évaluation » n'affiche plus qu'eux.
+18. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
+19. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+20. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance.
+21. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 
