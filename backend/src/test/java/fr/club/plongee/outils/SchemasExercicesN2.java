@@ -49,14 +49,24 @@ class SchemasExercicesN2 {
     static Font policeGrasse;
 
     public static void main(String[] args) throws Exception {
-        File dossier = new File(args.length > 0 ? args[0] : "schemas-n2");
+        chargerPolices();
+        ecrire(schemas(), new File(args.length > 0 ? args[0] : "schemas-n2"));
+    }
+
+    /** Écrit chaque schéma en {@code <numéro>.png} ; partagé avec {@link SchemasExercicesN3}. */
+    static void ecrire(List<Schema> liste, File dossier) throws Exception {
         dossier.mkdirs();
-        police = charger("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf", Font.PLAIN);
-        policeGrasse = charger("/usr/share/fonts/truetype/noto/NotoSans-SemiBold.ttf", Font.BOLD);
-        for (Schema s : schemas()) {
+        for (Schema s : liste) {
             ImageIO.write(s.image, "png", new File(dossier, s.numero + ".png"));
             System.out.println("Schéma " + s.numero);
         }
+    }
+
+    /** À appeler avant de créer un schéma. */
+    static void chargerPolices() {
+        if (police != null) return;
+        police = charger("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf", Font.PLAIN);
+        policeGrasse = charger("/usr/share/fonts/truetype/noto/NotoSans-SemiBold.ttf", Font.BOLD);
     }
 
     static Font charger(String chemin, int style) {
@@ -739,6 +749,48 @@ class SchemasExercicesN2 {
             g.setColor(GRIS_TRAIT);
             g.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g.draw(roche);
+        }
+
+        /** Ligne de profondeur à ne pas dépasser, en corail pointillé. */
+        void limite(double metres, String libelle) {
+            g.setColor(CORAIL);
+            g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1, new float[] {9, 6}, 0));
+            g.draw(new Line2D.Double(8, y(metres), L - 80, y(metres)));
+            g.setFont(police.deriveFont(15f));
+            g.drawString(libelle, 20, (float) y(metres) + 20);
+        }
+
+        /** Pavillon alpha (blanc et bleu, à queue d'aronde) sur son mât. */
+        void pavillon(double x, double yBas, double yHaut) {
+            g.setColor(GRIS);
+            g.setStroke(new BasicStroke(3));
+            g.draw(new Line2D.Double(x, yBas, x, yHaut));
+            Shape blanc = new Rectangle2D.Double(x, yHaut, 26, 32);
+            g.setColor(Color.WHITE);
+            g.fill(blanc);
+            g.setColor(GRIS);
+            g.setStroke(new BasicStroke(1.5f));
+            g.draw(blanc);
+            Path2D bleu = new Path2D.Double();
+            bleu.moveTo(x + 26, yHaut);
+            bleu.lineTo(x + 56, yHaut);
+            bleu.lineTo(x + 44, yHaut + 16);
+            bleu.lineTo(x + 56, yHaut + 32);
+            bleu.lineTo(x + 26, yHaut + 32);
+            bleu.closePath();
+            g.setColor(BLEU);
+            g.fill(bleu);
+        }
+
+        /** Gorgone posée sur le fond : un éventail de branches corail. */
+        void gorgone(double x, double yFond) {
+            g.setColor(CORAIL);
+            g.setStroke(new BasicStroke(2.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.draw(new Line2D.Double(x, yFond, x, yFond - 22));
+            for (double a = -60; a <= 60; a += 20) {
+                double r = Math.toRadians(a - 90);
+                g.draw(new Line2D.Double(x, yFond - 22, x + 34 * Math.cos(r), yFond - 22 + 34 * Math.sin(r)));
+            }
         }
 
         void cerceauAuSol(double x) {

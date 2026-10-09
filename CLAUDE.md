@@ -421,7 +421,7 @@ critères travaillés à la séance choisie ; la notation groupée propose de
 cocher d'un coup les critères des exercices (du groupe filtré et du commun),
 chacun gardant son commentaire obligatoire.
 
-**Base d'exercices par compétence (2026, N1 puis N2).** `ExerciceCompetence`
+**Base d'exercices par compétence (2026, N1, N2 et N3).** `ExerciceCompetence`
 (paquet `referentiel`, table `exercice_competence`, V50) : des exercices types
 rattachés à un bloc d'une version du MFT, chacun avec un numéro (celui du
 document du club, « 1.7 »), une `PhaseExercice` (INITIATION, PERFECTIONNEMENT,
@@ -434,7 +434,11 @@ restent ceux du document. V59 installe les 99 exercices du N2 PA20 | PE40
 le MFT de mai 2026 ; rien pour les deux blocs transverses de théorie) : chaque critère y a au moins un exercice de maîtrise, toujours
 décrit **en milieu naturel** — une note en piscine/fosse, même sur un
 exercice de maîtrise, reste un suivi d'entraînement (`estEntrainement`) et
-ne fait rien acquérir (rappel du club, 2026). **Un exercice est relié aux critères qu'il
+ne fait rien acquérir (rappel du club, 2026). V61 fait de même pour les 63
+exercices du N3 PA40 | PE60 (7 compétences, MFT de décembre 2025, rien pour
+le bloc transverse de théorie) : enseignement et validation entre 0 et 40 m
+par un E3, zone 40-60 m seulement sous un E4 et progressivement, comme le
+MFT. **Un exercice est relié aux critères qu'il
 travaille** (V54, `exercice_competence_critere`, au moins un, tous de son
 bloc ; choix du club 2026 : « 1.7 » → « Gréage et dégréage », pas toute la
 compétence « S'équiper ») ; le bloc ne sert qu'à ranger et numéroter.
@@ -460,8 +464,8 @@ critère déjà acquis (`refusSansExercice`) ; la notation groupée et les
 notes anciennes peuvent en être dépourvues, la vue globale les marque
 « sans exercice » ; un
 critère sans exercice de maîtrise (au N1 :
-« Départ plage », « Ventilation sur tuba », bloc transverse ; N3 pour
-l'instant) se note comme avant. Le programme d'une séance se construit
+« Départ plage », « Ventilation sur tuba », bloc transverse) se note comme
+avant. Le programme d'une séance se construit
 d'abord avec la base (choix du club, 2026 : « + Ajouter des exercices des
 compétences », `exercice_seance.exercice_competence_id`) : un tel exercice
 garde l'intitulé de la base et **reçoit les critères de la base**
@@ -509,7 +513,8 @@ PNG/JPEG vérifiés par leur signature, `SchemaExerciceService`,
 même pour 31 exercices du N2 (`db/schemas/n2/`), dessinés en Java2D par
 l'outil `backend/src/test/java/fr/club/plongee/outils/SchemasExercicesN2.java`
 (hors de `mvn test` : son nom ne finit pas par `Test` et il exige
-`-Dschemas.n2=<dossier>`) ; ne pas le relancer pour corriger un schéma
+`-Dschemas.n2=<dossier>`) ; V62 pour 20 exercices du N3 (`db/schemas/n3/`,
+`SchemasExercicesN3`, mêmes éléments de dessin, `-Dschemas.n3=`) ; ne pas les relancer pour corriger un schéma
 déjà en base, passer par l'écran d'admin. Les vues ne
 portent que `aSchema` ; l'image se lit à part (`SchemaExerciceComponent`),
 gardée sur l'appareil et embarquée par « Préparer hors ligne ».
