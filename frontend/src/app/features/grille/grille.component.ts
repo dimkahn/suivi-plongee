@@ -86,7 +86,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   ],
   template: `
     @if (depuis() === 'presences') {
-      <a class="retour-presences" [routerLink]="['/presences']" [queryParams]="{ seance: seance() }">
+      <a class="retour-presences" [routerLink]="['/presences']" [queryParams]="{ seance: seance(), groupe: groupe() }">
         &larr; Retour à la feuille de présence
       </a>
     }
@@ -939,6 +939,8 @@ export class GrilleComponent implements OnDestroy {
   seance = input<string>();
   /** Page d'où vient le moniteur (?depuis=presences) : propose d'y revenir sur la même séance. */
   depuis = input<string>();
+  /** Groupe filtré sur la feuille de présence (?groupe=3), rendu au retour. */
+  groupe = input<string>();
 
   grille = signal<GrilleVue | null>(null);
   seances = signal<SeanceVue[]>([]);
