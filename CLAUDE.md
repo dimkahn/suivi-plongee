@@ -63,6 +63,18 @@ le navigateur, sans serveur ni réseau, seules les vidéos viennent du
 catalogue publié. Changer un écran = mettre à jour son manuel au même
 commit ; un nouveau scénario de vidéo = le citer dans un manuel.
 
+**Règle pour chaque commit (demande du club, 2026) :** tout commit qui
+change ce que voit ou fait l'utilisateur met à jour, **dans le même
+commit**, l'aide (le ou les manuels de `frontend/src/app/features/aide/manuels/`
+concernés : texte, questions, mots-clés) **et** les scénarios de vidéo qui
+montrent cet écran (`outils/videos/scenarios/*.mjs` : gestes et phrases de
+voix off, date « Tournage du … » à jour pour qu'il soit retourné, plus
+l'entrée de `outils/videos/SCENARIOS.md`). Chercher les manuels et
+scénarios concernés (par l'écran, les sélecteurs CSS, les libellés de
+boutons) avant de commiter, et dire dans le résumé ce qui a été mis à jour.
+Seuls les commits sans effet visible (tests, outillage, refactorisation)
+en sont dispensés.
+
 Le frontend proxifie `/api` vers `localhost:8080` et `/medias/videos` vers
 `outils/videos/apercu.mjs` (port 4300) (`proxy.conf.json`).
 Comptes de démonstration dans le README, mot de passe `plongee2026`.
