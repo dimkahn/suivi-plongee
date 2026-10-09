@@ -421,7 +421,7 @@ critères travaillés à la séance choisie ; la notation groupée propose de
 cocher d'un coup les critères des exercices (du groupe filtré et du commun),
 chacun gardant son commentaire obligatoire.
 
-**Base d'exercices par compétence (2026, N1 d'abord).** `ExerciceCompetence`
+**Base d'exercices par compétence (2026, N1 puis N2).** `ExerciceCompetence`
 (paquet `referentiel`, table `exercice_competence`, V50) : des exercices types
 rattachés à un bloc d'une version du MFT, chacun avec un numéro (celui du
 document du club, « 1.7 »), une `PhaseExercice` (INITIATION, PERFECTIONNEMENT,
@@ -429,7 +429,13 @@ MAITRISE), un déroulement et un critère de réussite. V51 installe les 90
 exercices du N1 PE20 (9 par compétence) ; attention, le document numérote
 « 9 » Retourner en surface et « 10 » Évoluer en sécurité, rangés dans l'ordre
 inverse par V7 : le rattachement se fait sur l'ordre du bloc, les numéros
-restent ceux du document. **Un exercice est relié aux critères qu'il
+restent ceux du document. V59 installe les 99 exercices du N2 PA20 | PE40
+(9 par compétence, numérotés dans l'ordre des blocs de V8, rédigés d'après
+le MFT de mai 2026 ; rien pour les deux blocs transverses de théorie, pas
+de schéma) : chaque critère y a au moins un exercice de maîtrise, toujours
+décrit **en milieu naturel** — une note en piscine/fosse, même sur un
+exercice de maîtrise, reste un suivi d'entraînement (`estEntrainement`) et
+ne fait rien acquérir (rappel du club, 2026). **Un exercice est relié aux critères qu'il
 travaille** (V54, `exercice_competence_critere`, au moins un, tous de son
 bloc ; choix du club 2026 : « 1.7 » → « Gréage et dégréage », pas toute la
 compétence « S'équiper ») ; le bloc ne sert qu'à ranger et numéroter.
@@ -455,7 +461,7 @@ critère déjà acquis (`refusSansExercice`) ; la notation groupée et les
 notes anciennes peuvent en être dépourvues, la vue globale les marque
 « sans exercice » ; un
 critère sans exercice de maîtrise (au N1 :
-« Départ plage », « Ventilation sur tuba », bloc transverse ; N2/N3 pour
+« Départ plage », « Ventilation sur tuba », bloc transverse ; N3 pour
 l'instant) se note comme avant. Le programme d'une séance se construit
 d'abord avec la base (choix du club, 2026 : « + Ajouter des exercices des
 compétences », `exercice_seance.exercice_competence_id`) : un tel exercice

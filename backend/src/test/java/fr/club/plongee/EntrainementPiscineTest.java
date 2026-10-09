@@ -23,8 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * N2 et N3 : les exercices travaillés en piscine et en fosse sont suivis à
- * part de l'évaluation en milieu naturel. Une note prise en piscine
- * n'acquiert rien et ne permet pas de valider une compétence.
+ * part de l'évaluation en milieu naturel. Une note prise en piscine, même
+ * sur un exercice de maîtrise, n'acquiert rien et ne permet pas de valider
+ * une compétence.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -63,12 +64,22 @@ class EntrainementPiscineTest {
                 .andExpect(status().isOk());
     }
 
-    private void noter(String moniteur, long cursusId, long critereId, long seanceId) throws Exception {
+    private void noter(String moniteur, long cursusId, long critereId, long seanceId, long exerciceId) throws Exception {
         mvc.perform(post("/api/cursus/" + cursusId + "/evaluations").header("Authorization", moniteur)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                 {"critereId":%d,"seanceId":%d,"statut":"ACQUIS"}""".formatted(critereId, seanceId)))
+                                 {"critereId":%d,"seanceId":%d,"statut":"ACQUIS","exerciceId":%d}"""
+                                .formatted(critereId, seanceId, exerciceId)))
                 .andExpect(status().isCreated());
+    }
+
+    /** Un exercice de maîtrise du bloc qui travaille le critère (base d'exercices du N2, V59). */
+    private long exerciceDeMaitrise(JsonNode bloc, long critereId) {
+        for (JsonNode e : bloc.get("exercices")) {
+            if (!"MAITRISE".equals(e.get("phase").asText())) continue;
+            for (JsonNode c : e.get("critereIds")) if (c.asLong() == critereId) return e.get("id").asLong();
+        }
+        throw new AssertionError("Aucun exercice de maîtrise pour le critère " + critereId);
     }
 
     /** Nombre de notes reçues sur la séance, tel que l'affiche la feuille de présence. */
@@ -129,8 +140,12 @@ class EntrainementPiscineTest {
             // Feuille de présence : présent, mais pas encore noté sur cette séance.
             assertThat(notesSurLaFeuille(moniteur, piscine, cursusId)).isZero();
 
-            // Tous les critères du bloc acquis en piscine : rien d'acquis pour autant.
-            for (JsonNode c : bloc.get("criteres")) noter(moniteur, cursusId, c.get("id").asLong(), piscine);
+            // Tous les critères du bloc acquis en piscine, sur un exercice de maîtrise :
+            // rien d'acquis pour autant, seul le milieu naturel fait acquérir.
+            for (JsonNode c : bloc.get("criteres")) {
+                long id = c.get("id").asLong();
+                noter(moniteur, cursusId, id, piscine, exerciceDeMaitrise(bloc, id));
+            }
             assertThat(notesSurLaFeuille(moniteur, piscine, cursusId)).isEqualTo(bloc.get("criteres").size());
             assertThat(notesSurLaFeuille(moniteur, mer, cursusId)).isZero();
             bloc = premierBloc(moniteur, cursusId);
@@ -156,7 +171,7 @@ class EntrainementPiscineTest {
             assertThat(c0.get("statut").asText()).isEqualTo("NON_ABORDE");
 
             // En milieu naturel, c'est l'évaluation qui compte ; l'entraînement reste affiché à côté.
-            noter(moniteur, cursusId, critere, mer);
+            noter(moniteur, cursusId, critere, mer, exerciceDeMaitrise(bloc, critere));
             c0 = premierBloc(moniteur, cursusId).get("criteres").get(0);
             assertThat(c0.get("statut").asText()).isEqualTo("ACQUIS");
             assertThat(c0.get("entrainement").get("statut").asText()).isEqualTo("ACQUIS");

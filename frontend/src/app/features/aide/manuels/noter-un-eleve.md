@@ -9,6 +9,7 @@ questions:
 - Comment mettre un critère acquis ?
 - Pourquoi je ne peux pas mettre « Acquis » ?
 - Comment indiquer l'exercice réalisé ?
+- Pourquoi un exercice de maîtrise réussi en fosse ne valide pas le critère d'un N2 ?
 - Comment laisser un commentaire sur un élève ?
 - Pourquoi je ne trouve pas la séance dans la grille ?
 - Que veut dire « En retard » ?
@@ -27,7 +28,7 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 
 ## L'exercice réalisé : initiation, perfectionnement, maîtrise
 
-Chaque critère du N1 a ses exercices, rangés en trois temps ; un exercice peut travailler plusieurs critères de la même compétence. Une pastille dit d'un coup d'œil où en est l'élève : **I** initiation (bleu), **P** perfectionnement (ambre), **M** maîtrise (vert), suivie du numéro (« M 1.7 »).
+Chaque critère du N1 et du N2 a ses exercices, rangés en trois temps ; un exercice peut travailler plusieurs critères de la même compétence. Une pastille dit d'un coup d'œil où en est l'élève : **I** initiation (bleu), **P** perfectionnement (ambre), **M** maîtrise (vert), suivie du numéro (« M 1.7 »).
 
 - **On note l'exercice.** « En cours » ou « Acquis » disent où en est l'élève dans l'exercice choisi : un exercice d'initiation ou de perfectionnement peut être acquis. Sous le critère : « Noté sur I 1.1 : exercice acquis · critère en cours ».
 - **État du critère :** jamais noté, il est « non abordé » ; dès qu'une note porte sur un de ses exercices, il passe « en cours » ; il n'est **acquis qu'avec un exercice de maîtrise acquis**. Un exercice d'initiation ou de perfectionnement ne fait jamais reculer un critère déjà acquis. Un critère qui n'a aucun exercice de maîtrise (aujourd'hui « Départ plage » et « Ventilation sur tuba ») s'acquiert comme avant.
@@ -43,6 +44,8 @@ Au N2 et au N3, les compétences s'acquièrent en milieu naturel. La grille tien
 
 - choisissez une séance **en piscine ou en fosse** : un bandeau bleu « suivi d'entraînement » s'affiche, et vos notes disent où en est l'élève dans les exercices ;
 - choisissez une séance **en milieu naturel** : vous notez l'évaluation, celle qui compte pour valider la compétence.
+
+Au N2, la note porte aussi sur un exercice. Même un **exercice de maîtrise acquis en fosse** ne rend pas le critère acquis : il ne compte qu'à l'entraînement. Seul un exercice de maîtrise acquis **en milieu naturel** fait acquérir le critère.
 
 Sous chaque critère, l'autre suivi reste rappelé (« Piscine / fosse : acquis » ou « Milieu naturel : en cours »), et chaque bloc indique les deux comptes. Un critère acquis en fosse n'est pas acquis pour autant : il reste à le montrer en milieu naturel.
 

@@ -1,5 +1,5 @@
 // M19 — N2 et N3 : l'entraînement en piscine et fosse, à part de l'évaluation en milieu naturel.
-// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Camille (N2) : week-end à la Gravière du Fort les 26-27/09 (V107), fosse
 // les lundis de septembre, notée à l'entraînement par Gwendoline (V113).
 import { ouvrirGrille, ouvrirBloc, critere, noter } from '../grille.mjs';
@@ -39,10 +39,11 @@ export default {
     await pause(4000);
     await vignette();
 
-    await legende('Saut droit et bascule arrière : réussis en fosse ce soir-là.', 0);
+    await legende('Saut droit et bascule arrière : l\'exercice 1.3 réussi en fosse ce soir-là.', 0);
     await critere(page, 'Saut droit et bascule arrière - Remontée à l\'échelle').scrollIntoViewIfNeeded();
-    await noter(g, 'Saut droit et bascule arrière - Remontée à l\'échelle', 'Acquis');
-    await legende('Acquis à l\'entraînement… mais toujours « non abordé » en milieu naturel : il reste à le montrer en plongée.', 5000);
+    await noter(g, 'Saut droit et bascule arrière - Remontée à l\'échelle', 'Acquis', 'Mises à l\'eau et sortie par l\'échelle');
+    await legende('Le critère avance à l\'entraînement… mais reste « non abordé » en milieu naturel.', 5000);
+    await legende('Même un exercice de maîtrise réussi en fosse n\'acquiert rien : seul le milieu naturel valide.', 4500);
 
     await legende('Chaque bloc compte les deux : acquis en milieu naturel, et en piscine ou fosse.', 0);
     await page.locator('section.bloc', { hasText: BLOC }).locator('.detail').scrollIntoViewIfNeeded();
