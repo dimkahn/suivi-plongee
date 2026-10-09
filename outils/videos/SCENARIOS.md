@@ -69,24 +69,27 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 ### M3 — Faire l'appel d'une séance
 
-La feuille de présence d'une séance en moins d'une minute : nage, bloc ou théorie pour chaque élève.
+La feuille de présence d'une séance : le détail des exercices préparés, puis nage, bloc ou théorie pour chaque élève.
 
-Compte : `e2@club.fr` · format téléphone · 56 s
+Compte : `e2@club.fr` · format téléphone · 1 min 05
 
 1. Au bord du bassin : menu, puis « Présences ».
 2. D'abord la séance. Touchez « Changer » pour ouvrir le calendrier.
 3. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
 4. Un élève prévient de sa venue ? Les présences s'annoncent jusqu'à une semaine avant la séance.
 5. « Au programme » : ce que la progression du club prévoit ce mois-ci.
-6. Filtrez sur votre groupe d'entraînement.
-7. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
-8. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
-9. Un élève sans choix est absent.
-10. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
-11. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
-12. Le compteur en haut de la liste fait le bilan.
-13. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-14. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+6. Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.
+7. Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.
+8. Touchez le titre pour replier tout le bloc et garder la place pour l'appel.
+9. Filtrez sur votre groupe d'entraînement.
+10. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
+11. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
+12. Un élève sans choix est absent.
+13. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
+14. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
+15. Le compteur en haut de la liste fait le bilan.
+16. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+17. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 

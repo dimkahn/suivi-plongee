@@ -3,8 +3,10 @@ titre: Faire l'appel d'une séance
 rubrique: Moniteur
 videos: M3
 ecran: /presences
-mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté
+mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté, exercices, programme, schéma, critère de réussite, déroulement, replier, déplier
 questions:
+- Où voir le détail et le schéma des exercices de la séance ?
+- Comment replier les exercices de la séance ?
 - Comment faire l'appel ?
 - Comment noter qu'un élève est présent ou absent ?
 - Comment annoncer qu'un élève viendra ?
@@ -43,4 +45,11 @@ Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme 
 - Un élève sans choix est absent. Pas de bouton « Enregistrer ».
 - Les présences s'annoncent jusqu'à une semaine avant la séance ; elles ne comptent qu'une fois la séance passée.
 - « Au programme » rappelle ce que la progression du club prévoit ce mois-ci, et « Exercices de la séance » ce que chaque groupe a préparé.
+
+## Les exercices de la séance
+
+- Touchez le titre « Exercices de la séance » pour replier ou rouvrir tout le bloc : replié, il laisse la place à la liste des élèves.
+- Touchez un exercice pour le déplier : phase (initiation, perfectionnement, maîtrise), déroulement et consignes, critère de réussite, critères travaillés et schéma. Touchez-le de nouveau pour le replier.
+- « Tout déplier » ouvre tous les exercices affichés d'un coup, « Tout replier » les referme.
+- Filtré sur un groupe, le bloc ne montre que le programme de ce groupe et le programme commun.
 - Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.

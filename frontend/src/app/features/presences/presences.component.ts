@@ -20,6 +20,8 @@ import { lieuEtSite } from '../../core/seance-lieu';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 import { AuthService } from '../../core/auth.service';
 import { NotationGroupeeComponent } from './notation-groupee.component';
+import { PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
+import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 
 /** Un bouton de la ligne : l'atelier fait par un élève présent. */
 interface Choix {
@@ -65,7 +67,7 @@ function normaliser(texte: string): string {
 @Component({
   selector: 'app-presences',
   imports: [FormsModule, RouterLink, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
-            NotationGroupeeComponent],
+            NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
@@ -128,33 +130,94 @@ function normaliser(texte: string): string {
 
       <section class="exercices" aria-label="Exercices de la séance">
         <div class="entete-exercices">
-          <h2>Exercices de la séance</h2>
+          <h2>
+            <button type="button" class="bascule-exercices" aria-controls="contenu-exercices"
+                    [attr.aria-expanded]="exercicesOuverts()" (click)="exercicesOuverts.set(!exercicesOuverts())">
+              <span class="fleche" aria-hidden="true">{{ exercicesOuverts() ? '▾' : '▸' }}</span>
+              Exercices de la séance
+              @if (exercicesAffiches().length > 0) {
+                <span class="secondaire compte-exercices">({{ exercicesAffiches().length }})</span>
+              }
+            </button>
+          </h2>
           <a class="bouton-discret" [routerLink]="['/seances', s.id, 'programme']"
              [queryParams]="lienProgramme()">
             Préparer le programme
           </a>
         </div>
-        @if (exercicesAffiches().length > 0) {
-          @for (p of programmesAffiches(); track p.groupeId) {
-            <h3>{{ p.titre }}</h3>
-            <ol>
-              @for (e of p.exercices; track e.id) {
-                <li>
-                  @if (e.niveau) { <span class="niveau">{{ libellePreparation(e.niveau) }}</span> }
-                  <strong>{{ e.intitule }}</strong>
-                  @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
-                  @if (e.criteres.length > 0) {
-                    <span class="secondaire"> · {{ e.criteres.length }} critère(s)</span>
+        @if (exercicesOuverts()) {
+          <div id="contenu-exercices">
+            @if (exercicesAffiches().length > 0) {
+              <button type="button" class="bouton-discret tout-deplier" (click)="basculerTousLesExercices()">
+                {{ tousDeplies() ? 'Tout replier' : 'Tout déplier' }}
+              </button>
+              @for (p of programmesAffiches(); track p.groupeId) {
+                <h3>{{ p.titre }}</h3>
+                <ol class="liste-exercices">
+                  @for (e of p.exercices; track e.id) {
+                    @let ouvert = detailsOuverts().has(e.id);
+                    <li class="exercice" [class.ouvert]="ouvert">
+                      <button type="button" class="titre-exercice" [attr.aria-expanded]="ouvert"
+                              (click)="basculerExercice(e.id)">
+                        <span class="fleche" aria-hidden="true">{{ ouvert ? '▾' : '▸' }}</span>
+                        @if (e.phase) {
+                          <app-pastille-phase [phase]="e.phase" [numero]="e.exerciceBase?.numero ?? null"
+                                              [intitule]="e.exerciceBase ? e.exerciceBase.intitule : 'exercice libre'" />
+                        }
+                        <span class="intitule-exercice">
+                          <strong>{{ e.intitule }}</strong>
+                          <span class="secondaire">
+                            @if (e.niveau) { {{ libellePreparation(e.niveau) }} }
+                            @if (e.dureeMinutes) { · {{ e.dureeMinutes }} min }
+                            @if (e.criteres.length > 0) { · {{ e.criteres.length }} critère(s) }
+                            @if (e.aSchema) { · schéma }
+                          </span>
+                        </span>
+                      </button>
+                      @if (ouvert) {
+                        <div class="detail-exercice">
+                          @if (e.phase) {
+                            <p><span class="rubrique">Phase :</span> {{ libellePhase(e.phase) }}</p>
+                          }
+                          @if (e.consignes) {
+                            <p class="rubrique">Déroulement et consignes</p>
+                            <p class="texte-libre">{{ e.consignes }}</p>
+                          }
+                          @if (e.critereReussite) {
+                            <p class="rubrique">Critère de réussite</p>
+                            <p class="texte-libre">{{ e.critereReussite }}</p>
+                          }
+                          @if (e.criteres.length > 0) {
+                            <p class="rubrique">Critères travaillés</p>
+                            <ul class="criteres-exercice">
+                              @for (c of e.criteres; track c.id) {
+                                <li><span class="secondaire">{{ c.bloc }} —</span> {{ c.savoirFaire }}</li>
+                              }
+                            </ul>
+                          }
+                          @if (e.aSchema) {
+                            <p class="rubrique">Schéma</p>
+                            @if (e.exerciceBase; as base) {
+                              <app-schema-exercice [exerciceId]="base.id" [libelle]="base.numero + ' ' + base.intitule" />
+                            } @else {
+                              <app-schema-exercice [seanceId]="s.id" [schemaId]="e.schemaId" [libelle]="e.intitule" />
+                            }
+                          }
+                          @if (!e.consignes && !e.critereReussite && e.criteres.length === 0 && !e.aSchema) {
+                            <p class="secondaire">Pas d'autre détail pour cet exercice.</p>
+                          }
+                        </div>
+                      }
+                    </li>
                   }
-                  @if (e.consignes) { <p class="secondaire consignes">{{ e.consignes }}</p> }
-                </li>
+                </ol>
               }
-            </ol>
-          }
-        } @else if (reseau.enLigne()) {
-          <p class="secondaire">Aucun exercice préparé pour cette séance.</p>
-        } @else {
-          <p class="secondaire">Le programme d'exercices s'affiche avec du réseau.</p>
+            } @else if (reseau.enLigne()) {
+              <p class="secondaire">Aucun exercice préparé pour cette séance.</p>
+            } @else {
+              <p class="secondaire">Le programme d'exercices s'affiche avec du réseau.</p>
+            }
+          </div>
         }
       </section>
     }
@@ -283,11 +346,30 @@ function normaliser(texte: string): string {
     }
     .entete-exercices { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--pas); }
     .entete-exercices h2 { margin: 0; font-size: 1rem; }
+    .bascule-exercices {
+      display: inline-flex; align-items: center; gap: var(--pas); min-height: 44px; padding: 0;
+      border: 0; background: none; font: inherit; font-weight: 700; color: inherit; cursor: pointer; text-align: left;
+    }
+    .compte-exercices { font-weight: 400; }
+    .fleche { display: inline-block; width: 1em; color: var(--profond); }
+    .tout-deplier { margin-top: var(--pas); }
     .exercices h3 { margin: var(--pas-2) 0 0; font-size: .9375rem; color: var(--profond); }
-    .exercices ol { margin: var(--pas) 0 0; padding-left: 1.5rem; display: grid; gap: 4px; }
     .exercices p { margin: var(--pas) 0 0; }
-    .exercices .consignes { margin: 0; font-size: .875rem; white-space: pre-line; }
-    .exercices .niveau { margin-right: 4px; }
+    .liste-exercices { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: var(--pas); }
+    .exercice { border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte); }
+    .titre-exercice {
+      display: flex; align-items: center; gap: var(--pas); width: 100%; min-height: 44px;
+      padding: var(--pas) var(--pas-2); border: 0; background: none; font: inherit; color: inherit;
+      text-align: left; cursor: pointer;
+    }
+    .intitule-exercice { display: flex; flex-direction: column; gap: 2px; }
+    .intitule-exercice .secondaire { font-size: .8125rem; }
+    .detail-exercice { padding: 0 var(--pas-2) var(--pas-2); border-top: 1px solid var(--trait); font-size: .875rem; }
+    .detail-exercice .rubrique { margin-top: var(--pas-2); font-weight: 700; color: var(--profond); }
+    .detail-exercice span.rubrique { margin: 0; }
+    .detail-exercice .texte-libre { margin-top: 4px; white-space: pre-line; }
+    .criteres-exercice { margin: 4px 0 0; padding-left: 1.25rem; display: grid; gap: 2px; }
+    .detail-exercice app-schema-exercice { margin-top: var(--pas); }
     .filtres {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
       margin: var(--pas-3) 0 var(--pas-2);
@@ -446,6 +528,26 @@ export class PresencesComponent implements OnDestroy {
   seance = input<string>();
   /** Programmes d'exercices de la séance choisie : le commun et ceux des groupes. */
   exercices = signal<ExerciceVue[]>([]);
+  /** Le bloc « Exercices de la séance » se replie pour laisser la place à l'appel. */
+  exercicesOuverts = signal(true);
+  /** Exercices dépliés : déroulement, critère de réussite, critères travaillés et schéma. */
+  detailsOuverts = signal<ReadonlySet<number>>(new Set());
+  readonly libellePhase = libellePhase;
+
+  tousDeplies = computed(() => {
+    const affiches = this.exercicesAffiches();
+    return affiches.length > 0 && affiches.every(e => this.detailsOuverts().has(e.id));
+  });
+
+  basculerExercice(id: number): void {
+    const ouverts = new Set(this.detailsOuverts());
+    if (!ouverts.delete(id)) ouverts.add(id);
+    this.detailsOuverts.set(ouverts);
+  }
+
+  basculerTousLesExercices(): void {
+    this.detailsOuverts.set(this.tousDeplies() ? new Set() : new Set(this.exercicesAffiches().map(e => e.id)));
+  }
 
   /** Filtrée sur un groupe : son programme et le commun ; sinon tous. */
   exercicesAffiches = computed(() => {
