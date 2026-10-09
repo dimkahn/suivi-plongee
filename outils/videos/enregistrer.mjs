@@ -117,13 +117,20 @@ async function ecrireCatalogue() {
     if (tournee && await existe(`${nom}.json`)) {
       ({ duree, texte = [], sonore = false } = JSON.parse(await readFile(join(SORTIES, `${nom}.json`), 'utf8')));
     }
+    // Version : date de la dernière écriture des fichiers de la vidéo. La page
+    // l'ajoute à leur adresse, pour qu'une vidéo retournée ne soit pas lue
+    // dans le cache du navigateur (Caddy laisse les vidéos en cache).
+    const dates = await Promise.all([`${nom}.webm`, `${nom}.mp4`, `${nom}.jpg`]
+      .map(f => stat(join(SORTIES, f)).then(i => i.mtimeMs, () => 0)));
+    const derniere = Math.max(...dates);
     videos.push({
       id: s.id, titre: s.titre, public: s.public, resume: s.resume,
       format: s.format ?? 'telephone',
       webm: tournee ? `${nom}.webm` : null,
       mp4: await existe(`${nom}.mp4`) ? `${nom}.mp4` : null,
       vignette: await existe(`${nom}.jpg`) ? `${nom}.jpg` : null,
-      duree, texte, voix: sonore, compte: s.compte
+      duree, texte, voix: sonore, compte: s.compte,
+      version: derniere ? Math.round(derniere).toString(36) : null
     });
   }
   const ordre = v => [PUBLICS.indexOf(v.public), v.id.replace(/\d+/, n => n.padStart(3, '0'))];

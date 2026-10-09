@@ -24,6 +24,12 @@ export interface Video {
   texte?: string[];
   /** Vrai si la vidéo porte la voix off (les sous-titres lus à voix haute). */
   voix?: boolean;
+  /**
+   * Change à chaque tournage. Ajoutée à l'adresse des fichiers : une vidéo
+   * retournée garde son nom, et le navigateur montrerait sinon celle qu'il a
+   * en cache.
+   */
+  version?: string | null;
 }
 
 export interface Catalogue {
@@ -36,8 +42,9 @@ export function chargerCatalogue(http: HttpClient): Promise<Catalogue> {
   return firstValueFrom(http.get<Catalogue>(DOSSIER_VIDEOS + 'catalogue.json'));
 }
 
-export function urlVideo(fichier: string): string {
-  return DOSSIER_VIDEOS + encodeURIComponent(fichier);
+/** Adresse d'un fichier (vidéo ou aperçu) de la vidéo `v`, avec sa version. */
+export function urlVideo(fichier: string, v: Video): string {
+  return DOSSIER_VIDEOS + encodeURIComponent(fichier) + (v.version ? '?v=' + encodeURIComponent(v.version) : '');
 }
 
 export function dureeVideo(secondes: number): string {

@@ -57,7 +57,7 @@ const PRESENTATION: Record<string, string> = {
                         [attr.aria-label]="'Voir la vidéo : ' + v.titre">
                   <span class="apercu" [class.ordinateur]="v.format === 'ordinateur'">
                     @if (v.vignette) {
-                      <img [src]="url(v.vignette)" alt="" loading="lazy">
+                      <img [src]="url(v.vignette, v)" alt="" loading="lazy">
                     }
                     @if (v.webm || v.mp4) {
                       <span class="icone-lecture" aria-hidden="true">▶</span>
@@ -85,9 +85,9 @@ const PRESENTATION: Record<string, string> = {
           <button type="button" class="bouton-discret" (click)="lecteur.close()">Fermer</button>
         </div>
         <video controls autoplay playsinline [muted]="!v.voix" [class.ordinateur]="v.format === 'ordinateur'"
-               [attr.poster]="v.vignette ? url(v.vignette) : null">
-          @if (v.mp4) { <source [src]="url(v.mp4)" type="video/mp4"> }
-          @if (v.webm) { <source [src]="url(v.webm)" type="video/webm"> }
+               [attr.poster]="v.vignette ? url(v.vignette, v) : null">
+          @if (v.mp4) { <source [src]="url(v.mp4, v)" type="video/mp4"> }
+          @if (v.webm) { <source [src]="url(v.webm, v)" type="video/webm"> }
         </video>
         <p class="secondaire">{{ v.resume }}</p>
         @if (manuel(v); as m) {
@@ -210,8 +210,8 @@ export class VideosComponent {
     }
   }
 
-  url(fichier: string): string {
-    return urlVideo(fichier);
+  url(fichier: string, v: Video): string {
+    return urlVideo(fichier, v);
   }
 
   manuel(v: Video) {
