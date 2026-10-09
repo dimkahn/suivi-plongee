@@ -1,5 +1,5 @@
 // A13 — Adapter une progression type.
-// Tournage du 2026-10-06 (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
