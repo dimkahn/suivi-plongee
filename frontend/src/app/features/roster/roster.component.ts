@@ -76,7 +76,8 @@ const LIBELLES: Record<string, string> = {
                 <td class="figee">
                   <a class="eleve-cellule" [routerLink]="['/cursus', e.cursusId]">
                     @if (urlPhoto(e.eleveId); as url) {
-                      <img class="avatar" [src]="url" [alt]="e.eleve" width="40" height="40">
+                      <!-- alt vide : le nom suit dans le lien, le lire deux fois ne sert à rien. -->
+                      <img class="avatar" [src]="url" alt="" width="40" height="40">
                     } @else {
                       <div class="avatar silhouette" aria-hidden="true">{{ initiales(e.eleve) }}</div>
                     }
