@@ -4,7 +4,7 @@ export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter ».',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter ».',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -21,7 +21,15 @@ export default {
     await legende('« Au programme » : ce que la progression du club prévoit ce mois-ci.', 3500);
     await legende('Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.', 0);
     await page.locator('section.exercices').scrollIntoViewIfNeeded();
-    await pause(3000);
+    await pause(2500);
+    const exercice = page.locator('section.exercices .titre-exercice');
+    if (await exercice.count() > 0) {
+      await legende('Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.', 0);
+      await toucher(exercice.first(), { apres: 3500 });
+      await toucher(exercice.first(), { apres: 600 });
+    }
+    await legende('Touchez le titre pour replier tout le bloc et garder la place pour l\'appel.', 0);
+    await toucher(page.locator('.bascule-exercices'), { apres: 2000 });
 
     await legende('Filtrez sur votre groupe d\'entraînement.', 0);
     await toucher(page.getByRole('button', { name: 'Débutants', exact: true }), { apres: 1200 });
