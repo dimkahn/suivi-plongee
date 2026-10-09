@@ -231,8 +231,11 @@ function normaliser(texte: string): string {
                 </span>
               </button>
               @if (estNonNote(l)) {
-                <a class="non-note" [routerLink]="['/cursus', l.cursusId]"
+                <a class="non-note" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId() }"
                    [attr.aria-label]="l.eleve + ' : pas encore évalué, ouvrir sa grille'">Pas encore évalué</a>
+              } @else if (peutNoter(l)) {
+                <a class="noter" [routerLink]="['/cursus', l.cursusId]" [queryParams]="{ seance: seanceId() }"
+                   [attr.aria-label]="'Noter ' + l.eleve + ' sur cette séance, ouvrir sa grille'">Noter</a>
               }
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
                 @for (c of choix; track c.cle) {
@@ -300,6 +303,13 @@ function normaliser(texte: string): string {
       display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
       padding: 0 var(--pas); border: 1px dashed var(--en-cours); border-radius: var(--r-s);
       background: var(--en-cours-clair); color: var(--en-cours); font-size: .8125rem; font-weight: 700;
+      text-decoration: none; text-align: center;
+    }
+    /* Présent déjà noté : le même lien, plus discret, pour ajouter une note. */
+    .noter {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+      padding: 0 var(--pas); border: 1px solid var(--trait); border-radius: var(--r-s);
+      color: var(--profond); font-size: .8125rem; font-weight: 700;
       text-decoration: none; text-align: center;
     }
     .notation-groupee {
@@ -543,6 +553,14 @@ export class PresencesComponent implements OnDestroy {
   estNonNote(l: LignePresence): boolean {
     return !this.seanceAVenir() && l.statut === 'PRESENT' && l.evaluations === 0
       && !this.notesEnAttente().has(l.cursusId);
+  }
+
+  /**
+   * Présent à une séance passée (ou du jour) : sa grille s'ouvre sur cette
+   * séance pour le noter, qu'il ait déjà des notes ou non.
+   */
+  peutNoter(l: LignePresence): boolean {
+    return this.auth.estMoniteur() && !this.seanceAVenir() && l.statut === 'PRESENT';
   }
 
   /** Tous les présents sans évaluation, quels que soient les filtres. */

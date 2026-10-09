@@ -10,6 +10,7 @@ questions:
 - Comment annoncer qu'un élève viendra ?
 - Je me suis trompé de présence, comment corriger ?
 - Comment voir les élèves présents qui n'ont pas été évalués ?
+- Comment noter un élève depuis la feuille de présence ?
 ---
 Menu, « Présences » : choisissez la séance, puis touchez chaque élève et ce qu'il a fait (nage, bloc ou théorie). Chaque choix est enregistré tout de suite.
 
@@ -30,7 +31,8 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 Une fois la séance passée, la feuille repère les présents qui n'ont reçu **aucune note** sur cette séance :
 
 - le bilan en haut de la liste les compte (« 3 présent(s) sans évaluation ») ;
-- leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève et le noter ;
+- leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève, sur cette séance, et le noter ;
+- les présents déjà notés ont à la place un bouton « Noter », qui ouvre de même leur grille sur la séance pour ajouter ou corriger une note ;
 - le bouton « Voir les présents sans évaluation » n'affiche plus qu'eux, dans le groupe filtré. « Noter les présents » propose alors justement ces élèves.
 
 Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme une évaluation de la séance. Une note gardée sur le téléphone, pas encore envoyée, aussi.
