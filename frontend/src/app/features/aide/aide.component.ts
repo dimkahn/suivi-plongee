@@ -44,9 +44,9 @@ import { MANUELS } from './manuels';
                   @if (v.webm || v.mp4) {
                     <video controls playsinline preload="none" [muted]="!v.voix"
                            [class.ordinateur]="v.format === 'ordinateur'"
-                           [attr.poster]="v.vignette ? url(v.vignette) : null">
-                      @if (v.mp4) { <source [src]="url(v.mp4)" type="video/mp4"> }
-                      @if (v.webm) { <source [src]="url(v.webm)" type="video/webm"> }
+                           [attr.poster]="v.vignette ? url(v.vignette, v) : null">
+                      @if (v.mp4) { <source [src]="url(v.mp4, v)" type="video/mp4"> }
+                      @if (v.webm) { <source [src]="url(v.webm, v)" type="video/webm"> }
                     </video>
                   } @else {
                     <p class="a-venir">Vidéo à venir</p>
@@ -263,8 +263,8 @@ export class AideComponent {
     return this.videos().get(id) ?? null;
   }
 
-  url(fichier: string): string {
-    return urlVideo(fichier);
+  url(fichier: string, v: Video): string {
+    return urlVideo(fichier, v);
   }
 
   duree(secondes: number): string {
