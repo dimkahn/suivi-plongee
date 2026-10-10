@@ -93,4 +93,20 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
                             group by e2.critere.id)
            """)
     long compterAcquisDuBloc(@Param("cursusId") Long cursusId, @Param("blocId") Long blocId);
+
+    /**
+     * Au moins un exercice de maîtrise (de la base ou libre) noté acquis sur
+     * un critère du bloc, hors entraînement (choix du club, 2026).
+     */
+    @Query("""
+           select count(e) > 0 from Evaluation e
+             left join e.exercice x
+            where e.cursus.id = :cursusId
+              and e.critere.bloc.id = :blocId
+              and e.entrainement = false
+              and e.statutExercice = fr.club.plongee.evaluation.domain.StatutAcquisition.ACQUIS
+              and (x.phase = fr.club.plongee.referentiel.domain.PhaseExercice.MAITRISE
+                   or e.phaseExercice = fr.club.plongee.referentiel.domain.PhaseExercice.MAITRISE)
+           """)
+    boolean maitriseAcquiseDansLeBloc(@Param("cursusId") Long cursusId, @Param("blocId") Long blocId);
 }

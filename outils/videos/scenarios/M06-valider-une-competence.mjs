@@ -1,12 +1,12 @@
 // M6 — Valider une compétence (un bloc entier).
-// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-10, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, ouvrirBloc, bloc, critere, noter } from '../grille.mjs';
 
 export default {
   id: 'M6',
   titre: 'Valider une compétence',
   public: 'Moniteur',
-  resume: 'Valider un bloc de compétences quand tous ses critères sont acquis, et comprendre les refus.',
+  resume: 'Valider un bloc de compétences quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -19,12 +19,13 @@ export default {
     await bloc(page, 'S\'équiper et se déséquiper').scrollIntoViewIfNeeded();
     await legende('Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.', 4000);
 
-    await legende('Anis a choisi et réglé son matériel seul : dernier critère acquis.', 0);
+    await legende('Anis a choisi et réglé son matériel seul, sur l\'exercice de maîtrise 1.9 : dernier critère acquis.', 0);
     await noter(g, 'Choix de son matériel personnel', 'Acquis', 'Matériel personnel et lestage adapté');
 
     const b = bloc(page, 'S\'équiper et se déséquiper');
     await b.scrollIntoViewIfNeeded();
-    await legende('Tous les critères sont acquis : le bouton « Valider la compétence » apparaît.', 3500);
+    await legende('Tous les critères sont acquis, et au moins un exercice de maîtrise : le bouton « Valider la compétence » apparaît.', 4000);
+    await legende('Sans exercice de maîtrise acquis, la grille vous le rappelle à la place du bouton.', 3500);
     await toucher(b.getByRole('button', { name: 'Valider la compétence' }), { apres: 2000 });
     await b.scrollIntoViewIfNeeded();
     await legende('Validée, avec la date et votre nom. Les critères de ce bloc ne se modifient plus.', 4500);

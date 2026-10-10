@@ -13,6 +13,7 @@ import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.referentiel.repository.CritereRepository;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.domain.Niveau;
@@ -423,6 +424,38 @@ class EvaluationServiceTest {
         assertThatThrownBy(() -> service.validerBloc(100L, 6L, null, moniteurPrincipal))
                 .isInstanceOf(RegleMetierException.class)
                 .hasMessageContaining("fin de formation");
+    }
+
+    @Test
+    @DisplayName("Une competence avec exercices de maitrise ne se valide pas sans l'un d'eux acquis")
+    void validerBloc_sansExerciceDeMaitriseAcquis() {
+        Referentiel ref = referentiel(false, 40);
+        BlocCompetence b = bloc(ref, false, false);
+        ref.setBlocs(List.of(b));
+        Cursus c = cursus(ref, saison(1L), Cursus.Statut.EN_COURS);
+        ExerciceCompetence e17 = new ExerciceCompetence();
+        e17.setNumero("1.7");
+        ExerciceCompetence e19 = new ExerciceCompetence();
+        e19.setNumero("1.9");
+
+        when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(c));
+        when(habilitation.peutValiderBloc(moniteurPrincipal, b)).thenReturn(true);
+        when(validations.existsByCursusIdAndBlocId(100L, 1L)).thenReturn(false);
+        when(criteres.compterParBloc(1L)).thenReturn(3L);
+        when(evaluations.compterAcquisDuBloc(100L, 1L)).thenReturn(3L);
+        when(exercicesCompetence.maitriseDuBloc(1L)).thenReturn(List.of(e17, e19));
+        when(evaluations.maitriseAcquiseDansLeBloc(100L, 1L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.validerBloc(100L, 1L, null, moniteurPrincipal))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("au moins un exercice de maîtrise acquis (1.7, 1.9)");
+        verify(validations, never()).save(any());
+
+        // Un exercice de maîtrise acquis suffit.
+        when(evaluations.maitriseAcquiseDansLeBloc(100L, 1L)).thenReturn(true);
+        when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur));
+        when(validations.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        assertThat(service.validerBloc(100L, 1L, null, moniteurPrincipal).getBloc()).isSameAs(b);
     }
 
     @Test

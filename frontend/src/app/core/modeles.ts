@@ -169,6 +169,11 @@ export interface BlocVue {
   criteres: CritereVue[];
   /** Base d'exercices de la compétence (actifs). Absent d'une grille mise en cache avant son arrivée. */
   exercices?: ExerciceBaseVue[];
+  /**
+   * Critères tous acquis mais aucun exercice de maîtrise acquis : numéros des
+   * exercices attendus avant la validation (vide sinon, absent d'un ancien cache).
+   */
+  maitriseAttendue?: string[];
 }
 
 /** Une période de la progression suivie par le cursus. */

@@ -465,7 +465,11 @@ notes anciennes peuvent en être dépourvues, la vue globale les marque
 « sans exercice » ; un
 critère sans exercice de maîtrise (au N1 :
 « Départ plage », « Ventilation sur tuba », bloc transverse) se note comme
-avant. Le programme d'une séance se construit
+avant. **Validation d'une compétence** (choix du club, 2026) : un bloc qui a
+des exercices de maîtrise actifs ne se valide que si l'élève en a acquis au
+moins un, de la base ou exercice libre de maîtrise, hors entraînement
+(`EvaluationService.maitriseManquante`, `EvaluationRepository.maitriseAcquiseDansLeBloc`) ;
+la grille le rappelle à la place du bouton (`BlocVue.maitriseAttendue`). Le programme d'une séance se construit
 d'abord avec la base (choix du club, 2026 : « + Ajouter des exercices des
 compétences », `exercice_seance.exercice_competence_id`) : un tel exercice
 garde l'intitulé de la base et **reçoit les critères de la base**

@@ -135,17 +135,18 @@ Compte : `e2@club.fr` · format téléphone · 41 s
 
 ### M6 — Valider une compétence
 
-Valider un bloc de compétences quand tous ses critères sont acquis, et comprendre les refus.
+Valider un bloc de compétences quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.
 
-Compte : `e2@club.fr` · format téléphone · 57 s
+Compte : `e2@club.fr` · format téléphone · 61 s
 
 1. Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.
-2. Anis a choisi et réglé son matériel seul : dernier critère acquis.
-3. Tous les critères sont acquis : le bouton « Valider la compétence » apparaît.
-4. Validée, avec la date et votre nom. Les critères de ce bloc ne se modifient plus.
-5. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
-6. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
-7. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
+2. Anis a choisi et réglé son matériel seul, sur l'exercice de maîtrise 1.9 : dernier critère acquis.
+3. Tous les critères sont acquis, et au moins un exercice de maîtrise : le bouton « Valider la compétence » apparaît.
+4. Sans exercice de maîtrise acquis, la grille vous le rappelle à la place du bouton.
+5. Validée, avec la date et votre nom. Les critères de ce bloc ne se modifient plus.
+6. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
+7. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
+8. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
 
 ### M7 — Ce qu'on a le droit de noter
 

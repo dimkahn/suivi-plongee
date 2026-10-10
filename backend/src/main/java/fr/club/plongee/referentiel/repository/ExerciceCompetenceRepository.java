@@ -27,5 +27,14 @@ public interface ExerciceCompetenceRepository extends JpaRepository<ExerciceComp
            """)
     List<ExerciceCompetence> maitriseDuCritere(Long critereId);
 
+    /** Exercices de maîtrise actifs d'une compétence (validation du bloc). */
+    @Query("""
+           select e from ExerciceCompetence e
+            where e.bloc.id = :blocId and e.actif = true
+              and e.phase = fr.club.plongee.referentiel.domain.PhaseExercice.MAITRISE
+            order by e.ordre, e.numero
+           """)
+    List<ExerciceCompetence> maitriseDuBloc(Long blocId);
+
     boolean existsByBlocIdAndNumero(Long blocId, String numero);
 }
