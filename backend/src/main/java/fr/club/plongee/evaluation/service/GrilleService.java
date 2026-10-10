@@ -91,7 +91,12 @@ public class GrilleService {
                           LocalDate echeance, boolean enRetard,
                           List<CritereVue> criteres,
                           /** Base d'exercices de la competence (actifs), proposes a la notation. */
-                          List<ExerciceCompetenceController.ExerciceVue> exercices) {}
+                          List<ExerciceCompetenceController.ExerciceVue> exercices,
+                          /**
+                           * Critères tous acquis mais aucun exercice de maîtrise acquis :
+                           * numéros des exercices attendus avant la validation (choix du club, 2026).
+                           */
+                          List<String> maitriseAttendue) {}
 
     /** Une periode de la progression suivie par le cursus : le front en tire les blocs « au programme ». */
     public record PeriodeGrilleVue(String intitule, int moisDebut, int moisFin, String milieu, String note,
@@ -249,7 +254,11 @@ public class GrilleService {
                     enCours && EcheancesProgression.enRetard(echeances.get(bloc.getId()), aujourdhui,
                             v != null, acquis, criteres.size()),
                     criteres,
-                    exercicesParBloc.getOrDefault(bloc.getId(), List.of())));
+                    exercicesParBloc.getOrDefault(bloc.getId(), List.of()),
+                    v == null && acquis == criteres.size()
+                            ? evaluationService.maitriseManquante(cursusId, bloc.getId()).stream()
+                                    .map(ExerciceCompetence::getNumero).toList()
+                            : List.of()));
         }
 
         Long eleveId = cursus.getEleve().getId();

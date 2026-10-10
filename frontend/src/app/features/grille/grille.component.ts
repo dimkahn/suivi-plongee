@@ -422,6 +422,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 <p class="secondaire">
                   Validation possible une fois les {{ bloc.attentes }} saisie(s) envoyées.
                 </p>
+              } @else if (bloc.maitriseAttendue?.length) {
+                <p class="secondaire maitrise-attendue">
+                  Validation possible une fois un exercice de maîtrise acquis
+                  ({{ bloc.maitriseAttendue.join(', ') }}).
+                </p>
               } @else if (!reseau.enLigne()) {
                 <p class="secondaire">Validation possible au retour du réseau.</p>
               } @else {

@@ -305,6 +305,7 @@ public class EvaluationService {
             throw new RegleMetierException("Il reste " + (total - acquis)
                     + " critere(s) non acquis dans " + bloc.getIntitule() + ".");
         }
+        verifierMaitriseAcquise(cursusId, bloc);
 
         // Bloc marque valider_en_dernier : validee en fin de formation, apres tous les autres blocs.
         if (bloc.isValiderEnDernier()) {
@@ -328,6 +329,34 @@ public class EvaluationService {
         v.setDateValidation(LocalDate.now());
         v.setCommentaire(commentaire);
         return validations.save(v);
+    }
+
+    /**
+     * Choix du club (2026) : une compétence qui a des exercices de maîtrise
+     * dans la base ne se valide que si l'élève en a acquis au moins un (de la
+     * base ou exercice libre de maîtrise), hors entraînement. Une compétence
+     * sans exercice de maîtrise (bloc transverse, révision sans base
+     * d'exercices) se valide comme avant.
+     */
+    private void verifierMaitriseAcquise(Long cursusId, BlocCompetence bloc) {
+        List<ExerciceCompetence> manquants = maitriseManquante(cursusId, bloc.getId());
+        if (manquants.isEmpty()) return;
+        String lesquels = manquants.stream().map(ExerciceCompetence::getNumero)
+                .collect(Collectors.joining(", "));
+        throw new RegleMetierException(bloc.getIntitule()
+                + " ne se valide qu'avec au moins un exercice de maîtrise acquis (" + lesquels
+                + ") : notez-le acquis dans la grille avant de valider.");
+    }
+
+    /**
+     * Exercices de maîtrise de la compétence quand l'élève n'en a encore
+     * acquis aucun ; liste vide si la validation n'en attend pas (ou plus).
+     */
+    @Transactional(readOnly = true)
+    public List<ExerciceCompetence> maitriseManquante(Long cursusId, Long blocId) {
+        List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuBloc(blocId);
+        if (deMaitrise.isEmpty() || evaluations.maitriseAcquiseDansLeBloc(cursusId, blocId)) return List.of();
+        return deMaitrise;
     }
 
     // ----------------------------------------------------------------

@@ -33,6 +33,7 @@ class BaseExercicesTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired fr.club.plongee.evaluation.repository.EvaluationRepository evaluations;
 
     private String jeton(String email) throws Exception {
         String reponse = mvc.perform(post("/api/auth/connexion").contentType(MediaType.APPLICATION_JSON)
@@ -219,7 +220,11 @@ class BaseExercicesTest {
             JsonNode enCours = envoyer("POST", url, moniteur,
                     note.formatted(critere, seanceId, "EN_COURS", parNumero.get("1.1")), 201);
             assertThat(enCours.get("exercice").get("phase").asText()).isEqualTo("INITIATION");
+            // Validation de la compétence : un perfectionnement acquis ne compte pas, la maîtrise si.
+            long blocId = bloc.get("id").asLong();
+            assertThat(evaluations.maitriseAcquiseDansLeBloc(cursus, blocId)).isFalse();
             envoyer("POST", url, moniteur, note.formatted(critere, seanceId, "ACQUIS", parNumero.get("1.7")), 201);
+            assertThat(evaluations.maitriseAcquiseDansLeBloc(cursus, blocId)).isTrue();
             // Déjà acquis : un simple commentaire n'a pas à redonner l'exercice.
             envoyer("POST", url, moniteur, """
                     {"critereId":%d,"seanceId":%d,"statut":"ACQUIS","commentaire":"Toujours propre"}"""
