@@ -616,10 +616,15 @@ export class PresencesComponent implements OnDestroy {
 
   private urlsPhotos = signal<Map<number, string>>(new Map());
 
-  /** Séances déjà passées ou du jour : la séance proposée par défaut. */
-  seancesPassees = computed(() => {
+  /**
+   * Séance proposée par défaut : celle du jour, sinon la prochaine qu'on peut
+   * déjà annoncer, sinon la dernière passée.
+   */
+  seanceParDefaut = computed(() => {
     const aujourdhui = dateDuJour();
-    return this.seances().filter(s => s.date <= aujourdhui);
+    const ordonnees = [...this.seancesOuvertes()].sort((a, b) =>
+      a.date.localeCompare(b.date) || a.ordre - b.ordre);
+    return ordonnees.find(s => s.date >= aujourdhui) ?? ordonnees.at(-1);
   });
 
   /** Les présences s'annoncent au plus une semaine à l'avance : au-delà, le serveur refuserait. */
@@ -738,10 +743,10 @@ export class PresencesComponent implements OnDestroy {
       this.api.progressionsDeLaSaison().then(p => this.progressions.set(p), () => {});
       // Facultatif aussi : sans groupe (ou hors ligne sans cache), pas de filtre.
       this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
-      // La séance demandée (?seance=12, depuis « Infos élèves »), sinon la dernière passée ou du jour.
+      // La séance demandée (?seance=12, depuis « Infos élèves »), sinon celle du jour ou la prochaine.
       const demandee = this.seancesOuvertes().find(s => s.id === Number(this.seance()));
-      const derniere = demandee ?? this.seancesPassees().at(-1);
-      if (derniere) this.choisirSeance(derniere);
+      const proposee = demandee ?? this.seanceParDefaut();
+      if (proposee) this.choisirSeance(proposee);
     } catch {
       this.message.set('Impossible de charger les séances.');
     }
