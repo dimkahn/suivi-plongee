@@ -1,5 +1,5 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-11, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
@@ -69,6 +69,7 @@ export default {
       await noter.first().scrollIntoViewIfNeeded();
       await pause(2000);
       await toucher(noter.first(), { apres: 2500 });
+      await legende('En haut de sa fiche, le nom de l\'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.', 4500, { enHaut: true });
       await legende('Une fois l\'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.', 0, { enHaut: true });
       await toucher(page.locator('.retour-presences'), { apres: 2500 });
     } else {

@@ -22,7 +22,7 @@ questions:
 4. Touchez un nom pour ouvrir la fiche de l'élève.
 5. Touchez la case d'un élève sous une date : sa grille s'ouvre, **cette séance déjà choisie**, prête à noter.
 6. Touchez une date en haut de colonne : la feuille de cette séance s'ouvre (présences, programme d'exercices, « Noter les présents »).
-7. « Informations supplémentaires » : téléphone et contact d'urgence.
+7. Dans la fiche, « Plus d'actions », puis « Informations supplémentaires » : téléphone et contact d'urgence.
 
 ## Les couleurs du CACI
 

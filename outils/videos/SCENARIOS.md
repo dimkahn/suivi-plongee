@@ -95,8 +95,9 @@ Compte : `e2@club.fr` · format téléphone · 1 min 10
 20. « Voir les présents sans évaluation » n'affiche plus qu'eux.
 21. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
 22. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-23. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
-24. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+23. En haut de sa fiche, le nom de l'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.
+24. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
+25. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 
@@ -113,7 +114,7 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 7. « Au programme » : les compétences que la progression prévoit ce mois-ci.
 8. Chaque critère a trois états : non abordé, en cours, acquis.
 9. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
-10. La note porte sur l'exercice réalisé : choisissez-le, l'appli le demande s'il manque.
+10. La note porte sur l'exercice réalisé : « 1. Exercice », juste au-dessus des boutons. S'il manque, l'appli le demande au moment de noter.
 11. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
 12. Votre nom et la date s'affichent sous le critère.
 13. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
@@ -176,7 +177,7 @@ Compte : `e2@club.fr` · format téléphone · 37 s
 2. Une colonne par séance, une ligne par critère : comme l'onglet de l'élève dans l'ancien tableur.
 3. Par défaut, seulement les séances où il a été noté.
 4. Pour préparer la prochaine séance : seulement ce qui n'est pas encore acquis.
-5. Retour à la grille, et « Exporter en PDF » : la fiche de suivi à imprimer ou envoyer.
+5. Retour à la grille. « Plus d'actions », puis « Exporter en PDF » : la fiche de suivi à imprimer ou envoyer.
 6. Le PDF arrive dans les téléchargements du téléphone. Il demande le réseau.
 
 ### M9 — Travailler sans réseau au bord du bassin
@@ -297,7 +298,7 @@ Compte : `e2@club.fr` · format téléphone · 49 s
 6. Dessous, « Synthèse des compétences du groupe » montre l'avancement de tout le groupe : voir la vidéo M22.
 7. La recherche retrouve un élève par son nom ou son prénom.
 8. Touchez son nom pour ouvrir sa fiche.
-9. « Informations supplémentaires » : téléphone et contact d'urgence.
+9. « Plus d'actions », puis « Informations supplémentaires » : téléphone et contact d'urgence.
 10. Aucune donnée de santé n'est enregistrée : seule la date de fin du certificat.
 
 ### M17 — Noter les présents en une fois
@@ -725,4 +726,4 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 1. Camille est élève : son compte ne voit que sa propre formation.
 2. Sa grille N2 : ce qui est acquis, ce qui reste à travailler, ce qui est au programme.
 3. Les notes et commentaires des moniteurs, en lecture seule.
-4. Le bouton « Exporter en PDF » lui donne aussi sa fiche de suivi.
+4. « Plus d'actions », puis « Exporter en PDF », lui donne aussi sa fiche de suivi.

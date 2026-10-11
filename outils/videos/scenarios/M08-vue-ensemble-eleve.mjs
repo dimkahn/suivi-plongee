@@ -1,5 +1,5 @@
 // M8 — Vue d'ensemble d'un élève : matrice et fiche PDF.
-// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille } from '../grille.mjs';
 
 export default {
@@ -25,10 +25,11 @@ export default {
     await pause(2500);
     await defiler(500, 1500);
 
-    await legende('Retour à la grille, et « Exporter en PDF » : la fiche de suivi à imprimer ou envoyer.', 0);
+    await legende('Retour à la grille. « Plus d\'actions », puis « Exporter en PDF » : la fiche de suivi à imprimer ou envoyer.', 0);
     await page.goBack();
     await pause(1500);
-    const bouton = page.getByRole('button', { name: 'Exporter en PDF' });
+    await toucher(page.getByRole('button', { name: /^Plus d'actions/ }), { apres: 900 });
+    const bouton = page.getByRole('menuitem', { name: 'Exporter en PDF' });
     await Promise.all([
       page.waitForEvent('download', { timeout: 20000 }).catch(() => null),
       toucher(bouton, { apres: 2500 })

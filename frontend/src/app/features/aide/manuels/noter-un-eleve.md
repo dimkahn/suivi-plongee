@@ -3,7 +3,7 @@ titre: Noter un élève pendant la séance
 rubrique: Moniteur
 videos: M4, M19, M20
 ecran: /eleves
-mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par
+mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions
 questions:
 - Comment noter pour un encadrant qui ne l'a pas fait ?
 - Je suis référent : comment noter au nom d'un autre moniteur ?
@@ -15,6 +15,8 @@ questions:
 - Comment laisser un commentaire sur un élève ?
 - Pourquoi je ne trouve pas la séance dans la grille ?
 - Que veut dire « En retard » ?
+- Comment passer à l'élève suivant sans revenir à la feuille de présence ?
+- Où est passé le bouton « Exporter en PDF » ?
 - Comment suivre un N2 ou un N3 en piscine ou en fosse ?
 ---
 Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance du jour, puis touchez l'état de chaque critère : non abordé, en cours ou acquis.
@@ -23,8 +25,8 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 
 1. Dans « Infos élèves », touchez le nom de l'élève : sa grille s'ouvre.
 2. Choisissez la séance du jour en haut de la grille.
-3. Ouvrez la compétence : sous chaque critère, « Exercice » permet de choisir l'exercice fait par l'élève pour ce critère (déjà choisi s'il est au programme de la séance). Seuls les exercices qui travaillent ce critère sont proposés : « Gréage et dégréage » propose 1.1, 1.3, 1.6 et 1.7.
-4. Pour chaque critère travaillé, touchez son état : non abordé, en cours ou acquis.
+3. Ouvrez la compétence : à droite de chaque critère (dessous sur téléphone), « 1. Exercice » permet de choisir l'exercice fait par l'élève pour ce critère (déjà choisi s'il est au programme de la séance ; encadré en pointillés orange tant qu'il reste à choisir). Seuls les exercices qui travaillent ce critère sont proposés : « Gréage et dégréage » propose 1.1, 1.3, 1.6 et 1.7.
+4. Juste en dessous, « 2. Note » : touchez l'état de l'exercice : non abordé, en cours ou acquis.
 5. Votre nom, la date et l'exercice s'affichent sous le critère.
 6. Pour laisser un mot au prochain encadrant, écrivez un commentaire sur le critère : il reste affiché dessous.
 
@@ -70,3 +72,5 @@ Seuls les référents du groupe de l'élève voient ce choix, et seuls les encad
 - Les critères travaillés par les exercices de la séance portent le nom de l'exercice.
 - Sans réseau, la note reste sur le téléphone, « En attente d'envoi ».
 - Tout un groupe a fait le même exercice ? Voir « Noter les présents en une fois ».
+- Venu de la feuille de présence (« Noter » ou « Pas encore évalué »), le haut de la grille propose l'**élève précédent** et l'**élève suivant** parmi les présents du groupe filtré, avec sa place (« 3 / 8 ») : on note tout le groupe sans repasser par la feuille.
+- « Plus d'actions », en haut de la grille : « Exporter en PDF », « Voir les saisons précédentes » et « Informations supplémentaires » (contacts, tailles de matériel).

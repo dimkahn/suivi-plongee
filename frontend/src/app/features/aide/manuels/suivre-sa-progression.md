@@ -16,7 +16,7 @@ Un compte élève ne voit que sa propre formation : la grille de compétences, e
 1. Connectez-vous avec votre compte élève.
 2. Votre formation s'affiche : touchez-la pour ouvrir la grille.
 3. Acquis, en cours, au programme : tout y est, avec les commentaires des moniteurs.
-4. « Exporter en PDF » donne votre fiche de suivi.
+4. « Plus d'actions », puis « Exporter en PDF », donne votre fiche de suivi.
 
 ## Bon à savoir
 
