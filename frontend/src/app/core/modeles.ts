@@ -1478,18 +1478,14 @@ export interface SyntheseSeanceVue {
   eleves: EleveSyntheseVue[];
 }
 
+/** État d'une compétence : NT non travaillée, ECA en cours d'acquisition, A acquise (validée). */
+export type EtatCompetence = 'NT' | 'ECA' | 'A';
+
 /** Une compétence d'un élève dans la synthèse de son groupe, reprise de sa grille. */
 export interface CaseCompetenceVue {
   blocId: number;
-  acquis: number;
-  total: number;
-  valide: boolean;
+  etat: EtatCompetence;
   dateValidation: string | null;
-  /** N2/N3 : critères acquis à l'entraînement en piscine ou fosse. */
-  acquisEntrainement: number;
-  enRetard: boolean;
-  /** Tous les critères acquis, compétence pas encore validée. */
-  aValider: boolean;
 }
 
 export interface EleveCompetencesVue {
@@ -1497,28 +1493,25 @@ export interface EleveCompetencesVue {
   eleveId: number;
   eleve: string;
   statutCursus: string;
-  criteresAcquis: number;
-  criteresTotal: number;
-  competencesValidees: number;
+  /** Compétences acquises (validées). */
+  acquises: number;
   cases: CaseCompetenceVue[];
 }
 
-/** Une colonne : la compétence, et combien d'élèves du groupe l'ont validée ou sont en retard. */
+/** Une colonne : la compétence, et combien d'élèves du groupe en sont à chaque état. */
 export interface CompetenceGroupeVue {
   blocId: number;
   intitule: string;
   regroupement: string | null;
-  criteres: number;
-  echeance: string | null;
-  valides: number;
-  enRetard: number;
+  acquises: number;
+  enCours: number;
+  nonTravaillees: number;
 }
 
 /** Les élèves du groupe qui suivent une même version du MFT. */
 export interface FormationGroupeVue {
   niveau: string;
   versionMft: string;
-  progression: string | null;
   competences: CompetenceGroupeVue[];
   eleves: EleveCompetencesVue[];
 }

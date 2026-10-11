@@ -13,9 +13,10 @@ import { libellePreparation } from '../../core/niveaux';
 /**
  * Synthèse des compétences d'un groupe d'entraînement (choix du club, 2026) :
  * l'avancement de tous ses élèves d'un coup d'œil, un élève par ligne, une
- * compétence par colonne (validée, critères acquis sur le total, en retard,
- * à valider), comme dans la grille de chaque élève. Une formation (version
- * du MFT) par tableau. Lecture seule, réseau obligatoire.
+ * compétence par colonne, avec seulement l'état de la compétence (choix du
+ * club, 2026 : NT non travaillée, ECA en cours d'acquisition, A acquise),
+ * tiré de la grille de chaque élève. Une formation (version du MFT) par
+ * tableau. Lecture seule, réseau obligatoire.
  */
 @Component({
   selector: 'app-synthese-groupe',
@@ -58,16 +59,14 @@ import { libellePreparation } from '../../core/niveaux';
           <h3>
             {{ libellePreparation(f.niveau) }} <span class="secondaire">· MFT {{ f.versionMft }}</span>
           </h3>
-          @if (f.progression) { <p class="secondaire progression">Progression suivie : {{ f.progression }}</p> }
-
           <div class="defilement">
             <table class="tableau">
               <thead>
                 <tr>
                   <th scope="col" class="col-eleve">Élève</th>
-                  <th scope="col" class="col-total">Bilan</th>
+                  <th scope="col" class="col-total">Acquises</th>
                   @for (c of f.competences; track c.blocId) {
-                    <th scope="col" class="col-competence" [title]="titreCompetence(c)">
+                    <th scope="col" class="col-competence" [title]="c.intitule">
                       <span>{{ c.regroupement ? c.regroupement + ' · ' : '' }}{{ c.intitule }}</span>
                     </th>
                   }
@@ -82,26 +81,13 @@ import { libellePreparation } from '../../core/niveaux';
                         <span class="statut-cursus">{{ libelleStatut(e.statutCursus) }}</span>
                       }
                     </th>
-                    <td class="col-total">
-                      <span class="bilan-eleve">{{ e.competencesValidees }}/{{ f.competences.length }} validée(s)</span>
-                      <span class="barre" aria-hidden="true">
-                        <span [style.width.%]="pourcentage(e.criteresAcquis, e.criteresTotal)"></span>
-                      </span>
-                      <span class="secondaire">{{ pourcentage(e.criteresAcquis, e.criteresTotal) }} % des critères</span>
-                    </td>
+                    <td class="col-total">{{ e.acquises }}/{{ f.competences.length }}</td>
                     @for (c of f.competences; track c.blocId) {
                       @let k = caseDe(e, c.blocId);
                       <td class="case">
                         @if (k) {
-                          <a [routerLink]="['/cursus', e.cursusId]" [class]="'etat ' + classe(k)"
-                             [title]="detailCase(e, c, k)" [attr.aria-label]="detailCase(e, c, k)">
-                            @if (k.valide) {
-                              ✓
-                            } @else {
-                              {{ k.acquis }}/{{ k.total }}
-                              @if (k.enRetard) { <span class="signe" aria-hidden="true">!</span> }
-                            }
-                          </a>
+                          <a [routerLink]="['/cursus', e.cursusId]" [class]="'etat ' + k.etat"
+                             [title]="detailCase(e, c, k)" [attr.aria-label]="detailCase(e, c, k)">{{ k.etat }}</a>
                         }
                       </td>
                     }
@@ -110,12 +96,12 @@ import { libellePreparation } from '../../core/niveaux';
               </tbody>
               <tfoot>
                 <tr>
-                  <th scope="row" class="col-eleve">Validée par</th>
+                  <th scope="row" class="col-eleve">Acquise par</th>
                   <td class="col-total"></td>
                   @for (c of f.competences; track c.blocId) {
-                    <td class="case pied" [title]="c.enRetard > 0 ? c.enRetard + ' élève(s) en retard' : ''">
-                      {{ c.valides }}/{{ f.eleves.length }}
-                      @if (c.enRetard > 0) { <span class="retard-pied">{{ c.enRetard }} en retard</span> }
+                    <td class="case pied"
+                        [title]="c.acquises + ' A · ' + c.enCours + ' ECA · ' + c.nonTravaillees + ' NT'">
+                      {{ c.acquises }}/{{ f.eleves.length }}
                     </td>
                   }
                 </tr>
@@ -126,10 +112,9 @@ import { libellePreparation } from '../../core/niveaux';
       }
 
       <p class="secondaire legende">
-        <span class="etat valide">✓</span> validée ·
-        <span class="etat a-valider">5/5</span> critères tous acquis, à valider ·
-        <span class="etat en-cours">2/5</span> critères acquis sur le total ·
-        <span class="etat en-retard">1/5 !</span> en retard sur la progression.
+        <span class="etat NT">NT</span> non travaillée ·
+        <span class="etat ECA">ECA</span> en cours d'acquisition ·
+        <span class="etat A">A</span> acquise (compétence validée).
         Touchez une case ou un nom pour ouvrir la grille de l'élève.
       </p>
 
@@ -148,7 +133,6 @@ import { libellePreparation } from '../../core/niveaux';
     .imprimer { margin-left: auto; }
     .titre-groupe { margin: var(--pas-3) 0 0; }
     .formation h3 { margin: var(--pas-3) 0 var(--pas); font-size: 1rem; }
-    .progression { margin: 0 0 var(--pas); font-size: .875rem; }
     .defilement { overflow-x: auto; border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte); }
     .tableau { border-collapse: collapse; font-size: .875rem; min-width: 100%; }
     .tableau th, .tableau td { padding: var(--pas); border-bottom: 1px solid var(--trait); vertical-align: middle; }
@@ -156,11 +140,7 @@ import { libellePreparation } from '../../core/niveaux';
     .col-eleve { position: sticky; left: 0; background: var(--carte); text-align: left; min-width: 150px; z-index: 1; }
     .col-eleve a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; }
     .statut-cursus { display: block; font-weight: 400; font-size: .8125rem; color: var(--craie); }
-    .col-total { min-width: 130px; }
-    .bilan-eleve { display: block; font-weight: 700; }
-    .barre { display: block; height: 6px; margin: 4px 0; border-radius: 3px; background: var(--trait); overflow: hidden; }
-    .barre span { display: block; height: 100%; background: var(--acquis); }
-    .col-total .secondaire { font-size: .75rem; }
+    .col-total { text-align: center; font-weight: 700; white-space: nowrap; }
     .col-competence { width: 3.5rem; }
     .col-competence span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg);
                            max-height: 13rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -169,13 +149,10 @@ import { libellePreparation } from '../../core/niveaux';
             min-width: 44px; min-height: 44px; padding: 0 4px; border-radius: var(--r-s);
             border: 1px solid var(--trait); font-weight: 700; text-decoration: none; color: var(--craie); }
     .legende .etat { min-height: 0; min-width: 0; padding: 0 4px; }
-    .etat.valide { background: var(--acquis); border-color: var(--acquis); color: #fff; }
-    .etat.a-valider { background: var(--acquis-clair); border-color: var(--acquis); color: var(--acquis); }
-    .etat.en-cours { color: inherit; }
-    .etat.en-retard { background: var(--en-cours-clair); border: 2px solid var(--en-cours); color: var(--en-cours); }
-    .signe { font-weight: 800; }
+    .etat.A { background: var(--acquis-clair); border-color: var(--acquis); color: var(--acquis); }
+    .etat.ECA { background: var(--en-cours-clair); border-color: var(--en-cours); color: var(--en-cours); }
+    .etat.NT { color: var(--craie); }
     .pied { font-weight: 700; white-space: nowrap; }
-    .retard-pied { display: block; font-weight: 400; font-size: .75rem; color: var(--en-cours); }
     .legende { margin-top: var(--pas-2); font-size: .8125rem; line-height: 1.8; }
     @media print {
       .defilement { overflow: visible; border: 0; }
@@ -251,32 +228,10 @@ export class SyntheseGroupeComponent {
     return e.cases.find(c => c.blocId === blocId) ?? null;
   }
 
-  classe(k: CaseCompetenceVue): string {
-    if (k.valide) return 'valide';
-    if (k.enRetard) return 'en-retard';
-    if (k.aValider) return 'a-valider';
-    return 'en-cours';
-  }
-
-  pourcentage(acquis: number, total: number): number {
-    return total === 0 ? 0 : Math.round(100 * acquis / total);
-  }
-
-  titreCompetence(c: CompetenceGroupeVue): string {
-    const echeance = c.echeance ? ` · à travailler jusqu'au ${dateFr(c.echeance)}` : '';
-    return `${c.intitule} · ${c.criteres} critère(s)${echeance}`;
-  }
-
   detailCase(e: EleveCompetencesVue, c: CompetenceGroupeVue, k: CaseCompetenceVue): string {
-    let etat: string;
-    if (k.valide) {
-      etat = 'validée' + (k.dateValidation ? ` le ${dateFr(k.dateValidation)}` : '');
-    } else {
-      etat = `${k.acquis} critère(s) acquis sur ${k.total}`;
-      if (k.acquisEntrainement > 0) etat += `, ${k.acquisEntrainement} à l'entraînement`;
-      if (k.aValider) etat += ', à valider';
-      if (k.enRetard) etat += ', en retard sur la progression';
-    }
+    const etat = k.etat === 'A'
+      ? 'acquise' + (k.dateValidation ? ` le ${dateFr(k.dateValidation)}` : '')
+      : k.etat === 'ECA' ? 'en cours d’acquisition' : 'non travaillée';
     return `${e.eleve} — ${c.intitule} : ${etat}`;
   }
 

@@ -3,38 +3,36 @@ titre: La synthèse des compétences d'un groupe
 rubrique: Moniteur
 videos: M22
 ecran: /groupes-entrainement/synthese
-mots: synthèse, avancement, progression, bilan, groupe, groupe d'entraînement, compétences, validées, tableau, coup d'œil, retard, à valider, critères acquis, tous les élèves, imprimer
+mots: synthèse, avancement, progression, bilan, groupe, groupe d'entraînement, compétences, acquise, validée, en cours d'acquisition, non travaillée, NT, ECA, A, tableau, coup d'œil, tous les élèves, imprimer
 questions:
 - Comment voir l'avancement de tous les élèves d'un groupe ?
 - Où en est mon groupe dans ses compétences ?
-- Quels élèves sont en retard sur la progression ?
-- Quelles compétences sont prêtes à valider ?
-- Combien d'élèves du groupe ont validé une compétence ?
+- Que veulent dire NT, ECA et A ?
+- Combien d'élèves du groupe ont acquis une compétence ?
 ---
-Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » montre l'avancement de tous les élèves d'un groupe d'entraînement d'un coup d'œil : un élève par ligne, une compétence par colonne.
+Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » montre l'avancement de tous les élèves d'un groupe d'entraînement d'un coup d'œil : un élève par ligne, une compétence par colonne, avec son état NT, ECA ou A.
 
 ## Pas à pas
 
 1. Menu, « Infos élèves ». Touchez le bouton de votre groupe, puis « Synthèse des compétences du groupe ».
 2. Les boutons en haut passent d'un groupe à l'autre.
-3. Une ligne par élève : son nom, puis « Bilan » (compétences validées et part des critères acquis), puis une case par compétence.
+3. Une ligne par élève : son nom, le nombre de compétences acquises, puis l'état de chaque compétence.
 4. Sur téléphone, faites glisser le tableau sur le côté : le nom de l'élève reste visible.
-5. La dernière ligne, « Validée par », compte les élèves qui ont validé chaque compétence, et ceux en retard.
-6. Touchez une case ou un nom : la grille de l'élève s'ouvre pour le noter ou valider la compétence.
+5. La dernière ligne, « Acquise par », compte les élèves qui ont acquis chaque compétence.
+6. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
 7. « Imprimer » donne une version papier.
 
-## Les cases
+## Les états
 
-- **✓** (vert plein) : compétence validée.
-- **5/5** (vert clair) : tous les critères acquis, compétence à valider.
-- **2/5** : critères acquis sur le total.
-- **1/5 !** (orange) : en retard sur la progression type.
+- **NT**, non travaillée : aucun critère de la compétence n'a encore été noté.
+- **ECA**, en cours d'acquisition : au moins un critère a été noté, la compétence n'est pas encore validée.
+- **A**, acquise : la compétence est validée dans la grille de l'élève.
 
 ## Bon à savoir
 
-- Les cases reprennent exactement la grille de chaque élève : mêmes critères acquis, même retard, même validation.
+- Une compétence dont tous les critères sont acquis reste **ECA** tant qu'elle n'a pas été validée dans la grille.
+- Le détail des critères n'apparaît pas ici : il est dans la grille de l'élève.
+- Au N2 et au N3, une compétence travaillée seulement en piscine ou en fosse est déjà ECA.
 - Un groupe qui mélange plusieurs formations (par exemple deux versions du MFT) a un tableau par formation.
-- Au N2 et au N3, les notes prises en piscine ou en fosse ne comptent pas dans les critères acquis ; elles sont rappelées en touchant la case (« à l'entraînement »).
-- « Validée par » et « En retard » ne comptent que les élèves de ce groupe.
 - Les élèves du groupe sans formation cette saison sont cités sous le tableau.
 - La synthèse se lit avec du réseau ; elle ne modifie rien.

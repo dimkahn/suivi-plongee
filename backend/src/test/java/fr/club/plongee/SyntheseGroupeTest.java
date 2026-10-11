@@ -117,17 +117,19 @@ class SyntheseGroupeTest {
             assertThat(formation.get("niveau").asText()).isEqualTo("N1");
             JsonNode competence = formation.get("competences").get(0);
             assertThat(competence.get("blocId").asLong()).isEqualTo(blocId);
-            assertThat(competence.get("valides").asInt()).isZero();
+            assertThat(competence.get("acquises").asInt()).isZero();
+            assertThat(competence.get("enCours").asInt()).isEqualTo(1);
+            assertThat(competence.get("nonTravaillees").asInt()).isEqualTo(1);
 
+            // Seulement l'état de la compétence : Alice l'a travaillée, Bruno non.
             JsonNode eleves = formation.get("eleves");
             assertThat(eleves).extracting(e -> e.get("eleve").asText())
                     .containsExactly("Alice Groupesynthese", "Bruno Groupesynthese");
             JsonNode caseAlice = eleves.get(0).get("cases").get(0);
-            assertThat(caseAlice.get("acquis").asInt()).isEqualTo(1);
-            assertThat(caseAlice.get("total").asInt()).isEqualTo(bloc.get("criteres").size());
-            assertThat(caseAlice.get("valide").asBoolean()).isFalse();
-            assertThat(eleves.get(0).get("criteresAcquis").asInt()).isEqualTo(1);
-            assertThat(eleves.get(1).get("cases").get(0).get("acquis").asInt()).isZero();
+            assertThat(caseAlice.get("etat").asText()).isEqualTo("ECA");
+            assertThat(caseAlice.has("acquis")).isFalse();
+            assertThat(eleves.get(0).get("acquises").asInt()).isZero();
+            assertThat(eleves.get(1).get("cases").get(0).get("etat").asText()).isEqualTo("NT");
 
             // Un élève ne consulte pas la synthèse d'un groupe.
             envoyer("GET", "/api/groupes-entrainement/" + groupe + "/synthese-competences",
