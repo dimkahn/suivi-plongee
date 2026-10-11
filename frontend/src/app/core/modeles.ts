@@ -1477,3 +1477,57 @@ export interface SyntheseSeanceVue {
   criteres: CritereSyntheseVue[];
   eleves: EleveSyntheseVue[];
 }
+
+/** Une compétence d'un élève dans la synthèse de son groupe, reprise de sa grille. */
+export interface CaseCompetenceVue {
+  blocId: number;
+  acquis: number;
+  total: number;
+  valide: boolean;
+  dateValidation: string | null;
+  /** N2/N3 : critères acquis à l'entraînement en piscine ou fosse. */
+  acquisEntrainement: number;
+  enRetard: boolean;
+  /** Tous les critères acquis, compétence pas encore validée. */
+  aValider: boolean;
+}
+
+export interface EleveCompetencesVue {
+  cursusId: number;
+  eleveId: number;
+  eleve: string;
+  statutCursus: string;
+  criteresAcquis: number;
+  criteresTotal: number;
+  competencesValidees: number;
+  cases: CaseCompetenceVue[];
+}
+
+/** Une colonne : la compétence, et combien d'élèves du groupe l'ont validée ou sont en retard. */
+export interface CompetenceGroupeVue {
+  blocId: number;
+  intitule: string;
+  regroupement: string | null;
+  criteres: number;
+  echeance: string | null;
+  valides: number;
+  enRetard: number;
+}
+
+/** Les élèves du groupe qui suivent une même version du MFT. */
+export interface FormationGroupeVue {
+  niveau: string;
+  versionMft: string;
+  progression: string | null;
+  competences: CompetenceGroupeVue[];
+  eleves: EleveCompetencesVue[];
+}
+
+export interface SyntheseGroupeVue {
+  groupeId: number;
+  groupe: string;
+  saison: string;
+  formations: FormationGroupeVue[];
+  /** Élèves du groupe sans formation sur la saison. */
+  sansFormation: string[];
+}

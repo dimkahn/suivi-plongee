@@ -13,7 +13,8 @@ import {
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
-  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue
+  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue,
+  SyntheseGroupeVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -310,6 +311,11 @@ export class ApiService {
   syntheseSeance(seanceId: number, niveau: string | null): Observable<SyntheseSeanceVue> {
     return this.http.get<SyntheseSeanceVue>(`/api/seances/${seanceId}/synthese`,
       { params: niveau ? { niveau } : {} });
+  }
+
+  /** Synthèse des compétences des élèves d'un groupe d'entraînement (encadrants). Nécessite le réseau. */
+  syntheseGroupe(groupeId: number): Observable<SyntheseGroupeVue> {
+    return this.http.get<SyntheseGroupeVue>(`/api/groupes-entrainement/${groupeId}/synthese-competences`);
   }
 
   /** Programme d'exercices d'une séance (encadrants). Nécessite le réseau. */

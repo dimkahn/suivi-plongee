@@ -1,5 +1,5 @@
 // M16 — Infos élèves.
-// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M16',
   titre: 'Infos élèves',
@@ -28,6 +28,7 @@ export default {
     await enHaut();
     await legende('Les boutons filtrent par groupe d\'entraînement.', 0);
     await toucher(page.getByRole('button', { name: 'Débutants', exact: true }), { apres: 1800 });
+    await legende('Dessous, « Synthèse des compétences du groupe » montre l\'avancement de tout le groupe : voir la vidéo M22.', 4000);
     await legende('La recherche retrouve un élève par son nom ou son prénom.', 0);
     await saisir(page.getByPlaceholder(/Rechercher/), 'mor');
     await pause(1200);

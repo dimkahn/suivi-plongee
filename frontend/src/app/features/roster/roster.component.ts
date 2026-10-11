@@ -1,4 +1,4 @@
-import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
@@ -27,6 +27,8 @@ const LIBELLES: Record<string, string> = {
       @if (groupes().length > 0) {
         <app-filtre-groupe class="filtres" [groupes]="groupes()" [ids]="eleveIds()"
                            [(valeur)]="groupeFiltre" />
+        <a class="lien-synthese" routerLink="/groupes-entrainement/synthese"
+           [queryParams]="{ groupe: groupeSynthese() }">Synthèse des compétences du groupe</a>
       }
 
       <label for="filtreNom" class="etiquette-recherche">Nom ou prénom</label>
@@ -130,6 +132,7 @@ const LIBELLES: Record<string, string> = {
   styles: [`
     h1 { margin-bottom: var(--pas); }
     .filtres { margin-top: var(--pas-3); }
+    .lien-synthese { display: inline-flex; align-items: center; min-height: 44px; margin-top: var(--pas); font-weight: 700; }
     .etiquette-recherche { display: block; margin: var(--pas-2) 0 4px; font-weight: 700; font-size: .9375rem; }
     /* Espacement porté par le champ : il vaut pour le tableau comme pour le message « aucun élève ». */
     .recherche { max-width: 320px; margin-bottom: var(--pas-3); }
@@ -210,6 +213,13 @@ export class RosterComponent implements OnDestroy {
   groupes = signal<GroupeEntrainementVue[]>([]);
   groupeFiltre = signal<FiltreGroupe>('TOUS');
   filtreNom = signal('');
+  /** Groupe à filtrer d'emblée (?groupe=3 ou ?groupe=SANS), au retour de la synthèse des compétences. */
+  groupe = input<string>();
+  /** Groupe ouvert par « Synthèse des compétences du groupe » : le groupe filtré, sinon le premier. */
+  groupeSynthese = computed(() => {
+    const f = this.groupeFiltre();
+    return typeof f === 'number' ? f : null;
+  });
 
   eleveIds = computed(() => (this.roster()?.eleves ?? []).map(e => e.eleveId));
 
@@ -236,7 +246,12 @@ export class RosterComponent implements OnDestroy {
 
   constructor() {
     // Facultatif : sans groupe (ou hors ligne sans cache), pas de filtre.
-    this.api.groupesEntrainementSaisonOuverte().then(g => this.groupes.set(g), () => {});
+    this.api.groupesEntrainementSaisonOuverte().then(g => {
+      this.groupes.set(g);
+      const groupe = this.groupe();
+      if (groupe === 'SANS') this.groupeFiltre.set('SANS');
+      else if (groupe && g.some(x => x.id === Number(groupe))) this.groupeFiltre.set(Number(groupe));
+    }, () => {});
     this.api.roster().then(
       r => {
         this.roster.set(r);

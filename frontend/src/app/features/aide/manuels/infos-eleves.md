@@ -1,9 +1,9 @@
 ---
 titre: Infos élèves
 rubrique: Moniteur
-videos: M16
+videos: M16, M22
 ecran: /eleves
-mots: élèves, liste, accueil, CACI, certificat médical, expiré, date de l'examen, cases cochées, apnée, compétition, contact d'urgence, téléphone, séances suivies, rechercher
+mots: élèves, liste, accueil, CACI, certificat médical, expiré, date de l'examen, cases cochées, apnée, compétition, contact d'urgence, téléphone, séances suivies, rechercher, synthèse des compétences, avancement du groupe
 questions:
 - Où voir la liste des élèves ?
 - Quand expire le certificat médical d'un élève ?
@@ -17,7 +17,7 @@ questions:
 ## Pas à pas
 
 1. Menu, « Infos élèves » (c'est aussi la page d'arrivée).
-2. Les boutons filtrent par groupe d'entraînement ; la recherche retrouve un nom ou un prénom.
+2. Les boutons filtrent par groupe d'entraînement ; la recherche retrouve un nom ou un prénom. Dessous, « Synthèse des compétences du groupe » montre l'avancement de tous les élèves du groupe filtré, compétence par compétence ([la synthèse des compétences](/groupes-entrainement/synthese)).
 3. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.
 4. Touchez un nom pour ouvrir la fiche de l'élève.
 5. Touchez la case d'un élève sous une date : sa grille s'ouvre, **cette séance déjà choisie**, prête à noter.
