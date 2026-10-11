@@ -489,7 +489,8 @@ function normaliser(texte: string): string {
     @keyframes tourner { to { transform: rotate(360deg); } }
 
     .barre-choix {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      /* Au-dessus de la barre d'onglets du téléphone, le temps du choix. */
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
       padding: var(--pas-2) var(--pas-3) calc(var(--pas-2) + env(safe-area-inset-bottom, 0px));
       background: var(--carte); border-top: 1px solid var(--trait);
       box-shadow: 0 -6px 16px rgba(0,0,0,.15);

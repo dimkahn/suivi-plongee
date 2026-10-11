@@ -22,6 +22,7 @@ L'appli du club remplace le classeur partagé : elle se manie au téléphone, au
 
 ## Bon à savoir
 
+- Sur téléphone, « Présences », « Élèves » et « Planning » sont dans la barre en bas de l'écran ; « Plus » ouvre tout le reste du menu.
 - Pas de réseau à la piscine ? « Préparer hors ligne » avant de partir : tout part au retour du réseau.
 - Créer ou modifier quelque chose (une séance, un élève, un prêt…) ouvre une fenêtre devant la liste, en plein écran sur téléphone : « Enregistrer » en bas ; « Annuler », la croix ou la touche Échap la ferment sans rien changer.
 - Chaque écran a sa vidéo d'aide et son manuel, rangés par rôle.

@@ -1,5 +1,5 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-11, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 7e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
@@ -10,7 +10,7 @@ export default {
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
-    await legende('Au bord du bassin : menu, puis « Présences ».', 0);
+    await legende('Au bord du bassin : « Présences », en bas de l\'écran.', 0);
     await menu('Présences');
     await legende('Un doute ? « Comment faire ? » rappelle les règles de l\'appel.', 3000);
 

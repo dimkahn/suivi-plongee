@@ -1,5 +1,5 @@
 // M15 — Le trombinoscope.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M15',
   titre: 'Le trombinoscope',
@@ -10,7 +10,7 @@ export default {
   async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, menu }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
-    await legende('Mettre un nom sur un visage : menu, puis « Trombinoscope ».', 0);
+    await legende('Mettre un nom sur un visage : « Plus », puis « Trombinoscope ».', 0);
     await menu('Trombinoscope');
 
     await legende('Les élèves de la saison, rangés par groupe d\'entraînement.', 0);

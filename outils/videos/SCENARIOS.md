@@ -41,13 +41,14 @@ Compte : `e2@club.fr` · format téléphone · 62 s
 3. … et votre mot de passe.
 4. « Se souvenir de moi » : restez connecté sur votre téléphone. Décochez sur un appareil partagé.
 5. Vous arrivez sur « Infos élèves » : les élèves de la saison en un coup d'œil.
-6. Tout le reste est dans le menu, en haut à droite.
-7. Planning du bassin, présences, trombinoscope, fiches de sécurité…
-8. « Préparer hors ligne » avant d'aller au bassin, s'il n'y a pas de réseau.
-9. Votre nom : votre compte (photo, e-mail, mot de passe).
-10. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
-11. Mot de passe oublié ? Déconnectons-nous pour voir.
-12. Un lien de réinitialisation part par e-mail. Il suffit de le suivre.
+6. En bas de l'écran, à portée du pouce : Présences, Élèves et Planning.
+7. Tout le reste est derrière « Plus ».
+8. Trombinoscope, fiches de sécurité, groupes…
+9. « Préparer hors ligne » avant d'aller au bassin, s'il n'y a pas de réseau.
+10. « Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe).
+11. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
+12. Mot de passe oublié ? Déconnectons-nous pour voir.
+13. Un lien de réinitialisation part par e-mail. Il suffit de le suivre.
 
 ### M2 — Mon compte
 
@@ -55,7 +56,7 @@ Déposer sa photo, retrouver son niveau et son CACI, changer son e-mail ou son m
 
 Compte : `e2@club.fr` · format téléphone · 56 s
 
-1. Votre compte : touchez votre nom dans le menu.
+1. Votre compte : « Plus », en bas de l'écran, puis votre nom.
 2. En haut : votre niveau d'encadrement et la date de votre CACI.
 3. Ils sont saisis par un administrateur : c'est à lui qu'on remet un nouveau certificat.
 4. Votre photo apparaît dans le trombinoscope des moniteurs.
@@ -73,7 +74,7 @@ La feuille de présence d'une séance : le détail des exercices préparés (rep
 
 Compte : `e2@club.fr` · format téléphone · 1 min 10
 
-1. Au bord du bassin : menu, puis « Présences ».
+1. Au bord du bassin : « Présences », en bas de l'écran.
 2. Un doute ? « Comment faire ? » rappelle les règles de l'appel.
 3. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine.
 4. Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.
@@ -186,7 +187,7 @@ Préparer le téléphone avant de partir, noter sans réseau, et laisser l'appli
 
 Compte : `e2@club.fr` · format téléphone · 60 s
 
-1. Pas de réseau à la piscine ? Avant de partir, avec du réseau : menu, « Préparer hors ligne ».
+1. Pas de réseau à la piscine ? Avant de partir, avec du réseau : « Plus », puis « Préparer hors ligne ».
 2. Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.
 3. Au bord du bassin : plus de réseau.
 4. L'appli s'ouvre quand même : on retrouve la grille de Léa.
@@ -204,7 +205,7 @@ Avant la mise à l'eau : directeur de plongée, conditions, palanquées et plong
 
 Compte : `e2@club.fr` · format téléphone · 52 s
 
-1. Menu, « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
+1. « Plus », puis « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
 2. On retrouve la séance par sa date.
 3. Le directeur de plongée : seuls les E3 et E4 sont proposés.
 4. Les conditions du jour…
@@ -230,7 +231,7 @@ Saisir une fois les plongeurs d'un séjour, puis reprendre le groupe dans chaque
 
 Compte : `e2@club.fr` · format téléphone · 42 s
 
-1. Un séjour, c'est plusieurs plongées avec les mêmes plongeurs. Menu, « Groupes ».
+1. Un séjour, c'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Groupes ».
 2. On saisit la liste une seule fois.
 3. Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
 4. Il suffit ensuite de les répartir dans les palanquées.
@@ -241,7 +242,7 @@ Où est mon groupe ce soir ? Ligne d'eau, fosse, DP fosse et DP piscine, encadra
 
 Compte : `e2@club.fr` · format téléphone · 56 s
 
-1. Le planning remplace le tableur du lundi soir : menu, puis « Planning ».
+1. Le planning remplace le tableur du lundi soir : « Planning », en bas de l'écran.
 2. En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.
 3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau, « 5+6 » pour un groupe sur deux lignes.
 4. Sous chaque groupe, ses encadrants attitrés, le référent en premier.
@@ -275,7 +276,7 @@ Mettre un nom sur un visage : élèves par groupe et encadrants du club.
 
 Compte : `e2@club.fr` · format téléphone · 35 s
 
-1. Mettre un nom sur un visage : menu, puis « Trombinoscope ».
+1. Mettre un nom sur un visage : « Plus », puis « Trombinoscope ».
 2. Les élèves de la saison, rangés par groupe d'entraînement.
 3. Pas de photo sans le droit à l'image : il est distinct de l'autorisation de plonger.
 4. Filtrez sur un groupe…
@@ -590,7 +591,7 @@ Blocs, détendeurs, gilets et combinaisons : leur état, et ce qui arrive à éc
 
 Compte : `e3@club.fr` · format téléphone · 35 s
 
-1. Le directeur technique a une entrée de plus dans le menu : « Matériel ».
+1. Le directeur technique a une entrée de plus sous « Plus » : « Matériel ».
 2. En haut, les compteurs : disponible, prêté, à régulariser, hors service.
 3. « À surveiller » : les échéances proches ou dépassées, calculées par l'appli.
 4. TIV tous les 12 mois, requalification des blocs, révisions fabricant.

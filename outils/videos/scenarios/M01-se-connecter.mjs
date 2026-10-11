@@ -1,5 +1,5 @@
 // M1 — Se connecter et s'y retrouver.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -25,12 +25,14 @@ export default {
 
     await legende('Vous arrivez sur « Infos élèves » : les élèves de la saison en un coup d\'œil.', 3500);
 
-    await legende('Tout le reste est dans le menu, en haut à droite.', 0);
-    await toucher(page.getByRole('button', { name: 'Menu' }), { apres: 800 });
-    await legende('Planning du bassin, présences, trombinoscope, fiches de sécurité…', 3500);
+    await legende('En bas de l\'écran, à portée du pouce : Présences, Élèves et Planning.', 3500);
+    await legende('Tout le reste est derrière « Plus ».', 0);
+    const plus = page.locator('nav.onglets').getByRole('button', { name: 'Plus' });
+    await toucher(plus, { apres: 800 });
+    await legende('Trombinoscope, fiches de sécurité, groupes…', 3500);
     await legende('« Préparer hors ligne » avant d\'aller au bassin, s\'il n\'y a pas de réseau.', 3500);
-    await legende('Votre nom : votre compte (photo, e-mail, mot de passe).', 3000);
-    await toucher(page.getByRole('button', { name: 'Menu' }), { apres: 600 });
+    await legende('« Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe).', 4000);
+    await toucher(plus, { apres: 600 });
 
     await legende('Astuce : ajoutez l\'appli à l\'écran d\'accueil du téléphone, '
       + 'elle s\'ouvrira comme une application.', 4000);

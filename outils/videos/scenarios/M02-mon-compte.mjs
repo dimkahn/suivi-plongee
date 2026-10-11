@@ -1,5 +1,5 @@
 // M2 — Mon compte : photo, e-mail, mot de passe.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -20,8 +20,8 @@ export default {
 
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1200);
-    await legende('Votre compte : touchez votre nom dans le menu.', 0);
-    await toucher(page.getByRole('button', { name: 'Menu' }), { apres: 700 });
+    await legende('Votre compte : « Plus », en bas de l\'écran, puis votre nom.', 0);
+    await toucher(page.locator('nav.onglets').getByRole('button', { name: 'Plus' }), { apres: 700 });
     await toucher(page.locator('#menu-principal a.qui'), { apres: 1500 });
 
     await legende('En haut : votre niveau d\'encadrement et la date de votre CACI.', 3500);

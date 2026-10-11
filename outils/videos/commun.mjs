@@ -263,10 +263,19 @@ export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo
     await pause(700);
   };
 
-  /** Touche une entrée du menu ; sur téléphone, ouvre d'abord le menu (☰). */
+  /**
+   * Touche une entrée du menu. Sur téléphone, l'onglet du même nom de la
+   * barre du bas s'il existe, sinon « Plus » puis l'entrée du menu.
+   */
   const menu = async entree => {
-    const bouton = page.getByRole('button', { name: 'Menu' });
-    if (await bouton.isVisible()) await toucher(bouton, { apres: 700 });
+    const onglets = page.locator('nav.onglets');
+    const onglet = onglets.getByText(entree, { exact: true });
+    if (await onglet.isVisible()) {
+      await toucher(onglet, { apres: 1200 });
+      return;
+    }
+    const plus = onglets.getByRole('button', { name: 'Plus' });
+    if (await plus.isVisible()) await toucher(plus, { apres: 700 });
     await toucher(page.locator('#menu-principal').getByText(entree, { exact: true }), { apres: 1200 });
   };
 
