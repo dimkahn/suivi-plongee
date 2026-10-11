@@ -82,8 +82,10 @@ class SyntheseGroupeTest {
                     {"eleveId":%d,"saisonId":%d,"niveau":"N1"}""".formatted(alice, saison), 201).get("id").asLong();
             envoyer("POST", "/api/cursus", admin, """
                     {"eleveId":%d,"saisonId":%d,"niveau":"N1"}""".formatted(bruno, saison), 201);
-            // Chloé est dans le groupe sans formation cette saison.
-            for (long e : new long[] {alice, bruno, chloe}) {
+            // Chloé est dans le groupe sans formation cette saison : une simple adhésion.
+            envoyer("POST", "/api/adhesions", admin, """
+                    {"eleveId":%d,"saisonId":%d,"groupeId":%d}""".formatted(chloe, saison, groupe), 201);
+            for (long e : new long[] {alice, bruno}) {
                 envoyer("PUT", "/api/groupes-entrainement/saison/" + saison + "/eleves/" + e, admin,
                         "{\"groupeId\":" + groupe + "}", 200);
             }
