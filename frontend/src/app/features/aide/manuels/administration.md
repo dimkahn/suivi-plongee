@@ -3,7 +3,7 @@ titre: Tour de l'administration et début de saison
 rubrique: Administrateur
 videos: A1
 ecran: /admin
-mots: administration, admin, administrateur, rentrée, début de saison, ordre, checklist, gestion du club
+mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club
 questions:
 - Que faire en début de saison ?
 - Dans quel ordre préparer la rentrée ?
@@ -13,15 +13,28 @@ Un compte administrateur voit tout ce que voit un moniteur, plus « Administrati
 
 ## Les écrans
 
-- **Moniteurs** : les comptes des encadrants (niveau, rôles, CACI).
-- **Élèves** : les dossiers (autorisations, droit à l'image, photo, tailles de matériel).
+La page « Administration » les range par moment de l'année.
+
+**Début de saison**
+
 - **Saisons** : ouvrir la saison, choisir les progressions suivies.
 - **Séances** : le calendrier, à la main ou toute l'année d'un coup.
 - **Inscriptions** : qui prépare quel niveau, dans quel groupe.
 - **Groupes d'entraînement** : groupes du lundi soir, référents, encadrants, lignes d'eau.
+
+**Chaque semaine**
+
 - **Planning du bassin** : soir par soir, où va chaque groupe.
 - **Sorties** : week-ends et séjours en milieu naturel.
-- **Référentiel MFT** et **Progressions types** : les compétences fédérales et l'année de chaque niveau.
+
+**Personnes**
+
+- **Moniteurs** : les comptes des encadrants (niveau, rôles, CACI).
+- **Élèves** : les dossiers (autorisations, droit à l'image, photo, tailles de matériel).
+
+**Contenu pédagogique**
+
+- **Référentiel MFT**, **Base d'exercices** et **Progressions types** : les compétences fédérales, leurs exercices et l'année de chaque niveau.
 
 Sur chacun, « Nouveau… » ou « Modifier » ouvre une fenêtre devant la liste : « Enregistrer » en bas, « Annuler » ou la croix pour la refermer sans rien changer. Un refus (champ manquant, règle du club) s'affiche en haut de la fenêtre.
 
