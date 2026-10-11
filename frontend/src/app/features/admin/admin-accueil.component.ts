@@ -1,6 +1,62 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+interface Ecran {
+  lien: string;
+  nom: string;
+  detail: string;
+}
+
+/**
+ * Les écrans d'administration, rangés par moment de l'année plutôt qu'en
+ * une seule liste : on retrouve d'un coup d'œil ce qui sert à la rentrée,
+ * ce qui sert chaque semaine, et ce qui ne bouge presque jamais.
+ */
+const RUBRIQUES: { titre: string; aide: string; ecrans: Ecran[] }[] = [
+  {
+    titre: 'Début de saison',
+    aide: 'Dans l\'ordre : la saison, ses séances, les inscriptions, puis les groupes.',
+    ecrans: [
+      { lien: '/admin/saisons', nom: 'Saisons', detail: 'Ouverture et fermeture des saisons, progressions suivies' },
+      { lien: '/admin/seances', nom: 'Séances',
+        detail: 'Calendrier de la saison : créer, modifier, générer une saison ou un séjour' },
+      { lien: '/admin/cursus', nom: 'Inscriptions', detail: 'Inscrire un élève dans une formation, changer de niveau' },
+      { lien: '/admin/groupes-entrainement', nom: 'Groupes d\'entraînement',
+        detail: 'Groupes de la saison, encadrants attitrés, lignes d\'eau et fosse, élèves' }
+    ]
+  },
+  {
+    titre: 'Chaque semaine',
+    aide: 'Les soirées au bassin et les sorties en milieu naturel.',
+    ecrans: [
+      { lien: '/admin/planning', nom: 'Planning du bassin',
+        detail: 'Soir par soir : ligne d\'eau ou fosse de chaque groupe, DP fosse et DP piscine' },
+      { lien: '/admin/sorties', nom: 'Sorties',
+        detail: 'Week-ends et séjours : dates, lieu, plongées qui en font partie ; prêts de matériel' }
+    ]
+  },
+  {
+    titre: 'Personnes',
+    aide: 'Les comptes des encadrants et les dossiers des élèves.',
+    ecrans: [
+      { lien: '/admin/moniteurs', nom: 'Moniteurs',
+        detail: 'Comptes des encadrants : ajout, modification, niveau, activation, mot de passe' },
+      { lien: '/admin/eleves', nom: 'Élèves', detail: 'Dossiers, autorisations, droit à l\'image' }
+    ]
+  },
+  {
+    titre: 'Contenu pédagogique',
+    aide: 'Ce qui se règle rarement : le MFT, ses exercices et les progressions du club.',
+    ecrans: [
+      { lien: '/admin/referentiel', nom: 'Référentiel MFT', detail: 'Créer, modifier et supprimer versions, compétences et critères' },
+      { lien: '/admin/exercices', nom: 'Base d\'exercices',
+        detail: 'Exercices d\'initiation, de perfectionnement et de maîtrise de chaque compétence' },
+      { lien: '/admin/progressions', nom: 'Progressions types',
+        detail: 'L\'année de chaque niveau découpée en périodes, avec les compétences travaillées' }
+    ]
+  }
+];
+
 @Component({
   selector: 'app-admin-accueil',
   imports: [RouterLink],
@@ -8,84 +64,40 @@ import { RouterLink } from '@angular/router';
     <h1>Administration</h1>
     <p class="secondaire">Gestion du club : comptes, élèves, saisons, séances et inscriptions.</p>
 
-    <ul>
-      <li class="carte">
-        <a routerLink="/admin/moniteurs">
-          <span class="nom">Moniteurs</span>
-          <span class="secondaire">Comptes des encadrants : ajout, modification, niveau, activation, mot de passe</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/eleves">
-          <span class="nom">Élèves</span>
-          <span class="secondaire">Dossiers, autorisations, droit à l'image</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/saisons">
-          <span class="nom">Saisons</span>
-          <span class="secondaire">Ouverture et fermeture des saisons</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/planning">
-          <span class="nom">Planning du bassin</span>
-          <span class="secondaire">Soir par soir : ligne d'eau ou fosse de chaque groupe, DP fosse et DP piscine</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/groupes-entrainement">
-          <span class="nom">Groupes d'entraînement</span>
-          <span class="secondaire">Groupes de la saison, encadrants attitrés, lignes d'eau et fosse, élèves</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/seances">
-          <span class="nom">Séances</span>
-          <span class="secondaire">Calendrier de la saison : créer, modifier, générer une saison ou un séjour</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/sorties">
-          <span class="nom">Sorties</span>
-          <span class="secondaire">Week-ends et séjours : dates, lieu, plongées qui en font partie ; prêts de matériel</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/cursus">
-          <span class="nom">Inscriptions</span>
-          <span class="secondaire">Inscrire un élève dans une formation, changer de niveau</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/referentiel">
-          <span class="nom">Référentiel MFT</span>
-          <span class="secondaire">Créer, modifier et supprimer versions, blocs et critères</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/exercices">
-          <span class="nom">Base d'exercices</span>
-          <span class="secondaire">Exercices d'initiation, de perfectionnement et de maîtrise de chaque compétence</span>
-        </a>
-      </li>
-      <li class="carte">
-        <a routerLink="/admin/progressions">
-          <span class="nom">Progressions types</span>
-          <span class="secondaire">L'année de chaque niveau découpée en périodes, avec les blocs travaillés</span>
-        </a>
-      </li>
-    </ul>
+    @for (r of rubriques; track r.titre) {
+      <section class="rubrique" [attr.aria-labelledby]="'rubrique-' + $index">
+        <h2 [id]="'rubrique-' + $index">{{ r.titre }}</h2>
+        <p class="secondaire">{{ r.aide }}</p>
+        <ul>
+          @for (e of r.ecrans; track e.lien) {
+            <li class="carte">
+              <a [routerLink]="e.lien">
+                <span class="nom">{{ e.nom }}</span>
+                <span class="secondaire">{{ e.detail }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    ul { list-style: none; margin: var(--pas-3) 0 0; padding: 0; display: grid; gap: var(--pas-2); }
+    .rubrique { margin-top: var(--pas-4); }
+    .rubrique h2 { margin-bottom: 4px; }
+    .rubrique > p { margin-bottom: var(--pas-2); }
+    ul {
+      list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
     li a {
-      display: flex; flex-direction: column; gap: 2px; padding: var(--pas-2);
+      display: flex; flex-direction: column; gap: 2px; padding: var(--pas-2); height: 100%;
       text-decoration: none; color: inherit; min-height: 44px;
     }
     .nom { font-weight: 700; }
   `]
 })
-export class AdminAccueilComponent {}
+export class AdminAccueilComponent {
+  readonly rubriques = RUBRIQUES;
+}

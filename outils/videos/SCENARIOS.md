@@ -379,17 +379,21 @@ Ce que contient chaque écran d'administration, et dans quel ordre s'en servir e
 Compte : `presidente@club.fr` · format ordinateur · 61 s
 
 1. Un compte administrateur voit tout ce que voit un moniteur, plus « Administration ».
-2. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
-3. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
+2. Les écrans sont rangés par moment de l'année.
+3. Début de saison, dans l'ordre : la saison, ses séances, les inscriptions, puis les groupes.
 4. Saisons : Ouvrir la saison, choisir les progressions suivies.
 5. Séances : Le calendrier : à la main, ou toute l'année d'un coup.
 6. Inscriptions : Qui prépare quel niveau, dans quel groupe.
 7. Groupes d'entraînement : Les groupes du lundi soir, leurs référents, leurs encadrants et leur ligne d'eau.
-8. Planning du bassin : Soir par soir : où va chaque groupe.
-9. Sorties : Les week-ends et séjours en milieu naturel.
-10. Référentiel MFT : Les compétences fédérales, niveau par niveau.
-11. Progressions types : L'année de chaque niveau découpée en périodes.
-12. En début de saison : saison, séances, élèves et inscriptions, groupes, planning.
+8. Chaque semaine : les soirées au bassin et les sorties.
+9. Planning du bassin : Soir par soir : où va chaque groupe.
+10. Sorties : Les week-ends et séjours en milieu naturel.
+11. Les personnes :
+12. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
+13. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
+14. Enfin le contenu pédagogique, qui se règle rarement :
+15. Référentiel MFT : Les compétences fédérales, niveau par niveau.
+16. Progressions types : L'année de chaque niveau découpée en périodes.
 
 ### A2 — Ouvrir une nouvelle saison
 
