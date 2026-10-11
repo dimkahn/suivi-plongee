@@ -1,5 +1,5 @@
 // M1 — Se connecter et s'y retrouver.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -23,9 +23,9 @@ export default {
       + 'Décochez sur un appareil partagé.', 4000);
     await toucher(page.getByRole('button', { name: 'Se connecter' }), { apres: 1500 });
 
-    await legende('Vous arrivez sur « Infos élèves » : les élèves de la saison en un coup d\'œil.', 3500);
+    await legende('Vous arrivez sur « Aujourd\'hui » : la séance du jour, où va votre groupe, l\'appel. Voir la vidéo M23.', 4000);
 
-    await legende('En bas de l\'écran, à portée du pouce : Présences, Élèves et Planning.', 3500);
+    await legende('En bas de l\'écran, à portée du pouce : Aujourd\'hui, Présences, Élèves et Planning.', 3500);
     await legende('Tout le reste est derrière « Plus ».', 0);
     const plus = page.locator('nav.onglets').getByRole('button', { name: 'Plus' });
     await toucher(plus, { apres: 800 });

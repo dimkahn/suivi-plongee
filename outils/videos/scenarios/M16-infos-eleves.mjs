@@ -1,5 +1,5 @@
 // M16 — Infos élèves.
-// Tournage du 2026-10-11, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M16',
   titre: 'Infos élèves',
@@ -10,7 +10,7 @@ export default {
   async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1200);
-    await legende('« Infos élèves » : la page d\'accueil. Toute la saison sur un seul écran.', 3500);
+    await legende('« Infos élèves », l\'onglet « Élèves » sur téléphone : toute la saison sur un seul écran.', 3500);
     await page.locator('table').scrollIntoViewIfNeeded();
     await legende('Pour chaque élève : son niveau préparé et son CACI.', 3500);
     await legende('CACI : vert, plus d\'un mois ; orange, moins d\'un mois ; rouge, moins de 15 jours ; ⚠ expiré.', 5000);

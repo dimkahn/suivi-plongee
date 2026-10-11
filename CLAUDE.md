@@ -644,6 +644,13 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
   sécurité, programme d'exercices, génération de saison). Un overlay
   ouvert depuis un dialogue (recadrage photo) se place dans son contenu :
   le reste de la page est inerte tant qu'il est ouvert.
+- Navigation (2026) : page d'accueil des encadrants `/aujourdhui`
+  (`AujourdhuiComponent`, la séance du jour ou la prochaine, liens vers
+  l'appel, le programme, la fiche de sécurité). Sous 860 px, barre
+  d'onglets fixe en bas de l'écran (`app.component.ts`) et « Plus » pour
+  le reste du menu ; ce qui colle au bas de l'écran se place au-dessus
+  d'elle avec `--hauteur-onglets` (ou un `z-index` supérieur à 32 pour une
+  barre de choix temporaire).
 - Identité visuelle alignée sur celle du club (cppjvo.fr) : palette
   océan/corail, Poppins pour les titres, Nunito pour le texte courant.
   Jetons de design dans `frontend/src/styles.css`. Ne pas introduire de
