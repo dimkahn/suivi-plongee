@@ -106,17 +106,18 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 3. La jauge descend vers la profondeur du brevet à mesure qu'il progresse.
 4. Avant de noter, choisissez la séance du jour.
 5. Seules les séances où l'élève est noté présent sont proposées : faites l'appel d'abord.
-6. « Au programme » : les compétences que la progression prévoit ce mois-ci.
-7. Chaque critère a trois états : non abordé, en cours, acquis.
-8. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
-9. La note porte sur l'exercice réalisé : choisissez-le, l'appli le demande s'il manque.
-10. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
-11. Votre nom et la date s'affichent sous le critère.
-12. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
-13. … on laisse un mot pour le prochain encadrant.
-14. Le commentaire reste affiché sous le critère.
-15. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
-16. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
+6. Référent du groupe ? « Noter au nom de » rattrape la note d'un encadrant : laissez « Moi-même » pour noter à votre nom.
+7. « Au programme » : les compétences que la progression prévoit ce mois-ci.
+8. Chaque critère a trois états : non abordé, en cours, acquis.
+9. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
+10. La note porte sur l'exercice réalisé : choisissez-le, l'appli le demande s'il manque.
+11. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
+12. Votre nom et la date s'affichent sous le critère.
+13. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
+14. … on laisse un mot pour le prochain encadrant.
+15. Le commentaire reste affiché sous le critère.
+16. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
+17. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 
@@ -316,6 +317,21 @@ Compte : `e2@club.fr` · format téléphone · 81 s
 13. Le bilan s'affiche en haut de la feuille de présence.
 14. Dans la fiche de Hugo, le vidage de masque est passé « en cours », avec le commentaire.
 15. Pour noter un élève à part, sa grille reste là, comme avant.
+
+### M20 — Noter au nom d'un autre encadrant
+
+Référent du groupe : rattraper la note d'un encadrant qui ne l'a pas saisie, sous son nom.
+
+Compte : `e2@club.fr` · format téléphone
+
+1. Tiago a fait travailler Anis ce soir, mais n'a pas eu le temps de le noter.
+2. Flora est référente du groupe d'Anis : la grille lui propose « Noter au nom de ».
+3. Un bandeau rappelle au nom de qui partent les notes.
+4. Elle note ce que Tiago lui a rapporté, comme d'habitude, sur l'exercice réalisé.
+5. La note porte le nom de Tiago.
+6. L'historique garde que c'est Flora qui l'a saisie.
+7. Revenez sur « Moi-même » pour noter de nouveau à votre nom.
+8. Seuls les référents du groupe le peuvent, pour un encadrant qui a le niveau de noter ce brevet.
 
 ## Administrateur
 

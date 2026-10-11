@@ -13,7 +13,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import {
   BlocVue, CritereVue, CursusVue, EvaluationVue, ExerciceBaseVue, ExerciceGrilleVue, ExerciceNoteVue, GrilleVue,
-  PhaseExercice, SeanceVue, Statut
+  MoniteurOptionVue, PhaseExercice, SeanceVue, Statut
 } from '../../core/modeles';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
@@ -257,6 +257,23 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             <span class="changer">Changer</span>
           </button>
         </div>
+        @if (estReferent() && moniteursRemplacables().length > 0) {
+          <div class="barre-seance noter-pour">
+            <label for="noter-pour">Noter au nom de</label>
+            <select id="noter-pour" [ngModel]="pourMoniteurId()" (ngModelChange)="pourMoniteurId.set($event)">
+              <option [ngValue]="null">Moi-même</option>
+              @for (m of moniteursRemplacables(); track m.id) {
+                <option [ngValue]="m.id">{{ m.nomComplet }} ({{ m.niveauEncadrement }})</option>
+              }
+            </select>
+          </div>
+          @if (nomPourMoniteur(); as nom) {
+            <div class="alerte" role="status">
+              Vous notez <strong>au nom de {{ nom }}</strong>, en tant que référent du groupe :
+              les notes porteront son nom, et l'historique gardera que c'est vous qui les avez saisies.
+            </div>
+          }
+        }
       }
 
       <dialog #dialogueSeance class="dialogue-seance" aria-labelledby="titre-dialogue-seance"
@@ -604,7 +621,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                         @for (entree of entrees; track entree.id) {
                           <div class="entree-historique">
                             <span class="secondaire">
-                              {{ entree.dateEvaluation | dateFr }} · {{ entree.parQui }} · {{ libelleStatut(entree.statut) }}
+                              {{ entree.dateEvaluation | dateFr }} · {{ entree.parQui }}{{ entree.saisiPar ? ' (saisi par ' + entree.saisiPar + ')' : '' }} · {{ libelleStatut(entree.statut) }}
                               @if (entree.entrainement) { · <span class="etiquette-entrainement">piscine / fosse</span> }
                             </span>
                             @if (entree.exercice; as exo) {
@@ -762,6 +779,8 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 
     /* Dans la barre, le bouton partage la ligne avec son libellé. */
     .barre-seance .choix-seance { flex: 1; width: auto; }
+    .noter-pour { margin-top: 0; }
+    .noter-pour select { flex: 1; width: auto; min-height: 44px; margin: 0; }
     .sans-seance { display: block; margin: var(--pas-2) auto 0; }
 
     .bloc { margin-top: var(--pas-3); padding: var(--pas-3); }
@@ -1124,6 +1143,31 @@ export class GrilleComponent implements OnDestroy {
   peutVoirHistoriqueSaisons = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
 
   /**
+   * Référent du groupe de l'élève : il peut noter au nom d'un encadrant qui
+   * ne l'a pas fait (choix du club, 2026). Le serveur revérifie toujours.
+   */
+  estReferent = computed(() => {
+    const moi = this.auth.session()?.id;
+    return moi != null && (this.grille()?.referentIds ?? []).includes(moi);
+  });
+  moniteurs = signal<MoniteurOptionVue[]>([]);
+  /** Encadrant au nom duquel le référent note ; null : à son propre nom. */
+  pourMoniteurId = signal<number | null>(null);
+
+  /** Les autres encadrants qui ont le niveau pour noter ce brevet. */
+  moniteursRemplacables = computed(() => {
+    const g = this.grille();
+    const moi = this.auth.session()?.id;
+    if (!g) return [];
+    const ordre = ['E1', 'E2', 'E3', 'E4'];
+    return this.moniteurs().filter(m => m.id !== moi && m.niveauEncadrement != null
+      && ordre.indexOf(m.niveauEncadrement) >= ordre.indexOf(g.niveauEncadrantValidation));
+  });
+
+  nomPourMoniteur = computed(() =>
+    this.moniteurs().find(m => m.id === this.pourMoniteurId())?.nomComplet ?? null);
+
+  /**
    * Séances sur lesquelles on peut noter : déjà passées (ou du jour) — le
    * serveur refuse une séance à venir — et où l'élève est noté présent.
    * Pour un N2/N3, celles en piscine ou fosse notent l'entraînement.
@@ -1440,6 +1484,7 @@ export class GrilleComponent implements OnDestroy {
     this.historiqueSaisons.set([]);
     this.tailles.set(null);
     this.chargementHistoriqueSaisons.set(false);
+    this.pourMoniteurId.set(null);
   }
 
   /**
@@ -1470,6 +1515,13 @@ export class GrilleComponent implements OnDestroy {
       if (!this.reseau.enLigne()) await this.afficherAgeDuCache();
       else this.ageDuCache.set(null);
       if (g.aPhoto) this.chargerPhoto(g.eleveId);
+      if (this.estReferent() && this.moniteurs().length === 0) {
+        try {
+          this.moniteurs.set(await this.api.moniteursActifs());
+        } catch {
+          // Hors ligne sans liste embarquée : le référent note simplement à son nom.
+        }
+      }
     } catch {
       this.erreurChargement.set(true);
     }
@@ -1579,7 +1631,8 @@ export class GrilleComponent implements OnDestroy {
       statut,
       commentaire: null,
       dateEvaluation: seance ? seance.date : dateDuJour(),
-      ...this.champsExercice(exercice)
+      ...this.champsExercice(exercice),
+      ...this.champsPourMoniteur()
     });
 
     // Hors ligne : rien à attendre, le badge « En attente d'envoi » suffit.
@@ -1598,6 +1651,13 @@ export class GrilleComponent implements OnDestroy {
         this.marquerEnregistrement(enVol, null);
       }
     }
+  }
+
+  /** Référent qui note au nom d'un autre encadrant : son id pour le serveur, son nom pour le bandeau des refus. */
+  private champsPourMoniteur(): { pourMoniteurId: number | null; pourMoniteur: string | null } {
+    return this.estReferent() && this.pourMoniteurId() != null
+      ? { pourMoniteurId: this.pourMoniteurId(), pourMoniteur: this.nomPourMoniteur() }
+      : { pourMoniteurId: null, pourMoniteur: null };
   }
 
   /** Le suivi que notent les boutons : l'entraînement si la séance choisie est en piscine ou fosse (N2/N3). */
@@ -1762,7 +1822,8 @@ export class GrilleComponent implements OnDestroy {
       statut: this.suiviActif(critere).statut,
       commentaire: texte,
       dateEvaluation: seance ? seance.date : dateDuJour(),
-      ...this.champsExercice(this.exerciceNote(bloc, critere))
+      ...this.champsExercice(this.exerciceNote(bloc, critere)),
+      ...this.champsPourMoniteur()
     });
 
     const restants = { ...this.brouillons() };

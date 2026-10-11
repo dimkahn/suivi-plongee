@@ -1,5 +1,5 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter } from '../grille.mjs';
 
 export default {
@@ -21,6 +21,7 @@ export default {
     await legende('Sa dernière séance où il était présent est déjà choisie ; touchez-la pour en changer.', 0);
     await choisirDerniereSeance();
     await legende('Seules les séances où l\'élève est noté présent sont proposées : faites l\'appel d\'abord.', 4000);
+    await legende('Référent du groupe ? « Noter au nom de » rattrape la note d\'un encadrant : laissez « Moi-même » pour noter à votre nom.', 4500);
 
     await legende('« Au programme » : les compétences que la progression prévoit ce mois-ci.', 0);
     await page.locator('section.programme').scrollIntoViewIfNeeded();

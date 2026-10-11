@@ -27,7 +27,7 @@ import { DateFrPipe } from '../../core/date-fr';
             @for (r of file.refus(); track r.referenceClient) {
               <li>
                 <span>{{ r.raison }}</span>
-                <span class="secondaire">Saisie du {{ r.dateEvaluation | dateFr }}</span>
+                <span class="secondaire">Saisie du {{ r.dateEvaluation | dateFr }}{{ r.pourMoniteur ? ', au nom de ' + r.pourMoniteur : '' }}</span>
                 <button type="button" class="lien" (click)="ecarter(r)">Écarter</button>
               </li>
             }

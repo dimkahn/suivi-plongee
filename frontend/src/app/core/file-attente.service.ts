@@ -20,6 +20,9 @@ export interface SaisieEnAttente {
   /** À défaut, exercice libre du programme de la séance : son intitulé, et sa phase pour l'affichage local. */
   exerciceLibre?: string | null;
   phaseLibre?: PhaseExercice | null;
+  /** Référent du groupe qui note au nom d'un autre encadrant : son id, et son nom pour l'affichage. */
+  pourMoniteurId?: number | null;
+  pourMoniteur?: string | null;
   creeLe: number;
   tentatives: number;
 }
@@ -156,7 +159,8 @@ export class FileAttenteService {
             commentaire: s.commentaire,
             dateEvaluation: s.dateEvaluation,
             exerciceId: s.exerciceId ?? null,
-            exerciceLibre: s.exerciceLibre ?? null
+            exerciceLibre: s.exerciceLibre ?? null,
+            pourMoniteurId: s.pourMoniteurId ?? null
           })))
       );
 
@@ -207,7 +211,9 @@ export class FileAttenteService {
       dateEvaluation: refus.dateEvaluation,
       exerciceId: refus.exerciceId ?? null,
       exerciceLibre: refus.exerciceLibre ?? null,
-      phaseLibre: refus.phaseLibre ?? null
+      phaseLibre: refus.phaseLibre ?? null,
+      pourMoniteurId: refus.pourMoniteurId ?? null,
+      pourMoniteur: refus.pourMoniteur ?? null
     });
   }
 
