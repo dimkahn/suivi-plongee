@@ -13,7 +13,7 @@ import {
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
-  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase
+  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -304,6 +304,12 @@ export class ApiService {
     const donnees = new FormData();
     donnees.append('fichier', fichier);
     return this.http.post<{ id: number }>(`/api/seances/${seanceId}/programme/schemas`, donnees);
+  }
+
+  /** Synthèse des notations d'une séance pour un niveau (encadrants). Nécessite le réseau. */
+  syntheseSeance(seanceId: number, niveau: string | null): Observable<SyntheseSeanceVue> {
+    return this.http.get<SyntheseSeanceVue>(`/api/seances/${seanceId}/synthese`,
+      { params: niveau ? { niveau } : {} });
   }
 
   /** Programme d'exercices d'une séance (encadrants). Nécessite le réseau. */

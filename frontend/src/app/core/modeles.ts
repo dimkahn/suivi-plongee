@@ -1419,3 +1419,55 @@ export interface DemandeRetour {
   equipements: { equipementId: number; incident: string | null; horsService: boolean }[];
   remarques: string | null;
 }
+
+/** Synthèse des notations d'une séance : dernière note d'un élève sur un critère ce jour-là. */
+export interface NoteSyntheseVue {
+  cursusId: number;
+  eleve: string;
+  critereId: number;
+  bloc: string;
+  savoirFaire: string;
+  /** État du critère qui découle de la note. */
+  statut: Statut;
+  statutExercice: Statut | null;
+  exercice: ExerciceNoteVue | null;
+  parQui: string;
+  saisiPar: string | null;
+  entrainement: boolean;
+  /** Tous les commentaires laissés sur ce critère pendant la séance. */
+  commentaires: string[];
+}
+
+export interface CritereSyntheseVue {
+  critereId: number;
+  bloc: string;
+  regroupement: string | null;
+  savoirFaire: string;
+  acquis: number;
+  enCours: number;
+  nonAborde: number;
+  notes: NoteSyntheseVue[];
+}
+
+/** Un élève présent ; `notes` vide : pas encore évalué sur la séance. */
+export interface EleveSyntheseVue {
+  cursusId: number;
+  eleveId: number;
+  eleve: string;
+  notes: NoteSyntheseVue[];
+}
+
+export interface SyntheseSeanceVue {
+  seanceId: number;
+  date: string;
+  lieu: string | null;
+  milieu: string;
+  /** Niveaux des élèves présents ; `niveau` : celui de la synthèse (null : aucun présent). */
+  niveaux: string[];
+  niveau: string | null;
+  presents: number;
+  presentsNotes: number;
+  notes: number;
+  criteres: CritereSyntheseVue[];
+  eleves: EleveSyntheseVue[];
+}

@@ -89,11 +89,12 @@ Compte : `e2@club.fr` · format téléphone · 1 min 05
 14. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
 15. Le compteur en haut de la liste fait le bilan.
 16. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
-17. « Voir les présents sans évaluation » n'affiche plus qu'eux.
-18. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
-19. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-20. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
-21. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+17. « Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.
+18. « Voir les présents sans évaluation » n'affiche plus qu'eux.
+19. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
+20. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+21. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
+22. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 
@@ -332,6 +333,23 @@ Compte : `e2@club.fr` · format téléphone
 6. L'historique garde que c'est Flora qui l'a saisie.
 7. Revenez sur « Moi-même » pour noter de nouveau à votre nom.
 8. Seuls les référents du groupe le peuvent, pour un encadrant qui a le niveau de noter ce brevet.
+
+### M21 — La synthèse des notes d'une séance
+
+Tout ce qui a été noté pendant une séance pour un niveau : critère par critère, élève par élève, et qui reste à évaluer.
+
+Compte : `e2@club.fr` · format téléphone
+
+1. Que s'est-il noté pendant la séance ? Tout commence dans « Présences ».
+2. Choisissez la séance : ici, la piscine du lundi 21 septembre.
+3. Touchez « Synthèse des notes » : elle s'ouvre sur le niveau du groupe filtré.
+4. En haut, le bilan : présents, élèves évalués, et ceux qui ne l'ont pas encore été.
+5. Par critère : combien d'élèves sont acquis, en cours ou non abordé.
+6. Puis, pour chacun, l'exercice noté, l'encadrant et ses commentaires.
+7. Par élève : les notes de chacun sur la séance.
+8. « Pas encore évalué » signale un présent qui n'a reçu aucune note.
+9. Touchez un nom pour ouvrir sa grille sur cette séance.
+10. Les autres niveaux présents ce soir-là s'affichent d'une touche, et « Imprimer » donne une version papier.
 
 ## Administrateur
 

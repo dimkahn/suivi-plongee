@@ -249,6 +249,13 @@ function normaliser(texte: string): string {
           </button>
         }
 
+        @if (!seanceAVenir() && bilan().presents > 0) {
+          <a class="bouton-discret synthese" [routerLink]="['/seances', seanceId(), 'synthese']"
+             [queryParams]="lienSynthese()">
+            Synthèse des notes
+          </a>
+        }
+
         @if (seanceAVenir()) {
           <div class="alerte" role="status">
             Séance à venir : vous pouvez annoncer qui sera présent ; la notation sera possible le jour de la séance.
@@ -379,6 +386,7 @@ function normaliser(texte: string): string {
     .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
     .compte-non-notes { color: var(--en-cours); }
     .filtre-non-notes { margin-bottom: var(--pas-2); }
+    .synthese { display: inline-flex; align-items: center; min-height: 44px; margin: 0 var(--pas) var(--pas-2) 0; }
     .filtre-non-notes.actif { background: var(--profond); border-color: var(--profond); color: #fff; }
     /* Présent sans aucune note sur la séance : un lien vers sa grille pour le noter. */
     .non-note {
@@ -577,6 +585,13 @@ export class PresencesComponent implements OnDestroy {
   lienProgramme = computed(() => {
     const filtre = this.groupeFiltre();
     return typeof filtre === 'number' ? { groupe: filtre } : {};
+  });
+
+  /** La synthèse s'ouvre sur le niveau du groupe filtré, et garde le groupe pour le retour. */
+  lienSynthese = computed(() => {
+    const filtre = this.groupeFiltre();
+    const niveau = typeof filtre === 'number' ? this.groupes().find(g => g.id === filtre)?.niveauPrepare : null;
+    return { niveau: niveau ?? null, groupe: filtre === 'TOUS' ? null : filtre };
   });
 
   /** La grille d'un élève garde la séance et le groupe filtré, pour revenir à la feuille telle quelle. */

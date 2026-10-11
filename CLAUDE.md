@@ -402,6 +402,13 @@ Elle ne fait jamais reculer un élève : acquis reste acquis, en cours reste en
 cours (seul le commentaire s'ajoute), non abordé passe en cours. Élèves d'une
 même version du MFT à la fois, présence déjà enregistrée exigée, tout ou rien
 (un refus nomme l'élève), réseau obligatoire.
+**Synthèse des notes d'une séance** (lien « Synthèse des notes » de la
+feuille de présence, `/seances/:id/synthese?niveau=`, `SyntheseSeanceService`,
+`GET /api/seances/{id}/synthese`, MONITEUR/ADMIN) : pour un niveau, les
+présents et, par critère noté pendant la séance, le compte acquis / en
+cours / non abordé ; l'état retenu par élève et critère est sa **dernière
+note de la séance** (statut du critère), avec tous les commentaires du
+jour. Lecture seule, réseau obligatoire (pas embarquée hors ligne).
 
 **Programme d'exercices d'une séance (2026).** Chaque groupe d'entraînement
 prépare sa séance exercice par exercice (`/seances/:id/programme`,

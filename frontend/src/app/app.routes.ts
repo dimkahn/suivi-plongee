@@ -57,6 +57,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/seances/programme-exercices.component')
       .then(m => m.ProgrammeExercicesComponent)
   },
+  {
+    path: 'seances/:id/synthese',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/seances/synthese-seance.component')
+      .then(m => m.SyntheseSeanceComponent)
+  },
   // Anciennes adresses, avant le passage des séances dans l'administration.
   { path: 'seances', pathMatch: 'full', redirectTo: 'admin/seances' },
   { path: 'seances/generer', pathMatch: 'full', redirectTo: 'admin/seances/generer' },
