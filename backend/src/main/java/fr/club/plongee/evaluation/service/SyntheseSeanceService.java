@@ -8,6 +8,7 @@ import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.Participation;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.ParticipationRepository;
+import fr.club.plongee.formation.repository.PhotoEleveRepository;
 import fr.club.plongee.formation.repository.SeanceRepository;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Critere;
@@ -21,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -54,9 +56,10 @@ public class SyntheseSeanceService {
     /**
      * Un élève présent, avec ses notes de la séance (liste vide : pas encore évalué).
      * {@code atelier} : ce qu'il a fait (NAGE, BLOC...), null si non précisé ;
-     * {@code notePar} : les encadrants qui l'ont noté, dans l'ordre de leur première note.
+     * {@code notePar} : les encadrants qui l'ont noté, dans l'ordre de leur première note ;
+     * {@code aPhoto} : photo consultable (droit à l'image accordé), lue à part.
      */
-    public record EleveSyntheseVue(Long cursusId, Long eleveId, String eleve, String atelier,
+    public record EleveSyntheseVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto, String atelier,
                                    List<String> notePar, List<NoteSyntheseVue> notes) {}
 
     /**
@@ -71,12 +74,14 @@ public class SyntheseSeanceService {
     private final SeanceRepository seances;
     private final ParticipationRepository participations;
     private final EvaluationRepository evaluations;
+    private final PhotoEleveRepository photos;
 
     public SyntheseSeanceService(SeanceRepository seances, ParticipationRepository participations,
-                                 EvaluationRepository evaluations) {
+                                 EvaluationRepository evaluations, PhotoEleveRepository photos) {
         this.seances = seances;
         this.participations = participations;
         this.evaluations = evaluations;
+        this.photos = photos;
     }
 
     @Transactional(readOnly = true)
@@ -133,8 +138,10 @@ public class SyntheseSeanceService {
 
         Map<Long, Integer> ordreCritere = new LinkedHashMap<>();
         criteres.forEach(c -> ordreCritere.put(c.critereId(), ordreCritere.size()));
+        Set<Long> avecPhoto = photos.idsElevesAvecPhoto();
         List<EleveSyntheseVue> eleves = duNiveau.stream()
                 .map(c -> new EleveSyntheseVue(c.getId(), c.getEleve().getId(), c.getEleve().nomComplet(),
+                        c.getEleve().isAutorisationImage() && avecPhoto.contains(c.getEleve().getId()),
                         ateliers.get(c.getId()) == null ? null : ateliers.get(c.getId()).name(),
                         notes.stream().filter(e -> e.getCursus().getId().equals(c.getId()))
                                 .map(e -> e.getMoniteur().nomComplet()).distinct().toList(),

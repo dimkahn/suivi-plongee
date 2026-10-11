@@ -3,7 +3,7 @@ titre: La synthèse des compétences d'un groupe
 rubrique: Moniteur
 videos: M22
 ecran: /groupes-entrainement/synthese
-mots: synthèse, avancement, progression, bilan, groupe, groupe d'entraînement, compétences, acquise, validée, en cours d'acquisition, non travaillée, NT, ECA, A, tableau, coup d'œil, tous les élèves, imprimer
+mots: synthèse, avancement, progression, bilan, groupe, groupe d'entraînement, compétences, acquise, validée, en cours d'acquisition, non travaillée, NT, ECA, A, tableau, coup d'œil, tous les élèves, imprimer, photo, trombine
 questions:
 - Comment voir l'avancement de tous les élèves d'un groupe ?
 - Où en est mon groupe dans ses compétences ?
@@ -16,7 +16,7 @@ Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » 
 
 1. Menu, « Infos élèves ». Touchez le bouton de votre groupe, puis « Synthèse des compétences du groupe ».
 2. Les boutons en haut passent d'un groupe à l'autre.
-3. Une ligne par élève : son nom, le nombre de compétences acquises, puis l'état de chaque compétence.
+3. Une ligne par élève : sa photo et son nom, le nombre de compétences acquises, puis l'état de chaque compétence.
 4. Sur téléphone, faites glisser le tableau sur le côté : le nom de l'élève reste visible.
 5. La dernière ligne, « Acquise par », compte les élèves qui ont acquis chaque compétence.
 6. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
@@ -35,4 +35,5 @@ Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » 
 - Au N2 et au N3, une compétence travaillée seulement en piscine ou en fosse est déjà ECA.
 - Un groupe qui mélange plusieurs formations (par exemple deux versions du MFT) a un tableau par formation.
 - Les élèves du groupe sans formation cette saison sont cités sous le tableau.
+- La photo n'apparaît que si le droit à l'image de l'élève est accordé ; sinon, ses initiales.
 - La synthèse se lit avec du réseau ; elle ne modifie rien.

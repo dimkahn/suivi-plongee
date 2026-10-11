@@ -121,6 +121,7 @@ class SyntheseSeanceTest {
             assertThat(eleves).hasSize(3);
             assertThat(eleves.get(0).get("eleve").asText()).isEqualTo("Alice Synthese");
             assertThat(eleves.get(0).get("atelier").asText()).isEqualTo("BLOC");
+            assertThat(eleves.get(0).get("aPhoto").asBoolean()).isFalse();
             assertThat(eleves.get(0).get("notePar")).extracting(JsonNode::asText).containsExactly("Flora Vasseur");
             assertThat(eleves.get(2).get("notePar")).isEmpty();
             JsonNode noteAlice = eleves.get(0).get("notes").get(0);

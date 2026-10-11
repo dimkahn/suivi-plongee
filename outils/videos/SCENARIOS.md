@@ -346,7 +346,7 @@ Compte : `e2@club.fr` · format téléphone
 3. Touchez « Synthèse des notes » : elle s'ouvre sur le niveau du groupe filtré.
 4. En haut, le bilan : présents, élèves évalués, et ceux qui ne l'ont pas encore été.
 5. Le tableau : une ligne par élève, une colonne par critère noté avec l'état de l'exercice réalisé, et les commentaires.
-6. Sous chaque nom : l'encadrant qui l'a noté, et ce qu'il a fait ce soir-là.
+6. Devant chaque nom, la photo de l'élève ; dessous, l'encadrant qui l'a noté et ce qu'il a fait ce soir-là.
 7. Par critère : combien d'élèves ont l'exercice acquis, en cours ou non abordé.
 8. Puis, pour chacun, l'exercice noté, l'état de la compétence s'il diffère, l'encadrant et ses commentaires.
 9. Par élève : les notes de chacun sur la séance.
@@ -363,7 +363,7 @@ Compte : `e2@club.fr` · format téléphone
 1. Où en est tout le groupe ? Dans « Infos élèves », touchez le bouton du groupe.
 2. Puis « Synthèse des compétences du groupe ».
 3. Une ligne par élève, une case par compétence : tout le groupe d'un coup d'œil.
-4. Après le nom : le nombre de compétences acquises.
+4. La photo de chaque élève, puis le nombre de compétences acquises.
 5. Dans chaque case, l'état de la compétence : NT non travaillée, ECA en cours d'acquisition, A acquise.
 6. La dernière ligne compte les élèves qui ont acquis chaque compétence.
 7. Les boutons du haut passent d'un groupe à l'autre, et « Imprimer » donne une version papier.

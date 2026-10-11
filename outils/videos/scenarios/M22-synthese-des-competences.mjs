@@ -1,5 +1,5 @@
 // M22 — La synthèse des compétences d'un groupe d'entraînement.
-// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Groupe Débutants (V107) : élèves N1 notés en septembre.
 export default {
   id: 'M22',
@@ -22,7 +22,7 @@ export default {
     await legende('Une ligne par élève, une case par compétence : tout le groupe d\'un coup d\'œil.', 0);
     await page.locator('table.tableau').first().scrollIntoViewIfNeeded();
     await pause(3500);
-    await legende('Après le nom : le nombre de compétences acquises.', 3500);
+    await legende('La photo de chaque élève, puis le nombre de compétences acquises.', 3500);
     await legende('Dans chaque case, l\'état de la compétence : NT non travaillée, ECA en cours d\'acquisition, A acquise.', 0);
     await page.locator('.defilement').first().evaluate(el => el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' }));
     await pause(4500);
