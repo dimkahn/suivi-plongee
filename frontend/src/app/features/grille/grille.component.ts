@@ -804,9 +804,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .resume { flex: 1; min-width: 0; }
     .resume h1 { margin-bottom: 2px; }
     .score { margin: var(--pas) 0 0; font-weight: 700; }
-    .actions-entete { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas-2); }
+    /* position: relative : sur téléphone, le menu « Plus d'actions » prend la largeur de cette rangée (styles.css). */
+    .actions-entete { position: relative; display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas-2); }
     .lien-matrice { display: inline-flex; align-items: center; text-decoration: none; font-weight: 700; }
-    .actions-entete .menu-actions-liste { left: auto; right: 0; }
+    @media (min-width: 601px) { .actions-entete .menu-actions-liste { left: auto; right: 0; } }
+    @media (max-width: 600px) { .actions-entete .menu-actions { position: static; } }
     .saisons-precedentes { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 4px; }
     .saisons-precedentes a { font-size: .875rem; }
     .infos-supplementaires {
