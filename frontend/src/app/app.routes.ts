@@ -97,6 +97,12 @@ export const routes: Routes = [
       .then(m => m.GroupesComponent)
   },
   {
+    path: 'groupes-entrainement/synthese',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/groupes/synthese-groupe.component')
+      .then(m => m.SyntheseGroupeComponent)
+  },
+  {
     path: 'admin',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/admin-accueil.component')

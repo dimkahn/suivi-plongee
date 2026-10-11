@@ -416,6 +416,14 @@ du critère n'est rappelé que s'il diffère. Vue d'ouverture « Tableau » sur 
 `EleveSyntheseVue.notePar`, et l'atelier), critères en colonnes,
 commentaires en dernière colonne. Lecture seule, réseau obligatoire (pas
 embarquée hors ligne).
+**Synthèse des compétences d'un groupe** (lien « Synthèse des compétences
+du groupe » d'Infos élèves, `/groupes-entrainement/synthese?groupe=`,
+`SyntheseGroupeService`, `GET /api/groupes-entrainement/{id}/synthese-competences`,
+MONITEUR/ADMIN) : un élève du groupe par ligne, une compétence (bloc) par
+colonne, un tableau par version du MFT. Chaque case est tirée de
+`GrilleService.grille` de l'élève (acquis/total, validée, en retard, à
+valider) : aucune règle propre, elle suit la grille. Lecture seule, réseau
+obligatoire.
 
 **Programme d'exercices d'une séance (2026).** Chaque groupe d'entraînement
 prépare sa séance exercice par exercice (`/seances/:id/programme`,

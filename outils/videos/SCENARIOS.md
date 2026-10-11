@@ -292,10 +292,11 @@ Compte : `e2@club.fr` · format téléphone · 49 s
 3. CACI : vert, plus d'un mois ; orange, moins d'un mois ; rouge, moins de 15 jours ; ⚠ expiré.
 4. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.
 5. Les boutons filtrent par groupe d'entraînement.
-6. La recherche retrouve un élève par son nom ou son prénom.
-7. Touchez son nom pour ouvrir sa fiche.
-8. « Informations supplémentaires » : téléphone et contact d'urgence.
-9. Aucune donnée de santé n'est enregistrée : seule la date de fin du certificat.
+6. Dessous, « Synthèse des compétences du groupe » montre l'avancement de tout le groupe : voir la vidéo M22.
+7. La recherche retrouve un élève par son nom ou son prénom.
+8. Touchez son nom pour ouvrir sa fiche.
+9. « Informations supplémentaires » : téléphone et contact d'urgence.
+10. Aucune donnée de santé n'est enregistrée : seule la date de fin du certificat.
 
 ### M17 — Noter les présents en une fois
 
@@ -352,6 +353,21 @@ Compte : `e2@club.fr` · format téléphone
 10. « Pas encore évalué » signale un présent qui n'a reçu aucune note.
 11. Touchez un nom pour ouvrir sa grille sur cette séance.
 12. Les autres niveaux présents ce soir-là s'affichent d'une touche, et « Imprimer » donne une version papier.
+
+### M22 — La synthèse des compétences d'un groupe
+
+L'avancement de tous les élèves d'un groupe d'un coup d'œil : une ligne par élève, une case par compétence.
+
+Compte : `e2@club.fr` · format téléphone
+
+1. Où en est tout le groupe ? Dans « Infos élèves », touchez le bouton du groupe.
+2. Puis « Synthèse des compétences du groupe ».
+3. Une ligne par élève, une case par compétence : tout le groupe d'un coup d'œil.
+4. « Bilan » : les compétences validées et la part des critères acquis.
+5. Dans chaque case : ✓ validée, 5 sur 5 à valider, sinon les critères acquis sur le total. En orange avec « ! », en retard sur la progression.
+6. La dernière ligne compte les élèves qui ont validé chaque compétence.
+7. Les boutons du haut passent d'un groupe à l'autre, et « Imprimer » donne une version papier.
+8. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
 
 ## Administrateur
 
