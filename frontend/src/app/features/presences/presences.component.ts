@@ -70,13 +70,21 @@ function normaliser(texte: string): string {
   imports: [FormsModule, RouterLink, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
             NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent, PlurielPipe],
   template: `
-    <h1>Présences</h1>
-    <p class="secondaire">
-      Pour chaque élève présent, touchez ce qu'il a fait pendant la séance ; un élève sans choix est
-      absent. Chaque choix est enregistré tout de suite ; toucher de nouveau le choix actif l'efface.
-      Les présences peuvent être annoncées jusqu'à une semaine avant la séance. Seul un élève
-      noté présent peut être évalué sur une séance.
-    </p>
+    <div class="titre">
+      <h1>Présences</h1>
+      <button type="button" class="bouton-discret bouton-aide" aria-controls="aide-presences"
+              [attr.aria-expanded]="aideOuverte()" (click)="aideOuverte.set(!aideOuverte())">
+        <span aria-hidden="true">?</span> {{ aideOuverte() ? 'Masquer l’aide' : 'Comment faire ?' }}
+      </button>
+    </div>
+    @if (aideOuverte()) {
+      <p id="aide-presences" class="secondaire">
+        Pour chaque élève présent, touchez ce qu'il a fait pendant la séance ; un élève sans choix est
+        absent. Chaque choix est enregistré tout de suite ; toucher de nouveau le choix actif l'efface.
+        Les présences peuvent être annoncées jusqu'à une semaine avant la séance. Seul un élève
+        noté présent peut être évalué sur une séance.
+      </p>
+    }
 
     @if (!reseau.enLigne()) {
       <div class="alerte" role="status">
@@ -343,7 +351,14 @@ function normaliser(texte: string): string {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    h1 { margin-bottom: var(--pas); }
+    .titre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--pas); }
+    h1 { margin: 0; }
+    .bouton-aide { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--profond); }
+    .bouton-aide span {
+      display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+      border-radius: 50%; background: var(--profond); color: #fff; font-size: .8125rem;
+    }
+    #aide-presences { margin: var(--pas) 0 0; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
 
@@ -384,7 +399,13 @@ function normaliser(texte: string): string {
     }
     .recherche { max-width: 320px; margin: 0; }
 
-    .bilan { color: var(--craie); font-size: .875rem; margin-bottom: var(--pas-2); }
+    /* Le bilan reste en haut de l'écran pendant qu'on fait défiler la liste des élèves. */
+    .bilan {
+      position: sticky; top: 0; z-index: 5; max-width: none;
+      margin: 0 calc(-1 * var(--pas)) var(--pas-2); padding: var(--pas) var(--pas);
+      background: var(--fond); border-bottom: 1px solid var(--trait);
+      color: var(--encre); font-size: .9375rem; font-weight: 600;
+    }
     .compte-non-notes { color: var(--en-cours); }
     .filtre-non-notes { margin-bottom: var(--pas-2); }
     .synthese { display: inline-flex; align-items: center; min-height: 44px; margin: 0 var(--pas) var(--pas-2) 0; }
@@ -539,8 +560,10 @@ export class PresencesComponent implements OnDestroy {
   groupe = input<string>();
   /** Programmes d'exercices de la séance choisie : le commun et ceux des groupes. */
   exercices = signal<ExerciceVue[]>([]);
-  /** Le bloc « Exercices de la séance » se replie pour laisser la place à l'appel. */
-  exercicesOuverts = signal(true);
+  /** Le paragraphe d'explication, replié : on le lit une fois, ensuite il prend la place de l'appel. */
+  aideOuverte = signal(false);
+  /** « Exercices de la séance » s'ouvre replié, pour que la liste des élèves arrive vite sur téléphone. */
+  exercicesOuverts = signal(false);
   /** Exercices dépliés : déroulement, critère de réussite, critères travaillés et schéma. */
   detailsOuverts = signal<ReadonlySet<number>>(new Set());
   readonly libellePhase = libellePhase;
