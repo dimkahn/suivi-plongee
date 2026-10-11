@@ -1430,6 +1430,8 @@ export interface NoteSyntheseVue {
   /** État du critère qui découle de la note. */
   statut: Statut;
   statutExercice: Statut | null;
+  /** État montré par la synthèse : celui de l'exercice noté s'il y en a un, sinon celui du critère. */
+  statutAffiche: Statut;
   exercice: ExerciceNoteVue | null;
   parQui: string;
   saisiPar: string | null;

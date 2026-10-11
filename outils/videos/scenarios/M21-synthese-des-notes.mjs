@@ -1,5 +1,5 @@
 // M21 — La synthèse des notes d'une séance, pour un niveau.
-// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : Tiago y a noté plusieurs élèves
 // du groupe Débutants (V107).
 export default {
@@ -25,18 +25,18 @@ export default {
     await toucher(page.getByRole('link', { name: 'Synthèse des notes' }), { apres: 1800 });
     await legende('En haut, le bilan : présents, élèves évalués, et ceux qui ne l\'ont pas encore été.', 4000);
 
-    await legende('Le tableau : une ligne par élève, une colonne par critère noté, et les commentaires.', 0);
+    await legende('Le tableau : une ligne par élève, une colonne par critère noté avec l\'état de l\'exercice réalisé, et les commentaires.', 0);
     await page.locator('table.tableau').scrollIntoViewIfNeeded();
     await pause(3500);
     await legende('Sous chaque nom : l\'encadrant qui l\'a noté, et ce qu\'il a fait ce soir-là.', 0);
     await page.locator('.defilement').evaluate(el => el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' }));
     await pause(3500);
 
-    await legende('Par critère : combien d\'élèves sont acquis, en cours ou non abordé.', 0);
+    await legende('Par critère : combien d\'élèves ont l\'exercice acquis, en cours ou non abordé.', 0);
     await toucher(page.getByRole('tab', { name: 'Par critère' }), { apres: 1200 });
     await page.locator('section.critere').first().scrollIntoViewIfNeeded();
     await pause(3500);
-    await legende('Puis, pour chacun, l\'exercice noté, l\'encadrant et ses commentaires.', 0);
+    await legende('Puis, pour chacun, l\'exercice noté, l\'état de la compétence s\'il diffère, l\'encadrant et ses commentaires.', 0);
     await defiler(400);
     await pause(3000);
 

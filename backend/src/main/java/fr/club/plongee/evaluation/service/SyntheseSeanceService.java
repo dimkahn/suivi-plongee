@@ -28,17 +28,23 @@ import java.util.stream.Collectors;
  * ce que chaque élève présent a reçu ce jour-là, et, critère par critère,
  * combien d'élèves en sont à « acquis », « en cours » ou « non abordé ».
  * Lecture seule ; l'état retenu pour un élève et un critère est sa dernière
- * note de la séance (la table est en ajout seul, une correction s'ajoute).
+ * note de la séance (la table est en ajout seul, une correction s'ajoute),
+ * et l'état montré est celui de l'exercice noté, pas celui du critère qui en
+ * découle : un exercice d'initiation acquis s'affiche « acquis ».
  */
 @Service
 public class SyntheseSeanceService {
 
     /**
      * Dernière note d'un élève sur un critère pendant la séance. {@code statut} :
-     * état du critère qui en découle ; {@code commentaires} : tous ceux de la séance.
+     * état du critère qui en découle ; {@code statutExercice} : état saisi pour
+     * l'exercice ; {@code statutAffiche} : celui que montre la synthèse et que
+     * comptent les totaux (choix du club, 2026) — l'exercice noté s'il y en a un,
+     * sinon le critère ; {@code commentaires} : tous ceux de la séance.
      */
     public record NoteSyntheseVue(Long cursusId, String eleve, Long critereId, String bloc, String savoirFaire,
-                                  String statut, String statutExercice, GrilleService.ExerciceNoteVue exercice,
+                                  String statut, String statutExercice, String statutAffiche,
+                                  GrilleService.ExerciceNoteVue exercice,
                                   String parQui, String saisiPar, boolean entrainement,
                                   List<String> commentaires) {}
 
@@ -149,18 +155,20 @@ public class SyntheseSeanceService {
                 .map(Evaluation::getCommentaire)
                 .filter(Objects::nonNull).map(String::trim).filter(t -> !t.isEmpty())
                 .collect(Collectors.toList());
+        GrilleService.ExerciceNoteVue exercice = GrilleService.ExerciceNoteVue.de(derniere);
+        String statutExercice = derniere.getStatutExercice() == null ? null : derniere.getStatutExercice().name();
+        String statutAffiche = exercice != null && statutExercice != null ? statutExercice : derniere.getStatut().name();
         return new NoteSyntheseVue(derniere.getCursus().getId(), derniere.getCursus().getEleve().nomComplet(),
                 derniere.getCritere().getId(), derniere.getCritere().getBloc().getIntitule(),
                 derniere.getCritere().getSavoirFaire(), derniere.getStatut().name(),
-                derniere.getStatutExercice() == null ? null : derniere.getStatutExercice().name(),
-                GrilleService.ExerciceNoteVue.de(derniere),
+                statutExercice, statutAffiche, exercice,
                 derniere.getMoniteur().nomComplet(),
                 derniere.getSaisiPar() == null ? null : derniere.getSaisiPar().nomComplet(),
                 derniere.isEntrainement(), commentaires);
     }
 
     private static int compter(List<NoteSyntheseVue> notes, StatutAcquisition statut) {
-        return (int) notes.stream().filter(n -> n.statut().equals(statut.name())).count();
+        return (int) notes.stream().filter(n -> n.statutAffiche().equals(statut.name())).count();
     }
 
     private static String niveauDe(Cursus c) {

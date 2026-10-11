@@ -3,12 +3,13 @@ titre: La synthèse des notes d'une séance
 rubrique: Moniteur
 videos: M21
 ecran: /presences
-mots: synthèse, bilan, résumé, récapitulatif, tableau, notes, notations, séance, niveau, N1, N2, N3, critère, qui a été noté, qui a noté, encadrant, pas encore évalué, imprimer
+mots: synthèse, bilan, résumé, récapitulatif, tableau, notes, notations, séance, niveau, N1, N2, N3, critère, qui a été noté, qui a noté, encadrant, pas encore évalué, imprimer, exercice, état de l'exercice, compétence en cours
 questions:
 - Comment savoir quel encadrant a noté chaque élève ?
 - Comment voir toutes les notes d'une séance ?
 - Comment avoir la synthèse des notations d'un niveau sur une séance ?
 - Combien d'élèves ont acquis un critère ce soir ?
+- Pourquoi la synthèse affiche « acquis » alors que la compétence est en cours ?
 - Qui n'a pas encore été évalué sur la séance ?
 ---
 Depuis « Présences », le bouton « Synthèse des notes » réunit tout ce qui a été noté pendant la séance pour un niveau : critère par critère, puis élève par élève.
@@ -26,7 +27,7 @@ Depuis « Présences », le bouton « Synthèse des notes » réunit tout ce qui
 ## Bon à savoir
 
 - Pour un élève et un critère, c'est la **dernière note de la séance** qui compte : une correction le même soir remplace la première dans la synthèse, mais tous les commentaires restent affichés.
-- L'état affiché est celui du **critère** : un exercice d'initiation acquis laisse le critère « en cours ».
+- L'état affiché (et compté) est celui de l'**exercice noté** : un exercice d'initiation ou de perfectionnement acquis s'affiche « acquis », même si la compétence, elle, reste « en cours » (seul un exercice de maîtrise la rend acquise). Dans les vues « Par critère » et « Par élève », l'état de la compétence est rappelé à côté quand il diffère (« compétence en cours ») ; dans le tableau, il apparaît en touchant la case. Une note sans exercice montre l'état du critère.
 - Au N2 et au N3, une séance en piscine ou en fosse ne donne que du suivi d'entraînement : les notes sont marquées « entraînement ».
 - Une note saisie par un référent au nom d'un autre encadrant porte le nom de cet encadrant, suivi de « saisi par ».
 - La synthèse se lit avec du réseau ; elle ne modifie rien.
