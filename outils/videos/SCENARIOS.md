@@ -71,30 +71,31 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 La feuille de présence d'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d'où l'on revient à la feuille.
 
-Compte : `e2@club.fr` · format téléphone · 1 min 05
+Compte : `e2@club.fr` · format téléphone · 1 min 10
 
 1. Au bord du bassin : menu, puis « Présences ».
-2. D'abord la séance. Touchez « Changer » pour ouvrir le calendrier.
-3. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
-4. Un élève prévient de sa venue ? Les présences s'annoncent jusqu'à une semaine avant la séance.
-5. « Au programme » : ce que la progression du club prévoit ce mois-ci.
-6. Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.
-7. Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.
-8. Touchez le titre pour replier tout le bloc et garder la place pour l'appel.
-9. Filtrez sur votre groupe d'entraînement.
-10. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
-11. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
-12. Un élève sans choix est absent.
-13. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
-14. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
-15. Le compteur en haut de la liste fait le bilan.
-16. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
-17. « Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.
-18. « Voir les présents sans évaluation » n'affiche plus qu'eux.
-19. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
-20. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-21. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
-22. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+2. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine.
+3. Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.
+4. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
+5. Un élève prévient de sa venue ? Les présences s'annoncent jusqu'à une semaine avant la séance.
+6. « Au programme » : ce que la progression du club prévoit ce mois-ci.
+7. Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.
+8. Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.
+9. Touchez le titre pour replier tout le bloc et garder la place pour l'appel.
+10. Filtrez sur votre groupe d'entraînement.
+11. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
+12. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
+13. Un élève sans choix est absent.
+14. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
+15. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
+16. Le compteur en haut de la liste fait le bilan.
+17. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
+18. « Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.
+19. « Voir les présents sans évaluation » n'affiche plus qu'eux.
+20. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
+21. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+22. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
+23. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 

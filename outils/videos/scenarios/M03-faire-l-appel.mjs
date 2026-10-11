@@ -1,5 +1,5 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
@@ -13,7 +13,8 @@ export default {
     await legende('Au bord du bassin : menu, puis « Présences ».', 0);
     await menu('Présences');
 
-    await legende('D\'abord la séance. Touchez « Changer » pour ouvrir le calendrier.', 0);
+    await legende('La feuille s\'ouvre sur la séance du jour, sinon sur la prochaine.', 3500);
+    await legende('Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.', 0);
     await choisirDerniereSeance();
     await legende('Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.', 4000);
     await legende('Un élève prévient de sa venue ? Les présences s\'annoncent jusqu\'à une semaine avant la séance.', 4000);
