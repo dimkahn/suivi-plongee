@@ -5,10 +5,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
-import { NoteSyntheseVue, Statut, SyntheseSeanceVue } from '../../core/modeles';
+import { EleveSyntheseVue, NoteSyntheseVue, Statut, SyntheseSeanceVue } from '../../core/modeles';
 import { PastillePhaseComponent } from '../../core/phase-exercice';
 import { dateFr } from '../../core/date-fr';
 import { libellePreparation } from '../../core/niveaux';
+
+const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 'théorie', PLONGEE: 'plongée' };
 
 /**
  * Synthèse des notations d'une séance pour un niveau (choix du club, 2026) :
@@ -55,13 +57,59 @@ import { libellePreparation } from '../../core/niveaux';
         </p>
 
         <div class="vues" role="tablist">
+          <button type="button" role="tab" class="bouton-discret" [class.actif]="vue() === 'TABLEAU'"
+                  [attr.aria-selected]="vue() === 'TABLEAU'" (click)="vue.set('TABLEAU')">Tableau</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="vue() === 'CRITERES'"
                   [attr.aria-selected]="vue() === 'CRITERES'" (click)="vue.set('CRITERES')">Par critère</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="vue() === 'ELEVES'"
                   [attr.aria-selected]="vue() === 'ELEVES'" (click)="vue.set('ELEVES')">Par élève</button>
         </div>
 
-        @if (vue() === 'CRITERES') {
+        @if (vue() === 'TABLEAU') {
+          <div class="defilement">
+            <table class="tableau">
+              <thead>
+                <tr>
+                  <th scope="col" class="col-eleve">Élève</th>
+                  @for (c of s.criteres; track c.critereId) {
+                    <th scope="col" class="col-critere" [title]="c.bloc + ' — ' + c.savoirFaire">
+                      <span>{{ c.savoirFaire }}</span>
+                    </th>
+                  }
+                  <th scope="col" class="col-commentaire">Commentaire</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of s.eleves; track e.cursusId) {
+                  <tr>
+                    <th scope="row" class="col-eleve">
+                      <a [routerLink]="['/cursus', e.cursusId]" [queryParams]="lienGrille()">{{ e.eleve }}</a>
+                      <span class="note-par">{{ sousTitre(e) }}</span>
+                    </th>
+                    @for (c of s.criteres; track c.critereId) {
+                      @let n = noteDe(e.notes, c.critereId);
+                      <td class="case">
+                        @if (n) {
+                          <span [class]="'etat ' + classe(n.statut)" [title]="detailCase(n)">{{ abrege(n.statut) }}</span>
+                        } @else {
+                          <span class="secondaire" aria-label="pas de note">–</span>
+                        }
+                      </td>
+                    }
+                    <td class="col-commentaire">
+                      @for (n of e.notes; track n.critereId) {
+                        @for (texte of n.commentaires; track $index) {
+                          <span class="commentaire-ligne"><strong>{{ n.savoirFaire }} :</strong> {{ texte }}</span>
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="secondaire legende">A acquis · EC en cours · NA non abordé · – pas de note. Exercice et encadrant de chaque note : vues « Par critère » et « Par élève ».</p>
+        } @else if (vue() === 'CRITERES') {
           @if (s.criteres.length === 0) {
             <div class="carte vide"><p>Aucune note n'a encore été prise sur cette séance pour ce niveau.</p></div>
           }
@@ -148,7 +196,24 @@ import { libellePreparation } from '../../core/niveaux';
     .savoir-faire { font-weight: 700; }
     .ligne-detail { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); font-size: .875rem; }
     .commentaire { font-size: .875rem; font-style: italic; }
+    .defilement { overflow-x: auto; margin-top: var(--pas-2); border: 1px solid var(--trait);
+                  border-radius: var(--r-s); background: var(--carte); }
+    .tableau { border-collapse: collapse; font-size: .875rem; min-width: 100%; }
+    .tableau th, .tableau td { padding: var(--pas); border-bottom: 1px solid var(--trait); vertical-align: middle; }
+    .tableau thead th { vertical-align: bottom; text-align: left; }
+    .col-eleve { position: sticky; left: 0; background: var(--carte); text-align: left; min-width: 150px; }
+    .col-eleve a { min-height: 32px; }
+    .note-par { display: block; font-weight: 400; font-size: .8125rem; color: var(--craie); }
+    .col-critere { width: 2.5rem; }
+    .col-critere span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg);
+                        max-height: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .case { text-align: center; }
+    .case .etat { min-width: 2rem; text-align: center; cursor: help; }
+    .col-commentaire { min-width: 220px; }
+    .commentaire-ligne { display: block; }
+    .legende { font-size: .8125rem; }
     @media print {
+      .defilement { overflow: visible; border: 0; }
       .retour, .niveaux, .vues, .alerte { display: none; }
       .carte { break-inside: avoid; }
     }
@@ -168,7 +233,7 @@ export class SyntheseSeanceComponent {
   synthese = signal<SyntheseSeanceVue | null>(null);
   chargement = signal(false);
   message = signal<string | null>(null);
-  vue = signal<'CRITERES' | 'ELEVES'>('CRITERES');
+  vue = signal<'TABLEAU' | 'CRITERES' | 'ELEVES'>('TABLEAU');
 
   readonly dateFr = dateFr;
   readonly libellePreparation = libellePreparation;
@@ -211,6 +276,26 @@ export class SyntheseSeanceComponent {
 
   classe(statut: Statut): string {
     return statut === 'ACQUIS' ? 'acquis' : statut === 'EN_COURS' ? 'encours' : 'neant';
+  }
+
+  noteDe(notes: NoteSyntheseVue[], critereId: number): NoteSyntheseVue | null {
+    return notes.find(n => n.critereId === critereId) ?? null;
+  }
+
+  abrege(statut: Statut): string {
+    return statut === 'ACQUIS' ? 'A' : statut === 'EN_COURS' ? 'EC' : 'NA';
+  }
+
+  /** Sous le nom, comme sur le tableau papier : qui l'a noté, et ce qu'il a fait (nage, bloc...). */
+  sousTitre(e: EleveSyntheseVue): string {
+    const atelier = e.atelier ? ATELIERS[e.atelier] ?? e.atelier.toLowerCase() : null;
+    const qui = e.notePar.length > 0 ? e.notePar.join(', ') : 'pas encore évalué';
+    return atelier ? `${qui} · ${atelier}` : qui;
+  }
+
+  detailCase(n: NoteSyntheseVue): string {
+    const exercice = n.exercice ? ` · ${n.exercice.numero ? n.exercice.numero + ' ' : ''}${n.exercice.intitule}` : '';
+    return `${this.libelle(n.statut)}${exercice} · ${this.parQui(n)}`;
   }
 
   parQui(n: NoteSyntheseVue): string {
