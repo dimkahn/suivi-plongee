@@ -420,10 +420,13 @@ embarquée hors ligne).
 du groupe » d'Infos élèves, `/groupes-entrainement/synthese?groupe=`,
 `SyntheseGroupeService`, `GET /api/groupes-entrainement/{id}/synthese-competences`,
 MONITEUR/ADMIN) : un élève du groupe par ligne, une compétence (bloc) par
-colonne, un tableau par version du MFT. Chaque case est tirée de
-`GrilleService.grille` de l'élève (acquis/total, validée, en retard, à
-valider) : aucune règle propre, elle suit la grille. Lecture seule, réseau
-obligatoire.
+colonne, un tableau par version du MFT. Chaque case ne montre que l'état
+de la compétence (choix du club, 2026 : pas le nombre de critères),
+`SyntheseGroupeService.EtatCompetence`, tiré de `GrilleService.grille` :
+A acquise = bloc validé ; ECA en cours d'acquisition = un critère noté
+au-delà de « non abordé » (entraînement compris), même tous acquis tant
+que le bloc n'est pas validé ; NT non travaillée sinon. Lecture seule,
+réseau obligatoire.
 
 **Programme d'exercices d'une séance (2026).** Chaque groupe d'entraînement
 prépare sa séance exercice par exercice (`/seances/:id/programme`,

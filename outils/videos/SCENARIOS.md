@@ -356,16 +356,16 @@ Compte : `e2@club.fr` · format téléphone
 
 ### M22 — La synthèse des compétences d'un groupe
 
-L'avancement de tous les élèves d'un groupe d'un coup d'œil : une ligne par élève, une case par compétence.
+L'avancement de tous les élèves d'un groupe d'un coup d'œil : une ligne par élève, l'état de chaque compétence (NT, ECA, A).
 
 Compte : `e2@club.fr` · format téléphone
 
 1. Où en est tout le groupe ? Dans « Infos élèves », touchez le bouton du groupe.
 2. Puis « Synthèse des compétences du groupe ».
 3. Une ligne par élève, une case par compétence : tout le groupe d'un coup d'œil.
-4. « Bilan » : les compétences validées et la part des critères acquis.
-5. Dans chaque case : ✓ validée, 5 sur 5 à valider, sinon les critères acquis sur le total. En orange avec « ! », en retard sur la progression.
-6. La dernière ligne compte les élèves qui ont validé chaque compétence.
+4. Après le nom : le nombre de compétences acquises.
+5. Dans chaque case, l'état de la compétence : NT non travaillée, ECA en cours d'acquisition, A acquise.
+6. La dernière ligne compte les élèves qui ont acquis chaque compétence.
 7. Les boutons du haut passent d'un groupe à l'autre, et « Imprimer » donne une version papier.
 8. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
 
