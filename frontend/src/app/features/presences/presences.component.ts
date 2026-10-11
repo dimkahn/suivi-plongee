@@ -650,14 +650,18 @@ export class PresencesComponent implements OnDestroy {
   /** Jour touché dans le calendrier du dialogue. */
   jourDialogue = signal<string | null>(null);
 
-  lignesFiltrees = computed(() => {
+  /** Élèves du groupe filtré, sans tenir compte de la recherche : ce que compte le bilan. */
+  lignesDuGroupe = computed(() => {
     const filtre = this.groupeFiltre();
     const groupes = this.groupes();
+    return this.lignes().filter(l => passeFiltreGroupe(l.eleveId, filtre, groupes));
+  });
+
+  lignesFiltrees = computed(() => {
     const recherche = normaliser(this.rechercheEleve());
     const seulementNonNotes = this.seulementNonNotes();
-    return this.lignes().filter(l =>
-      passeFiltreGroupe(l.eleveId, filtre, groupes)
-      && (!recherche || normaliser(l.eleve).includes(recherche))
+    return this.lignesDuGroupe().filter(l =>
+      (!recherche || normaliser(l.eleve).includes(recherche))
       && (!seulementNonNotes || this.estNonNote(l)));
   });
 
@@ -688,8 +692,8 @@ export class PresencesComponent implements OnDestroy {
     return this.auth.estMoniteur() && !this.seanceAVenir() && l.statut === 'PRESENT';
   }
 
-  /** Tous les présents sans évaluation, quels que soient les filtres. */
-  nonNotes = computed(() => this.lignes().filter(l => this.estNonNote(l)));
+  /** Présents sans évaluation du groupe filtré, quelle que soit la recherche. */
+  nonNotes = computed(() => this.lignesDuGroupe().filter(l => this.estNonNote(l)));
 
   /** Après une notation groupée, la feuille se recharge : les élèves notés ne sont plus « sans évaluation ». */
   apresNotation(bilan: string): void {
@@ -708,12 +712,14 @@ export class PresencesComponent implements OnDestroy {
     return this.lignesFiltrees().filter(l => l.statut === 'PRESENT' && !enAttente.has(l.cursusId));
   });
 
+  /** Le bilan suit le groupe filtré (pas la recherche, qui ne sert qu'à trouver un élève). */
   bilan = computed(() => {
-    const lignes = this.lignes();
+    const lignes = this.lignesDuGroupe();
+    const enAttente = this.enAttente();
     return {
       presents: lignes.filter(l => l.statut === 'PRESENT').length,
       absents: lignes.filter(l => l.statut !== 'PRESENT').length,
-      enAttente: this.enAttente().size
+      enAttente: lignes.filter(l => enAttente.has(l.cursusId)).length
     };
   });
 

@@ -69,7 +69,7 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 ### M3 — Faire l'appel d'une séance
 
-La feuille de présence d'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter », d'où l'on revient à la feuille.
+La feuille de présence d'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d'où l'on revient à la feuille.
 
 Compte : `e2@club.fr` · format téléphone · 1 min 05
 

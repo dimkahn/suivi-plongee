@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, puis qui reste à évaluer et le bouton « Noter », d\'où l\'on revient à la feuille.',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où l\'on revient à la feuille.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -48,7 +48,7 @@ export default {
     await toucher(cartes.nth(3).locator('.zone-identite'), { apres: 600 });
     await toucher(page.locator('.barre-choix').getByRole('button', { name: 'Théorie' }), { apres: 1500 });
 
-    await legende('Le compteur en haut de la liste fait le bilan.', 0);
+    await legende('Le compteur en haut de la liste fait le bilan du groupe filtré.', 0);
     await page.locator('.bilan').scrollIntoViewIfNeeded();
     await pause(3000);
 
