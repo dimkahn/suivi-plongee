@@ -15,7 +15,8 @@
   --encre:     #0F172A;
   --profond:   #0891B2;
   --profond-fonce: #0C3547;
-  --craie:     #64748B;
+  /* Gris des textes secondaires : assez foncé pour se lire au soleil, au bord du bassin. */
+  --craie:     #475569;
   --trait:     #E2E8F0;
 
   --accent:    #F97316;
@@ -108,7 +109,7 @@ input, select, textarea {
   box-shadow: var(--ombre);
 }
 
-.secondaire { color: var(--craie); font-size: 0.875rem; }
+.secondaire { color: var(--craie); font-size: 0.9375rem; }
 
 .alerte {
   border-left: 4px solid var(--en-cours);

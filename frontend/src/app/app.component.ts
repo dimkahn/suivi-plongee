@@ -1,10 +1,11 @@
-import { Component, ViewChild, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewChild, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
 import { FileEcrituresService } from './core/file-ecritures.service';
 import { MiseAJourService } from './core/mise-a-jour.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
+import { DialogueComponent } from './core/dialogue.component';
 
 /**
  * Tag déployé, fixé à la compilation (`ng build --define`, voir le
@@ -15,7 +16,7 @@ declare const VERSION_APPLI: string;
 
 @Component({
   selector: 'app-racine',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, DialogueComponent],
   template: `
     @if (pret()) {
       @if (auth.connecte()) {
@@ -95,6 +96,21 @@ declare const VERSION_APPLI: string;
 
       <main><router-outlet /></main>
       <footer class="version">Version {{ version }}</footer>
+
+      <app-dialogue [ouvert]="confirmationDeconnexion()" titre="Se déconnecter ?"
+                    (fermer)="confirmationDeconnexion.set(false)">
+        <p>
+          {{ enAttente() > 1 ? enAttente() + ' saisies ne sont pas encore envoyées.'
+                             : 'Une saisie n’est pas encore envoyée.' }}
+          Elles restent sur cet appareil et partiront à votre prochaine connexion, avec du réseau.
+        </p>
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="confirmationDeconnexion.set(false)">
+            Rester connecté
+          </button>
+          <button type="button" class="bouton-discret" (click)="confirmerDeconnexion()">Se déconnecter quand même</button>
+        </div>
+      </app-dialogue>
     } @else {
       <p class="vide">Ouverture de la session…</p>
     }
@@ -205,15 +221,20 @@ export class AppComponent {
     this.menuOuvert.set(false);
   }
 
-  /** On prévient plutôt que de perdre silencieusement des saisies. */
+  /** Saisies pas encore envoyées : on prévient plutôt que de les laisser en plan sans le dire. */
+  readonly enAttente = computed(() => this.file.enAttente().length + this.ecritures.enAttente().length);
+  confirmationDeconnexion = signal(false);
+
   deconnecter(): void {
-    const attente = this.file.enAttente().length + this.ecritures.enAttente().length;
-    if (attente > 0) {
-      const suite = confirm(
-        `${attente} saisie(s) ne sont pas encore envoyées. ` +
-        `Elles resteront sur cet appareil jusqu'à votre prochaine connexion. Se déconnecter ?`);
-      if (!suite) return;
+    if (this.enAttente() > 0) {
+      this.confirmationDeconnexion.set(true);
+      return;
     }
+    this.auth.deconnexion();
+  }
+
+  confirmerDeconnexion(): void {
+    this.confirmationDeconnexion.set(false);
     this.auth.deconnexion();
   }
 }
