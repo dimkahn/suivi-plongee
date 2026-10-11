@@ -1454,6 +1454,10 @@ export interface EleveSyntheseVue {
   cursusId: number;
   eleveId: number;
   eleve: string;
+  /** Ce qu'il a fait à la séance (NAGE, BLOC, THEORIE, PLONGEE) ; null si non précisé. */
+  atelier: string | null;
+  /** Encadrants qui l'ont noté sur la séance, dans l'ordre de leur première note. */
+  notePar: string[];
   notes: NoteSyntheseVue[];
 }
 

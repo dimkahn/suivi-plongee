@@ -45,8 +45,13 @@ public class SyntheseSeanceService {
     public record CritereSyntheseVue(Long critereId, String bloc, String regroupement, String savoirFaire,
                                      int acquis, int enCours, int nonAborde, List<NoteSyntheseVue> notes) {}
 
-    /** Un élève présent, avec ses notes de la séance (liste vide : pas encore évalué). */
-    public record EleveSyntheseVue(Long cursusId, Long eleveId, String eleve, List<NoteSyntheseVue> notes) {}
+    /**
+     * Un élève présent, avec ses notes de la séance (liste vide : pas encore évalué).
+     * {@code atelier} : ce qu'il a fait (NAGE, BLOC...), null si non précisé ;
+     * {@code notePar} : les encadrants qui l'ont noté, dans l'ordre de leur première note.
+     */
+    public record EleveSyntheseVue(Long cursusId, Long eleveId, String eleve, String atelier,
+                                   List<String> notePar, List<NoteSyntheseVue> notes) {}
 
     /**
      * {@code niveaux} : niveaux des élèves présents, pour passer de l'un à l'autre ;
@@ -73,8 +78,10 @@ public class SyntheseSeanceService {
         Seance seance = seances.findById(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Séance introuvable"));
 
+        Map<Long, Participation.Atelier> ateliers = new LinkedHashMap<>();
         List<Cursus> presents = participations.findBySeanceId(seanceId).stream()
                 .filter(p -> p.getStatut() == Participation.Statut.PRESENT)
+                .peek(p -> ateliers.put(p.getCursus().getId(), p.getAtelier()))
                 .map(Participation::getCursus)
                 .sorted(Comparator.comparing((Cursus c) -> c.getEleve().getNom())
                         .thenComparing(c -> c.getEleve().getPrenom()))
@@ -122,6 +129,9 @@ public class SyntheseSeanceService {
         criteres.forEach(c -> ordreCritere.put(c.critereId(), ordreCritere.size()));
         List<EleveSyntheseVue> eleves = duNiveau.stream()
                 .map(c -> new EleveSyntheseVue(c.getId(), c.getEleve().getId(), c.getEleve().nomComplet(),
+                        ateliers.get(c.getId()) == null ? null : ateliers.get(c.getId()).name(),
+                        notes.stream().filter(e -> e.getCursus().getId().equals(c.getId()))
+                                .map(e -> e.getMoniteur().nomComplet()).distinct().toList(),
                         dernieres.stream().filter(n -> n.cursusId().equals(c.getId()))
                                 .sorted(Comparator.comparing(n -> ordreCritere.get(n.critereId())))
                                 .toList()))

@@ -344,12 +344,14 @@ Compte : `e2@club.fr` · format téléphone
 2. Choisissez la séance : ici, la piscine du lundi 21 septembre.
 3. Touchez « Synthèse des notes » : elle s'ouvre sur le niveau du groupe filtré.
 4. En haut, le bilan : présents, élèves évalués, et ceux qui ne l'ont pas encore été.
-5. Par critère : combien d'élèves sont acquis, en cours ou non abordé.
-6. Puis, pour chacun, l'exercice noté, l'encadrant et ses commentaires.
-7. Par élève : les notes de chacun sur la séance.
-8. « Pas encore évalué » signale un présent qui n'a reçu aucune note.
-9. Touchez un nom pour ouvrir sa grille sur cette séance.
-10. Les autres niveaux présents ce soir-là s'affichent d'une touche, et « Imprimer » donne une version papier.
+5. Le tableau : une ligne par élève, une colonne par critère noté, et les commentaires.
+6. Sous chaque nom : l'encadrant qui l'a noté, et ce qu'il a fait ce soir-là.
+7. Par critère : combien d'élèves sont acquis, en cours ou non abordé.
+8. Puis, pour chacun, l'exercice noté, l'encadrant et ses commentaires.
+9. Par élève : les notes de chacun sur la séance.
+10. « Pas encore évalué » signale un présent qui n'a reçu aucune note.
+11. Touchez un nom pour ouvrir sa grille sur cette séance.
+12. Les autres niveaux présents ce soir-là s'affichent d'une touche, et « Imprimer » donne une version papier.
 
 ## Administrateur
 

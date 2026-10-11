@@ -408,7 +408,11 @@ feuille de présence, `/seances/:id/synthese?niveau=`, `SyntheseSeanceService`,
 présents et, par critère noté pendant la séance, le compte acquis / en
 cours / non abordé ; l'état retenu par élève et critère est sa **dernière
 note de la séance** (statut du critère), avec tous les commentaires du
-jour. Lecture seule, réseau obligatoire (pas embarquée hors ligne).
+jour. Vue d'ouverture « Tableau » sur le modèle du tableau papier du club :
+élèves en lignes (sous le nom, les encadrants qui l'ont noté,
+`EleveSyntheseVue.notePar`, et l'atelier), critères en colonnes,
+commentaires en dernière colonne. Lecture seule, réseau obligatoire (pas
+embarquée hors ligne).
 
 **Programme d'exercices d'une séance (2026).** Chaque groupe d'entraînement
 prépare sa séance exercice par exercice (`/seances/:id/programme`,
