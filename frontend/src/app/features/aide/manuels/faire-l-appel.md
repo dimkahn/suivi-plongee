@@ -11,6 +11,7 @@ questions:
 - Comment noter qu'un élève est présent ou absent ?
 - Comment annoncer qu'un élève viendra ?
 - Je me suis trompé de présence, comment corriger ?
+- Combien d'élèves de mon groupe sont présents ?
 - Comment voir les élèves présents qui n'ont pas été évalués ?
 - Comment noter un élève depuis la feuille de présence ?
 - Comment revenir à la feuille de présence après avoir noté un élève ?
@@ -23,7 +24,7 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 2. Touchez « Changer » pour choisir la séance dans le calendrier. Le lundi, la piscine et la fosse sont deux séances distinctes.
 3. Filtrez sur votre groupe d'entraînement avec les boutons.
 4. Touchez un élève, puis ce qu'il a fait : « Nage », « Bloc » ou « Théorie ».
-5. Le compteur en haut de la liste fait le bilan.
+5. Le compteur en haut de la liste fait le bilan : présents, absents, et présents sans évaluation. Filtré sur un groupe, il ne compte que les élèves de ce groupe (la recherche d'un élève, elle, ne change pas le compte).
 
 ## Corriger
 
@@ -33,7 +34,7 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 
 Une fois la séance passée, la feuille repère les présents qui n'ont reçu **aucune note** sur cette séance :
 
-- le bilan en haut de la liste les compte (« 3 présent(s) sans évaluation ») ;
+- le bilan en haut de la liste les compte, dans le groupe filtré (« 3 présent(s) sans évaluation ») ;
 - leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève, sur cette séance, et le noter ;
 - les présents déjà notés ont à la place un bouton « Noter », qui ouvre de même leur grille sur la séance pour ajouter ou corriger une note ;
 - une fois l'élève noté, « ← Retour à la feuille de présence », en haut de sa grille, ramène à la feuille sur la même séance, filtrée sur le même groupe, pour passer à l'élève suivant ;
