@@ -92,8 +92,15 @@ class SyntheseSeanceTest {
                     {"critereId":%d,"seanceId":%d,"statut":"%s","commentaire":"%s"}""";
             envoyer("POST", "/api/cursus/" + cAlice + "/evaluations", moniteur,
                     note.formatted(critere, seanceId, "EN_COURS", "Premier essai"), 201);
-            envoyer("POST", "/api/cursus/" + cBruno + "/evaluations", moniteur,
-                    note.formatted(critere, seanceId, "EN_COURS", "Hésitant"), 201);
+            long exercice16 = 0;
+            for (JsonNode e : bloc.get("exercices")) {
+                if (e.get("numero").asText().equals("1.6")) exercice16 = e.get("id").asLong();
+            }
+            // Exercice de perfectionnement acquis : la synthèse montre l'exercice acquis,
+            // la compétence reste en cours.
+            envoyer("POST", "/api/cursus/" + cBruno + "/evaluations", moniteur, """
+                    {"critereId":%d,"seanceId":%d,"statut":"ACQUIS","exerciceId":%d,"commentaire":"Hésitant"}"""
+                    .formatted(critere, seanceId, exercice16), 201);
             // Une correction le même jour : seule la dernière note compte dans la synthèse.
             envoyer("POST", "/api/cursus/" + cAlice + "/evaluations", moniteur,
                     note.formatted(critere, seanceId, "NON_ABORDE", "Pas vu finalement"), 201);
@@ -106,9 +113,9 @@ class SyntheseSeanceTest {
 
             JsonNode ligne = synthese.get("criteres").get(0);
             assertThat(ligne.get("critereId").asLong()).isEqualTo(critere);
-            assertThat(ligne.get("enCours").asInt()).isEqualTo(1);
+            assertThat(ligne.get("acquis").asInt()).isEqualTo(1);
             assertThat(ligne.get("nonAborde").asInt()).isEqualTo(1);
-            assertThat(ligne.get("acquis").asInt()).isZero();
+            assertThat(ligne.get("enCours").asInt()).isZero();
 
             JsonNode eleves = synthese.get("eleves");
             assertThat(eleves).hasSize(3);
@@ -118,6 +125,11 @@ class SyntheseSeanceTest {
             assertThat(eleves.get(2).get("notePar")).isEmpty();
             JsonNode noteAlice = eleves.get(0).get("notes").get(0);
             assertThat(noteAlice.get("statut").asText()).isEqualTo("NON_ABORDE");
+            assertThat(noteAlice.get("statutAffiche").asText()).isEqualTo("NON_ABORDE");
+            JsonNode noteBruno = eleves.get(1).get("notes").get(0);
+            assertThat(noteBruno.get("statutAffiche").asText()).isEqualTo("ACQUIS");
+            assertThat(noteBruno.get("statut").asText()).isEqualTo("EN_COURS");
+            assertThat(noteBruno.get("exercice").get("numero").asText()).isEqualTo("1.6");
             assertThat(noteAlice.get("commentaires")).extracting(JsonNode::asText)
                     .containsExactly("Premier essai", "Pas vu finalement");
             assertThat(noteAlice.get("parQui").asText()).isEqualTo("Flora Vasseur");

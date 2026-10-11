@@ -16,7 +16,9 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
  * Synthèse des notations d'une séance pour un niveau (choix du club, 2026) :
  * critère par critère, combien d'élèves en sont à « acquis », « en cours »
  * ou « non abordé » à la fin de la séance, puis élève par élève ce qu'il a
- * reçu, et les présents pas encore évalués. Lecture seule, réseau obligatoire.
+ * reçu, et les présents pas encore évalués. L'état montré est celui de
+ * l'exercice noté (`statutAffiche`), celui de la compétence n'est rappelé
+ * que s'il diffère. Lecture seule, réseau obligatoire.
  */
 @Component({
   selector: 'app-synthese-seance',
@@ -90,7 +92,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
                       @let n = noteDe(e.notes, c.critereId);
                       <td class="case">
                         @if (n) {
-                          <span [class]="'etat ' + classe(n.statut)" [title]="detailCase(n)">{{ abrege(n.statut) }}</span>
+                          <span [class]="'etat ' + classe(n.statutAffiche)" [title]="detailCase(n)">{{ abrege(n.statutAffiche) }}</span>
                         } @else {
                           <span class="secondaire" aria-label="pas de note">–</span>
                         }
@@ -108,7 +110,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
               </tbody>
             </table>
           </div>
-          <p class="secondaire legende">A acquis · EC en cours · NA non abordé · – pas de note. Exercice et encadrant de chaque note : vues « Par critère » et « Par élève ».</p>
+          <p class="secondaire legende">État de l'exercice noté : A acquis · EC en cours · NA non abordé · – pas de note. Exercice et encadrant de chaque note : vues « Par critère » et « Par élève ».</p>
         } @else if (vue() === 'CRITERES') {
           @if (s.criteres.length === 0) {
             <div class="carte vide"><p>Aucune note n'a encore été prise sur cette séance pour ce niveau.</p></div>
@@ -160,9 +162,12 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
 
     <ng-template #detail let-n>
       <span class="ligne-detail">
-        <span class="etat" [class]="'etat ' + classe(n.statut)">{{ libelle(n.statut) }}</span>
+        <span class="etat" [class]="'etat ' + classe(n.statutAffiche)">{{ libelle(n.statutAffiche) }}</span>
         @if (n.exercice; as exo) {
           <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
+        }
+        @if (n.statutAffiche !== n.statut) {
+          <span class="secondaire">compétence {{ libelle(n.statut).toLowerCase() }}</span>
         }
         @if (n.entrainement) { <span class="secondaire">entraînement</span> }
         <span class="secondaire">{{ parQui(n) }}</span>
@@ -295,7 +300,8 @@ export class SyntheseSeanceComponent {
 
   detailCase(n: NoteSyntheseVue): string {
     const exercice = n.exercice ? ` · ${n.exercice.numero ? n.exercice.numero + ' ' : ''}${n.exercice.intitule}` : '';
-    return `${this.libelle(n.statut)}${exercice} · ${this.parQui(n)}`;
+    const competence = n.statutAffiche !== n.statut ? ` (compétence ${this.libelle(n.statut).toLowerCase()})` : '';
+    return `${this.libelle(n.statutAffiche)}${exercice}${competence} · ${this.parQui(n)}`;
   }
 
   parQui(n: NoteSyntheseVue): string {

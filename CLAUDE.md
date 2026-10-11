@@ -407,8 +407,11 @@ feuille de présence, `/seances/:id/synthese?niveau=`, `SyntheseSeanceService`,
 `GET /api/seances/{id}/synthese`, MONITEUR/ADMIN) : pour un niveau, les
 présents et, par critère noté pendant la séance, le compte acquis / en
 cours / non abordé ; l'état retenu par élève et critère est sa **dernière
-note de la séance** (statut du critère), avec tous les commentaires du
-jour. Vue d'ouverture « Tableau » sur le modèle du tableau papier du club :
+note de la séance**, avec tous les commentaires du jour. L'état montré et
+compté est celui de l'**exercice noté** (`NoteSyntheseVue.statutAffiche` =
+`statutExercice`, sinon `statut` pour une note sans exercice ; choix du
+club, 2026) : un exercice d'initiation acquis s'affiche « acquis », l'état
+du critère n'est rappelé que s'il diffère. Vue d'ouverture « Tableau » sur le modèle du tableau papier du club :
 élèves en lignes (sous le nom, les encadrants qui l'ont noté,
 `EleveSyntheseVue.notePar`, et l'atelier), critères en colonnes,
 commentaires en dernière colonne. Lecture seule, réseau obligatoire (pas
