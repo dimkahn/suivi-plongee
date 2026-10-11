@@ -12,6 +12,7 @@ import validerUneCompetence from './valider-une-competence.md';
 import droitsDeNotation from './droits-de-notation.md';
 import vueEnsembleEleve from './vue-ensemble-eleve.md';
 import noterLesPresents from './noter-les-presents.md';
+import syntheseDesNotes from './synthese-des-notes.md';
 import preparerLaSeance from './preparer-la-seance.md';
 import ficheDeSecurite from './fiche-de-securite.md';
 import groupesDePlongeurs from './groupes-de-plongeurs.md';
@@ -67,6 +68,7 @@ const SOURCES: Record<string, string> = {
   'droits-de-notation': droitsDeNotation,
   'vue-ensemble-eleve': vueEnsembleEleve,
   'noter-les-presents': noterLesPresents,
+  'synthese-des-notes': syntheseDesNotes,
   'preparer-la-seance': preparerLaSeance,
   'fiche-de-securite': ficheDeSecurite,
   'groupes-de-plongeurs': groupesDePlongeurs,

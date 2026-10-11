@@ -22,6 +22,21 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
             group by e.cursus.id
            """)
     List<Object[]> compterParCursusPourSeance(@Param("seanceId") Long seanceId);
+
+    /** Synthèse d'une séance : toutes les notes prises sur cette séance, dans l'ordre de saisie. */
+    @Query("""
+           select e from Evaluation e
+             join fetch e.cursus cu
+             join fetch cu.referentiel r
+             join fetch e.critere c
+             join fetch c.bloc b
+             join fetch e.moniteur m
+             left join fetch e.exercice x
+             left join fetch e.saisiPar sp
+            where e.seance.id = :seanceId
+            order by e.id
+           """)
+    List<Evaluation> deLaSeance(@Param("seanceId") Long seanceId);
     boolean existsByCritereId(Long critereId);
     boolean existsByCritere_BlocId(Long blocId);
     boolean existsByExerciceId(Long exerciceId);

@@ -47,6 +47,7 @@ Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme 
 - Un élève sans choix est absent. Pas de bouton « Enregistrer ».
 - Les présences s'annoncent jusqu'à une semaine avant la séance ; elles ne comptent qu'une fois la séance passée.
 - « Au programme » rappelle ce que la progression du club prévoit ce mois-ci, et « Exercices de la séance » ce que chaque groupe a préparé.
+- Une fois la séance commencée, « Synthèse des notes » réunit tout ce qui a été noté pour un niveau (voir « La synthèse des notes d'une séance »).
 
 ## Les exercices de la séance
 

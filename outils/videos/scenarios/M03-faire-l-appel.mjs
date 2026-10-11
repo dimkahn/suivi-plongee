@@ -1,5 +1,5 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
@@ -53,6 +53,9 @@ export default {
     await pause(3000);
 
     await legende('Séance passée : il compte aussi les présents qui n\'ont encore reçu aucune note.', 3500);
+    await legende('« Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.', 0);
+    await page.getByRole('link', { name: 'Synthèse des notes' }).scrollIntoViewIfNeeded();
+    await pause(3500);
     await legende('« Voir les présents sans évaluation » n\'affiche plus qu\'eux.', 0);
     await toucher(page.getByRole('button', { name: 'Voir les présents sans évaluation' }), { apres: 1500 });
     await legende('« Pas encore évalué » ouvre la grille de l\'élève, pour le noter avant de partir.', 0);
