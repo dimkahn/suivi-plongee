@@ -45,9 +45,12 @@ public class SyntheseGroupeService {
     /** Une case du tableau : l'état d'une compétence pour un élève. */
     public record CaseCompetenceVue(Long blocId, EtatCompetence etat, LocalDate dateValidation) {}
 
-    /** {@code acquises} : compétences validées. */
-    public record EleveCompetencesVue(Long cursusId, Long eleveId, String eleve, String statutCursus,
-                                      int acquises, List<CaseCompetenceVue> cases) {}
+    /**
+     * {@code aPhoto} : photo consultable (droit à l'image accordé), lue à part ;
+     * {@code acquises} : compétences validées.
+     */
+    public record EleveCompetencesVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto,
+                                      String statutCursus, int acquises, List<CaseCompetenceVue> cases) {}
 
     /** Une colonne : la compétence et, pour le groupe, combien d'élèves en sont à chaque état. */
     public record CompetenceGroupeVue(Long blocId, String intitule, String regroupement,
@@ -110,7 +113,7 @@ public class SyntheseGroupeService {
                     List<CaseCompetenceVue> cases = g.blocs().stream()
                             .map(b -> new CaseCompetenceVue(b.id(), etat(b), b.dateValidation()))
                             .toList();
-                    return new EleveCompetencesVue(g.cursusId(), g.eleveId(), g.eleve(), g.statut(),
+                    return new EleveCompetencesVue(g.cursusId(), g.eleveId(), g.eleve(), g.aPhoto(), g.statut(),
                             (int) cases.stream().filter(c -> c.etat() == EtatCompetence.A).count(), cases);
                 })
                 .toList();

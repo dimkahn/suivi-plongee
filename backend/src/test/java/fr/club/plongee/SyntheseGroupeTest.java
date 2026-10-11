@@ -129,6 +129,8 @@ class SyntheseGroupeTest {
             assertThat(caseAlice.get("etat").asText()).isEqualTo("ECA");
             assertThat(caseAlice.has("acquis")).isFalse();
             assertThat(eleves.get(0).get("acquises").asInt()).isZero();
+            // Pas de photo déposée : les initiales s'affichent.
+            assertThat(eleves.get(0).get("aPhoto").asBoolean()).isFalse();
             assertThat(eleves.get(1).get("cases").get(0).get("etat").asText()).isEqualTo("NT");
 
             // Un élève ne consulte pas la synthèse d'un groupe.

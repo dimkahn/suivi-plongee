@@ -426,7 +426,9 @@ de la compétence (choix du club, 2026 : pas le nombre de critères),
 A acquise = bloc validé ; ECA en cours d'acquisition = un critère noté
 au-delà de « non abordé » (entraînement compris), même tous acquis tant
 que le bloc n'est pas validé ; NT non travaillée sinon. Lecture seule,
-réseau obligatoire.
+réseau obligatoire. Les deux synthèses montrent la photo de chaque élève
+(`aPhoto` dans leurs vues, droit à l'image compris ; `PhotoEleveComponent`
+de `core/`, initiales à défaut).
 
 **Programme d'exercices d'une séance (2026).** Chaque groupe d'entraînement
 prépare sa séance exercice par exercice (`/seances/:id/programme`,

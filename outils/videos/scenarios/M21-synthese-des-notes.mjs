@@ -1,5 +1,5 @@
 // M21 — La synthèse des notes d'une séance, pour un niveau.
-// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : Tiago y a noté plusieurs élèves
 // du groupe Débutants (V107).
 export default {
@@ -28,7 +28,7 @@ export default {
     await legende('Le tableau : une ligne par élève, une colonne par critère noté avec l\'état de l\'exercice réalisé, et les commentaires.', 0);
     await page.locator('table.tableau').scrollIntoViewIfNeeded();
     await pause(3500);
-    await legende('Sous chaque nom : l\'encadrant qui l\'a noté, et ce qu\'il a fait ce soir-là.', 0);
+    await legende('Devant chaque nom, la photo de l\'élève ; dessous, l\'encadrant qui l\'a noté et ce qu\'il a fait ce soir-là.', 0);
     await page.locator('.defilement').evaluate(el => el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' }));
     await pause(3500);
 

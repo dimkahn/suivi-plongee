@@ -9,6 +9,7 @@ import { EleveSyntheseVue, NoteSyntheseVue, Statut, SyntheseSeanceVue } from '..
 import { PastillePhaseComponent } from '../../core/phase-exercice';
 import { dateFr } from '../../core/date-fr';
 import { libellePreparation } from '../../core/niveaux';
+import { PhotoEleveComponent } from '../../core/photo-eleve.component';
 
 const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 'théorie', PLONGEE: 'plongée' };
 
@@ -22,7 +23,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
  */
 @Component({
   selector: 'app-synthese-seance',
-  imports: [RouterLink, NgTemplateOutlet, PastillePhaseComponent],
+  imports: [RouterLink, NgTemplateOutlet, PastillePhaseComponent, PhotoEleveComponent],
   template: `
     <a routerLink="/presences" [queryParams]="lienRetour()" class="retour">← Présences</a>
     <h1>Synthèse des notes</h1>
@@ -85,8 +86,13 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
                 @for (e of s.eleves; track e.cursusId) {
                   <tr>
                     <th scope="row" class="col-eleve">
-                      <a [routerLink]="['/cursus', e.cursusId]" [queryParams]="lienGrille()">{{ e.eleve }}</a>
-                      <span class="note-par">{{ sousTitre(e) }}</span>
+                      <div class="identite">
+                        <app-photo-eleve [eleveId]="e.eleveId" [nom]="e.eleve" [aPhoto]="e.aPhoto" />
+                        <div>
+                          <a [routerLink]="['/cursus', e.cursusId]" [queryParams]="lienGrille()">{{ e.eleve }}</a>
+                          <span class="note-par">{{ sousTitre(e) }}</span>
+                        </div>
+                      </div>
                     </th>
                     @for (c of s.criteres; track c.critereId) {
                       @let n = noteDe(e.notes, c.critereId);
@@ -127,7 +133,11 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
               <ul class="notes">
                 @for (n of c.notes; track n.cursusId) {
                   <li>
-                    <a [routerLink]="['/cursus', n.cursusId]" [queryParams]="lienGrille()">{{ n.eleve }}</a>
+                    @let el = eleveDe(n.cursusId);
+                    <a class="identite" [routerLink]="['/cursus', n.cursusId]" [queryParams]="lienGrille()">
+                      @if (el) { <app-photo-eleve [eleveId]="el.eleveId" [nom]="el.eleve" [aPhoto]="el.aPhoto" [taille]="32" /> }
+                      {{ n.eleve }}
+                    </a>
                     <ng-container *ngTemplateOutlet="detail; context: { $implicit: n }" />
                   </li>
                 }
@@ -138,7 +148,10 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
           @for (e of s.eleves; track e.cursusId) {
             <section class="carte eleve">
               <h2>
-                <a [routerLink]="['/cursus', e.cursusId]" [queryParams]="lienGrille()">{{ e.eleve }}</a>
+                <a class="identite" [routerLink]="['/cursus', e.cursusId]" [queryParams]="lienGrille()">
+                  <app-photo-eleve [eleveId]="e.eleveId" [nom]="e.eleve" [aPhoto]="e.aPhoto" />
+                  {{ e.eleve }}
+                </a>
               </h2>
               @if (e.notes.length === 0) {
                 <p class="non-notes">Pas encore évalué sur cette séance.</p>
@@ -208,6 +221,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
     .tableau thead th { vertical-align: bottom; text-align: left; }
     .col-eleve { position: sticky; left: 0; background: var(--carte); text-align: left; min-width: 150px; }
     .col-eleve a { min-height: 32px; }
+    .identite { display: flex; align-items: center; gap: var(--pas); }
     .note-par { display: block; font-weight: 400; font-size: .8125rem; color: var(--craie); }
     .col-critere { width: 2.5rem; }
     .col-critere span { display: inline-block; writing-mode: vertical-rl; transform: rotate(180deg);
@@ -281,6 +295,11 @@ export class SyntheseSeanceComponent {
 
   classe(statut: Statut): string {
     return statut === 'ACQUIS' ? 'acquis' : statut === 'EN_COURS' ? 'encours' : 'neant';
+  }
+
+  /** L'élève d'une note, pour sa photo dans la vue « Par critère ». */
+  eleveDe(cursusId: number): EleveSyntheseVue | null {
+    return this.synthese()?.eleves.find(e => e.cursusId === cursusId) ?? null;
   }
 
   noteDe(notes: NoteSyntheseVue[], critereId: number): NoteSyntheseVue | null {

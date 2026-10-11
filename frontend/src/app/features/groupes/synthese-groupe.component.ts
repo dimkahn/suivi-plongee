@@ -9,6 +9,7 @@ import {
 } from '../../core/modeles';
 import { dateFr } from '../../core/date-fr';
 import { libellePreparation } from '../../core/niveaux';
+import { PhotoEleveComponent } from '../../core/photo-eleve.component';
 
 /**
  * Synthèse des compétences d'un groupe d'entraînement (choix du club, 2026) :
@@ -20,7 +21,7 @@ import { libellePreparation } from '../../core/niveaux';
  */
 @Component({
   selector: 'app-synthese-groupe',
-  imports: [RouterLink],
+  imports: [RouterLink, PhotoEleveComponent],
   template: `
     <a routerLink="/eleves" [queryParams]="{ groupe: groupe() ?? null }" class="retour">← Infos élèves</a>
     <h1>Synthèse des compétences</h1>
@@ -76,10 +77,15 @@ import { libellePreparation } from '../../core/niveaux';
                 @for (e of f.eleves; track e.cursusId) {
                   <tr>
                     <th scope="row" class="col-eleve">
-                      <a [routerLink]="['/cursus', e.cursusId]">{{ e.eleve }}</a>
-                      @if (e.statutCursus !== 'EN_COURS') {
-                        <span class="statut-cursus">{{ libelleStatut(e.statutCursus) }}</span>
-                      }
+                      <a class="identite" [routerLink]="['/cursus', e.cursusId]">
+                        <app-photo-eleve [eleveId]="e.eleveId" [nom]="e.eleve" [aPhoto]="e.aPhoto" />
+                        <span>
+                          {{ e.eleve }}
+                          @if (e.statutCursus !== 'EN_COURS') {
+                            <span class="statut-cursus">{{ libelleStatut(e.statutCursus) }}</span>
+                          }
+                        </span>
+                      </a>
                     </th>
                     <td class="col-total">{{ e.acquises }}/{{ f.competences.length }}</td>
                     @for (c of f.competences; track c.blocId) {
@@ -138,7 +144,7 @@ import { libellePreparation } from '../../core/niveaux';
     .tableau th, .tableau td { padding: var(--pas); border-bottom: 1px solid var(--trait); vertical-align: middle; }
     .tableau thead th { vertical-align: bottom; text-align: left; }
     .col-eleve { position: sticky; left: 0; background: var(--carte); text-align: left; min-width: 150px; z-index: 1; }
-    .col-eleve a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; }
+    .col-eleve a { display: inline-flex; align-items: center; gap: var(--pas); min-height: 44px; font-weight: 700; }
     .statut-cursus { display: block; font-weight: 400; font-size: .8125rem; color: var(--craie); }
     .col-total { text-align: center; font-weight: 700; white-space: nowrap; }
     .col-competence { width: 3.5rem; }
