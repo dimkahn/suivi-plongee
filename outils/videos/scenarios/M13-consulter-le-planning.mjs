@@ -1,10 +1,10 @@
 // M13 — Consulter le planning du bassin.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',
   public: 'Moniteur',
-  resume: 'Où est mon groupe ce soir ? Ligne d\'eau, fosse, DP fosse et DP piscine, avertissements.',
+  resume: 'Où est mon groupe ce soir ? Ligne d\'eau, fosse, DP fosse et DP piscine, encadrants présents et absents par groupe, avertissements.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {
@@ -18,6 +18,7 @@ export default {
     await page.locator('.soiree').getByText('Votre groupe').scrollIntoViewIfNeeded();
     await legende('Sous chaque groupe, ses encadrants attitrés, le référent en premier.', 3500);
     await legende('En gras, ceux qui ont répondu présent ; rayés, ceux qui seront absents.', 3500);
+    await legende('À côté du nom du groupe, le nombre d\'encadrants présents et absents.', 3500);
     await legende('Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».', 3500);
     await legende('« À savoir » signale ce qui cloche : ici, un groupe dont l\'encadrant sera absent.', 4000);
 

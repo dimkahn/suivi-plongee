@@ -86,6 +86,12 @@ const SOIREES_A_VENIR = 8;
                 <span class="texte">
                   <span class="nom-groupe">
                     {{ l.groupe.nom }}
+                    @if (l.encadrants.length > 0) {
+                      <span class="compte-groupe">
+                        {{ l.presents }} présent{{ l.presents > 1 ? 's' : '' }}
+                        · {{ l.absents }} absent{{ l.absents > 1 ? 's' : '' }}
+                      </span>
+                    }
                     @if (l.mien) {
                       <span class="etiquette">{{ l.ceSoirSeulement ? 'Votre groupe ce soir' : 'Votre groupe' }}</span>
                     }
@@ -209,6 +215,7 @@ const SOIREES_A_VENIR = 8;
     .encadrants-groupe .nom-absent { font-weight: 700; text-decoration: line-through; text-decoration-thickness: 2px; }
     .encadrants-groupe .nom-present { font-weight: 700; }
     .nom-groupe { font-weight: 700; }
+    .compte-groupe { margin-left: 4px; font-weight: 400; font-size: .8125rem; color: var(--craie); white-space: nowrap; }
     .etiquette {
       display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px;
       background: var(--profond); color: #fff; font-size: .75rem; font-weight: 700; vertical-align: middle;
@@ -261,11 +268,17 @@ export class PlanningComponent {
     const s = this.soiree();
     if (!p || !s) return [];
     const miens = this.groupesDuSoir(s);
-    const lignes = p.groupes.map((groupe, i) => ({
-      groupe, case: s.cases[i], mien: miens.includes(groupe.id),
-      ceSoirSeulement: miens.includes(groupe.id) && !p.mesGroupeIds.includes(groupe.id),
-      encadrants: (s.cases[i].encadrants ?? groupe.encadrants.map(e => ({ ...e, affecteCeSoir: false })))
-    }));
+    const lignes = p.groupes.map((groupe, i) => {
+      const encadrants = s.cases[i].encadrants ?? groupe.encadrants.map(e => ({ ...e, affecteCeSoir: false }));
+      return {
+        groupe, case: s.cases[i], mien: miens.includes(groupe.id),
+        ceSoirSeulement: miens.includes(groupe.id) && !p.mesGroupeIds.includes(groupe.id),
+        encadrants,
+        // Encadrants du groupe ce soir qui ont répondu ; qui n'a pas répondu n'est compté nulle part.
+        presents: encadrants.filter(e => this.estPresent(s, e.id)).length,
+        absents: encadrants.filter(e => this.estAbsent(s, e.id)).length
+      };
+    });
     return [...lignes.filter(l => l.mien), ...lignes.filter(l => !l.mien)];
   });
 

@@ -1,5 +1,5 @@
 // M14 — Dire si je suis présent à une soirée.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M14',
   titre: 'Dire si je suis présent à une soirée',
@@ -18,6 +18,7 @@ export default {
     await legende('Un toucher suffit.', 0);
     await toucher(page.locator('.ma-reponse').getByRole('button', { name: 'Présent' }), { apres: 1500 });
     await legende('Enregistré : votre nom rejoint la liste des présents, et passe en gras sous votre groupe.', 3500);
+    await legende('Le compte des présents et absents, à côté du nom du groupe, se met à jour.', 3500);
 
     await legende('Pour les soirées suivantes, répondez dans le tableau : ✓ présent, ✗ absent.', 0);
     const lignes = page.locator('.a-venir tbody tr');

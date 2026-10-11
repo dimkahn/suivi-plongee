@@ -234,7 +234,7 @@ Compte : `e2@club.fr` · format téléphone · 42 s
 
 ### M13 — Consulter le planning du bassin
 
-Où est mon groupe ce soir ? Ligne d'eau, fosse, DP fosse et DP piscine, avertissements.
+Où est mon groupe ce soir ? Ligne d'eau, fosse, DP fosse et DP piscine, encadrants présents et absents par groupe, avertissements.
 
 Compte : `e2@club.fr` · format téléphone · 56 s
 

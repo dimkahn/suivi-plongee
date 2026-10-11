@@ -15,7 +15,7 @@ Dans « Planning », répondez en un toucher à « Vous serez là ? » pour la p
 
 1. Menu, puis « Planning ».
 2. Sous la prochaine soirée, « Vous serez là ? » : touchez votre réponse.
-3. Votre nom rejoint la liste des présents et passe en gras sous votre groupe.
+3. Votre nom rejoint la liste des présents et passe en gras sous votre groupe ; le compte « présents · absents » à côté du nom du groupe se met à jour.
 4. Pour les soirées suivantes, répondez dans le tableau : ✓ présent, ✗ absent.
 
 ## Bon à savoir
