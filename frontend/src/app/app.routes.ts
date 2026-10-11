@@ -2,9 +2,15 @@ import { Routes } from '@angular/router';
 import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeInspectionBlocs, gardeMateriel, gardeSorties } from './core/gardes';
 
 export const routes: Routes = [
-  // Page d'accueil : Infos élèves. Un compte sans rôle d'encadrant en est
-  // renvoyé vers /cursus par gardeEncadrant.
-  { path: '', pathMatch: 'full', redirectTo: 'eleves' },
+  // Page d'accueil : « Aujourd'hui », la séance du jour. Un compte sans rôle
+  // d'encadrant en est renvoyé vers /cursus par gardeEncadrant.
+  { path: '', pathMatch: 'full', redirectTo: 'aujourdhui' },
+  {
+    path: 'aujourdhui',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/accueil/aujourdhui.component')
+      .then(m => m.AujourdhuiComponent)
+  },
   {
     path: 'connexion',
     loadComponent: () => import('./features/connexion/connexion.component')

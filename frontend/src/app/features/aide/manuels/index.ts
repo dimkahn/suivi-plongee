@@ -5,6 +5,7 @@ import seConnecter from './se-connecter.md';
 import monCompte from './mon-compte.md';
 import horsLigne from './hors-ligne.md';
 
+import aujourdhui from './aujourdhui.md';
 import faireLAppel from './faire-l-appel.md';
 import noterUnEleve from './noter-un-eleve.md';
 import corrigerUneNote from './corriger-une-note.md';
@@ -62,6 +63,7 @@ const SOURCES: Record<string, string> = {
   'mon-compte': monCompte,
   'hors-ligne': horsLigne,
 
+  'aujourdhui': aujourdhui,
   'faire-l-appel': faireLAppel,
   'noter-un-eleve': noterUnEleve,
   'corriger-une-note': corrigerUneNote,

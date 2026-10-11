@@ -40,8 +40,8 @@ Compte : `e2@club.fr` · format téléphone · 62 s
 2. Votre adresse e-mail…
 3. … et votre mot de passe.
 4. « Se souvenir de moi » : restez connecté sur votre téléphone. Décochez sur un appareil partagé.
-5. Vous arrivez sur « Infos élèves » : les élèves de la saison en un coup d'œil.
-6. En bas de l'écran, à portée du pouce : Présences, Élèves et Planning.
+5. Vous arrivez sur « Aujourd'hui » : la séance du jour, où va votre groupe, l'appel. Voir la vidéo M23.
+6. En bas de l'écran, à portée du pouce : Aujourd'hui, Présences, Élèves et Planning.
 7. Tout le reste est derrière « Plus ».
 8. Trombinoscope, fiches de sécurité, groupes…
 9. « Préparer hors ligne » avant d'aller au bassin, s'il n'y a pas de réseau.
@@ -291,7 +291,7 @@ Toute la saison sur un écran : CACI, séances suivies, contacts d'urgence.
 
 Compte : `e2@club.fr` · format téléphone · 49 s
 
-1. « Infos élèves » : la page d'accueil. Toute la saison sur un seul écran.
+1. « Infos élèves », l'onglet « Élèves » sur téléphone : toute la saison sur un seul écran.
 2. Pour chaque élève : son niveau préparé et son CACI.
 3. CACI : vert, plus d'un mois ; orange, moins d'un mois ; rouge, moins de 15 jours ; ⚠ expiré.
 4. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.
@@ -372,6 +372,23 @@ Compte : `e2@club.fr` · format téléphone
 6. La dernière ligne compte les élèves qui ont acquis chaque compétence.
 7. Les boutons du haut passent d'un groupe à l'autre, et « Imprimer » donne une version papier.
 8. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
+
+### M23 — La page « Aujourd'hui »
+
+En ouvrant l'appli : où va son groupe au bassin, sa réponse de présence, et de quoi faire l'appel, préparer le programme et la fiche de sécurité.
+
+Compte : `e2@club.fr` · format téléphone · manuel : `aujourdhui.md`
+
+1. En ouvrant l'appli, « Aujourd'hui » : la séance du jour, ou la prochaine.
+2. Sous le titre, la date et vos groupes d'entraînement.
+3. « Au bassin » : la ligne d'eau ou la fosse de votre groupe, le DP fosse et le DP piscine.
+4. « Vous serez là ? » : un toucher répond pour la soirée, comme dans « Planning ».
+5. Puis une carte par séance : le lundi, la piscine et la fosse.
+6. Le bilan de vos groupes : présents, et présents pas encore évalués.
+7. Programme d'exercices, fiche de sécurité en milieu naturel : tout part d'ici.
+8. Le premier bouton ouvre la feuille de présence de la séance, filtrée sur votre groupe.
+9. Sur téléphone, « Aujourd'hui » est aussi le premier onglet, en bas de l'écran.
+10. Après « Préparer hors ligne », la page s'ouvre même sans réseau.
 
 ## Administrateur
 

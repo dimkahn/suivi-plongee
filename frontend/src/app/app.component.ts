@@ -23,6 +23,7 @@ interface Onglet {
 }
 
 const ICONES = {
+  aujourdhui: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
   presences: 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9',
   eleves: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
   planning: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2',
@@ -48,6 +49,9 @@ const ICONES = {
                de la barre du bas par « Plus ». -->
           <nav id="menu-principal" class="identite" [class.ouvert]="menuOuvert()" aria-label="Menu">
             @if (auth.estMoniteur() || auth.estAdmin()) {
+              <a routerLink="/aujourdhui" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Aujourd’hui
+              </a>
               <a routerLink="/eleves" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Infos élèves
               </a>
@@ -255,10 +259,11 @@ export class AppComponent {
   pret = this.auth.sessionResolue;
   menuOuvert = signal(false);
 
-  /** Trois onglets au plus, selon le compte ; « Plus » donne tout le reste. */
+  /** Quatre onglets au plus, selon le compte ; « Plus » donne tout le reste. */
   readonly onglets = computed<Onglet[]>(() => {
     if (this.auth.estMoniteur() || this.auth.estAdmin()) {
       return [
+        { lien: '/aujourdhui', libelle: 'Aujourd’hui', icone: ICONES.aujourdhui },
         { lien: '/presences', libelle: 'Présences', icone: ICONES.presences },
         { lien: '/eleves', libelle: 'Élèves', icone: ICONES.eleves },
         { lien: '/planning', libelle: 'Planning', icone: ICONES.planning }

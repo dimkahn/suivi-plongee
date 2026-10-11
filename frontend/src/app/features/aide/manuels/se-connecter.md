@@ -18,8 +18,8 @@ On se connecte avec son adresse e-mail et son mot de passe. Sur téléphone, les
 
 1. Sur le téléphone, ouvrez l'adresse de l'appli du club.
 2. Saisissez votre adresse e-mail et votre mot de passe, puis « Se connecter ».
-3. Vous arrivez sur « Infos élèves » : les élèves de la saison.
-4. En bas de l'écran, à portée du pouce : « Présences », « Élèves » et « Planning ».
+3. Vous arrivez sur « Aujourd'hui » : la séance du jour ou la prochaine, où va votre groupe, l'appel (voir « La page Aujourd'hui »).
+4. En bas de l'écran, à portée du pouce : « Aujourd'hui », « Présences », « Élèves » et « Planning ».
 5. « Plus », au bout de la barre, ouvre tout le reste : trombinoscope, fiches de sécurité, groupes, « Préparer hors ligne », « Aide » (questions fréquentes et vidéos), votre compte et « Se déconnecter ». Touchez-le de nouveau, ou à côté, pour le refermer.
 
 ## Mot de passe oublié
