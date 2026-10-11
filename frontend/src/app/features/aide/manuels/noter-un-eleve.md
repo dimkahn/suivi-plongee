@@ -1,10 +1,12 @@
 ---
 titre: Noter un élève pendant la séance
 rubrique: Moniteur
-videos: M4, M19
+videos: M4, M19, M20
 ecran: /eleves
-mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise
+mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par
 questions:
+- Comment noter pour un encadrant qui ne l'a pas fait ?
+- Je suis référent : comment noter au nom d'un autre moniteur ?
 - Comment noter un élève ?
 - Comment mettre un critère acquis ?
 - Pourquoi je ne peux pas mettre « Acquis » ?
@@ -48,6 +50,17 @@ Au N2 et au N3, les compétences s'acquièrent en milieu naturel. La grille tien
 Au N2 et au N3, la note porte aussi sur un exercice. Même un **exercice de maîtrise acquis en fosse** ne rend pas le critère acquis : il ne compte qu'à l'entraînement. Seul un exercice de maîtrise acquis **en milieu naturel** fait acquérir le critère.
 
 Sous chaque critère, l'autre suivi reste rappelé (« Piscine / fosse : acquis » ou « Milieu naturel : en cours »), et chaque bloc indique les deux comptes. Un critère acquis en fosse n'est pas acquis pour autant : il reste à le montrer en milieu naturel.
+
+## Référent du groupe : noter au nom d'un autre encadrant
+
+Un encadrant a fait travailler l'élève mais n'a pas saisi ses notes ? Le **référent du groupe d'entraînement de l'élève** peut les rattraper à sa place :
+
+1. Dans la grille, sous « Séance évaluée », choisissez l'encadrant dans « Noter au nom de ».
+2. Un bandeau rappelle au nom de qui partent les notes. Notez comme d'habitude.
+3. Les notes portent le nom de cet encadrant ; l'historique du critère ajoute « saisi par » avec votre nom.
+4. Revenez sur « Moi-même » pour noter de nouveau à votre nom.
+
+Seuls les référents du groupe de l'élève voient ce choix, et seuls les encadrants qui ont le niveau de noter ce brevet y sont proposés (E2 et plus pour un N2, par exemple). Le serveur refait les deux contrôles.
 
 ## Bon à savoir
 

@@ -25,3 +25,4 @@ Chaque encadrant note les niveaux de son encadrement : E1 le N1, E2 jusqu'au N2,
 
 - Votre niveau d'encadrement est saisi par un administrateur (écran Moniteurs) : en cas d'erreur, c'est à lui de le corriger.
 - Le niveau de plongeur est distinct du niveau d'encadrement : un E1 peut n'être que N2.
+- Le référent du groupe d'un élève peut noter au nom d'un autre encadrant qui ne l'a pas fait (voir « Noter un élève pendant la séance ») : seulement au nom d'un encadrant qui a lui-même le niveau de noter ce brevet.

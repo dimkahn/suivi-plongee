@@ -47,7 +47,9 @@ public class AuthController {
                           String nom, String prenom, String numeroLicence,
                           LocalDate certificatValideJusquAu,
                           /** Détail du CACI, en lecture : saisi par un ADMIN dans l'écran Moniteurs. */
-                          LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites) {}
+                          LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites,
+                          /** Pour que l'écran se reconnaisse (référent d'un groupe) ; le serveur revérifie toujours. */
+                          Long id) {}
 
     public record DemandeMotDePasseOublie(@NotBlank @Email String email) {}
 
@@ -216,7 +218,8 @@ public class AuthController {
                 u.getPrenom(),
                 u.getNumeroLicence(),
                 u.getCertificatValideJusquAu(),
-                u.getCaci().dateExamen(), u.getCaci().medecin(), u.getCaci().activites());
+                u.getCaci().dateExamen(), u.getCaci().medecin(), u.getCaci().activites(),
+                u.getId());
     }
 
     /**

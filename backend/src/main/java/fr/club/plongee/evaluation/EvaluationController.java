@@ -31,12 +31,16 @@ public class EvaluationController {
                                   /** Exercice de la base sur lequel le critère est noté. */
                                   Long exerciceId,
                                   /** À défaut, intitulé d'un exercice libre du programme de la séance. */
-                                  String exerciceLibre) {}
+                                  String exerciceLibre,
+                                  /** Référent du groupe : encadrant au nom duquel il note ; null sinon. */
+                                  Long pourMoniteurId) {}
 
     public record DemandeValidation(String commentaire) {}
 
     public record EvaluationVue(Long id, Long critereId, String statut, String commentaire,
                                 LocalDate dateEvaluation, String parQui,
+                                /** Référent qui a saisi la note au nom de parQui ; null s'il a noté lui-même. */
+                                String saisiPar,
                                 /** N2/N3 noté en piscine ou fosse : suivi d'entraînement. */
                                 boolean entrainement,
                                 /** Exercice noté ; null pour une note sans exercice. */
@@ -84,7 +88,8 @@ public class EvaluationController {
         Evaluation e = evaluations.noter(cursusId,
                 new EvaluationService.Notation(demande.critereId(), demande.seanceId(),
                         demande.statut(), demande.commentaire(), demande.dateEvaluation(),
-                        demande.referenceClient(), demande.exerciceId(), demande.exerciceLibre()),
+                        demande.referenceClient(), demande.exerciceId(), demande.exerciceLibre(),
+                        demande.pourMoniteurId()),
                 auteur);
         return vue(e);
     }
@@ -130,6 +135,7 @@ public class EvaluationController {
     private EvaluationVue vue(Evaluation e) {
         return new EvaluationVue(e.getId(), e.getCritere().getId(), e.getStatut().name(),
                 e.getCommentaire(), e.getDateEvaluation(), e.getMoniteur().nomComplet(),
+                e.getSaisiPar() == null ? null : e.getSaisiPar().nomComplet(),
                 e.isEntrainement(), GrilleService.ExerciceNoteVue.de(e),
                 e.getStatutExercice() == null ? null : e.getStatutExercice().name());
     }

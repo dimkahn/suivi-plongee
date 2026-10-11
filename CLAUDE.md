@@ -528,7 +528,15 @@ puis l'habilitation métier via
 `@habilitation.peutEvaluer(#cursusId, authentication)` qui compare le niveau
 d'encadrement de l'utilisateur au niveau exigé par le référentiel (E1 pour le
 N1, E2 pour le N2, E3 pour le N3). L'auteur d'une évaluation vient toujours du
-`SecurityContext`, jamais du corps de la requête. Les gardes Angular ne sont
+`SecurityContext`, jamais du corps de la requête. **Seule exception (choix
+du club, 2026) :** un référent du groupe d'entraînement de l'élève peut
+noter au nom d'un autre encadrant qui ne l'a pas fait (`pourMoniteurId`,
+contrôlé par `EvaluationService.moniteurRemplace` : référent du groupe de
+l'élève dans la saison du cursus, encadrant actif et habilité au niveau) ;
+la note porte le nom de cet encadrant (`moniteur_id`) et le référent est
+gardé dans `evaluation.saisi_par_id` (V63, null quand on note soi-même),
+montré « saisi par » dans l'historique. Grille seulement (et sa file hors
+ligne) : ni la notation groupée ni la validation d'un bloc. Les gardes Angular ne sont
 que du confort d'affichage.
 
 **Les règles du MFT sont dans le serveur.** `EvaluationService` et

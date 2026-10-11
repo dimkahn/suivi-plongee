@@ -62,6 +62,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
            select e from Evaluation e
              join fetch e.moniteur m
              left join fetch e.exercice x
+             left join fetch e.saisiPar sp
             where e.cursus.id = :cursusId and e.critere.id = :critereId
             order by e.saisiLe
            """)

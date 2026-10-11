@@ -18,6 +18,8 @@ import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.repository.CritereRepository;
 import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.domain.Referentiel;
+import fr.club.plongee.planning.repository.GroupeEntrainementRepository;
+import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.securite.repository.UtilisateurRepository;
@@ -35,11 +37,20 @@ public class EvaluationService {
 
     /**
      * {@code exerciceId} : exercice de la base sur lequel le critère est noté, facultatif ;
-     * {@code exerciceLibre} : à défaut, intitulé d'un exercice libre du programme de la séance.
+     * {@code exerciceLibre} : à défaut, intitulé d'un exercice libre du programme de la séance ;
+     * {@code pourMoniteurId} : encadrant au nom duquel un référent du groupe note, null sinon.
      */
     public record Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                            String commentaire, LocalDate dateEvaluation,
-                           String referenceClient, Long exerciceId, String exerciceLibre) {
+                           String referenceClient, Long exerciceId, String exerciceLibre,
+                           Long pourMoniteurId) {
+
+        public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
+                        String commentaire, LocalDate dateEvaluation, String referenceClient,
+                        Long exerciceId, String exerciceLibre) {
+            this(critereId, seanceId, statut, commentaire, dateEvaluation, referenceClient,
+                    exerciceId, exerciceLibre, null);
+        }
 
         public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                         String commentaire, LocalDate dateEvaluation, String referenceClient) {
@@ -62,6 +73,7 @@ public class EvaluationService {
     private final ParticipationRepository participations;
     private final ExerciceCompetenceRepository exercicesCompetence;
     private final ExerciceSeanceRepository exercicesSeance;
+    private final GroupeEntrainementRepository groupes;
 
     public EvaluationService(EvaluationRepository evaluations,
                              ValidationCompetenceRepository validations,
@@ -72,7 +84,9 @@ public class EvaluationService {
                              HabilitationService habilitation,
                              ParticipationRepository participations,
                              ExerciceCompetenceRepository exercicesCompetence,
-                             ExerciceSeanceRepository exercicesSeance) {
+                             ExerciceSeanceRepository exercicesSeance,
+                             GroupeEntrainementRepository groupes) {
+        this.groupes = groupes;
         this.exercicesCompetence = exercicesCompetence;
         this.exercicesSeance = exercicesSeance;
         this.evaluations = evaluations;
@@ -131,13 +145,17 @@ public class EvaluationService {
         List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuCritere(critere.getId());
         verifierExerciceDeMaitrise(critere, notation.statut(), actuel, phase, deMaitrise);
 
-        Utilisateur moniteur = utilisateurs.findById(auteur.id()).orElseThrow();
+        Utilisateur saisiPar = utilisateurs.findById(auteur.id()).orElseThrow();
+        Utilisateur moniteur = notation.pourMoniteurId() == null || notation.pourMoniteurId().equals(auteur.id())
+                ? saisiPar
+                : moniteurRemplace(cursus, notation.pourMoniteurId(), saisiPar);
 
         Evaluation e = new Evaluation();
         e.setCursus(cursus);
         e.setCritere(critere);
         e.setSeance(seance);
-        e.setMoniteur(moniteur);          // jamais un id transmis par le client
+        e.setMoniteur(moniteur);          // l'auteur connecté, ou celui qu'un référent remplace
+        if (moniteur != saisiPar) e.setSaisiPar(saisiPar);
         // Un exercice libre suit toujours la règle des phases : le moniteur
         // l'a relié au critère et lui a donné sa phase.
         e.setStatut(statutDuCritere(notation.statut(), actuel, phase, !deMaitrise.isEmpty() || libre != null));
@@ -154,6 +172,30 @@ public class EvaluationService {
         e.setEntrainement(entrainement);
         e.setExercice(exercice);
         return evaluations.save(e);
+    }
+
+    /**
+     * Noter au nom d'un autre encadrant (choix du club, 2026) : réservé aux
+     * référents du groupe d'entraînement de l'élève, pour rattraper la note
+     * d'un encadrant qui ne l'a pas saisie. La note porte le nom de cet
+     * encadrant, qui doit lui-même avoir le niveau pour noter ce brevet ; le
+     * référent reste tracé comme auteur de la saisie.
+     */
+    private Utilisateur moniteurRemplace(Cursus cursus, Long moniteurId, Utilisateur referent) {
+        List<Long> referents = groupes.referentsDeLEleve(cursus.getSaison().getId(), cursus.getEleve().getId());
+        if (!referents.contains(referent.getId())) {
+            throw new RegleMetierException("Seuls les référents du groupe de " + cursus.getEleve().nomComplet()
+                    + " peuvent noter au nom d'un autre encadrant.");
+        }
+        Utilisateur moniteur = utilisateurs.findById(moniteurId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Encadrant introuvable"));
+        NiveauEncadrement requis = cursus.getReferentiel().getNiveauEncadrantValidation();
+        if (!moniteur.isActif() || !moniteur.estMoniteur() || !moniteur.getNiveauEncadrement().auMoins(requis)) {
+            throw new RegleMetierException(moniteur.nomComplet() + " ne peut pas noter le "
+                    + cursus.getReferentiel().getNiveau() + " : réservé aux encadrants "
+                    + requis + " et au-delà.");
+        }
+        return moniteur;
     }
 
     /** L'exercice noté doit travailler le critère. Un exercice désactivé depuis reste accepté (saisie hors ligne). */

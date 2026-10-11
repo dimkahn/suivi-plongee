@@ -35,10 +35,26 @@ public class Evaluation {
     @JoinColumn(name = "seance_id")
     private Seance seance;
 
-    /** Toujours issu du SecurityContext, jamais du corps de la requete. */
+    /**
+     * Issu du SecurityContext ; seul un référent du groupe de l'élève peut
+     * noter au nom d'un autre encadrant, et il est alors dans {@link #saisiPar}.
+     */
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "moniteur_id")
     private Utilisateur moniteur;
+
+    /** Référent qui a saisi la note au nom de {@link #moniteur} ; null s'il a noté lui-même. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "saisi_par_id")
+    private Utilisateur saisiPar;
+
+    public Utilisateur getSaisiPar() {
+        return saisiPar;
+    }
+
+    public void setSaisiPar(Utilisateur saisiPar) {
+        this.saisiPar = saisiPar;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

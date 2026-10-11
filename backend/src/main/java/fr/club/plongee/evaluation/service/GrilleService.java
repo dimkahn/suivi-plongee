@@ -118,7 +118,9 @@ public class GrilleService {
                             /** Seances ou l'eleve est note present : les seules proposees pour le noter. */
                             List<Long> seancesPresent,
                             /** Programme d'exercices des seances de la saison : sa formation et les exercices communs. */
-                            List<ProgrammeGrilleVue> programmes) {}
+                            List<ProgrammeGrilleVue> programmes,
+                            /** Referents du groupe d'entrainement de l'eleve : ils notent au nom d'un autre encadrant. */
+                            List<Long> referentIds) {}
 
     /** Un exercice du programme d'une seance, vu depuis la fiche d'un eleve. */
     public record ExerciceGrilleVue(String intitule, String consignes, Integer dureeMinutes,
@@ -282,7 +284,8 @@ public class GrilleService {
                 progression == null ? null : progression.getNom(),
                 progression == null ? List.of() : periodesVue(progression),
                 participations.seancesOuPresent(cursusId),
-                programmes(cursus, avecSchema));
+                programmes(cursus, avecSchema),
+                groupes.referentsDeLEleve(cursus.getSaison().getId(), eleveId));
     }
 
     /**

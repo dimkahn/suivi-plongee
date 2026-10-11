@@ -16,6 +16,8 @@ export interface Session {
   caciDateExamen?: string | null;
   caciMedecin?: string | null;
   caciActivites?: string[];
+  /** Pour se reconnaître (référent d'un groupe) ; absent d'une session ouverte avant son ajout. */
+  id?: number;
 }
 
 export interface CursusVue {
@@ -226,6 +228,8 @@ export interface GrilleVue {
    * exercices communs). Peut manquer dans une grille mise en cache avant.
    */
   programmes?: ProgrammeGrilleVue[];
+  /** Référents du groupe d'entraînement de l'élève : ils notent au nom d'un autre encadrant. */
+  referentIds?: number[];
 }
 
 export interface ExerciceGrilleVue {
@@ -354,6 +358,8 @@ export interface EvaluationVue {
   commentaire: string | null;
   dateEvaluation: string;
   parQui: string;
+  /** Référent qui a saisi la note au nom de `parQui` ; null s'il a noté lui-même. */
+  saisiPar?: string | null;
   /** N2/N3 noté en piscine ou en fosse : suivi d'entraînement. */
   entrainement?: boolean;
   /** Exercice de la base noté ; null sans exercice. */
