@@ -1,5 +1,5 @@
 // M17 — Noter les présents en une fois, depuis la feuille de présence.
-// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : les présences y sont déjà
 // (données de démo), l'appel du 28 reste à M3.
 import { critere } from '../grille.mjs';
@@ -33,7 +33,7 @@ export default {
     await vignette();
 
     await legende('Votre groupe a préparé la séance ? Un bouton coche d\'un coup les critères de ses exercices.', 4000);
-    await legende('Sinon, cochez le ou les critères travaillés. Les blocs « Au programme » du mois viennent en premier.', 0);
+    await legende('Sinon, cochez le ou les critères travaillés. Les compétences « Au programme » du mois viennent en premier.', 0);
     await cocherCritere(g, dialogue, 'Palmage ventral en surface');
     await legende('Chaque critère coché demande son commentaire : il s\'ajoutera à la fiche de chaque élève.', 0);
     await saisir(dialogue.getByLabel('Commentaire : Palmage ventral en surface'), '200 m sans s\'arrêter, bon rythme.');

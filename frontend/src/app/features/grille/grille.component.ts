@@ -18,6 +18,7 @@ import {
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
+import { PlurielPipe } from '../../core/pluriel';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { periodeDuMois, plageMois } from '../../core/progression';
@@ -81,7 +82,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   selector: 'app-grille',
   standalone: true,
   imports: [
-    FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
+    FormsModule, RouterLink, DateFrPipe, PlurielPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
     SchemaExerciceComponent
   ],
   template: `
@@ -332,7 +333,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             }
             @if (blocsAuProgramme().size > 0) {
               <button type="button" class="bouton-discret" (click)="ouvrirBlocsAuProgramme()">
-                Ouvrir les {{ blocsAuProgramme().size }} blocs au programme
+                Ouvrir {{ blocsAuProgramme().size > 1 ? 'les ' + (blocsAuProgramme().size | pluriel:'compétence') : 'la compétence' }} au programme
               </button>
             }
           } @else {
@@ -340,7 +341,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           }
           @if (nombreEnRetard() > 0) {
             <p class="retard-resume" role="status">
-              {{ nombreEnRetard() }} bloc(s) en retard sur la progression
+              {{ nombreEnRetard() | pluriel:'compétence' }} en retard sur la progression
             </p>
           }
         </section>
@@ -361,7 +362,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 <span class="secondaire"> · {{ e.groupe ?? 'programme commun' }}</span>
                 @if (e.dureeMinutes) { <span class="secondaire"> · {{ e.dureeMinutes }} min</span> }
                 @if (e.critereIds.length > 0) {
-                  <span class="secondaire"> · {{ e.critereIds.length }} critère(s) travaillé(s)</span>
+                  <span class="secondaire"> · {{ e.critereIds.length | pluriel:'critère travaillé':'critères travaillés' }}</span>
                 }
                 @if (e.consignes) { <span class="secondaire consignes">{{ e.consignes }}</span> }
                 @if (e.critereReussite) {
@@ -386,7 +387,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           </ol>
           @if (blocsDesExercices().size > 0) {
             <button type="button" class="bouton-discret" (click)="ouvrirBlocsDesExercices()">
-              Ouvrir les {{ blocsDesExercices().size }} bloc(s) travaillé(s)
+              Ouvrir {{ blocsDesExercices().size > 1 ? 'les ' + (blocsDesExercices().size | pluriel:'compétence travaillée':'compétences travaillées') : 'la compétence travaillée' }}
             </button>
           }
         </section>
@@ -437,7 +438,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             } @else if (peutSaisir() && bloc.acquis === bloc.total) {
               @if (bloc.attentes > 0) {
                 <p class="secondaire">
-                  Validation possible une fois les {{ bloc.attentes }} saisie(s) envoyées.
+                  Validation possible une fois {{ bloc.attentes > 1 ? 'les ' + bloc.attentes + ' saisies envoyées' : 'la saisie envoyée' }}.
                 </p>
               } @else if (bloc.maitriseAttendue?.length) {
                 <p class="secondaire maitrise-attendue">

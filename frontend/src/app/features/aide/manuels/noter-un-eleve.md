@@ -49,7 +49,7 @@ Au N2 et au N3, les compétences s'acquièrent en milieu naturel. La grille tien
 
 Au N2 et au N3, la note porte aussi sur un exercice. Même un **exercice de maîtrise acquis en fosse** ne rend pas le critère acquis : il ne compte qu'à l'entraînement. Seul un exercice de maîtrise acquis **en milieu naturel** fait acquérir le critère.
 
-Sous chaque critère, l'autre suivi reste rappelé (« Piscine / fosse : acquis » ou « Milieu naturel : en cours »), et chaque bloc indique les deux comptes. Un critère acquis en fosse n'est pas acquis pour autant : il reste à le montrer en milieu naturel.
+Sous chaque critère, l'autre suivi reste rappelé (« Piscine / fosse : acquis » ou « Milieu naturel : en cours »), et chaque compétence indique les deux comptes. Un critère acquis en fosse n'est pas acquis pour autant : il reste à le montrer en milieu naturel.
 
 ## Référent du groupe : noter au nom d'un autre encadrant
 
@@ -66,7 +66,7 @@ Seuls les référents du groupe de l'élève voient ce choix, et seuls les encad
 
 - Seules les séances où l'élève est **noté présent** sont proposées : faites l'appel d'abord.
 - Les notes attendent le jour de la séance : on ne note pas à l'avance.
-- « Au programme » : les blocs que la progression prévoit ce mois-ci. « En retard » : un bloc qui a passé l'échéance prévue sans être acquis.
+- « Au programme » : les compétences que la progression prévoit ce mois-ci (« Ouvrir les … compétences au programme » les déplie d'un coup). « En retard » : une compétence qui a passé l'échéance prévue sans être acquise.
 - Les critères travaillés par les exercices de la séance portent le nom de l'exercice.
 - Sans réseau, la note reste sur le téléphone, « En attente d'envoi ».
 - Tout un groupe a fait le même exercice ? Voir « Noter les présents en une fois ».

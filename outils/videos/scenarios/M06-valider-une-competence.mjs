@@ -1,12 +1,12 @@
 // M6 — Valider une compétence (un bloc entier).
-// Tournage du 2026-10-10, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, ouvrirBloc, bloc, critere, noter } from '../grille.mjs';
 
 export default {
   id: 'M6',
   titre: 'Valider une compétence',
   public: 'Moniteur',
-  resume: 'Valider un bloc de compétences quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.',
+  resume: 'Valider une compétence quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -28,7 +28,7 @@ export default {
     await legende('Sans exercice de maîtrise acquis, la grille vous le rappelle à la place du bouton.', 3500);
     await toucher(b.getByRole('button', { name: 'Valider la compétence' }), { apres: 2000 });
     await b.scrollIntoViewIfNeeded();
-    await legende('Validée, avec la date et votre nom. Les critères de ce bloc ne se modifient plus.', 4500);
+    await legende('Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.', 4500);
 
     await legende('Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.', 4500);
     await legende('Par exemple, au N2 et au N3, tout se valide en milieu naturel.', 0);

@@ -13,6 +13,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { dateFr } from '../../core/date-fr';
+import { pluriel } from '../../core/pluriel';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
@@ -437,7 +438,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
         }
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" [disabled]="baseCoches().size === 0" (click)="ajouterDepuisBase()">
-            Ajouter {{ baseCoches().size > 0 ? baseCoches().size + ' exercice(s)' : '' }}
+            Ajouter {{ baseCoches().size > 0 ? pluriel(baseCoches().size, 'exercice') : '' }}
           </button>
           <button type="button" class="bouton-discret" (click)="baseOuverte.set(false)">Annuler</button>
         </div>
@@ -544,6 +545,7 @@ export class ProgrammeExercicesComponent {
   /** Programme à ouvrir d'emblée (?groupe=12 ou ?groupe=commun), depuis la feuille de présence filtrée sur un groupe. */
   groupe = input<string>();
   readonly libellePreparation = libellePreparation;
+  readonly pluriel = pluriel;
 
   chargement = signal(true);
   charge = signal(false);
@@ -833,7 +835,8 @@ export class ProgrammeExercicesComponent {
     this.brouillons.set([...this.brouillons(), ...nouveaux]);
     this.baseCoches.set(new Set());
     this.baseOuverte.set(false);
-    this.message.set(`${nouveaux.length} exercice(s) ajouté(s) depuis la base : vérifiez-les puis enregistrez.`);
+    this.message.set(`${pluriel(nouveaux.length, 'exercice ajouté', 'exercices ajoutés')} depuis la base : `
+      + 'vérifiez-les puis enregistrez.');
   }
 
   changerPhase(b: Brouillon, phase: PhaseExercice | null): void {
@@ -927,7 +930,7 @@ export class ProgrammeExercicesComponent {
         && repris.some(e => e.referentielId === f.referentielId));
       if (manquantes.length > 0) this.formations.set([...this.formations(), ...manquantes.map(f => ({ ...f, eleves: 0 }))]);
       this.brouillons.set([...this.brouillons(), ...repris.map(e => versBrouillon(e, seanceId))]);
-      this.message.set(`${repris.length} exercice(s) repris${duGroupe.length > 0 ? '' : ' du programme commun'} : `
+      this.message.set(`${pluriel(repris.length, 'exercice repris', 'exercices repris')}${duGroupe.length > 0 ? '' : ' du programme commun'} : `
         + 'vérifiez-les puis enregistrez.');
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'Impossible de lire le programme de cette séance.');

@@ -10,6 +10,7 @@ import { ReseauService } from '../../core/reseau.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { FileAttenteService } from '../../core/file-attente.service';
 import { dateDansJours, dateDuJour, dateFr } from '../../core/date-fr';
+import { PlurielPipe } from '../../core/pluriel';
 import {
   Atelier, ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
 } from '../../core/modeles';
@@ -67,7 +68,7 @@ function normaliser(texte: string): string {
 @Component({
   selector: 'app-presences',
   imports: [FormsModule, RouterLink, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
-            NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent],
+            NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent, PlurielPipe],
   template: `
     <h1>Présences</h1>
     <p class="secondaire">
@@ -169,7 +170,7 @@ function normaliser(texte: string): string {
                           <span class="secondaire">
                             @if (e.niveau) { {{ libellePreparation(e.niveau) }} }
                             @if (e.dureeMinutes) { · {{ e.dureeMinutes }} min }
-                            @if (e.criteres.length > 0) { · {{ e.criteres.length }} critère(s) }
+                            @if (e.criteres.length > 0) { · {{ e.criteres.length | pluriel:'critère' }} }
                             @if (e.aSchema) { · schéma }
                           </span>
                         </span>
@@ -238,9 +239,9 @@ function normaliser(texte: string): string {
         <div class="carte vide"><p>Aucun élève inscrit sur la saison de cette séance.</p></div>
       } @else {
         <p class="bilan" role="status">
-          {{ bilan().presents }} présent(s) · {{ bilan().absents }} absent(s)
+          {{ bilan().presents | pluriel:'présent' }} · {{ bilan().absents | pluriel:'absent' }}
           @if (bilan().enAttente > 0) { · {{ bilan().enAttente }} en attente d'envoi }
-          @if (nonNotes().length > 0) { · <strong class="compte-non-notes">{{ nonNotes().length }} présent(s) sans évaluation</strong> }
+          @if (nonNotes().length > 0) { · <strong class="compte-non-notes">{{ nonNotes().length | pluriel:'présent' }} sans évaluation</strong> }
         </p>
         @if (nonNotes().length > 0 || seulementNonNotes()) {
           <button type="button" class="bouton-discret filtre-non-notes" [class.actif]="seulementNonNotes()"

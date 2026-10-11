@@ -4,6 +4,7 @@ import { FileAttenteService, SaisieRefusee } from '../../core/file-attente.servi
 import { EcritureRefusee, FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import { DateFrPipe } from '../../core/date-fr';
+import { PlurielPipe, pluriel } from '../../core/pluriel';
 
 /**
  * Trois informations, par ordre d'urgence décroissante :
@@ -16,13 +17,13 @@ import { DateFrPipe } from '../../core/date-fr';
  */
 @Component({
   selector: 'app-bandeau-sync',
-  imports: [DateFrPipe],
+  imports: [DateFrPipe, PlurielPipe],
   standalone: true,
   template: `
     @if (nombreRefus() > 0) {
       <div class="bandeau refus" role="alert">
         <div class="texte">
-          <strong>{{ nombreRefus() }} saisie(s) refusée(s) par le serveur.</strong>
+          <strong>{{ nombreRefus() | pluriel:'saisie refusée':'saisies refusées' }} par le serveur.</strong>
           <ul>
             @for (r of file.refus(); track r.referenceClient) {
               <li>
@@ -46,7 +47,7 @@ import { DateFrPipe } from '../../core/date-fr';
     @if (nombreEnAttente() > 0) {
       <div class="bandeau attente" role="status">
         <span>
-          {{ nombreEnAttente() }} saisie(s) en attente d'envoi.
+          {{ nombreEnAttente() | pluriel:'saisie' }} en attente d'envoi.
           @if (enSynchronisation()) { Envoi en cours… }
           @else if (!reseau.enLigne()) { Elles partiront au retour du réseau. }
         </span>
@@ -113,8 +114,9 @@ export class BandeauSyncComponent {
     this.message.set('Préparation du mode hors ligne…');
     try {
       const { grilles, feuilles, fiches, photos } = await this.api.precharger();
-      this.message.set(`Disponibles hors ligne : ${grilles} grille(s), ${feuilles} feuille(s) de présence, `
-        + `${fiches} fiche(s) de sécurité, ${photos} photo(s).`);
+      this.message.set(`Disponibles hors ligne : ${pluriel(grilles, 'grille')}, `
+        + `${pluriel(feuilles, 'feuille')} de présence, ${pluriel(fiches, 'fiche')} de sécurité, `
+        + `${pluriel(photos, 'photo')}.`);
     } catch {
       this.message.set('Le préchargement a échoué. Réessayez avec du réseau.');
     }

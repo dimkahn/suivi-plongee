@@ -1,5 +1,5 @@
 // M19 — N2 et N3 : l'entraînement en piscine et fosse, à part de l'évaluation en milieu naturel.
-// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 // Camille (N2) : week-end à la Gravière du Fort les 26-27/09 (V107), fosse
 // les lundis de septembre, notée à l'entraînement par Gwendoline (V113).
 import { ouvrirGrille, ouvrirBloc, critere, noter } from '../grille.mjs';
@@ -45,7 +45,7 @@ export default {
     await legende('Le critère avance à l\'entraînement… mais reste « non abordé » en milieu naturel.', 5000);
     await legende('Même un exercice de maîtrise réussi en fosse n\'acquiert rien : seul le milieu naturel valide.', 4500);
 
-    await legende('Chaque bloc compte les deux : acquis en milieu naturel, et en piscine ou fosse.', 0);
+    await legende('Chaque compétence compte les deux : acquis en milieu naturel, et en piscine ou fosse.', 0);
     await page.locator('section.bloc', { hasText: BLOC }).locator('.detail').scrollIntoViewIfNeeded();
     await pause(4000);
 
