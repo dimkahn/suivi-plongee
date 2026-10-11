@@ -7,6 +7,8 @@ mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, séance
 questions:
 - Où voir le détail et le schéma des exercices de la séance ?
 - Comment replier les exercices de la séance ?
+- Où sont passés les exercices de la séance ?
+- Où relire les règles de l'appel ?
 - Comment faire l'appel ?
 - Quelle séance la feuille de présence affiche-t-elle à l'ouverture ?
 - Comment noter qu'un élève est présent ou absent ?
@@ -25,7 +27,9 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 2. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine séance (dans la semaine qui vient), sinon sur la dernière passée. Pour une autre, touchez « Changer » et choisissez-la dans le calendrier. Le lundi, la piscine et la fosse sont deux séances distinctes.
 3. Filtrez sur votre groupe d'entraînement avec les boutons.
 4. Touchez un élève, puis ce qu'il a fait : « Nage », « Bloc » ou « Théorie ».
-5. Le compteur en haut de la liste fait le bilan : présents, absents, et présents sans évaluation. Filtré sur un groupe, il ne compte que les élèves de ce groupe (la recherche d'un élève, elle, ne change pas le compte).
+5. Le compteur en haut de la liste fait le bilan : présents, absents, et présents sans évaluation. Il reste en haut de l'écran pendant qu'on fait défiler les élèves. Filtré sur un groupe, il ne compte que les élèves de ce groupe (la recherche d'un élève, elle, ne change pas le compte).
+
+Un doute en cours de route ? « Comment faire ? », à côté du titre, rappelle les règles de l'appel.
 
 ## Corriger
 
@@ -53,8 +57,8 @@ Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme 
 
 ## Les exercices de la séance
 
-- Touchez le titre « Exercices de la séance » pour replier ou rouvrir toute la partie : replié, il laisse la place à la liste des élèves.
+- « Exercices de la séance » s'ouvre **replié**, pour laisser la place à la liste des élèves ; le nombre d'exercices est entre parenthèses. Touchez le titre pour l'ouvrir, de nouveau pour le replier.
 - Touchez un exercice pour le déplier : phase (initiation, perfectionnement, maîtrise), déroulement et consignes, critère de réussite, critères travaillés et schéma. Touchez-le de nouveau pour le replier.
 - « Tout déplier » ouvre tous les exercices affichés d'un coup, « Tout replier » les referme.
-- Filtré sur un groupe, le bloc ne montre que le programme de ce groupe et le programme commun.
+- Filtré sur un groupe, la partie ne montre que le programme de ce groupe et le programme commun.
 - Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.

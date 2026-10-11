@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés, nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où l\'on revient à la feuille.',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où l\'on revient à la feuille.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -12,6 +12,7 @@ export default {
     await pause(1000);
     await legende('Au bord du bassin : menu, puis « Présences ».', 0);
     await menu('Présences');
+    await legende('Un doute ? « Comment faire ? » rappelle les règles de l\'appel.', 3000);
 
     await legende('La feuille s\'ouvre sur la séance du jour, sinon sur la prochaine.', 3500);
     await legende('Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.', 0);
@@ -20,16 +21,15 @@ export default {
     await legende('Un élève prévient de sa venue ? Les présences s\'annoncent jusqu\'à une semaine avant la séance.', 4000);
 
     await legende('« Au programme » : ce que la progression du club prévoit ce mois-ci.', 3500);
-    await legende('Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.', 0);
-    await page.locator('section.exercices').scrollIntoViewIfNeeded();
-    await pause(2500);
+    await legende('Dessous, « Exercices de la séance », replié pour laisser la place à l\'appel. Touchez le titre pour voir ce que chaque groupe a préparé.', 0);
+    await toucher(page.locator('.bascule-exercices'), { apres: 1500 });
     const exercice = page.locator('section.exercices .titre-exercice');
     if (await exercice.count() > 0) {
       await legende('Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.', 0);
       await toucher(exercice.first(), { apres: 3500 });
       await toucher(exercice.first(), { apres: 600 });
     }
-    await legende('Touchez le titre pour replier toute la partie et garder la place pour l\'appel.', 0);
+    await legende('Touchez de nouveau le titre pour replier la partie.', 0);
     await toucher(page.locator('.bascule-exercices'), { apres: 2000 });
 
     await legende('Filtrez sur votre groupe d\'entraînement.', 0);
@@ -49,7 +49,7 @@ export default {
     await toucher(cartes.nth(3).locator('.zone-identite'), { apres: 600 });
     await toucher(page.locator('.barre-choix').getByRole('button', { name: 'Théorie' }), { apres: 1500 });
 
-    await legende('Le compteur en haut de la liste fait le bilan du groupe filtré.', 0);
+    await legende('Le compteur en haut de la liste fait le bilan du groupe filtré ; il reste en haut de l\'écran quand la liste défile.', 0);
     await page.locator('.bilan').scrollIntoViewIfNeeded();
     await pause(3000);
 
