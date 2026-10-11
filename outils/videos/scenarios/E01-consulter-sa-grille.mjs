@@ -1,5 +1,5 @@
 // E1 — Compte élève : consulter sa propre grille.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -20,7 +20,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Tout ouvrir' }), { apres: 900 });
     await defiler(700, 1800);
     await legende('Les notes et commentaires des moniteurs, en lecture seule.', 3500);
-    await legende('Le bouton « Exporter en PDF » lui donne aussi sa fiche de suivi.', 3500);
+    await legende('« Plus d\'actions », puis « Exporter en PDF », lui donne aussi sa fiche de suivi.', 3500);
     await legende(null, 0);
     await pause(500);
   }

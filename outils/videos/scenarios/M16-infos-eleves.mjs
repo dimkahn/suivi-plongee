@@ -1,5 +1,5 @@
 // M16 — Infos élèves.
-// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M16',
   titre: 'Infos élèves',
@@ -35,8 +35,9 @@ export default {
 
     await legende('Touchez son nom pour ouvrir sa fiche.', 0);
     await toucher(page.getByRole('link', { name: 'Léa Morel', exact: true }), { apres: 1800 });
-    await legende('« Informations supplémentaires » : téléphone et contact d\'urgence.', 0);
-    await toucher(page.getByRole('button', { name: 'Informations supplémentaires' }), { apres: 1200 });
+    await legende('« Plus d\'actions », puis « Informations supplémentaires » : téléphone et contact d\'urgence.', 0);
+    await toucher(page.getByRole('button', { name: /^Plus d'actions/ }), { apres: 900 });
+    await toucher(page.getByRole('menuitem', { name: 'Informations supplémentaires' }), { apres: 1200 });
     await page.locator('.infos-supplementaires').scrollIntoViewIfNeeded();
     await pause(3500);
     await legende('Aucune donnée de santé n\'est enregistrée : seule la date de fin du certificat.', 4000);

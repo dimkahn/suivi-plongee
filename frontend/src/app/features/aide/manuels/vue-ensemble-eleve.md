@@ -13,7 +13,7 @@ questions:
 - Que reste-t-il à travailler pour cet élève ?
 - Pour un N2 ou un N3, comment distinguer la fosse du milieu naturel dans la vue globale ?
 ---
-Sous le nom de l'élève, « Vue globale (toutes les séances) » montre une colonne par séance, comme l'ancien tableur. « Exporter en PDF » donne la fiche de suivi à imprimer ou envoyer.
+Sous le nom de l'élève, « Vue globale (toutes les séances) » montre une colonne par séance, comme l'ancien tableur. « Plus d'actions », puis « Exporter en PDF », donne la fiche de suivi à imprimer ou envoyer.
 
 ## La vue globale
 
@@ -39,7 +39,7 @@ Le PDF de la fiche porte de même une colonne « Piscine / fosse » à côté du
 ## La fiche de suivi en PDF
 
 1. Revenez à la grille.
-2. Touchez « Exporter en PDF ».
+2. Touchez « Plus d'actions », en haut, puis « Exporter en PDF ».
 3. Le PDF arrive dans les téléchargements du téléphone.
 
 ## Bon à savoir

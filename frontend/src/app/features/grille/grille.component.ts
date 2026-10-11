@@ -13,8 +13,9 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import {
   BlocVue, CritereVue, CursusVue, EvaluationVue, ExerciceBaseVue, ExerciceGrilleVue, ExerciceNoteVue, GrilleVue,
-  MoniteurOptionVue, PhaseExercice, SeanceVue, Statut
+  GroupeEntrainementVue, MoniteurOptionVue, PhaseExercice, SeanceVue, Statut
 } from '../../core/modeles';
+import { FiltreGroupe, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
@@ -87,9 +88,25 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   ],
   template: `
     @if (depuis() === 'presences') {
-      <a class="retour-presences" [routerLink]="['/presences']" [queryParams]="{ seance: seance(), groupe: groupe() }">
-        &larr; Retour à la feuille de présence
-      </a>
+      <nav class="navigation-eleves" aria-label="Élèves présents à la séance">
+        <a class="retour-presences" [routerLink]="['/presences']" [queryParams]="{ seance: seance(), groupe: groupe() }">
+          &larr; Retour à la feuille de présence
+        </a>
+        <!-- Les présents de la feuille (groupe filtré compris), pour noter le groupe sans repasser par la feuille. -->
+        @if (voisins(); as v) {
+          <div class="voisins">
+            @if (v.precedent; as p) {
+              <a class="bouton-discret precedent" [routerLink]="['/cursus', p.cursusId]" queryParamsHandling="preserve"
+                 [attr.aria-label]="'Élève précédent : ' + p.eleve">‹ {{ p.eleve }}</a>
+            }
+            <span class="secondaire rang">{{ v.rang }} / {{ v.total }}</span>
+            @if (v.suivant; as s) {
+              <a class="bouton-discret suivant" [routerLink]="['/cursus', s.cursusId]" queryParamsHandling="preserve"
+                 [attr.aria-label]="'Élève suivant : ' + s.eleve">{{ s.eleve }} ›</a>
+            }
+          </div>
+        }
+      </nav>
     }
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
@@ -125,19 +142,41 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           @if (ageDuCache(); as age) {
             <p class="secondaire">Grille consultée hors ligne, dernière mise à jour {{ age }}.</p>
           }
-          <a [routerLink]="['/cursus', id(), 'matrice']" class="lien-matrice">
-            Vue globale (toutes les séances)
-          </a>
-          <button type="button" class="bouton-discret lien-pdf"
-                  [disabled]="!reseau.enLigne() || exportEnCours()"
-                  (click)="telechargerPdf(g)">
-            {{ exportEnCours() ? 'Génération du PDF…' : 'Exporter en PDF' }}
-          </button>
+          <!-- Les deux gestes courants restent visibles ; le reste passe dans « Plus d'actions ». -->
+          <div class="actions-entete">
+            <a [routerLink]="['/cursus', id(), 'matrice']" class="bouton-discret lien-matrice">
+              Vue globale (toutes les séances)
+            </a>
+            <button type="button" class="bouton-discret bascule-blocs" (click)="basculerTousLesBlocs(g.blocs)">
+              {{ blocsOuverts().size > 0 ? 'Tout refermer' : 'Tout ouvrir' }}
+            </button>
+            <div class="menu-actions">
+              <button type="button" class="bouton-discret plus-actions" aria-haspopup="menu"
+                      [attr.aria-expanded]="menuOuvert()" (click)="menuOuvert.set(!menuOuvert())">
+                Plus d'actions ▾
+              </button>
+              @if (menuOuvert()) {
+                <div class="menu-actions-liste" role="menu" (click)="menuOuvert.set(false)">
+                  <button type="button" role="menuitem" [disabled]="!reseau.enLigne() || exportEnCours()"
+                          (click)="telechargerPdf(g)">
+                    {{ reseau.enLigne() ? 'Exporter en PDF' : 'Exporter en PDF (réseau nécessaire)' }}
+                  </button>
+                  @if (peutVoirHistoriqueSaisons()) {
+                    <button type="button" role="menuitem" (click)="basculerHistoriqueSaisons()">
+                      {{ historiqueSaisonsOuvert() ? 'Masquer les saisons précédentes' : 'Voir les saisons précédentes' }}
+                    </button>
+                  }
+                  <button type="button" role="menuitem"
+                          (click)="infosSupplementairesOuvertes.set(!infosSupplementairesOuvertes())">
+                    {{ infosSupplementairesOuvertes() ? 'Masquer les informations supplémentaires' : 'Informations supplémentaires' }}
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+          @if (exportEnCours()) { <p class="secondaire" role="status">Génération du PDF…</p> }
 
           @if (peutVoirHistoriqueSaisons()) {
-            <button type="button" class="bouton-discret lien-pdf" (click)="basculerHistoriqueSaisons()">
-              {{ historiqueSaisonsOuvert() ? 'Masquer les saisons précédentes' : 'Voir les saisons précédentes' }}
-            </button>
             @if (historiqueSaisonsOuvert()) {
               @if (chargementHistoriqueSaisons()) {
                 <p class="secondaire">Chargement…</p>
@@ -160,13 +199,6 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             }
           }
 
-          <button type="button" class="bouton-discret bascule-blocs" (click)="basculerTousLesBlocs(g.blocs)">
-            {{ blocsOuverts().size > 0 ? 'Tout refermer' : 'Tout ouvrir' }}
-          </button>
-
-          <button type="button" class="bouton-discret lien-pdf" (click)="infosSupplementairesOuvertes.set(!infosSupplementairesOuvertes())">
-            {{ infosSupplementairesOuvertes() ? 'Masquer les informations supplémentaires' : 'Informations supplémentaires' }}
-          </button>
           @if (infosSupplementairesOuvertes()) {
             <dl class="infos-supplementaires">
               <dt>Date de naissance</dt><dd>{{ g.dateNaissance ? (g.dateNaissance | dateFr) : 'non renseignée' }}</dd>
@@ -534,51 +566,54 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     }
                   </div>
 
-                  <div class="etats" role="group" [attr.aria-label]="critere.savoirFaire">
-                    @for (choix of etats; track choix.valeur) {
-                      <button type="button"
-                              [class]="'etat ' + choix.classe"
-                              [class.actif]="actif.statut === choix.valeur"
-                              [class.differe]="actif.enAttente && actif.statut === choix.valeur"
-                              [disabled]="!peutSaisir() || bloc.valide || actif.enregistrement"
-                              [attr.aria-pressed]="actif.statut === choix.valeur"
-                              (click)="noter(bloc, critere, choix.valeur)">
-                        {{ choix.libelle }}
-                      </button>
+                  <!-- D'abord l'exercice réalisé, puis la note : dans l'ordre des gestes du moniteur. -->
+                  <div class="saisie">
+                    @if (peutSaisir() && !bloc.valide && aDesExercices(bloc, critere)) {
+                      @let choisi = exerciceChoisi(bloc, critere);
+                      @let note = exerciceNote(bloc, critere);
+                      <div class="choix-exercice">
+                        <button type="button" class="choix-seance" [class.a-choisir]="!note" aria-haspopup="dialog"
+                                [attr.aria-label]="'Exercice réalisé pour ' + critere.savoirFaire"
+                                (click)="ouvrirChoixExercice(bloc, critere)">
+                          <span class="titre-choix">1. Exercice</span>
+                          @if (note) {
+                            <app-pastille-phase [phase]="note.phase" [numero]="note.numero" [intitule]="note.intitule" />
+                            <span class="libelle-choix">{{ note.intitule }}@if (note.id == null) { <span class="secondaire"> (libre)</span> }</span>
+                          } @else {
+                            <span class="libelle-choix">à choisir</span>
+                          }
+                          <span class="changer">{{ note ? 'Changer' : 'Choisir' }}</span>
+                        </button>
+                        @if (choisi?.critereReussite) {
+                          <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
+                        }
+                        @if (choisi?.aSchema) {
+                          <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(choisi!.id)"
+                                  (click)="basculerSchema(choisi!.id)">
+                            {{ schemasOuverts().has(choisi!.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
+                          </button>
+                          @if (schemasOuverts().has(choisi!.id)) {
+                            <app-schema-exercice [exerciceId]="choisi!.id" [libelle]="choisi!.numero + ' ' + choisi!.intitule" />
+                          }
+                        }
+                        <span class="titre-choix">2. Note</span>
+                      </div>
                     }
+                    <div class="etats" role="group" [attr.aria-label]="critere.savoirFaire">
+                      @for (choix of etats; track choix.valeur) {
+                        <button type="button"
+                                [class]="'etat ' + choix.classe"
+                                [class.actif]="actif.statut === choix.valeur"
+                                [class.differe]="actif.enAttente && actif.statut === choix.valeur"
+                                [disabled]="!peutSaisir() || bloc.valide || actif.enregistrement"
+                                [attr.aria-pressed]="actif.statut === choix.valeur"
+                                (click)="noter(bloc, critere, choix.valeur)">
+                          {{ choix.libelle }}
+                        </button>
+                      }
+                    </div>
                   </div>
                 </div>
-
-                @if (peutSaisir() && !bloc.valide && aDesExercices(bloc, critere)) {
-                  @let choisi = exerciceChoisi(bloc, critere);
-                  @let note = exerciceNote(bloc, critere);
-                  <div class="choix-exercice">
-                    <button type="button" class="choix-seance" aria-haspopup="dialog"
-                            [attr.aria-label]="'Exercice réalisé pour ' + critere.savoirFaire"
-                            (click)="ouvrirChoixExercice(bloc, critere)">
-                      <span class="titre-choix">Exercice</span>
-                      @if (note) {
-                        <app-pastille-phase [phase]="note.phase" [numero]="note.numero" [intitule]="note.intitule" />
-                        <span class="libelle-choix">{{ note.intitule }}@if (note.id == null) { <span class="secondaire"> (libre)</span> }</span>
-                      } @else {
-                        <span class="libelle-choix">à choisir</span>
-                      }
-                      <span class="changer">Changer</span>
-                    </button>
-                    @if (choisi?.critereReussite) {
-                      <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
-                    }
-                    @if (choisi?.aSchema) {
-                      <button type="button" class="lien-historique" [attr.aria-expanded]="schemasOuverts().has(choisi!.id)"
-                              (click)="basculerSchema(choisi!.id)">
-                        {{ schemasOuverts().has(choisi!.id) ? 'Masquer le schéma' : 'Voir le schéma' }}
-                      </button>
-                      @if (schemasOuverts().has(choisi!.id)) {
-                        <app-schema-exercice [exerciceId]="choisi!.id" [libelle]="choisi!.numero + ' ' + choisi!.intitule" />
-                      }
-                    }
-                  </div>
-                }
 
                 <div class="liens-critere">
                   @if (peutSaisir() && !bloc.valide) {
@@ -737,11 +772,25 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
+  host: {
+    '(document:click)': 'fermerMenuSiAilleurs($event)',
+    '(document:keydown.escape)': 'menuOuvert.set(false)'
+  },
   styles: [`
+    .navigation-eleves {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: var(--pas); margin-bottom: var(--pas);
+    }
     .retour-presences {
-      display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas);
+      display: inline-flex; align-items: center; min-height: 44px;
       font-size: .9375rem; text-decoration: none;
     }
+    .voisins { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
+    .voisins a {
+      display: inline-flex; align-items: center; text-decoration: none; color: var(--profond); font-weight: 700;
+      max-width: 44vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .voisins .rang { font-size: .875rem; }
     .entete { display: flex; gap: var(--pas-3); align-items: center; padding: var(--pas-3); }
     .avatar { flex: none; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--fond); }
     .silhouette {
@@ -755,9 +804,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .resume { flex: 1; min-width: 0; }
     .resume h1 { margin-bottom: 2px; }
     .score { margin: var(--pas) 0 0; font-weight: 700; }
-    .lien-matrice { display: inline-block; margin-top: var(--pas); font-size: .875rem; }
-    .lien-pdf { display: block; margin-top: var(--pas); padding: 0; min-height: auto; background: none; border: none; color: var(--profond); font-size: .875rem; text-decoration: underline; }
-    .lien-pdf:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
+    .actions-entete { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas-2); }
+    .lien-matrice { display: inline-flex; align-items: center; text-decoration: none; font-weight: 700; }
+    .actions-entete .menu-actions-liste { left: auto; right: 0; }
     .saisons-precedentes { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 4px; }
     .saisons-precedentes a { font-size: .875rem; }
     .infos-supplementaires {
@@ -800,7 +849,6 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .texte-bloc { display: flex; flex-direction: column; gap: 2px; }
     .detail { font-family: var(--font-texte); font-size: .875rem; font-weight: 400; }
     .chevron { flex: none; width: 1em; color: var(--profond); font-size: 1.125rem; line-height: 1.5; }
-    .bascule-blocs { display: block; margin-top: var(--pas); }
     .titre-groupe {
       margin: var(--pas-3) 0 var(--pas); padding-bottom: 4px;
       border-bottom: 2px solid var(--profond); color: var(--profond);
@@ -837,7 +885,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 
     /* Base d'exercices : l'exercice réalisé s'applique aux notes de la compétence. */
     .aide-exercice { margin: 0 0 var(--pas); font-size: .8125rem; }
-    .choix-exercice { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: var(--pas); }
+    /* Colonne de saisie d'un critère : l'exercice, puis les trois états. */
+    .saisie { display: flex; flex-direction: column; align-items: stretch; gap: var(--pas); flex: 0 1 380px; min-width: 0; }
+    .choix-exercice { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+    .choix-exercice .choix-seance.a-choisir { border: 2px dashed var(--accent); }
     .choix-exercice .titre-choix { font-weight: 700; font-size: .875rem; }
     .choix-exercice .choix-seance { display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 520px; }
     .choix-exercice .secondaire { font-size: .8125rem; }
@@ -891,7 +942,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     @keyframes tourner { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .chargeur { animation-duration: 2.4s; } }
 
-    .etats { display: flex; gap: 4px; flex: none; }
+    .etats { display: flex; gap: 4px; flex: none; justify-content: flex-end; }
     .etat {
       min-height: 44px; min-width: 60px; padding: 0 12px;
       border: 1px solid var(--trait); background: var(--carte); color: var(--craie);
@@ -933,6 +984,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     @media (max-width: 720px) {
       .entete { flex-direction: row; padding: var(--pas-2); }
       .ligne { flex-direction: column; align-items: stretch; }
+      .saisie { flex: none; }
       .etats { justify-content: stretch; }
       .etat { flex: 1; }
       .barre-seance { flex-direction: column; align-items: stretch; }
@@ -966,6 +1018,26 @@ export class GrilleComponent implements OnDestroy {
   depuis = input<string>();
   /** Groupe filtré sur la feuille de présence (?groupe=3), rendu au retour. */
   groupe = input<string>();
+
+  /**
+   * Venu de la feuille de présence : ses présents (dans le groupe filtré),
+   * dans l'ordre de la feuille, pour passer à l'élève précédent ou suivant.
+   */
+  presentsFeuille = signal<{ cursusId: number; eleve: string }[]>([]);
+  voisins = computed(() => {
+    const liste = this.presentsFeuille();
+    const i = liste.findIndex(l => l.cursusId === Number(this.id()));
+    if (i < 0 || liste.length < 2) return null;
+    return { precedent: liste[i - 1] ?? null, suivant: liste[i + 1] ?? null, rang: i + 1, total: liste.length };
+  });
+
+  /** Menu « Plus d'actions » de l'en-tête : PDF, saisons précédentes, informations supplémentaires. */
+  menuOuvert = signal(false);
+
+  /** Un toucher hors du menu le referme. */
+  fermerMenuSiAilleurs(evenement: Event): void {
+    if (!(evenement.target as Element | null)?.closest?.('.menu-actions')) this.menuOuvert.set(false);
+  }
 
   grille = signal<GrilleVue | null>(null);
   seances = signal<SeanceVue[]>([]);
@@ -1443,11 +1515,25 @@ export class GrilleComponent implements OnDestroy {
     // même route (/cursus/:id) : Angular réutilise alors l'instance du
     // composant, donc le rechargement doit suivre les changements de l'input
     // plutôt que ne s'exécuter qu'une fois au montage.
+    let premiereGrille = true;
     effect(() => {
       this.id();
       untracked(() => {
         this.reinitialiser();
         void this.charger(true);
+        // Élève suivant ou précédent : même composant, on remonte en haut de sa fiche.
+        if (!premiereGrille) window.scrollTo({ top: 0 });
+        premiereGrille = false;
+      });
+    });
+
+    effect(() => {
+      const seanceId = Number(this.seance());
+      const depuisFeuille = this.depuis() === 'presences';
+      const groupe = this.groupe();
+      untracked(() => {
+        if (depuisFeuille && seanceId) void this.chargerPresentsFeuille(seanceId, groupe);
+        else this.presentsFeuille.set([]);
       });
     });
 
@@ -1460,6 +1546,29 @@ export class GrilleComponent implements OnDestroy {
         if (this.grille()) void this.charger();
       });
     });
+  }
+
+  /**
+   * Présents de la feuille, mêmes règles que la feuille elle-même : choix
+   * pas encore envoyés compris, filtrés sur le groupe. Facultatif : sans
+   * feuille (hors ligne, pas embarquée), pas de navigation entre élèves.
+   */
+  private async chargerPresentsFeuille(seanceId: number, groupe: string | undefined): Promise<void> {
+    try {
+      const [feuille, groupes] = await Promise.all([
+        this.api.feuillePresence(seanceId),
+        this.api.groupesEntrainementSaisonOuverte().catch(() => [] as GroupeEntrainementVue[])
+      ]);
+      const filtre: FiltreGroupe = groupe === 'SANS' ? 'SANS'
+        : groupe && Number.isInteger(Number(groupe)) ? Number(groupe) : 'TOUS';
+      const enAttente = new Map(this.ecritures.pourSeance(seanceId, 'presence').map(p => [p.cursusId, p.statut]));
+      this.presentsFeuille.set(feuille.eleves
+        .filter(l => (enAttente.has(l.cursusId) ? enAttente.get(l.cursusId) : l.statut) === 'PRESENT')
+        .filter(l => passeFiltreGroupe(l.eleveId, filtre, groupes))
+        .map(l => ({ cursusId: l.cursusId, eleve: l.eleve })));
+    } catch {
+      this.presentsFeuille.set([]);
+    }
   }
 
   private reinitialiser(): void {
