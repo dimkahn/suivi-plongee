@@ -10,11 +10,11 @@ questions:
 - Pourquoi ma validation est refusée ?
 - Faut-il un exercice de maîtrise pour valider une compétence ?
 ---
-Quand tous les critères d'une compétence sont acquis, **et qu'au moins un de ses exercices de maîtrise est acquis**, le bouton « Valider la compétence » apparaît sous le bloc. Le serveur vérifie les règles du MFT avant d'accepter.
+Quand tous les critères d'une compétence sont acquis, **et qu'au moins un de ses exercices de maîtrise est acquis**, le bouton « Valider la compétence » apparaît sous son titre. Le serveur vérifie les règles du MFT avant d'accepter.
 
 ## Pas à pas
 
-1. Dans la grille, notez « acquis » le dernier critère du bloc, sur un exercice de maîtrise.
+1. Dans la grille, notez « acquis » le dernier critère de la compétence, sur un exercice de maîtrise.
 2. Le bouton « Valider la compétence » apparaît.
 3. Touchez-le : la compétence est validée, avec la date et votre nom.
 
@@ -35,5 +35,5 @@ Le message dit pourquoi. Les causes les plus courantes :
 
 ## Bon à savoir
 
-- Une fois validée, les critères du bloc ne se modifient plus.
+- Une fois validée, les critères de la compétence ne se modifient plus.
 - Le brevet lui-même est délivré par un administrateur, à la fin de la formation.

@@ -10,6 +10,7 @@ import { ReseauService } from '../../core/reseau.service';
 import { BlocReferentielVue, ExerciceVue, LignePresence, ProgressionVue, ReferentielVue, SeanceVue } from '../../core/modeles';
 import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
+import { PlurielPipe, pluriel } from '../../core/pluriel';
 
 /**
  * Notation groupée depuis la feuille de présence : le moniteur coche des
@@ -24,7 +25,7 @@ import { periodeDuMois } from '../../core/progression';
  */
 @Component({
   selector: 'app-notation-groupee',
-  imports: [FormsModule],
+  imports: [FormsModule, PlurielPipe],
   template: `
     <button type="button" class="bouton-principal" (click)="ouvrir()">
       Noter les présents
@@ -97,7 +98,7 @@ import { periodeDuMois } from '../../core/progression';
           @if (criteresDesExercices().size > 0) {
             <button type="button" class="bouton-discret reprise-exercices" (click)="cocherExercices()"
                     [disabled]="exercicesTousCoches()">
-              Cocher les {{ criteresDesExercices().size }} critère(s) des exercices de la séance
+              Cocher {{ criteresDesExercices().size > 1 ? 'les ' + (criteresDesExercices().size | pluriel:'critère') : 'le critère' }} des exercices de la séance
             </button>
           }
           @for (b of blocs(); track b.id) {
@@ -396,9 +397,13 @@ export class NotationGroupeeComponent {
         }))
       }));
       const morceaux = [];
-      if (bilan.passesEnCours > 0) morceaux.push(`${bilan.passesEnCours} critère(s) passé(s) en cours`);
-      if (bilan.commentairesAjoutes > 0) morceaux.push(`${bilan.commentairesAjoutes} commentaire(s) ajouté(s)`);
-      this.notee.emit(`Notation enregistrée pour ${bilan.eleves} élève(s) : ${morceaux.join(', ')}.`);
+      if (bilan.passesEnCours > 0) {
+        morceaux.push(`${pluriel(bilan.passesEnCours, 'critère passé', 'critères passés')} en cours`);
+      }
+      if (bilan.commentairesAjoutes > 0) {
+        morceaux.push(pluriel(bilan.commentairesAjoutes, 'commentaire ajouté', 'commentaires ajoutés'));
+      }
+      this.notee.emit(`Notation enregistrée pour ${pluriel(bilan.eleves, 'élève')} : ${morceaux.join(', ')}.`);
       this.fermer();
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'La notation n\'a pas pu être enregistrée.');

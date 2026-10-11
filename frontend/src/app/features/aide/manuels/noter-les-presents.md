@@ -17,7 +17,7 @@ Depuis « Présences », le bouton « Noter les présents » note en une fois to
 2. Filtrez sur votre groupe et faites l'appel si ce n'est pas déjà fait.
 3. Touchez « Noter les présents ».
 4. Les présents du groupe sont cochés : décochez ceux qui n'ont pas fait l'exercice.
-5. Cochez le ou les critères travaillés (les blocs « Au programme » du mois viennent en premier). Un bouton coche d'un coup les critères des exercices préparés pour la séance.
+5. Cochez le ou les critères travaillés (les compétences « Au programme » du mois viennent en premier). Un bouton coche d'un coup les critères des exercices préparés pour la séance.
 6. Écrivez le commentaire de chaque critère coché : il s'ajoutera à la fiche de chaque élève.
 7. Touchez « Valider la notation » : le bilan s'affiche en haut de la feuille de présence.
 

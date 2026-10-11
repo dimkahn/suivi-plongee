@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, input, model, signal, ChangeDetectionStrategy } from '@angular/core';
 import { SeanceVue } from './modeles';
 import { DateFrPipe, dateDuJour } from './date-fr';
+import { PlurielPipe } from './pluriel';
 
 interface JourCalendrier {
   date: string;
@@ -28,7 +29,7 @@ function premierDuMois(date: string): Date {
  */
 @Component({
   selector: 'app-calendrier-seances',
-  imports: [DateFrPipe],
+  imports: [DateFrPipe, PlurielPipe],
   template: `
     <div class="navigation-mois">
       <button type="button" class="bouton-discret" (click)="changerMois(-1)" aria-label="Mois précédent">‹</button>
@@ -48,7 +49,7 @@ function premierDuMois(date: string): Date {
                 [class.selectionne]="jour.date === jourSelectionne()"
                 [disabled]="jour.horsLimite"
                 [attr.aria-pressed]="jour.date === jourSelectionne()"
-                [attr.aria-label]="(jour.date | dateFr) + (jour.seances.length ? ', ' + jour.seances.length + ' séance(s)' : '')"
+                [attr.aria-label]="(jour.date | dateFr) + (jour.seances.length ? ', ' + (jour.seances.length | pluriel:'séance') : '')"
                 (click)="jourSelectionne.set(jour.date)">
           <span class="numero">{{ jour.numero }}</span>
           @for (s of jour.seances; track s.id) {

@@ -1,5 +1,5 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter } from '../grille.mjs';
 
 export default {
@@ -26,7 +26,7 @@ export default {
     await legende('« Au programme » : les compétences que la progression prévoit ce mois-ci.', 0);
     await page.locator('section.programme').scrollIntoViewIfNeeded();
     await pause(3000);
-    await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1200 });
+    await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences|la compétence) au programme$/ }), { apres: 1200 });
     await legende('Si son groupe a préparé la séance, ses exercices s\'affichent aussi, et les critères travaillés portent le nom de l\'exercice.', 4500);
 
     await legende('Chaque critère a trois états : non abordé, en cours, acquis.', 0);
@@ -47,7 +47,7 @@ export default {
     await toucher(ligne.getByRole('button', { name: 'Enregistrer le commentaire' }), { apres: 1500 });
     await legende('Le commentaire reste affiché sous le critère.', 3000);
 
-    await legende('Un bloc marqué « En retard » a passé l\'échéance prévue par la progression.', 3500);
+    await legende('Une compétence marquée « En retard » a passé l\'échéance prévue par la progression.', 3500);
     await legende('Pas de réseau ? La note est gardée sur le téléphone, « En attente d\'envoi ».', 4000);
     await legende(null, 0);
     await pause(500);

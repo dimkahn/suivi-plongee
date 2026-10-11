@@ -29,7 +29,7 @@ export default {
       await toucher(exercice.first(), { apres: 3500 });
       await toucher(exercice.first(), { apres: 600 });
     }
-    await legende('Touchez le titre pour replier tout le bloc et garder la place pour l\'appel.', 0);
+    await legende('Touchez le titre pour replier toute la partie et garder la place pour l\'appel.', 0);
     await toucher(page.locator('.bascule-exercices'), { apres: 2000 });
 
     await legende('Filtrez sur votre groupe d\'entraînement.', 0);

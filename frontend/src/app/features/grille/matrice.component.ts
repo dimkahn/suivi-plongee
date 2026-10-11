@@ -6,6 +6,7 @@ import {
   CelluleMatrice, ExerciceBaseVue, ExerciceGrilleVue, LigneMatrice, MatriceVue, SeanceEnTete
 } from '../../core/modeles';
 import { DateFrPipe, dateFr } from '../../core/date-fr';
+import { PlurielPipe } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
@@ -16,7 +17,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-matrice',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, PlurielPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     <a [routerLink]="['/cursus', id()]" class="retour">&larr; Retour à la grille</a>
 
@@ -60,7 +61,7 @@ const LIBELLES: Record<string, string> = {
         @if (m.milieuNaturelExclusif) {
           <span class="pastille acquis entrainement">A</span> case en pointillés : entraînement en piscine / fosse
         }
-        · {{ seancesAffichees().length }} séance(s) sur {{ m.seances.length }}
+        · {{ seancesAffichees().length | pluriel:'séance' }} sur {{ m.seances.length }}
       </p>
       @if (m.exercices?.length) {
         <p class="legende secondaire">

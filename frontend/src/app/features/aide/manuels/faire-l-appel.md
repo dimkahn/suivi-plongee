@@ -35,7 +35,7 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 
 Une fois la séance passée, la feuille repère les présents qui n'ont reçu **aucune note** sur cette séance :
 
-- le bilan en haut de la liste les compte, dans le groupe filtré (« 3 présent(s) sans évaluation ») ;
+- le bilan en haut de la liste les compte, dans le groupe filtré (« 3 présents sans évaluation ») ;
 - leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève, sur cette séance, et le noter ;
 - les présents déjà notés ont à la place un bouton « Noter », qui ouvre de même leur grille sur la séance pour ajouter ou corriger une note ;
 - une fois l'élève noté, « ← Retour à la feuille de présence », en haut de sa grille, ramène à la feuille sur la même séance, filtrée sur le même groupe, pour passer à l'élève suivant ;
@@ -53,7 +53,7 @@ Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme 
 
 ## Les exercices de la séance
 
-- Touchez le titre « Exercices de la séance » pour replier ou rouvrir tout le bloc : replié, il laisse la place à la liste des élèves.
+- Touchez le titre « Exercices de la séance » pour replier ou rouvrir toute la partie : replié, il laisse la place à la liste des élèves.
 - Touchez un exercice pour le déplier : phase (initiation, perfectionnement, maîtrise), déroulement et consignes, critère de réussite, critères travaillés et schéma. Touchez-le de nouveau pour le replier.
 - « Tout déplier » ouvre tous les exercices affichés d'un coup, « Tout replier » les referme.
 - Filtré sur un groupe, le bloc ne montre que le programme de ce groupe et le programme commun.

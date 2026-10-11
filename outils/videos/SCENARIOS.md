@@ -81,7 +81,7 @@ Compte : `e2@club.fr` · format téléphone · 1 min 10
 6. « Au programme » : ce que la progression du club prévoit ce mois-ci.
 7. Dessous, « Exercices de la séance » : ce que chaque groupe a préparé pour ce soir.
 8. Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.
-9. Touchez le titre pour replier tout le bloc et garder la place pour l'appel.
+9. Touchez le titre pour replier toute la partie et garder la place pour l'appel.
 10. Filtrez sur votre groupe d'entraînement.
 11. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
 12. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
@@ -118,7 +118,7 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 13. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
 14. … on laisse un mot pour le prochain encadrant.
 15. Le commentaire reste affiché sous le critère.
-16. Un bloc marqué « En retard » a passé l'échéance prévue par la progression.
+16. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
 17. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
@@ -138,7 +138,7 @@ Compte : `e2@club.fr` · format téléphone · 41 s
 
 ### M6 — Valider une compétence
 
-Valider un bloc de compétences quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.
+Valider une compétence quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.
 
 Compte : `e2@club.fr` · format téléphone · 61 s
 
@@ -146,7 +146,7 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 2. Anis a choisi et réglé son matériel seul, sur l'exercice de maîtrise 1.9 : dernier critère acquis.
 3. Tous les critères sont acquis, et au moins un exercice de maîtrise : le bouton « Valider la compétence » apparaît.
 4. Sans exercice de maîtrise acquis, la grille vous le rappelle à la place du bouton.
-5. Validée, avec la date et votre nom. Les critères de ce bloc ne se modifient plus.
+5. Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.
 6. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
 7. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
 8. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
@@ -310,7 +310,7 @@ Compte : `e2@club.fr` · format téléphone · 81 s
 3. Filtrez sur votre groupe, puis faites l'appel si ce n'est pas déjà fait.
 4. Touchez « Noter les présents ».
 5. Les présents du groupe sont tous cochés. Décochez celui qui n'a pas fait l'exercice.
-6. Puis cochez le ou les critères travaillés. Les blocs « Au programme » du mois viennent en premier.
+6. Puis cochez le ou les critères travaillés. Les compétences « Au programme » du mois viennent en premier.
 7. Chaque critère coché demande son commentaire : il s'ajoutera à la fiche de chaque élève.
 8. Un deuxième critère ? Même chose, avec son propre commentaire.
 9. Tant qu'un commentaire manque, « Valider la notation » reste grisé.

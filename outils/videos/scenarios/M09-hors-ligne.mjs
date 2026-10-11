@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-09, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -32,7 +32,7 @@ export default {
     await toucher(page.getByRole('link', { name: 'Léa Morel', exact: true }), { apres: 1800 });
     await legende('« Grille consultée hors ligne » : la version embarquée avant de partir.', 3500);
     await choisirDerniereSeance();
-    await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ blocs au programme$/ }), { apres: 1000 });
+    await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences|la compétence) au programme$/ }), { apres: 1000 });
     await legende('On note comme d\'habitude…', 0);
     const ligne = critere(page, 'Palmage dorsal');
     await toucher(ligne.locator('.etats').getByRole('button', { name: 'Acquis', exact: true }), { apres: 300 });

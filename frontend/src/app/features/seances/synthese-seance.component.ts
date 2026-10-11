@@ -8,6 +8,7 @@ import { ReseauService } from '../../core/reseau.service';
 import { EleveSyntheseVue, NoteSyntheseVue, Statut, SyntheseSeanceVue } from '../../core/modeles';
 import { PastillePhaseComponent } from '../../core/phase-exercice';
 import { dateFr } from '../../core/date-fr';
+import { PlurielPipe } from '../../core/pluriel';
 import { libellePreparation } from '../../core/niveaux';
 import { PhotoEleveComponent } from '../../core/photo-eleve.component';
 
@@ -23,7 +24,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
  */
 @Component({
   selector: 'app-synthese-seance',
-  imports: [RouterLink, NgTemplateOutlet, PastillePhaseComponent, PhotoEleveComponent],
+  imports: [RouterLink, NgTemplateOutlet, PastillePhaseComponent, PhotoEleveComponent, PlurielPipe],
   template: `
     <a routerLink="/presences" [queryParams]="lienRetour()" class="retour">← Présences</a>
     <h1>Synthèse des notes</h1>
@@ -53,9 +54,10 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
         </div>
 
         <p class="bilan" role="status">
-          {{ s.presents }} présent(s) · {{ s.presentsNotes }} évalué(s) · {{ s.notes }} note(s) saisie(s)
+          {{ s.presents | pluriel:'présent' }} · {{ s.presentsNotes | pluriel:'évalué' }}
+          · {{ s.notes | pluriel:'note saisie':'notes saisies' }}
           @if (s.presents > s.presentsNotes) {
-            · <strong class="non-notes">{{ s.presents - s.presentsNotes }} pas encore évalué(s)</strong>
+            · <strong class="non-notes">{{ s.presents - s.presentsNotes | pluriel:'pas encore évalué':'pas encore évalués' }}</strong>
           }
         </p>
 

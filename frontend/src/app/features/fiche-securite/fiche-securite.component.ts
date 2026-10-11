@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
+import { PlurielPipe } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
@@ -103,7 +104,7 @@ interface FormulaireEntete {
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, ComboboxComponent, DialogueComponent],
+  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, PlurielPipe, ComboboxComponent, DialogueComponent],
   template: `
     <!-- La liste rouvre sur la date de la séance, pas sur toutes les dates. -->
     <a routerLink="/fiches-securite" [queryParams]="{ date: seance()?.date ?? null }"
@@ -226,7 +227,7 @@ interface FormulaireEntete {
                 🔗 Liée à <strong>{{ libelleSeance(l) }}</strong>
                 <span class="secondaire">
                   — {{ detailsSeance(l.seanceId) }}{{ detailsSeance(l.seanceId) ? ' · ' : '' }}{{
-                    l.ficheEtablie ? l.plongeursPlaces.length + ' plongeur(s) déjà placé(s)' : 'fiche pas encore établie' }}
+                    l.ficheEtablie ? (l.plongeursPlaces.length | pluriel:'plongeur déjà placé':'plongeurs déjà placés') : 'fiche pas encore établie' }}
                 </span>
               </p>
             }
@@ -299,7 +300,9 @@ interface FormulaireEntete {
           </div>
           @if (masquesParLiaison() > 0) {
             <p class="secondaire">
-              {{ masquesParLiaison() }} plongeur(s) du groupe déjà placé(s) sur la fiche liée, non proposé(s) ici.
+              {{ masquesParLiaison() > 1
+                  ? masquesParLiaison() + ' plongeurs du groupe déjà placés sur la fiche liée, non proposés ici.'
+                  : masquesParLiaison() + ' plongeur du groupe déjà placé sur la fiche liée, non proposé ici.' }}
             </p>
           }
           @if (seance()?.milieu === 'NATUREL') {
@@ -314,7 +317,7 @@ interface FormulaireEntete {
                     (fermer)="propositionOuverte.set(false)">
         @if (criteres(); as c) {
           <p class="secondaire">
-            {{ proposables().length }} plongeur(s) du groupe. La proposition remplace les palanquées du
+            {{ proposables().length | pluriel:'plongeur' }} du groupe. La proposition remplace les palanquées du
             formulaire ; rien n'est enregistré avant que vous ne la relisiez et touchiez « Enregistrer la fiche ».
           </p>
 
@@ -396,7 +399,7 @@ interface FormulaireEntete {
             <button type="button" class="bouton-discret" (click)="bilanProposition.set(null)">Fermer</button>
           </div>
           <p class="secondaire">
-            {{ b.palanquees.length }} palanquée(s) proposée(s). Vérifiez-les, ajustez-les si besoin,
+            {{ b.palanquees.length | pluriel:'palanquée proposée':'palanquées proposées' }}. Vérifiez-les, ajustez-les si besoin,
             puis enregistrez la fiche : le directeur de plongée reste seul juge.
           </p>
           @if (b.nonPlaces.length > 0) {

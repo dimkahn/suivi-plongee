@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-09, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
@@ -71,7 +71,7 @@ export default {
     await legende('Les exercices de son groupe s\'affichent avec la séance.', 0);
     await page.locator('section.exercices-seance').scrollIntoViewIfNeeded();
     await pause(3000);
-    await toucher(page.getByRole('button', { name: /^Ouvrir les \d+ bloc\(s\) travaillé\(s\)$/ }), { apres: 1200 });
+    await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences travaillées|la compétence travaillée)$/ }), { apres: 1200 });
     await legende('Les critères travaillés portent le nom de l\'exercice : il ne reste qu\'à noter.', 0);
     await critere(page, 'Vidage du masque').scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy({ top: 120, behavior: 'smooth' }));
