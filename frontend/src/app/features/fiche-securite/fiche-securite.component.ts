@@ -584,8 +584,9 @@ interface FormulaireEntete {
     .jeton-plongeur.selectionne {
       background: var(--profond); border-color: var(--profond); color: #fff; font-weight: 700;
     }
+    /* Au-dessus de la barre d'onglets du téléphone, le temps du choix. */
     .barre-placement {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
       max-height: 45vh; overflow-y: auto;
       padding: var(--pas-2) var(--pas-3) calc(var(--pas-2) + env(safe-area-inset-bottom, 0px));
       background: var(--carte); border-top: 1px solid var(--trait);

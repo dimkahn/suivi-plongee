@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -14,7 +14,7 @@ export default {
     const { page, pause, legende, toucher, menu, reseau, vignette, choisirDerniereSeance, defiler } = g;
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('Pas de réseau à la piscine ? Avant de partir, avec du réseau : menu, « Préparer hors ligne ».', 0);
+    await legende('Pas de réseau à la piscine ? Avant de partir, avec du réseau : « Plus », puis « Préparer hors ligne ».', 0);
     await menu('Préparer hors ligne');
     await page.locator('app-bandeau-sync').getByText(/Disponibles hors ligne/).waitFor({ timeout: 30000 });
     await legende('Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.', 4500);

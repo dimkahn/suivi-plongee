@@ -39,6 +39,13 @@
 
   --font-titres: 'Poppins', sans-serif;
   --font-texte:  'Nunito', sans-serif;
+
+  /* Barre d'onglets du bas (téléphone, app.component.ts) : ce qui colle au
+     bas de l'écran se place au-dessus d'elle. */
+  --hauteur-onglets: 0px;
+}
+@media (max-width: 860px) {
+  :root { --hauteur-onglets: calc(64px + env(safe-area-inset-bottom, 0px)); }
 }
 
 * { box-sizing: border-box; }

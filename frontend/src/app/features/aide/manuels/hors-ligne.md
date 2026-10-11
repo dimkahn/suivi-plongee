@@ -9,11 +9,11 @@ questions:
 - Mes notes sont-elles perdues sans réseau ?
 - À quoi sert « Préparer hors ligne » ?
 ---
-Avant de partir, avec du réseau : menu, « Préparer hors ligne ». Au bassin, l'appli s'ouvre et note sans réseau ; tout part seul au retour du réseau.
+Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer hors ligne ». Au bassin, l'appli s'ouvre et note sans réseau ; tout part seul au retour du réseau.
 
 ## Pas à pas
 
-1. Avant de partir, avec du réseau : menu, puis « Préparer hors ligne ».
+1. Avant de partir, avec du réseau : « Plus » en bas de l'écran (sur ordinateur : le menu en haut), puis « Préparer hors ligne ».
 2. Grilles des élèves, feuilles de présence et fiches de sécurité des séances proches, moniteurs, groupes et planning sont copiés sur le téléphone.
 3. Au bassin, sans réseau : l'appli s'ouvre quand même. « Grille consultée hors ligne » rappelle qu'on voit la version embarquée.
 4. Notez et faites l'appel comme d'habitude : chaque saisie attend, « En attente d'envoi ».

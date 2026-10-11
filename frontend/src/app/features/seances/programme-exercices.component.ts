@@ -518,7 +518,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
     .reprise label { margin-top: 0; }
     .reprise select { margin: 0; }
     .barre-enregistrement {
-      position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center;
+      position: sticky; bottom: var(--hauteur-onglets); z-index: 5; display: flex; flex-wrap: wrap; align-items: center;
       gap: var(--pas-2); margin-top: var(--pas-3); padding: var(--pas-2) 0; background: var(--fond);
     }
     .barre-enregistrement .bouton-principal { width: auto; margin-top: 0; }

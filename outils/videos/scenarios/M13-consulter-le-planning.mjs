@@ -1,5 +1,5 @@
 // M13 — Consulter le planning du bassin.
-// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',
@@ -10,7 +10,7 @@ export default {
   async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
-    await legende('Le planning remplace le tableur du lundi soir : menu, puis « Planning ».', 0);
+    await legende('Le planning remplace le tableur du lundi soir : « Planning », en bas de l\'écran.', 0);
     await menu('Planning');
 
     await legende('En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.', 4000);

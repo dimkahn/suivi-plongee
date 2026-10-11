@@ -1,5 +1,5 @@
 // D1 — L'inventaire du matériel.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -12,7 +12,7 @@ export default {
   async jouer({ page, pause, legende, toucher, saisir, menu, defiler, enHaut, vignette }) {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('Le directeur technique a une entrée de plus dans le menu : « Matériel ».', 0);
+    await legende('Le directeur technique a une entrée de plus sous « Plus » : « Matériel ».', 0);
     await menu('Matériel');
     await legende('En haut, les compteurs : disponible, prêté, à régulariser, hors service.', 3500);
     await vignette();
