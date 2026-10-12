@@ -5,6 +5,7 @@ import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.Milieu;
 import fr.club.plongee.formation.domain.Saison;
 import fr.club.plongee.formation.repository.SaisonRepository;
+import fr.club.plongee.progression.domain.DecoupageProgression;
 import fr.club.plongee.progression.domain.PeriodeProgression;
 import fr.club.plongee.progression.domain.ProgressionType;
 import fr.club.plongee.progression.repository.ProgressionTypeRepository;
@@ -38,26 +39,41 @@ public class ProgressionService {
     public record ExerciceResume(Long id, Long blocId, String numero, String intitule, String phase,
                                  boolean actif) {}
 
-    public record PeriodeVue(Long id, int rang, String intitule, int moisDebut, int moisFin,
+    /**
+     * Mois (progression découpée par mois) ou numéros de plongée (découpée
+     * par plongées) : l'autre paire est nulle.
+     */
+    public record PeriodeVue(Long id, int rang, String intitule, Integer moisDebut, Integer moisFin,
+                             Integer plongeeDebut, Integer plongeeFin,
                              String milieu, String note, List<BlocResume> blocs,
                              List<ExerciceResume> exercices) {}
 
     public record ProgressionResume(Long id, String nom, Long referentielId, String niveau,
-                                    String versionMft, int nombrePeriodes) {}
+                                    String versionMft, String decoupage, int nombrePeriodes) {}
 
     public record ProgressionVue(Long id, String nom, String description, Long referentielId,
-                                 String niveau, String versionMft, List<PeriodeVue> periodes) {}
+                                 String niveau, String versionMft, String decoupage, List<PeriodeVue> periodes) {}
+
+    /** Borne de saisie d'une étape : bien au-delà d'une formation, même N3. */
+    public static final int MAX_PLONGEES = 99;
 
     /**
      * {@code id} null : nouvelle periode. {@code exerciceIds} null : exercices
      * inchangés (écran d'une version précédente, qui ne les envoyait pas).
+     * Mois ou plongées selon le découpage de la progression.
      */
     public record DemandePeriode(Long id, @NotBlank String intitule,
-                                 @Min(1) @Max(12) int moisDebut, @Min(1) @Max(12) int moisFin,
+                                 @Min(1) @Max(12) Integer moisDebut, @Min(1) @Max(12) Integer moisFin,
+                                 @Min(1) @Max(MAX_PLONGEES) Integer plongeeDebut,
+                                 @Min(1) @Max(MAX_PLONGEES) Integer plongeeFin,
                                  Milieu milieu, String note, List<Long> blocIds, List<Long> exerciceIds) {}
 
-    /** {@code referentielId} n'est lu qu'a la creation : une progression ne change pas de referentiel. */
+    /**
+     * {@code referentielId} et {@code decoupage} (null = MOIS) ne sont lus qu'a
+     * la creation : une progression ne change ni de referentiel ni de decoupage.
+     */
     public record DemandeProgression(Long referentielId, @NotBlank String nom, String description,
+                                     DecoupageProgression decoupage,
                                      List<@Valid DemandePeriode> periodes) {}
 
     private final ProgressionTypeRepository progressions;
@@ -119,7 +135,7 @@ public class ProgressionService {
         return progressions.listerAvecReferentiel().stream()
                 .map(p -> new ProgressionResume(p.getId(), p.getNom(), p.getReferentiel().getId(),
                         p.getReferentiel().getNiveau().name(), p.getReferentiel().getVersionMft(),
-                        p.getPeriodes().size()))
+                        p.getDecoupage().name(), p.getPeriodes().size()))
                 .toList();
     }
 
@@ -137,6 +153,7 @@ public class ProgressionService {
                 .orElseThrow(() -> new RessourceIntrouvableException("Referentiel introuvable"));
         ProgressionType p = new ProgressionType();
         p.setReferentiel(r);
+        if (demande.decoupage() != null) p.setDecoupage(demande.decoupage());
         appliquer(p, demande);
         return vers(progressions.save(p));
     }
@@ -156,6 +173,7 @@ public class ProgressionService {
         copie.setReferentiel(source.getReferentiel());
         copie.setNom(source.getNom() + " (copie)");
         copie.setDescription(source.getDescription());
+        copie.setDecoupage(source.getDecoupage());
         for (PeriodeProgression ps : source.getPeriodes()) {
             PeriodeProgression pc = new PeriodeProgression();
             pc.setProgression(copie);
@@ -163,6 +181,8 @@ public class ProgressionService {
             pc.setIntitule(ps.getIntitule());
             pc.setMoisDebut(ps.getMoisDebut());
             pc.setMoisFin(ps.getMoisFin());
+            pc.setPlongeeDebut(ps.getPlongeeDebut());
+            pc.setPlongeeFin(ps.getPlongeeFin());
             pc.setMilieu(ps.getMilieu());
             pc.setNote(ps.getNote());
             pc.setBlocs(new LinkedHashSet<>(ps.getBlocs()));
@@ -203,8 +223,7 @@ public class ProgressionService {
             }
             pp.setRang(i + 1);
             pp.setIntitule(dp.intitule().trim());
-            pp.setMoisDebut(dp.moisDebut());
-            pp.setMoisFin(dp.moisFin());
+            appliquerPlage(p, pp, dp);
             pp.setMilieu(dp.milieu());
             pp.setNote(dp.note() == null || dp.note().isBlank() ? null : dp.note());
             pp.setBlocs(blocsDuReferentiel(p.getReferentiel(), dp.blocIds()));
@@ -214,6 +233,32 @@ public class ProgressionService {
         // Meme collection (orphanRemoval) : les periodes absentes de la demande sont supprimees.
         p.getPeriodes().clear();
         p.getPeriodes().addAll(nouvelles);
+    }
+
+    /** Mois ou plongées selon le découpage ; l'autre paire est effacée. */
+    private static void appliquerPlage(ProgressionType p, PeriodeProgression pp, DemandePeriode dp) {
+        String nom = "« " + dp.intitule().trim() + " »";
+        if (p.parPlongees()) {
+            if (dp.plongeeDebut() == null || dp.plongeeFin() == null) {
+                throw new RegleMetierException("Indiquez la première et la dernière plongée de l'étape " + nom + ".");
+            }
+            if (dp.plongeeFin() < dp.plongeeDebut()) {
+                throw new RegleMetierException("L'étape " + nom
+                        + " finit avant de commencer : sa dernière plongée doit venir après la première.");
+            }
+            pp.setPlongeeDebut(dp.plongeeDebut());
+            pp.setPlongeeFin(dp.plongeeFin());
+            pp.setMoisDebut(null);
+            pp.setMoisFin(null);
+        } else {
+            if (dp.moisDebut() == null || dp.moisFin() == null) {
+                throw new RegleMetierException("Indiquez le mois de début et le mois de fin de la période " + nom + ".");
+            }
+            pp.setMoisDebut(dp.moisDebut());
+            pp.setMoisFin(dp.moisFin());
+            pp.setPlongeeDebut(null);
+            pp.setPlongeeFin(null);
+        }
     }
 
     private Set<BlocCompetence> blocsDuReferentiel(Referentiel r, List<Long> ids) {
@@ -245,7 +290,7 @@ public class ProgressionService {
         List<PeriodeVue> periodes = p.getPeriodes().stream()
                 .sorted(Comparator.comparingInt(PeriodeProgression::getRang))
                 .map(pp -> new PeriodeVue(pp.getId(), pp.getRang(), pp.getIntitule(),
-                        pp.getMoisDebut(), pp.getMoisFin(),
+                        pp.getMoisDebut(), pp.getMoisFin(), pp.getPlongeeDebut(), pp.getPlongeeFin(),
                         pp.getMilieu() == null ? null : pp.getMilieu().name(), pp.getNote(),
                         pp.getBlocs().stream()
                                 .sorted(Comparator.comparingInt(BlocCompetence::getOrdre))
@@ -260,6 +305,6 @@ public class ProgressionService {
                                 .toList()))
                 .toList();
         return new ProgressionVue(p.getId(), p.getNom(), p.getDescription(), r.getId(),
-                r.getNiveau().name(), r.getVersionMft(), periodes);
+                r.getNiveau().name(), r.getVersionMft(), p.getDecoupage().name(), periodes);
     }
 }

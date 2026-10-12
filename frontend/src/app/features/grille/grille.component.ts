@@ -23,7 +23,7 @@ import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
-import { periodeDuMois, plageMois } from '../../core/progression';
+import { periodeDeLaPlongee, periodeDuMois, plagePeriode } from '../../core/progression';
 import { DialogueComponent } from '../../core/dialogue.component';
 
 /** Un suivi affiché (milieu naturel ou entraînement), augmenté de l'information « pas encore envoyé ». */
@@ -387,8 +387,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             <p class="periode">
               <span class="etiquette-programme">Au programme</span>
               <strong>{{ p.intitule }}</strong>
-              <span class="secondaire"> · {{ plage(p.moisDebut, p.moisFin) }}</span>
+              <span class="secondaire"> · {{ plage(p) }}</span>
             </p>
+            @if (numeroPlongee(); as n) {
+              <p class="secondaire">
+                @if (seanceChoisie()) { Plongée n° {{ n }} de l'élève en milieu naturel }
+                @else { Sa prochaine plongée : n° {{ n }} }
+                · {{ (g.plongeesFaites ?? 0) | pluriel:'plongée faite':'plongées faites' }}
+              </p>
+            }
             @if (p.note) {
               <details class="note-periode"><summary>Contenu de la période</summary><p>{{ p.note }}</p></details>
             }
@@ -398,7 +405,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               </button>
             }
           } @else {
-            <p class="secondaire periode">Aucune période de « {{ g.progression }} » ce mois-ci.</p>
+            @if (g.decoupage === 'PLONGEES') {
+              <p class="secondaire periode">Aucune étape de « {{ g.progression }} » pour cette plongée.</p>
+            } @else {
+              <p class="secondaire periode">Aucune période de « {{ g.progression }} » ce mois-ci.</p>
+            }
           }
           @if (nombreEnRetard() > 0) {
             <p class="retard-resume" role="status">
@@ -498,6 +509,8 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 }
                 @if (bloc.enRetard && bloc.echeance) {
                   · prévu avant le {{ bloc.echeance | dateFr }}
+                } @else if (bloc.enRetard && bloc.echeancePlongee) {
+                  · prévu au plus tard à la plongée {{ bloc.echeancePlongee }}
                 }
                 @if (bloc.evaluationTransverse) {
                   · vérifiée au fil des autres compétences, sans séance dédiée
@@ -1416,11 +1429,26 @@ export class GrilleComponent implements OnDestroy {
    */
   periodeEnCours = computed(() => {
     const g = this.grille();
-    return g ? periodeDuMois(g.periodes ?? [], this.seanceChoisie()?.date ?? this.aujourdhui) : null;
+    if (!g) return null;
+    const n = this.numeroPlongee();
+    return n != null ? periodeDeLaPlongee(g.periodes ?? [], n)
+      : periodeDuMois(g.periodes ?? [], this.seanceChoisie()?.date ?? this.aujourdhui);
+  });
+
+  /**
+   * Progression découpée par plongées : numéro de plongée en milieu naturel
+   * de l'élève à la séance choisie, sinon sa prochaine plongée. Null pour
+   * une progression par mois.
+   */
+  numeroPlongee = computed(() => {
+    const g = this.grille();
+    if (g?.decoupage !== 'PLONGEES') return null;
+    const s = this.seanceChoisie();
+    return (s ? g.numerosPlongee?.[s.id] : undefined) ?? (g.plongeesFaites ?? 0) + 1;
   });
   blocsAuProgramme = computed(() => new Set(this.periodeEnCours()?.blocIds ?? []));
   nombreEnRetard = computed(() => this.grille()?.blocs.filter(b => b.enRetard).length ?? 0);
-  readonly plage = plageMois;
+  readonly plage = plagePeriode;
 
   /**
    * Exercices préparés pour la séance choisie par le groupe de l'élève et

@@ -164,7 +164,9 @@ export interface FicheExerciceVue {
   /** Périodes des progressions types où l'exercice est prévu. */
   periodes: {
     progressionId: number; progression: string; rang: number; intitule: string;
-    moisDebut: number; moisFin: number; milieu: 'ARTIFICIEL' | 'NATUREL' | null;
+    moisDebut: number | null; moisFin: number | null;
+    plongeeDebut?: number | null; plongeeFin?: number | null;
+    milieu: 'ARTIFICIEL' | 'NATUREL' | null;
   }[];
   precedent: VoisinExerciceVue | null;
   suivant: VoisinExerciceVue | null;
@@ -244,6 +246,8 @@ export interface BlocVue {
   echeance: string | null;
   /** Échéance passée, bloc non validé et critères pas tous acquis (calculé par le serveur). */
   enRetard: boolean;
+  /** Progression par plongées : dernière plongée de la dernière étape qui contient ce bloc. */
+  echeancePlongee?: number | null;
   criteres: CritereVue[];
   /** Base d'exercices de la compétence (actifs). Absent d'une grille mise en cache avant son arrivée. */
   exercices?: ExerciceBaseVue[];
@@ -257,8 +261,10 @@ export interface BlocVue {
 /** Une période de la progression suivie par le cursus. */
 export interface PeriodeGrilleVue {
   intitule: string;
-  moisDebut: number;
-  moisFin: number;
+  moisDebut: number | null;
+  moisFin: number | null;
+  plongeeDebut?: number | null;
+  plongeeFin?: number | null;
   milieu: 'ARTIFICIEL' | 'NATUREL' | null;
   note: string | null;
   blocIds: number[];
@@ -294,6 +300,15 @@ export interface GrilleVue {
   /** Progression suivie par la saison pour ce référentiel ; null et liste vide sinon. */
   progression: string | null;
   periodes: PeriodeGrilleVue[];
+  /** Découpage de la progression suivie ; absent d'une grille mise en cache avant (= MOIS). */
+  decoupage?: DecoupageProgression | null;
+  /**
+   * Numéro de plongée en milieu naturel de l'élève pour chaque séance où il y est
+   * présent (clé : id de la séance), à venir comprises.
+   */
+  numerosPlongee?: Record<number, number>;
+  /** Plongées en milieu naturel déjà faites. */
+  plongeesFaites?: number;
   /**
    * Séances où l'élève est noté présent : les seules où on peut le noter.
    * Peut manquer dans une grille mise en cache avant cette règle.
@@ -970,9 +985,15 @@ export interface PeriodeProgressionVue {
   id: number;
   rang: number;
   intitule: string;
-  /** 1 = janvier ... 12 = décembre ; une période peut enjamber le changement d'année. */
-  moisDebut: number;
-  moisFin: number;
+  /**
+   * 1 = janvier ... 12 = décembre ; une période peut enjamber le changement d'année.
+   * Null dans une progression découpée par plongées.
+   */
+  moisDebut: number | null;
+  moisFin: number | null;
+  /** Numéros de plongée de l'élève (1 = sa première en milieu naturel) ; null si découpée par mois. */
+  plongeeDebut?: number | null;
+  plongeeFin?: number | null;
   milieu: 'ARTIFICIEL' | 'NATUREL' | null;
   note: string | null;
   blocs: BlocResume[];
@@ -995,8 +1016,15 @@ export interface ProgressionResume {
   referentielId: number;
   niveau: 'N1' | 'N2' | 'N3';
   versionMft: string;
+  decoupage?: DecoupageProgression;
   nombrePeriodes: number;
 }
+
+/**
+ * MOIS : périodes de la saison (club associatif) ; PLONGEES : étapes lues au
+ * numéro de plongée en milieu naturel de l'élève (centre de plongée en mer).
+ */
+export type DecoupageProgression = 'MOIS' | 'PLONGEES';
 
 export interface ProgressionVue {
   id: number;
@@ -1005,15 +1033,19 @@ export interface ProgressionVue {
   referentielId: number;
   niveau: 'N1' | 'N2' | 'N3';
   versionMft: string;
+  /** Absent d'une copie gardée avant son arrivée : MOIS. */
+  decoupage?: DecoupageProgression;
   periodes: PeriodeProgressionVue[];
 }
 
-/** id null : nouvelle période. L'ordre de la liste donne le rang. */
+/** id null : nouvelle période. L'ordre de la liste donne le rang. Mois ou plongées selon le découpage. */
 export interface DemandePeriodeProgression {
   id: number | null;
   intitule: string;
-  moisDebut: number;
-  moisFin: number;
+  moisDebut: number | null;
+  moisFin: number | null;
+  plongeeDebut: number | null;
+  plongeeFin: number | null;
   milieu: 'ARTIFICIEL' | 'NATUREL' | null;
   note: string | null;
   blocIds: number[];
@@ -1021,11 +1053,19 @@ export interface DemandePeriodeProgression {
   exerciceIds: number[];
 }
 
-/** referentielId n'est lu qu'à la création. */
+/** Ce qu'a installé le modèle « centre de plongée en mer ». */
+export interface ResultatModeleCentreMer {
+  progressions: number;
+  exercicesMer: number;
+  exercicesDesactives: number;
+}
+
+/** referentielId et decoupage ne sont lus qu'à la création. */
 export interface DemandeProgression {
   referentielId: number | null;
   nom: string;
   description: string | null;
+  decoupage: DecoupageProgression;
   periodes: DemandePeriodeProgression[];
 }
 

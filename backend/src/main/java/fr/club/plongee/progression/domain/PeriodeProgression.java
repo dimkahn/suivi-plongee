@@ -12,6 +12,8 @@ import java.util.Set;
  * Une periode d'une progression type : une plage de mois (qui peut enjamber
  * le changement d'annee, novembre a fevrier par exemple) et les blocs qui y
  * sont travailles. Un bloc peut figurer dans plusieurs periodes successives.
+ * Dans une progression decoupee par plongees (V73), une plage de numeros de
+ * plongee en milieu naturel de l'eleve remplace la plage de mois.
  */
 @Entity
 public class PeriodeProgression {
@@ -30,12 +32,18 @@ public class PeriodeProgression {
     @Column(nullable = false, length = 200)
     private String intitule;
 
-    /** 1 = janvier ... 12 = decembre. */
-    @Column(nullable = false)
-    private int moisDebut;
+    /** 1 = janvier ... 12 = decembre ; null dans une progression découpée par plongées. */
+    private Integer moisDebut;
 
-    @Column(nullable = false)
-    private int moisFin;
+    private Integer moisFin;
+
+    /**
+     * Numéros de plongée en milieu naturel de l'élève (1 = sa première),
+     * bornes comprises ; null dans une progression découpée par mois.
+     */
+    private Integer plongeeDebut;
+
+    private Integer plongeeFin;
 
     /** Milieu dominant de la periode ; null = indifferent. */
     @Enumerated(EnumType.STRING)
@@ -102,20 +110,36 @@ public class PeriodeProgression {
         this.intitule = intitule;
     }
 
-    public int getMoisDebut() {
+    public Integer getMoisDebut() {
         return moisDebut;
     }
 
-    public void setMoisDebut(int moisDebut) {
+    public void setMoisDebut(Integer moisDebut) {
         this.moisDebut = moisDebut;
     }
 
-    public int getMoisFin() {
+    public Integer getMoisFin() {
         return moisFin;
     }
 
-    public void setMoisFin(int moisFin) {
+    public void setMoisFin(Integer moisFin) {
         this.moisFin = moisFin;
+    }
+
+    public Integer getPlongeeDebut() {
+        return plongeeDebut;
+    }
+
+    public void setPlongeeDebut(Integer plongeeDebut) {
+        this.plongeeDebut = plongeeDebut;
+    }
+
+    public Integer getPlongeeFin() {
+        return plongeeFin;
+    }
+
+    public void setPlongeeFin(Integer plongeeFin) {
+        this.plongeeFin = plongeeFin;
     }
 
     public Milieu getMilieu() {

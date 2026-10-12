@@ -4,7 +4,9 @@ import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.formation.domain.Milieu;
 import fr.club.plongee.formation.domain.Saison;
 import fr.club.plongee.formation.repository.SaisonRepository;
+import fr.club.plongee.progression.domain.DecoupageProgression;
 import fr.club.plongee.progression.domain.PeriodeProgression;
+import fr.club.plongee.progression.service.EcheancesProgression;
 import fr.club.plongee.progression.domain.ProgressionType;
 import fr.club.plongee.progression.repository.ProgressionTypeRepository;
 import fr.club.plongee.progression.service.ProgressionService;
@@ -65,9 +67,9 @@ class ProgressionServiceTest {
         when(blocs.findAllById(anyIterable())).thenReturn(List.of(equilibre, immersion));
         when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        ProgressionVue vue = service.creer(new DemandeProgression(1L, " N1 hiver ", null, List.of(
-                new DemandePeriode(null, "Piscine", 9, 10, Milieu.ARTIFICIEL, "", List.of(11L, 10L), null),
-                new DemandePeriode(null, "Mer", 5, 6, Milieu.NATUREL, "Fin de saison", List.of(), null))));
+        ProgressionVue vue = service.creer(new DemandeProgression(1L, " N1 hiver ", null, null, List.of(
+                new DemandePeriode(null, "Piscine", 9, 10, null, null, Milieu.ARTIFICIEL, "", List.of(11L, 10L), null),
+                new DemandePeriode(null, "Mer", 5, 6, null, null, Milieu.NATUREL, "Fin de saison", List.of(), null))));
 
         assertThat(vue.nom()).isEqualTo("N1 hiver");
         assertThat(vue.periodes()).extracting(ProgressionService.PeriodeVue::rang).containsExactly(1, 2);
@@ -78,14 +80,72 @@ class ProgressionServiceTest {
     }
 
     @Test
+    @DisplayName("Une progression par plongées garde ses étapes en plongées, sans mois, et en tire les échéances")
+    void creer_parPlongees() {
+        when(referentiels.findById(1L)).thenReturn(Optional.of(n1));
+        when(blocs.findAllById(anyIterable())).thenAnswer(i -> {
+            List<BlocCompetence> trouves = new java.util.ArrayList<>();
+            for (Object id : (Iterable<?>) i.getArgument(0)) trouves.add(id.equals(10L) ? immersion : equilibre);
+            return trouves;
+        });
+        when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        ProgressionVue vue = service.creer(new DemandeProgression(1L, "N1 en mer", null,
+                DecoupageProgression.PLONGEES, List.of(
+                new DemandePeriode(null, "Découverte", 9, 10, 1, 1, Milieu.NATUREL, null, List.of(10L), null),
+                new DemandePeriode(null, "Validation", null, null, 2, 4, Milieu.NATUREL, null,
+                        List.of(10L, 11L), null))));
+
+        assertThat(vue.decoupage()).isEqualTo("PLONGEES");
+        assertThat(vue.periodes().get(0).moisDebut()).isNull();
+        assertThat(vue.periodes().get(1).plongeeDebut()).isEqualTo(2);
+        assertThat(vue.periodes().get(1).plongeeFin()).isEqualTo(4);
+
+        ProgressionType p = new ProgressionType();
+        p.setDecoupage(DecoupageProgression.PLONGEES);
+        PeriodeProgression decouverte = periode(1L, p, 1, "Découverte");
+        decouverte.setPlongeeDebut(1);
+        decouverte.setPlongeeFin(1);
+        decouverte.setBlocs(new java.util.LinkedHashSet<>(Set.of(immersion)));
+        PeriodeProgression validation = periode(2L, p, 2, "Validation");
+        validation.setPlongeeDebut(2);
+        validation.setPlongeeFin(4);
+        validation.setBlocs(new java.util.LinkedHashSet<>(Set.of(equilibre)));
+        p.getPeriodes().addAll(List.of(decouverte, validation));
+        assertThat(EcheancesProgression.parBlocEnPlongees(p)).containsEntry(10L, 1).containsEntry(11L, 4);
+        assertThat(EcheancesProgression.parBloc(p, java.time.LocalDate.of(2026, 9, 1))).isEmpty();
+        // Plongée d'échéance faite un jour précédent : en retard ; le jour même, pas encore.
+        assertThat(EcheancesProgression.enRetardEnPlongees(4, 4, false, 1, 2)).isTrue();
+        assertThat(EcheancesProgression.enRetardEnPlongees(4, 3, false, 1, 2)).isFalse();
+        assertThat(EcheancesProgression.enRetardEnPlongees(4, 5, true, 1, 2)).isFalse();
+    }
+
+    @Test
+    @DisplayName("Une étape sans plongées, ou qui finit avant de commencer, est refusée")
+    void creer_parPlongeesRefuseUneEtapeIncomplete() {
+        when(referentiels.findById(1L)).thenReturn(Optional.of(n1));
+
+        assertThatThrownBy(() -> service.creer(new DemandeProgression(1L, "N1 en mer", null,
+                DecoupageProgression.PLONGEES, List.of(
+                new DemandePeriode(null, "Découverte", 9, 10, null, null, null, null, List.of(), null)))))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("première et la dernière plongée");
+        assertThatThrownBy(() -> service.creer(new DemandeProgression(1L, "N1 en mer", null,
+                DecoupageProgression.PLONGEES, List.of(
+                new DemandePeriode(null, "Validation", null, null, 5, 3, null, null, List.of(), null)))))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("finit avant de commencer");
+    }
+
+    @Test
     @DisplayName("Une période qui vise un bloc d'un autre référentiel est refusée")
     void creer_refuseUnBlocDUnAutreReferentiel() {
         BlocCompetence blocN2 = bloc(20L, 1, "Bloc N2", referentiel(2L, Niveau.N2));
         when(referentiels.findById(1L)).thenReturn(Optional.of(n1));
         when(blocs.findAllById(anyIterable())).thenReturn(List.of(blocN2));
 
-        assertThatThrownBy(() -> service.creer(new DemandeProgression(1L, "N1", null, List.of(
-                new DemandePeriode(null, "Piscine", 9, 10, null, null, List.of(20L), null)))))
+        assertThatThrownBy(() -> service.creer(new DemandeProgression(1L, "N1", null, null, List.of(
+                new DemandePeriode(null, "Piscine", 9, 10, null, null, null, null, List.of(20L), null)))))
                 .isInstanceOf(RegleMetierException.class);
     }
 
@@ -103,9 +163,9 @@ class ProgressionServiceTest {
         when(progressions.findById(5L)).thenReturn(Optional.of(p));
         when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        ProgressionVue vue = service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
-                new DemandePeriode(53L, "Printemps", 3, 4, null, null, null, null),
-                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null))));
+        ProgressionVue vue = service.modifier(5L, new DemandeProgression(null, "N1", null, null, List.of(
+                new DemandePeriode(53L, "Printemps", 3, 4, null, null, null, null, null, null),
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null, null, null))));
 
         assertThat(p.getPeriodes()).containsExactly(printemps, automne);
         assertThat(printemps.getRang()).isEqualTo(1);
@@ -150,21 +210,21 @@ class ProgressionServiceTest {
         when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
         when(exercices.findAllById(anyIterable())).thenReturn(List.of(maitrise, initiation));
 
-        ProgressionVue vue = service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
-                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, List.of(101L, 102L)))));
+        ProgressionVue vue = service.modifier(5L, new DemandeProgression(null, "N1", null, null, List.of(
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null, null, List.of(101L, 102L)))));
         assertThat(vue.periodes().get(0).exercices()).extracting(ProgressionService.ExerciceResume::numero)
                 .containsExactly("3.1", "6.7");
 
         // Un écran d'une version précédente n'envoie pas les exercices : ils sont gardés.
-        vue = service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
-                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null))));
+        vue = service.modifier(5L, new DemandeProgression(null, "N1", null, null, List.of(
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null, null, null))));
         assertThat(vue.periodes().get(0).exercices()).hasSize(2);
 
         var autreNiveau = exercice(201L, bloc(20L, 1, "Bloc N2", referentiel(2L, Niveau.N2)), 1, "1.1",
                 PhaseExercice.INITIATION);
         when(exercices.findAllById(anyIterable())).thenReturn(List.of(autreNiveau));
-        assertThatThrownBy(() -> service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
-                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, List.of(201L))))))
+        assertThatThrownBy(() -> service.modifier(5L, new DemandeProgression(null, "N1", null, null, List.of(
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null, null, List.of(201L))))))
                 .isInstanceOf(RegleMetierException.class)
                 .hasMessageContaining("exercice");
     }

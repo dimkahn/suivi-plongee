@@ -82,6 +82,7 @@ Seuls les référents du groupe de l'élève voient ce choix, et seuls les encad
 - Seules les séances où l'élève est **noté présent** sont proposées : faites l'appel d'abord.
 - Les notes attendent le jour de la séance : on ne note pas à l'avance.
 - « Au programme » : les compétences que la progression prévoit ce mois-ci (« Ouvrir les … compétences au programme » les déplie d'un coup). « En retard » : une compétence qui a passé l'échéance prévue sans être acquise.
+- Progression découpée par plongées (stage en mer) : « Au programme » est l'étape de la plongée de l'élève à la séance choisie (« Plongée n° 3 de l'élève en milieu naturel »), sinon de sa prochaine plongée ; une compétence est « En retard » quand l'élève a déjà fait la plongée prévue pour elle.
 - Les critères travaillés par les exercices de la séance portent le nom de l'exercice ; ils se notent aussi directement sous chaque exercice, dans « Exercices de la séance ».
 - Sans réseau, la note reste sur le téléphone, « En attente d'envoi ».
 - Tout un groupe a fait le même exercice ? Voir « Noter les présents en une fois ».

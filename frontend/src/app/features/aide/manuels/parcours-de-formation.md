@@ -3,7 +3,7 @@ titre: Le parcours de formation et la fiche d'un exercice
 rubrique: Moniteur
 videos: M24
 ecran: /parcours
-mots: parcours, cursus, progression, étape, période, mois, exercices, initiation, perfectionnement, maîtrise, fiche, fiche complète, schéma, photo, photos, vidéo, vidéos, conseils, erreurs fréquentes, vigilance, N1, N2, N3, en ce moment, hors du parcours
+mots: parcours, cursus, progression, étape, période, mois, plongées, stage, mer, exercices, initiation, perfectionnement, maîtrise, fiche, fiche complète, schéma, photo, photos, vidéo, vidéos, conseils, erreurs fréquentes, vigilance, N1, N2, N3, en ce moment, hors du parcours
 questions:
 - Quels exercices faire avec mes élèves ce mois-ci ?
 - Où voir le parcours d'un niveau, du début à la fin de la saison ?
@@ -37,3 +37,4 @@ La fiche s'ouvre aussi depuis le programme d'une séance (« Fiche complète »)
 - Le parcours et les fiches demandent le **réseau** ; les schémas déjà vus restent visibles sans réseau.
 - Photos et vidéos sont ajoutées par un administrateur dans la base d'exercices : un exercice sans photo ni vidéo n'en a simplement pas encore reçu.
 - Le parcours se modifie dans l'administration, « Progressions types » ; le programme de la séance propose d'abord les exercices de l'étape du mois.
+- Un parcours **par plongées** (stage en mer) donne des étapes « plongée 1 », « plongées 5 – 6 » : chaque élève y avance à son rythme, et sa fiche de suivi montre l'étape où il en est. Aucune n'est marquée « En ce moment ».

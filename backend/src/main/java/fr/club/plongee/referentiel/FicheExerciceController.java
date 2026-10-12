@@ -39,9 +39,10 @@ public class FicheExerciceController {
     /** Exercice voisin dans la compétence (précédent, suivant). */
     public record VoisinVue(Long id, String numero, String intitule, String phase) {}
 
-    /** Période d'une progression type où l'exercice est prévu. */
+    /** Période d'une progression type où l'exercice est prévu : mois, ou plongées (découpage par plongées). */
     public record PeriodeVue(Long progressionId, String progression, int rang, String intitule,
-                             int moisDebut, int moisFin, String milieu) {}
+                             Integer moisDebut, Integer moisFin, Integer plongeeDebut, Integer plongeeFin,
+                             String milieu) {}
 
     public record FicheVue(Long id, Long referentielId, String niveau, String versionMft,
                            Long blocId, int blocOrdre, String bloc, String regroupement,
@@ -84,14 +85,17 @@ public class FicheExerciceController {
         VoisinVue suivant = rang >= 0 && rang < duBloc.size() - 1 ? voisin(duBloc.get(rang + 1)) : null;
 
         List<PeriodeVue> periodes = jdbc.query("""
-                SELECT p.id, p.nom, pp.rang, pp.intitule, pp.mois_debut, pp.mois_fin, pp.milieu
+                SELECT p.id, p.nom, pp.rang, pp.intitule, pp.mois_debut, pp.mois_fin,
+                       pp.plongee_debut, pp.plongee_fin, pp.milieu
                   FROM periode_progression_exercice ppe
                   JOIN periode_progression pp ON pp.id = ppe.periode_id
                   JOIN progression_type p ON p.id = pp.progression_id
                  WHERE ppe.exercice_id = ?
                  ORDER BY p.nom, pp.rang""",
                 (rs, i) -> new PeriodeVue(rs.getLong(1), rs.getString(2), rs.getInt(3), rs.getString(4),
-                        rs.getInt(5), rs.getInt(6), rs.getString(7)), exerciceId);
+                        rs.getObject(5, Integer.class), rs.getObject(6, Integer.class),
+                        rs.getObject(7, Integer.class), rs.getObject(8, Integer.class), rs.getString(9)),
+                exerciceId);
 
         return new FicheVue(e.getId(), r.getId(), r.getNiveau().name(), r.getVersionMft(),
                 bloc.getId(), bloc.getOrdre(), bloc.getIntitule(), bloc.getRegroupement(),

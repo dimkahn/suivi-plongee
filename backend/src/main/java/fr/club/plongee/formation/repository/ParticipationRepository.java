@@ -2,6 +2,7 @@ package fr.club.plongee.formation.repository;
 
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.formation.domain.Participation;
+import fr.club.plongee.formation.domain.Seance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,6 +39,20 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     long compterAtelierJusquAu(@Param("cursusId") Long cursusId,
                                @Param("atelier") Participation.Atelier atelier,
                                @Param("jusquAu") LocalDate jusquAu);
+
+    /**
+     * Plongées en milieu naturel de l'élève, dans l'ordre où il les fait
+     * (à venir comprises) : le rang donne le numéro de plongée lu par une
+     * progression découpée par plongées.
+     */
+    @Query("""
+           select p.seance from Participation p
+            where p.cursus.id = :cursusId
+              and p.statut = 'PRESENT'
+              and p.seance.milieu = 'NATUREL'
+            order by p.seance.dateSeance, p.seance.ordre, p.seance.id
+           """)
+    List<Seance> plongeesEnMilieuNaturel(@Param("cursusId") Long cursusId);
 
     /** Séances de la saison où l'élève est noté présent : les seules où on peut l'évaluer. */
     @Query("""

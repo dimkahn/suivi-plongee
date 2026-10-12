@@ -16,6 +16,9 @@ import java.util.Map;
  * Les mois d'une période sont situés dans l'année de la saison : un mois
  * antérieur au mois de début de la saison tombe l'année suivante (saison
  * 2026-2027 commencée en septembre : février = février 2027).
+ * <p>
+ * Progression découpée par plongées : l'échéance est un numéro de plongée,
+ * la dernière plongée de la dernière étape qui contient le bloc.
  */
 public final class EcheancesProgression {
 
@@ -23,10 +26,23 @@ public final class EcheancesProgression {
 
     public static Map<Long, LocalDate> parBloc(ProgressionType progression, LocalDate debutSaison) {
         Map<Long, LocalDate> echeances = new HashMap<>();
+        if (progression.parPlongees()) return echeances;
         for (PeriodeProgression p : progression.getPeriodes()) {
             LocalDate fin = finDePeriode(p, debutSaison);
             for (BlocCompetence b : p.getBlocs()) {
                 echeances.merge(b.getId(), fin, (a, c) -> a.isAfter(c) ? a : c);
+            }
+        }
+        return echeances;
+    }
+
+    /** Progression découpée par plongées : numéro de la plongée d'échéance de chaque bloc. */
+    public static Map<Long, Integer> parBlocEnPlongees(ProgressionType progression) {
+        Map<Long, Integer> echeances = new HashMap<>();
+        if (!progression.parPlongees()) return echeances;
+        for (PeriodeProgression p : progression.getPeriodes()) {
+            for (BlocCompetence b : p.getBlocs()) {
+                echeances.merge(b.getId(), p.getPlongeeFin(), Math::max);
             }
         }
         return echeances;
@@ -45,5 +61,16 @@ public final class EcheancesProgression {
      */
     public static boolean enRetard(LocalDate echeance, LocalDate aujourdhui, boolean valide, int acquis, int total) {
         return echeance != null && aujourdhui.isAfter(echeance) && !valide && acquis < total;
+    }
+
+    /**
+     * Même règle en plongées : l'élève a fait la plongée d'échéance un jour
+     * précédent ({@code plongeesFaitesAvantAujourdhui}, le jour même laisse
+     * le temps de saisir les notes), comme le mois d'échéance n'est dépassé
+     * que le lendemain de son dernier jour.
+     */
+    public static boolean enRetardEnPlongees(Integer echeance, int plongeesFaitesAvantAujourdhui,
+                                             boolean valide, int acquis, int total) {
+        return echeance != null && plongeesFaitesAvantAujourdhui >= echeance && !valide && acquis < total;
     }
 }
