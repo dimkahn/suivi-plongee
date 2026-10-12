@@ -34,7 +34,11 @@ La page « Administration » les range par moment de l'année.
 
 **Contenu pédagogique**
 
-- **Référentiel MFT**, **Base d'exercices** et **Progressions types** : les compétences fédérales, leurs exercices et l'année de chaque niveau.
+- **Référentiel MFT**, **Base d'exercices** et **Progressions types** : les compétences fédérales, leurs exercices et la progression de chaque niveau (par mois, ou par plongées pour un stage en mer).
+
+**Structure**
+
+- **Identité de la structure** : le nom, le logo et les couleurs du club ou du centre, réglés une fois à l'installation.
 
 Sur chacun, « Nouveau… » ou « Modifier » ouvre une fenêtre devant la liste : « Enregistrer » en bas, « Annuler » ou la croix pour la refermer sans rien changer. Un refus (champ manquant, règle du club) s'affiche en haut de la fenêtre.
 

@@ -439,9 +439,13 @@ Compte : `presidente@club.fr` · format ordinateur · 61 s
 11. Les personnes :
 12. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
 13. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
-14. Enfin le contenu pédagogique, qui se règle rarement :
+14. Puis le contenu pédagogique, qui se règle rarement :
 15. Référentiel MFT : Les compétences fédérales, niveau par niveau.
-16. Progressions types : L'année de chaque niveau découpée en périodes.
+16. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
+17. Enfin la structure, réglée une fois à l'installation :
+18. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
+
+_À retourner (tournage du 2026-10-12)._
 
 ### A2 — Ouvrir une nouvelle saison
 

@@ -3,7 +3,7 @@ package fr.club.plongee.formation.service;
 import fr.club.plongee.formation.domain.*;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.springframework.beans.factory.annotation.Value;
+import fr.club.plongee.identite.IdentiteStructureService;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -27,12 +27,10 @@ public class FicheSecuritePdfService {
     public record FichePdf(byte[] contenu, String nomFichier) {}
 
     /** Nom de la structure, en-tête obligatoire de la fiche (A322-72) : la fiche est un document de l'établissement. */
-    private final String nomClub;
-    private final LogoClub logo;
+    private final IdentiteStructureService identite;
 
-    public FicheSecuritePdfService(@Value("${app.club.nom}") String nomClub, LogoClub logo) {
-        this.nomClub = nomClub;
-        this.logo = logo;
+    public FicheSecuritePdfService(IdentiteStructureService identite) {
+        this.identite = identite;
     }
 
     public FichePdf generer(FicheSecurite fiche) {
@@ -196,8 +194,8 @@ public class FicheSecuritePdfService {
                 echapper(s.getLieu()),
                 s.getSite() == null || s.getSite().isBlank() ? "" : " — site : " + echapper(s.getSite()),
                 s.getOrdre(),
-                logo.dataUri(),
-                echapper(nomClub),
+                identite.logoDataUri(),
+                echapper(identite.nom()),
                 echapper(f.getDp().nomComplet()),
                 conditionsResumees(f),
                 colonnesPalanquees,

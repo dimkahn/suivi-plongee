@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/actuator/health", "/api-docs/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        // Nom, logo, couleurs et icônes : lus par la page de connexion, avant tout jeton.
+                        .requestMatchers(HttpMethod.GET, "/api/identite", "/api/identite/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/referentiels/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

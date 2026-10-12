@@ -15,7 +15,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EnvoiParametresSejourServiceTest {
 
     private final EnvoiParametresSejourService service =
-            new EnvoiParametresSejourService(null, null, null, null, "Club de test");
+            new EnvoiParametresSejourService(null, null, null, null,
+                    new fr.club.plongee.identite.IdentiteStructureService(null, "Club de test") {
+                        @Override
+                        public String nom() {
+                            return "Club de test";
+                        }
+                    });
 
     private static MembrePalanquee plongeur(String prenom, String nom, String aptitude, FonctionPalanquee fonction) {
         MembrePalanquee m = new MembrePalanquee();

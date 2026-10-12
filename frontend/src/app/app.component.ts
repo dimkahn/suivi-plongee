@@ -4,6 +4,7 @@ import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
 import { FileEcrituresService } from './core/file-ecritures.service';
 import { MiseAJourService } from './core/mise-a-jour.service';
+import { IdentiteService } from './core/identite.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 import { DialogueComponent } from './core/dialogue.component';
 import { BarrePageComponent } from './core/barre-page.component';
@@ -42,7 +43,7 @@ const ICONES = {
       @if (auth.connecte()) {
         <header>
           <a routerLink="/" class="marque" (click)="fermerMenu()">
-            <img src="logo-club.png" alt="" width="44" height="44">
+            <img [src]="identite.logo()" alt="" width="44" height="44">
             <span>Suivi des formations</span>
           </a>
 
@@ -174,7 +175,7 @@ const ICONES = {
       display: flex; align-items: center; gap: var(--pas); min-height: 44px;
       color: #fff; text-decoration: none; font-weight: 700;
     }
-    .marque img { flex: none; width: 44px; height: 44px; }
+    .marque img { flex: none; width: 44px; height: 44px; object-fit: contain; }
 
     .identite { display: flex; align-items: center; gap: var(--pas-2); font-size: .9375rem; flex-wrap: wrap; }
     .identite .bouton-discret {
@@ -263,6 +264,7 @@ export class AppComponent {
   private file = inject(FileAttenteService);
   private ecritures = inject(FileEcrituresService);
   miseAJour = inject(MiseAJourService);
+  identite = inject(IdentiteService);
 
   @ViewChild(BandeauSyncComponent) bandeau?: BandeauSyncComponent;
 
@@ -300,6 +302,8 @@ export class AppComponent {
 
     this.auth.initialiser();
     this.miseAJour.demarrer();
+    // Nom, couleurs et logo de la structure : sans connexion, dès la page de connexion.
+    void this.identite.charger();
   }
 
   fermerMenu(): void {

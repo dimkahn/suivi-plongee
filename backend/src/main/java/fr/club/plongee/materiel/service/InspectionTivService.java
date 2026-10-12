@@ -25,7 +25,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.springframework.beans.factory.annotation.Value;
+import fr.club.plongee.identite.IdentiteStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -91,16 +91,16 @@ public class InspectionTivService {
     private final InspectionTivRepository inspections;
     private final InterventionEquipementRepository interventions;
     private final UtilisateurRepository utilisateurs;
-    private final String nomClub;
+    private final IdentiteStructureService identite;
 
     public InspectionTivService(MaterielService materiel, InspectionTivRepository inspections,
                                 InterventionEquipementRepository interventions, UtilisateurRepository utilisateurs,
-                                @Value("${app.club.nom}") String nomClub) {
+                                IdentiteStructureService identite) {
         this.materiel = materiel;
         this.inspections = inspections;
         this.interventions = interventions;
         this.utilisateurs = utilisateurs;
-        this.nomClub = nomClub;
+        this.identite = identite;
     }
 
     @Transactional(readOnly = true)
@@ -247,7 +247,7 @@ public class InspectionTivService {
             if (!constats.isEmpty()) sections.add(new SectionConstatsVue(s, s.libelle(), constats));
         }
         // Le compte rendu se lit aussi par un TIV : pas de nom d'emprunteur.
-        return new InspectionTivVue(t.getId(), numero(t), nomClub, materiel.lire(bloc.getId(), false),
+        return new InspectionTivVue(t.getId(), numero(t), identite.nom(),materiel.lire(bloc.getId(), false),
                 i.getDateIntervention(), t.getMotif(), t.getMotif().libelle(),
                 t.getTivNom(), t.getTivNumero(), t.getProprietaire(),
                 t.getFiletageBouteille(), t.getFiletageRobinet(), t.getMarquageRequalification(),

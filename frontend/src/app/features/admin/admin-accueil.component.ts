@@ -52,7 +52,15 @@ const RUBRIQUES: { titre: string; aide: string; ecrans: Ecran[] }[] = [
       { lien: '/admin/exercices', nom: 'Base d\'exercices',
         detail: 'Exercices d\'initiation, de perfectionnement et de maîtrise de chaque compétence' },
       { lien: '/admin/progressions', nom: 'Progressions types',
-        detail: 'L\'année de chaque niveau découpée en périodes, avec les compétences travaillées' }
+        detail: 'Chaque niveau découpé en périodes de mois ou en plongées, avec les compétences travaillées' }
+    ]
+  },
+  {
+    titre: 'Structure',
+    aide: 'Ce qui se règle une fois, à l\'installation.',
+    ecrans: [
+      { lien: '/admin/identite', nom: 'Identité de la structure',
+        detail: 'Nom, logo et couleurs du club ou du centre : connexion, écrans, icône de l\'appli, documents' }
     ]
   }
 ];

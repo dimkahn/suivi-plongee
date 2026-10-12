@@ -8,7 +8,7 @@ import fr.club.plongee.formation.repository.FicheSecuriteRepository;
 import fr.club.plongee.formation.repository.GroupePlongeursRepository;
 import fr.club.plongee.formation.repository.SortieRepository;
 import fr.club.plongee.notification.service.ServiceNotification;
-import org.springframework.beans.factory.annotation.Value;
+import fr.club.plongee.identite.IdentiteStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,16 +46,16 @@ public class EnvoiParametresSejourService {
     private final SortieRepository sorties;
     private final FicheSecuriteRepository fiches;
     private final ServiceNotification notification;
-    private final String nomClub;
+    private final IdentiteStructureService identite;
 
     public EnvoiParametresSejourService(GroupePlongeursRepository groupes, SortieRepository sorties,
                                         FicheSecuriteRepository fiches, ServiceNotification notification,
-                                        @Value("${app.club.nom}") String nomClub) {
+                                        IdentiteStructureService identite) {
         this.groupes = groupes;
         this.sorties = sorties;
         this.fiches = fiches;
         this.notification = notification;
-        this.nomClub = nomClub;
+        this.identite = identite;
     }
 
     @Transactional(readOnly = true)
@@ -119,7 +119,7 @@ public class EnvoiParametresSejourService {
                 + "Voici les paramètres de vos plongées lors de « " + sortie.getNom() + " »"
                 + (sortie.getLieu() == null ? "" : " (" + sortie.getLieu() + ")")
                 + ", relevés sur les fiches de sécurité, pour votre carnet de plongée.\n";
-        String pied = "\nBonnes bulles,\n" + nomClub + "\n";
+        String pied = "\nBonnes bulles,\n" + identite.nom() + "\n";
         return Optional.of(new Courriel(membre.emailEffectif(),
                 "Vos plongées — " + sortie.getNom(), entete + corps + pied));
     }

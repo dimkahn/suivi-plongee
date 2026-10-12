@@ -5,7 +5,7 @@ import fr.club.plongee.formation.domain.MembrePalanquee;
 import fr.club.plongee.formation.domain.Palanquee;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.service.FicheSecuritePdfService;
-import fr.club.plongee.formation.service.LogoClub;
+import fr.club.plongee.identite.IdentiteStructureService;
 import fr.club.plongee.securite.domain.Utilisateur;
 
 import org.apache.pdfbox.Loader;
@@ -26,8 +26,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class FicheSecuritePdfServiceTest {
 
-    private final FicheSecuritePdfService service =
-            new FicheSecuritePdfService("Club de plongée", new LogoClub());
+    /** Identité d'origine, sans base : nom par défaut et logo embarqué. */
+    private final FicheSecuritePdfService service = new FicheSecuritePdfService(
+            new IdentiteStructureService(null, "Club de plongée") {
+                @Override
+                public String nom() {
+                    return "Club de plongée";
+                }
+
+                @Override
+                public byte[] logoPng() {
+                    return logoOrigine();
+                }
+            });
 
     @Test
     void une_fiche_pleine_tient_sur_une_page() throws IOException {
