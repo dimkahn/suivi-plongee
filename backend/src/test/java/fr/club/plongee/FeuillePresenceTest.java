@@ -60,8 +60,30 @@ class FeuillePresenceTest {
                 .andExpect(status().isOk());
     }
 
+    private void saisirAvecTheorie(String moniteur, long seanceId, long cursusId, String atelierJson) throws Exception {
+        mvc.perform(put("/api/seances/" + seanceId + "/presences").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 [{"cursusId":%d,"statut":"PRESENT","atelier":%s,"theorie":true}]"""
+                                .formatted(cursusId, atelierJson)))
+                .andExpect(status().isOk());
+    }
+
+    /** La case de la seance dans « Infos eleves ». */
+    private String atelierDansInfosEleves(String moniteur, long seanceId, long cursusId) throws Exception {
+        String roster = mvc.perform(get("/api/roster").header("Authorization", moniteur))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        for (JsonNode l : json.readTree(roster).get("eleves")) {
+            if (l.get("cursusId").asLong() == cursusId) {
+                return l.get("presencesParSeance").get(String.valueOf(seanceId)).asText();
+            }
+        }
+        throw new AssertionError("Cursus absent d'Infos eleves");
+    }
+
     @Test
-    @DisplayName("Saisir bloc, passer absent (l'atelier tombe), puis effacer")
+    @DisplayName("Saisir bloc, ajouter de la theorie, theorie seule, passer absent (l'atelier tombe), puis effacer")
     void feuilleDePresence() throws Exception {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e1@club.fr");
@@ -114,12 +136,30 @@ class FeuillePresenceTest {
         JsonNode l = ligne(moniteur, seanceId, cursusId);
         assertThat(l.get("statut").asText()).isEqualTo("PRESENT");
         assertThat(l.get("atelier").asText()).isEqualTo("BLOC");
+        assertThat(l.get("theorie").asBoolean()).isFalse();
+
+        // De la theorie en plus du bloc.
+        saisirAvecTheorie(moniteur, seanceId, cursusId, "\"BLOC\"");
+        l = ligne(moniteur, seanceId, cursusId);
+        assertThat(l.get("atelier").asText()).isEqualTo("BLOC");
+        assertThat(l.get("theorie").asBoolean()).isTrue();
+        assertThat(atelierDansInfosEleves(moniteur, seanceId, cursusId)).isEqualTo("BLOC+THEORIE");
+
+        // De la theorie seule : sans autre atelier, c'est l'atelier THEORIE.
+        saisirAvecTheorie(moniteur, seanceId, cursusId, "null");
+        l = ligne(moniteur, seanceId, cursusId);
+        assertThat(l.get("atelier").asText()).isEqualTo("THEORIE");
+        assertThat(l.get("theorie").asBoolean()).isTrue();
+        saisir(moniteur, seanceId, cursusId, "PRESENT", "THEORIE");
+        assertThat(ligne(moniteur, seanceId, cursusId).get("theorie").asBoolean()).isTrue();
+        assertThat(atelierDansInfosEleves(moniteur, seanceId, cursusId)).isEqualTo("THEORIE");
 
         // Un absent n'a pas d'atelier, meme si le client en envoie un.
         saisir(moniteur, seanceId, cursusId, "ABSENT", "NAGE");
         l = ligne(moniteur, seanceId, cursusId);
         assertThat(l.get("statut").asText()).isEqualTo("ABSENT");
         assertThat(l.get("atelier").isNull()).isTrue();
+        assertThat(l.get("theorie").asBoolean()).isFalse();
 
         mvc.perform(delete("/api/seances/" + seanceId + "/presences/" + cursusId).header("Authorization", moniteur))
                 .andExpect(status().isNoContent());

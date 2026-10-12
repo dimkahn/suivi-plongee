@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où « ← Feuille de présence » ramène à la feuille.',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office), nage ou bloc pour chaque élève, avec ou sans théorie, ou théorie seule, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où « ← Feuille de présence » ramène à la feuille.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -36,18 +36,28 @@ export default {
     await toucher(page.getByRole('button', { name: 'Débutants', exact: true }), { apres: 1200 });
 
     const cartes = page.locator('ul.eleves li');
-    await legende('Touchez un élève, puis ce qu\'il a fait : nage, bloc ou théorie.', 0, { enHaut: true });
-    for (const [k, choix] of [[0, 'Bloc'], [1, 'Nage'], [2, 'Bloc'], [3, 'Théorie']]) {
+    const barre = page.locator('.barre-choix');
+    await legende('Touchez un élève, puis ce qu\'il a fait : nage ou bloc.', 0, { enHaut: true });
+    for (const [k, choix] of [[0, 'Bloc'], [1, 'Nage']]) {
       await toucher(cartes.nth(k).locator('.zone-identite'), { apres: 600 });
-      await toucher(page.locator('.barre-choix').getByRole('button', { name: choix }), { apres: 900 });
+      await toucher(barre.getByRole('button', { name: choix }), { apres: 900 });
     }
+    await legende('De la théorie en plus ? Touchez « Théorie », puis « Bloc » ou « Nage ».', 0, { enHaut: true });
+    await toucher(cartes.nth(2).locator('.zone-identite'), { apres: 600 });
+    await toucher(barre.getByRole('button', { name: 'Théorie' }), { apres: 1200 });
+    await toucher(barre.getByRole('button', { name: 'Bloc' }), { apres: 1500 });
+    await legende('Une séance de théorie seule : « Théorie », puis « Fermer ».', 0, { enHaut: true });
+    await toucher(cartes.nth(3).locator('.zone-identite'), { apres: 600 });
+    await toucher(barre.getByRole('button', { name: 'Théorie' }), { apres: 1200 });
+    await toucher(barre.getByRole('button', { name: 'Fermer' }), { apres: 900 });
     await legende('Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».', 3500, { enHaut: true });
     await legende('Un élève sans choix est absent.', 3000, { enHaut: true });
     await legende('L\'appel d\'abord : seul un élève noté présent peut être évalué sur la séance.', 3500, { enHaut: true });
 
     await legende('Erreur ? Touchez de nouveau le choix actif pour l\'effacer.', 0, { enHaut: true });
     await toucher(cartes.nth(3).locator('.zone-identite'), { apres: 600 });
-    await toucher(page.locator('.barre-choix').getByRole('button', { name: 'Théorie' }), { apres: 1500 });
+    await toucher(barre.getByRole('button', { name: 'Théorie' }), { apres: 1200 });
+    await toucher(barre.getByRole('button', { name: 'Fermer' }), { apres: 900 });
 
     await legende('Le compteur en haut de la liste fait le bilan du groupe filtré ; il reste en haut de l\'écran quand la liste défile.', 0);
     await page.locator('.bilan').scrollIntoViewIfNeeded();

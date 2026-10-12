@@ -19,7 +19,7 @@ Depuis « Présences », le bouton « Synthèse des notes » réunit tout ce qui
 1. Dans « Présences », choisissez la séance (passée ou du jour) et faites l'appel si ce n'est pas déjà fait.
 2. Touchez « Synthèse des notes ». Si la feuille est filtrée sur un groupe, la synthèse s'ouvre sur le niveau de ce groupe.
 3. Choisissez le niveau en haut (PN1, PN2, PN3) : seuls ceux des élèves présents sont proposés.
-4. **Tableau** (vue d'ouverture) : une ligne par élève présent, une colonne par critère noté pendant la séance (A acquis, EC en cours, NA non abordé, – pas de note) et une colonne « Commentaire ». Devant le nom, la photo de l'élève (ses initiales sans droit à l'image) ; sous le nom : **qui l'a noté**, et ce qu'il a fait (nage, bloc…) ; « pas encore évalué » s'il n'a aucune note. Sur téléphone, faites glisser le tableau sur le côté.
+4. **Tableau** (vue d'ouverture) : une ligne par élève présent, une colonne par critère noté pendant la séance (A acquis, EC en cours, NA non abordé, – pas de note) et une colonne « Commentaire ». Devant le nom, la photo de l'élève (ses initiales sans droit à l'image) ; sous le nom : **qui l'a noté**, et ce qu'il a fait (nage, bloc + théorie…) ; « pas encore évalué » s'il n'a aucune note. Sur téléphone, faites glisser le tableau sur le côté.
 5. **Par critère** : chaque critère noté pendant la séance, avec le nombre d'élèves acquis, en cours ou non abordé, puis chaque élève avec son état, l'exercice, qui l'a noté et les commentaires.
 6. **Par élève** : chaque présent avec ses notes de la séance ; « Pas encore évalué » signale ceux qui n'ont reçu aucune note.
 7. Touchez le nom d'un élève pour ouvrir sa grille sur cette séance. « Imprimer » donne une version papier.

@@ -65,17 +65,22 @@ public class SeanceController {
     private static final int DUREE_MAX_SEJOUR_JOURS = 31;
     private static final DateTimeFormatter FORMAT_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+    /**
+     * {@code theorie} : théorie faite en plus de la nage ou du bloc (null : non) ;
+     * l'atelier THEORIE seul dit « que de la théorie ».
+     */
     public record DemandePresence(@NotNull Long cursusId, @NotNull Participation.Statut statut,
-                                  Participation.Atelier atelier, String commentaire) {}
+                                  Participation.Atelier atelier, Boolean theorie, String commentaire) {}
 
     /**
      * Une ligne de la feuille de présence ; statut/atelier null : rien de saisi pour cette séance.
+     * {@code theorie} : théorie faite pendant la séance, seule (atelier THEORIE) ou en plus de la nage ou du bloc.
      * {@code referentielId} : version du MFT figée sur le cursus, pour la notation groupée des présents.
      * {@code evaluations} : notes reçues sur cette séance (entraînement compris), pour repérer
      * les présents que personne n'a encore évalués.
      */
     public record LignePresence(Long cursusId, Long eleveId, String eleve, String niveau, Long referentielId,
-                                String statut, String atelier, boolean aPhoto, boolean autorisationImage,
+                                String statut, String atelier, boolean theorie, boolean aPhoto, boolean autorisationImage,
                                 long evaluations) {}
 
     public record FeuillePresence(SeanceVue seance, List<LignePresence> eleves) {}
@@ -304,6 +309,7 @@ public class SeanceController {
                             c.getReferentiel().getNiveau().name(), c.getReferentiel().getId(),
                             p == null ? null : p.getStatut().name(),
                             p == null || p.getAtelier() == null ? null : p.getAtelier().name(),
+                            p != null && p.isTheorie(),
                             e.isAutorisationImage() && photos.existsById(e.getId()),
                             e.isAutorisationImage(),
                             notes.getOrDefault(c.getId(), 0L));
@@ -334,7 +340,13 @@ public class SeanceController {
             p.setSeance(seance);
             p.setStatut(d.statut());
             // L'atelier ne se dit que d'un eleve present : un absent n'a fait ni nage ni bloc.
-            p.setAtelier(d.statut() == Participation.Statut.PRESENT ? d.atelier() : null);
+            boolean present = d.statut() == Participation.Statut.PRESENT;
+            boolean theorie = present
+                    && (d.atelier() == Participation.Atelier.THEORIE || Boolean.TRUE.equals(d.theorie()));
+            // De la theorie sans autre atelier : c'est une seance de theorie seule.
+            p.setAtelier(!present ? null
+                    : d.atelier() == null && theorie ? Participation.Atelier.THEORIE : d.atelier());
+            p.setTheorie(theorie);
             p.setCommentaire(d.commentaire());
             participations.save(p);
         }

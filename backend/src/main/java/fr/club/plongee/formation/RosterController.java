@@ -100,10 +100,13 @@ public class RosterController {
         return new RosterVue(entetes, lignes);
     }
 
-    /** Le libelle affiche dans la case de la seance : l'atelier si present, sinon le statut. */
+    /**
+     * Le libelle affiche dans la case de la seance : l'atelier si present (« BLOC+THEORIE »
+     * avec de la theorie en plus), sinon le statut.
+     */
     private String libelle(Participation p) {
         if (p.getStatut() == Participation.Statut.PRESENT) {
-            return p.getAtelier() == null ? p.getStatut().name() : p.getAtelier().name();
+            return p.getAtelier() == null ? p.getStatut().name() : p.codeAtelier();
         }
         return p.getStatut().name();
     }

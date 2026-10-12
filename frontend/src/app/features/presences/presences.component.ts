@@ -12,7 +12,7 @@ import { FileAttenteService } from '../../core/file-attente.service';
 import { dateDansJours, dateDuJour, dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import {
-  Atelier, ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, StatutPresence
+  ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue
 } from '../../core/modeles';
 import { RouterLink } from '@angular/router';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
@@ -24,28 +24,52 @@ import { NotationGroupeeComponent } from './notation-groupee.component';
 import { PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 
-/** Un bouton de la ligne : l'atelier fait par un élève présent. */
+/** Un bouton de la ligne : ce qu'a fait un élève présent. */
 interface Choix {
-  cle: string;
+  cle: 'NAGE' | 'BLOC' | 'THEORIE';
   libelle: string;
-  statut: StatutPresence;
-  atelier: Atelier | null;
   classe: string;
 }
 
 /**
  * Pas de bouton « Absent » : un élève sans choix est absent. Plongée, Excusé et
  * Absent ne sont plus proposés ; une saisie ancienne de ce type reste affichée.
+ * Nage et bloc s'excluent ; la théorie s'ajoute à l'un ou l'autre, ou se fait seule.
  */
 const CHOIX: Choix[] = [
-  { cle: 'NAGE', libelle: 'Nage', statut: 'PRESENT', atelier: 'NAGE', classe: 'present' },
-  { cle: 'BLOC', libelle: 'Bloc', statut: 'PRESENT', atelier: 'BLOC', classe: 'present' },
-  { cle: 'THEORIE', libelle: 'Théorie', statut: 'PRESENT', atelier: 'THEORIE', classe: 'present' }
+  { cle: 'NAGE', libelle: 'Nage', classe: 'present' },
+  { cle: 'BLOC', libelle: 'Bloc', classe: 'present' },
+  { cle: 'THEORIE', libelle: 'Théorie', classe: 'present' }
 ];
 
-function cleDe(l: LignePresence): string | null {
-  if (!l.statut) return null;
-  return l.statut === 'PRESENT' ? (l.atelier ?? 'PRESENT') : l.statut;
+type EtatPresence = Pick<LignePresence, 'statut' | 'atelier' | 'theorie'>;
+
+/** Nage ou bloc fait par un élève présent, sinon null. */
+function eauDe(l: LignePresence): 'NAGE' | 'BLOC' | null {
+  return l.statut === 'PRESENT' && (l.atelier === 'NAGE' || l.atelier === 'BLOC') ? l.atelier : null;
+}
+
+/** Théorie faite, seule ou en plus ; une saisie gardée avant l'ajout de la case n'a que l'atelier. */
+function theorieDe(l: LignePresence): boolean {
+  return l.statut === 'PRESENT' && (l.atelier === 'THEORIE' || !!l.theorie);
+}
+
+function estActif(l: LignePresence, c: Choix): boolean {
+  return c.cle === 'THEORIE' ? theorieDe(l) : eauDe(l) === c.cle;
+}
+
+/**
+ * L'état après un toucher : le choix actif s'efface, l'autre s'ajoute. Sans
+ * nage ni bloc, la théorie seule reste l'atelier THEORIE ; sans rien, absent.
+ */
+function apresToucher(l: LignePresence, c: Choix): EtatPresence {
+  let eau = eauDe(l);
+  let theorie = theorieDe(l);
+  if (c.cle === 'THEORIE') theorie = !theorie;
+  else eau = eau === c.cle ? null : c.cle;
+  if (eau) return { statut: 'PRESENT', atelier: eau, theorie };
+  if (theorie) return { statut: 'PRESENT', atelier: 'THEORIE', theorie: true };
+  return { statut: null, atelier: null, theorie: false };
 }
 
 function normaliser(texte: string): string {
@@ -53,8 +77,8 @@ function normaliser(texte: string): string {
 }
 
 /**
- * Feuille de présence d'une séance : ce que chaque élève a fait (nage, bloc,
- * théorie) ; sans choix, il est absent. Remplace la grille de dates en
+ * Feuille de présence d'une séance : ce que chaque élève a fait (nage ou bloc,
+ * avec ou sans théorie, ou théorie seule) ; sans choix, il est absent. Remplace la grille de dates en
  * colonnes du tableur ; les compteurs « séances bloc / nage » de Infos élèves
  * en découlent. Enregistrement immédiat à chaque toucher ; hors ligne, le
  * choix est gardé sur l'appareil ({@link FileEcrituresService}) et part au
@@ -289,8 +313,8 @@ function normaliser(texte: string): string {
                     <span class="enregistrement" role="status">
                       <span class="chargeur" aria-hidden="true"></span>Enregistrement…
                     </span>
-                  } @else if (choixActuel(l); as ca) {
-                    <span class="etat-mini" [class]="ca.classe" [class.differe]="enAttente().has(l.cursusId)">{{ ca.libelle }}</span>
+                  } @else if (libelleEtat(l); as libelle) {
+                    <span class="etat-mini present" [class.differe]="enAttente().has(l.cursusId)">{{ libelle }}</span>
                   } @else if (!l.statut) {
                     <span class="secondaire">Absent</span>
                   } @else {
@@ -308,9 +332,9 @@ function normaliser(texte: string): string {
               <div class="choix" role="group" [attr.aria-label]="'Présence de ' + l.eleve">
                 @for (c of choix; track c.cle) {
                   <button type="button" [class]="'etat ' + c.classe"
-                          [class.actif]="cleDe(l) === c.cle"
-                          [class.differe]="cleDe(l) === c.cle && enAttente().has(l.cursusId)"
-                          [attr.aria-pressed]="cleDe(l) === c.cle"
+                          [class.actif]="estActif(l, c)"
+                          [class.differe]="estActif(l, c) && enAttente().has(l.cursusId)"
+                          [attr.aria-pressed]="estActif(l, c)"
                           [disabled]="enregistrements().has(l.cursusId)"
                           (click)="choisir(l, c)">
                     {{ c.libelle }}
@@ -326,13 +350,15 @@ function normaliser(texte: string): string {
             <p><strong>{{ l.eleve }}</strong> — qu'a-t-il fait ?</p>
             <div class="choix-rapide">
               @for (c of choix; track c.cle) {
-                <button type="button" [class]="'etat ' + c.classe" [class.actif]="cleDe(l) === c.cle"
+                <button type="button" [class]="'etat ' + c.classe" [class.actif]="estActif(l, c)"
+                        [attr.aria-pressed]="estActif(l, c)" [disabled]="enregistrements().has(l.cursusId)"
                         (click)="choisirEtFermer(l, c)">
                   {{ c.libelle }}
                 </button>
               }
-              <button type="button" class="bouton-discret" (click)="ligneSelectionnee.set(null)">Annuler</button>
+              <button type="button" class="bouton-discret" (click)="cursusSelectionne.set(null)">Fermer</button>
             </div>
+            <p class="secondaire aide-theorie">La théorie s'ajoute à la nage ou au bloc, ou se coche seule.</p>
           </div>
         }
       }
@@ -479,6 +505,7 @@ function normaliser(texte: string): string {
       box-shadow: 0 -6px 16px rgba(0,0,0,.15);
     }
     .barre-choix p { margin: 0 0 var(--pas); }
+    .barre-choix .aide-theorie { margin: var(--pas) 0 0; font-size: .8125rem; }
     .choix-rapide { display: flex; flex-wrap: wrap; gap: var(--pas); }
     .choix-rapide .etat { flex: 1 1 72px; }
 
@@ -515,18 +542,17 @@ export class PresencesComponent implements OnDestroy {
 
   readonly choix = CHOIX;
   readonly libellePreparation = libellePreparation;
-  readonly cleDe = cleDe;
+  readonly estActif = estActif;
 
-  /** La saisie correspond-elle à un bouton affiché ? Sinon (plongée, excusé...), on l'indique en texte. */
-  choixConnu(l: LignePresence): boolean {
-    const cle = cleDe(l);
-    return cle === null || CHOIX.some(c => c.cle === cle);
-  }
-
-  choixActuel(l: LignePresence): Choix | null {
-    if (!this.choixConnu(l)) return null;
-    const cle = cleDe(l);
-    return CHOIX.find(c => c.cle === cle) ?? null;
+  /**
+   * Ce qu'a fait l'élève, en clair (« Bloc + théorie ») ; null si rien de
+   * saisi ou si la saisie n'a pas de bouton (plongée, excusé...), dite en texte.
+   */
+  libelleEtat(l: LignePresence): string | null {
+    const eau = eauDe(l);
+    const theorie = theorieDe(l);
+    if (eau) return CHOIX.find(c => c.cle === eau)!.libelle + (theorie ? ' + théorie' : '');
+    return theorie ? 'Théorie' : null;
   }
 
   libelleAncien(l: LignePresence): string {
@@ -618,7 +644,9 @@ export class PresencesComponent implements OnDestroy {
   rechercheEleve = signal('');
 
   /** Élève dont la carte a été touchée sur téléphone : barre de choix ouverte en bas d'écran. */
-  ligneSelectionnee = signal<LignePresence | null>(null);
+  cursusSelectionne = signal<number | null>(null);
+  /** Sa ligne à jour : la barre reste ouverte quand on ajoute la théorie. */
+  ligneSelectionnee = computed(() => this.lignes().find(l => l.cursusId === this.cursusSelectionne()) ?? null);
 
   private urlsPhotos = signal<Map<number, string>>(new Map());
 
@@ -818,7 +846,7 @@ export class PresencesComponent implements OnDestroy {
         const enAttente = new Map(this.file.pourSeance(seanceId, 'presence').map(p => [p.cursusId, p]));
         const lignes = feuille.eleves.map(l => {
           const p = enAttente.get(l.cursusId);
-          return p ? { ...l, statut: p.statut, atelier: p.atelier } : l;
+          return p ? { ...l, statut: p.statut, atelier: p.atelier, theorie: p.theorie ?? p.atelier === 'THEORIE' } : l;
         });
         this.lignes.set(lignes);
         this.chargerPhotosManquantes(lignes);
@@ -864,11 +892,12 @@ export class PresencesComponent implements OnDestroy {
   ouvrirChoixMobile(l: LignePresence): void {
     if (window.innerWidth > 600) return;
     if (this.enregistrements().has(l.cursusId)) return;
-    this.ligneSelectionnee.set(l);
+    this.cursusSelectionne.set(l.cursusId);
   }
 
+  /** Nage ou bloc ferme la barre ; la théorie la laisse ouverte, pour y ajouter la nage ou le bloc. */
   async choisirEtFermer(ligne: LignePresence, c: Choix): Promise<void> {
-    this.ligneSelectionnee.set(null);
+    if (c.cle !== 'THEORIE') this.cursusSelectionne.set(null);
     await this.choisir(ligne, c);
   }
 
@@ -876,10 +905,9 @@ export class PresencesComponent implements OnDestroy {
   async choisir(ligne: LignePresence, c: Choix): Promise<void> {
     const seanceId = this.seanceId();
     if (!seanceId) return;
-    const effacer = cleDe(ligne) === c.cle;
-    const avant = { statut: ligne.statut, atelier: ligne.atelier };
+    const avant: EtatPresence = { statut: ligne.statut, atelier: ligne.atelier, theorie: ligne.theorie };
 
-    const apres = effacer ? { statut: null, atelier: null } : { statut: c.statut, atelier: c.atelier };
+    const apres = apresToucher(ligne, c);
     this.remplacer(ligne.cursusId, apres);
     this.marquer(ligne.cursusId, true);
     this.message.set(null);
@@ -901,7 +929,7 @@ export class PresencesComponent implements OnDestroy {
     }
   }
 
-  private remplacer(cursusId: number, valeur: Pick<LignePresence, 'statut' | 'atelier'>): void {
+  private remplacer(cursusId: number, valeur: EtatPresence): void {
     this.lignes.set(this.lignes().map(l => l.cursusId === cursusId ? { ...l, ...valeur } : l));
   }
 

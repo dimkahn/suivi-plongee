@@ -920,6 +920,11 @@ export interface LignePresence {
   referentielId?: number;
   statut: StatutPresence | null;
   atelier: Atelier | null;
+  /**
+   * Théorie faite pendant la séance : seule (atelier THEORIE) ou en plus de la
+   * nage ou du bloc ; absent d'une feuille embarquée hors ligne avant son ajout.
+   */
+  theorie?: boolean;
   aPhoto: boolean;
   autorisationImage: boolean;
   /**
