@@ -453,8 +453,11 @@ ligne) le programme commun et celui du groupe de l'élève, et marque les
 critères travaillés à la séance choisie, et les fait noter sous chaque
 exercice du programme (choix du club, 2026 : on y note **l'exercice**,
 « non abordé / en cours d'acquisition / acquis », dont l'état est la
-dernière note de cet exercice, `CritereVue.etatsExercices` ; jamais l'état
-du critère ni de la compétence, ouvert même une compétence validée) ; la notation groupée propose de
+dernière note de cet exercice, `CritereVue.etatsExercices` ; ouvert même
+une compétence validée). Même règle dans la compétence dès qu'un exercice
+est choisi : les boutons montrent l'état de l'exercice, celui du critère
+est rappelé dessous (« Critère : … ») et celui de la compétence en
+pastille (A / ECA / NT, recalculé à l'écran avec les notes en attente) ; la notation groupée propose de
 cocher d'un coup les critères des exercices (du groupe filtré et du commun),
 chacun gardant son commentaire obligatoire.
 

@@ -13,7 +13,7 @@ import { FileAttenteService } from '../../core/file-attente.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import {
-  BlocVue, CritereVue, CursusVue, EvaluationVue, ExerciceBaseVue, ExerciceGrilleVue, ExerciceNoteVue, GrilleVue,
+  BlocVue, CritereVue, CursusVue, EtatCompetence, EvaluationVue, ExerciceBaseVue, ExerciceGrilleVue, ExerciceNoteVue, GrilleVue,
   GroupeEntrainementVue, MoniteurOptionVue, PhaseExercice, SeanceVue, Statut
 } from '../../core/modeles';
 import { FiltreGroupe, passeFiltreGroupe } from '../../core/filtre-groupe.component';
@@ -442,7 +442,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   <ul class="criteres criteres-exercice" [attr.aria-label]="'Critères à évaluer sur ' + e.intitule">
                     @for (c of aEvaluer; track c.critere.id) {
                       <li>
-                        <span class="secondaire competence-du-critere">{{ c.bloc.intitule }}</span>
+                        @let etatBloc = etatCompetence(c.bloc);
+                        <span class="competence-du-critere">
+                          <span class="secondaire">{{ c.bloc.intitule }}</span>
+                          <span [class]="'pastille etat-competence etat-' + etatBloc">{{ libelleCompetence(etatBloc) }}</span>
+                        </span>
                         <ng-container *ngTemplateOutlet="ligneCritere; context: { bloc: c.bloc, critere: c.critere, exo: e, lieu: 'x' + i }" />
                       </li>
                     }
@@ -473,13 +477,13 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               <span class="chevron" aria-hidden="true">{{ blocsOuverts().has(bloc.id) ? '▾' : '▸' }}</span>
               <span class="texte-bloc">
               <span class="intitule">{{ bloc.intitule }}</span>
-              @if (blocsAuProgramme().has(bloc.id) || blocsDesExercices().has(bloc.id) || bloc.enRetard) {
-                <span class="pastilles">
-                  @if (blocsDesExercices().has(bloc.id)) { <span class="pastille exercice">Travaillé à la séance</span> }
-                  @if (blocsAuProgramme().has(bloc.id)) { <span class="pastille au-programme">Au programme</span> }
-                  @if (bloc.enRetard) { <span class="pastille en-retard">En retard</span> }
-                </span>
-              }
+              <span class="pastilles">
+                @let etatBloc = etatCompetence(bloc);
+                <span [class]="'pastille etat-competence etat-' + etatBloc">{{ libelleCompetence(etatBloc) }}</span>
+                @if (blocsDesExercices().has(bloc.id)) { <span class="pastille exercice">Travaillé à la séance</span> }
+                @if (blocsAuProgramme().has(bloc.id)) { <span class="pastille au-programme">Au programme</span> }
+                @if (bloc.enRetard) { <span class="pastille en-retard">En retard</span> }
+              </span>
               <span class="secondaire detail">
                 {{ bloc.acquis }} / {{ bloc.total }} acquis
                 @if (g.milieuNaturelExclusif) {
@@ -572,12 +576,16 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               @let rappel = suiviRappele(critere);
               @let cleUi = lieu + ':' + critere.id;
               <!--
-                Sous un exercice de la séance (choix du club, 2026) : on note l'exercice, rien
-                d'autre. Les boutons montrent l'état de cet exercice, jamais celui du critère
-                ni de la compétence, et restent ouverts même une compétence validée.
+                On note l'exercice (choix du club, 2026) : sous un exercice de la séance,
+                comme dans la compétence dès qu'un exercice est choisi, les boutons montrent
+                et notent l'état de cet exercice, pas celui du critère. Sous un exercice de la
+                séance, ils restent ouverts même une compétence validée. Sans exercice, ils
+                notent le critère comme avant.
               -->
               @let surExo = !!exo && exerciceImpose(bloc, critere, exo) !== null;
-              @let suivi = surExo ? etatExercice(critere, exo) : actif;
+              @let cible = surExo ? cibleDeLExercice(exo) : exerciceNote(bloc, critere);
+              @let parExercice = cible !== null;
+              @let suivi = cible !== null ? etatDeLExercice(critere, cible) : actif;
                 <div class="ligne">
                   <div class="libelle">
                     <span>{{ critere.savoirFaire }}</span>
@@ -596,9 +604,22 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     } @else if (suivi.parQui) {
                       <span class="secondaire trace">{{ suivi.parQui }} · {{ suivi.le | dateFr }}</span>
                     }
-                    @if (surExo) {
+                    @if (parExercice) {
                       @if (suivi.commentaire) {
                         <span class="dernier-commentaire">« {{ suivi.commentaire }} »</span>
+                      }
+                      @if (!surExo) {
+                        <!-- Les boutons disent l'exercice : l'état du critère est rappelé à part. -->
+                        <span class="etat-critere" [class.acquis]="actif.statut === 'ACQUIS'">
+                          Critère : {{ libelleCritere(actif.statut) }}
+                        </span>
+                        @if (g.milieuNaturelExclusif) {
+                          <span class="autre-suivi" [class.acquis]="rappel.statut === 'ACQUIS'">
+                            {{ modeEntrainement() ? 'Milieu naturel' : 'Piscine / fosse' }} :
+                            {{ libelleStatut(rappel.statut) }}@if (rappel.enAttente) { (en attente d'envoi)
+                            } @else if (rappel.le) { · {{ rappel.le | dateFr }} }
+                          </span>
+                        }
                       }
                     } @else {
                     @if (actif.exercice; as exoNote) {
@@ -669,12 +690,12 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                             Fiche complète (photos, vidéos) ↗
                           </a>
                         }
-                        <span class="titre-choix">2. Note</span>
+                        <span class="titre-choix">2. Note de l'exercice</span>
                       </div>
                     }
                     <div class="etats" role="group"
-                         [attr.aria-label]="surExo ? critere.savoirFaire + ' — exercice ' + exo.intitule : critere.savoirFaire">
-                      @for (choix of (surExo ? etatsExercice : etats); track choix.valeur) {
+                         [attr.aria-label]="cible ? critere.savoirFaire + ' — exercice ' + cible.intitule : critere.savoirFaire">
+                      @for (choix of (parExercice ? etatsExercice : etats); track choix.valeur) {
                         <button type="button"
                                 [class]="'etat ' + choix.classe"
                                 [class.actif]="suivi.statut === choix.valeur"
@@ -952,7 +973,14 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
       margin-top: var(--pas); padding-left: var(--pas-2); border-left: 3px solid var(--accent-clair);
     }
     .criteres-exercice > li:first-child { border-top: none; }
-    .competence-du-critere { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .02em; }
+    .competence-du-critere { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .competence-du-critere .secondaire { font-size: .75rem; text-transform: uppercase; letter-spacing: .02em; }
+    /* État de la compétence (mêmes mots que la synthèse A / ECA / NT). */
+    .pastille.etat-competence { border: 1px solid var(--trait); color: var(--craie); background: var(--carte); }
+    .pastille.etat-competence.etat-ECA { background: var(--en-cours-clair); border-color: var(--en-cours); color: var(--en-cours); }
+    .pastille.etat-competence.etat-A { background: var(--acquis-clair); border-color: var(--acquis); color: var(--acquis); }
+    .etat-critere { font-size: .8125rem; font-weight: 700; color: var(--en-cours); }
+    .etat-critere.acquis { color: var(--acquis); }
     .exercice-critere {
       align-self: flex-start; padding: 0 8px; border-radius: var(--r-s);
       background: var(--profond); color: #fff; font-size: .75rem; font-weight: 700;
@@ -1603,16 +1631,25 @@ export class GrilleComponent implements OnDestroy {
     { valeur: 'ACQUIS'     as Statut, libelle: 'Acquis', classe: 'acquis' }
   ];
 
-  /**
-   * État d'un exercice de la séance pour un critère : sa dernière note (dans le
-   * suivi des boutons, entraînement à part), recouverte par une saisie sur cet
-   * exercice en cours d'envoi ou en attente. Jamais l'état du critère.
-   */
-  etatExercice(critere: CritereAffiche, exo: ExerciceGrilleVue): SuiviAffiche {
-    const entrainement = this.modeEntrainement();
+  /** L'exercice de la séance vu comme l'exercice d'une note : son id dans la base, sinon son intitulé (libre). */
+  cibleDeLExercice(exo: ExerciceGrilleVue): ExerciceNoteVue {
     const base = exo.exerciceBase;
-    const note = (critere.etatsExercices ?? []).find(x => x.entrainement === entrainement
-      && (base ? x.exerciceId === base.id : x.exerciceId == null && x.exerciceLibre === exo.intitule));
+    return base
+      ? { id: base.id, numero: base.numero, intitule: base.intitule, phase: base.phase, blocId: base.blocId, critereIds: null }
+      : { id: null, numero: null, intitule: exo.intitule, phase: exo.phase!, blocId: null, critereIds: null };
+  }
+
+  /**
+   * État d'un exercice pour un critère : sa dernière note (dans le suivi des
+   * boutons, entraînement à part), recouverte par une saisie sur cet exercice
+   * en cours d'envoi ou en attente. Jamais l'état du critère.
+   */
+  etatDeLExercice(critere: CritereAffiche, cible: ExerciceNoteVue): SuiviAffiche {
+    const entrainement = this.modeEntrainement();
+    const meme = (id: number | null, intitule: string | null) =>
+      cible.id != null ? id === cible.id : id == null && intitule === cible.intitule;
+    const note = (critere.etatsExercices ?? [])
+      .find(x => x.entrainement === entrainement && meme(x.exerciceId, x.exerciceLibre));
     const etat: SuiviAffiche = {
       statut: note?.statut ?? 'NON_ABORDE', parQui: note?.parQui ?? null, le: note?.le ?? null,
       commentaire: note?.commentaire ?? null, exercice: null, statutExercice: null,
@@ -1620,12 +1657,36 @@ export class GrilleComponent implements OnDestroy {
     };
     const actif = this.suiviActif(critere);
     const x = actif.exercice;
-    const memeExercice = !!x && (base ? x.id === base.id : x.id == null && x.intitule === exo.intitule);
-    if ((actif.enregistrement || actif.enAttente) && memeExercice) {
+    if ((actif.enregistrement || actif.enAttente) && !!x && meme(x.id, x.intitule)) {
       return { ...etat, statut: actif.statutExercice ?? actif.statut, enAttente: actif.enAttente,
                enregistrement: actif.enregistrement, le: actif.enAttente ? actif.le : etat.le };
     }
     return etat;
+  }
+
+  /** État de l'exercice sur lequel portera la prochaine note du critère ; null sans exercice (on note le critère). */
+  private etatDeLaCible(bloc: BlocAffiche, critere: CritereAffiche): SuiviAffiche | null {
+    const cible = this.exerciceNote(bloc, critere);
+    return cible ? this.etatDeLExercice(critere, cible) : null;
+  }
+
+  /**
+   * État de la compétence, mêmes règles que le serveur (EtatCompetence) mais
+   * recouvert des notes pas encore envoyées : A validée, ECA dès qu'un critère
+   * est noté au-delà de « non abordé » (entraînement compris), NT sinon.
+   */
+  etatCompetence(bloc: BlocAffiche): EtatCompetence {
+    if (bloc.valide) return 'A';
+    return bloc.criteres.some(c => c.statut !== 'NON_ABORDE' || c.entr.statut !== 'NON_ABORDE') ? 'ECA' : 'NT';
+  }
+
+  libelleCompetence(etat: EtatCompetence): string {
+    return etat === 'A' ? 'Compétence acquise'
+      : etat === 'ECA' ? 'Compétence en cours d\'acquisition' : 'Compétence non travaillée';
+  }
+
+  libelleCritere(statut: Statut): string {
+    return statut === 'EN_COURS' ? 'en cours d\'acquisition' : this.libelleStatut(statut).toLowerCase();
   }
 
   private imposerExercice(bloc: BlocAffiche, critere: CritereAffiche, exo: ExerciceGrilleVue | null): void {
@@ -1854,13 +1915,11 @@ export class GrilleComponent implements OnDestroy {
    */
   async noter(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut,
               exo: ExerciceGrilleVue | null = null): Promise<void> {
-    // Noté sous un exercice de la séance : la note porte sur cet exercice ;
-    // rien de nouveau si l'exercice a déjà cet état.
-    if (exo && this.exerciceImpose(bloc, critere, exo) !== null) {
-      const etat = this.etatExercice(critere, exo);
-      if (etat.le && etat.statut === statut) return;
-    }
+    // Noté sous un exercice de la séance : la note porte sur cet exercice.
     this.imposerExercice(bloc, critere, exo);
+    // Rien de nouveau si l'exercice noté a déjà cet état.
+    const etat = this.etatDeLaCible(bloc, critere);
+    if (etat?.le && etat.statut === statut) return;
     // Rien de nouveau : même état, sur le même exercice que la dernière note.
     // (Un autre exercice, ou un exercice d'initiation acquis sur un critère en cours, se note toujours.)
     const actif = this.suiviActif(critere);
@@ -2095,9 +2154,8 @@ export class GrilleComponent implements OnDestroy {
       cursusId: Number(this.id()),
       critereId: critere.id,
       seanceId: seance ? seance.id : null,
-      // Sous un exercice de la séance : l'état de l'exercice, que le commentaire ne change pas.
-      statut: exo && this.exerciceImpose(bloc, critere, exo) !== null
-        ? this.etatExercice(critere, exo).statut : this.suiviActif(critere).statut,
+      // Sur un exercice : son état, que le commentaire ne change pas ; sinon celui du critère.
+      statut: (this.etatDeLaCible(bloc, critere) ?? this.suiviActif(critere)).statut,
       commentaire: texte,
       dateEvaluation: seance ? seance.date : dateDuJour(),
       ...this.champsExercice(this.exerciceNote(bloc, critere)),

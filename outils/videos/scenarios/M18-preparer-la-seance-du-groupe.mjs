@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-12, 9e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 10e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
@@ -80,7 +80,8 @@ export default {
     await pause(1500);
     await page.locator('.criteres-exercice').first().scrollIntoViewIfNeeded();
     await pause(3000);
-    await legende('On note directement l\'exercice : non abordé, en cours d\'acquisition ou acquis. On y voit où en est l\'élève dans cet exercice, pas l\'état de la compétence.', 5500);
+    await legende('On note directement l\'exercice : non abordé, en cours d\'acquisition ou acquis. Les boutons montrent où en est l\'élève dans cet exercice.', 5000);
+    await legende('L\'état de la compétence est rappelé à côté de son nom : non travaillée, en cours d\'acquisition ou acquise.', 4000);
     await legende('« Commenter » et « Voir l\'historique » sont là aussi.', 3000);
     await legende('Les mêmes critères restent dans leur compétence, plus bas.', 0);
     await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences travaillées|la compétence travaillée)$/ }), { apres: 1200 });
