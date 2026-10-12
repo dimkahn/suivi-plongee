@@ -160,27 +160,44 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               </button>
               @if (menuOuvert()) {
                 <div class="menu-actions-liste" role="menu" (click)="menuOuvert.set(false)">
-                  <button type="button" role="menuitem" [disabled]="!reseau.enLigne() || exportEnCours()"
-                          (click)="telechargerPdf(g)">
-                    {{ reseau.enLigne() ? 'Exporter en PDF' : 'Exporter en PDF (réseau nécessaire)' }}
-                  </button>
+                  <button type="button" role="menuitem" (click)="ouvrirPdf()">Exporter en PDF</button>
                   @if (peutVoirHistoriqueSaisons()) {
-                    <button type="button" role="menuitem" (click)="basculerHistoriqueSaisons()">
-                      {{ historiqueSaisonsOuvert() ? 'Masquer les saisons précédentes' : 'Voir les saisons précédentes' }}
+                    <button type="button" role="menuitem" (click)="ouvrirHistoriqueSaisons()">
+                      Voir les saisons précédentes
                     </button>
                   }
-                  <button type="button" role="menuitem"
-                          (click)="infosSupplementairesOuvertes.set(!infosSupplementairesOuvertes())">
-                    {{ infosSupplementairesOuvertes() ? 'Masquer les informations supplémentaires' : 'Informations supplémentaires' }}
+                  <button type="button" role="menuitem" (click)="infosSupplementairesOuvertes.set(true)">
+                    Informations supplémentaires
                   </button>
+                  @if (peutModifierTailles()) {
+                    <button type="button" role="menuitem"
+                            (click)="ouvrirTailles(g.tailleGilet, g.tailleCombinaison)">
+                      Modifier les tailles
+                    </button>
+                  }
                 </div>
               }
             </div>
           </div>
-          @if (exportEnCours()) { <p class="secondaire" role="status">Génération du PDF…</p> }
+
+          <!-- Chaque action de « Plus d'actions » s'ouvre dans sa propre fenêtre. -->
+          <app-dialogue [ouvert]="pdfOuvert()" [titre]="'Fiche de suivi de ' + g.eleve" [erreur]="erreurPdf()"
+                        (fermer)="pdfOuvert.set(false)">
+            <p>La fiche reprend la grille de l'élève, mise en page pour l'imprimer ou l'envoyer.</p>
+            @if (!reseau.enLigne()) { <p class="secondaire">Le réseau est nécessaire pour générer le PDF.</p> }
+            @if (exportEnCours()) { <p class="secondaire" role="status">Génération du PDF…</p> }
+            <div class="actions-dialogue">
+              <button type="button" class="bouton-principal" (click)="telechargerPdf(g)"
+                      [disabled]="!reseau.enLigne() || exportEnCours()">
+                Télécharger le PDF
+              </button>
+              <button type="button" class="bouton-discret" (click)="pdfOuvert.set(false)">Fermer</button>
+            </div>
+          </app-dialogue>
 
           @if (peutVoirHistoriqueSaisons()) {
-            @if (historiqueSaisonsOuvert()) {
+            <app-dialogue [ouvert]="historiqueSaisonsOuvert()" [titre]="'Saisons précédentes de ' + g.eleve"
+                          (fermer)="historiqueSaisonsOuvert.set(false)">
               @if (chargementHistoriqueSaisons()) {
                 <p class="secondaire">Chargement…</p>
               } @else {
@@ -191,7 +208,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   <ul class="saisons-precedentes">
                     @for (c of autres; track c.id) {
                       <li>
-                        <a [routerLink]="['/cursus', c.id]">
+                        <a [routerLink]="['/cursus', c.id]" (click)="historiqueSaisonsOuvert.set(false)">
                           {{ c.niveau }} · {{ c.saison }} · {{ c.statut }}
                         </a>
                       </li>
@@ -199,10 +216,14 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   </ul>
                 }
               }
-            }
+              <div class="actions-dialogue">
+                <button type="button" class="bouton-discret" (click)="historiqueSaisonsOuvert.set(false)">Fermer</button>
+              </div>
+            </app-dialogue>
           }
 
-          @if (infosSupplementairesOuvertes()) {
+          <app-dialogue [ouvert]="infosSupplementairesOuvertes()" [titre]="'Informations sur ' + g.eleve"
+                        (fermer)="infosSupplementairesOuvertes.set(false)">
             <dl class="infos-supplementaires">
               <dt>Date de naissance</dt><dd>{{ g.dateNaissance ? (g.dateNaissance | dateFr) : 'non renseignée' }}</dd>
               <dt>CACI valide jusqu'au</dt>
@@ -215,16 +236,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 }
               </dd>
               <dt>Taille de gilet</dt><dd>{{ g.tailleGilet || 'non renseignée' }}</dd>
-              <dt>Taille de combinaison</dt>
-              <dd>
-                {{ g.tailleCombinaison || 'non renseignée' }}
-                @if (peutModifierTailles()) {
-                  <button type="button" class="lien-historique modifier-tailles"
-                          (click)="ouvrirTailles(g.tailleGilet, g.tailleCombinaison)">
-                    Modifier les tailles
-                  </button>
-                }
-              </dd>
+              <dt>Taille de combinaison</dt><dd>{{ g.tailleCombinaison || 'non renseignée' }}</dd>
               <dt>E-mail</dt><dd>{{ g.email || 'non renseigné' }}</dd>
               <dt>Téléphone</dt><dd>{{ g.telephone || 'non renseigné' }}</dd>
               <dt>Contact d'urgence</dt>
@@ -237,6 +249,12 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 }
               </dd>
             </dl>
+            <div class="actions-dialogue">
+              <button type="button" class="bouton-discret" (click)="infosSupplementairesOuvertes.set(false)">Fermer</button>
+            </div>
+          </app-dialogue>
+
+          @if (peutModifierTailles()) {
             <app-dialogue [ouvert]="tailles() !== null" [titre]="'Tailles de ' + g.eleve" [erreur]="message()"
                           (fermer)="tailles.set(null)">
               @if (tailles(); as t) {
@@ -821,7 +839,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     @media (min-width: 601px) { .actions-entete .menu-actions-liste { left: auto; right: 0; } }
     @media (max-width: 600px) { .actions-entete .menu-actions { position: static; } }
     .saisons-precedentes { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 4px; }
-    .saisons-precedentes a { font-size: .875rem; }
+    .saisons-precedentes a { display: flex; align-items: center; min-height: 44px; }
     .infos-supplementaires {
       margin: var(--pas) 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px var(--pas);
       font-size: .875rem;
@@ -832,7 +850,6 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .infos-supplementaires label { margin: 0; font-weight: 700; }
     .infos-supplementaires input { margin: 0; max-width: 200px; }
     .champ-taille { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
-    .modifier-tailles { display: block; }
 
     .barre-seance {
       display: flex; align-items: center; gap: var(--pas-2);
@@ -1060,6 +1077,9 @@ export class GrilleComponent implements OnDestroy {
   ageDuCache = signal<string | null>(null);
   urlPhoto = signal<string | null>(null);
   exportEnCours = signal(false);
+  /** Fenêtre « Exporter en PDF » ouverte depuis « Plus d'actions », et son refus éventuel. */
+  pdfOuvert = signal(false);
+  erreurPdf = signal<string | null>(null);
   /** Critères en cours d'enregistrement : `cle(critère, entraînement)` → saisie envoyée. */
   enregistrements = signal<Map<string, EnVol>>(new Map());
   validationEnCours = signal<number | null>(null);
@@ -1606,6 +1626,8 @@ export class GrilleComponent implements OnDestroy {
     this.historiqueSaisonsOuvert.set(false);
     this.historiqueSaisons.set([]);
     this.tailles.set(null);
+    this.infosSupplementairesOuvertes.set(false);
+    this.pdfOuvert.set(false);
     this.chargementHistoriqueSaisons.set(false);
     this.pourMoniteurId.set(null);
   }
@@ -1816,11 +1838,7 @@ export class GrilleComponent implements OnDestroy {
    * son statut n'est plus EN_COURS, donc aucun contrôle supplémentaire n'est
    * nécessaire pour la consultation.
    */
-  async basculerHistoriqueSaisons(): Promise<void> {
-    if (this.historiqueSaisonsOuvert()) {
-      this.historiqueSaisonsOuvert.set(false);
-      return;
-    }
+  async ouvrirHistoriqueSaisons(): Promise<void> {
     this.historiqueSaisonsOuvert.set(true);
     if (this.historiqueSaisons().length > 0) return;
 
@@ -1842,8 +1860,14 @@ export class GrilleComponent implements OnDestroy {
    * l'impression) et déclenche son téléchargement. Nécessite le réseau : pas
    * de génération PDF côté client, ni de mise en cache hors ligne.
    */
+  ouvrirPdf(): void {
+    this.erreurPdf.set(null);
+    this.pdfOuvert.set(true);
+  }
+
   telechargerPdf(g: { eleve: string }): void {
     this.exportEnCours.set(true);
+    this.erreurPdf.set(null);
     this.api.fichePdf(Number(this.id())).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
@@ -1853,9 +1877,10 @@ export class GrilleComponent implements OnDestroy {
         lien.click();
         URL.revokeObjectURL(url);
         this.exportEnCours.set(false);
+        this.pdfOuvert.set(false);
       },
       error: () => {
-        this.message.set('Le PDF n’a pas pu être généré.');
+        this.erreurPdf.set('Le PDF n’a pas pu être généré.');
         this.exportEnCours.set(false);
       }
     });

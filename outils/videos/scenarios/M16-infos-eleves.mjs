@@ -1,5 +1,5 @@
 // M16 — Infos élèves.
-// Tournage du 2026-10-11, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M16',
   titre: 'Infos élèves',
@@ -41,6 +41,12 @@ export default {
     await page.locator('.infos-supplementaires').scrollIntoViewIfNeeded();
     await pause(3500);
     await legende('Aucune donnée de santé n\'est enregistrée : seule la date de fin du certificat.', 4000);
+    await toucher(page.getByRole('dialog').locator('.actions-dialogue').getByRole('button', { name: 'Fermer' }), { apres: 900 });
+
+    await legende('Les tailles de gilet et de combinaison se corrigent par « Plus d\'actions », puis « Modifier les tailles ».', 0);
+    await toucher(page.getByRole('button', { name: /^Plus d'actions/ }), { apres: 900 });
+    await toucher(page.getByRole('menuitem', { name: 'Modifier les tailles' }), { apres: 2500 });
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 900 });
     await legende(null, 0);
     await pause(500);
   }

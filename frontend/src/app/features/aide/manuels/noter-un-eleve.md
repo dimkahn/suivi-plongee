@@ -74,4 +74,4 @@ Seuls les référents du groupe de l'élève voient ce choix, et seuls les encad
 - Sans réseau, la note reste sur le téléphone, « En attente d'envoi ».
 - Tout un groupe a fait le même exercice ? Voir « Noter les présents en une fois ».
 - Venu de la feuille de présence (« Noter » ou « Pas encore évalué »), le haut de la grille propose l'**élève précédent** et l'**élève suivant** parmi les présents du groupe filtré, avec sa place (« 3 / 8 ») : on note tout le groupe sans repasser par la feuille.
-- « Plus d'actions », en haut de la grille : « Exporter en PDF », « Voir les saisons précédentes » et « Informations supplémentaires » (contacts, tailles de matériel).
+- « Plus d'actions », en haut de la grille : « Exporter en PDF », « Voir les saisons précédentes », « Informations supplémentaires » (contacts, tailles de matériel) et « Modifier les tailles ». Chacune s'ouvre dans sa propre fenêtre, sans déplacer la grille.

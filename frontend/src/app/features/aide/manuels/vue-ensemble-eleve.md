@@ -40,7 +40,8 @@ Le PDF de la fiche porte de même une colonne « Piscine / fosse » à côté du
 
 1. Revenez à la grille.
 2. Touchez « Plus d'actions », en haut, puis « Exporter en PDF ».
-3. Le PDF arrive dans les téléchargements du téléphone.
+3. Dans la fenêtre qui s'ouvre, touchez « Télécharger le PDF ».
+4. Le PDF arrive dans les téléchargements du téléphone.
 
 ## Bon à savoir
 
