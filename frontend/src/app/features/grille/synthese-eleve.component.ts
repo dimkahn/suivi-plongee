@@ -55,6 +55,33 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
         }
       </div>
 
+      <section class="avancement" aria-labelledby="titre-avancement">
+        <h2 id="titre-avancement">Avancement par compétence</h2>
+        <p class="secondaire">Part des critères acquis{{ g.milieuNaturelExclusif ? ' en milieu naturel' : '' }} ; une compétence validée compte pour 100 %.</p>
+        <ul class="camemberts">
+          @for (b of g.blocs; track b.id) {
+            @let p = pourcentage(b);
+            <li>
+              <a [href]="'#competence-' + b.id" (click)="allerALaCompetence($event, b.id)" class="camembert"
+                 [title]="detailPourcentage(b)" [attr.aria-label]="b.intitule + ' : ' + p + ' %, ' + detailPourcentage(b)">
+                <svg viewBox="0 0 42 42" width="72" height="72" aria-hidden="true">
+                  <circle cx="21" cy="21" r="16" class="piste" />
+                  @if (p > 0) {
+                    <circle cx="21" cy="21" r="16" class="part" pathLength="100"
+                            [attr.stroke-dasharray]="p + ' ' + (100 - p)" transform="rotate(-90 21 21)" />
+                  }
+                  <text x="21" y="21" text-anchor="middle" dominant-baseline="central">{{ p }} %</text>
+                </svg>
+                <span class="nom-competence">
+                  @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
+                  {{ b.intitule }}
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+
       @for (r of rubriques; track r.etat) {
         @let blocs = parEtat()[r.etat];
         <section class="rubrique" [id]="'rubrique-' + r.etat">
@@ -64,7 +91,7 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
           } @else {
             <ul class="competences">
               @for (b of blocs; track b.id) {
-                <li class="carte competence">
+                <li class="carte competence" [id]="'competence-' + b.id">
                   <p class="intitule">
                     @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
                     {{ b.intitule }}
@@ -150,9 +177,21 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
     .entrainement { display: block; font-size: .8125rem; color: var(--craie); }
     .retard { color: var(--accent); font-weight: 700; }
     .legende { margin-top: var(--pas-3); font-size: .8125rem; line-height: 1.8; }
+    .avancement h2 { margin: var(--pas-3) 0 0; font-size: 1.125rem; }
+    .avancement > p { margin: 2px 0 var(--pas); font-size: .8125rem; }
+    .camemberts { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--pas);
+                  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    .camembert { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%;
+                 min-height: 44px; padding: var(--pas); border: 1px solid var(--trait); border-radius: var(--r-s);
+                 background: var(--carte); color: var(--encre); text-decoration: none; text-align: center; }
+    .camembert:hover { border-color: var(--profond); }
+    .camembert .piste { fill: none; stroke: var(--trait); stroke-width: 8; }
+    .camembert .part { fill: none; stroke: var(--profond); stroke-width: 8; }
+    .camembert text { font-size: 9px; font-weight: 700; fill: var(--encre); }
+    .nom-competence { font-size: .8125rem; line-height: 1.3; color: var(--craie); }
     @media print {
       .retour, .imprimer { display: none; }
-      .competence { break-inside: avoid; }
+      .competence, .camembert { break-inside: avoid; }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -206,6 +245,25 @@ export class SyntheseEleveComponent {
   allerA(evenement: Event, etat: EtatCompetence): void {
     evenement.preventDefault();
     document.getElementById('rubrique-' + etat)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /**
+   * Part de la compétence effectuée : critères acquis sur le total (milieu
+   * naturel seul pour un N2/N3, comme la validation) ; 100 % une fois validée.
+   */
+  pourcentage(b: BlocVue): number {
+    if (etatDe(b) === 'A') return 100;
+    return b.total > 0 ? Math.round(100 * b.acquis / b.total) : 0;
+  }
+
+  detailPourcentage(b: BlocVue): string {
+    if (etatDe(b) === 'A') return 'compétence validée';
+    return `${b.acquis} critère${b.acquis > 1 ? 's' : ''} acquis sur ${b.total}`;
+  }
+
+  allerALaCompetence(evenement: Event, blocId: number): void {
+    evenement.preventDefault();
+    document.getElementById('competence-' + blocId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   imprimer(): void {

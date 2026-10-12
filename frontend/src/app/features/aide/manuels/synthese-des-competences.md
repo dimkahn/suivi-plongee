@@ -3,7 +3,7 @@ titre: La synthèse des compétences d'un groupe ou d'un élève
 rubrique: Moniteur
 videos: M22
 ecran: /groupes-entrainement/synthese
-mots: synthèse, avancement, progression, bilan, groupe, groupe d'entraînement, compétences, acquise, validée, en cours d'acquisition, non travaillée, NT, ECA, A, tableau, coup d'œil, tous les élèves, imprimer, photo, trombine, fiche de synthèse, élève, reste à travailler, bilan de l'élève
+mots: synthèse, avancement, progression, bilan, groupe, groupe d'entraînement, compétences, acquise, validée, en cours d'acquisition, non travaillée, NT, ECA, A, tableau, coup d'œil, tous les élèves, imprimer, photo, trombine, fiche de synthèse, élève, reste à travailler, bilan de l'élève, pourcentage, camembert, graphique, cercle, avancement par compétence
 questions:
 - Comment voir l'avancement de tous les élèves d'un groupe ?
 - Où en est mon groupe dans ses compétences ?
@@ -11,6 +11,7 @@ questions:
 - Combien d'élèves du groupe ont acquis une compétence ?
 - Comment voir d'un coup les compétences acquises, en cours et non travaillées d'un élève ?
 - Comment imprimer le bilan d'un élève ?
+- Quel pourcentage de chaque compétence un élève a-t-il effectué ?
 ---
 Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » montre l'avancement de tous les élèves d'un groupe d'entraînement d'un coup d'œil : un élève par ligne, une compétence par colonne, avec son état NT, ECA ou A. Pour un seul élève, le lien « Synthèse A / ECA / NT » de sa fiche de suivi range ses compétences en trois listes.
 
@@ -29,11 +30,12 @@ Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » 
 1. Ouvrez la fiche de suivi (la grille) de l'élève.
 2. Sous son nom, touchez « Synthèse A / ECA / NT ».
 3. En haut, trois compteurs : compétences acquises, en cours d'acquisition, non travaillées. Touchez-en un pour descendre à sa liste.
-4. **Acquises** : la date de validation et l'encadrant qui l'a validée.
-5. **En cours d'acquisition** : le nombre de critères acquis et l'état de chacun (A, ECA ou NA non abordé) ; « reste à valider la compétence » quand tous sont acquis. Au N2 et au N3, l'état à l'entraînement (piscine, fosse) est rappelé sous le critère.
-6. **Non travaillées** : ce qui n'a pas encore été abordé.
-7. Une compétence en retard sur la progression type est signalée.
-8. « Imprimer » donne une version papier ; « Retour à la fiche de suivi » revient à la grille.
+4. Dessous, « Avancement par compétence » : un graphique en cercle par compétence, avec le pourcentage effectué, c'est-à-dire la part de ses critères acquis (100 % une fois la compétence validée). Au N2 et au N3, seuls les critères acquis en milieu naturel comptent. Touchez un cercle pour descendre au détail de la compétence.
+5. **Acquises** : la date de validation et l'encadrant qui l'a validée.
+6. **En cours d'acquisition** : le nombre de critères acquis et l'état de chacun (A, ECA ou NA non abordé) ; « reste à valider la compétence » quand tous sont acquis. Au N2 et au N3, l'état à l'entraînement (piscine, fosse) est rappelé sous le critère.
+7. **Non travaillées** : ce qui n'a pas encore été abordé.
+8. Une compétence en retard sur la progression type est signalée.
+9. « Imprimer » donne une version papier ; « Retour à la fiche de suivi » revient à la grille.
 
 ## Les états
 
