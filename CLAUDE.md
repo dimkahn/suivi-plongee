@@ -404,7 +404,11 @@ avant les notes. La feuille de présence compte les notes reçues par chaque
 élève sur la séance (`LignePresence.evaluations`, entraînement compris) :
 une séance passée signale les présents « pas encore évalués » (lien vers
 leur grille, filtre dédié), les notes en attente sur l'appareil comptant
-comme reçues.
+comme reçues. **Théorie en plus** (V72, `participation.theorie`, choix du
+club 2026) : nage et bloc s'excluent, la théorie s'y ajoute ou se fait
+seule (atelier `THEORIE`, dont la colonne est alors toujours vraie) ;
+`Participation.codeAtelier()` donne « BLOC+THEORIE » à Infos élèves et à
+la synthèse des notes.
 **Notation groupée** (bouton « Noter les présents » de la feuille de
 présence, `NotationGroupeeService`, `POST /api/seances/{id}/notation-groupee`) :
 plusieurs élèves présents, un ou plusieurs critères, chacun avec son

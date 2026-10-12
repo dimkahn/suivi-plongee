@@ -320,8 +320,9 @@ export class RosterComponent implements OnDestroy {
       + `${a.competencesValidees} compétence${a.competencesValidees > 1 ? 's' : ''} validée${a.competencesValidees > 1 ? 's' : ''} sur ${a.competences}`;
   }
 
+  /** « BLOC+THEORIE » : bloc avec de la théorie en plus. */
   libelle(code: string | undefined): string {
     if (!code) return '–';
-    return LIBELLES[code] ?? code;
+    return code.split('+').map(c => LIBELLES[c] ?? c).join(' + ');
   }
 }

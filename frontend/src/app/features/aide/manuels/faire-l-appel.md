@@ -3,7 +3,7 @@ titre: Faire l'appel d'une séance
 rubrique: Moniteur
 videos: M3
 ecran: /presences
-mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté, exercices, programme, schéma, critère de réussite, déroulement, replier, déplier, retour, revenir, élève suivant, séance du jour, prochaine séance, date par défaut, changer de séance
+mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, théorie seule, cours, en plus, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté, exercices, programme, schéma, critère de réussite, déroulement, replier, déplier, retour, revenir, élève suivant, séance du jour, prochaine séance, date par défaut, changer de séance
 questions:
 - Où voir le détail et le schéma des exercices de la séance ?
 - Comment replier les exercices de la séance ?
@@ -12,6 +12,8 @@ questions:
 - Comment faire l'appel ?
 - Quelle séance la feuille de présence affiche-t-elle à l'ouverture ?
 - Comment noter qu'un élève est présent ou absent ?
+- Comment dire qu'un élève a fait de la théorie en plus de la nage ou du bloc ?
+- Comment noter une séance de théorie seule ?
 - Comment annoncer qu'un élève viendra ?
 - Je me suis trompé de présence, comment corriger ?
 - Combien d'élèves de mon groupe sont présents ?
@@ -19,21 +21,23 @@ questions:
 - Comment noter un élève depuis la feuille de présence ?
 - Comment revenir à la feuille de présence après avoir noté un élève ?
 ---
-Menu, « Présences » : choisissez la séance, puis touchez chaque élève et ce qu'il a fait (nage, bloc ou théorie). Chaque choix est enregistré tout de suite.
+Menu, « Présences » : choisissez la séance, puis touchez chaque élève et ce qu'il a fait (nage ou bloc, avec ou sans théorie, ou théorie seule). Chaque choix est enregistré tout de suite.
 
 ## Pas à pas
 
 1. Menu, puis « Présences ».
 2. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine séance (dans la semaine qui vient), sinon sur la dernière passée. Pour une autre, touchez « Changer » et choisissez-la dans le calendrier. Le lundi, la piscine et la fosse sont deux séances distinctes.
 3. Filtrez sur votre groupe d'entraînement avec les boutons.
-4. Touchez un élève, puis ce qu'il a fait : « Nage », « Bloc » ou « Théorie ».
+4. Touchez un élève, puis ce qu'il a fait : « Nage » ou « Bloc ».
+   - **Théorie en plus** : cochez aussi « Théorie » (l'élève est alors « Bloc + théorie » ou « Nage + théorie »). Sur téléphone, « Théorie » laisse la barre ouverte : touchez ensuite « Bloc » ou « Nage », ou « Fermer ».
+   - **Théorie seule** : touchez seulement « Théorie ».
 5. Le compteur en haut de la liste fait le bilan : présents, absents, et présents sans évaluation. Il reste en haut de l'écran pendant qu'on fait défiler les élèves. Filtré sur un groupe, il ne compte que les élèves de ce groupe (la recherche d'un élève, elle, ne change pas le compte).
 
 Un doute en cours de route ? « Comment faire ? », en haut à droite de l'écran, rappelle les règles de l'appel.
 
 ## Corriger
 
-- Touchez de nouveau le choix actif pour l'effacer : l'élève redevient absent.
+- Touchez de nouveau le choix actif pour l'effacer : l'élève redevient absent. Avec de la théorie en plus, effacer « Bloc » laisse la théorie seule, effacer « Théorie » laisse le bloc.
 
 ## Qui n'a pas encore été évalué ?
 

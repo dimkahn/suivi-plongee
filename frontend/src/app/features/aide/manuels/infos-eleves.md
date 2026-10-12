@@ -20,7 +20,7 @@ questions:
 
 1. Menu, « Infos élèves » (sur téléphone : l'onglet « Élèves », en bas de l'écran).
 2. Les boutons filtrent par groupe d'entraînement ; la recherche retrouve un nom ou un prénom. Dessous, « Synthèse des compétences du groupe » montre l'avancement de tous les élèves du groupe filtré, compétence par compétence ([la synthèse des compétences](/groupes-entrainement/synthese)).
-3. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.
+3. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date (ce que l'élève a fait : « Bloc », « Nage + Théorie », « Théorie »…).
 4. Touchez un nom pour ouvrir la fiche de l'élève.
 5. Touchez la case d'un élève sous une date : sa grille s'ouvre, **cette séance déjà choisie**, prête à noter.
 6. Touchez une date en haut de colonne : la feuille de cette séance s'ouvre (présences, programme d'exercices, « Noter les présents »).

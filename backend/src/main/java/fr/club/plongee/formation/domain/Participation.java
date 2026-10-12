@@ -29,8 +29,25 @@ public class Participation {
     @Enumerated(EnumType.STRING)
     private Atelier atelier;
 
+    /**
+     * Théorie faite pendant la séance, en plus de la nage ou du bloc ;
+     * toujours vraie pour l'atelier THEORIE (théorie seule).
+     */
+    @Column(nullable = false)
+    private boolean theorie;
+
     @Column(columnDefinition = "text")
     private String commentaire;
+
+    /**
+     * Ce que l'élève a fait, tel que l'affichent les écrans : l'atelier
+     * (« BLOC »), suivi de « +THEORIE » s'il a fait de la théorie en plus ;
+     * null si rien n'est précisé.
+     */
+    public String codeAtelier() {
+        if (atelier == null) return null;
+        return theorie && atelier != Atelier.THEORIE ? atelier.name() + "+THEORIE" : atelier.name();
+    }
 
     public Long getId() {
         return id;
@@ -70,6 +87,14 @@ public class Participation {
 
     public void setAtelier(Atelier atelier) {
         this.atelier = atelier;
+    }
+
+    public boolean isTheorie() {
+        return theorie;
+    }
+
+    public void setTheorie(boolean theorie) {
+        this.theorie = theorie;
     }
 
     public String getCommentaire() {

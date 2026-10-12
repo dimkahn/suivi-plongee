@@ -73,7 +73,7 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 ### M3 — Faire l'appel d'une séance
 
-La feuille de présence d'une séance : le détail des exercices préparés (replié d'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d'où « ← Feuille de présence » ramène à la feuille.
+La feuille de présence d'une séance : le détail des exercices préparés (replié d'office), nage ou bloc pour chaque élève, avec ou sans théorie, ou théorie seule, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d'où « ← Feuille de présence » ramène à la feuille.
 
 Compte : `e2@club.fr` · format téléphone · 1 min 10
 
@@ -88,20 +88,22 @@ Compte : `e2@club.fr` · format téléphone · 1 min 10
 9. Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.
 10. Touchez de nouveau le titre pour replier la partie.
 11. Filtrez sur votre groupe d'entraînement.
-12. Touchez un élève, puis ce qu'il a fait : nage, bloc ou théorie.
-13. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
-14. Un élève sans choix est absent.
-15. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
-16. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
-17. Le compteur en haut de la liste fait le bilan du groupe filtré ; il reste en haut de l'écran quand la liste défile.
-18. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
-19. « Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.
-20. « Voir les présents sans évaluation » n'affiche plus qu'eux.
-21. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
-22. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
-23. En haut de sa fiche, le nom de l'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.
-24. Une fois l'élève noté, « ← Feuille de présence », en haut à gauche, ramène sur la même séance et le même groupe.
-25. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+12. Touchez un élève, puis ce qu'il a fait : nage ou bloc.
+13. De la théorie en plus ? Touchez « Théorie », puis « Bloc » ou « Nage ».
+14. Une séance de théorie seule : « Théorie », puis « Fermer ».
+15. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
+16. Un élève sans choix est absent.
+17. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
+18. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
+19. Le compteur en haut de la liste fait le bilan du groupe filtré ; il reste en haut de l'écran quand la liste défile.
+20. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
+21. « Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.
+22. « Voir les présents sans évaluation » n'affiche plus qu'eux.
+23. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
+24. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+25. En haut de sa fiche, le nom de l'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.
+26. Une fois l'élève noté, « ← Feuille de présence », en haut à gauche, ramène sur la même séance et le même groupe.
+27. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance
 

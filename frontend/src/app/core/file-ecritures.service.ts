@@ -35,7 +35,9 @@ export interface ProfilRealise {
  * Un statut de présence nul veut dire « effacer ».
  */
 export type Ecriture =
-  | { type: 'presence'; seanceId: number; cursusId: number; statut: StatutPresence | null; atelier: Atelier | null }
+  | { type: 'presence'; seanceId: number; cursusId: number; statut: StatutPresence | null; atelier: Atelier | null;
+      /** Théorie en plus de la nage ou du bloc ; absent d'une écriture gardée avant son ajout. */
+      theorie?: boolean }
   | { type: 'fiche'; seanceId: number; demande: DemandeFicheSecurite }
   | { type: 'realise'; seanceId: number; profils: ProfilRealise[] };
 
@@ -249,7 +251,7 @@ export class FileEcrituresService {
         return e.statut === null
           ? this.http.delete(`/api/seances/${e.seanceId}/presences/${e.cursusId}`)
           : this.http.put(`/api/seances/${e.seanceId}/presences`,
-              [{ cursusId: e.cursusId, statut: e.statut, atelier: e.atelier }]);
+              [{ cursusId: e.cursusId, statut: e.statut, atelier: e.atelier, theorie: e.theorie ?? false }]);
       case 'fiche':
         return this.http.put<FicheSecuriteVue>(`/api/seances/${e.seanceId}/fiche-securite`, e.demande);
       case 'realise':

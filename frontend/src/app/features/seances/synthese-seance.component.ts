@@ -309,9 +309,11 @@ export class SyntheseSeanceComponent {
     return statut === 'ACQUIS' ? 'A' : statut === 'EN_COURS' ? 'EC' : 'NA';
   }
 
-  /** Sous le nom, comme sur le tableau papier : qui l'a noté, et ce qu'il a fait (nage, bloc...). */
+  /** Sous le nom, comme sur le tableau papier : qui l'a noté, et ce qu'il a fait (nage, bloc + théorie...). */
   sousTitre(e: EleveSyntheseVue): string {
-    const atelier = e.atelier ? ATELIERS[e.atelier] ?? e.atelier.toLowerCase() : null;
+    const atelier = e.atelier
+      ? e.atelier.split('+').map(a => ATELIERS[a] ?? a.toLowerCase()).join(' + ')
+      : null;
     const qui = e.notePar.length > 0 ? e.notePar.join(', ') : 'pas encore évalué';
     return atelier ? `${qui} · ${atelier}` : qui;
   }
