@@ -45,4 +45,5 @@ Le PDF de la fiche porte de même une colonne « Piscine / fosse » à côté du
 ## Bon à savoir
 
 - Le PDF demande le réseau.
+- Pour un bilan rapide, compétence par compétence, « Synthèse A / ECA / NT » sous le nom de l'élève : voir « La synthèse des compétences d'un groupe ou d'un élève ».
 - L'élève peut aussi exporter sa propre fiche depuis son compte.

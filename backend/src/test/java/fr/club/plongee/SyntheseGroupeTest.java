@@ -133,6 +133,11 @@ class SyntheseGroupeTest {
             assertThat(eleves.get(0).get("aPhoto").asBoolean()).isFalse();
             assertThat(eleves.get(1).get("cases").get(0).get("etat").asText()).isEqualTo("NT");
 
+            // La grille porte le même état, bloc par bloc : la fiche de synthèse de l'élève le lit.
+            JsonNode blocs = envoyer("GET", "/api/cursus/" + cAlice + "/grille", moniteur, null, 200).get("blocs");
+            assertThat(blocs.get(0).get("etat").asText()).isEqualTo("ECA");
+            assertThat(blocs.get(1).get("etat").asText()).isEqualTo("NT");
+
             // Un élève ne consulte pas la synthèse d'un groupe.
             envoyer("GET", "/api/groupes-entrainement/" + groupe + "/synthese-competences",
                     jeton("eleve@club.fr"), null, 403);

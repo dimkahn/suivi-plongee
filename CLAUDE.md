@@ -422,11 +422,17 @@ du groupe » d'Infos élèves, `/groupes-entrainement/synthese?groupe=`,
 MONITEUR/ADMIN) : un élève du groupe par ligne, une compétence (bloc) par
 colonne, un tableau par version du MFT. Chaque case ne montre que l'état
 de la compétence (choix du club, 2026 : pas le nombre de critères),
-`SyntheseGroupeService.EtatCompetence`, tiré de `GrilleService.grille` :
+`EtatCompetence` (paquet `evaluation.service`), calculé par `GrilleService`
+et porté par chaque bloc de la grille (`BlocVue.etat`) :
 A acquise = bloc validé ; ECA en cours d'acquisition = un critère noté
 au-delà de « non abordé » (entraînement compris), même tous acquis tant
 que le bloc n'est pas validé ; NT non travaillée sinon. Lecture seule,
-réseau obligatoire. Les deux synthèses montrent la photo de chaque élève
+réseau obligatoire. **Fiche de synthèse d'un élève** (lien « Synthèse
+A / ECA / NT » de la grille, `/cursus/:id/synthese`,
+`SyntheseEleveComponent`) : ses compétences en trois listes, avec le
+détail des critères pour celles en cours ; lue dans la grille elle-même,
+donc hors ligne si la grille est embarquée, et ouverte à l'élève pour sa
+propre formation. Les synthèses montrent la photo de chaque élève
 (`aPhoto` dans leurs vues, droit à l'image compris ; `PhotoEleveComponent`
 de `core/`, initiales à défaut).
 

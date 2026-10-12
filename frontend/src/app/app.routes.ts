@@ -40,6 +40,12 @@ export const routes: Routes = [
       .then(m => m.MatriceComponent)
   },
   {
+    path: 'cursus/:id/synthese',
+    canActivate: [gardeConnecte],
+    loadComponent: () => import('./features/grille/synthese-eleve.component')
+      .then(m => m.SyntheseEleveComponent)
+  },
+  {
     path: 'mon-compte',
     canActivate: [gardeConnecte],
     loadComponent: () => import('./features/compte/mon-compte.component')

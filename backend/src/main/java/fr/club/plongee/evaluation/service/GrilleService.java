@@ -79,6 +79,8 @@ public class GrilleService {
     public record BlocVue(Long id, String intitule,
                           boolean evaluationTransverse, boolean validerEnDernier,
                           int acquis, int total, boolean valide,
+                          /** NT / ECA / A, lu par les synthèses (groupe, fiche de l'eleve). */
+                          EtatCompetence etat,
                           /** Criteres acquis a l'entrainement en piscine ou fosse (N2/N3). */
                           int acquisEntrainement,
                           LocalDate dateValidation, String valideePar,
@@ -245,6 +247,7 @@ public class GrilleService {
             blocs.add(new BlocVue(bloc.getId(), bloc.getIntitule(),
                     bloc.isEvaluationTransverse(), bloc.isValiderEnDernier(),
                     acquis, criteres.size(), v != null,
+                    EtatCompetence.de(v != null, criteres),
                     (int) criteres.stream().filter(c -> c.entrainement() != null
                             && StatutAcquisition.ACQUIS.name().equals(c.entrainement().statut())).count(),
                     v == null ? null : v.getDateValidation(),

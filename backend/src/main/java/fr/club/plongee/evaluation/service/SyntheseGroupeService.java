@@ -1,7 +1,6 @@
 package fr.club.plongee.evaluation.service;
 
 import fr.club.plongee.commun.RessourceIntrouvableException;
-import fr.club.plongee.evaluation.domain.StatutAcquisition;
 import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.Eleve;
 import fr.club.plongee.formation.repository.CursusRepository;
@@ -31,16 +30,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SyntheseGroupeService {
-
-    /** État d'une compétence pour un élève. */
-    public enum EtatCompetence {
-        /** Aucun critère noté autrement que « non abordé », ni en milieu naturel ni à l'entraînement. */
-        NT,
-        /** Travaillée mais pas encore validée (même si tous ses critères sont acquis). */
-        ECA,
-        /** Validée. */
-        A
-    }
 
     /** Une case du tableau : l'état d'une compétence pour un élève. */
     public record CaseCompetenceVue(Long blocId, EtatCompetence etat, LocalDate dateValidation) {}
@@ -111,7 +100,7 @@ public class SyntheseGroupeService {
         List<EleveCompetencesVue> eleves = grillesFormation.stream()
                 .map(g -> {
                     List<CaseCompetenceVue> cases = g.blocs().stream()
-                            .map(b -> new CaseCompetenceVue(b.id(), etat(b), b.dateValidation()))
+                            .map(b -> new CaseCompetenceVue(b.id(), b.etat(),b.dateValidation()))
                             .toList();
                     return new EleveCompetencesVue(g.cursusId(), g.eleveId(), g.eleve(), g.aPhoto(), g.statut(),
                             (int) cases.stream().filter(c -> c.etat() == EtatCompetence.A).count(), cases);
@@ -126,15 +115,6 @@ public class SyntheseGroupeService {
                 .toList();
 
         return new FormationGroupeVue(premiere.niveau(), premiere.versionMft(), competences, eleves);
-    }
-
-    /** Validée : A ; un critère noté (milieu naturel ou entraînement) au-delà de « non abordé » : ECA ; sinon NT. */
-    static EtatCompetence etat(GrilleService.BlocVue b) {
-        if (b.valide()) return EtatCompetence.A;
-        String nonAborde = StatutAcquisition.NON_ABORDE.name();
-        boolean travaillee = b.criteres().stream().anyMatch(c -> !nonAborde.equals(c.statut())
-                || (c.entrainement() != null && !nonAborde.equals(c.entrainement().statut())));
-        return travaillee ? EtatCompetence.ECA : EtatCompetence.NT;
     }
 
     private static int compter(List<EleveCompetencesVue> eleves, Long blocId, EtatCompetence etat) {
