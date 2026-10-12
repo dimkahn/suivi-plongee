@@ -16,7 +16,7 @@ Un compte élève ne voit que sa propre formation : la grille de compétences, e
 1. Connectez-vous avec votre compte élève.
 2. Votre formation s'affiche : touchez-la pour ouvrir la grille.
 3. Acquis, en cours, au programme : tout y est, avec les commentaires des moniteurs.
-4. « Synthèse A / ECA / NT », sous votre nom : vos compétences acquises, en cours d'acquisition et non travaillées, en trois listes, et pour chacune un cercle qui donne le pourcentage effectué (critères acquis).
+4. « Synthèse A / ECA / NT », sous votre nom : vos compétences acquises, en cours d'acquisition et non travaillées, en trois listes, avec le pourcentage effectué (critères acquis) de chacune : un camembert de toutes vos compétences, puis un cercle par compétence.
 5. « Plus d'actions », puis « Exporter en PDF », donne votre fiche de suivi.
 
 ## Bon à savoir

@@ -58,16 +58,43 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
       <section class="avancement" aria-labelledby="titre-avancement">
         <h2 id="titre-avancement">Avancement par compétence</h2>
         <p class="secondaire">Part des critères acquis{{ g.milieuNaturelExclusif ? ' en milieu naturel' : '' }} ; une compétence validée compte pour 100 %.</p>
+        <figure class="camembert">
+          <svg [attr.viewBox]="'0 0 ' + TAILLE + ' ' + TAILLE" role="img"
+               [attr.aria-label]="'Avancement de ' + g.eleve + ' : toutes les compétences ; détail dans les cercles qui suivent'">
+            @for (rayon of [25, 50, 75]; track rayon) {
+              <circle [attr.cx]="CENTRE" [attr.cy]="CENTRE" [attr.r]="RAYON * rayon / 100" class="repere" />
+            }
+            @for (s of secteurs(); track s.bloc.id) {
+              <g class="secteur" [class.survole]="survole() === s.bloc.id"
+                 (mouseenter)="survole.set(s.bloc.id)" (mouseleave)="survole.set(null)"
+                 (click)="allerALaCompetence($event, s.bloc.id)">
+                <title>{{ s.numero }}. {{ s.bloc.intitule }} : {{ s.pourcentage }} % ({{ detailPourcentage(s.bloc) }})</title>
+                <path [attr.d]="s.fond" class="fond" />
+                @if (s.part) { <path [attr.d]="s.part" class="part" /> }
+                <text [attr.x]="s.etiquette.x" [attr.y]="s.etiquette.y" text-anchor="middle" dominant-baseline="central">{{ s.numero }}</text>
+              </g>
+            }
+          </svg>
+          <figcaption class="secondaire">
+            Toutes les compétences d'un coup d'œil : une part numérotée par compétence, remplie depuis le centre
+            jusqu'à son pourcentage (pleine jusqu'au bord = 100 %). Les cercles légers marquent 25, 50 et 75 %.
+            Le numéro renvoie au cercle de la compétence, ci-dessous.
+          </figcaption>
+        </figure>
         <ul class="camemberts">
-          @for (b of g.blocs; track b.id) {
-            @let p = pourcentage(b);
+          @for (s of secteurs(); track s.bloc.id) {
+            @let b = s.bloc;
+            @let p = s.pourcentage;
             <li>
-              <a [href]="'#competence-' + b.id" (click)="allerALaCompetence($event, b.id)" class="camembert"
-                 [title]="detailPourcentage(b)" [attr.aria-label]="b.intitule + ' : ' + p + ' %, ' + detailPourcentage(b)">
+              <a [href]="'#competence-' + b.id" (click)="allerALaCompetence($event, b.id)" class="cercle"
+                 [class.survole]="survole() === b.id"
+                 (mouseenter)="survole.set(b.id)" (mouseleave)="survole.set(null)"
+                 [title]="detailPourcentage(b)" [attr.aria-label]="s.numero + '. ' + b.intitule + ' : ' + p + ' %, ' + detailPourcentage(b)">
+                <span class="numero" aria-hidden="true">{{ s.numero }}</span>
                 <svg viewBox="0 0 42 42" width="72" height="72" aria-hidden="true">
                   <circle cx="21" cy="21" r="16" class="piste" />
                   @if (p > 0) {
-                    <circle cx="21" cy="21" r="16" class="part" pathLength="100"
+                    <circle cx="21" cy="21" r="16" class="anneau" pathLength="100"
                             [attr.stroke-dasharray]="p + ' ' + (100 - p)" transform="rotate(-90 21 21)" />
                   }
                   <text x="21" y="21" text-anchor="middle" dominant-baseline="central">{{ p }} %</text>
@@ -179,19 +206,32 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
     .legende { margin-top: var(--pas-3); font-size: .8125rem; line-height: 1.8; }
     .avancement h2 { margin: var(--pas-3) 0 0; font-size: 1.125rem; }
     .avancement > p { margin: 2px 0 var(--pas); font-size: .8125rem; }
+    .camembert { display: flex; flex-direction: column; align-items: center; gap: var(--pas); margin: 0 0 var(--pas);
+                 padding: var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte); }
+    .camembert svg { width: min(100%, 300px); height: auto; }
+    .camembert figcaption { max-width: 34rem; margin: 0; font-size: .8125rem; text-align: center; }
+    .camembert .repere { fill: none; stroke: var(--trait); stroke-width: 1; }
+    /* Bord couleur de la carte : 2 px de jour entre les parts. */
+    .camembert .fond { fill: var(--fond); stroke: var(--carte); stroke-width: 2; }
+    .camembert .part { fill: var(--profond); stroke: var(--carte); stroke-width: 2; }
+    .camembert .secteur { cursor: pointer; }
+    .camembert .secteur.survole .fond { fill: var(--trait); }
+    .camembert .secteur.survole .part { fill: var(--profond-fonce); }
+    .camembert text { font-size: 11px; font-weight: 700; fill: var(--craie); }
     .camemberts { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--pas);
                   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
-    .camembert { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%;
-                 min-height: 44px; padding: var(--pas); border: 1px solid var(--trait); border-radius: var(--r-s);
-                 background: var(--carte); color: var(--encre); text-decoration: none; text-align: center; }
-    .camembert:hover { border-color: var(--profond); }
-    .camembert .piste { fill: none; stroke: var(--trait); stroke-width: 8; }
-    .camembert .part { fill: none; stroke: var(--profond); stroke-width: 8; }
-    .camembert text { font-size: 9px; font-weight: 700; fill: var(--encre); }
+    .cercle { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%;
+              min-height: 44px; padding: var(--pas); border: 1px solid var(--trait); border-radius: var(--r-s);
+              background: var(--carte); color: var(--encre); text-decoration: none; text-align: center; }
+    .cercle:hover, .cercle.survole { border-color: var(--profond); background: var(--fond); }
+    .cercle .numero { position: absolute; top: 4px; left: 8px; font-size: .8125rem; font-weight: 700; color: var(--craie); }
+    .cercle .piste { fill: none; stroke: var(--trait); stroke-width: 8; }
+    .cercle .anneau { fill: none; stroke: var(--profond); stroke-width: 8; }
+    .cercle text { font-size: 9px; font-weight: 700; fill: var(--encre); }
     .nom-competence { font-size: .8125rem; line-height: 1.3; color: var(--craie); }
     @media print {
       .retour, .imprimer { display: none; }
-      .competence, .camembert { break-inside: avoid; }
+      .competence, .camembert, .cercle { break-inside: avoid; }
     }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -215,6 +255,39 @@ export class SyntheseEleveComponent {
     const rangees: Record<EtatCompetence, BlocVue[]> = { A: [], ECA: [], NT: [] };
     for (const b of this.grille()?.blocs ?? []) rangees[etatDe(b)].push(b);
     return rangees;
+  });
+
+  /** Dimensions du camembert (unités du viewBox) ; les numéros se placent hors du disque. */
+  readonly TAILLE = 260;
+  readonly CENTRE = 130;
+  readonly RAYON = 108;
+
+  /** Compétence survolée, mise en valeur à la fois dans le camembert et dans sa légende. */
+  survole = signal<number | null>(null);
+
+  /**
+   * Un seul camembert pour toutes les compétences (choix du club, 2026) :
+   * une part égale par compétence, dans l'ordre de la grille, remplie depuis
+   * le centre jusqu'à son pourcentage effectué.
+   */
+  secteurs = computed(() => {
+    const blocs = this.grille()?.blocs ?? [];
+    const angle = 2 * Math.PI / Math.max(blocs.length, 1);
+    return blocs.map((bloc, i) => {
+      const pourcentage = this.pourcentage(bloc);
+      const debut = -Math.PI / 2 + i * angle;
+      const fin = debut + angle;
+      const milieu = (debut + fin) / 2;
+      return {
+        bloc, numero: i + 1, pourcentage,
+        fond: secteur(this.CENTRE, this.RAYON, debut, fin),
+        part: pourcentage > 0 ? secteur(this.CENTRE, this.RAYON * pourcentage / 100, debut, fin) : null,
+        etiquette: {
+          x: this.CENTRE + (this.RAYON + 12) * Math.cos(milieu),
+          y: this.CENTRE + (this.RAYON + 12) * Math.sin(milieu)
+        }
+      };
+    });
   });
 
   constructor() {
@@ -269,6 +342,18 @@ export class SyntheseEleveComponent {
   imprimer(): void {
     window.print();
   }
+}
+
+/** Tracé SVG d'une part de disque, de l'angle `debut` à `fin` (radians). */
+function secteur(centre: number, rayon: number, debut: number, fin: number): string {
+  const point = (a: number) => `${(centre + rayon * Math.cos(a)).toFixed(2)} ${(centre + rayon * Math.sin(a)).toFixed(2)}`;
+  if (fin - debut >= 2 * Math.PI - 1e-9) {
+    // Une seule compétence : le disque entier, en deux demi-arcs.
+    const moitie = debut + Math.PI;
+    return `M ${point(debut)} A ${rayon} ${rayon} 0 1 1 ${point(moitie)} A ${rayon} ${rayon} 0 1 1 ${point(debut)} Z`;
+  }
+  const grandArc = fin - debut > Math.PI ? 1 : 0;
+  return `M ${centre} ${centre} L ${point(debut)} A ${rayon} ${rayon} 0 ${grandArc} 1 ${point(fin)} Z`;
 }
 
 /** L'état calculé par le serveur ; même règle pour une grille mise en cache avant son arrivée. */

@@ -30,7 +30,10 @@ Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » 
 1. Ouvrez la fiche de suivi (la grille) de l'élève.
 2. Sous son nom, touchez « Synthèse A / ECA / NT ».
 3. En haut, trois compteurs : compétences acquises, en cours d'acquisition, non travaillées. Touchez-en un pour descendre à sa liste.
-4. Dessous, « Avancement par compétence » : un graphique en cercle par compétence, avec le pourcentage effectué, c'est-à-dire la part de ses critères acquis (100 % une fois la compétence validée). Au N2 et au N3, seuls les critères acquis en milieu naturel comptent. Touchez un cercle pour descendre au détail de la compétence.
+4. Dessous, « Avancement par compétence » donne le pourcentage effectué de chaque compétence, c'est-à-dire la part de ses critères acquis (100 % une fois la compétence validée). Au N2 et au N3, seuls les critères acquis en milieu naturel comptent.
+   - D'abord un camembert de toutes les compétences : une part numérotée par compétence, remplie depuis le centre jusqu'à son pourcentage (pleine jusqu'au bord = 100 %) ; les cercles légers marquent 25, 50 et 75 %.
+   - Puis un cercle par compétence, avec le même numéro, son nom et son pourcentage.
+   - Touchez une part ou un cercle pour descendre au détail de la compétence.
 5. **Acquises** : la date de validation et l'encadrant qui l'a validée.
 6. **En cours d'acquisition** : le nombre de critères acquis et l'état de chacun (A, ECA ou NA non abordé) ; « reste à valider la compétence » quand tous sont acquis. Au N2 et au N3, l'état à l'entraînement (piscine, fosse) est rappelé sous le critère.
 7. **Non travaillées** : ce qui n'a pas encore été abordé.
