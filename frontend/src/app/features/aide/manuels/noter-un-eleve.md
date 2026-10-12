@@ -3,7 +3,7 @@ titre: Noter un élève pendant la séance
 rubrique: Moniteur
 videos: M4, M19, M20
 ecran: /eleves
-mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme, noter l'exercice, en cours d'acquisition, état de la compétence, état du critère, non travaillée, acquise
+mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme, noter l'exercice, en cours d'acquisition, état de la compétence, état du critère, non travaillée, acquise, NA, ECA, A, sigles, légende
 questions:
 - Comment noter pour un encadrant qui ne l'a pas fait ?
 - Je suis référent : comment noter au nom d'un autre moniteur ?
@@ -12,7 +12,8 @@ questions:
 - Pourquoi je ne peux pas mettre « Acquis » ?
 - Comment indiquer l'exercice réalisé ?
 - Comment noter les critères d'un exercice de la séance ?
-- Pourquoi les boutons montrent « En cours d'acquisition » alors que le critère est acquis ?
+- Pourquoi les boutons montrent « ECA » alors que le critère est acquis ?
+- Que veulent dire NA, ECA et A sur les boutons ?
 - Où voir si une compétence est acquise ?
 - Pourquoi un exercice de maîtrise réussi en fosse ne valide pas le critère d'un N2 ou d'un N3 ?
 - Comment laisser un commentaire sur un élève ?
@@ -22,14 +23,14 @@ questions:
 - Où est passé le bouton « Exporter en PDF » ?
 - Comment suivre un N2 ou un N3 en piscine ou en fosse ?
 ---
-Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance du jour, puis touchez l'état de chaque critère : non abordé, en cours ou acquis.
+Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance du jour, puis touchez l'état de chaque critère : **NA** (non abordé), **ECA** (en cours d'acquisition) ou **A** (acquis). Sur les boutons, seuls les sigles s'affichent, pour tenir sur un téléphone ; la légende est rappelée en haut de la fiche.
 
 ## Pas à pas
 
 1. Dans « Infos élèves », touchez le nom de l'élève : sa grille s'ouvre.
 2. Choisissez la séance du jour en haut de la grille.
 3. Ouvrez la compétence : à droite de chaque critère (dessous sur téléphone), « 1. Exercice » permet de choisir l'exercice fait par l'élève pour ce critère (déjà choisi s'il est au programme de la séance ; encadré en pointillés orange tant qu'il reste à choisir). Seuls les exercices qui travaillent ce critère sont proposés : « Gréage et dégréage » propose 1.1, 1.3, 1.6 et 1.7.
-4. Juste en dessous, « 2. Note de l'exercice » : touchez l'état de **l'exercice** : non abordé, en cours d'acquisition ou acquis. Les boutons montrent où en est l'élève dans cet exercice (sa dernière note sur cet exercice), pas l'état du critère.
+4. Juste en dessous, « 2. Note de l'exercice » : touchez l'état de **l'exercice** : NA (non abordé), ECA (en cours d'acquisition) ou A (acquis). Les boutons montrent où en est l'élève dans cet exercice (sa dernière note sur cet exercice), pas l'état du critère.
 5. Votre nom et la date s'affichent sous le critère, puis « Critère : … », l'état du critère qui en découle. L'état de la compétence (non travaillée, en cours d'acquisition, acquise) est rappelé en pastille à côté de son titre.
 6. Pour laisser un mot au prochain encadrant, écrivez un commentaire sur le critère : il reste affiché dessous.
 
@@ -37,7 +38,7 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 
 Si le programme de la séance a été préparé, la carte « Exercices de la séance » (en haut de la grille) donne, **sous chaque exercice, les critères qu'il fait évaluer**, avec le nom de leur compétence. C'est le plus simple pendant la séance : on suit le programme, exercice après exercice.
 
-Ici, **on note l'exercice** : « Non abordé », « En cours d'acquisition » ou « Acquis ». Les boutons montrent où en est l'élève **dans cet exercice** (sa dernière note sur cet exercice, avec qui l'a noté et quand), et ils restent ouverts même si la compétence est déjà validée. À côté du nom de la compétence, une pastille rappelle son état : non travaillée, en cours d'acquisition ou acquise. « Commenter » et « Voir l'historique » sont là aussi ; le commentaire porte sur l'exercice.
+Ici, **on note l'exercice** : NA (non abordé), ECA (en cours d'acquisition) ou A (acquis). Les boutons montrent où en est l'élève **dans cet exercice** (sa dernière note sur cet exercice, avec qui l'a noté et quand), et ils restent ouverts même si la compétence est déjà validée. À côté du nom de la compétence, une pastille rappelle son état : non travaillée, en cours d'acquisition ou acquise. « Commenter » et « Voir l'historique » sont là aussi ; le commentaire porte sur l'exercice.
 
 Le critère, lui, suit la règle habituelle : seul un exercice de maîtrise acquis le rend acquis. Son état se lit plus bas, dans sa compétence (« Critère : … »), où les mêmes critères se notent de la même façon, exercice choisi. Un exercice libre sans phase ne sert pas à noter : sous lui, « 1. Exercice » reste à choisir comme d'habitude.
 
@@ -45,7 +46,7 @@ Le critère, lui, suit la règle habituelle : seul un exercice de maîtrise acqu
 
 Chaque critère du N1, du N2 et du N3 a ses exercices, rangés en trois temps ; un exercice peut travailler plusieurs critères de la même compétence. Une pastille dit d'un coup d'œil où en est l'élève : **I** initiation (bleu), **P** perfectionnement (ambre), **M** maîtrise (vert), suivie du numéro (« M 1.7 »).
 
-- **On note l'exercice.** « En cours d'acquisition » ou « Acquis » disent où en est l'élève dans l'exercice choisi : un exercice d'initiation ou de perfectionnement peut être acquis. Changer d'exercice change les boutons : ils montrent l'état de l'exercice choisi. Sous le critère : « Critère : en cours d'acquisition ». Sans exercice choisi (critère sans exercice), les boutons notent le critère, comme avant.
+- **On note l'exercice.** ECA (en cours d'acquisition) ou A (acquis) disent où en est l'élève dans l'exercice choisi : un exercice d'initiation ou de perfectionnement peut être acquis. Changer d'exercice change les boutons : ils montrent l'état de l'exercice choisi. Sous le critère : « Critère : en cours d'acquisition ». Sans exercice choisi (critère sans exercice), les boutons notent le critère, comme avant.
 - **État du critère :** jamais noté, il est « non abordé » ; dès qu'une note porte sur un de ses exercices, il passe « en cours » ; il n'est **acquis qu'avec un exercice de maîtrise acquis**. Un exercice d'initiation ou de perfectionnement ne fait jamais reculer un critère déjà acquis. Un critère qui n'a aucun exercice de maîtrise (aujourd'hui « Départ plage » et « Ventilation sur tuba ») s'acquiert comme avant.
 - **Un critère qui a des exercices se note toujours sur l'un d'eux**, pour qu'on lise ensuite (vue globale, historique) s'il s'agissait d'une initiation, d'un perfectionnement ou d'une maîtrise. Sans exercice choisi, toucher une note ouvre la liste des exercices : choisissez celui réalisé, la note part aussitôt.
 - La liste propose aussi, sous « Exercices libres du programme », les exercices libres de la séance choisie qui travaillent ce critère et ont une phase (pastille sans numéro). Ils notent comme ceux de la base : seul un exercice de maîtrise acquis rend le critère acquis.

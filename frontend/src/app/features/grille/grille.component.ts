@@ -372,6 +372,13 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
         }
       </dialog>
 
+      <!-- Les boutons de note n'affichent que les sigles : la légende les explique une fois pour toutes. -->
+      <p class="legende-etats" aria-hidden="true">
+        <span><strong>NA</strong> non abordé</span>
+        <span><strong>ECA</strong> en cours d'acquisition</span>
+        <span><strong>A</strong> acquis</span>
+      </p>
+
       @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
       @if (g.progression) {
@@ -702,8 +709,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                                 [class.differe]="suivi.enAttente && suivi.statut === choix.valeur"
                                 [disabled]="!peutSaisir() || (bloc.valide && !surExo) || suivi.enregistrement"
                                 [attr.aria-pressed]="suivi.statut === choix.valeur"
+                                [attr.aria-label]="choix.libelle" [title]="choix.libelle"
                                 (click)="noter(bloc, critere, choix.valeur, exo)">
-                          {{ choix.libelle }}
+                          {{ choix.court }}
                         </button>
                       }
                     </div>
@@ -1047,6 +1055,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     @media (prefers-reduced-motion: reduce) { .chargeur { animation-duration: 2.4s; } }
 
     .etats { display: flex; gap: 4px; flex: none; justify-content: flex-end; }
+    .legende-etats {
+      display: flex; flex-wrap: wrap; gap: 4px var(--pas-2); margin: 0 0 var(--pas-2);
+      font-size: .8125rem; color: var(--craie);
+    }
+    .legende-etats strong { color: var(--encre); }
     .etat {
       min-height: 44px; min-width: 60px; padding: 0 12px;
       border: 1px solid var(--trait); background: var(--carte); color: var(--craie);
@@ -1231,10 +1244,15 @@ export class GrilleComponent implements OnDestroy {
     });
   }
 
+  /**
+   * `court` : le texte des boutons, trop longs en toutes lettres sur téléphone
+   * (choix du club, 2026) ; la légende en haut de la fiche les explique, et
+   * `libelle` reste le nom lu par les lecteurs d'écran et la bulle au survol.
+   */
   readonly etats = [
-    { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },
-    { valeur: 'EN_COURS'   as Statut, libelle: 'En cours',   classe: 'encours' },
-    { valeur: 'ACQUIS'     as Statut, libelle: 'Acquis',     classe: 'acquis' }
+    { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', court: 'NA',  classe: 'neant' },
+    { valeur: 'EN_COURS'   as Statut, libelle: 'En cours',   court: 'ECA', classe: 'encours' },
+    { valeur: 'ACQUIS'     as Statut, libelle: 'Acquis',     court: 'A',   classe: 'acquis' }
   ];
 
   /**
@@ -1626,9 +1644,9 @@ export class GrilleComponent implements OnDestroy {
 
   /** Sous un exercice de la séance, on note l'exercice : libellés propres. */
   readonly etatsExercice = [
-    { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },
-    { valeur: 'EN_COURS'   as Statut, libelle: 'En cours d\'acquisition', classe: 'encours' },
-    { valeur: 'ACQUIS'     as Statut, libelle: 'Acquis', classe: 'acquis' }
+    { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', court: 'NA', classe: 'neant' },
+    { valeur: 'EN_COURS'   as Statut, libelle: 'En cours d\'acquisition', court: 'ECA', classe: 'encours' },
+    { valeur: 'ACQUIS'     as Statut, libelle: 'Acquis', court: 'A', classe: 'acquis' }
   ];
 
   /** L'exercice de la séance vu comme l'exercice d'une note : son id dans la base, sinon son intitulé (libre). */

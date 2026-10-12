@@ -114,10 +114,10 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 6. Référent du groupe ? « Noter au nom de » rattrape la note d'un encadrant : laissez « Moi-même » pour noter à votre nom.
 7. « Au programme » : les compétences que la progression prévoit ce mois-ci.
 8. Si son groupe a préparé la séance, ses exercices s'affichent aussi, chacun avec ses critères à noter juste dessous.
-9. Chaque critère a trois états : non abordé, en cours, acquis.
+9. Trois états, en sigles sur les boutons : NA non abordé, ECA en cours d'acquisition, A acquis. La légende est en haut de la fiche.
 10. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
 11. La note porte sur l'exercice réalisé : « 1. Exercice », juste au-dessus des boutons. S'il manque, l'appli le demande au moment de noter.
-12. Une fois l'exercice choisi, les boutons notent l'exercice : non abordé, en cours d'acquisition ou acquis.
+12. Une fois l'exercice choisi, les boutons notent l'exercice : NA, ECA ou A.
 13. L'état du critère s'affiche à part, sous son nom, et celui de la compétence à côté de son titre.
 14. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
 15. Votre nom et la date s'affichent sous le critère.
