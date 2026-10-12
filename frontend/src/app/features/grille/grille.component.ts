@@ -142,10 +142,13 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           @if (ageDuCache(); as age) {
             <p class="secondaire">Grille consultée hors ligne, dernière mise à jour {{ age }}.</p>
           }
-          <!-- Les deux gestes courants restent visibles ; le reste passe dans « Plus d'actions ». -->
+          <!-- Les gestes courants (vue globale, synthèse, tout ouvrir) restent visibles ; le reste passe dans « Plus d'actions ». -->
           <div class="actions-entete">
             <a [routerLink]="['/cursus', id(), 'matrice']" class="bouton-discret lien-matrice">
               Vue globale (toutes les séances)
+            </a>
+            <a [routerLink]="['/cursus', id(), 'synthese']" class="bouton-discret lien-matrice lien-synthese">
+              Synthèse A / ECA / NT
             </a>
             <button type="button" class="bouton-discret bascule-blocs" (click)="basculerTousLesBlocs(g.blocs)">
               {{ blocsOuverts().size > 0 ? 'Tout refermer' : 'Tout ouvrir' }}

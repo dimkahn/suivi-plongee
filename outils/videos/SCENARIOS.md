@@ -358,9 +358,9 @@ Compte : `e2@club.fr` · format téléphone
 11. Touchez un nom pour ouvrir sa grille sur cette séance.
 12. Les autres niveaux présents ce soir-là s'affichent d'une touche, et « Imprimer » donne une version papier.
 
-### M22 — La synthèse des compétences d'un groupe
+### M22 — La synthèse des compétences d'un groupe ou d'un élève
 
-L'avancement de tous les élèves d'un groupe d'un coup d'œil : une ligne par élève, l'état de chaque compétence (NT, ECA, A).
+L'avancement de tous les élèves d'un groupe d'un coup d'œil (NT, ECA, A), puis la fiche de synthèse d'un élève.
 
 Compte : `e2@club.fr` · format téléphone
 
@@ -372,6 +372,10 @@ Compte : `e2@club.fr` · format téléphone
 6. La dernière ligne compte les élèves qui ont acquis chaque compétence.
 7. Les boutons du haut passent d'un groupe à l'autre, et « Imprimer » donne une version papier.
 8. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
+9. Pour un seul élève, « Synthèse A / ECA / NT », sous son nom.
+10. En haut, combien de compétences sont acquises, en cours, non travaillées.
+11. Puis la liste de chacune ; pour celles en cours, l'état de chaque critère.
+12. « Imprimer » en fait un bilan papier pour l'élève.
 
 ### M23 — La page « Aujourd'hui »
 

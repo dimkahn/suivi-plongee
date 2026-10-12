@@ -1,11 +1,11 @@
-// M22 — La synthèse des compétences d'un groupe d'entraînement.
-// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// M22 — La synthèse des compétences d'un groupe d'entraînement, puis d'un élève.
+// Tournage du 2026-10-12, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Groupe Débutants (V107) : élèves N1 notés en septembre.
 export default {
   id: 'M22',
-  titre: 'La synthèse des compétences d\'un groupe',
+  titre: 'La synthèse des compétences d\'un groupe ou d\'un élève',
   public: 'Moniteur',
-  resume: 'L\'avancement de tous les élèves d\'un groupe d\'un coup d\'œil : une ligne par élève, l\'état de chaque compétence (NT, ECA, A).',
+  resume: 'L\'avancement de tous les élèves d\'un groupe d\'un coup d\'œil (NT, ECA, A), puis la fiche de synthèse d\'un élève.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -34,6 +34,14 @@ export default {
     await legende('Les boutons du haut passent d\'un groupe à l\'autre, et « Imprimer » donne une version papier.', 4500);
     await legende('Touchez une case ou un nom : la grille de l\'élève s\'ouvre, pour le noter ou valider la compétence.', 0);
     await toucher(page.locator('table.tableau tbody th a').first(), { apres: 2000 });
+
+    await legende('Pour un seul élève, « Synthèse A / ECA / NT », sous son nom.', 0);
+    await toucher(page.getByRole('link', { name: 'Synthèse A / ECA / NT' }), { apres: 1800 });
+    await legende('En haut, combien de compétences sont acquises, en cours, non travaillées.', 3500);
+    await legende('Puis la liste de chacune ; pour celles en cours, l\'état de chaque critère.', 0);
+    await defiler(600, 2000);
+    await defiler(600, 2000);
+    await legende('« Imprimer » en fait un bilan papier pour l\'élève.', 3500);
     await legende(null, 0);
     await pause(500);
   }

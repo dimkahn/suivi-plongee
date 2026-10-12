@@ -209,6 +209,8 @@ export interface BlocVue {
   acquis: number;
   total: number;
   valide: boolean;
+  /** NT / ECA / A, calculé par le serveur. Absent d'une grille mise en cache avant son arrivée. */
+  etat?: EtatCompetence;
   /** Critères acquis à l'entraînement en piscine ou fosse (N2/N3). */
   acquisEntrainement?: number;
   dateValidation: string | null;
