@@ -201,6 +201,12 @@ export const routes: Routes = [
       .then(m => m.GenerationSaisonComponent)
   },
   {
+    path: 'admin/identite',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/identite-admin.component')
+      .then(m => m.IdentiteAdminComponent)
+  },
+  {
     path: 'admin/progressions',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/progressions-admin.component')

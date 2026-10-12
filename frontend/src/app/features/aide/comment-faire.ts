@@ -54,6 +54,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/admin/seances', manuels: ['gerer-les-seances', 'generer-les-seances'] },
   { adresse: '/admin/seances/generer', manuels: ['generer-les-seances'] },
   { adresse: '/admin/progressions', manuels: ['progression-type'] },
+  { adresse: '/admin/identite', manuels: ['identite-de-la-structure'] },
 
   {
     adresse: '/materiel',

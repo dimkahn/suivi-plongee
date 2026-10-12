@@ -1,5 +1,5 @@
 // A1 — Tour de l'administration.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -32,9 +32,12 @@ export default {
         ['Moniteurs', 'Les comptes des encadrants : niveau, rôles, CACI.'],
         ['Élèves', 'Les dossiers : autorisations, droit à l\'image, photo, tailles de matériel.']
       ]],
-      ['Contenu pédagogique', 'Enfin le contenu pédagogique, qui se règle rarement :', [
+      ['Contenu pédagogique', 'Puis le contenu pédagogique, qui se règle rarement :', [
         ['Référentiel MFT', 'Les compétences fédérales, niveau par niveau.'],
-        ['Progressions types', 'L\'année de chaque niveau découpée en périodes.']
+        ['Progressions types', 'Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.']
+      ]],
+      ['Structure', 'Enfin la structure, réglée une fois à l\'installation :', [
+        ['Identité de la structure', 'Le nom, le logo et les couleurs du club, jusque sur les documents.']
       ]]
     ];
     for (const [titre, phrase, cartes] of rubriques) {

@@ -24,6 +24,17 @@
   ],
   "dataGroups": [
     {
+      "comment": "Identité de la structure (logo, icônes, manifeste) : le réseau prime, le cache garde le logo hors ligne.",
+      "name": "identite",
+      "urls": ["/api/identite/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 20,
+        "maxAge": "30d",
+        "timeout": "3s"
+      }
+    },
+    {
       "comment": "Référentiel et base d'exercices se modifient depuis l'administration : le réseau prime (sinon une modification n'apparaît pas au rafraîchissement), le cache ne sert que de filet hors ligne.",
       "name": "referentiel",
       "urls": ["/api/referentiels", "/api/referentiels/**"],

@@ -146,6 +146,19 @@ VALUES (lastval(), 'ADMIN'), (lastval(), 'MONITEUR');
 Une fois connecté en ADMIN, tous les autres comptes moniteurs se créent
 depuis l'écran d'administration (avec un vrai lien d'invitation, cf. § 7).
 
+### Une installation pour un autre club ou un centre
+
+Chaque structure a sa propre installation (sa VM ou au moins son
+`docker-compose`, son domaine, sa base). Après le premier compte ADMIN :
+
+1. Administration, « Identité de la structure » : nom, logo, couleurs.
+   Sans réglage, l'appli garde l'identité d'origine (celle du club pour qui
+   elle a été écrite).
+2. Pour un centre qui forme en stage court, tout en mer : Administration,
+   « Progressions types », « Installer le modèle… » (exercices N1 écrits
+   pour la mer, progressions N1/N2/N3 découpées par plongées). Un club qui
+   forme sur l'année ne l'installe pas.
+
 ## 7. Limitation connue : pas d'envoi d'e-mail réel
 
 `ServiceNotificationConsole` (voir chantier ouvert n°6 du `CLAUDE.md`) se

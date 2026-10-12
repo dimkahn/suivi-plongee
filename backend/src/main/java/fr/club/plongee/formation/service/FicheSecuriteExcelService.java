@@ -8,7 +8,7 @@ import fr.club.plongee.formation.domain.Seance;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Value;
+import fr.club.plongee.identite.IdentiteStructureService;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -32,12 +32,11 @@ public class FicheSecuriteExcelService {
 
     public record FicheExcel(byte[] contenu, String nomFichier) {}
 
-    private final String nomClub;
-    private final LogoClub logo;
+    /** Nom et logo de la structure, en-tête de la fiche. */
+    private final IdentiteStructureService identite;
 
-    public FicheSecuriteExcelService(@Value("${app.club.nom}") String nomClub, LogoClub logo) {
-        this.nomClub = nomClub;
-        this.logo = logo;
+    public FicheSecuriteExcelService(IdentiteStructureService identite) {
+        this.identite = identite;
     }
 
     public FicheExcel generer(FicheSecurite f) {
@@ -142,7 +141,7 @@ public class FicheSecuriteExcelService {
      * l'ajustement des largeurs de colonnes.
      */
     private void placerLogo(Workbook classeur, Sheet feuille, int premiereColonne) {
-        int indexImage = classeur.addPicture(logo.png(), Workbook.PICTURE_TYPE_PNG);
+        int indexImage = classeur.addPicture(identite.logoPng(),Workbook.PICTURE_TYPE_PNG);
         ClientAnchor ancre = classeur.getCreationHelper().createClientAnchor();
         ancre.setAnchorType(ClientAnchor.AnchorType.MOVE_DONT_RESIZE);
         ancre.setCol1(premiereColonne);
@@ -190,7 +189,7 @@ public class FicheSecuriteExcelService {
     }
 
     private int ecrireLignesEntete(Sheet feuille, int ligne, FicheSecurite f, Seance s) {
-        cellule(feuille.createRow(ligne++), 0, nomClub, null);
+        cellule(feuille.createRow(ligne++), 0, identite.nom(), null);
         cellule(feuille.createRow(ligne++), 0, "FICHE DE SÉCURITÉ", null);
         cellule(feuille.createRow(ligne++), 0, "Date : " + s.getDateSeance().format(DATE), null);
         cellule(feuille.createRow(ligne++), 0, "Lieu : " + (s.getLieu() == null ? "" : s.getLieu())

@@ -746,7 +746,21 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
 - Identité visuelle alignée sur celle du club (cppjvo.fr) : palette
   océan/corail, Poppins pour les titres, Nunito pour le texte courant.
   Jetons de design dans `frontend/src/styles.css`. Ne pas introduire de
-  bibliothèque de composants.
+  bibliothèque de composants. **Identité réglable par structure (2026,
+  une installation par club ou centre)** : table `identite_structure`
+  (V74, une ligne), écran `/admin/identite`, `IdentiteStructureService`
+  (JdbcTemplate, pas d'entité). Nom, nom court, texte d'accueil, trois
+  couleurs (`--profond`, `--profond-fonce`, `--accent`, posées sur la
+  page par `core/identite.service.ts`) et logo (gardé en PNG ≤ 512 px).
+  **Vide = l'identité d'origine** (logo embarqué, couleurs de
+  styles.css, nom de `CLUB_NOM`) : le club en production ne voit aucun
+  changement tant que rien n'est saisi. `GET /api/identite/**` est
+  public (page de connexion) ; le manifeste et les icônes de l'appli
+  installée ne passent par `/api/identite/manifest.webmanifest` que si
+  l'identité est réglée. Les exports (fiche de sécurité PDF/Excel,
+  compte rendu TIV, courriels de fin de séjour) lisent `nom()` et
+  `logoPng()` à chaque génération ; ne plus utiliser `app.club.nom`
+  directement.
 
 ## Données personnelles
 
