@@ -3,7 +3,7 @@ titre: Organiser un séjour
 rubrique: Administrateur
 videos: A17
 ecran: /sejours
-mots: séjour, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail
+mots: séjour, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte
 questions:
 - Comment noter les vols d'arrivée et de départ des participants ?
 - Comment répartir les participants dans les voitures ?
@@ -11,9 +11,11 @@ questions:
 - Comment connaître les régimes alimentaires du groupe ?
 - Comment faire la liste des affaires à emporter ?
 - Comment faire le programme d'un séjour ?
+- Comment partager les frais du séjour ?
+- Qui doit combien à qui ?
 - Comment donner les informations du séjour aux participants ?
 ---
-Menu « Séjours », puis la sortie : participants, arrivées et départs, voitures, chambres, repas, affaires à prévoir, programme et infos pratiques, au même endroit. Les participants reçoivent ensuite leur carnet.
+Menu « Séjours », puis la sortie : participants, arrivées et départs, voitures, chambres, repas, affaires à prévoir, programme, partage des frais et infos pratiques, au même endroit. Les participants reçoivent ensuite leur carnet.
 
 ## Pas à pas
 
@@ -25,13 +27,15 @@ Menu « Séjours », puis la sortie : participants, arrivées et départs, voitu
 6. **Repas** : le nombre de couverts et, régime par régime, qui est concerné.
 7. **Affaires** : « Modifier la liste », « Partir de la liste type », puis ajoutez ou retirez des lignes : papiers, plongée, séjour.
 8. **Programme** : « Ajouter un rendez-vous » (jour, heure, lieu). Les plongées de la sortie s'y ajoutent toutes seules.
-9. **Infos pratiques** : numéros d'urgence, centre de plongée, caisson le plus proche.
-10. « Envoyer le carnet par e-mail » : chaque participant reçoit son voyage, sa voiture, sa chambre, le programme et la liste des affaires. « Imprimer le carnet » met tout sur une page, à imprimer ou enregistrer en PDF.
+9. **Frais** : « Ajouter une dépense » (quoi, montant, qui l'a payé, partagé entre qui ; 2 parts pour quelqu'un qui compte double). L'appli calcule le compte de chacun et **qui doit combien à qui**, au centime près ; « C'est remboursé » note le remboursement fait.
+10. **Infos pratiques** : numéros d'urgence, centre de plongée, caisson le plus proche.
+11. « Envoyer le carnet par e-mail » : chaque participant reçoit son voyage, sa voiture, sa chambre, le programme, la liste des affaires et ses frais. « Imprimer le carnet » met tout sur une page, à imprimer ou enregistrer en PDF.
 
 ## Bon à savoir
 
 - En haut, les **points à vérifier** : voiture ou chambre trop pleine, voiture sans conducteur, participant sans chambre ou dans deux voitures. Ils ne bloquent rien.
 - Un participant ne dort que dans une chambre ; un départ avant l'arrivée est refusé.
+- Les comptes se recalculent à chaque dépense ou remboursement : rien à tenir à la main. Un participant qui figure dans les frais ne se retire du séjour qu'après l'avoir sorti des dépenses et des remboursements.
 - **Pas d'information médicale** dans l'appli (règle du club, des mineurs sont suivis) : ni allergie ni traitement. Les régimes sont des choix de table ; le reste se transmet à part, au responsable du séjour.
 - Géré par un administrateur ou le directeur technique ; les moniteurs le consultent. Un participant qui a un compte lit son carnet du séjour dans « Séjours », sans les coordonnées ni les régimes des autres.
 - Supprimer la sortie supprime son séjour. Réseau nécessaire.

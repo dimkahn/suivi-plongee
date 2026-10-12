@@ -132,6 +132,71 @@ export interface EvenementVue {
 
 export type DemandeEvenement = Omit<EvenementVue, 'id'>;
 
+export type CategorieDepense = 'HEBERGEMENT' | 'TRANSPORT' | 'REPAS' | 'PLONGEE' | 'AUTRE';
+
+export const CATEGORIES_DEPENSE: { code: CategorieDepense; libelle: string }[] = [
+  { code: 'HEBERGEMENT', libelle: 'Hébergement' },
+  { code: 'TRANSPORT', libelle: 'Transport' },
+  { code: 'REPAS', libelle: 'Repas, courses' },
+  { code: 'PLONGEE', libelle: 'Plongée' },
+  { code: 'AUTRE', libelle: 'Autre' }
+];
+
+/** Montants en centimes, comme le serveur. */
+export interface DepenseVue {
+  id: number;
+  libelle: string;
+  categorie: CategorieDepense;
+  montantCentimes: number;
+  payeurId: number;
+  jour: string | null;
+  /** Qui partage la dépense, et avec combien de parts (2 pour un couple…). */
+  parts: { participantId: number; parts: number }[];
+}
+
+export type DemandeDepense = Omit<DepenseVue, 'id'>;
+
+export interface VersementVue {
+  id: number;
+  deId: number;
+  aId: number;
+  montantCentimes: number;
+  jour: string | null;
+}
+
+export type DemandeVersement = Omit<VersementVue, 'id'>;
+
+/** Solde positif : on lui doit de l'argent ; négatif : il en doit. */
+export interface SoldeVue {
+  participantId: number;
+  payeCentimes: number;
+  duCentimes: number;
+  soldeCentimes: number;
+}
+
+export interface FraisVue {
+  depenses: DepenseVue[];
+  versements: VersementVue[];
+  comptes: {
+    totalCentimes: number;
+    soldes: SoldeVue[];
+    /** Les virements qui soldent les comptes, calculés par le serveur. */
+    remboursements: { deId: number; aId: number; montantCentimes: number }[];
+  };
+}
+
+/** « 1 234,50 € ». */
+export function euros(centimes: number): string {
+  return (centimes / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+}
+
+/** « 12,5 » ou « 12.50 » → 1250 ; null si ce n'est pas un montant. */
+export function enCentimes(saisie: string | number | null): number | null {
+  if (saisie === null || saisie === '') return null;
+  const n = Number(String(saisie).replace(/\s/g, '').replace(',', '.'));
+  return Number.isFinite(n) ? Math.round(n * 100) : null;
+}
+
 export interface GroupeProposeVue {
   id: number;
   nom: string;
@@ -150,6 +215,7 @@ export interface SejourVue {
   logements: LogementVue[];
   affaires: AffaireVue[];
   evenements: EvenementVue[];
+  frais: FraisVue;
   avertissements: string[];
   groupesProposes: GroupeProposeVue[];
 }
@@ -257,6 +323,24 @@ export class SejourApi {
 
   supprimerEvenement(id: number, evenementId: number): Observable<SejourVue> {
     return this.http.delete<SejourVue>(`/api/sejours/${id}/evenements/${evenementId}`);
+  }
+
+  enregistrerDepense(id: number, depenseId: number | null, d: DemandeDepense): Observable<SejourVue> {
+    return depenseId === null
+      ? this.http.post<SejourVue>(`/api/sejours/${id}/depenses`, d)
+      : this.http.put<SejourVue>(`/api/sejours/${id}/depenses/${depenseId}`, d);
+  }
+
+  supprimerDepense(id: number, depenseId: number): Observable<SejourVue> {
+    return this.http.delete<SejourVue>(`/api/sejours/${id}/depenses/${depenseId}`);
+  }
+
+  ajouterVersement(id: number, d: DemandeVersement): Observable<SejourVue> {
+    return this.http.post<SejourVue>(`/api/sejours/${id}/versements`, d);
+  }
+
+  supprimerVersement(id: number, versementId: number): Observable<SejourVue> {
+    return this.http.delete<SejourVue>(`/api/sejours/${id}/versements/${versementId}`);
   }
 
   envoyerCarnet(id: number): Observable<BilanEnvoiCarnet> {

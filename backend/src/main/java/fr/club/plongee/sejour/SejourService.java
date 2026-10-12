@@ -106,6 +106,19 @@ public class SejourService {
                                    @NotBlank @Size(max = 160) String titre, @Size(max = 160) String lieu,
                                    String details) {}
 
+    /** Dépenses, remboursements faits, et les comptes qui en découlent (soldes, remboursements à faire). */
+    public record FraisVue(List<FraisSejour.Depense> depenses, List<FraisSejour.Versement> versements,
+                           FraisSejour.Comptes comptes) {}
+
+    /** {@code parts} : les participants qui partagent la dépense, chacun avec son poids. */
+    public record DemandeDepense(@NotBlank @Size(max = 160) String libelle,
+                                 @NotNull FraisSejour.CategorieDepense categorie,
+                                 @NotNull Long montantCentimes, @NotNull Long payeurId, LocalDate jour,
+                                 List<FraisSejour.Part> parts) {}
+
+    public record DemandeVersement(@NotNull Long deId, @NotNull Long aId, @NotNull Long montantCentimes,
+                                   LocalDate jour) {}
+
     /** Un groupe de plongeurs de la saison de la sortie, pour en inscrire tous les membres d'un coup. */
     public record GroupeProposeVue(Long id, String nom, int membres) {}
 
@@ -116,7 +129,7 @@ public class SejourService {
     public record SejourVue(SortieVue sortie, boolean gere, boolean encadrant, String infosPratiques,
                             List<ParticipantVue> participants, List<VoitureVue> voitures,
                             List<LogementVue> logements, List<AffaireVue> affaires,
-                            List<EvenementVue> evenements, List<String> avertissements,
+                            List<EvenementVue> evenements, FraisVue frais, List<String> avertissements,
                             List<GroupeProposeVue> groupesProposes) {}
 
     /** Une ligne de la liste des séjours. */
@@ -273,8 +286,32 @@ public class SejourService {
                 (rs, i) -> new GroupeProposeVue(rs.getLong("id"), rs.getString("nom"), rs.getInt("n")));
 
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
-                voitures, logements, affaires, evenements,
+                voitures, logements, affaires, evenements, frais(sortieId, participants),
                 avertissements(participants, voitures, logements), groupes);
+    }
+
+    private FraisVue frais(Long sortieId, List<ParticipantVue> participants) {
+        var id = new MapSqlParameterSource("id", sortieId);
+        Map<Long, List<FraisSejour.Part>> parts = new HashMap<>();
+        jdbc.query("""
+                SELECT dp.depense_id, dp.participant_id, dp.parts FROM sejour_depense_part dp
+                  JOIN sejour_depense d ON d.id = dp.depense_id
+                  JOIN sejour_participant p ON p.id = dp.participant_id
+                 WHERE d.sortie_id = :id ORDER BY p.nom, p.prenom""", id,
+                rs -> { parts.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>())
+                        .add(new FraisSejour.Part(rs.getLong(2), rs.getInt(3))); });
+        List<FraisSejour.Depense> depenses = jdbc.query("""
+                SELECT * FROM sejour_depense WHERE sortie_id = :id ORDER BY jour, id""", id,
+                (rs, i) -> new FraisSejour.Depense(rs.getLong("id"), rs.getString("libelle"),
+                        FraisSejour.CategorieDepense.valueOf(rs.getString("categorie")),
+                        rs.getLong("montant_centimes"), rs.getLong("payeur_id"),
+                        rs.getObject("jour", LocalDate.class), parts.getOrDefault(rs.getLong("id"), List.of())));
+        List<FraisSejour.Versement> versements = jdbc.query("""
+                SELECT * FROM sejour_versement WHERE sortie_id = :id ORDER BY jour, id""", id,
+                (rs, i) -> new FraisSejour.Versement(rs.getLong("id"), rs.getLong("de_id"), rs.getLong("a_id"),
+                        rs.getLong("montant_centimes"), rs.getObject("jour", LocalDate.class)));
+        return new FraisVue(depenses, versements, FraisSejour.calculer(
+                participants.stream().map(ParticipantVue::id).toList(), depenses, versements));
     }
 
     /** Le carnet d'un participant : ses propres données, et des autres seulement ce qui organise le séjour. */
@@ -284,7 +321,7 @@ public class SejourService {
                         null, null, Set.of(), null, null, null, p.arrivee(), p.depart(), null, false))
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), List.of(), List.of());
+                s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of());
     }
 
     private static ParticipantVue participant(ResultSet rs, Long moi) throws SQLException {
@@ -415,6 +452,14 @@ public class SejourService {
     @Transactional
     public void supprimerParticipant(Long sortieId, Long participantId) {
         verifierParticipants(sortieId, List.of(participantId));
+        int frais = compter("""
+                SELECT (SELECT COUNT(*) FROM sejour_depense WHERE payeur_id = :x)
+                     + (SELECT COUNT(*) FROM sejour_depense_part WHERE participant_id = :x)
+                     + (SELECT COUNT(*) FROM sejour_versement WHERE de_id = :x OR a_id = :x)""", participantId);
+        if (frais > 0) {
+            throw new RegleMetierException(nomDe(participantId) + " figure dans le partage des frais : "
+                    + "retirez-le d'abord des dépenses et des remboursements, sinon les comptes seraient faux.");
+        }
         jdbc.update("DELETE FROM sejour_participant WHERE id = :pid", new MapSqlParameterSource("pid", participantId));
     }
 
@@ -781,6 +826,114 @@ public class SejourService {
         if (compter("SELECT COUNT(*) FROM sejour_evenement WHERE id = :x AND sortie_id = :sortie", evenementId,
                 sortieId) == 0) {
             throw new RessourceIntrouvableException("Rendez-vous introuvable");
+        }
+    }
+
+    // ------------------------------------------------------------------
+    //  Partage des frais
+    // ------------------------------------------------------------------
+
+    /** Au-delà, plus probablement une faute de frappe (centimes saisis comme des euros). */
+    static final long MONTANT_MAX_CENTIMES = 10_000_000L;
+
+    @Transactional
+    public void creerDepense(Long sortieId, DemandeDepense d) {
+        sorties.sortie(sortieId);
+        List<FraisSejour.Part> parts = verifier(sortieId, d);
+        KeyHolder cle = new GeneratedKeyHolder();
+        jdbc.update("""
+                INSERT INTO sejour_depense (sortie_id, libelle, categorie, montant_centimes, payeur_id, jour)
+                VALUES (:sortie, :libelle, :categorie, :montant, :payeur, :jour)""",
+                parametres(sortieId, d), cle, new String[]{"id"});
+        ecrireParts(cle.getKey().longValue(), parts);
+    }
+
+    @Transactional
+    public void modifierDepense(Long sortieId, Long depenseId, DemandeDepense d) {
+        depenseDe(sortieId, depenseId);
+        List<FraisSejour.Part> parts = verifier(sortieId, d);
+        jdbc.update("""
+                UPDATE sejour_depense SET libelle = :libelle, categorie = :categorie, montant_centimes = :montant,
+                       payeur_id = :payeur, jour = :jour WHERE id = :depense""",
+                parametres(sortieId, d).addValue("depense", depenseId));
+        jdbc.update("DELETE FROM sejour_depense_part WHERE depense_id = :d", new MapSqlParameterSource("d", depenseId));
+        ecrireParts(depenseId, parts);
+    }
+
+    @Transactional
+    public void supprimerDepense(Long sortieId, Long depenseId) {
+        depenseDe(sortieId, depenseId);
+        jdbc.update("DELETE FROM sejour_depense WHERE id = :d", new MapSqlParameterSource("d", depenseId));
+    }
+
+    @Transactional
+    public void creerVersement(Long sortieId, DemandeVersement d) {
+        sorties.sortie(sortieId);
+        verifierMontant(d.montantCentimes());
+        if (d.deId().equals(d.aId())) {
+            throw new RegleMetierException("Un remboursement va d'un participant à un autre.");
+        }
+        verifierParticipants(sortieId, List.of(d.deId(), d.aId()));
+        jdbc.update("""
+                INSERT INTO sejour_versement (sortie_id, de_id, a_id, montant_centimes, jour)
+                VALUES (:sortie, :de, :a, :montant, :jour)""",
+                new MapSqlParameterSource("sortie", sortieId).addValue("de", d.deId()).addValue("a", d.aId())
+                        .addValue("montant", d.montantCentimes()).addValue("jour", d.jour()));
+    }
+
+    @Transactional
+    public void supprimerVersement(Long sortieId, Long versementId) {
+        if (compter("SELECT COUNT(*) FROM sejour_versement WHERE id = :x AND sortie_id = :sortie", versementId,
+                sortieId) == 0) {
+            throw new RessourceIntrouvableException("Remboursement introuvable");
+        }
+        jdbc.update("DELETE FROM sejour_versement WHERE id = :v", new MapSqlParameterSource("v", versementId));
+    }
+
+    /** Les parts retenues : une par participant, au moins une. */
+    private List<FraisSejour.Part> verifier(Long sortieId, DemandeDepense d) {
+        verifierMontant(d.montantCentimes());
+        Map<Long, FraisSejour.Part> parts = new LinkedHashMap<>();
+        for (FraisSejour.Part p : d.parts() == null ? List.<FraisSejour.Part>of() : d.parts()) {
+            if (p == null || p.participantId() == null) continue;
+            if (p.parts() < 1 || p.parts() > 20) {
+                throw new RegleMetierException("Le nombre de parts d'un participant va de 1 à 20.");
+            }
+            parts.put(p.participantId(), p);
+        }
+        if (parts.isEmpty()) {
+            throw new RegleMetierException("Cochez au moins un participant qui partage cette dépense.");
+        }
+        List<Long> tous = new ArrayList<>(parts.keySet());
+        tous.add(d.payeurId());
+        verifierParticipants(sortieId, tous);
+        return new ArrayList<>(parts.values());
+    }
+
+    private static void verifierMontant(Long centimes) {
+        if (centimes == null || centimes <= 0) throw new RegleMetierException("Le montant doit être positif.");
+        if (centimes > MONTANT_MAX_CENTIMES) {
+            throw new RegleMetierException("Montant trop élevé (plus de 100 000 €) : vérifiez la saisie.");
+        }
+    }
+
+    private static MapSqlParameterSource parametres(Long sortieId, DemandeDepense d) {
+        return new MapSqlParameterSource("sortie", sortieId).addValue("libelle", d.libelle().trim())
+                .addValue("categorie", d.categorie().name()).addValue("montant", d.montantCentimes())
+                .addValue("payeur", d.payeurId()).addValue("jour", d.jour());
+    }
+
+    private void ecrireParts(Long depenseId, List<FraisSejour.Part> parts) {
+        for (FraisSejour.Part p : parts) {
+            jdbc.update("INSERT INTO sejour_depense_part (depense_id, participant_id, parts) VALUES (:d, :p, :n)",
+                    new MapSqlParameterSource("d", depenseId).addValue("p", p.participantId()).addValue("n", p.parts()));
+        }
+    }
+
+    private void depenseDe(Long sortieId, Long depenseId) {
+        if (compter("SELECT COUNT(*) FROM sejour_depense WHERE id = :x AND sortie_id = :sortie", depenseId,
+                sortieId) == 0) {
+            throw new RessourceIntrouvableException("Dépense introuvable");
         }
     }
 

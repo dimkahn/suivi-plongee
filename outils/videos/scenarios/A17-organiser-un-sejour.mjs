@@ -6,7 +6,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Les vols de chacun, qui conduit quelle voiture, qui dort où, les régimes, les affaires à prévoir et le programme.',
+  resume: 'Les vols de chacun, qui conduit quelle voiture, qui dort où, les régimes, les affaires, le programme et le partage des frais.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -48,7 +48,15 @@ export default {
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
     await defiler(400, 1500);
     await enHaut();
-    await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme et les affaires.', 5000);
+
+    await legende('« Frais » : qui a avancé quoi, pour qui. L\'appli calcule qui doit combien à qui.', 0);
+    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3500 });
+    await legende('Mateo rembourse Gwendoline : « C\'est remboursé », et les comptes se mettent à jour.', 0);
+    const remboursement = page.locator('.remboursement').filter({ hasText: 'Mateo' }).first();
+    await toucher(remboursement.getByRole('button', { name: 'C\'est remboursé' }), { apres: 1000 });
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
+    await enHaut();
+    await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);
     await legende(null, 0);
     await pause(500);
