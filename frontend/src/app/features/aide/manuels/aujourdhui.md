@@ -3,8 +3,9 @@ titre: La page « Aujourd'hui »
 rubrique: Moniteur
 videos: M23
 ecran: /aujourdhui
-mots: accueil, page d'accueil, aujourd'hui, ce soir, séance du jour, prochaine séance, mon groupe, ligne d'eau, fosse, appel, programme, fiche de sécurité, pas encore évalué, raccourci
+mots: accueil, page d'accueil, aujourd'hui, ce soir, séance du jour, prochaine séance, mon groupe, ligne d'eau, fosse, appel, programme, fiche de sécurité, retour de plongée, compléter la fiche, profil réalisé, pas encore évalué, raccourci
 questions:
+- Où compléter la fiche de sécurité en sortant de l'eau ?
 - Que voir en ouvrant l'appli ?
 - Où va mon groupe ce soir ?
 - Par où commencer au bord du bassin ?
@@ -25,6 +26,7 @@ En ouvrant l'appli, « Aujourd'hui » réunit la séance du jour (ou la prochain
 - « Faire l'appel » (ou « Appel et notes » s'il reste des élèves à évaluer) ouvre la feuille de présence de la séance.
 - « Programme d'exercices » ouvre le programme de la séance.
 - En milieu naturel, « Établir la fiche de sécurité » (ou « Fiche de sécurité » si elle existe déjà).
+- Le jour de la plongée, une fois la fiche établie, « Compléter au retour de plongée » ouvre directement la saisie du profil réellement plongé par chaque palanquée (heures, profondeur, durée).
 - Encadrant d'un seul groupe : la feuille et le programme s'ouvrent déjà filtrés sur lui.
 
 ## Bon à savoir

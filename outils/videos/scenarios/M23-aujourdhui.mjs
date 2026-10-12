@@ -34,6 +34,7 @@ export default {
       await legende('Le bilan de vos groupes : présents, et présents pas encore évalués.', 3500);
     }
     await legende('Programme d\'exercices, fiche de sécurité en milieu naturel : tout part d\'ici.', 3500);
+    await legende('En milieu naturel, le jour même, « Compléter au retour de plongée » ouvre la saisie du profil réalisé.', 4000);
     await legende('Le premier bouton ouvre la feuille de présence de la séance, filtrée sur votre groupe.', 0);
     await toucher(carte.locator('.actions a').first(), { apres: 2500 });
 
