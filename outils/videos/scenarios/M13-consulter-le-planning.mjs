@@ -1,5 +1,5 @@
 // M13 — Consulter le planning du bassin.
-// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',

@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { NavigationService } from '../../core/navigation';
 import { ReseauService } from '../../core/reseau.service';
 import { FicheExerciceVue, VideoExerciceVue } from '../../core/modeles';
 import { PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
@@ -27,9 +28,6 @@ export function videoDansLaPage(v: VideoExerciceVue): boolean {
   selector: 'app-fiche-exercice',
   imports: [RouterLink, PastillePhaseComponent, SchemaExerciceComponent, PhotoExerciceComponent],
   template: `
-    <a routerLink="/parcours" [queryParams]="fiche() ? { referentiel: fiche()!.referentielId } : {}" class="retour">
-      ← Parcours de formation
-    </a>
     @if (erreur(); as e) {
       <div class="alerte" role="alert">{{ e }}</div>
     } @else if (fiche(); as f) {
@@ -152,7 +150,6 @@ export function videoDansLaPage(v: VideoExerciceVue): boolean {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; }
     .contexte { margin: var(--pas) 0 0; }
     .regroupement {
       border: 1px solid var(--trait); border-radius: var(--r-s); padding: 0 6px; font-size: .75rem;
@@ -193,6 +190,11 @@ export class FicheExerciceComponent {
   readonly videoDansLaPage = videoDansLaPage;
 
   constructor() {
+    // Le parcours rouvre sur la formation de l'exercice.
+    inject(NavigationService).preciserRetour(computed(() => {
+      const f = this.fiche();
+      return f ? { libelle: 'Parcours de formation', lien: '/parcours', parametres: { referentiel: f.referentielId } } : null;
+    }));
     effect(() => {
       const id = Number(this.id());
       untracked(() => void this.charger(id));

@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ElementRef, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { reduirePhoto } from '../../core/reduire-photo';
@@ -23,9 +23,8 @@ const INTERVALLE_ANALYSE_MS = 250;
  */
 @Component({
   selector: 'app-scanner-materiel',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   template: `
-    <a routerLink="/materiel" class="retour">← Matériel</a>
     <h1>Scanner une étiquette</h1>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -74,7 +73,6 @@ const INTERVALLE_ANALYSE_MS = 250;
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     h1 { margin-bottom: var(--pas-2); }
     .bloc { padding: var(--pas-2); margin-bottom: var(--pas-2); max-width: 520px; }
     .viseur { position: relative; border-radius: var(--r-s); overflow: hidden; background: #000; margin-bottom: var(--pas); }

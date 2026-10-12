@@ -31,8 +31,6 @@ interface Ligne {
   selector: 'app-saisie-inspection-tiv',
   imports: [FormsModule, RouterLink],
   template: `
-    <a [routerLink]="['/materiel', equipementId]" class="retour">← Fiche du bloc</a>
-
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (modele(); as m) {
@@ -180,7 +178,6 @@ interface Ligne {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     h1 { margin-bottom: var(--pas); }
     .bloc-saisie { padding: var(--pas-2) var(--pas-3); margin-bottom: var(--pas-2); max-width: 860px; }
     .bloc-saisie h2 { margin-bottom: var(--pas); }

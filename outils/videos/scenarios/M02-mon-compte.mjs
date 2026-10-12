@@ -1,5 +1,5 @@
 // M2 — Mon compte : photo, e-mail, mot de passe.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';

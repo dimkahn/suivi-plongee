@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-11, 7e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où l\'on revient à la feuille.',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où « ← Feuille de présence » ramène à la feuille.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance }) {
@@ -12,7 +12,7 @@ export default {
     await pause(1000);
     await legende('Au bord du bassin : « Présences », en bas de l\'écran.', 0);
     await menu('Présences');
-    await legende('Un doute ? « Comment faire ? » rappelle les règles de l\'appel.', 3000);
+    await legende('Un doute ? « Comment faire ? », en haut à droite, rappelle les règles de l\'appel.', 3000);
 
     await legende('La feuille s\'ouvre sur la séance du jour, sinon sur la prochaine.', 3500);
     await legende('Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.', 0);
@@ -70,8 +70,8 @@ export default {
       await pause(2000);
       await toucher(noter.first(), { apres: 2500 });
       await legende('En haut de sa fiche, le nom de l\'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.', 4500, { enHaut: true });
-      await legende('Une fois l\'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.', 0, { enHaut: true });
-      await toucher(page.locator('.retour-presences'), { apres: 2500 });
+      await legende('Une fois l\'élève noté, « ← Feuille de présence », en haut à gauche, ramène sur la même séance et le même groupe.', 0, { enHaut: true });
+      await toucher(page.locator('.retour-page'), { apres: 2500 });
     } else {
       await pause(3500);
     }

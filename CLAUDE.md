@@ -695,7 +695,16 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
   d'onglets fixe en bas de l'écran (`app.component.ts`) et « Plus » pour
   le reste du menu ; ce qui colle au bas de l'écran se place au-dessus
   d'elle avec `--hauteur-onglets` (ou un `z-index` supérieur à 32 pour une
-  barre de choix temporaire).
+  barre de choix temporaire). En tête de chaque page, la barre de page
+  (`core/barre-page.component.ts`, posée par `app.component.ts`) : à gauche
+  le retour « ← … » vers l'écran parent, calculé au même endroit pour toute
+  l'appli (`core/navigation.ts` : on remonte d'un cran dans l'arborescence,
+  jamais vers la page vue juste avant ; un écran qui ne connaît son parent
+  qu'une fois chargé le donne par `NavigationService.preciserRetour`) ; à
+  droite « Comment faire ? », qui ouvre dans une fenêtre les manuels de
+  l'écran (`features/aide/comment-faire.ts`, chargé au premier appui). Ne
+  plus écrire de lien de retour dans un écran ; un nouvel écran = une entrée
+  dans ces deux fichiers.
 - Identité visuelle alignée sur celle du club (cppjvo.fr) : palette
   océan/corail, Poppins pour les titres, Nunito pour le texte courant.
   Jetons de design dans `frontend/src/styles.css`. Ne pas introduire de

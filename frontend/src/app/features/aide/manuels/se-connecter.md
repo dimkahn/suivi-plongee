@@ -3,7 +3,7 @@ titre: Se connecter et s'y retrouver
 rubrique: Découverte
 videos: M1
 ecran: /connexion
-mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide
+mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent
 questions:
 - Comment me connecter ?
 - J'ai oublié mon mot de passe
@@ -11,6 +11,8 @@ questions:
 - Où sont les écrans ?
 - Où est passé le menu ?
 - Où sont les vidéos d'aide ?
+- Comment avoir de l'aide sur l'écran où je suis ?
+- Comment revenir à l'écran précédent ?
 ---
 On se connecte avec son adresse e-mail et son mot de passe. Sur téléphone, les écrans de tous les jours sont dans la barre en bas de l'écran, le reste derrière « Plus » ; sur ordinateur, tout est dans le menu en haut.
 
@@ -22,6 +24,13 @@ On se connecte avec son adresse e-mail et son mot de passe. Sur téléphone, les
 4. En bas de l'écran, à portée du pouce : « Aujourd'hui », « Présences », « Élèves » et « Planning ».
 5. « Plus », au bout de la barre, ouvre tout le reste : trombinoscope, fiches de sécurité, groupes, « Préparer hors ligne », « Aide » (questions fréquentes et vidéos), votre compte et « Se déconnecter ». Touchez-le de nouveau, ou à côté, pour le refermer.
 
+## Comment faire ? et le retour
+
+En haut de chaque écran, la même barre :
+
+- À droite, **« Comment faire ? »** ouvre les manuels de l'écran où vous êtes, avec leur vidéo d'aide, dans une fenêtre : ce que vous étiez en train de saisir reste en place, « Revenir à l'écran » le retrouve. « Toutes les questions » mène à la page Aide.
+- À gauche, **« ← … »** remonte d'un cran : de la fiche d'un bloc vers « Matériel », de la vue globale vers la fiche de suivi, d'une fiche de suivi ouverte depuis l'appel vers la feuille de présence de la même séance. Les écrans du menu n'en ont pas : le menu y mène.
+
 ## Mot de passe oublié
 
 1. Sur l'écran de connexion, touchez « Mot de passe oublié ? ».
@@ -32,5 +41,5 @@ On se connecte avec son adresse e-mail et son mot de passe. Sur téléphone, les
 
 - « Se souvenir de moi » garde la session sur votre téléphone. Décochez-le sur un appareil partagé.
 - Ajoutez l'appli à l'écran d'accueil du téléphone (menu du navigateur, « Ajouter à l'écran d'accueil ») : elle s'ouvrira comme une application.
-- Les vidéos d'aide sont dans « Aide » : chaque réponse montre la sienne, et « Toutes les vidéos » les liste toutes.
+- Les vidéos d'aide sont dans « Aide » et derrière « Comment faire ? » : chaque réponse montre la sienne, et « Toutes les vidéos » les liste toutes.
 - Pas encore de compte ? C'est un administrateur du club qui le crée : vous recevez alors un e-mail pour choisir votre mot de passe.

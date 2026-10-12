@@ -1,5 +1,5 @@
 // M12 — Groupes de plongeurs pour un séjour.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

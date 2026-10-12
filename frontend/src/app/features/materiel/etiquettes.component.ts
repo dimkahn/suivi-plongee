@@ -1,6 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { EtiquetteMateriel } from '../../core/modeles';
@@ -15,10 +15,9 @@ type Format = 'petit' | 'grand';
  */
 @Component({
   selector: 'app-etiquettes-materiel',
-  imports: [RouterLink, QrCodeComponent],
+  imports: [QrCodeComponent],
   template: `
     <div class="pas-imprime">
-      <a routerLink="/materiel" class="retour">← Matériel</a>
       <h1>Étiquettes QR code</h1>
       <p class="secondaire">
         Imprimez la planche, découpez et collez chaque étiquette sur son équipement. Le QR code ouvre la fiche :
@@ -63,7 +62,6 @@ type Format = 'petit' | 'grand';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     h1 { margin-bottom: var(--pas); }
     .actions { display: flex; gap: var(--pas-2); flex-wrap: wrap; align-items: center; margin: var(--pas-2) 0; }
     .formats { display: flex; gap: var(--pas); flex-wrap: wrap; }

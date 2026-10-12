@@ -23,9 +23,6 @@ const PRESENTATION: Record<string, string> = {
   selector: 'app-videos',
   imports: [RouterLink],
   template: `
-    @if (!auth.connecte()) {
-      <p class="retour"><a routerLink="/connexion">← Se connecter</a></p>
-    }
     <h1>Vidéos d'aide</h1>
     <p class="secondaire intro">
       Une vidéo par geste, rangées par rôle. Elles sont tournées sur des données de démonstration :
@@ -106,8 +103,6 @@ const PRESENTATION: Record<string, string> = {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { margin: 0 0 var(--pas-2); }
-    .retour a { display: inline-flex; align-items: center; min-height: 44px; }
     h1 { margin-bottom: var(--pas); }
     .intro { max-width: 680px; }
 

@@ -1,5 +1,5 @@
 // M24 — Le parcours de formation et la fiche d'un exercice.
-// Tournage du 2026-10-12, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Parcours N1 de la saison de démo (progression type rattachée par V107) ;
 // le texte ne cite aucun exercice précis, chaque geste vérifie que son
 // élément existe.

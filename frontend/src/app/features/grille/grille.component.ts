@@ -88,12 +88,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     SchemaExerciceComponent
   ],
   template: `
-    @if (depuis() === 'presences') {
+    <!-- Le retour à la feuille de présence est dans la barre de page (core/navigation.ts). Ici, les présents
+         de la feuille (groupe filtré compris), pour noter le groupe sans repasser par la feuille. -->
+    @if (depuis() === 'presences' && voisins()) {
       <nav class="navigation-eleves" aria-label="Élèves présents à la séance">
-        <a class="retour-presences" [routerLink]="['/presences']" [queryParams]="{ seance: seance(), groupe: groupe() }">
-          &larr; Retour à la feuille de présence
-        </a>
-        <!-- Les présents de la feuille (groupe filtré compris), pour noter le groupe sans repasser par la feuille. -->
         @if (voisins(); as v) {
           <div class="voisins">
             @if (v.precedent; as p) {
@@ -145,10 +143,12 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           }
           <!-- Les gestes courants (vue globale, synthèse, tout ouvrir) restent visibles ; le reste passe dans « Plus d'actions ». -->
           <div class="actions-entete">
-            <a [routerLink]="['/cursus', id(), 'matrice']" class="bouton-discret lien-matrice">
+            <!-- La séance et l'origine suivent : le retour de ces écrans rouvre la fiche telle qu'elle était. -->
+            <a [routerLink]="['/cursus', id(), 'matrice']" queryParamsHandling="preserve" class="bouton-discret lien-matrice">
               Vue globale (toutes les séances)
             </a>
-            <a [routerLink]="['/cursus', id(), 'synthese']" class="bouton-discret lien-matrice lien-synthese">
+            <a [routerLink]="['/cursus', id(), 'synthese']" queryParamsHandling="preserve"
+               class="bouton-discret lien-matrice lien-synthese">
               Synthèse A / ECA / NT
             </a>
             <button type="button" class="bouton-discret bascule-blocs" (click)="basculerTousLesBlocs(g.blocs)">
@@ -877,10 +877,6 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .navigation-eleves {
       display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
       gap: var(--pas); margin-bottom: var(--pas);
-    }
-    .retour-presences {
-      display: inline-flex; align-items: center; min-height: 44px;
-      font-size: .9375rem; text-decoration: none;
     }
     .voisins { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .voisins a {

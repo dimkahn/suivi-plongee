@@ -1,5 +1,5 @@
 // M1 — Se connecter et s'y retrouver.
-// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -33,6 +33,12 @@ export default {
     await legende('« Préparer hors ligne » avant d\'aller au bassin, s\'il n\'y a pas de réseau.', 3500);
     await legende('« Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe).', 4000);
     await toucher(plus, { apres: 600 });
+
+    await legende('Sur chaque écran, « Comment faire ? », en haut à droite, ouvre les manuels et vidéos de cet écran.', 0);
+    await toucher(page.getByRole('button', { name: 'Comment faire ?' }), { apres: 1500 });
+    await legende('Votre saisie reste en place derrière la fenêtre : « Revenir à l\'écran » la retrouve.', 3500);
+    await toucher(page.getByRole('dialog').getByRole('button', { name: 'Revenir à l\'écran' }), { apres: 800 });
+    await legende('En haut à gauche des autres écrans, « ← … » remonte d\'un cran, toujours au même endroit.', 4000);
 
     await legende('Astuce : ajoutez l\'appli à l\'écran d\'accueil du téléphone, '
       + 'elle s\'ouvrira comme une application.', 4000);

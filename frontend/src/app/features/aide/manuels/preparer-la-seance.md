@@ -43,6 +43,7 @@ Un exercice libre **avec une phase et des critères cochés** sert aussi à note
 - Le **programme commun** sert à toute la séance (échauffement, sortie sans groupes) : tout encadrant peut le préparer.
 - Dans « Noter les présents », un bouton coche d'un coup les critères des exercices.
 - Le programme se prépare avant comme après la séance.
+- « ← Feuille de présence », en haut à gauche, ramène à l'appel de la même séance, filtré sur le même groupe.
 - Critère de réussite et schéma se retrouvent dans « Exercices de la séance » de la grille de l'élève et dans la vue globale ; « Préparer hors ligne » garde aussi les schémas des exercices libres.
 - Reprendre les exercices d'une autre séance reprend aussi leurs schémas.
 - « Fiche complète » (dans la liste comme sur la carte d'un exercice des compétences) ouvre sa fiche : conseils de l'encadrant, photos, vidéos et place dans le parcours (voir « Le parcours de formation »).

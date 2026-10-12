@@ -1,8 +1,9 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { NavigationService } from '../../core/navigation';
 import { InspectionTivVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 
@@ -15,10 +16,9 @@ import { DateFrPipe } from '../../core/date-fr';
  */
 @Component({
   selector: 'app-rapport-inspection-tiv',
-  imports: [RouterLink, DateFrPipe],
+  imports: [DateFrPipe],
   template: `
     @if (fiche(); as f) {
-      <a [routerLink]="['/materiel', f.bloc.id]" class="retour pas-imprime">← Fiche du bloc {{ f.bloc.reference }}</a>
       <div class="actions pas-imprime">
         <button type="button" class="bouton-principal" (click)="imprimer()">Imprimer</button>
       </div>
@@ -123,7 +123,6 @@ import { DateFrPipe } from '../../core/date-fr';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     .actions { display: flex; gap: var(--pas); margin-bottom: var(--pas-2); }
     .rapport { padding: var(--pas-3); max-width: 900px; }
     header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2);
@@ -172,11 +171,17 @@ import { DateFrPipe } from '../../core/date-fr';
 export class RapportInspectionTivComponent {
   private api = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private navigation = inject(NavigationService);
 
   fiche = signal<InspectionTivVue | null>(null);
   message = signal<string | null>(null);
 
   constructor() {
+    // Le compte rendu ne connaît son bloc qu'une fois lu.
+    this.navigation.preciserRetour(computed(() => {
+      const bloc = this.fiche()?.bloc;
+      return bloc ? { libelle: `Fiche du bloc ${bloc.reference}`, lien: `/materiel/${bloc.id}` } : null;
+    }));
     void this.charger(Number(this.route.snapshot.paramMap.get('inspectionId')));
   }
 

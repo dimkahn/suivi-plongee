@@ -1,5 +1,5 @@
 // M20 — Référent du groupe : noter au nom d'un encadrant qui ne l'a pas fait.
-// Tournage du 2026-10-12, 10e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Flora (e2) est référente du groupe Débutants (V110), où Tiago (e1) encadre aussi.
 import { ouvrirGrille, ouvrirBloc, critere, noter } from '../grille.mjs';
 

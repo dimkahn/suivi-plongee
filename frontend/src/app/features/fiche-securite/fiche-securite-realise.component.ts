@@ -19,8 +19,6 @@ import { lieuEtSite } from '../../core/seance-lieu';
   selector: 'app-fiche-securite-realise',
   imports: [FormsModule, RouterLink, DateFrPipe],
   template: `
-    <a [routerLink]="['/fiches-securite', seanceId]" class="bouton-discret">← Établissement de la fiche</a>
-
     @if (seance(); as s) {
       <h1>Compléter la fiche — {{ s.date | dateFr }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</h1>
       <p class="secondaire">
