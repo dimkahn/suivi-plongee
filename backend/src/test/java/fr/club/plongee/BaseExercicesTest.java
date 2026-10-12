@@ -405,10 +405,10 @@ class BaseExercicesTest {
             parNumero.put(e.get("numero").asText(), e);
             if (e.get("aSchema").asBoolean()) avecSchema++;
         }
-        // 29 schémas dans le document, 5.3 et 5.4 partagent le même ; rien pour les compétences 9 et 10.
-        assertThat(avecSchema).isEqualTo(30);
+        // 29 schémas du document (5.3 et 5.4 partagent le même, V53), les 60 autres dessinés (V66).
+        assertThat(avecSchema).isEqualTo(90);
         assertThat(parNumero.get("5.4").get("aSchema").asBoolean()).isTrue();
-        assertThat(parNumero.get("10.1").get("aSchema").asBoolean()).isFalse();
+        assertThat(parNumero.get("10.1").get("aSchema").asBoolean()).isTrue();
 
         long schema = parNumero.get("1.1").get("id").asLong();
         byte[] png = mvc.perform(get("/api/exercices/" + schema + "/schema").header("Authorization", moniteur))
@@ -418,8 +418,10 @@ class BaseExercicesTest {
                 .andReturn().getResponse().getContentAsByteArray();
         assertThat(png[1]).isEqualTo((byte) 'P');
 
-        long sansSchema = parNumero.get("10.1").get("id").asLong();
-        String url = "/api/exercices/" + sansSchema + "/schema";
+        long autre = parNumero.get("10.1").get("id").asLong();
+        String url = "/api/exercices/" + autre + "/schema";
+        mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isOk());
+        mvc.perform(delete(url).header("Authorization", admin)).andExpect(status().isOk());
         mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isNotFound());
         var fichier = new org.springframework.mock.web.MockMultipartFile("fichier", "schema.png", "image/png", png);
         var texte = new org.springframework.mock.web.MockMultipartFile("fichier", "schema.png", "image/png",
@@ -431,8 +433,60 @@ class BaseExercicesTest {
         mvc.perform(multipart(url).file(fichier).with(r -> { r.setMethod("PUT"); return r; })
                 .header("Authorization", admin)).andExpect(status().isOk());
         mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isOk());
-        mvc.perform(delete(url).header("Authorization", admin)).andExpect(status().isOk());
-        mvc.perform(get(url).header("Authorization", moniteur)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Parcours du N1 : chaque exercice a ses conseils et figure dans une période de la progression type")
+    void parcoursN1() throws Exception {
+        verifierParcours("N1", "PE20", 90);
+    }
+
+    /**
+     * Chaque exercice de la formation a des conseils et est prévu dans
+     * exactement une période de la progression type du club ; l'initiation
+     * d'une compétence ne vient jamais après sa maîtrise.
+     */
+    private void verifierParcours(String niveau, String version, int nombre) throws Exception {
+        String moniteur = jeton("e3@club.fr");
+        long ref = -1;
+        for (JsonNode r : envoyer("GET", "/api/referentiels", moniteur, null, 200)) {
+            if (niveau.equals(r.get("niveau").asText()) && r.get("versionMft").asText().startsWith(version)) {
+                ref = r.get("id").asLong();
+            }
+        }
+        JsonNode exercices = envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200);
+        assertThat(exercices).hasSize(nombre);
+        for (JsonNode e : exercices) {
+            assertThat(e.get("conseils").asText("")).as("conseils de " + e.get("numero").asText()).isNotBlank();
+        }
+
+        long progression = -1;
+        for (JsonNode p : envoyer("GET", "/api/progressions", moniteur, null, 200)) {
+            if (p.get("referentielId").asLong() == ref && p.get("nom").asText().endsWith("progression type du club")) {
+                progression = p.get("id").asLong();
+            }
+        }
+        JsonNode periodes = envoyer("GET", "/api/progressions/" + progression, moniteur, null, 200).get("periodes");
+        Map<Long, Integer> rangDeLExercice = new HashMap<>();
+        for (JsonNode p : periodes) {
+            for (JsonNode e : p.get("exercices")) {
+                assertThat(rangDeLExercice.put(e.get("id").asLong(), p.get("rang").asInt()))
+                        .as("exercice " + e.get("numero").asText() + " dans une seule période").isNull();
+            }
+        }
+        assertThat(rangDeLExercice).hasSize(nombre);
+
+        // Par compétence : la maîtrise ne vient jamais avant l'initiation.
+        Map<Long, Integer> derniereInitiation = new HashMap<>();
+        Map<Long, Integer> premiereMaitrise = new HashMap<>();
+        for (JsonNode e : exercices) {
+            long bloc = e.get("blocId").asLong();
+            int rang = rangDeLExercice.get(e.get("id").asLong());
+            if ("INITIATION".equals(e.get("phase").asText())) derniereInitiation.merge(bloc, rang, Math::max);
+            if ("MAITRISE".equals(e.get("phase").asText())) premiereMaitrise.merge(bloc, rang, Math::min);
+        }
+        premiereMaitrise.forEach((bloc, rang) ->
+                assertThat(rang).as("maîtrise du bloc " + bloc).isGreaterThanOrEqualTo(derniereInitiation.get(bloc)));
     }
 
     @Test

@@ -617,6 +617,15 @@ class SchemasExercicesN2 {
          * tête à droite ; -90 : debout ; 90 : tête en bas ; 180 : tête à gauche.
          */
         void plongeur(double x, double y, double angle, boolean eleve, double echelle) {
+            dessinerPlongeur(x, y, angle, eleve, echelle, true);
+        }
+
+        /** Nageur en PMT : le plongeur sans bloc, mêmes conventions que {@link #plongeur}. */
+        void nageur(double x, double y, double angle, boolean eleve, double echelle) {
+            dessinerPlongeur(x, y, angle, eleve, echelle, false);
+        }
+
+        private void dessinerPlongeur(double x, double y, double angle, boolean eleve, double echelle, boolean avecBloc) {
             AffineTransform avant = g.getTransform();
             g.translate(x, y);
             if (angle == 180) {
@@ -631,7 +640,7 @@ class SchemasExercicesN2 {
             Shape bloc = new RoundRectangle2D.Double(-44, -18, 30, 10, 6, 6);
             Shape corps = new RoundRectangle2D.Double(-50, -9, 42, 18, 9, 9);
             Shape tete = new Ellipse2D.Double(-9, -10, 20, 20);
-            for (Shape forme : new Shape[] {bloc, corps, tete}) {
+            for (Shape forme : avecBloc ? new Shape[] {bloc, corps, tete} : new Shape[] {corps, tete}) {
                 g.setColor(forme == tete ? Color.WHITE : fond);
                 g.fill(forme);
                 g.setColor(trait);
@@ -851,6 +860,96 @@ class SchemasExercicesN2 {
             g.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1, new float[] {6, 5}, 0));
             g.draw(new RoundRectangle2D.Double(x, y, l, h, 12, 12));
             texteDoux((float) x + 10, (float) y - 8, libelle);
+        }
+
+        /** Bloc posé au sol (ligne ySol) : debout ou couché. */
+        void blocAuSol(double x, double ySol, boolean debout) {
+            Shape bloc = debout
+                    ? new RoundRectangle2D.Double(x - 14, ySol - 90, 28, 90, 14, 14)
+                    : new RoundRectangle2D.Double(x - 45, ySol - 28, 90, 28, 14, 14);
+            g.setColor(Color.WHITE);
+            g.fill(bloc);
+            g.setColor(GRIS);
+            g.setStroke(new BasicStroke(2.4f));
+            g.draw(bloc);
+            Shape robinet = debout
+                    ? new Rectangle2D.Double(x - 6, ySol - 104, 12, 14)
+                    : new Rectangle2D.Double(x + 45, ySol - 20, 14, 12);
+            g.fill(robinet);
+        }
+
+        /** Ballon (volume d'air) avec sa légende dessous. */
+        void ballon(double x, double y, double rayon, String libelle) {
+            Shape b = new Ellipse2D.Double(x - rayon, y - rayon, 2 * rayon, 2 * rayon);
+            g.setColor(BLEU_CLAIR);
+            g.fill(b);
+            g.setColor(BLEU);
+            g.setStroke(new BasicStroke(2.2f));
+            g.draw(b);
+            if (!libelle.isEmpty()) texte(x + rayon + 10, y + 5, libelle);
+        }
+
+        /** Coche bleue : ce qu'on fait. */
+        void coche(double x, double y) {
+            g.setColor(BLEU);
+            g.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            Path2D p = new Path2D.Double();
+            p.moveTo(x - 10, y);
+            p.lineTo(x - 2, y + 9);
+            p.lineTo(x + 13, y - 10);
+            g.draw(p);
+        }
+
+        /** Croix corail : ce qu'on ne fait pas. */
+        void croix(double x, double y) {
+            g.setColor(CORAIL);
+            g.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.draw(new Line2D.Double(x - 10, y - 10, x + 10, y + 10));
+            g.draw(new Line2D.Double(x - 10, y + 10, x + 10, y - 10));
+        }
+
+        /** Fond irrégulier : x1, y1, x2, y2, … de gauche à droite, rempli jusqu'en bas. */
+        void relief(double... points) {
+            Path2D p = new Path2D.Double();
+            p.moveTo(points[0], BAS);
+            for (int i = 0; i < points.length; i += 2) p.lineTo(points[i], points[i + 1]);
+            p.lineTo(points[points.length - 2], BAS);
+            p.closePath();
+            g.setColor(GRIS_CLAIR);
+            g.fill(p);
+            Path2D ligne = new Path2D.Double();
+            ligne.moveTo(points[0], points[1]);
+            for (int i = 2; i < points.length; i += 2) ligne.lineTo(points[i], points[i + 1]);
+            g.setColor(GRIS_TRAIT);
+            g.setStroke(new BasicStroke(4, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.draw(ligne);
+        }
+
+        /** Gros rocher posé sur le fond (ligne ySol). */
+        void rocher(double x, double ySol, double l, double h) {
+            Path2D p = new Path2D.Double();
+            p.moveTo(x - l / 2, ySol);
+            p.curveTo(x - l / 2, ySol - h * 0.8, x - l / 4, ySol - h, x, ySol - h);
+            p.curveTo(x + l / 3, ySol - h, x + l / 2, ySol - h * 0.6, x + l / 2, ySol);
+            p.closePath();
+            g.setColor(GRIS_CLAIR);
+            g.fill(p);
+            g.setColor(GRIS_TRAIT);
+            g.setStroke(new BasicStroke(3));
+            g.draw(p);
+        }
+
+        /** Carnet ou fiche : un cadre blanc et ses lignes de texte. */
+        void carnet(double x, double y, double l, String... lignes) {
+            double h = 22 + lignes.length * 24;
+            g.setColor(Color.WHITE);
+            g.fill(new RoundRectangle2D.Double(x, y, l, h, 8, 8));
+            g.setColor(GRIS);
+            g.setStroke(new BasicStroke(2));
+            g.draw(new RoundRectangle2D.Double(x, y, l, h, 8, 8));
+            g.setColor(TEXTE);
+            g.setFont(police.deriveFont(15f));
+            for (int i = 0; i < lignes.length; i++) g.drawString(lignes[i], (float) x + 12, (float) (y + 28 + i * 24));
         }
 
         // ---------- Flèches et textes ----------
