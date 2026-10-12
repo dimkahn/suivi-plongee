@@ -952,6 +952,50 @@ class SchemasExercicesN2 {
             for (int i = 0; i < lignes.length; i++) g.drawString(lignes[i], (float) x + 12, (float) (y + 28 + i * 24));
         }
 
+        /** Écran d'ordinateur de plongée : bord sombre, lignes d'affichage. */
+        void ordinateur(double x, double y, String... lignes) {
+            g.setFont(policeGrasse.deriveFont(Font.BOLD, 16f));
+            double l = 0;
+            for (String ligne : lignes) l = Math.max(l, g.getFontMetrics().stringWidth(ligne));
+            l = Math.max(150, l + 26);
+            double h = 26 + lignes.length * 26;
+            g.setColor(TEXTE);
+            g.fill(new RoundRectangle2D.Double(x - 8, y - 8, l + 16, h + 16, 22, 22));
+            g.setColor(new Color(0xE9F1E4));
+            g.fill(new RoundRectangle2D.Double(x, y, l, h, 12, 12));
+            g.setColor(TEXTE);
+            g.setFont(policeGrasse.deriveFont(Font.BOLD, 16f));
+            for (int i = 0; i < lignes.length; i++) g.drawString(lignes[i], (float) x + 12, (float) (y + 30 + i * 26));
+        }
+
+        /** Compas vu de dessus : cadran, repère de cap et aiguille. */
+        void compas(double x, double y, double rayon) {
+            g.setColor(Color.WHITE);
+            g.fill(new Ellipse2D.Double(x - rayon, y - rayon, 2 * rayon, 2 * rayon));
+            g.setColor(GRIS);
+            g.setStroke(new BasicStroke(3));
+            g.draw(new Ellipse2D.Double(x - rayon, y - rayon, 2 * rayon, 2 * rayon));
+            g.setStroke(new BasicStroke(2));
+            for (int a = 0; a < 360; a += 30) {
+                double r = Math.toRadians(a);
+                g.draw(new Line2D.Double(x + (rayon - 8) * Math.cos(r), y + (rayon - 8) * Math.sin(r),
+                        x + rayon * Math.cos(r), y + rayon * Math.sin(r)));
+            }
+            Path2D aiguille = new Path2D.Double();
+            aiguille.moveTo(x, y - rayon + 12);
+            aiguille.lineTo(x + 7, y);
+            aiguille.lineTo(x - 7, y);
+            aiguille.closePath();
+            g.setColor(CORAIL);
+            g.fill(aiguille);
+            g.setColor(BLEU);
+            g.setStroke(new BasicStroke(2.5f));
+            g.draw(new Line2D.Double(x, y - rayon - 18, x, y + rayon + 6));
+            g.setFont(policeGrasse.deriveFont(Font.BOLD, 14f));
+            g.setColor(TEXTE);
+            g.drawString("N", (float) x - 5, (float) (y - rayon + 30));
+        }
+
         // ---------- Flèches et textes ----------
 
         void fleche(double x1, double y1, double x2, double y2, boolean pointille) {

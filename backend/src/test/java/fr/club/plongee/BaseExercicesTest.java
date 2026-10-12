@@ -110,8 +110,14 @@ class BaseExercicesTest {
     @DisplayName("La base du N2 PA20 | PE40 compte 99 exercices ; chaque critère a un exercice de maîtrise")
     void contenuN2() throws Exception {
         List<String> avecSchema = verifierBase("N2", "PA20", 11);
-        // Schémas dessinés pour 31 exercices (V60).
-        assertThat(avecSchema).hasSize(31).contains("2.9", "7.7", "11.7").doesNotContain("1.1", "10.9");
+        // Schémas dessinés pour 31 exercices (V60), puis pour les 68 autres (V68).
+        assertThat(avecSchema).hasSize(99).contains("1.1", "2.9", "7.7", "10.9", "11.7");
+    }
+
+    @Test
+    @DisplayName("Parcours du N2 : conseils partout, maîtrises en milieu naturel en fin de saison")
+    void parcoursN2() throws Exception {
+        verifierParcours("N2", "PA20", 99);
     }
 
     @Test
