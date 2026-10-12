@@ -1,6 +1,5 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/api.service';
 import { DemandeGenerationSaison, GenerationSaisonVue, JourSemaine, SaisonVue } from '../../core/modeles';
@@ -21,9 +20,8 @@ const JOURS: { valeur: JourSemaine; libelle: string }[] = [
  */
 @Component({
   selector: 'app-generation-saison',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [FormsModule, DateFrPipe],
   template: `
-    <a routerLink="/admin/seances" class="retour">&larr; Séances</a>
     <h1>Générer les séances d'une saison</h1>
     <p class="secondaire">
       Choisissez les jours de la semaine et décrivez la séance : elle est créée chaque semaine de la
@@ -172,7 +170,6 @@ const JOURS: { valeur: JourSemaine; libelle: string }[] = [
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-block; margin-bottom: var(--pas-2); font-size: .875rem; text-decoration: none; }
     h1 { margin-bottom: var(--pas); }
     .panneau { max-width: 900px; padding: var(--pas-3); margin: var(--pas-3) 0; }
     .panneau h2 { margin-bottom: 4px; }

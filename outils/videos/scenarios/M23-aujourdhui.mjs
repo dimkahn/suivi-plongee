@@ -1,5 +1,5 @@
 // M23 — La page « Aujourd'hui » : la séance du jour en un coup d'œil.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 // La page montre la séance du jour du tournage, ou la prochaine : le texte
 // ne cite ni date ni lieu, et chaque geste vérifie que son bouton existe.
 export default {

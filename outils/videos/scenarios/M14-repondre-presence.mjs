@@ -1,5 +1,5 @@
 // M14 — Dire si je suis présent à une soirée.
-// Tournage du 2026-10-11, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M14',
   titre: 'Dire si je suis présent à une soirée',

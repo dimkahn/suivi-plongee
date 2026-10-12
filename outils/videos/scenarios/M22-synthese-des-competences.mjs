@@ -1,5 +1,5 @@
 // M22 — La synthèse des compétences d'un groupe d'entraînement, puis d'un élève.
-// Tournage du 2026-10-12, 5e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Groupe Débutants (V107) : élèves N1 notés en septembre.
 export default {
   id: 'M22',

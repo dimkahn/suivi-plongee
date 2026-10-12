@@ -53,8 +53,6 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
   selector: 'app-fiche-equipement',
   imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
   template: `
-    <a routerLink="/materiel" class="retour pas-imprime">← Matériel</a>
-
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
@@ -489,7 +487,6 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     h1 { margin-bottom: var(--pas); }
     h3 { margin: var(--pas-2) 0 4px; font-size: .9375rem; }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }

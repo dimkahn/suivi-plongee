@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { BlocVue, CritereVue, EtatCompetence, GrilleVue } from '../../core/modeles';
 import { dateFr } from '../../core/date-fr';
@@ -25,10 +24,8 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
  */
 @Component({
   selector: 'app-synthese-eleve',
-  imports: [RouterLink, PhotoEleveComponent],
+  imports: [PhotoEleveComponent],
   template: `
-    <a [routerLink]="['/cursus', id()]" class="retour">&larr; Retour à la fiche de suivi</a>
-
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (erreur()) {
@@ -171,7 +168,6 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
     }
   `,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; }
     .entete { display: flex; align-items: center; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas) 0 var(--pas-2); }
     .entete h1 { margin: 0; }
     .entete p { margin: 0; }
@@ -230,7 +226,7 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
     .cercle text { font-size: 9px; font-weight: 700; fill: var(--encre); }
     .nom-competence { font-size: .8125rem; line-height: 1.3; color: var(--craie); }
     @media print {
-      .retour, .imprimer { display: none; }
+      .imprimer { display: none; }
       .competence, .camembert, .cercle { break-inside: avoid; }
     }
   `],

@@ -1,6 +1,5 @@
 import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import {
   CelluleMatrice, ExerciceBaseVue, ExerciceGrilleVue, LigneMatrice, MatriceVue, SeanceEnTete
@@ -17,10 +16,8 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-matrice',
-  imports: [FormsModule, RouterLink, DateFrPipe, PlurielPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
+  imports: [FormsModule, DateFrPipe, PlurielPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
-    <a [routerLink]="['/cursus', id()]" class="retour">&larr; Retour à la grille</a>
-
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (erreur()) {
@@ -286,9 +283,6 @@ const LIBELLES: Record<string, string> = {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour {
-      display: inline-block; margin-bottom: var(--pas-2); font-size: .875rem; text-decoration: none;
-    }
     h1 { margin-bottom: 2px; }
     .options { display: flex; flex-wrap: wrap; gap: var(--pas) var(--pas-3); margin-top: var(--pas-3); }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; font-weight: 700; font-size: .9375rem; cursor: pointer; }

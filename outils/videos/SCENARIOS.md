@@ -46,9 +46,12 @@ Compte : `e2@club.fr` · format téléphone · 62 s
 8. Trombinoscope, fiches de sécurité, groupes…
 9. « Préparer hors ligne » avant d'aller au bassin, s'il n'y a pas de réseau.
 10. « Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe).
-11. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
-12. Mot de passe oublié ? Déconnectons-nous pour voir.
-13. Un lien de réinitialisation part par e-mail. Il suffit de le suivre.
+11. Sur chaque écran, « Comment faire ? », en haut à droite, ouvre les manuels et vidéos de cet écran.
+12. Votre saisie reste en place derrière la fenêtre : « Revenir à l'écran » la retrouve.
+13. En haut à gauche des autres écrans, « ← … » remonte d'un cran, toujours au même endroit.
+14. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
+15. Mot de passe oublié ? Déconnectons-nous pour voir.
+16. Un lien de réinitialisation part par e-mail. Il suffit de le suivre.
 
 ### M2 — Mon compte
 
@@ -70,12 +73,12 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 
 ### M3 — Faire l'appel d'une séance
 
-La feuille de présence d'une séance : le détail des exercices préparés (replié d'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d'où l'on revient à la feuille.
+La feuille de présence d'une séance : le détail des exercices préparés (replié d'office), nage, bloc ou théorie pour chaque élève, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d'où « ← Feuille de présence » ramène à la feuille.
 
 Compte : `e2@club.fr` · format téléphone · 1 min 10
 
 1. Au bord du bassin : « Présences », en bas de l'écran.
-2. Un doute ? « Comment faire ? » rappelle les règles de l'appel.
+2. Un doute ? « Comment faire ? », en haut à droite, rappelle les règles de l'appel.
 3. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine.
 4. Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.
 5. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
@@ -97,7 +100,7 @@ Compte : `e2@club.fr` · format téléphone · 1 min 10
 21. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
 22. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
 23. En haut de sa fiche, le nom de l'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.
-24. Une fois l'élève noté, « Retour à la feuille de présence » ramène sur la même séance et le même groupe.
+24. Une fois l'élève noté, « ← Feuille de présence », en haut à gauche, ramène sur la même séance et le même groupe.
 25. Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
 
 ### M4 — Noter un élève pendant la séance

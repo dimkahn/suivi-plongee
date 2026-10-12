@@ -1,7 +1,6 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
@@ -22,13 +21,8 @@ function sortieVide(): DemandeSortie {
  */
 @Component({
   selector: 'app-sorties',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
+  imports: [FormsModule, DateFrPipe, DialogueComponent],
   template: `
-    @if (auth.estAdmin()) {
-      <a routerLink="/admin" class="retour">← Administration</a>
-    } @else {
-      <a routerLink="/materiel/prets" class="retour">← Prêts de matériel</a>
-    }
     <div class="entete">
       <div>
         <h1>Sorties</h1>
@@ -222,7 +216,6 @@ function sortieVide(): DemandeSortie {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete h1 { margin-bottom: var(--pas); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }

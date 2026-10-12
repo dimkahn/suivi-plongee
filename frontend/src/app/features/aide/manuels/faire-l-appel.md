@@ -29,7 +29,7 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
 4. Touchez un élève, puis ce qu'il a fait : « Nage », « Bloc » ou « Théorie ».
 5. Le compteur en haut de la liste fait le bilan : présents, absents, et présents sans évaluation. Il reste en haut de l'écran pendant qu'on fait défiler les élèves. Filtré sur un groupe, il ne compte que les élèves de ce groupe (la recherche d'un élève, elle, ne change pas le compte).
 
-Un doute en cours de route ? « Comment faire ? », à côté du titre, rappelle les règles de l'appel.
+Un doute en cours de route ? « Comment faire ? », en haut à droite de l'écran, rappelle les règles de l'appel.
 
 ## Corriger
 
@@ -42,7 +42,7 @@ Une fois la séance passée, la feuille repère les présents qui n'ont reçu **
 - le bilan en haut de la liste les compte, dans le groupe filtré (« 3 présents sans évaluation ») ;
 - leur carte porte « Pas encore évalué » : touchez-le pour ouvrir la grille de l'élève, sur cette séance, et le noter ;
 - les présents déjà notés ont à la place un bouton « Noter », qui ouvre de même leur grille sur la séance pour ajouter ou corriger une note ;
-- une fois l'élève noté, « ← Retour à la feuille de présence », en haut de sa grille, ramène à la feuille sur la même séance, filtrée sur le même groupe, pour passer à l'élève suivant ;
+- une fois l'élève noté, « ← Feuille de présence », en haut à gauche de sa grille, ramène à la feuille sur la même séance, filtrée sur le même groupe, pour passer à l'élève suivant ;
 - le bouton « Voir les présents sans évaluation » n'affiche plus qu'eux, dans le groupe filtré. « Noter les présents » propose alors justement ces élèves.
 
 Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme une évaluation de la séance. Une note gardée sur le téléphone, pas encore envoyée, aussi.

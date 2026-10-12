@@ -1,5 +1,5 @@
 // M15 — Le trombinoscope.
-// Tournage du 2026-10-11, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M15',
   titre: 'Le trombinoscope',

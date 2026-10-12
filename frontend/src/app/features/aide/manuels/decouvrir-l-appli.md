@@ -2,7 +2,7 @@
 titre: L'appli en bref
 rubrique: Découverte
 videos: X1
-mots: présentation, tour, découverte, débuter, commencer, sommaire, tableur, classeur
+mots: présentation, tour, découverte, débuter, commencer, sommaire, tableur, classeur, comment faire, aide, retour
 questions:
 - À quoi sert l'appli ?
 - Par où commencer ?
@@ -26,5 +26,5 @@ L'appli du club remplace le classeur partagé : elle se manie au téléphone, au
 - Sur téléphone, « Aujourd'hui », « Présences », « Élèves » et « Planning » sont dans la barre en bas de l'écran ; « Plus » ouvre tout le reste du menu.
 - Pas de réseau à la piscine ? « Préparer hors ligne » avant de partir : tout part au retour du réseau.
 - Créer ou modifier quelque chose (une séance, un élève, un prêt…) ouvre une fenêtre devant la liste, en plein écran sur téléphone : « Enregistrer » en bas ; « Annuler », la croix ou la touche Échap la ferment sans rien changer.
-- Chaque écran a sa vidéo d'aide et son manuel, rangés par rôle.
+- Chaque écran a sa vidéo d'aide et son manuel : « Comment faire ? », en haut à droite de l'écran, les ouvre sans quitter la page. En haut à gauche, « ← … » remonte à l'écran d'où l'on vient (la fiche d'un bloc vers « Matériel », par exemple).
 - Les élèves et encadrants des vidéos sont fictifs.

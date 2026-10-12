@@ -90,7 +90,6 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
   selector: 'app-programme-exercices',
   imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
-    <a routerLink="/presences" class="retour">← Présences</a>
     <h1>Programme d'exercices</h1>
     @if (seances().length > 0) {
       <label for="seance">Séance</label>
@@ -467,7 +466,6 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; }
     h1 { margin-bottom: var(--pas); }
     .choix-seance-programme { max-width: 560px; }
     .titre-choix { margin: var(--pas-3) 0 var(--pas); font-size: 1rem; }

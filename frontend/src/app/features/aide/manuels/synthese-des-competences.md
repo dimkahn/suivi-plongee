@@ -38,7 +38,7 @@ Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » 
 6. **En cours d'acquisition** : le nombre de critères acquis et l'état de chacun (A, ECA ou NA non abordé) ; « reste à valider la compétence » quand tous sont acquis. Au N2 et au N3, l'état à l'entraînement (piscine, fosse) est rappelé sous le critère.
 7. **Non travaillées** : ce qui n'a pas encore été abordé.
 8. Une compétence en retard sur la progression type est signalée.
-9. « Imprimer » donne une version papier ; « Retour à la fiche de suivi » revient à la grille.
+9. « Imprimer » donne une version papier ; « ← Fiche de suivi », en haut à gauche, revient à la grille.
 
 ## Les états
 

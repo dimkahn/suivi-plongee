@@ -23,7 +23,6 @@ import { PhotoEleveComponent } from '../../core/photo-eleve.component';
   selector: 'app-synthese-groupe',
   imports: [RouterLink, PhotoEleveComponent],
   template: `
-    <a routerLink="/eleves" [queryParams]="{ groupe: groupe() ?? null }" class="retour">← Infos élèves</a>
     <h1>Synthèse des compétences</h1>
     <p class="secondaire">
       L'avancement des élèves d'un groupe d'entraînement, compétence par compétence.
@@ -132,7 +131,6 @@ import { PhotoEleveComponent } from '../../core/photo-eleve.component';
     }
   `,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; }
     h1 { margin-bottom: var(--pas); }
     .groupes { display: flex; flex-wrap: wrap; gap: var(--pas); margin: var(--pas-2) 0; }
     .groupes .actif { background: var(--profond); border-color: var(--profond); color: #fff; }
@@ -162,7 +160,7 @@ import { PhotoEleveComponent } from '../../core/photo-eleve.component';
     .legende { margin-top: var(--pas-2); font-size: .8125rem; line-height: 1.8; }
     @media print {
       .defilement { overflow: visible; border: 0; }
-      .retour, .groupes, .alerte { display: none; }
+      .groupes, .alerte { display: none; }
       .formation { break-inside: avoid; }
     }
   `],

@@ -6,6 +6,7 @@ import { FileEcrituresService } from './core/file-ecritures.service';
 import { MiseAJourService } from './core/mise-a-jour.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 import { DialogueComponent } from './core/dialogue.component';
+import { BarrePageComponent } from './core/barre-page.component';
 
 /**
  * Tag déployé, fixé à la compilation (`ng build --define`, voir le
@@ -34,7 +35,7 @@ const ICONES = {
 
 @Component({
   selector: 'app-racine',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, DialogueComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, DialogueComponent, BarrePageComponent],
   host: { '(document:keydown.escape)': 'fermerMenu()' },
   template: `
     @if (pret()) {
@@ -135,7 +136,7 @@ const ICONES = {
 
       <app-bandeau-sync />
 
-      <main [class.avec-onglets]="auth.connecte()"><router-outlet /></main>
+      <main [class.avec-onglets]="auth.connecte()"><app-barre-page /><router-outlet /></main>
       <footer class="version" [class.avec-onglets]="auth.connecte()">Version {{ version }}</footer>
 
       <app-dialogue [ouvert]="confirmationDeconnexion()" titre="Se déconnecter ?"

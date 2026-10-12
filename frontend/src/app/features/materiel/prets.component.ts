@@ -31,7 +31,6 @@ interface LigneRetour { incident: string; horsService: boolean; }
   selector: 'app-prets',
   imports: [FormsModule, RouterLink, DateFrPipe, ComboboxComponent, PhotosPretComponent, DialogueComponent],
   template: `
-    <a routerLink="/materiel" class="retour">← Matériel</a>
     <div class="entete">
       <h1>Prêts de matériel</h1>
       <button type="button" class="bouton-principal" (click)="ouvrirFormulaire()">Nouveau prêt</button>
@@ -251,7 +250,6 @@ interface LigneRetour { incident: string; horsService: boolean; }
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .ancien { font-weight: 400; color: var(--craie); }
-    .retour { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--pas); }
     .entete { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap;
               margin-bottom: var(--pas-2); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }

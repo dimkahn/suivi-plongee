@@ -9,6 +9,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
@@ -106,10 +107,6 @@ interface FormulaireEntete {
   selector: 'app-fiche-securite',
   imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, PlurielPipe, ComboboxComponent, DialogueComponent],
   template: `
-    <!-- La liste rouvre sur la date de la séance, pas sur toutes les dates. -->
-    <a routerLink="/fiches-securite" [queryParams]="{ date: seance()?.date ?? null }"
-       class="bouton-discret">← Fiches de sécurité</a>
-
     <datalist id="plongeurs-club">
       @for (c of plongeursConnus(); track libellePlongeurConnu(c)) {
         <option [value]="libellePlongeurConnu(c)"></option>
@@ -641,6 +638,7 @@ export class FicheSecuriteComponent {
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
+  private navigation = inject(NavigationService);
 
   seanceId = Number(this.route.snapshot.paramMap.get('id'));
 
@@ -740,6 +738,10 @@ export class FicheSecuriteComponent {
   tousLesIds = computed(() => ['pool', ...this.idsPalanquees()]);
 
   constructor() {
+    // La liste rouvre sur la date de la séance, pas sur toutes les dates.
+    this.navigation.preciserRetour(computed(() => ({
+      libelle: 'Fiches de sécurité', lien: '/fiches-securite', parametres: { date: this.seance()?.date ?? null }
+    })));
     void this.charger();
   }
 

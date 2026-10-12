@@ -26,7 +26,6 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
   selector: 'app-synthese-seance',
   imports: [RouterLink, NgTemplateOutlet, PastillePhaseComponent, PhotoEleveComponent, PlurielPipe],
   template: `
-    <a routerLink="/presences" [queryParams]="lienRetour()" class="retour">← Présences</a>
     <h1>Synthèse des notes</h1>
 
     @if (!reseau.enLigne()) {
@@ -193,7 +192,6 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
     </ng-template>
   `,
   styles: [`
-    .retour { display: inline-flex; align-items: center; min-height: 44px; }
     h1 { margin-bottom: var(--pas); }
     .niveaux, .vues { display: flex; flex-wrap: wrap; gap: var(--pas); margin: var(--pas-2) 0; }
     .niveaux .actif, .vues .actif { background: var(--profond); border-color: var(--profond); color: #fff; }
@@ -235,7 +233,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
     .legende { font-size: .8125rem; }
     @media print {
       .defilement { overflow: visible; border: 0; }
-      .retour, .niveaux, .vues, .alerte { display: none; }
+      .niveaux, .vues, .alerte { display: none; }
       .carte { break-inside: avoid; }
     }
   `],
@@ -259,7 +257,6 @@ export class SyntheseSeanceComponent {
   readonly dateFr = dateFr;
   readonly libellePreparation = libellePreparation;
 
-  lienRetour = computed(() => ({ seance: this.id(), groupe: this.groupe() ?? null }));
   lienGrille = computed(() => ({ seance: this.id(), depuis: 'presences', groupe: this.groupe() ?? null }));
 
   constructor() {
