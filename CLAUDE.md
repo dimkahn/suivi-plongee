@@ -450,7 +450,11 @@ remplace d'un bloc (`PUT …/programme?groupeId=`, sans paramètre : le
 commun), sans historique, et disparaît avec la séance ou le groupe. La fiche
 de suivi reçoit avec la grille (`GrilleVue.programmes`, donc embarquée hors
 ligne) le programme commun et celui du groupe de l'élève, et marque les
-critères travaillés à la séance choisie ; la notation groupée propose de
+critères travaillés à la séance choisie, et les fait noter sous chaque
+exercice du programme (choix du club, 2026 : on y note **l'exercice**,
+« non abordé / en cours d'acquisition / acquis », dont l'état est la
+dernière note de cet exercice, `CritereVue.etatsExercices` ; jamais l'état
+du critère ni de la compétence, ouvert même une compétence validée) ; la notation groupée propose de
 cocher d'un coup les critères des exercices (du groupe filtré et du commun),
 chacun gardant son commentaire obligatoire.
 

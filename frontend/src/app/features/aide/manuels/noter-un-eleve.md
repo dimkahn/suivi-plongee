@@ -3,7 +3,7 @@ titre: Noter un élève pendant la séance
 rubrique: Moniteur
 videos: M4, M19, M20
 ecran: /eleves
-mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme
+mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme, noter l'exercice, en cours d'acquisition
 questions:
 - Comment noter pour un encadrant qui ne l'a pas fait ?
 - Je suis référent : comment noter au nom d'un autre moniteur ?
@@ -33,9 +33,11 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 
 ## Noter directement sous les exercices de la séance
 
-Si le programme de la séance a été préparé, la carte « Exercices de la séance » (en haut de la grille) donne, **sous chaque exercice, les critères qu'il fait évaluer**, avec le nom de leur compétence. On y note exactement comme dans la compétence : les trois états, « Commenter » et « Voir l'historique ». La note et le commentaire portent alors **sur cet exercice**, sans avoir à le choisir. C'est le plus simple pendant la séance : on suit le programme, exercice après exercice.
+Si le programme de la séance a été préparé, la carte « Exercices de la séance » (en haut de la grille) donne, **sous chaque exercice, les critères qu'il fait évaluer**, avec le nom de leur compétence. C'est le plus simple pendant la séance : on suit le programme, exercice après exercice.
 
-Les mêmes critères restent dans leur compétence, plus bas : une note prise à un endroit s'affiche aussitôt à l'autre. Un exercice libre sans phase ne sert pas à noter : sous lui, « 1. Exercice » reste à choisir comme d'habitude.
+Ici, **on note l'exercice, rien d'autre** : « Non abordé », « En cours d'acquisition » ou « Acquis ». Les boutons montrent où en est l'élève **dans cet exercice** (sa dernière note sur cet exercice, avec qui l'a noté et quand), jamais l'état du critère ni de la compétence, et ils restent ouverts même si la compétence est déjà validée. « Commenter » et « Voir l'historique » sont là aussi ; le commentaire porte sur l'exercice.
+
+Le critère, lui, suit la règle habituelle : seul un exercice de maîtrise acquis le rend acquis. Son état se lit plus bas, dans sa compétence, où les mêmes critères restent notables comme avant. Un exercice libre sans phase ne sert pas à noter : sous lui, « 1. Exercice » reste à choisir comme d'habitude.
 
 ## L'exercice réalisé : initiation, perfectionnement, maîtrise
 

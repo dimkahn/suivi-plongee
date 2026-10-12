@@ -37,7 +37,7 @@ Un exercice libre **avec une phase et des critères cochés** sert aussi à note
 
 ## Bon à savoir
 
-- Dans la grille des élèves, chaque exercice de la séance montre **ses critères à évaluer juste dessous** : on les note, les commente et consulte leur historique sur place, la note portant sur cet exercice. Dans les compétences aussi, l'exercice de la séance est **déjà choisi** pour noter ses critères.
+- Dans la grille des élèves, chaque exercice de la séance montre **ses critères à évaluer juste dessous** : on y note l'exercice (non abordé, en cours d'acquisition, acquis), on le commente et on consulte l'historique sur place. Dans les compétences aussi, l'exercice de la séance est **déjà choisi** pour noter ses critères.
 - Préparer un programme **ne note aucun élève**.
 - Le programme d'un groupe est préparé par ses encadrants attitrés (ou un administrateur) ; les autres encadrants le consultent. Un encadrant que le planning du bassin met dans ce groupe le jour de la séance le prépare aussi.
 - Le **programme commun** sert à toute la séance (échauffement, sortie sans groupes) : tout encadrant peut le préparer.

@@ -81,6 +81,24 @@ export interface CritereVue {
   exercice?: ExerciceNoteVue | null;
   /** État de cet exercice ; `statut` est celui du critère qui en découle. */
   statutExercice?: Statut | null;
+  /**
+   * Dernière note de chaque exercice sur ce critère, entraînement à part :
+   * la notation sous un exercice de la séance montre l'état de l'exercice.
+   * Absent d'une grille mise en cache avant son arrivée.
+   */
+  etatsExercices?: EtatExerciceVue[];
+}
+
+export interface EtatExerciceVue {
+  /** Exercice de la base ; null pour un exercice libre (alors `exerciceLibre`, son intitulé). */
+  exerciceId: number | null;
+  exerciceLibre: string | null;
+  entrainement: boolean;
+  /** État saisi pour l'exercice. */
+  statut: Statut;
+  parQui: string;
+  le: string;
+  commentaire: string | null;
 }
 
 export interface SuiviEntrainementVue {

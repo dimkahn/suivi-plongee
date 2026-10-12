@@ -284,6 +284,17 @@ class BaseExercicesTest {
             JsonNode apres = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200);
             JsonNode critereApres = apres.get("blocs").get(0).get("criteres").get(0);
             assertThat(critereApres.get("statut").asText()).isEqualTo("ACQUIS");
+            // État de chaque exercice (sa dernière note), pour noter sous les exercices de la séance :
+            // 1.1 noté non abordé puis en cours ; la note sans exercice n'y figure pas.
+            Map<Long, String> parExercice = new HashMap<>();
+            for (JsonNode x : critereApres.get("etatsExercices")) {
+                assertThat(x.get("entrainement").asBoolean()).isFalse();
+                parExercice.put(x.get("exerciceId").asLong(), x.get("statut").asText());
+            }
+            assertThat(parExercice).containsOnly(
+                    Map.entry(parNumero.get("1.1"), "EN_COURS"),
+                    Map.entry(parNumero.get("1.6"), "ACQUIS"),
+                    Map.entry(parNumero.get("1.7"), "ACQUIS"));
         } finally {
             mvc.perform(post("/api/eleves/" + eleveId + "/archivage").header("Authorization", admin));
             mvc.perform(delete("/api/eleves/" + eleveId).header("Authorization", admin));
