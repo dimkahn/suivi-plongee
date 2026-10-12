@@ -1,5 +1,5 @@
 // M22 — La synthèse des compétences d'un groupe d'entraînement, puis d'un élève.
-// Tournage du 2026-10-12, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 4e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Groupe Débutants (V107) : élèves N1 notés en septembre.
 export default {
   id: 'M22',
@@ -38,6 +38,9 @@ export default {
     await legende('Pour un seul élève, « Synthèse A / ECA / NT », sous son nom.', 0);
     await toucher(page.getByRole('link', { name: 'Synthèse A / ECA / NT' }), { apres: 1800 });
     await legende('En haut, combien de compétences sont acquises, en cours, non travaillées.', 3500);
+    await legende('Dessous, un cercle par compétence : le pourcentage de ses critères déjà acquis.', 0);
+    await page.locator('.camemberts').scrollIntoViewIfNeeded();
+    await pause(4000);
     await legende('Puis la liste de chacune ; pour celles en cours, l\'état de chaque critère.', 0);
     await defiler(600, 2000);
     await defiler(600, 2000);

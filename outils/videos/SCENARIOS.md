@@ -376,8 +376,9 @@ Compte : `e2@club.fr` · format téléphone
 8. Touchez une case ou un nom : la grille de l'élève s'ouvre, pour le noter ou valider la compétence.
 9. Pour un seul élève, « Synthèse A / ECA / NT », sous son nom.
 10. En haut, combien de compétences sont acquises, en cours, non travaillées.
-11. Puis la liste de chacune ; pour celles en cours, l'état de chaque critère.
-12. « Imprimer » en fait un bilan papier pour l'élève.
+11. Dessous, un cercle par compétence : le pourcentage de ses critères déjà acquis.
+12. Puis la liste de chacune ; pour celles en cours, l'état de chaque critère.
+13. « Imprimer » en fait un bilan papier pour l'élève.
 
 ### M23 — La page « Aujourd'hui »
 
