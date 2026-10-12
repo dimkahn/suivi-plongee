@@ -391,6 +391,30 @@ Suites possibles : masques et tubas
 (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de
 la fiche de gestion.
 
+**Séjour d'une sortie (2026, V75).** Paquet `fr.club.plongee.sejour`,
+écrans `/sejours` et `/sejours/:id` (bouton « Gérer le séjour » de
+`/admin/sorties`). Tout dépend de la `Sortie` et disparaît avec elle :
+participants (`sejour_participant`, instantané éditable comme un membre de
+groupe de plongeurs, pré-rempli du dossier élève ou du compte ; arrivée et
+départ avec moyen, numéro de vol ou de train, lieu ; régimes alimentaires
+en cases `RegimeAlimentaire` + une précision pour la cuisine ; personne à
+prévenir), voitures (places conducteur compris, conducteur, passagers),
+logements → chambres → occupants (une chambre par participant, contrainte
+en base), affaires à prévoir (`CategorieAffaire`, liste remplacée d'un
+bloc, liste type côté écran), programme (`sejour_evenement`, les plongées
+de la sortie s'y ajoutent à l'affichage) et infos pratiques. Tables en SQL
+(`SejourService`, `NamedParameterJdbcTemplate`, pas d'entité ni d'Envers).
+Géré par ADMIN/DT, lu en entier par les encadrants ; un participant qui a
+un compte (son dossier élève ou son compte) lit le **carnet** : sans
+téléphone, e-mail, régime ni personne à prévenir des autres (filtré par le
+serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail ;
+« Imprimer le carnet » côté écran. Avertissements jamais bloquants
+(voiture ou chambre trop pleine, sans conducteur, sans chambre, dans deux
+voitures). **Pas de champ médical** (allergie, traitement) : demandé par
+le club en 2026, écarté par la règle « Données personnelles » ci-dessous
+tant qu'elle n'est pas révisée. Réseau obligatoire. Démo : V117 (Port-Cros,
+juin 2027, Camille y participe).
+
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
 donne l'historique de progression et la traçabilité de qui a noté quoi. Ne pas

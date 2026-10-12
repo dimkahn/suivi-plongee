@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -21,7 +22,7 @@ function sortieVide(): DemandeSortie {
  */
 @Component({
   selector: 'app-sorties',
-  imports: [FormsModule, DateFrPipe, DialogueComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -104,6 +105,10 @@ function sortieVide(): DemandeSortie {
 
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="ouvrirChoix(s)">Choisir les plongées</button>
+                  <a class="bouton-discret" [routerLink]="['/sejours', s.id]"
+                     title="Participants, arrivées et départs, voitures, chambres, repas, affaires, programme">
+                    Gérer le séjour
+                  </a>
                   @if (s.nombrePlongees > 0) {
                     <button type="button" class="bouton-discret" (click)="imprimerFiches(s)"
                             [disabled]="impression() === s.id">
@@ -357,7 +362,8 @@ export class SortiesComponent {
   }
 
   supprimer(s: SortieVue): void {
-    if (!confirm(`Supprimer la sortie « ${s.nom} » ? Ses plongées restent dans les séances.`)) return;
+    if (!confirm(`Supprimer la sortie « ${s.nom} » ? Ses plongées restent dans les séances ; son séjour `
+      + `(participants, voitures, chambres, programme) est supprimé avec elle.`)) return;
     this.api.supprimerSortie(s.id).subscribe({
       next: () => this.liste.set(this.liste().filter(x => x.id !== s.id)),
       error: (e: HttpErrorResponse) => this.message.set(e.error?.detail ?? "La sortie n'a pas pu être supprimée.")

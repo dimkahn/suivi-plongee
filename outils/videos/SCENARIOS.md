@@ -635,10 +635,19 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 1. Ses plongées : deux par jour, sur le site prévu.
 2. Elles sont créées et rattachées à la sortie, en un geste.
 3. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
+4. « Gérer le séjour » : vols, voitures, chambres, repas et programme. Voir la vidéo A17.
 
 ### A16 — La base d'exercices
 
 Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos.
+
+Compte : `presidente@club.fr` · format ordinateur
+
+_Pas encore tournée : le texte viendra au premier enregistrement._
+
+### A17 — Organiser un séjour
+
+Les vols de chacun, qui conduit quelle voiture, qui dort où, les régimes, les affaires à prévoir et le programme.
 
 Compte : `presidente@club.fr` · format ordinateur
 
@@ -789,3 +798,11 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 2. Sa grille N2 : ce qui est acquis, ce qui reste à travailler, ce qui est au programme.
 3. Les notes et commentaires des moniteurs, en lecture seule.
 4. « Plus d'actions », puis « Exporter en PDF » et « Télécharger le PDF », lui donne aussi sa fiche de suivi.
+
+### E2 — Le carnet du séjour
+
+Son vol, sa voiture, sa chambre, le programme et les affaires à prévoir, sur son téléphone.
+
+Compte : `eleve@club.fr` · format téléphone
+
+_Pas encore tournée : le texte viendra au premier enregistrement._

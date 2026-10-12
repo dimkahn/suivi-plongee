@@ -20,6 +20,7 @@ const NOMS_ECRANS: Record<string, string> = {
   '/trombinoscope': 'Trombinoscope',
   '/fiches-securite': 'Fiches de sécurité',
   '/groupes': 'Groupes',
+  '/sejours': 'Séjours',
   '/parcours': 'Parcours de formation',
   '/materiel': 'Matériel',
   '/admin': 'Administration',
@@ -106,6 +107,8 @@ export class NavigationService {
           ? { libelle: 'Fiche de sécurité', lien: `/fiches-securite/${s[1]}` }
           : { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
         return null;
+      case 'sejours':
+        return s.length === 2 ? { libelle: 'Séjours', lien: '/sejours' } : null;
       case 'groupes-entrainement':
         return { libelle: 'Infos élèves', lien: '/eleves', parametres: { groupe: q['groupe'] ?? null } };
 

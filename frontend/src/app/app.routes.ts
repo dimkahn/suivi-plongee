@@ -122,6 +122,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/groupes/groupes.component')
       .then(m => m.GroupesComponent)
   },
+  // Ouverts à tout compte : un élève y lit le carnet des séjours où il est inscrit (contrôlé par le serveur).
+  {
+    path: 'sejours',
+    canActivate: [gardeConnecte],
+    loadComponent: () => import('./features/sejours/sejours-liste.component')
+      .then(m => m.SejoursListeComponent)
+  },
+  {
+    path: 'sejours/:id',
+    canActivate: [gardeConnecte],
+    loadComponent: () => import('./features/sejours/sejour.component')
+      .then(m => m.SejourComponent)
+  },
   {
     path: 'groupes-entrainement/synthese',
     canActivate: [gardeConnecte, gardeEncadrant],

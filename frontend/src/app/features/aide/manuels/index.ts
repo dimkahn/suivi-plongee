@@ -39,6 +39,7 @@ import progressionType from './progression-type.md';
 import referentielMft from './referentiel-mft.md';
 import baseDExercices from './base-d-exercices.md';
 import organiserUneSortie from './organiser-une-sortie.md';
+import organiserUnSejour from './organiser-un-sejour.md';
 import identiteDeLaStructure from './identite-de-la-structure.md';
 
 import inventaireMateriel from './inventaire-materiel.md';
@@ -54,6 +55,7 @@ import etiquettesQrCode from './etiquettes-qr-code.md';
 import classeurExcelMateriel from './classeur-excel-materiel.md';
 
 import suivreSaProgression from './suivre-sa-progression.md';
+import carnetDuSejour from './carnet-du-sejour.md';
 
 /**
  * Tous les manuels, dans l'ordre d'affichage de chaque rubrique. Un nouveau
@@ -99,6 +101,7 @@ const SOURCES: Record<string, string> = {
   'referentiel-mft': referentielMft,
   'base-d-exercices': baseDExercices,
   'organiser-une-sortie': organiserUneSortie,
+  'organiser-un-sejour': organiserUnSejour,
   'identite-de-la-structure': identiteDeLaStructure,
 
   'inventaire-materiel': inventaireMateriel,
@@ -113,7 +116,8 @@ const SOURCES: Record<string, string> = {
   'etiquettes-qr-code': etiquettesQrCode,
   'classeur-excel-materiel': classeurExcelMateriel,
 
-  'suivre-sa-progression': suivreSaProgression
+  'suivre-sa-progression': suivreSaProgression,
+  'carnet-du-sejour': carnetDuSejour
 };
 
 export const MANUELS: Manuel[] = Object.entries(SOURCES).map(([id, source]) => lireManuel(id, source));

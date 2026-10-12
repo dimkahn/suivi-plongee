@@ -77,6 +77,12 @@ const ICONES = {
                 Parcours
               </a>
             }
+            @if (!auth.estSecuriteSurface() || auth.estMoniteur() || auth.estAdmin()) {
+              <a routerLink="/sejours" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()"
+                 title="Arrivées et départs, voitures, chambres, repas, affaires à prévoir et programme des séjours">
+                Séjours
+              </a>
+            }
             @if (auth.estSecuriteSurface() && !auth.estMoniteur() && !auth.estAdmin()) {
               <a routerLink="/fiches-securite" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Fiches de sécurité

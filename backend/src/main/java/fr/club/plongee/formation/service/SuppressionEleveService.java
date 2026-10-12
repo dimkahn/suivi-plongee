@@ -69,6 +69,9 @@ public class SuppressionEleveService {
         executer("DELETE FROM photo_eleve WHERE eleve_id = :id", eleveId);
         executer("UPDATE membre_palanquee SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
         executer("UPDATE membre_groupe_plongeurs SET eleve_id = NULL, email = NULL WHERE eleve_id = :id", eleveId);
+        // Le séjour garde le nom (chambres, voitures), pas les coordonnées.
+        executer("UPDATE sejour_participant SET eleve_id = NULL, email = NULL, telephone = NULL, "
+                + "urgence_nom = NULL, urgence_telephone = NULL WHERE eleve_id = :id", eleveId);
         executer("UPDATE pret SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
         executer("UPDATE pret_aud SET eleve_id = NULL WHERE eleve_id = :id", eleveId);
 
