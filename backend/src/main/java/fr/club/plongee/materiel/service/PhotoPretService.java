@@ -110,8 +110,9 @@ public class PhotoPretService {
     /**
      * Le type annoncé par le navigateur ne suffit pas : on vérifie aussi la
      * signature du fichier, puisqu'on le resservira tel quel comme image.
+     * Repris pour les photos des notes de frais d'un séjour.
      */
-    private static void verifierImage(byte[] contenu, String type) {
+    public static void verifierImage(byte[] contenu, String type) {
         if (contenu == null || contenu.length == 0) throw new RegleMetierException("Le fichier est vide.");
         if (contenu.length > TAILLE_MAX_PHOTO_OCTETS) {
             throw new RegleMetierException("La photo dépasse la taille maximale de 5 Mo.");

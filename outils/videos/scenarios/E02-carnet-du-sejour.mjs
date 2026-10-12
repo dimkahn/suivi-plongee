@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -23,6 +23,7 @@ export default {
     await toucher(page.getByRole('tab', { name: 'Affaires' }), { apres: 3500 });
     await legende('« Frais » : les dépenses du séjour, et ce qu\'elle doit, à qui.', 0);
     await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3500 });
+    await legende('Elle a payé quelque chose ? Elle donne la note à un moniteur du séjour, qui la saisit pour elle.', 4000);
     await legende('« Imprimer le carnet » : tout sur une page, à garder sans réseau.', 4000);
     await legende(null, 0);
     await pause(500);

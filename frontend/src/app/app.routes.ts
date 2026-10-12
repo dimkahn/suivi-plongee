@@ -273,6 +273,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/roster/trombinoscope.component')
       .then(m => m.TrombinoscopeComponent)
   },
+  // Page publique : les frais d'un séjour pour un participant sans compte (lien + code par e-mail).
+  {
+    path: 'frais/:code',
+    loadComponent: () => import('./features/sejours/frais-invite.component')
+      .then(m => m.FraisInviteComponent)
+  },
   // Page publique : les vidéos d'aide se regardent sans compte.
   {
     path: 'videos',

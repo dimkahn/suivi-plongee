@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : vols, voitures, chambres, repas, affaires, programme.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -55,6 +55,8 @@ export default {
     const remboursement = page.locator('.remboursement').filter({ hasText: 'Mateo' }).first();
     await toucher(remboursement.getByRole('button', { name: 'C\'est remboursé' }), { apres: 1000 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
+    await legende('Chaque dépense garde la photo de sa note. Les participants notent aussi leurs propres frais.', 4000);
+    await legende('Sans compte ? « Envoyer le lien des frais » : un lien, puis un code reçu par e-mail.', 4500);
     await enHaut();
     await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);

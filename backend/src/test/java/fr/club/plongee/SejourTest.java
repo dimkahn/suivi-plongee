@@ -162,11 +162,11 @@ class SejourTest {
         s = envoyer("POST", base + "/depenses", dt, """
                 {"libelle":"Gîte","categorie":"HEBERGEMENT","montantCentimes":9000,"payeurId":%d,
                  "parts":[{"participantId":%d,"parts":1},{"participantId":%d,"parts":1}]}"""
-                .formatted(ines, ines, camille), 200);
+                .formatted(ines, ines, camille), 200).get("sejour");
         s = envoyer("POST", base + "/depenses", dt, """
                 {"libelle":"Courses","categorie":"REPAS","montantCentimes":3000,"payeurId":%d,
                  "parts":[{"participantId":%d,"parts":1},{"participantId":%d,"parts":1},{"participantId":%d,"parts":1}]}"""
-                .formatted(camille, ines, camille, leo), 200);
+                .formatted(camille, ines, camille, leo), 200).get("sejour");
         JsonNode comptes = s.get("frais").get("comptes");
         assertThat(comptes.get("totalCentimes").asLong()).isEqualTo(12000);
         // Inès : payé 90, doit 55 → +35. Camille : payé 30, doit 55 → -25. Léo : doit 10.

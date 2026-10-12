@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 import { SortieVue } from '../../core/modeles';
 
 // ----------------------------------------------------------------
@@ -152,9 +152,13 @@ export interface DepenseVue {
   jour: string | null;
   /** Qui partage la dépense, et avec combien de parts (2 pour un couple…). */
   parts: { participantId: number; parts: number }[];
+  /** Les photos de la note (ids). */
+  photos: number[];
+  saisieParUtilisateurId: number | null;
+  saisieParParticipantId: number | null;
 }
 
-export type DemandeDepense = Omit<DepenseVue, 'id'>;
+export type DemandeDepense = Pick<DepenseVue, 'libelle' | 'categorie' | 'montantCentimes' | 'payeurId' | 'jour' | 'parts'>;
 
 export interface VersementVue {
   id: number;
@@ -165,6 +169,17 @@ export interface VersementVue {
 }
 
 export type DemandeVersement = Omit<VersementVue, 'id'>;
+
+/** Ce que le compte (ou l'invité) peut faire ; le serveur revérifie tout. */
+export interface DroitsFrais {
+  /** Sa ligne parmi les participants, s'il en est. */
+  moiId: number | null;
+  peutAjouter: boolean;
+  /** Saisir pour un autre payeur, noter tout remboursement : organisateur et moniteurs du séjour. */
+  pourLesAutres: boolean;
+  depensesModifiables: number[];
+  versementsSupprimables: number[];
+}
 
 /** Solde positif : on lui doit de l'argent ; négatif : il en doit. */
 export interface SoldeVue {
@@ -183,6 +198,36 @@ export interface FraisVue {
     /** Les virements qui soldent les comptes, calculés par le serveur. */
     remboursements: { deId: number; aId: number; montantCentimes: number }[];
   };
+  droits: DroitsFrais;
+}
+
+/** Un participant, tel que l'onglet des frais en a besoin. */
+export interface ParticipantFrais {
+  id: number;
+  prenom: string;
+  nom: string;
+  plongeur?: boolean;
+}
+
+/**
+ * Les écritures des frais, pour l'onglet du séjour (compte connecté) comme
+ * pour la page des invités sans compte (lien et code) : chaque appel
+ * renvoie les frais à jour.
+ */
+export interface PortFrais {
+  enregistrerDepense(depenseId: number | null, d: DemandeDepense): Observable<{ depenseId: number; frais: FraisVue }>;
+  supprimerDepense(depenseId: number): Observable<FraisVue>;
+  ajouterPhoto(depenseId: number, fichier: File): Observable<FraisVue>;
+  supprimerPhoto(depenseId: number, photoId: number): Observable<FraisVue>;
+  lirePhoto(depenseId: number, photoId: number): Observable<Blob>;
+  ajouterVersement(d: DemandeVersement): Observable<FraisVue>;
+  supprimerVersement(versementId: number): Observable<FraisVue>;
+}
+
+export interface BilanEnvoiAcces {
+  envoyes: string[];
+  sansEmail: string[];
+  echecs: string[];
 }
 
 /** « 1 234,50 € ». */
@@ -325,27 +370,42 @@ export class SejourApi {
     return this.http.delete<SejourVue>(`/api/sejours/${id}/evenements/${evenementId}`);
   }
 
-  enregistrerDepense(id: number, depenseId: number | null, d: DemandeDepense): Observable<SejourVue> {
-    return depenseId === null
-      ? this.http.post<SejourVue>(`/api/sejours/${id}/depenses`, d)
-      : this.http.put<SejourVue>(`/api/sejours/${id}/depenses/${depenseId}`, d);
+  /** Les frais du séjour pour un compte connecté ; {@code maj} reçoit le séjour à jour après chaque écriture. */
+  portFrais(id: number, maj: (s: SejourVue) => void): PortFrais {
+    const base = `/api/sejours/${id}`;
+    const suivre = (o: Observable<SejourVue>) => o.pipe(tap(maj), map(s => s.frais));
+    return {
+      enregistrerDepense: (depenseId, d) => depenseId === null
+        ? this.http.post<{ depenseId: number; sejour: SejourVue }>(`${base}/depenses`, d).pipe(
+          tap(r => maj(r.sejour)), map(r => ({ depenseId: r.depenseId, frais: r.sejour.frais })))
+        : suivre(this.http.put<SejourVue>(`${base}/depenses/${depenseId}`, d)).pipe(map(frais => ({ depenseId, frais }))),
+      supprimerDepense: depenseId => suivre(this.http.delete<SejourVue>(`${base}/depenses/${depenseId}`)),
+      ajouterPhoto: (depenseId, fichier) => suivre(
+        this.http.post<SejourVue>(`${base}/depenses/${depenseId}/photos`, formulairePhoto(fichier))),
+      supprimerPhoto: (depenseId, photoId) => suivre(
+        this.http.delete<SejourVue>(`${base}/depenses/${depenseId}/photos/${photoId}`)),
+      lirePhoto: (depenseId, photoId) => this.http.get(`${base}/depenses/${depenseId}/photos/${photoId}`,
+        { responseType: 'blob' }),
+      ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),
+      supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`))
+    };
   }
 
-  supprimerDepense(id: number, depenseId: number): Observable<SejourVue> {
-    return this.http.delete<SejourVue>(`/api/sejours/${id}/depenses/${depenseId}`);
-  }
-
-  ajouterVersement(id: number, d: DemandeVersement): Observable<SejourVue> {
-    return this.http.post<SejourVue>(`/api/sejours/${id}/versements`, d);
-  }
-
-  supprimerVersement(id: number, versementId: number): Observable<SejourVue> {
-    return this.http.delete<SejourVue>(`/api/sejours/${id}/versements/${versementId}`);
+  /** L'adresse des frais (lien + code par e-mail) aux participants sans compte ; participantId : à lui seul. */
+  envoyerAccesFrais(id: number, participantId: number | null): Observable<BilanEnvoiAcces> {
+    const params: Record<string, number> = participantId === null ? {} : { participantId };
+    return this.http.post<BilanEnvoiAcces>(`/api/sejours/${id}/acces-frais`, {}, { params });
   }
 
   envoyerCarnet(id: number): Observable<BilanEnvoiCarnet> {
     return this.http.post<BilanEnvoiCarnet>(`/api/sejours/${id}/envoi-carnet`, {});
   }
+}
+
+export function formulairePhoto(fichier: File): FormData {
+  const donnees = new FormData();
+  donnees.append('fichier', fichier);
+  return donnees;
 }
 
 const JOURS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];

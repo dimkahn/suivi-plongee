@@ -424,6 +424,27 @@ au centime inférieur, centimes restants aux premiers ids ; plus gros
 débiteur vers plus gros créancier). Saisis par ADMIN/DT, lus aussi par les
 participants (carnet compris, et dans l'e-mail du carnet). Un participant
 présent dans les frais ne se retire pas du séjour (422). Démo : V118.
+**Saisie par les participants, photos, accès sans compte (V77, choix du
+club 2026).** `FraisService` règle les droits selon qui agit
+(`ActeurFrais`, jamais le seul rôle) : ADMIN/DT tout ; **moniteur inscrit
+au séjour** toute dépense, quel qu'en soit le payeur (les élèves passent
+par lui) ; autre participant (invité, compte non élève) ce qu'il a payé
+lui-même ; **élève : lecture seule**. Chacun modifie ce qu'il a saisi
+(`saisie_par_utilisateur_id` / `saisie_par_participant_id`) ; un
+remboursement se note par celui qui le reçoit. `FraisVue.droits` dit à
+l'écran ce qui est permis (le serveur revérifie). Photos des notes :
+`sejour_depense_photo` (6 au plus, JPEG/PNG vérifiés par
+`PhotoPretService.verifierImage`, réduites par le téléphone), lues par
+tous les participants. **Participants sans compte** (ni compte ni dossier
+élève relié à un compte, avec e-mail) : page publique `/frais/{code}`
+(`FraisInviteComponent`, `AccesFraisController` sous `/api/public/frais/**`,
+ouvert dans SecurityConfig) ; `sejour.code_frais` secret, code à
+6 chiffres par e-mail (`AccesFraisService` : empreinte SHA-256 seulement,
+10 min, 5 essais, un envoi par minute, même réponse si l'e-mail est
+inconnu), puis jeton (empreinte en base, en-tête `X-Jeton-Frais`, gardé
+en IndexedDB) valable jusqu'à 60 jours après le séjour. Envoi du lien :
+`POST /api/sejours/{id}/acces-frais`. L'onglet et la page publique
+partagent `SejourFraisComponent` par un `PortFrais`.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela
