@@ -1,5 +1,5 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-12, 10e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 11e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter } from '../grille.mjs';
 
 export default {
@@ -29,13 +29,13 @@ export default {
     await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences|la compétence) au programme$/ }), { apres: 1200 });
     await legende('Si son groupe a préparé la séance, ses exercices s\'affichent aussi, chacun avec ses critères à noter juste dessous.', 4500);
 
-    await legende('Chaque critère a trois états : non abordé, en cours, acquis.', 0);
+    await legende('Trois états, en sigles sur les boutons : NA non abordé, ECA en cours d\'acquisition, A acquis. La légende est en haut de la fiche.', 0);
     await critere(page, 'Palmage dorsal').scrollIntoViewIfNeeded();
     await pause(2500);
     await legende('Tiago l\'avait noté « en cours » la semaine dernière. Aujourd\'hui, il réussit le parcours de surface.', 0);
     await noter(g, 'Palmage dorsal', 'Acquis', 'Parcours de surface en PMT');
     await legende('La note porte sur l\'exercice réalisé : « 1. Exercice », juste au-dessus des boutons. S\'il manque, l\'appli le demande au moment de noter.', 4500);
-    await legende('Une fois l\'exercice choisi, les boutons notent l\'exercice : non abordé, en cours d\'acquisition ou acquis.', 4000);
+    await legende('Une fois l\'exercice choisi, les boutons notent l\'exercice : NA, ECA ou A.', 4000);
     await legende('L\'état du critère s\'affiche à part, sous son nom, et celui de la compétence à côté de son titre.', 4000);
     await legende('Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».', 3500);
     await legende('Votre nom et la date s\'affichent sous le critère.', 3000);
