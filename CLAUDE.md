@@ -414,6 +414,16 @@ voitures). **Pas de champ médical** (allergie, traitement) : demandé par
 le club en 2026, écarté par la règle « Données personnelles » ci-dessous
 tant qu'elle n'est pas révisée. Réseau obligatoire. Démo : V117 (Port-Cros,
 juin 2027, Camille y participe).
+**Partage des frais** (V76, onglet « Frais », `SejourFraisComponent`) :
+dépenses avancées par un participant (`sejour_depense`, montants en
+**centimes**), réparties entre les participants cochés selon leurs parts
+(`sejour_depense_part`, 2 pour un couple), et remboursements faits
+(`sejour_versement`). Soldes et remboursements à faire sont **calculés,
+jamais stockés** (`FraisSejour`, calcul pur testé à part : prorata arrondi
+au centime inférieur, centimes restants aux premiers ids ; plus gros
+débiteur vers plus gros créancier). Saisis par ADMIN/DT, lus aussi par les
+participants (carnet compris, et dans l'e-mail du carnet). Un participant
+présent dans les frais ne se retire pas du séjour (422). Démo : V118.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela

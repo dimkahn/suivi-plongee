@@ -6,7 +6,7 @@ export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'Son vol, sa voiture, sa chambre, le programme et les affaires à prévoir, sur son téléphone.',
+  resume: 'Son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, vignette }) {
@@ -21,6 +21,8 @@ export default {
     await defiler(600, 2000);
     await legende('« Affaires » : ce qu\'il faut emporter.', 0);
     await toucher(page.getByRole('tab', { name: 'Affaires' }), { apres: 3500 });
+    await legende('« Frais » : les dépenses du séjour, et ce qu\'elle doit, à qui.', 0);
+    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3500 });
     await legende('« Imprimer le carnet » : tout sur une page, à garder sans réseau.', 4000);
     await legende(null, 0);
     await pause(500);

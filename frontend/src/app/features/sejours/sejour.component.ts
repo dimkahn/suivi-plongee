@@ -11,10 +11,12 @@ import { periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeVoiture, EvenementVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire, SejourApi, SejourVue,
-  TRANSPORTS, Trajet, VoitureVue, heure, jourLong, nomComplet
+  TRANSPORTS, Trajet, VoitureVue, euros, heure, jourLong, nomComplet
 } from './sejour-api';
+import { SejourFraisComponent } from './sejour-frais.component';
 
-type Onglet = 'programme' | 'participants' | 'trajets' | 'voitures' | 'chambres' | 'repas' | 'affaires' | 'infos' | 'tout';
+type Onglet = 'programme' | 'participants' | 'trajets' | 'voitures' | 'chambres' | 'repas' | 'affaires' | 'frais'
+  | 'infos' | 'tout';
 
 /** Une ligne du programme d'un jour : rendez-vous saisi, ou plongée de la sortie. */
 interface LigneProgramme {
@@ -58,7 +60,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, DialogueComponent, ComboboxComponent],
+  imports: [FormsModule, DialogueComponent, ComboboxComponent, SejourFraisComponent],
   template: `
     @if (sejour(); as s) {
       <div class="entete">
@@ -98,6 +100,9 @@ function participantVide(): BrouillonParticipant {
           }
           @if (chambreDe(m.id); as c) {
             <p><strong>Chambre :</strong> « {{ c.chambre }} », {{ c.logement }}@if (c.avec.length) {, avec {{ c.avec.join(', ') }}}</p>
+          }
+          @for (r of mesRemboursements(m.id); track $index) {
+            <p><strong>Frais :</strong> {{ r }}</p>
           }
         </section>
       }
@@ -355,6 +360,13 @@ function participantVide(): BrouillonParticipant {
               }
             }
           </div>
+        </section>
+      }
+
+      <!-- Frais partagés -->
+      @if (voir('frais')) {
+        <section>
+          <app-sejour-frais [sejour]="s" (maj)="sejour.set($event)" />
         </section>
       }
 
@@ -681,6 +693,7 @@ export class SejourComponent {
       { code: 'chambres', libelle: 'Chambres' },
       { code: 'repas', libelle: 'Repas' },
       { code: 'affaires', libelle: 'Affaires' },
+      { code: 'frais', libelle: 'Frais' },
       { code: 'infos', libelle: 'Infos pratiques' },
       { code: 'tout', libelle: 'Tout' }
     ];
@@ -786,6 +799,15 @@ export class SejourComponent {
       }
     }
     return null;
+  }
+
+  /** « vous devez 25,00 € à Inès Roux », « Léo Durand vous doit 10,00 € ». */
+  mesRemboursements(id: number): string[] {
+    return (this.sejour()?.frais.comptes.remboursements ?? [])
+      .filter(r => r.deId === id || r.aId === id)
+      .map(r => r.deId === id
+        ? `vous devez ${euros(r.montantCentimes)} à ${this.nomDe(r.aId)}`
+        : `${this.nomDe(r.deId)} vous doit ${euros(r.montantCentimes)}`);
   }
 
   libellesRegimes(codes: RegimeAlimentaire[]): string {

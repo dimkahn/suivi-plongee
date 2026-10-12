@@ -158,6 +158,39 @@ class SejourTest {
         JsonNode bilan = envoyer("POST", base + "/envoi-carnet", dt, null, 200);
         assertThat(bilan.get("sansEmail").toString()).contains("Léo Durand");
 
+        // Partage des frais : Inès avance le gîte (90 €) pour elle et Camille, Camille les courses (30 €) pour trois.
+        s = envoyer("POST", base + "/depenses", dt, """
+                {"libelle":"Gîte","categorie":"HEBERGEMENT","montantCentimes":9000,"payeurId":%d,
+                 "parts":[{"participantId":%d,"parts":1},{"participantId":%d,"parts":1}]}"""
+                .formatted(ines, ines, camille), 200);
+        s = envoyer("POST", base + "/depenses", dt, """
+                {"libelle":"Courses","categorie":"REPAS","montantCentimes":3000,"payeurId":%d,
+                 "parts":[{"participantId":%d,"parts":1},{"participantId":%d,"parts":1},{"participantId":%d,"parts":1}]}"""
+                .formatted(camille, ines, camille, leo), 200);
+        JsonNode comptes = s.get("frais").get("comptes");
+        assertThat(comptes.get("totalCentimes").asLong()).isEqualTo(12000);
+        // Inès : payé 90, doit 55 → +35. Camille : payé 30, doit 55 → -25. Léo : doit 10.
+        JsonNode remboursements = comptes.get("remboursements");
+        assertThat(remboursements.toString())
+                .contains("{\"deId\":%d,\"aId\":%d,\"montantCentimes\":2500}".formatted(camille, ines))
+                .contains("{\"deId\":%d,\"aId\":%d,\"montantCentimes\":1000}".formatted(leo, ines));
+        // Sans participant, une dépense est refusée.
+        envoyer("POST", base + "/depenses", dt, """
+                {"libelle":"Rien","categorie":"AUTRE","montantCentimes":100,"payeurId":%d,"parts":[]}"""
+                .formatted(ines), 422);
+        // Léo rembourse Inès : il ne figure plus dans les remboursements à faire.
+        s = envoyer("POST", base + "/versements", dt, """
+                {"deId":%d,"aId":%d,"montantCentimes":1000}""".formatted(leo, ines), 200);
+        assertThat(s.get("frais").get("comptes").get("remboursements")).hasSize(1);
+        // Le carnet de Camille montre aussi les comptes.
+        assertThat(envoyer("GET", base, eleve, null, 200).get("frais").get("depenses")).hasSize(2);
+        // Léo figure dans les frais : il ne se retire pas tant qu'on ne l'en a pas sorti.
+        envoyer("DELETE", base + "/participants/" + leo, dt, null, 422);
+        long courses = s.get("frais").get("depenses").get(1).get("id").asLong();
+        envoyer("DELETE", base + "/depenses/" + courses, dt, null, 200);
+        long versement = s.get("frais").get("versements").get(0).get("id").asLong();
+        envoyer("DELETE", base + "/versements/" + versement, dt, null, 200);
+
         // Retirer Léo : il quitte sa voiture, qui n'a plus de conducteur.
         s = envoyer("DELETE", base + "/participants/" + leo, dt, null, 200);
         assertThat(s.get("voitures").get(0).get("conducteurId").isNull()).isTrue();

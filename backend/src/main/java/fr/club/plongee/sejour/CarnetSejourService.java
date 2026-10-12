@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
 /**
  * Le carnet du séjour envoyé par e-mail à chaque participant : son voyage
  * (arrivée, départ, voiture, chambre), le programme jour par jour, les
- * affaires à prévoir et les infos pratiques. Pour ceux qui n'ont pas de
+ * affaires à prévoir, ses frais (ce qu'il a payé, sa part, qui rembourser)
+ * et les infos pratiques. Pour ceux qui n'ont pas de
  * compte, ou pour l'avoir hors connexion sur place. Rien n'est mémorisé
  * de l'envoi : le refaire renvoie le carnet à jour.
  * <p>
@@ -134,6 +135,26 @@ public class CarnetSejourService {
                 liste.forEach(a -> t.append("    - ").append(a.libelle()).append(a.indispensable() ? " *" : "").append("\n"));
             }
         }
+
+        FraisSejour.Comptes comptes = s.frais().comptes();
+        comptes.soldes().stream().filter(x -> x.participantId().equals(moi.id())).findFirst()
+                .filter(x -> x.payeCentimes() != 0 || x.duCentimes() != 0)
+                .ifPresent(solde -> {
+                    t.append("\nVOS FRAIS\n")
+                            .append("  Vous avez payé ").append(FraisSejour.euros(solde.payeCentimes()))
+                            .append(" ; votre part des dépenses : ").append(FraisSejour.euros(solde.duCentimes()))
+                            .append(".\n");
+                    for (FraisSejour.Remboursement r : comptes.remboursements()) {
+                        if (r.deId().equals(moi.id())) {
+                            t.append("  À rembourser à ").append(nom.apply(r.aId())).append(" : ")
+                                    .append(FraisSejour.euros(r.montantCentimes())).append("\n");
+                        } else if (r.aId().equals(moi.id())) {
+                            t.append("  ").append(nom.apply(r.deId())).append(" vous doit ")
+                                    .append(FraisSejour.euros(r.montantCentimes())).append("\n");
+                        }
+                    }
+                    if (solde.soldeCentimes() == 0) t.append("  Vos comptes sont soldés.\n");
+                });
 
         if (s.infosPratiques() != null) {
             t.append("\nINFOS PRATIQUES\n").append(s.infosPratiques()).append("\n");

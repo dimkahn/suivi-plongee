@@ -175,6 +175,47 @@ public class SejourController {
         return service.lire(id, moi);
     }
 
+    @PostMapping("/{id}/depenses")
+    @PreAuthorize(GERE)
+    public SejourVue creerDepense(@PathVariable Long id, @Valid @RequestBody DemandeDepense d,
+                                  @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.creerDepense(id, d);
+        return service.lire(id, moi);
+    }
+
+    @PutMapping("/{id}/depenses/{depenseId}")
+    @PreAuthorize(GERE)
+    public SejourVue modifierDepense(@PathVariable Long id, @PathVariable Long depenseId,
+                                     @Valid @RequestBody DemandeDepense d,
+                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.modifierDepense(id, depenseId, d);
+        return service.lire(id, moi);
+    }
+
+    @DeleteMapping("/{id}/depenses/{depenseId}")
+    @PreAuthorize(GERE)
+    public SejourVue supprimerDepense(@PathVariable Long id, @PathVariable Long depenseId,
+                                      @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.supprimerDepense(id, depenseId);
+        return service.lire(id, moi);
+    }
+
+    @PostMapping("/{id}/versements")
+    @PreAuthorize(GERE)
+    public SejourVue creerVersement(@PathVariable Long id, @Valid @RequestBody DemandeVersement d,
+                                    @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.creerVersement(id, d);
+        return service.lire(id, moi);
+    }
+
+    @DeleteMapping("/{id}/versements/{versementId}")
+    @PreAuthorize(GERE)
+    public SejourVue supprimerVersement(@PathVariable Long id, @PathVariable Long versementId,
+                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.supprimerVersement(id, versementId);
+        return service.lire(id, moi);
+    }
+
     /** Chaque participant reçoit son carnet : son voyage, sa voiture, sa chambre, le programme, les affaires. */
     @PostMapping("/{id}/envoi-carnet")
     @PreAuthorize(GERE)
