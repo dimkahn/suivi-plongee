@@ -46,7 +46,21 @@ public class GrilleService {
                              /** Exercice de la derniere note ; null sans exercice. */
                              ExerciceNoteVue exercice,
                              /** Etat de cet exercice (statut : celui du critere qui en decoule). */
-                             String statutExercice) {}
+                             String statutExercice,
+                             /**
+                              * Derniere note de chaque exercice sur ce critere (milieu naturel et
+                              * entrainement a part) : la notation sous un exercice de la seance
+                              * montre l'etat de l'exercice, pas celui du critere.
+                              */
+                             List<EtatExerciceVue> etatsExercices) {}
+
+    /**
+     * Derniere note d'un exercice pour un critere : {@code exerciceId} pour un exercice
+     * de la base, sinon {@code exerciceLibre} (intitule copie). {@code statut} : l'etat
+     * saisi pour l'exercice.
+     */
+    public record EtatExerciceVue(Long exerciceId, String exerciceLibre, boolean entrainement,
+                                  String statut, String parQui, LocalDate le, String commentaire) {}
 
     /** Suivi d'entrainement d'un critere (N2/N3) : ne compte pas pour l'acquisition. */
     public record SuiviEntrainementVue(String statut, String parQui, LocalDate le, String commentaire,
@@ -211,6 +225,7 @@ public class GrilleService {
 
         Map<Long, Evaluation> etat = evaluationService.etatCourant(cursusId);
         Map<Long, Evaluation> entrainement = evaluationService.etatEntrainement(cursusId);
+        Map<Long, List<EtatExerciceVue>> etatsExercices = etatsExercices(cursusId);
         Map<Long, ValidationCompetence> valide = validations.findByCursusId(cursusId).stream()
                 .collect(Collectors.toMap(v -> v.getBloc().getId(), v -> v));
 
@@ -236,7 +251,8 @@ public class GrilleService {
 
         for (BlocCompetence bloc : blocsGroupesParRegroupement(cursus.getReferentiel().getBlocs())) {
             List<CritereVue> criteres = bloc.getCriteres().stream()
-                    .map(c -> critereVue(c, etat.get(c.getId()), entrainement.get(c.getId())))
+                    .map(c -> critereVue(c, etat.get(c.getId()), entrainement.get(c.getId()),
+                            etatsExercices.getOrDefault(c.getId(), List.of())))
                     .toList();
             int acquis = (int) criteres.stream()
                     .filter(c -> StatutAcquisition.ACQUIS.name().equals(c.statut())).count();
@@ -339,7 +355,32 @@ public class GrilleService {
         return parRegroupement.values().stream().flatMap(List::stream).toList();
     }
 
-    private CritereVue critereVue(Critere c, Evaluation e, Evaluation entrainement) {
+    /**
+     * Par critère, la dernière note (plus grand id, table en ajout seul) de chaque
+     * exercice, de la base ou libre, à part pour l'entraînement en piscine ou fosse.
+     * Une note sans exercice n'y figure pas.
+     */
+    private Map<Long, List<EtatExerciceVue>> etatsExercices(Long cursusId) {
+        Map<Long, Map<String, Evaluation>> dernieres = new java.util.HashMap<>();
+        evaluationService.historiqueCursus(cursusId).stream()
+                .filter(e -> e.getExercice() != null || e.getExerciceLibre() != null)
+                .sorted(java.util.Comparator.comparing(Evaluation::getId))
+                .forEach(e -> dernieres.computeIfAbsent(e.getCritere().getId(), k -> new java.util.LinkedHashMap<>())
+                        .put((e.isEntrainement() ? "e" : "n")
+                                + (e.getExercice() != null ? "#" + e.getExercice().getId() : "L" + e.getExerciceLibre()), e));
+        Map<Long, List<EtatExerciceVue>> parCritere = new java.util.HashMap<>();
+        dernieres.forEach((critereId, parExercice) -> parCritere.put(critereId, parExercice.values().stream()
+                .map(e -> new EtatExerciceVue(
+                        e.getExercice() == null ? null : e.getExercice().getId(),
+                        e.getExercice() == null ? e.getExerciceLibre() : null,
+                        e.isEntrainement(),
+                        (e.getStatutExercice() != null ? e.getStatutExercice() : e.getStatut()).name(),
+                        e.getMoniteur().nomComplet(), e.getDateEvaluation(), e.getCommentaire()))
+                .toList()));
+        return parCritere;
+    }
+
+    private CritereVue critereVue(Critere c, Evaluation e, Evaluation entrainement, List<EtatExerciceVue> etatsExercices) {
         return new CritereVue(c.getId(), c.getOrdre(), c.getSavoirFaire(), c.getCritereRealisation(),
                 e == null ? StatutAcquisition.NON_ABORDE.name() : e.getStatut().name(),
                 e == null ? null : e.getMoniteur().nomComplet(),
@@ -350,7 +391,8 @@ public class GrilleService {
                         entrainement.getCommentaire(), ExerciceNoteVue.de(entrainement),
                         nom(entrainement.getStatutExercice())),
                 e == null ? null : ExerciceNoteVue.de(e),
-                e == null ? null : nom(e.getStatutExercice()));
+                e == null ? null : nom(e.getStatutExercice()),
+                etatsExercices);
     }
 
     private static String nom(StatutAcquisition statut) {

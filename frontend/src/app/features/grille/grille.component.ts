@@ -442,11 +442,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   <ul class="criteres criteres-exercice" [attr.aria-label]="'Critères à évaluer sur ' + e.intitule">
                     @for (c of aEvaluer; track c.critere.id) {
                       <li>
-                        @if (c.bloc.valide) {
-                          <span class="secondaire competence-du-critere">{{ c.bloc.intitule }} · compétence validée</span>
-                        } @else {
-                          <span class="secondaire competence-du-critere">{{ c.bloc.intitule }}</span>
-                        }
+                        <span class="secondaire competence-du-critere">{{ c.bloc.intitule }}</span>
                         <ng-container *ngTemplateOutlet="ligneCritere; context: { bloc: c.bloc, critere: c.critere, exo: e, lieu: 'x' + i }" />
                       </li>
                     }
@@ -575,6 +571,13 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               @let actif = suiviActif(critere);
               @let rappel = suiviRappele(critere);
               @let cleUi = lieu + ':' + critere.id;
+              <!--
+                Sous un exercice de la séance (choix du club, 2026) : on note l'exercice, rien
+                d'autre. Les boutons montrent l'état de cet exercice, jamais celui du critère
+                ni de la compétence, et restent ouverts même une compétence validée.
+              -->
+              @let surExo = !!exo && exerciceImpose(bloc, critere, exo) !== null;
+              @let suivi = surExo ? etatExercice(critere, exo) : actif;
                 <div class="ligne">
                   <div class="libelle">
                     <span>{{ critere.savoirFaire }}</span>
@@ -584,15 +587,20 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     @if (critere.critereRealisation) {
                       <span class="secondaire">{{ critere.critereRealisation }}</span>
                     }
-                    @if (actif.enregistrement) {
+                    @if (suivi.enregistrement) {
                       <span class="enregistrement" role="status">
                         <span class="chargeur" aria-hidden="true"></span>Enregistrement…
                       </span>
-                    } @else if (actif.enAttente) {
+                    } @else if (suivi.enAttente) {
                       <span class="attente">En attente d'envoi</span>
-                    } @else if (actif.parQui) {
-                      <span class="secondaire trace">{{ actif.parQui }} · {{ actif.le | dateFr }}</span>
+                    } @else if (suivi.parQui) {
+                      <span class="secondaire trace">{{ suivi.parQui }} · {{ suivi.le | dateFr }}</span>
                     }
+                    @if (surExo) {
+                      @if (suivi.commentaire) {
+                        <span class="dernier-commentaire">« {{ suivi.commentaire }} »</span>
+                      }
+                    } @else {
                     @if (actif.exercice; as exoNote) {
                       <span class="exercice-note">
                         <span class="secondaire">Noté sur</span>
@@ -618,6 +626,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                         {{ libelleStatut(rappel.statut) }}@if (rappel.enAttente) { (en attente d'envoi)
                         } @else if (rappel.le) { · {{ rappel.le | dateFr }} }
                       </span>
+                    }
                     }
                   </div>
 
@@ -663,14 +672,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                         <span class="titre-choix">2. Note</span>
                       </div>
                     }
-                    <div class="etats" role="group" [attr.aria-label]="critere.savoirFaire">
-                      @for (choix of etats; track choix.valeur) {
+                    <div class="etats" role="group"
+                         [attr.aria-label]="surExo ? critere.savoirFaire + ' — exercice ' + exo.intitule : critere.savoirFaire">
+                      @for (choix of (surExo ? etatsExercice : etats); track choix.valeur) {
                         <button type="button"
                                 [class]="'etat ' + choix.classe"
-                                [class.actif]="actif.statut === choix.valeur"
-                                [class.differe]="actif.enAttente && actif.statut === choix.valeur"
-                                [disabled]="!peutSaisir() || bloc.valide || actif.enregistrement"
-                                [attr.aria-pressed]="actif.statut === choix.valeur"
+                                [class.actif]="suivi.statut === choix.valeur"
+                                [class.differe]="suivi.enAttente && suivi.statut === choix.valeur"
+                                [disabled]="!peutSaisir() || (bloc.valide && !surExo) || suivi.enregistrement"
+                                [attr.aria-pressed]="suivi.statut === choix.valeur"
                                 (click)="noter(bloc, critere, choix.valeur, exo)">
                           {{ choix.libelle }}
                         </button>
@@ -680,7 +690,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 </div>
 
                 <div class="liens-critere">
-                  @if (peutSaisir() && !bloc.valide) {
+                  @if (peutSaisir() && (!bloc.valide || surExo)) {
                     <button type="button" class="lien-historique"
                             [attr.aria-expanded]="commentairesOuverts().has(cleUi)"
                             (click)="basculerCommentaire(cleUi)">
@@ -693,7 +703,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   </button>
                 </div>
 
-                @if (commentairesOuverts().has(cleUi) && peutSaisir() && !bloc.valide) {
+                @if (commentairesOuverts().has(cleUi) && peutSaisir() && (!bloc.valide || surExo)) {
                   <div class="ajout-commentaire">
                     <label class="secondaire" [for]="'commentaire-' + lieu + '-' + critere.id">
                       Ce qui a été travaillé, ce qui reste à revoir…
@@ -1586,6 +1596,38 @@ export class GrilleComponent implements OnDestroy {
     return this.exercicesLibresDuCritere(critere).some(x => x.intitule === exo.intitule) ? exo.intitule : null;
   }
 
+  /** Sous un exercice de la séance, on note l'exercice : libellés propres. */
+  readonly etatsExercice = [
+    { valeur: 'NON_ABORDE' as Statut, libelle: 'Non abordé', classe: 'neant' },
+    { valeur: 'EN_COURS'   as Statut, libelle: 'En cours d\'acquisition', classe: 'encours' },
+    { valeur: 'ACQUIS'     as Statut, libelle: 'Acquis', classe: 'acquis' }
+  ];
+
+  /**
+   * État d'un exercice de la séance pour un critère : sa dernière note (dans le
+   * suivi des boutons, entraînement à part), recouverte par une saisie sur cet
+   * exercice en cours d'envoi ou en attente. Jamais l'état du critère.
+   */
+  etatExercice(critere: CritereAffiche, exo: ExerciceGrilleVue): SuiviAffiche {
+    const entrainement = this.modeEntrainement();
+    const base = exo.exerciceBase;
+    const note = (critere.etatsExercices ?? []).find(x => x.entrainement === entrainement
+      && (base ? x.exerciceId === base.id : x.exerciceId == null && x.exerciceLibre === exo.intitule));
+    const etat: SuiviAffiche = {
+      statut: note?.statut ?? 'NON_ABORDE', parQui: note?.parQui ?? null, le: note?.le ?? null,
+      commentaire: note?.commentaire ?? null, exercice: null, statutExercice: null,
+      enAttente: false, enregistrement: false
+    };
+    const actif = this.suiviActif(critere);
+    const x = actif.exercice;
+    const memeExercice = !!x && (base ? x.id === base.id : x.id == null && x.intitule === exo.intitule);
+    if ((actif.enregistrement || actif.enAttente) && memeExercice) {
+      return { ...etat, statut: actif.statutExercice ?? actif.statut, enAttente: actif.enAttente,
+               enregistrement: actif.enregistrement, le: actif.enAttente ? actif.le : etat.le };
+    }
+    return etat;
+  }
+
   private imposerExercice(bloc: BlocAffiche, critere: CritereAffiche, exo: ExerciceGrilleVue | null): void {
     const impose = this.exerciceImpose(bloc, critere, exo);
     if (impose !== null) this.exercicesChoisis.set({ ...this.exercicesChoisis(), [critere.id]: impose });
@@ -1812,7 +1854,12 @@ export class GrilleComponent implements OnDestroy {
    */
   async noter(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut,
               exo: ExerciceGrilleVue | null = null): Promise<void> {
-    // Noté sous un exercice de la séance : la note porte sur cet exercice.
+    // Noté sous un exercice de la séance : la note porte sur cet exercice ;
+    // rien de nouveau si l'exercice a déjà cet état.
+    if (exo && this.exerciceImpose(bloc, critere, exo) !== null) {
+      const etat = this.etatExercice(critere, exo);
+      if (etat.le && etat.statut === statut) return;
+    }
     this.imposerExercice(bloc, critere, exo);
     // Rien de nouveau : même état, sur le même exercice que la dernière note.
     // (Un autre exercice, ou un exercice d'initiation acquis sur un critère en cours, se note toujours.)
@@ -2048,7 +2095,9 @@ export class GrilleComponent implements OnDestroy {
       cursusId: Number(this.id()),
       critereId: critere.id,
       seanceId: seance ? seance.id : null,
-      statut: this.suiviActif(critere).statut,
+      // Sous un exercice de la séance : l'état de l'exercice, que le commentaire ne change pas.
+      statut: exo && this.exerciceImpose(bloc, critere, exo) !== null
+        ? this.etatExercice(critere, exo).statut : this.suiviActif(critere).statut,
       commentaire: texte,
       dateEvaluation: seance ? seance.date : dateDuJour(),
       ...this.champsExercice(this.exerciceNote(bloc, critere)),
