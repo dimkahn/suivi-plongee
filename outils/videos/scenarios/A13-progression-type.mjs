@@ -1,12 +1,12 @@
 // A13 — Adapter une progression type.
-// Tournage du 2026-10-09, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A13',
   titre: 'Adapter une progression type',
   public: 'Administrateur',
-  resume: 'L\'année d\'un niveau découpée en périodes de mois : ce qui est « au programme » et ce qui est « en retard ».',
+  resume: 'L\'année d\'un niveau découpée en périodes de mois, avec leurs exercices : le parcours des moniteurs, ce qui est « au programme » et « en retard ».',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -14,8 +14,14 @@ export default {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await administration('Progressions types');
-    await legende('La progression N1 du club : des périodes de mois, avec les blocs travaillés.', 3500);
+    await legende('La progression N1 du club : des périodes de mois, avec les blocs travaillés…', 3500);
     await defiler(600, 2000);
+    const exercices = page.locator('details.exercices-lus summary').first();
+    if (await exercices.count() > 0) {
+      await legende('… et les exercices prévus, de l\'initiation à la maîtrise.', 0);
+      await toucher(exercices, { apres: 2500 });
+      await legende('C\'est le parcours de formation que les moniteurs consultent, menu « Parcours ».', 4000);
+    }
     await legende('En mois et pas en dates : elle resert d\'une saison à l\'autre.', 3500);
     await legende('Elle fait apparaître « Au programme » dans les grilles, et calcule les blocs « En retard ».', 4500);
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -28,6 +34,11 @@ export default {
     await saisir(nom, 'N1 – essai saison 2027-2028');
     await vignette();
     await legende('Chaque période : ses mois, son milieu, ses conseils aux moniteurs, ses blocs cochés.', 4000);
+    const choix = page.locator('dialog[open] details.exercices-choix summary').first();
+    if (await choix.count() > 0) {
+      await legende('« Exercices de la période » : cochez les exercices, ou toute une phase avec « + I », « + P », « + M ».', 0);
+      await toucher(choix, { apres: 2500 });
+    }
     await toucher(page.getByRole('button', { name: 'Enregistrer' }).first(), { apres: 1800 });
     await legende('On la choisit ensuite pour une saison, dans « Saisons ».', 3500);
     await legende(null, 0);

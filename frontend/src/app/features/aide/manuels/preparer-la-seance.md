@@ -3,7 +3,7 @@ titre: Préparer la séance de son groupe
 rubrique: Moniteur
 videos: M18
 ecran: /presences
-mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, exercices des compétences, initiation, perfectionnement, maîtrise, exercice libre, schéma, dessin, image, photo, critère de réussite
+mots: programme, exercices, préparer, préparation, séance, contenu, consignes, durée, échauffement, commun, base d'exercices, exercices des compétences, initiation, perfectionnement, maîtrise, exercice libre, schéma, dessin, image, photo, critère de réussite, parcours, prévus ce mois-ci, par compétence, fiche complète, vidéo
 questions:
 - Comment ajouter un schéma à un exercice libre ?
 - Comment préparer le programme de ma séance ?
@@ -12,6 +12,7 @@ questions:
 - Comment ajouter un échauffement ?
 - Qui peut préparer le programme d'un groupe ?
 - Où voir ce que les autres groupes ont prévu ?
+- Pourquoi la liste propose « Prévus par le parcours ce mois-ci » ?
 ---
 Depuis « Présences », choisissez la séance puis « Préparer le programme », et ajoutez les exercices des compétences : chacun arrive avec ses critères, son déroulement et son critère de réussite. La fiche de chaque élève du groupe les reprend.
 
@@ -20,7 +21,7 @@ Depuis « Présences », choisissez la séance puis « Préparer le programme »
 1. Menu, « Présences », choisissez la séance et filtrez sur votre groupe.
 2. Sous le programme du mois, « Exercices de la séance » : touchez « Préparer le programme ».
 3. Votre groupe est déjà choisi. Touchez « + Ajouter des exercices des compétences ».
-4. Choisissez la formation (celle que prépare le groupe est proposée), puis la compétence (celles au programme du mois en tête).
+4. Choisissez la formation (celle que prépare le groupe est proposée). Si le parcours de formation prévoit des exercices pour le mois de la séance, ils sont proposés d'abord (« Prévus par le parcours ce mois-ci ») : cochez-les directement. Sinon, ou avec « Par compétence », choisissez la compétence (celles au programme du mois en tête).
 5. Choisissez le temps : initiation, perfectionnement ou maîtrise, et cochez les exercices (« Voir le schéma » pour l'organisation dans l'eau). Vous pouvez passer d'une compétence à l'autre, les coches restent.
 6. « Ajouter » : les exercices arrivent dans la séance avec leur numéro, leurs critères, leur critère de réussite et leur schéma (« Voir le schéma » sur la carte), et leur déroulement en consignes.
 7. Réglez la durée, complétez les consignes si besoin ; « monter », « descendre » et « supprimer » règlent l'ordre de la séance.
@@ -44,3 +45,4 @@ Un exercice libre **avec une phase et des critères cochés** sert aussi à note
 - Le programme se prépare avant comme après la séance.
 - Critère de réussite et schéma se retrouvent dans « Exercices de la séance » de la grille de l'élève et dans la vue globale ; « Préparer hors ligne » garde aussi les schémas des exercices libres.
 - Reprendre les exercices d'une autre séance reprend aussi leurs schémas.
+- « Fiche complète » (dans la liste comme sur la carte d'un exercice des compétences) ouvre sa fiche : conseils de l'encadrant, photos, vidéos et place dans le parcours (voir « Le parcours de formation »).

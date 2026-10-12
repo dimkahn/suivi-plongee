@@ -52,6 +52,18 @@ export const routes: Routes = [
       .then(m => m.RosterComponent)
   },
   {
+    path: 'parcours',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/exercices/parcours.component')
+      .then(m => m.ParcoursComponent)
+  },
+  {
+    path: 'exercices/:id',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/exercices/fiche-exercice.component')
+      .then(m => m.FicheExerciceComponent)
+  },
+  {
     path: 'presences',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/presences/presences.component')

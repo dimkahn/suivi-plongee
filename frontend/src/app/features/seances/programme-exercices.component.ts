@@ -172,6 +172,9 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
                     }
                   }
                 }
+                @if (e.exerciceBase; as base) {
+                  <a class="bouton-discret petit" [routerLink]="['/exercices', base.id]">Fiche complète</a>
+                }
                 @if (e.criteres.length > 0) {
                   <ul class="choisis">
                     @for (c of e.criteres; track c.id) {
@@ -217,6 +220,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
                   <app-schema-exercice [exerciceId]="base.id" [libelle]="base.numero + ' ' + base.intitule" />
                 }
               }
+              <a class="bouton-discret petit" [href]="'/exercices/' + base.id" target="_blank" rel="noopener">Fiche complète ↗</a>
               <div class="champs">
                 <div class="duree">
                   <label [for]="'duree-' + b.cle">Durée (min)</label>
@@ -391,6 +395,19 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
           }
         </select>
         @if (baseReferentielId() != null && referentiels().get(baseReferentielId()!); as ref) {
+          @if (prevusDuMois(ref.id).size > 0) {
+            <div class="phases" role="group" aria-label="Exercices proposés">
+              <button type="button" class="bouton-discret" [class.actif]="baseParcours()"
+                      [attr.aria-pressed]="baseParcours()" (click)="baseParcours.set(true)">
+                Prévus par le parcours ce mois-ci ({{ prevusDuMois(ref.id).size }})
+              </button>
+              <button type="button" class="bouton-discret" [class.actif]="!baseParcours()"
+                      [attr.aria-pressed]="!baseParcours()" (click)="baseParcours.set(false)">
+                Par compétence
+              </button>
+            </div>
+          }
+          @if (!baseParcours() || prevusDuMois(ref.id).size === 0) {
           <label for="base-competence">Compétence</label>
           <select id="base-competence" [ngModel]="baseBlocId()" (ngModelChange)="baseBlocId.set($event)">
             @for (bloc of blocsAvecExercices(ref); track bloc.id) {
@@ -410,6 +427,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
               </button>
             }
           </div>
+          }
           <ul class="liste-coches">
             @for (e of exercicesProposes(); track e.id) {
               <li>
@@ -421,6 +439,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
                     @if (e.critereReussite) { <span class="secondaire reussite">Réussite : {{ e.critereReussite }}</span> }
                   </span>
                 </label>
+                <a class="bouton-discret petit" [href]="'/exercices/' + e.id" target="_blank" rel="noopener">Fiche complète ↗</a>
                 @if (e.aSchema) {
                   <button type="button" class="bouton-discret petit" (click)="basculerSchema(e.id)"
                           [attr.aria-expanded]="schemaOuvert() === e.id">
@@ -758,11 +777,24 @@ export class ProgrammeExercicesComponent {
   /** Base d'exercices chargée par formation. */
   private bases = signal<Map<number, ExerciceBaseVue[]>>(new Map());
 
+  /** Proposer d'abord les exercices que le parcours prévoit pour le mois de la séance. */
+  baseParcours = signal(true);
+
   exercicesProposes = computed(() => {
     const ref = this.baseReferentielId();
-    return (ref == null ? [] : this.bases().get(ref) ?? [])
-      .filter(e => e.actif && e.blocId === this.baseBlocId() && e.phase === this.basePhase());
+    const base = ref == null ? [] : this.bases().get(ref) ?? [];
+    const prevus = ref == null ? new Set<number>() : this.prevusDuMois(ref);
+    if (this.baseParcours() && prevus.size > 0) return base.filter(e => e.actif && prevus.has(e.id));
+    return base.filter(e => e.actif && e.blocId === this.baseBlocId() && e.phase === this.basePhase());
   });
+
+  /** Exercices de la période de progression du mois de la séance pour cette formation. */
+  prevusDuMois(referentielId: number): Set<number> {
+    const s = this.seance();
+    const progression = this.progressions().find(p => p.referentielId === referentielId);
+    const periode = progression && s ? periodeDuMois(progression.periodes, s.date) : null;
+    return new Set((periode?.exercices ?? []).map(e => e.id));
+  }
 
   /** Formation proposée d'emblée : celle que prépare le groupe, sinon la première de la liste. */
   ouvrirBase(): void {

@@ -1,12 +1,12 @@
 // A16 — La base d'exercices.
-// Tournage du 2026-10-09, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A16',
   titre: 'La base d\'exercices',
   public: 'Administrateur',
-  resume: 'Les exercices de chaque compétence du N1 au N3, par phase, et les critères qu\'ils font travailler.',
+  resume: 'Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -20,9 +20,19 @@ export default {
     await toucher(page.getByRole('button', { name: 'Modifier', exact: true }).first(), { apres: 1500 });
     await legende('« Modifier » : numéro, phase, intitulé, et les critères travaillés, au moins un.', 4500);
     await defiler(400, 2000);
+    await legende('Déroulement, critère de réussite, et les conseils de l\'encadrant : vigilance, erreurs fréquentes.', 4500);
+    await defiler(500, 2000);
+    await legende('Puis le schéma, les photos et les vidéos, ajoutés tout de suite.', 4000);
+    await legende('Une photo n\'est acceptée qu\'avec l\'accord des personnes reconnaissables : le club suit des mineurs.', 4500);
+    await legende('Une vidéo est un lien : la chaîne du club, ou une vidéo publiée par le club.', 4000);
     await legende('Seul un exercice de maîtrise fait passer ses critères à « Acquis ».', 4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }).first(), { apres: 1000 });
     await legende('Un exercice déjà noté ne se supprime pas : on le désactive.', 3500);
+    await legende('« Fiche » montre l\'exercice tel que le voient les moniteurs.', 0);
+    await toucher(page.getByRole('link', { name: 'Fiche', exact: true }).first(), { apres: 2500 });
+    await defiler(500, 2000);
+    await page.goBack();
+    await pause(1500);
     await legende('Le N2 a aussi sa base : 9 exercices par compétence, PA20 et PE40, avec leurs schémas.', 0);
     await page.locator('select#version').selectOption({ label: 'N2 · MFT PA20 | PE40 (2026-05)' });
     await pause(2500);

@@ -115,6 +115,60 @@ export interface ExerciceBaseVue {
   aSchema?: boolean;
   /** Critères de la compétence que l'exercice fait travailler. Absent d'une grille mise en cache avant. */
   critereIds?: number[];
+  /** Points de vigilance, erreurs fréquentes et remédiation. Absent d'une grille mise en cache avant. */
+  conseils?: string | null;
+  /** Photos et vidéos : elles se voient sur la fiche complète (`/exercices/:id`). */
+  nombrePhotos?: number;
+  nombreVideos?: number;
+}
+
+/** Fiche complète d'un exercice de la base (`GET /api/exercices/{id}`), réseau obligatoire. */
+export interface FicheExerciceVue {
+  id: number;
+  referentielId: number;
+  niveau: 'N1' | 'N2' | 'N3';
+  versionMft: string;
+  blocId: number;
+  blocOrdre: number;
+  bloc: string;
+  regroupement: string | null;
+  numero: string;
+  phase: PhaseExercice;
+  intitule: string;
+  deroulement: string | null;
+  critereReussite: string | null;
+  conseils: string | null;
+  actif: boolean;
+  aSchema: boolean;
+  criteres: { id: number; savoirFaire: string }[];
+  photos: PhotoExerciceVue[];
+  videos: VideoExerciceVue[];
+  /** Périodes des progressions types où l'exercice est prévu. */
+  periodes: {
+    progressionId: number; progression: string; rang: number; intitule: string;
+    moisDebut: number; moisFin: number; milieu: 'ARTIFICIEL' | 'NATUREL' | null;
+  }[];
+  precedent: VoisinExerciceVue | null;
+  suivant: VoisinExerciceVue | null;
+}
+
+export interface PhotoExerciceVue {
+  id: number;
+  legende: string | null;
+}
+
+export interface VideoExerciceVue {
+  id: number;
+  /** https://… ou /medias/… (vidéo publiée par le club). */
+  adresse: string;
+  legende: string | null;
+}
+
+export interface VoisinExerciceVue {
+  id: number;
+  numero: string;
+  intitule: string;
+  phase: PhaseExercice;
 }
 
 /** L'exercice sur lequel une note a été prise. */
@@ -143,6 +197,8 @@ export interface DemandeExerciceBase {
   actif: boolean;
   /** Au moins un critère de la compétence. */
   critereIds: number[];
+  /** Chaîne vide : efface les conseils. */
+  conseils: string;
 }
 
 export interface BlocVue {
@@ -874,6 +930,17 @@ export interface PeriodeProgressionVue {
   milieu: 'ARTIFICIEL' | 'NATUREL' | null;
   note: string | null;
   blocs: BlocResume[];
+  /** Exercices de la base prévus dans la période, rangés par compétence. Absent d'une copie gardée avant. */
+  exercices?: ExerciceResume[];
+}
+
+export interface ExerciceResume {
+  id: number;
+  blocId: number;
+  numero: string;
+  intitule: string;
+  phase: PhaseExercice;
+  actif: boolean;
 }
 
 export interface ProgressionResume {
@@ -904,6 +971,8 @@ export interface DemandePeriodeProgression {
   milieu: 'ARTIFICIEL' | 'NATUREL' | null;
   note: string | null;
   blocIds: number[];
+  /** Exercices de la base prévus dans la période. */
+  exerciceIds: number[];
 }
 
 /** referentielId n'est lu qu'à la création. */

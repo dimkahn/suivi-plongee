@@ -6,8 +6,12 @@ import { ApiService } from '../../core/api.service';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
+import { PhotoExerciceComponent } from '../../core/photo-exercice.component';
+import { reduirePhoto } from '../../core/reduire-photo';
+import { RouterLink } from '@angular/router';
 import {
-  BlocReferentielVue, DemandeExerciceBase, ExerciceBaseVue, PhaseExercice, ReferentielVue
+  BlocReferentielVue, DemandeExerciceBase, ExerciceBaseVue, PhaseExercice, PhotoExerciceVue, ReferentielVue,
+  VideoExerciceVue
 } from '../../core/modeles';
 
 /** Exercice en cours de saisie dans le dialogue : `id` null pour une création. */
@@ -24,11 +28,13 @@ interface Formulaire extends DemandeExerciceBase {
  */
 @Component({
   selector: 'app-exercices-admin',
-  imports: [FormsModule, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
+  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent,
+            PhotoExerciceComponent],
   template: `
     <h1>Base d'exercices</h1>
     <p class="secondaire">
-      Chaque compétence a ses exercices d'initiation, de perfectionnement et de maîtrise. Les moniteurs
+      Chaque compétence a ses exercices d'initiation, de perfectionnement et de maîtrise, avec leurs
+      conseils, leur schéma, leurs photos et leurs vidéos (« Fiche » montre ce que voient les moniteurs). Les moniteurs
       les ajoutent au programme d'une séance et notent l'exercice réalisé avec chaque critère :
       seul un exercice de <strong>maîtrise</strong> fait passer un critère à « Acquis ». Un exercice
       déjà noté ne se supprime pas, désactivez-le : il n'est plus proposé mais reste lisible sur les notes passées.
@@ -70,11 +76,15 @@ interface Formulaire extends DemandeExerciceBase {
                         <strong>{{ e.intitule }}</strong>
                         @if (!e.actif) { <span class="secondaire">(désactivé)</span> }
                         @if (e.aSchema) { <span class="secondaire">· schéma</span> }
+                        @if (e.nombrePhotos) { <span class="secondaire">· {{ e.nombrePhotos }} photo(s)</span> }
+                        @if (e.nombreVideos) { <span class="secondaire">· {{ e.nombreVideos }} vidéo(s)</span> }
+                        @if (!e.conseils) { <span class="secondaire">· sans conseils</span> }
                       </span>
                       <span class="criteres-exercice">Critère(s) : {{ libellesCriteres(bloc, e) }}</span>
                       @if (e.critereReussite) { <span class="secondaire">Réussite : {{ e.critereReussite }}</span> }
                     </div>
                     <div class="actions">
+                      <a class="bouton-discret" [routerLink]="['/exercices', e.id]">Fiche</a>
                       <button type="button" class="bouton-discret" (click)="modifier(e)">Modifier</button>
                       <button type="button" class="bouton-discret danger" (click)="supprimer(e)">Supprimer</button>
                     </div>
@@ -122,6 +132,9 @@ interface Formulaire extends DemandeExerciceBase {
         <textarea id="deroulement" rows="5" [(ngModel)]="f.deroulement"></textarea>
         <label for="reussite">Critère de réussite</label>
         <textarea id="reussite" rows="2" [(ngModel)]="f.critereReussite"></textarea>
+        <label for="conseils">Conseils de l'encadrant</label>
+        <textarea id="conseils" rows="3" [(ngModel)]="f.conseils"
+                  placeholder="Points de vigilance, erreurs fréquentes et comment y remédier"></textarea>
         <label class="case">
           <input type="checkbox" [(ngModel)]="f.actif"> Proposé aux moniteurs (actif)
         </label>
@@ -144,8 +157,69 @@ interface Formulaire extends DemandeExerciceBase {
             }
           </div>
           <p class="secondaire">Image PNG ou JPEG, 2 Mo au plus.</p>
+
+          <p class="titre-schema">Photos</p>
+          @if (medias(); as m) {
+            @if (m.photos.length === 0) { <p class="secondaire">Pas de photo pour cet exercice.</p> }
+            <div class="photos">
+              @for (p of m.photos; track p.id) {
+                <figure>
+                  <app-photo-exercice [exerciceId]="f.id" [photoId]="p.id" [legende]="p.legende" />
+                  <figcaption>{{ p.legende || 'Sans légende' }}</figcaption>
+                  <button type="button" class="bouton-discret danger" [disabled]="envoiSchema()"
+                          (click)="retirerPhoto(f.id, p.id)">Retirer</button>
+                </figure>
+              }
+            </div>
+            @if (m.photos.length < 6) {
+              <label for="legende-photo">Légende de la prochaine photo</label>
+              <input id="legende-photo" type="text" maxlength="200" [(ngModel)]="legendePhoto"
+                     placeholder="ex. Main droite sur masque et détendeur">
+              <label class="case">
+                <input type="checkbox" [(ngModel)]="accordPhoto">
+                Personne n'est reconnaissable, ou les personnes reconnaissables ont donné leur accord (droit à l'image)
+              </label>
+              <label class="bouton-discret depot" [class.inactif]="!accordPhoto || envoiSchema()">
+                Ajouter une photo
+                <input type="file" accept="image/*" (change)="deposerPhoto(f.id, $event)"
+                       [disabled]="!accordPhoto || envoiSchema()">
+              </label>
+              <p class="secondaire">6 photos au plus ; réduites sur le téléphone avant l'envoi.</p>
+            }
+
+            <p class="titre-schema">Vidéos</p>
+            @if (m.videos.length === 0) { <p class="secondaire">Pas de vidéo pour cet exercice.</p> }
+            <ul class="videos">
+              @for (v of m.videos; track v.id) {
+                <li>
+                  <a [href]="v.adresse" target="_blank" rel="noopener noreferrer">{{ v.legende || v.adresse }}</a>
+                  <button type="button" class="bouton-discret danger" [disabled]="envoiSchema()"
+                          (click)="retirerVideo(f.id, v.id)">Retirer</button>
+                </li>
+              }
+            </ul>
+            @if (m.videos.length < 5) {
+              <div class="ligne-champs">
+                <div>
+                  <label for="adresse-video">Adresse de la vidéo</label>
+                  <input id="adresse-video" type="url" maxlength="500" [(ngModel)]="adresseVideo"
+                         placeholder="https://… ou /medias/…">
+                </div>
+                <div>
+                  <label for="legende-video">Légende</label>
+                  <input id="legende-video" type="text" maxlength="200" [(ngModel)]="legendeVideo">
+                </div>
+              </div>
+              <button type="button" class="bouton-discret" [disabled]="!adresseVideo.trim() || envoiSchema()"
+                      (click)="ajouterVideo(f.id)">Ajouter la vidéo</button>
+              <p class="secondaire">Un lien vers la vidéo (chaîne du club, plateforme de vidéos) : elle n'est pas
+                copiée dans l'appli.</p>
+            }
+          } @else {
+            <p class="secondaire">Chargement des photos et vidéos…</p>
+          }
         } @else {
-          <p class="secondaire">Le schéma s'ajoute une fois l'exercice enregistré.</p>
+          <p class="secondaire">Le schéma, les photos et les vidéos s'ajoutent une fois l'exercice enregistré.</p>
         }
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer(f)">
@@ -187,6 +261,13 @@ interface Formulaire extends DemandeExerciceBase {
     .actions-schema { display: flex; flex-wrap: wrap; gap: var(--pas); margin-top: var(--pas); }
     .depot { position: relative; display: inline-flex; align-items: center; min-height: 44px; margin: 0; cursor: pointer; }
     .depot input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .depot.inactif { opacity: .5; cursor: default; }
+    .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--pas); }
+    .photos figure { margin: 0; }
+    .photos figcaption { font-size: .8125rem; color: var(--craie); margin: 4px 0; }
+    .videos { list-style: none; margin: 0; padding: 0; }
+    .videos li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--pas); }
+    .videos a { overflow-wrap: anywhere; }
   `]
 })
 export class ExercicesAdminComponent {
@@ -263,7 +344,7 @@ export class ExercicesAdminComponent {
     this.erreur.set(null);
     this.formulaire.set({
       id: null, blocId: bloc.id, numero: `${bloc.ordre}.${ordre}`, ordre, phase: 'INITIATION' as PhaseExercice,
-      intitule: '', deroulement: null, critereReussite: null, actif: true,
+      intitule: '', deroulement: null, critereReussite: null, actif: true, conseils: '',
       // Une compétence à un seul critère : il est coché d'office.
       critereIds: bloc.criteres.length === 1 ? [bloc.criteres[0].id] : []
     });
@@ -274,8 +355,111 @@ export class ExercicesAdminComponent {
     this.formulaire.set({
       id: e.id, blocId: e.blocId, numero: e.numero, ordre: e.ordre, phase: e.phase, intitule: e.intitule,
       deroulement: e.deroulement, critereReussite: e.critereReussite, actif: e.actif,
-      critereIds: [...(e.critereIds ?? [])]
+      critereIds: [...(e.critereIds ?? [])], conseils: e.conseils ?? ''
     });
+    void this.chargerMedias(e.id);
+  }
+
+  // ----------------------------------------------------------------
+  //  Photos et vidéos : ajoutées ou retirées tout de suite, comme le schéma.
+  // ----------------------------------------------------------------
+
+  medias = signal<{ photos: PhotoExerciceVue[]; videos: VideoExerciceVue[] } | null>(null);
+  legendePhoto = '';
+  accordPhoto = false;
+  adresseVideo = '';
+  legendeVideo = '';
+
+  private async chargerMedias(exerciceId: number): Promise<void> {
+    this.medias.set(null);
+    this.legendePhoto = '';
+    this.accordPhoto = false;
+    this.adresseVideo = '';
+    this.legendeVideo = '';
+    try {
+      const fiche = await firstValueFrom(this.api.ficheExercice(exerciceId));
+      if (this.formulaire()?.id === exerciceId) this.medias.set({ photos: fiche.photos, videos: fiche.videos });
+    } catch {
+      this.erreur.set('Impossible de charger les photos et vidéos de cet exercice.');
+    }
+  }
+
+  private compterMedias(exerciceId: number): void {
+    const m = this.medias();
+    if (!m) return;
+    this.exercices.set(this.exercices().map(e => e.id === exerciceId
+      ? { ...e, nombrePhotos: m.photos.length, nombreVideos: m.videos.length } : e));
+  }
+
+  async deposerPhoto(exerciceId: number, evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    const m = this.medias();
+    if (!fichier || !m) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      const photo = await firstValueFrom(this.api.deposerPhotoExercice(
+        exerciceId, await reduirePhoto(fichier), this.legendePhoto, this.accordPhoto));
+      this.medias.set({ ...m, photos: [...m.photos, photo] });
+      this.legendePhoto = '';
+      this.compterMedias(exerciceId);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'La photo n\'a pas pu être enregistrée.');
+    } finally {
+      this.envoiSchema.set(false);
+    }
+  }
+
+  async retirerPhoto(exerciceId: number, photoId: number): Promise<void> {
+    const m = this.medias();
+    if (!m || !confirm('Retirer cette photo ?')) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      await firstValueFrom(this.api.supprimerPhotoExercice(exerciceId, photoId));
+      this.medias.set({ ...m, photos: m.photos.filter(p => p.id !== photoId) });
+      this.compterMedias(exerciceId);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'La photo n\'a pas pu être retirée.');
+    } finally {
+      this.envoiSchema.set(false);
+    }
+  }
+
+  async ajouterVideo(exerciceId: number): Promise<void> {
+    const m = this.medias();
+    if (!m) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      const video = await firstValueFrom(this.api.ajouterVideoExercice(exerciceId, this.adresseVideo, this.legendeVideo));
+      this.medias.set({ ...m, videos: [...m.videos, video] });
+      this.adresseVideo = '';
+      this.legendeVideo = '';
+      this.compterMedias(exerciceId);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'La vidéo n\'a pas pu être ajoutée.');
+    } finally {
+      this.envoiSchema.set(false);
+    }
+  }
+
+  async retirerVideo(exerciceId: number, videoId: number): Promise<void> {
+    const m = this.medias();
+    if (!m || !confirm('Retirer cette vidéo ?')) return;
+    this.envoiSchema.set(true);
+    this.erreur.set(null);
+    try {
+      await firstValueFrom(this.api.supprimerVideoExercice(exerciceId, videoId));
+      this.medias.set({ ...m, videos: m.videos.filter(v => v.id !== videoId) });
+      this.compterMedias(exerciceId);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? 'La vidéo n\'a pas pu être retirée.');
+    } finally {
+      this.envoiSchema.set(false);
+    }
   }
 
   criteresDuBloc(blocId: number): { id: number; savoirFaire: string }[] {

@@ -2,6 +2,7 @@ package fr.club.plongee.progression.domain;
 
 import fr.club.plongee.formation.domain.Milieu;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import jakarta.persistence.*;
 
 import java.util.LinkedHashSet;
@@ -49,6 +50,25 @@ public class PeriodeProgression {
             joinColumns = @JoinColumn(name = "periode_id"),
             inverseJoinColumns = @JoinColumn(name = "bloc_id"))
     private Set<BlocCompetence> blocs = new LinkedHashSet<>();
+
+    /**
+     * Exercices de la base prévus dans la période (V64) : le parcours de
+     * l'initiation à la maîtrise. Affichés dans l'ordre des blocs puis des
+     * exercices.
+     */
+    @ManyToMany
+    @JoinTable(name = "periode_progression_exercice",
+            joinColumns = @JoinColumn(name = "periode_id"),
+            inverseJoinColumns = @JoinColumn(name = "exercice_id"))
+    private Set<ExerciceCompetence> exercices = new LinkedHashSet<>();
+
+    public Set<ExerciceCompetence> getExercices() {
+        return exercices;
+    }
+
+    public void setExercices(Set<ExerciceCompetence> exercices) {
+        this.exercices = exercices;
+    }
 
     public Long getId() {
         return id;

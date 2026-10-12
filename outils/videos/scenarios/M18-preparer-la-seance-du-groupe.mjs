@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-11, 2e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
@@ -34,6 +34,12 @@ export default {
     await legende('On part des exercices des compétences : « + Ajouter des exercices des compétences ».', 0);
     await toucher(page.getByRole('button', { name: '+ Ajouter des exercices des compétences' }), { apres: 1200 });
     const base = page.locator('dialog[open]');
+    const parCompetence = base.getByRole('button', { name: 'Par compétence', exact: true });
+    if (await parCompetence.count() > 0) {
+      await legende('La formation du groupe est proposée d\'office, avec les exercices que le parcours prévoit ce mois-ci.', 4500);
+      await legende('On peut aussi chercher par compétence.', 0);
+      await toucher(parCompetence, { apres: 1000 });
+    }
     await legende('La formation que prépare le groupe est proposée d\'office. Choisissez la compétence…', 0);
     await choisir(base.locator('#base-competence'), 'Évoluer dans l\'eau - Se ventiler', { exact: false });
     await legende('… puis le temps : initiation, perfectionnement ou maîtrise.', 0);
@@ -42,6 +48,7 @@ export default {
     await toucher(base.getByRole('button', { name: /^Ajouter \d+ exercice/ }), { apres: 1500 });
     let exercice = page.locator('li.exercice').last();
     await legende('L\'exercice arrive avec son numéro, ses critères, son déroulement et son critère de réussite.', 4000);
+    await legende('« Fiche complète » ouvre ses conseils, ses photos et ses vidéos.', 3000);
     await saisir(exercice.getByLabel('Durée (min)'), '15');
 
     await legende('Pour la nage ou l\'échauffement : un exercice libre.', 0);
