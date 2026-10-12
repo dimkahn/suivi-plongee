@@ -9,7 +9,8 @@ import {
   ReferentielVue
 } from '../../core/modeles';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
-import { plageMois } from '../../core/progression';
+import { periodeDuMois, plagePeriode } from '../../core/progression';
+import { dateDuJour } from '../../core/date-fr';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -66,6 +67,12 @@ interface GroupeCompetence {
         <p class="secondaire">{{ p.niveau }} · MFT {{ p.versionMft }}
           @if (suivies().has(p.id)) { · suivie par la saison en cours }</p>
         @if (p.description) { <p>{{ p.description }}</p> }
+        @if (p.decoupage === 'PLONGEES') {
+          <p class="secondaire">
+            Découpée par plongées : chaque élève avance à son rythme, l'étape se lit à son numéro
+            de plongée en milieu naturel (sa fiche de suivi montre la sienne).
+          </p>
+        }
         <p class="legende-phases">
           @for (ph of phases; track ph.valeur) {
             <span><app-pastille-phase [phase]="ph.valeur" /> {{ ph.libelle }}</span>
@@ -78,7 +85,7 @@ interface GroupeCompetence {
           <li class="carte periode" [class.en-cours]="periode.id === periodeDuJour()?.id">
             <div class="entete-periode">
               <span class="etape">Étape {{ i + 1 }}</span>
-              <span class="plage">{{ plage(periode.moisDebut, periode.moisFin) }}</span>
+              <span class="plage">{{ plage(periode) }}</span>
               @if (periode.milieu) {
                 <span class="milieu">{{ periode.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
               }
@@ -186,7 +193,7 @@ export class ParcoursComponent {
   reseau = inject(ReseauService);
   readonly niveaux = NIVEAUX;
   readonly phases = PHASES;
-  readonly plage = plageMois;
+  readonly plage = plagePeriode;
 
   /** Progression à ouvrir (?progression=12), ou la formation (?referentiel=3). */
   progressionParam = input<string | undefined>(undefined, { alias: 'progression' });
@@ -207,14 +214,10 @@ export class ParcoursComponent {
 
   private exercicesParId = computed(() => new Map(this.exercices().map(e => [e.id, e])));
 
-  /** La période qui couvre le mois en cours. */
+  /** La période qui couvre le mois en cours (aucune pour une progression par plongées). */
   periodeDuJour = computed(() => {
     const p = this.progression();
-    if (!p) return null;
-    const mois = new Date().getMonth() + 1;
-    return p.periodes.find(x => x.moisDebut <= x.moisFin
-      ? mois >= x.moisDebut && mois <= x.moisFin
-      : mois >= x.moisDebut || mois <= x.moisFin) ?? null;
+    return p ? periodeDuMois(p.periodes, dateDuJour()) : null;
   });
 
   horsParcours = computed(() => {

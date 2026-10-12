@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input } from '@angular/core';
 import { ProgressionVue } from './modeles';
-import { plageMois, programmeDuJour } from './progression';
+import { plagePeriode, programmeDuJour } from './progression';
 
 /**
  * Programme d'une séance tiré des progressions suivies par la saison : la
@@ -27,7 +27,7 @@ import { plageMois, programmeDuJour } from './progression';
                 <span class="intitule">{{ p.periode.intitule }}</span>
               </summary>
               <div class="contenu">
-                <p class="secondaire">{{ p.progression }} · {{ plage(p.periode.moisDebut, p.periode.moisFin) }}</p>
+                <p class="secondaire">{{ p.progression }} · {{ plage(p.periode) }}</p>
                 @if (p.periode.note) { <p>{{ p.periode.note }}</p> }
                 @if (p.periode.blocs.length > 0) {
                   <ul>
@@ -65,5 +65,5 @@ export class ProgrammeSeanceComponent {
   readonly compact = input(false);
 
   readonly programme = computed(() => programmeDuJour(this.progressions(), this.date()));
-  readonly plage = plageMois;
+  readonly plage = plagePeriode;
 }

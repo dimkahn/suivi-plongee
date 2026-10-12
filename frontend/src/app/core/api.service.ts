@@ -7,7 +7,7 @@ import {
   EleveVue, EvaluationVue, FicheSecuriteVue,GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   CompteSurfaceVue, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
-  DemandeProgression, ProgressionResume, ProgressionVue,
+  DemandeProgression, ProgressionResume, ProgressionVue, ResultatModeleCentreMer,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
   DemandeCasePlanning, PlanningVue, ReponseDisponibilite, SoireePlanningVue,
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
@@ -823,6 +823,16 @@ export class ApiService {
 
   supprimerProgression(id: number): Observable<unknown> {
     return this.http.delete(`/api/progressions/${id}`);
+  }
+
+  /** Modèle « centre de plongée en mer » : déjà installé ou non (ADMIN). */
+  etatModeleCentreMer(): Observable<{ installe: boolean }> {
+    return this.http.get<{ installe: boolean }>('/api/progressions/modeles/centre-mer');
+  }
+
+  installerModeleCentreMer(desactiverExercicesPiscineN1: boolean): Observable<ResultatModeleCentreMer> {
+    return this.http.post<ResultatModeleCentreMer>('/api/progressions/modeles/centre-mer',
+      { desactiverExercicesPiscineN1 });
   }
 
   /** Progressions suivies par la saison ouverte : programme des séances, gardé pour le hors ligne. */

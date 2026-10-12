@@ -9,7 +9,7 @@ import { FicheExerciceVue, VideoExerciceVue } from '../../core/modeles';
 import { PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { PhotoExerciceComponent } from '../../core/photo-exercice.component';
-import { plageMois } from '../../core/progression';
+import { plagePeriode } from '../../core/progression';
 
 /** Une vidéo publiée par le club ou un fichier vidéo se lit dans la page ; le reste s'ouvre à part. */
 export function videoDansLaPage(v: VideoExerciceVue): boolean {
@@ -124,7 +124,7 @@ export function videoDansLaPage(v: VideoExerciceVue): boolean {
               <li>
                 <a routerLink="/parcours" [queryParams]="{ progression: p.progressionId }">
                   {{ p.progression }}</a> :
-                <span class="plage">{{ plage(p.moisDebut, p.moisFin) }}</span>, {{ p.intitule }}
+                <span class="plage">{{ plage(p) }}</span>, {{ p.intitule }}
                 @if (p.milieu) { <span class="secondaire">({{ p.milieu === 'NATUREL' ? 'milieu naturel' : 'piscine / fosse' }})</span> }
               </li>
             }
@@ -186,7 +186,7 @@ export class FicheExerciceComponent {
   erreur = signal<string | null>(null);
 
   readonly libellePhase = libellePhase;
-  readonly plage = plageMois;
+  readonly plage = plagePeriode;
   readonly videoDansLaPage = videoDansLaPage;
 
   constructor() {

@@ -5,10 +5,11 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { RouterLink } from '@angular/router';
 import {
-  BlocReferentielVue, DemandePeriodeProgression, DemandeProgression, ExerciceBaseVue, PhaseExercice,
+  BlocReferentielVue, DecoupageProgression, DemandePeriodeProgression, DemandeProgression, ExerciceBaseVue,
+  PhaseExercice,
   ProgressionResume, ProgressionVue, ReferentielVue
 } from '../../core/modeles';
-import { MOIS_SAISON, nomMois, plageMois } from '../../core/progression';
+import { MOIS_SAISON, nomMois, plagePeriode } from '../../core/progression';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 
@@ -33,9 +34,10 @@ function periodeEditee(p: DemandePeriodeProgression): PeriodeEditee {
 
 function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
   return {
-    referentielId: p.referentielId, nom: p.nom, description: p.description,
+    referentielId: p.referentielId, nom: p.nom, description: p.description, decoupage: p.decoupage ?? 'MOIS',
     periodes: p.periodes.map(pe => periodeEditee({
       id: pe.id, intitule: pe.intitule, moisDebut: pe.moisDebut, moisFin: pe.moisFin,
+      plongeeDebut: pe.plongeeDebut ?? null, plongeeFin: pe.plongeeFin ?? null,
       milieu: pe.milieu, note: pe.note, blocIds: pe.blocs.map(b => b.id),
       exerciceIds: (pe.exercices ?? []).map(e => e.id)
     }))
@@ -48,10 +50,11 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
   template: `
     <h1>Progressions types</h1>
     <p class="secondaire">
-      L'année de formation d'un niveau découpée en périodes, avec les blocs du référentiel
+      La formation d'un niveau découpée en périodes, avec les blocs du référentiel
       travaillés dans chacune et les exercices de la base prévus, de l'initiation à la maîtrise : c'est
       le parcours que les moniteurs consultent (menu « Parcours »). Une progression est rattachée à une
-      version du référentiel MFT.
+      version du référentiel MFT. Elle se découpe en mois de la saison (club, formation sur l'année) ou
+      en plongées de l'élève (stage court en mer : « plongée 1 », « plongées 5 à 6 »).
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -90,7 +93,8 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
         <section class="carte fiche">
           <div class="entete">
             <span class="nom">{{ d.nom }}</span>
-            <span class="secondaire">{{ d.niveau }} · MFT {{ d.versionMft }}</span>
+            <span class="secondaire">{{ d.niveau }} · MFT {{ d.versionMft }} ·
+              {{ d.decoupage === 'PLONGEES' ? 'découpée par plongées de l’élève' : 'découpée par mois de la saison' }}</span>
           </div>
           @if (d.description) { <p>{{ d.description }}</p> }
           <div class="actions">
@@ -106,7 +110,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
             @for (p of d.periodes; track p.id) {
               <li class="periode">
                 <div class="entete-periode">
-                  <span class="plage">{{ plage(p.moisDebut, p.moisFin) }}</span>
+                  <span class="plage">{{ plage(p) }}</span>
                   @if (p.milieu) {
                     <span class="milieu">{{ p.milieu === 'NATUREL' ? 'Milieu naturel' : 'Piscine / fosse' }}</span>
                   }
@@ -140,7 +144,41 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           </ol>
         </section>
       }
+
+      @if (modeleInstalle() === false) {
+        <section class="carte modele">
+          <h2>Modèle « centre de plongée en mer »</h2>
+          <p class="secondaire">
+            Pour une structure qui forme en stage court, tout en mer : une base d'exercices N1 écrite pour
+            la mer (exercices « M ») et trois progressions découpées par plongées, N1 en 6 plongées, N2 en 8,
+            N3 en 10, à adapter ensuite. Un club qui forme sur l'année n'en a pas besoin.
+          </p>
+          <button type="button" class="bouton-discret" (click)="ouvrirModele()">Installer le modèle…</button>
+        </section>
+      }
     }
+
+    <app-dialogue [ouvert]="modeleOuvert()" titre="Installer le modèle « centre de plongée en mer »"
+                  [erreur]="message()" (fermer)="modeleOuvert.set(false)">
+      <div class="formulaire">
+        <p>
+          Le modèle ajoute 44 exercices du N1 pensés pour la mer et trois progressions par plongées
+          (N1, N2, N3). Le N2 et le N3 reprennent la base d'exercices existante, déjà décrite en
+          milieu naturel. Rien n'est supprimé ; tout se modifie ensuite depuis cet écran et depuis
+          « Base d'exercices ».
+        </p>
+        <label class="case">
+          <input type="checkbox" [(ngModel)]="desactiverPiscine">
+          Désactiver les exercices N1 pensés pour la piscine (réactivables depuis « Base d'exercices »)
+        </label>
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" (click)="installerModele()" [disabled]="envoi()">
+            {{ envoi() ? 'Installation…' : 'Installer le modèle' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="modeleOuvert.set(false)">Annuler</button>
+        </div>
+      </div>
+    </app-dialogue>
 
     <app-dialogue [ouvert]="creation() !== null" [titre]="'Nouvelle progression ' + selectionNiveau()"
                   [erreur]="message()" (fermer)="creation.set(null)">
@@ -154,6 +192,15 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           </select>
           <label for="nouveau-nom">Nom</label>
           <input id="nouveau-nom" type="text" [(ngModel)]="c.nom" placeholder="ex. N1 – saison piscine">
+          <label for="nouveau-decoupage">Découpage</label>
+          <select id="nouveau-decoupage" [(ngModel)]="c.decoupage">
+            <option ngValue="MOIS">Par mois de la saison (formation sur l'année)</option>
+            <option ngValue="PLONGEES">Par plongées de l'élève (stage court en mer)</option>
+          </select>
+          <p class="aide">
+            Par plongées, chaque élève avance à son rythme : l'étape se lit à son numéro de plongée en
+            milieu naturel, et le retard se compte en plongées. Le découpage ne change plus ensuite.
+          </p>
           <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
               {{ envoi() ? 'Création…' : 'Créer puis ajouter les périodes' }}
@@ -174,26 +221,40 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           <textarea id="description" rows="2" [ngModel]="f.description ?? ''"
                     (ngModelChange)="f.description = $event || null"></textarea>
 
-          <h3>Périodes</h3>
+          @let parPlongees = f.decoupage === 'PLONGEES';
+          <h3>{{ parPlongees ? 'Étapes, par plongée de l’élève' : 'Périodes' }}</h3>
           @for (p of f.periodes; track p.cle; let i = $index, premier = $first, dernier = $last) {
             <fieldset class="periode-edition">
-              <legend>Période {{ i + 1 }}</legend>
+              <legend>{{ parPlongees ? 'Étape' : 'Période' }} {{ i + 1 }}</legend>
               <label [for]="'intitule-' + p.cle">Intitulé</label>
               <input [id]="'intitule-' + p.cle" type="text" [(ngModel)]="p.intitule">
 
               <div class="mois">
-                <div>
-                  <label [for]="'debut-' + p.cle">De</label>
-                  <select [id]="'debut-' + p.cle" [(ngModel)]="p.moisDebut">
-                    @for (m of moisSaison; track m) { <option [ngValue]="m">{{ nomMois(m) }}</option> }
-                  </select>
-                </div>
-                <div>
-                  <label [for]="'fin-' + p.cle">À</label>
-                  <select [id]="'fin-' + p.cle" [(ngModel)]="p.moisFin">
-                    @for (m of moisSaison; track m) { <option [ngValue]="m">{{ nomMois(m) }}</option> }
-                  </select>
-                </div>
+                @if (parPlongees) {
+                  <div>
+                    <label [for]="'debut-' + p.cle">De la plongée</label>
+                    <input [id]="'debut-' + p.cle" type="number" min="1" max="99" inputmode="numeric"
+                           [(ngModel)]="p.plongeeDebut">
+                  </div>
+                  <div>
+                    <label [for]="'fin-' + p.cle">À la plongée</label>
+                    <input [id]="'fin-' + p.cle" type="number" min="1" max="99" inputmode="numeric"
+                           [(ngModel)]="p.plongeeFin">
+                  </div>
+                } @else {
+                  <div>
+                    <label [for]="'debut-' + p.cle">De</label>
+                    <select [id]="'debut-' + p.cle" [(ngModel)]="p.moisDebut">
+                      @for (m of moisSaison; track m) { <option [ngValue]="m">{{ nomMois(m) }}</option> }
+                    </select>
+                  </div>
+                  <div>
+                    <label [for]="'fin-' + p.cle">À</label>
+                    <select [id]="'fin-' + p.cle" [(ngModel)]="p.moisFin">
+                      @for (m of moisSaison; track m) { <option [ngValue]="m">{{ nomMois(m) }}</option> }
+                    </select>
+                  </div>
+                }
                 <div>
                   <label [for]="'milieu-' + p.cle">Milieu</label>
                   <select [id]="'milieu-' + p.cle" [(ngModel)]="p.milieu">
@@ -260,13 +321,13 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
                   Descendre
                 </button>
                 <button type="button" class="bouton-discret danger" (click)="retirerPeriode(i)">
-                  Retirer la période
+                  {{ parPlongees ? 'Retirer l’étape' : 'Retirer la période' }}
                 </button>
               </div>
             </fieldset>
           }
           <button type="button" class="bouton-discret ajout" (click)="ajouterPeriode()">
-            Ajouter une période
+            {{ parPlongees ? 'Ajouter une étape' : 'Ajouter une période' }}
           </button>
 
           <div class="actions-dialogue">
@@ -347,6 +408,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; }
     .danger { color: #B3261E; border-color: #B3261E; }
+    .modele { padding: var(--pas-3); }
     @media (max-width: 600px) {
       .mois { grid-template-columns: 1fr 1fr; }
       .mois > div:last-child { grid-column: 1 / -1; }
@@ -372,19 +434,50 @@ export class ProgressionsAdminComponent {
   exercicesReferentiel = signal<ExerciceBaseVue[]>([]);
   readonly phases = PHASES;
   edition = signal<FormulaireProgression | null>(null);
-  creation = signal<{ referentielId: number | null; nom: string } | null>(null);
+  creation = signal<{ referentielId: number | null; nom: string; decoupage: DecoupageProgression } | null>(null);
 
   progressionsDuNiveau = computed(() => this.liste().filter(p => p.niveau === this.selectionNiveau()));
   referentielsDuNiveau = computed(() => this.referentiels()
     .filter(r => r.niveau === this.selectionNiveau())
     .sort((a, b) => Number(b.actif) - Number(a.actif) || b.dateApplication.localeCompare(a.dateApplication)));
 
+  /** null tant qu'on ne sait pas : la carte du modèle n'apparaît qu'une fois la réponse reçue. */
+  modeleInstalle = signal<boolean | null>(null);
+  modeleOuvert = signal(false);
+  desactiverPiscine = true;
+
   constructor() {
     void this.charger();
+    this.api.etatModeleCentreMer().subscribe({ next: e => this.modeleInstalle.set(e.installe), error: () => {} });
+  }
+
+  ouvrirModele(): void {
+    this.message.set(null);
+    this.desactiverPiscine = true;
+    this.modeleOuvert.set(true);
+  }
+
+  installerModele(): void {
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.installerModeleCentreMer(this.desactiverPiscine).subscribe({
+      next: async r => {
+        this.envoi.set(false);
+        this.modeleOuvert.set(false);
+        this.modeleInstalle.set(true);
+        await this.charger();
+        this.message.set(`Modèle installé : ${r.progressions} progressions par plongées, ${r.exercicesMer} exercices N1 en mer`
+          + (r.exercicesDesactives ? `, ${r.exercicesDesactives} exercices de piscine désactivés.` : '.'));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(err.error?.detail ?? "Le modèle n'a pas pu être installé.");
+      }
+    });
   }
 
   readonly nomMois = nomMois;
-  readonly plage = plageMois;
+  readonly plage = plagePeriode;
 
   private async charger(idASelectionner?: number): Promise<void> {
     this.chargement.set(true);
@@ -432,7 +525,7 @@ export class ProgressionsAdminComponent {
   commencerCreation(): void {
     this.message.set(null);
     const r = this.referentielsDuNiveau()[0];
-    this.creation.set({ referentielId: r?.id ?? null, nom: '' });
+    this.creation.set({ referentielId: r?.id ?? null, nom: '', decoupage: 'MOIS' });
   }
 
   creer(): void {
@@ -443,7 +536,9 @@ export class ProgressionsAdminComponent {
       return;
     }
     this.envoi.set(true);
-    this.api.creerProgression({ referentielId: c.referentielId, nom: c.nom, description: null, periodes: [] })
+    this.api.creerProgression({
+      referentielId: c.referentielId, nom: c.nom, description: null, decoupage: c.decoupage, periodes: []
+    })
       .subscribe({
         next: async p => {
           this.envoi.set(false);
@@ -518,17 +613,24 @@ export class ProgressionsAdminComponent {
     this.edition.set({ ...f, periodes: f.periodes.filter((_, j) => j !== i) });
   }
 
-  /** La nouvelle période démarre le mois qui suit la précédente. */
+  /** La nouvelle période démarre le mois (ou la plongée) qui suit la précédente. */
   ajouterPeriode(): void {
     const f = this.edition();
     if (!f) return;
     const derniere = f.periodes[f.periodes.length - 1];
-    const debut = derniere ? derniere.moisFin % 12 + 1 : 9;
-    const fin = debut % 12 + 1;
+    let plage: Pick<DemandePeriodeProgression, 'moisDebut' | 'moisFin' | 'plongeeDebut' | 'plongeeFin'>;
+    if (f.decoupage === 'PLONGEES') {
+      const debut = (derniere?.plongeeFin ?? 0) + 1;
+      plage = { moisDebut: null, moisFin: null, plongeeDebut: debut, plongeeFin: debut };
+    } else {
+      const debut = derniere?.moisFin ? derniere.moisFin % 12 + 1 : 9;
+      plage = { moisDebut: debut, moisFin: debut % 12 + 1, plongeeDebut: null, plongeeFin: null };
+    }
     this.edition.set({
       ...f,
       periodes: [...f.periodes, periodeEditee({
-        id: null, intitule: '', moisDebut: debut, moisFin: fin, milieu: null, note: null, blocIds: [], exerciceIds: []
+        id: null, intitule: '', ...plage, milieu: f.decoupage === 'PLONGEES' ? 'NATUREL' : null, note: null,
+        blocIds: [], exerciceIds: []
       })]
     });
   }
@@ -548,7 +650,7 @@ export class ProgressionsAdminComponent {
     this.envoi.set(true);
     this.message.set(null);
     const demande: DemandeProgression = {
-      referentielId: f.referentielId, nom: f.nom, description: f.description,
+      referentielId: f.referentielId, nom: f.nom, description: f.description, decoupage: f.decoupage,
       periodes: f.periodes.map(({ cle, ...p }) => p)
     };
     this.api.modifierProgression(id, demande).subscribe({

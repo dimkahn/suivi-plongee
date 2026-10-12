@@ -105,6 +105,11 @@ public class GrilleService {
                           String theorie, String modalitesEvaluation,
                           /** Fin de la derniere periode de la progression suivie qui contient le bloc ; null sinon. */
                           LocalDate echeance, boolean enRetard,
+                          /**
+                           * Progression decoupee par plongees : derniere plongee de la derniere
+                           * etape qui contient le bloc ({@code echeance} reste null) ; null sinon.
+                           */
+                          Integer echeancePlongee,
                           List<CritereVue> criteres,
                           /** Base d'exercices de la competence (actifs), proposes a la notation. */
                           List<ExerciceCompetenceController.ExerciceVue> exercices,
@@ -115,7 +120,8 @@ public class GrilleService {
                           List<String> maitriseAttendue) {}
 
     /** Une periode de la progression suivie par le cursus : le front en tire les blocs « au programme ». */
-    public record PeriodeGrilleVue(String intitule, int moisDebut, int moisFin, String milieu, String note,
+    public record PeriodeGrilleVue(String intitule, Integer moisDebut, Integer moisFin,
+                                   Integer plongeeDebut, Integer plongeeFin, String milieu, String note,
                                    List<Long> blocIds) {}
 
     public record GrilleVue(Long cursusId, Long eleveId, String eleve, boolean aPhoto,
@@ -131,6 +137,16 @@ public class GrilleService {
                             List<BlocVue> blocs,
                             /** Progression suivie par la saison pour ce referentiel ; null et liste vide sinon. */
                             String progression, List<PeriodeGrilleVue> periodes,
+                            /** MOIS ou PLONGEES (decoupage de la progression) ; null sans progression. */
+                            String decoupage,
+                            /**
+                             * Numero de plongee en milieu naturel de l'eleve pour chaque seance ou il
+                             * est present en milieu naturel (1 = sa premiere), a venir comprises :
+                             * l'etape « au programme » d'une progression decoupee par plongees.
+                             */
+                            Map<Long, Integer> numerosPlongee,
+                            /** Plongees en milieu naturel deja faites (seance passee ou du jour). */
+                            int plongeesFaites,
                             /** Seances ou l'eleve est note present : les seules proposees pour le noter. */
                             List<Long> seancesPresent,
                             /** Programme d'exercices des seances de la saison : sa formation et les exercices communs. */
@@ -235,8 +251,18 @@ public class GrilleService {
                 .suivie(cursus.getSaison().getId(), cursus.getReferentiel().getId()).orElse(null);
         Map<Long, LocalDate> echeances = progression == null ? Map.of()
                 : EcheancesProgression.parBloc(progression, cursus.getSaison().getDateDebut());
+        Map<Long, Integer> echeancesPlongee = progression == null ? Map.of()
+                : EcheancesProgression.parBlocEnPlongees(progression);
         boolean enCours = cursus.getStatut() == Cursus.Statut.EN_COURS;
         LocalDate aujourdhui = Calendrier.aujourdhui();
+
+        // Numero de chaque plongee en milieu naturel de l'eleve : etape d'une progression par plongees.
+        List<Seance> plongees = participations.plongeesEnMilieuNaturel(cursusId);
+        Map<Long, Integer> numerosPlongee = new java.util.LinkedHashMap<>();
+        for (Seance s : plongees) numerosPlongee.put(s.getId(), numerosPlongee.size() + 1);
+        int plongeesFaites = (int) plongees.stream().filter(s -> !s.estAVenir()).count();
+        int plongeesFaitesAvantAujourdhui = (int) plongees.stream()
+                .filter(s -> s.getDateSeance().isBefore(aujourdhui)).count();
 
         java.util.Set<Long> avecSchema = schemas.exercicesAvecSchema(cursus.getReferentiel().getId());
         Map<Long, List<ExerciceCompetenceController.ExerciceVue>> exercicesParBloc = exercicesBase
@@ -272,8 +298,11 @@ public class GrilleService {
                     bloc.getCompetenceAttendue(), bloc.getComportement(),
                     bloc.getTheorie(), bloc.getModalitesEvaluation(),
                     echeances.get(bloc.getId()),
-                    enCours && EcheancesProgression.enRetard(echeances.get(bloc.getId()), aujourdhui,
-                            v != null, acquis, criteres.size()),
+                    enCours && (EcheancesProgression.enRetard(echeances.get(bloc.getId()), aujourdhui,
+                            v != null, acquis, criteres.size())
+                            || EcheancesProgression.enRetardEnPlongees(echeancesPlongee.get(bloc.getId()),
+                            plongeesFaitesAvantAujourdhui, v != null, acquis, criteres.size())),
+                    echeancesPlongee.get(bloc.getId()),
                     criteres,
                     exercicesParBloc.getOrDefault(bloc.getId(), List.of()),
                     v == null && acquis == criteres.size()
@@ -302,6 +331,8 @@ public class GrilleService {
                 acquisTotal, total, blocs,
                 progression == null ? null : progression.getNom(),
                 progression == null ? List.of() : periodesVue(progression),
+                progression == null ? null : progression.getDecoupage().name(),
+                numerosPlongee, plongeesFaites,
                 participations.seancesOuPresent(cursusId),
                 programmes(cursus, avecSchema),
                 groupes.referentsDeLEleve(cursus.getSaison().getId(), eleveId));
@@ -335,6 +366,7 @@ public class GrilleService {
         return p.getPeriodes().stream()
                 .sorted(java.util.Comparator.comparingInt(fr.club.plongee.progression.domain.PeriodeProgression::getRang))
                 .map(pp -> new PeriodeGrilleVue(pp.getIntitule(), pp.getMoisDebut(), pp.getMoisFin(),
+                        pp.getPlongeeDebut(), pp.getPlongeeFin(),
                         pp.getMilieu() == null ? null : pp.getMilieu().name(), pp.getNote(),
                         pp.getBlocs().stream().map(BlocCompetence::getId).toList()))
                 .toList();

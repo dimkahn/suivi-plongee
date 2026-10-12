@@ -33,6 +33,11 @@ public class ProgressionType {
     @Column(columnDefinition = "text")
     private String description;
 
+    /** Fixé à la création : les périodes sont en mois ou en plongées (V73). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private DecoupageProgression decoupage = DecoupageProgression.MOIS;
+
     @OneToMany(mappedBy = "progression", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("rang")
     private List<PeriodeProgression> periodes = new ArrayList<>();
@@ -74,6 +79,18 @@ public class ProgressionType {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public DecoupageProgression getDecoupage() {
+        return decoupage;
+    }
+
+    public void setDecoupage(DecoupageProgression decoupage) {
+        this.decoupage = decoupage;
+    }
+
+    public boolean parPlongees() {
+        return decoupage == DecoupageProgression.PLONGEES;
     }
 
     public List<PeriodeProgression> getPeriodes() {

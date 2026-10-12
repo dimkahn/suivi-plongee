@@ -1,12 +1,12 @@
 // A13 — Adapter une progression type.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A13',
   titre: 'Adapter une progression type',
   public: 'Administrateur',
-  resume: 'L\'année d\'un niveau découpée en périodes de mois, avec leurs exercices : le parcours des moniteurs, ce qui est « au programme » et « en retard ».',
+  resume: 'L\'année d\'un niveau découpée en périodes de mois (ou un stage en mer, plongée par plongée), avec leurs exercices : le parcours des moniteurs, ce qui est « au programme » et « en retard ».',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -41,6 +41,13 @@ export default {
     }
     await toucher(page.getByRole('button', { name: 'Enregistrer' }).first(), { apres: 1800 });
     await legende('On la choisit ensuite pour une saison, dans « Saisons ».', 3500);
+    const modele = page.locator('section.modele');
+    if (await modele.count() > 0) {
+      await modele.scrollIntoViewIfNeeded();
+      await pause(600);
+      await legende('Un centre qui forme en stage court, tout en mer, découpe ses progressions par plongées de l\'élève.', 4500);
+      await legende('« Installer le modèle… » en pose trois, N1, N2 et N3, avec des exercices N1 écrits pour la mer.', 4500);
+    }
     await legende(null, 0);
     await pause(500);
   }

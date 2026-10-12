@@ -589,7 +589,7 @@ Compte : `presidente@club.fr` · format ordinateur · 46 s
 
 ### A13 — Adapter une progression type
 
-L'année d'un niveau découpée en périodes de mois, avec leurs exercices : le parcours des moniteurs, ce qui est « au programme » et « en retard ».
+L'année d'un niveau découpée en périodes de mois (ou un stage en mer, plongée par plongée), avec leurs exercices : le parcours des moniteurs, ce qui est « au programme » et « en retard ».
 
 Compte : `presidente@club.fr` · format ordinateur
 
@@ -602,6 +602,8 @@ Compte : `presidente@club.fr` · format ordinateur
 7. Chaque période : ses mois, son milieu, ses conseils aux moniteurs, ses blocs cochés.
 8. « Exercices de la période » : cochez les exercices, ou toute une phase avec « + I », « + P », « + M ».
 9. On la choisit ensuite pour une saison, dans « Saisons ».
+10. Un centre qui forme en stage court, tout en mer, découpe ses progressions par plongées de l'élève.
+11. « Installer le modèle… » en pose trois, N1, N2 et N3, avec des exercices N1 écrits pour la mer.
 
 _À retourner (tournage du 2026-10-12)._
 

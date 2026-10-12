@@ -1,5 +1,6 @@
 package fr.club.plongee.progression;
 
+import fr.club.plongee.progression.service.ModeleCentreMerService;
 import fr.club.plongee.progression.service.ProgressionService;
 import fr.club.plongee.progression.service.ProgressionService.DemandeProgression;
 import fr.club.plongee.progression.service.ProgressionService.ProgressionResume;
@@ -19,10 +20,14 @@ public class ProgressionController {
 
     public record DemandeProgressionsSaison(@NotNull List<Long> progressionIds) {}
 
-    private final ProgressionService service;
+    public record DemandeModeleCentreMer(boolean desactiverExercicesPiscineN1) {}
 
-    public ProgressionController(ProgressionService service) {
+    private final ProgressionService service;
+    private final ModeleCentreMerService modeleCentreMer;
+
+    public ProgressionController(ProgressionService service, ModeleCentreMerService modeleCentreMer) {
         this.service = service;
+        this.modeleCentreMer = modeleCentreMer;
     }
 
     @GetMapping
@@ -41,6 +46,20 @@ public class ProgressionController {
     public List<ProgressionVue> definirPourSaison(@PathVariable Long saisonId,
                                                   @Valid @RequestBody DemandeProgressionsSaison demande) {
         return service.definirPourSaison(saisonId, demande.progressionIds());
+    }
+
+    /** Modèle « centre de plongée en mer » : déjà installé ou non. */
+    @GetMapping("/modeles/centre-mer")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ModeleCentreMerService.EtatModele etatModeleCentreMer() {
+        return modeleCentreMer.etat();
+    }
+
+    @PostMapping("/modeles/centre-mer")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ModeleCentreMerService.ResultatInstallation installerModeleCentreMer(
+            @RequestBody DemandeModeleCentreMer demande) {
+        return modeleCentreMer.installer(demande.desactiverExercicesPiscineN1());
     }
 
     @GetMapping("/{id}")
