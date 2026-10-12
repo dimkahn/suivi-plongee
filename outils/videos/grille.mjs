@@ -48,7 +48,9 @@ export async function choisirExercice({ page, pause, toucher }, intitule) {
 export async function noter(g, savoirFaire, etat, exercice = null) {
   const { page, pause, toucher } = g;
   const ligne = critere(page, savoirFaire);
-  await toucher(ligne.locator('.etats').getByRole('button', { name: etat, exact: true }), { apres: 300 });
+  // Sur un exercice choisi, « En cours » s'appelle « En cours d'acquisition ».
+  const nom = etat === 'En cours' ? /^En cours/ : etat;
+  await toucher(ligne.locator('.etats').getByRole('button', { name: nom, exact: typeof nom === 'string' }), { apres: 300 });
   if (exercice) await choisirExercice(g, exercice);
   await ligne.locator('.enregistrement').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {});
   await pause(900);

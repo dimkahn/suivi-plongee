@@ -117,13 +117,15 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 9. Chaque critère a trois états : non abordé, en cours, acquis.
 10. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
 11. La note porte sur l'exercice réalisé : « 1. Exercice », juste au-dessus des boutons. S'il manque, l'appli le demande au moment de noter.
-12. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
-13. Votre nom et la date s'affichent sous le critère.
-14. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
-15. … on laisse un mot pour le prochain encadrant.
-16. Le commentaire reste affiché sous le critère.
-17. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
-18. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
+12. Une fois l'exercice choisi, les boutons notent l'exercice : non abordé, en cours d'acquisition ou acquis.
+13. L'état du critère s'affiche à part, sous son nom, et celui de la compétence à côté de son titre.
+14. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
+15. Votre nom et la date s'affichent sous le critère.
+16. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
+17. … on laisse un mot pour le prochain encadrant.
+18. Le commentaire reste affiché sous le critère.
+19. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
+20. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 
