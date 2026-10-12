@@ -31,6 +31,7 @@ export default {
     await legende('Elles sont créées et rattachées à la sortie, en un geste.', 3500);
     await vignette();
     await legende('Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s\'y rattache.', 4500);
+    await legende('« Gérer le séjour » : vols, voitures, chambres, repas et programme. Voir la vidéo A17.', 4500);
     await legende(null, 0);
     await pause(500);
   }

@@ -40,6 +40,8 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/fiches-securite/:x', manuels: ['fiche-de-securite'] },
   { adresse: '/fiches-securite/:x/realise', manuels: ['fiche-de-securite'] },
   { adresse: '/groupes', manuels: ['groupes-de-plongeurs'] },
+  { adresse: '/sejours', manuels: ['organiser-un-sejour', 'carnet-du-sejour'], pourEleve: ['carnet-du-sejour'] },
+  { adresse: '/sejours/:x', manuels: ['organiser-un-sejour', 'carnet-du-sejour'], pourEleve: ['carnet-du-sejour'] },
 
   { adresse: '/admin', manuels: ['administration', 'ouvrir-une-saison'] },
   { adresse: '/admin/moniteurs', manuels: ['ajouter-un-moniteur'] },
@@ -50,7 +52,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/admin/exercices', manuels: ['base-d-exercices'] },
   { adresse: '/admin/groupes-entrainement', manuels: ['groupes-entrainement'] },
   { adresse: '/admin/planning', manuels: ['planning-des-soirees'] },
-  { adresse: '/admin/sorties', manuels: ['organiser-une-sortie'] },
+  { adresse: '/admin/sorties', manuels: ['organiser-une-sortie', 'organiser-un-sejour'] },
   { adresse: '/admin/seances', manuels: ['gerer-les-seances', 'generer-les-seances'] },
   { adresse: '/admin/seances/generer', manuels: ['generer-les-seances'] },
   { adresse: '/admin/progressions', manuels: ['progression-type'] },
