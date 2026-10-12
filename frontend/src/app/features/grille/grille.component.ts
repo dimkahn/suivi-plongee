@@ -596,6 +596,14 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                             <app-schema-exercice [exerciceId]="choisi!.id" [libelle]="choisi!.numero + ' ' + choisi!.intitule" />
                           }
                         }
+                        @if (choisi?.conseils) {
+                          <span class="secondaire">Conseil : {{ choisi!.conseils }}</span>
+                        }
+                        @if (choisi && reseau.enLigne()) {
+                          <a class="lien-historique" [href]="'/exercices/' + choisi.id" target="_blank" rel="noopener">
+                            Fiche complète (photos, vidéos) ↗
+                          </a>
+                        }
                         <span class="titre-choix">2. Note</span>
                       </div>
                     }

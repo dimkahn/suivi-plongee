@@ -436,6 +436,71 @@ class BaseExercicesTest {
     }
 
     @Test
+    @DisplayName("Fiche complète d'un exercice : conseils, photos (accord exigé), vidéos (liens https), voisins")
+    void ficheEtMedias() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e1@club.fr");
+        long ref = referentielN1(moniteur);
+        Map<String, JsonNode> parNumero = new HashMap<>();
+        for (JsonNode e : envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200)) {
+            parNumero.put(e.get("numero").asText(), e);
+        }
+        long id = parNumero.get("2.5").get("id").asLong();
+        String url = "/api/exercices/" + id;
+
+        JsonNode fiche = envoyer("GET", url, moniteur, null, 200);
+        assertThat(fiche.get("niveau").asText()).isEqualTo("N1");
+        assertThat(fiche.get("bloc").asText()).isNotBlank();
+        assertThat(fiche.get("precedent").get("numero").asText()).isEqualTo("2.4");
+        assertThat(fiche.get("suivant").get("numero").asText()).isEqualTo("2.6");
+        assertThat(fiche.get("criteres")).isNotEmpty();
+        JsonNode premier = envoyer("GET", "/api/exercices/" + parNumero.get("1.1").get("id").asLong(), moniteur, null, 200);
+        assertThat(premier.get("precedent").isNull()).isTrue();
+
+        // Photos : JPEG/PNG, accord des personnes reconnaissables exigé, réservé à l'admin.
+        byte[] png = mvc.perform(get("/api/exercices/" + parNumero.get("1.1").get("id").asLong() + "/schema")
+                .header("Authorization", moniteur)).andReturn().getResponse().getContentAsByteArray();
+        var fichier = new org.springframework.mock.web.MockMultipartFile("fichier", "photo.png", "image/png", png);
+        mvc.perform(multipart(url + "/photos").file(fichier).param("accordPersonnes", "true")
+                .header("Authorization", moniteur)).andExpect(status().isForbidden());
+        String refus = mvc.perform(multipart(url + "/photos").file(fichier).header("Authorization", admin))
+                .andExpect(status().isUnprocessableContent()).andReturn().getResponse().getContentAsString();
+        assertThat(refus).contains("droit à l");
+        JsonNode photo = json.readTree(mvc.perform(multipart(url + "/photos").file(fichier)
+                        .param("accordPersonnes", "true").param("legende", "Palmes chaussées sur le binôme")
+                        .header("Authorization", admin))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        long photoId = photo.get("id").asLong();
+        mvc.perform(get(url + "/photos/" + photoId).header("Authorization", moniteur))
+                .andExpect(status().isOk());
+
+        // Vidéos : liens https ou publiés par le club sous /medias/.
+        JsonNode refusVideo = envoyer("POST", url + "/videos", admin,
+                Map.of("adresse", "javascript:alert(1)"), 422);
+        assertThat(refusVideo.get("detail").asText()).contains("https://");
+        envoyer("POST", url + "/videos", moniteur, Map.of("adresse", "https://videos.club.fr/2-5.mp4"), 403);
+        long videoId = envoyer("POST", url + "/videos", admin,
+                Map.of("adresse", "https://videos.club.fr/2-5.mp4", "legende", "Départ plage"), 201).get("id").asLong();
+
+        fiche = envoyer("GET", url, moniteur, null, 200);
+        assertThat(fiche.get("photos")).hasSize(1);
+        assertThat(fiche.get("photos").get(0).get("legende").asText()).isEqualTo("Palmes chaussées sur le binôme");
+        assertThat(fiche.get("videos").get(0).get("adresse").asText()).isEqualTo("https://videos.club.fr/2-5.mp4");
+        JsonNode liste = null;
+        for (JsonNode e : envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200)) {
+            if (e.get("id").asLong() == id) liste = e;
+        }
+        assertThat(liste.get("nombrePhotos").asInt()).isEqualTo(1);
+        assertThat(liste.get("nombreVideos").asInt()).isEqualTo(1);
+
+        envoyer("DELETE", url + "/photos/" + photoId, admin, null, 200);
+        envoyer("DELETE", url + "/videos/" + videoId, admin, null, 200);
+        fiche = envoyer("GET", url, moniteur, null, 200);
+        assertThat(fiche.get("photos")).isEmpty();
+        assertThat(fiche.get("videos")).isEmpty();
+    }
+
+    @Test
     @DisplayName("Un administrateur ajoute, modifie et supprime un exercice ; un moniteur ne peut que lire")
     void administration() throws Exception {
         String admin = jeton("presidente@club.fr");
@@ -459,10 +524,18 @@ class BaseExercicesTest {
         envoyer("POST", url, admin, corps.formatted("1.10", true, "[" + autreBloc + "]"), 422);
 
         long id = envoyer("POST", url, admin, corps.formatted("1.10", true, "[" + greage + "]"), 201).get("id").asLong();
+        String avecConseils = """
+                {"numero":"1.10","ordre":10,"phase":"MAITRISE","intitule":"Équipement de nuit","actif":false,
+                 "critereIds":%s,"conseils":"Lampe testée avant l'équipement."}""";
         JsonNode modifie = envoyer("PUT", "/api/referentiels/" + ref + "/exercices/" + id, admin,
-                corps.formatted("1.10", false, "[" + greage + "," + capelage + "]"), 200);
+                avecConseils.formatted("[" + greage + "," + capelage + "]"), 200);
         assertThat(modifie.get("actif").asBoolean()).isFalse();
         assertThat(modifie.get("critereIds")).hasSize(2);
+        assertThat(modifie.get("conseils").asText()).isEqualTo("Lampe testée avant l'équipement.");
+        // Sans le champ (écran d'une version précédente), les conseils restent.
+        modifie = envoyer("PUT", "/api/referentiels/" + ref + "/exercices/" + id, admin,
+                corps.formatted("1.10", false, "[" + greage + "]"), 200);
+        assertThat(modifie.get("conseils").asText()).isEqualTo("Lampe testée avant l'équipement.");
         envoyer("DELETE", "/api/referentiels/" + ref + "/exercices/" + id, admin, null, 200);
         assertThat(envoyer("GET", "/api/referentiels/" + ref + "/exercices", moniteur, null, 200)).hasSize(90);
     }

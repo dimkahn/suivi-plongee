@@ -40,6 +40,7 @@ Chaque critère du N1, du N2 et du N3 a ses exercices, rangés en trois temps ; 
 - La liste propose aussi, sous « Exercices libres du programme », les exercices libres de la séance choisie qui travaillent ce critère et ont une phase (pastille sans numéro). Ils notent comme ceux de la base : seul un exercice de maîtrise acquis rend le critère acquis.
 - Un critère déjà acquis se commente sans redonner l'exercice.
 - « Voir le schéma » montre l'organisation dans l'eau, sous l'exercice choisi comme dans la liste. Après « Préparer hors ligne », les schémas restent visibles sans réseau.
+- Sous l'exercice choisi, le **conseil** de l'encadrant (point de vigilance, erreur fréquente) et, avec du réseau, « Fiche complète (photos, vidéos) » qui ouvre la fiche de l'exercice dans un nouvel onglet.
 - Dans la vue globale, chaque case montre la pastille de l'exercice ; touchez une date pour voir les exercices de cette séance, leur déroulement et les critères notés.
 
 ## N2 et N3 : entraînement en piscine, évaluation en milieu naturel

@@ -390,6 +390,14 @@ Compte : `e2@club.fr` · format téléphone · manuel : `aujourdhui.md`
 9. Sur téléphone, « Aujourd'hui » est aussi le premier onglet, en bas de l'écran.
 10. Après « Préparer hors ligne », la page s'ouvre même sans réseau.
 
+### M24 — Le parcours de formation
+
+L'année de chaque niveau étape par étape, les exercices prévus de l'initiation à la maîtrise, et la fiche complète de chaque exercice.
+
+Compte : `e2@club.fr` · format téléphone · manuel : `parcours-de-formation.md`
+
+_Pas encore tournée : le texte viendra au premier enregistrement._
+
 ## Administrateur
 
 ### A1 — Tour de l'administration
@@ -558,16 +566,21 @@ Compte : `presidente@club.fr` · format ordinateur · 46 s
 
 ### A13 — Adapter une progression type
 
-L'année d'un niveau découpée en périodes de mois : ce qui est « au programme » et ce qui est « en retard ».
+L'année d'un niveau découpée en périodes de mois, avec leurs exercices : le parcours des moniteurs, ce qui est « au programme » et « en retard ».
 
-Compte : `presidente@club.fr` · format ordinateur · 45 s
+Compte : `presidente@club.fr` · format ordinateur
 
-1. La progression N1 du club : des périodes de mois, avec les blocs travaillés.
-2. En mois et pas en dates : elle resert d'une saison à l'autre.
-3. Elle fait apparaître « Au programme » dans les grilles, et calcule les blocs « En retard ».
-4. Pour essayer une variante sans toucher à celle en service : « Dupliquer ».
-5. Chaque période : ses mois, son milieu, ses conseils aux moniteurs, ses blocs cochés.
-6. On la choisit ensuite pour une saison, dans « Saisons ».
+1. La progression N1 du club : des périodes de mois, avec les blocs travaillés…
+2. … et les exercices prévus, de l'initiation à la maîtrise.
+3. C'est le parcours de formation que les moniteurs consultent, menu « Parcours ».
+4. En mois et pas en dates : elle resert d'une saison à l'autre.
+5. Elle fait apparaître « Au programme » dans les grilles, et calcule les blocs « En retard ».
+6. Pour essayer une variante sans toucher à celle en service : « Dupliquer ».
+7. Chaque période : ses mois, son milieu, ses conseils aux moniteurs, ses blocs cochés.
+8. « Exercices de la période » : cochez les exercices, ou toute une phase avec « + I », « + P », « + M ».
+9. On la choisit ensuite pour une saison, dans « Saisons ».
+
+_À retourner (tournage du 2026-10-12)._
 
 ### A14 — Le référentiel MFT
 
@@ -594,7 +607,7 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 
 ### A16 — La base d'exercices
 
-Les exercices de chaque compétence du N1 au N3, par phase, et les critères qu'ils font travailler.
+Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos.
 
 Compte : `presidente@club.fr` · format ordinateur
 

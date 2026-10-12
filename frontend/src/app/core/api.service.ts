@@ -14,7 +14,7 @@ import {
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
   DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue,
-  SyntheseGroupeVue
+  SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -292,6 +292,40 @@ export class ApiService {
   supprimerSchemaExercice(exerciceId: number): Observable<unknown> {
     void supprimer(MAGASIN_CACHE, `schema-exercice:${exerciceId}`);
     return this.http.delete(`/api/exercices/${exerciceId}/schema`);
+  }
+
+  /** Fiche complète d'un exercice de la base : conseils, photos, vidéos, place dans le parcours. Réseau obligatoire. */
+  ficheExercice(exerciceId: number): Observable<FicheExerciceVue> {
+    return this.http.get<FicheExerciceVue>(`/api/exercices/${exerciceId}`);
+  }
+
+  /** Photo d'un exercice ; gardée sur l'appareil (une photo ne change jamais, elle se remplace). */
+  photoExercice(exerciceId: number, photoId: number): Promise<Blob> {
+    return this.lirePhoto(`photo-exercice:${photoId}`,
+      () => this.http.get(`/api/exercices/${exerciceId}/photos/${photoId}`, { responseType: 'blob' }));
+  }
+
+  /** `accordPersonnes` : personne de reconnaissable, ou leur accord est donné (droit à l'image). */
+  deposerPhotoExercice(exerciceId: number, fichier: File, legende: string,
+                       accordPersonnes: boolean): Observable<PhotoExerciceVue> {
+    const donnees = new FormData();
+    donnees.append('fichier', fichier);
+    donnees.append('legende', legende);
+    donnees.append('accordPersonnes', String(accordPersonnes));
+    return this.http.post<PhotoExerciceVue>(`/api/exercices/${exerciceId}/photos`, donnees);
+  }
+
+  supprimerPhotoExercice(exerciceId: number, photoId: number): Observable<unknown> {
+    void supprimer(MAGASIN_CACHE, `photo-exercice:${photoId}`);
+    return this.http.delete(`/api/exercices/${exerciceId}/photos/${photoId}`);
+  }
+
+  ajouterVideoExercice(exerciceId: number, adresse: string, legende: string): Observable<VideoExerciceVue> {
+    return this.http.post<VideoExerciceVue>(`/api/exercices/${exerciceId}/videos`, { adresse, legende });
+  }
+
+  supprimerVideoExercice(exerciceId: number, videoId: number): Observable<unknown> {
+    return this.http.delete(`/api/exercices/${exerciceId}/videos/${videoId}`);
   }
 
   /** Schéma d'un exercice libre du programme d'une séance ; gardé sur l'appareil (il ne change jamais). */

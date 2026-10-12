@@ -9,8 +9,10 @@ import fr.club.plongee.progression.domain.PeriodeProgression;
 import fr.club.plongee.progression.domain.ProgressionType;
 import fr.club.plongee.progression.repository.ProgressionTypeRepository;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
+import fr.club.plongee.referentiel.domain.ExerciceCompetence;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.BlocCompetenceRepository;
+import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -32,8 +34,13 @@ public class ProgressionService {
 
     public record BlocResume(Long id, int ordre, String intitule) {}
 
+    /** Exercice de la base prévu dans une période ; {@code blocId} : sa compétence. */
+    public record ExerciceResume(Long id, Long blocId, String numero, String intitule, String phase,
+                                 boolean actif) {}
+
     public record PeriodeVue(Long id, int rang, String intitule, int moisDebut, int moisFin,
-                             String milieu, String note, List<BlocResume> blocs) {}
+                             String milieu, String note, List<BlocResume> blocs,
+                             List<ExerciceResume> exercices) {}
 
     public record ProgressionResume(Long id, String nom, Long referentielId, String niveau,
                                     String versionMft, int nombrePeriodes) {}
@@ -41,10 +48,13 @@ public class ProgressionService {
     public record ProgressionVue(Long id, String nom, String description, Long referentielId,
                                  String niveau, String versionMft, List<PeriodeVue> periodes) {}
 
-    /** {@code id} null : nouvelle periode. */
+    /**
+     * {@code id} null : nouvelle periode. {@code exerciceIds} null : exercices
+     * inchangés (écran d'une version précédente, qui ne les envoyait pas).
+     */
     public record DemandePeriode(Long id, @NotBlank String intitule,
                                  @Min(1) @Max(12) int moisDebut, @Min(1) @Max(12) int moisFin,
-                                 Milieu milieu, String note, List<Long> blocIds) {}
+                                 Milieu milieu, String note, List<Long> blocIds, List<Long> exerciceIds) {}
 
     /** {@code referentielId} n'est lu qu'a la creation : une progression ne change pas de referentiel. */
     public record DemandeProgression(Long referentielId, @NotBlank String nom, String description,
@@ -54,13 +64,16 @@ public class ProgressionService {
     private final ReferentielRepository referentiels;
     private final BlocCompetenceRepository blocs;
     private final SaisonRepository saisons;
+    private final ExerciceCompetenceRepository exercices;
 
     public ProgressionService(ProgressionTypeRepository progressions, ReferentielRepository referentiels,
-                              BlocCompetenceRepository blocs, SaisonRepository saisons) {
+                              BlocCompetenceRepository blocs, SaisonRepository saisons,
+                              ExerciceCompetenceRepository exercices) {
         this.progressions = progressions;
         this.referentiels = referentiels;
         this.blocs = blocs;
         this.saisons = saisons;
+        this.exercices = exercices;
     }
 
     /**
@@ -153,6 +166,7 @@ public class ProgressionService {
             pc.setMilieu(ps.getMilieu());
             pc.setNote(ps.getNote());
             pc.setBlocs(new LinkedHashSet<>(ps.getBlocs()));
+            pc.setExercices(new LinkedHashSet<>(ps.getExercices()));
             copie.getPeriodes().add(pc);
         }
         return vers(progressions.save(copie));
@@ -194,6 +208,7 @@ public class ProgressionService {
             pp.setMilieu(dp.milieu());
             pp.setNote(dp.note() == null || dp.note().isBlank() ? null : dp.note());
             pp.setBlocs(blocsDuReferentiel(p.getReferentiel(), dp.blocIds()));
+            if (dp.exerciceIds() != null) pp.setExercices(exercicesDuReferentiel(p.getReferentiel(), dp.exerciceIds()));
             nouvelles.add(pp);
         }
         // Meme collection (orphanRemoval) : les periodes absentes de la demande sont supprimees.
@@ -213,6 +228,18 @@ public class ProgressionService {
         return new LinkedHashSet<>(trouves);
     }
 
+    private Set<ExerciceCompetence> exercicesDuReferentiel(Referentiel r, List<Long> ids) {
+        if (ids.isEmpty()) return new LinkedHashSet<>();
+        Set<Long> uniques = new LinkedHashSet<>(ids);
+        List<ExerciceCompetence> trouves = exercices.findAllById(uniques);
+        if (trouves.size() != uniques.size()
+                || trouves.stream().anyMatch(e -> !e.getBloc().getReferentiel().getId().equals(r.getId()))) {
+            throw new RegleMetierException(
+                    "Une période désigne un exercice qui n'appartient pas au référentiel de la progression.");
+        }
+        return new LinkedHashSet<>(trouves);
+    }
+
     private ProgressionVue vers(ProgressionType p) {
         Referentiel r = p.getReferentiel();
         List<PeriodeVue> periodes = p.getPeriodes().stream()
@@ -223,6 +250,13 @@ public class ProgressionService {
                         pp.getBlocs().stream()
                                 .sorted(Comparator.comparingInt(BlocCompetence::getOrdre))
                                 .map(b -> new BlocResume(b.getId(), b.getOrdre(), b.getIntitule()))
+                                .toList(),
+                        pp.getExercices().stream()
+                                .sorted(Comparator.comparingInt((ExerciceCompetence e) -> e.getBloc().getOrdre())
+                                        .thenComparingInt(ExerciceCompetence::getOrdre)
+                                        .thenComparing(ExerciceCompetence::getNumero))
+                                .map(e -> new ExerciceResume(e.getId(), e.getBloc().getId(), e.getNumero(),
+                                        e.getIntitule(), e.getPhase().name(), e.isActif()))
                                 .toList()))
                 .toList();
         return new ProgressionVue(p.getId(), p.getNom(), p.getDescription(), r.getId(),

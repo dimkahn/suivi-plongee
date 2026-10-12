@@ -70,6 +70,10 @@ const ICONES = {
               <a routerLink="/groupes" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Groupes
               </a>
+              <a routerLink="/parcours" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()"
+                 title="Le parcours de chaque niveau, période par période, et la fiche de chaque exercice">
+                Parcours
+              </a>
             }
             @if (auth.inspecteBlocs()) {
               <a routerLink="/materiel" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">

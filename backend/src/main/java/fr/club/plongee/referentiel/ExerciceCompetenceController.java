@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -32,38 +33,52 @@ public class ExerciceCompetenceController {
 
     /**
      * Un exercice de la base ; {@code blocId} : la compétence qu'il travaille ;
-     * {@code aSchema} : un schéma se lit sur /api/exercices/{id}/schema.
+     * {@code aSchema} : un schéma se lit sur /api/exercices/{id}/schema ;
+     * photos et vidéos se lisent sur la fiche complète, /api/exercices/{id}.
      */
     public record ExerciceVue(Long id, Long blocId, String numero, int ordre, String phase,
                               String intitule, String deroulement, String critereReussite, boolean actif,
                               boolean aSchema,
                               /** Critères de la compétence que l'exercice fait travailler. */
-                              List<Long> critereIds) {
+                              List<Long> critereIds,
+                              /** Points de vigilance, erreurs fréquentes et remédiation. */
+                              String conseils,
+                              int nombrePhotos, int nombreVideos) {
 
         public static ExerciceVue de(ExerciceCompetence e, Set<Long> avecSchema) {
+            return de(e, avecSchema, Map.of());
+        }
+
+        public static ExerciceVue de(ExerciceCompetence e, Set<Long> avecSchema,
+                                     Map<Long, MediaExerciceService.Compte> medias) {
+            MediaExerciceService.Compte compte = medias.getOrDefault(e.getId(), MediaExerciceService.Compte.AUCUN);
             return new ExerciceVue(e.getId(), e.getBloc().getId(), e.getNumero(), e.getOrdre(),
                     e.getPhase().name(), e.getIntitule(), e.getDeroulement(), e.getCritereReussite(), e.isActif(),
                     avecSchema.contains(e.getId()),
                     e.getCriteres().stream()
                             .sorted(java.util.Comparator.comparingInt(Critere::getOrdre))
-                            .map(Critere::getId).toList());
+                            .map(Critere::getId).toList(),
+                    e.getConseils(), compte.photos(), compte.videos());
         }
     }
 
+    /** {@code conseils} null : inchangés (écran d'une version précédente) ; vide : effacés. */
     public record DemandeExercice(String numero, int ordre, @NotNull PhaseExercice phase,
                                   String intitule, String deroulement, String critereReussite,
-                                  boolean actif, List<Long> critereIds) {}
+                                  boolean actif, List<Long> critereIds, String conseils) {}
 
     private final ReferentielRepository referentiels;
     private final BlocCompetenceRepository blocs;
     private final ExerciceCompetenceRepository exercices;
     private final EvaluationRepository evaluations;
     private final SchemaExerciceService schemas;
+    private final MediaExerciceService medias;
 
     public ExerciceCompetenceController(ReferentielRepository referentiels, BlocCompetenceRepository blocs,
                                         ExerciceCompetenceRepository exercices, EvaluationRepository evaluations,
-                                        SchemaExerciceService schemas) {
+                                        SchemaExerciceService schemas, MediaExerciceService medias) {
         this.schemas = schemas;
+        this.medias = medias;
         this.referentiels = referentiels;
         this.blocs = blocs;
         this.exercices = exercices;
@@ -79,7 +94,8 @@ public class ExerciceCompetenceController {
             throw new RessourceIntrouvableException("Referentiel introuvable");
         }
         Set<Long> avecSchema = schemas.exercicesAvecSchema(referentielId);
-        return exercices.parReferentiel(referentielId).stream().map(e -> ExerciceVue.de(e, avecSchema)).toList();
+        Map<Long, MediaExerciceService.Compte> comptes = medias.comptes(referentielId);
+        return exercices.parReferentiel(referentielId).stream().map(e -> ExerciceVue.de(e, avecSchema, comptes)).toList();
     }
 
     @PostMapping("/blocs/{blocId}/exercices")
@@ -104,7 +120,7 @@ public class ExerciceCompetenceController {
                                 @Valid @RequestBody DemandeExercice demande) {
         ExerciceCompetence e = exercice(referentielId, exerciceId);
         appliquer(e, demande);
-        return ExerciceVue.de(exercices.save(e), schemas.exercicesAvecSchema(referentielId));
+        return ExerciceVue.de(exercices.save(e), schemas.exercicesAvecSchema(referentielId), medias.comptes(referentielId));
     }
 
     /** Bloqué si l'exercice porte déjà une note : la table evaluation est en ajout seul. */
@@ -158,6 +174,7 @@ public class ExerciceCompetenceController {
         e.setIntitule(intitule);
         e.setDeroulement(vide(d.deroulement()));
         e.setCritereReussite(vide(d.critereReussite()));
+        if (d.conseils() != null) e.setConseils(vide(d.conseils()));
         e.setActif(d.actif());
     }
 

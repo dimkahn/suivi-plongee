@@ -13,8 +13,10 @@ import fr.club.plongee.progression.service.ProgressionService.DemandeProgression
 import fr.club.plongee.progression.service.ProgressionService.ProgressionVue;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.referentiel.domain.Niveau;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.BlocCompetenceRepository;
+import fr.club.plongee.referentiel.repository.ExerciceCompetenceRepository;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +43,7 @@ class ProgressionServiceTest {
     @Mock ReferentielRepository referentiels;
     @Mock BlocCompetenceRepository blocs;
     @Mock SaisonRepository saisons;
+    @Mock ExerciceCompetenceRepository exercices;
 
     ProgressionService service;
     Referentiel n1;
@@ -49,7 +52,7 @@ class ProgressionServiceTest {
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new ProgressionService(progressions, referentiels, blocs, saisons);
+        service = new ProgressionService(progressions, referentiels, blocs, saisons, exercices);
         n1 = referentiel(1L, Niveau.N1);
         immersion = bloc(10L, 3, "S'immerger", n1);
         equilibre = bloc(11L, 6, "S'équilibrer", n1);
@@ -63,8 +66,8 @@ class ProgressionServiceTest {
         when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
 
         ProgressionVue vue = service.creer(new DemandeProgression(1L, " N1 hiver ", null, List.of(
-                new DemandePeriode(null, "Piscine", 9, 10, Milieu.ARTIFICIEL, "", List.of(11L, 10L)),
-                new DemandePeriode(null, "Mer", 5, 6, Milieu.NATUREL, "Fin de saison", List.of()))));
+                new DemandePeriode(null, "Piscine", 9, 10, Milieu.ARTIFICIEL, "", List.of(11L, 10L), null),
+                new DemandePeriode(null, "Mer", 5, 6, Milieu.NATUREL, "Fin de saison", List.of(), null))));
 
         assertThat(vue.nom()).isEqualTo("N1 hiver");
         assertThat(vue.periodes()).extracting(ProgressionService.PeriodeVue::rang).containsExactly(1, 2);
@@ -82,7 +85,7 @@ class ProgressionServiceTest {
         when(blocs.findAllById(anyIterable())).thenReturn(List.of(blocN2));
 
         assertThatThrownBy(() -> service.creer(new DemandeProgression(1L, "N1", null, List.of(
-                new DemandePeriode(null, "Piscine", 9, 10, null, null, List.of(20L))))))
+                new DemandePeriode(null, "Piscine", 9, 10, null, null, List.of(20L), null)))))
                 .isInstanceOf(RegleMetierException.class);
     }
 
@@ -101,8 +104,8 @@ class ProgressionServiceTest {
         when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
 
         ProgressionVue vue = service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
-                new DemandePeriode(53L, "Printemps", 3, 4, null, null, null),
-                new DemandePeriode(51L, "Automne", 9, 10, null, null, null))));
+                new DemandePeriode(53L, "Printemps", 3, 4, null, null, null, null),
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null))));
 
         assertThat(p.getPeriodes()).containsExactly(printemps, automne);
         assertThat(printemps.getRang()).isEqualTo(1);
@@ -130,6 +133,56 @@ class ProgressionServiceTest {
         assertThat(copie.periodes().get(0).id()).isNull();
         assertThat(copie.periodes().get(0).blocs()).extracting(ProgressionService.BlocResume::id)
                 .containsExactly(10L);
+    }
+
+    @Test
+    @DisplayName("Les exercices d'une période sont rangés par bloc puis par ordre ; absents de la demande, ils restent")
+    void modifier_exercicesDeLaPeriode() {
+        ProgressionType p = new ProgressionType();
+        p.setId(5L);
+        p.setReferentiel(n1);
+        p.setNom("N1");
+        PeriodeProgression automne = periode(51L, p, 1, "Automne");
+        p.getPeriodes().add(automne);
+        var maitrise = exercice(101L, equilibre, 7, "6.7", PhaseExercice.MAITRISE);
+        var initiation = exercice(102L, immersion, 1, "3.1", PhaseExercice.INITIATION);
+        when(progressions.findById(5L)).thenReturn(Optional.of(p));
+        when(progressions.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(exercices.findAllById(anyIterable())).thenReturn(List.of(maitrise, initiation));
+
+        ProgressionVue vue = service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, List.of(101L, 102L)))));
+        assertThat(vue.periodes().get(0).exercices()).extracting(ProgressionService.ExerciceResume::numero)
+                .containsExactly("3.1", "6.7");
+
+        // Un écran d'une version précédente n'envoie pas les exercices : ils sont gardés.
+        vue = service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, null))));
+        assertThat(vue.periodes().get(0).exercices()).hasSize(2);
+
+        var autreNiveau = exercice(201L, bloc(20L, 1, "Bloc N2", referentiel(2L, Niveau.N2)), 1, "1.1",
+                PhaseExercice.INITIATION);
+        when(exercices.findAllById(anyIterable())).thenReturn(List.of(autreNiveau));
+        assertThatThrownBy(() -> service.modifier(5L, new DemandeProgression(null, "N1", null, List.of(
+                new DemandePeriode(51L, "Automne", 9, 10, null, null, null, List.of(201L))))))
+                .isInstanceOf(RegleMetierException.class)
+                .hasMessageContaining("exercice");
+    }
+
+    private static fr.club.plongee.referentiel.domain.ExerciceCompetence exercice(
+            Long id, BlocCompetence bloc, int ordre, String numero, PhaseExercice phase) {
+        var e = new fr.club.plongee.referentiel.domain.ExerciceCompetence() {
+            @Override
+            public Long getId() {
+                return id;
+            }
+        };
+        e.setBloc(bloc);
+        e.setOrdre(ordre);
+        e.setNumero(numero);
+        e.setIntitule("Exercice " + numero);
+        e.setPhase(phase);
+        return e;
     }
 
     @Test

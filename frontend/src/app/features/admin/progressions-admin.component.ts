@@ -3,12 +3,14 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { RouterLink } from '@angular/router';
 import {
-  BlocReferentielVue, DemandePeriodeProgression, DemandeProgression, ProgressionResume, ProgressionVue,
-  ReferentielVue
+  BlocReferentielVue, DemandePeriodeProgression, DemandeProgression, ExerciceBaseVue, PhaseExercice,
+  ProgressionResume, ProgressionVue, ReferentielVue
 } from '../../core/modeles';
 import { MOIS_SAISON, nomMois, plageMois } from '../../core/progression';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -34,19 +36,22 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
     referentielId: p.referentielId, nom: p.nom, description: p.description,
     periodes: p.periodes.map(pe => periodeEditee({
       id: pe.id, intitule: pe.intitule, moisDebut: pe.moisDebut, moisFin: pe.moisFin,
-      milieu: pe.milieu, note: pe.note, blocIds: pe.blocs.map(b => b.id)
+      milieu: pe.milieu, note: pe.note, blocIds: pe.blocs.map(b => b.id),
+      exerciceIds: (pe.exercices ?? []).map(e => e.id)
     }))
   };
 }
 
 @Component({
   selector: 'app-progressions-admin',
-  imports: [FormsModule, DialogueComponent],
+  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent],
   template: `
     <h1>Progressions types</h1>
     <p class="secondaire">
       L'année de formation d'un niveau découpée en périodes, avec les blocs du référentiel
-      travaillés dans chacune. Une progression est rattachée à une version du référentiel MFT.
+      travaillés dans chacune et les exercices de la base prévus, de l'initiation à la maîtrise : c'est
+      le parcours que les moniteurs consultent (menu « Parcours »). Une progression est rattachée à une
+      version du référentiel MFT.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -114,6 +119,21 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
                   </ul>
                 } @else {
                   <p class="secondaire">Aucun bloc désigné.</p>
+                }
+                @if ((p.exercices ?? []).length > 0) {
+                  <details class="exercices-lus">
+                    <summary>{{ p.exercices!.length }} exercice(s) prévu(s)</summary>
+                    <ul>
+                      @for (e of p.exercices; track e.id) {
+                        <li>
+                          <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
+                          <a [routerLink]="['/exercices', e.id]">{{ e.intitule }}</a>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                } @else {
+                  <p class="secondaire">Aucun exercice prévu.</p>
                 }
               </li>
             }
@@ -200,6 +220,38 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
                 }
               </div>
 
+              <details class="exercices-choix">
+                <summary>Exercices de la période ({{ p.exerciceIds.length }})</summary>
+                <p class="secondaire">
+                  Les exercices de la base pour les blocs cochés, de l'initiation à la maîtrise. Ils forment le
+                  parcours que voient les moniteurs (« Parcours ») et sont proposés en premier pour le programme
+                  des séances de la période.
+                </p>
+                @for (g of choixExercices(p); track g.bloc.id) {
+                  <div class="groupe-exercices">
+                    <div class="titre-groupe">
+                      <strong>{{ g.bloc.intitule }}</strong>
+                      @for (ph of phases; track ph.valeur) {
+                        <button type="button" class="bouton-discret petit" (click)="cocherPhase(p, g.exercices, ph.valeur)"
+                                [attr.aria-label]="'Cocher les exercices ' + ph.libelle + ' de ' + g.bloc.intitule">
+                          + {{ ph.lettre }}
+                        </button>
+                      }
+                    </div>
+                    @for (e of g.exercices; track e.id) {
+                      <label class="case">
+                        <input type="checkbox" [checked]="p.exerciceIds.includes(e.id)" (change)="basculerExercice(p, e.id)">
+                        <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
+                        {{ e.intitule }}{{ e.actif ? '' : ' (désactivé)' }}
+                      </label>
+                    }
+                  </div>
+                }
+                @if (choixExercices(p).length === 0) {
+                  <p class="secondaire">Cochez d'abord les blocs travaillés.</p>
+                }
+              </details>
+
               <div class="actions">
                 <button type="button" class="bouton-discret" (click)="deplacer(i, -1)" [disabled]="premier">
                   Monter
@@ -281,6 +333,17 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
       border: 1px solid var(--profond); color: var(--profond);
     }
     .ajout { align-self: flex-start; }
+    .exercices-lus { margin-top: var(--pas); font-size: .9375rem; }
+    .exercices-lus summary, .exercices-choix summary {
+      min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700;
+    }
+    .exercices-lus ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+    .exercices-lus li { display: flex; align-items: center; gap: var(--pas); }
+    .exercices-choix { margin-top: var(--pas); border: 1px solid var(--trait); border-radius: var(--r-s); padding: 0 var(--pas); }
+    .groupe-exercices { margin-bottom: var(--pas-2); }
+    .titre-groupe { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
+    .titre-groupe strong { flex: 1 1 200px; }
+    .petit { min-height: 44px; padding: 4px 10px; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; }
     .danger { color: #B3261E; border-color: #B3261E; }
@@ -305,6 +368,9 @@ export class ProgressionsAdminComponent {
   detail = signal<ProgressionVue | null>(null);
   /** Blocs du référentiel de la progression affichée, pour les cases à cocher de l'édition. */
   blocsReferentiel = signal<BlocReferentielVue[]>([]);
+  /** Base d'exercices du référentiel, pour choisir ceux de chaque période. */
+  exercicesReferentiel = signal<ExerciceBaseVue[]>([]);
+  readonly phases = PHASES;
   edition = signal<FormulaireProgression | null>(null);
   creation = signal<{ referentielId: number | null; nom: string } | null>(null);
 
@@ -395,12 +461,43 @@ export class ProgressionsAdminComponent {
   async commencerEdition(p: ProgressionVue): Promise<void> {
     this.message.set(null);
     try {
-      const r = await firstValueFrom(this.api.referentiel(p.referentielId));
+      const [r, exercices] = await Promise.all([
+        firstValueFrom(this.api.referentiel(p.referentielId)),
+        firstValueFrom(this.api.exercicesBase(p.referentielId))
+      ]);
       this.blocsReferentiel.set([...r.blocs].sort((a, b) => a.ordre - b.ordre));
+      this.exercicesReferentiel.set(exercices);
       this.edition.set(formulaireDepuis(p));
     } catch {
       this.message.set('Impossible de charger les blocs du référentiel.');
     }
+  }
+
+  /**
+   * Exercices proposés pour une période : ceux des blocs cochés (actifs), et
+   * ceux déjà prévus même si leur bloc a été décoché ou qu'ils sont désactivés,
+   * pour pouvoir les retirer.
+   */
+  choixExercices(p: PeriodeEditee): { bloc: BlocReferentielVue; exercices: ExerciceBaseVue[] }[] {
+    const tous = this.exercicesReferentiel();
+    return this.blocsReferentiel()
+      .map(bloc => ({
+        bloc,
+        exercices: tous.filter(e => e.blocId === bloc.id
+          && ((p.blocIds.includes(bloc.id) && e.actif) || p.exerciceIds.includes(e.id)))
+      }))
+      .filter(g => g.exercices.length > 0);
+  }
+
+  basculerExercice(p: PeriodeEditee, exerciceId: number): void {
+    p.exerciceIds = p.exerciceIds.includes(exerciceId)
+      ? p.exerciceIds.filter(id => id !== exerciceId) : [...p.exerciceIds, exerciceId];
+  }
+
+  /** Coche d'un coup les exercices d'une phase d'un bloc. */
+  cocherPhase(p: PeriodeEditee, exercices: ExerciceBaseVue[], phase: PhaseExercice): void {
+    const ajout = exercices.filter(e => e.phase === phase && e.actif && !p.exerciceIds.includes(e.id)).map(e => e.id);
+    p.exerciceIds = [...p.exerciceIds, ...ajout];
   }
 
   basculerBloc(p: PeriodeEditee, blocId: number): void {
@@ -431,7 +528,7 @@ export class ProgressionsAdminComponent {
     this.edition.set({
       ...f,
       periodes: [...f.periodes, periodeEditee({
-        id: null, intitule: '', moisDebut: debut, moisFin: fin, milieu: null, note: null, blocIds: []
+        id: null, intitule: '', moisDebut: debut, moisFin: fin, milieu: null, note: null, blocIds: [], exerciceIds: []
       })]
     });
   }

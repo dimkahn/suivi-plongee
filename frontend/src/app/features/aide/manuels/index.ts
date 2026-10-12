@@ -16,6 +16,7 @@ import noterLesPresents from './noter-les-presents.md';
 import syntheseDesNotes from './synthese-des-notes.md';
 import syntheseDesCompetences from './synthese-des-competences.md';
 import preparerLaSeance from './preparer-la-seance.md';
+import parcoursDeFormation from './parcours-de-formation.md';
 import ficheDeSecurite from './fiche-de-securite.md';
 import groupesDePlongeurs from './groupes-de-plongeurs.md';
 import consulterLePlanning from './consulter-le-planning.md';
@@ -74,6 +75,7 @@ const SOURCES: Record<string, string> = {
   'synthese-des-notes': syntheseDesNotes,
   'synthese-des-competences': syntheseDesCompetences,
   'preparer-la-seance': preparerLaSeance,
+  'parcours-de-formation': parcoursDeFormation,
   'fiche-de-securite': ficheDeSecurite,
   'groupes-de-plongeurs': groupesDePlongeurs,
   'consulter-le-planning': consulterLePlanning,

@@ -80,9 +80,14 @@ public class SchemaExerciceService {
 
     /** Refuse ce qui n'est pas une image JPEG ou PNG de 2 Mo au plus (aussi pour les schémas du programme). */
     public static void verifierImage(byte[] contenu, String type) {
+        verifierImage(contenu, type, "Le schéma");
+    }
+
+    /** {@code quoi} : « Le schéma », « La photo », pour le message de refus. */
+    public static void verifierImage(byte[] contenu, String type, String quoi) {
         if (contenu == null || contenu.length == 0) throw new RegleMetierException("Le fichier est vide.");
         if (contenu.length > TAILLE_MAX_OCTETS) {
-            throw new RegleMetierException("Le schéma dépasse la taille maximale de 2 Mo.");
+            throw new RegleMetierException(quoi + " dépasse la taille maximale de 2 Mo.");
         }
         boolean jpeg = contenu.length > 3 && (contenu[0] & 0xFF) == 0xFF && (contenu[1] & 0xFF) == 0xD8
                 && (contenu[2] & 0xFF) == 0xFF;

@@ -44,6 +44,10 @@ public class ExerciceCompetence {
     @Column(columnDefinition = "text")
     private String critereReussite;
 
+    /** Points de vigilance, erreurs fréquentes et remédiation (V64). */
+    @Column(columnDefinition = "text")
+    private String conseils;
+
     /** Désactivé : n'est plus proposé, mais reste lisible sur les notes passées. */
     @Column(nullable = false)
     private boolean actif = true;
@@ -121,6 +125,14 @@ public class ExerciceCompetence {
 
     public void setCritereReussite(String critereReussite) {
         this.critereReussite = critereReussite;
+    }
+
+    public String getConseils() {
+        return conseils;
+    }
+
+    public void setConseils(String conseils) {
+        this.conseils = conseils;
     }
 
     public boolean isActif() {

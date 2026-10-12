@@ -535,6 +535,27 @@ d'exercices » en tête du tableau a été retirée, jugée inutile par le club)
 et son filtre par défaut garde les séances où l'élève était
 présent (`MatriceVue.seancesPresent`) autant que celles où il a été noté. Pas de
 suivi séparé par phase : la phase ne fait que qualifier la note.
+**Parcours de formation (2026, choix du club : « un vrai cursus de
+niveau »).** V64 ajoute à chaque exercice de la base des **conseils de
+l'encadrant** (`exercice_competence.conseils` : vigilance, erreurs
+fréquentes, remédiation), des **photos** (`photo_exercice`, 6 au plus,
+légende, dépôt ADMIN qui exige `accordPersonnes` : personne de
+reconnaissable ou accord donné — le club suit des mineurs) et des
+**vidéos** qui ne sont que des **liens** (`video_exercice`, https ou
+`/medias/…`, jamais de fichier en base) ; `MediaExerciceService`,
+`FicheExerciceController` (`GET /api/exercices/{id}` : fiche complète,
+avec les périodes où l'exercice est prévu et ses voisins dans la
+compétence). Les **périodes d'une progression type portent des
+exercices** (`periode_progression_exercice`, rangés par bloc puis ordre,
+sans ordre propre ; `DemandePeriode.exerciceIds` null = inchangés) : c'est
+le parcours, lu par les encadrants sur `/parcours` (`ParcoursComponent`),
+chaque exercice ouvrant `/exercices/:id` (`FicheExerciceComponent`).
+Le programme d'une séance propose d'abord les exercices de la période du
+mois. Le découpage reste **par mois** (pas séance par séance, choix de
+2026 maintenu). Contenu : une migration par niveau remplit conseils et
+exercices des périodes de V22, et complète les schémas manquants.
+Réseau obligatoire pour la fiche et le parcours (les photos vues restent
+en cache comme les schémas).
 **Schémas** (V52, table `schema_exercice` à part comme `photo_eleve`,
 PNG/JPEG vérifiés par leur signature, `SchemaExerciceService`,
 `/api/exercices/{id}/schema`, dépôt ADMIN) : V53 est une **migration Java**
