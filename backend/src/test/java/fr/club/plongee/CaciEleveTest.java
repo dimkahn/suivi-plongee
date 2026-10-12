@@ -107,4 +107,19 @@ class CaciEleveTest {
         assertThat(camille.has("caciDateExamen")).isTrue();
         assertThat(camille.get("caciActivites").isArray()).isTrue();
     }
+
+    @Test
+    @DisplayName("« Infos élèves » donne l'avancement de chaque formation pour sa barre de progression")
+    void rosterDonneLAvancement() throws Exception {
+        JsonNode roster = json.readTree(mvc.perform(get("/api/roster").header("Authorization", jeton("e3@club.fr")))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(roster.get("eleves")).isNotEmpty();
+        for (JsonNode ligne : roster.get("eleves")) {
+            JsonNode a = ligne.get("avancement");
+            assertThat(a.get("criteresTotal").asInt()).isPositive();
+            assertThat(a.get("criteresEffectues").asInt()).isBetween(0, a.get("criteresTotal").asInt());
+            assertThat(a.get("pourcentage").asInt())
+                    .isEqualTo(Math.round(100f * a.get("criteresEffectues").asInt() / a.get("criteresTotal").asInt()));
+        }
+    }
 }

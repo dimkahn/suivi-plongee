@@ -4,6 +4,7 @@ import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.formation.service.*;
 
+import fr.club.plongee.evaluation.service.AvancementFormation;
 import fr.club.plongee.commun.ActiviteCaci;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.MedecinCaci;
@@ -39,7 +40,9 @@ public class RosterController {
                              boolean caciValide, LocalDate caciFinValidite,
                              LocalDate caciDateExamen, MedecinCaci caciMedecin, Set<ActiviteCaci> caciActivites,
                              long seancesBloc, long seancesNage,
-                             Map<Long, String> presencesParSeance, boolean aPhoto) {}
+                             Map<Long, String> presencesParSeance, boolean aPhoto,
+                             /** Barre de progression à côté du nom : même calcul que la synthèse de l'élève. */
+                             AvancementFormation.Avancement avancement) {}
 
     public record RosterVue(List<SeanceEnTete> seances, List<LigneEleve> eleves) {}
 
@@ -48,10 +51,12 @@ public class RosterController {
     private final SeanceRepository seances;
     private final ParticipationRepository participations;
     private final PhotoEleveRepository photos;
+    private final AvancementFormation avancements;
 
     public RosterController(CursusRepository cursus, SaisonRepository saisons,
                             SeanceRepository seances, ParticipationRepository participations,
-                            PhotoEleveRepository photos) {
+                            PhotoEleveRepository photos, AvancementFormation avancements) {
+        this.avancements = avancements;
         this.cursus = cursus;
         this.saisons = saisons;
         this.seances = seances;
@@ -84,7 +89,8 @@ public class RosterController {
                     participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),
                     participations.compterAtelier(c.getId(), Participation.Atelier.NAGE),
                     presences,
-                    e.isAutorisationImage() && photos.existsById(e.getId()));
+                    e.isAutorisationImage() && photos.existsById(e.getId()),
+                    avancements.de(c.getId()));
         }).toList();
 
         List<SeanceEnTete> entetes = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()

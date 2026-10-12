@@ -1,10 +1,10 @@
 // M16 — Infos élèves.
-// Tournage du 2026-10-12, 6e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 7e série (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M16',
   titre: 'Infos élèves',
   public: 'Moniteur',
-  resume: 'Toute la saison sur un écran : CACI, séances suivies, contacts d\'urgence.',
+  resume: 'Toute la saison sur un écran : progression, CACI, séances suivies, contacts d\'urgence.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut }) {
@@ -12,6 +12,9 @@ export default {
     await pause(1200);
     await legende('« Infos élèves », l\'onglet « Élèves » sur téléphone : toute la saison sur un seul écran.', 3500);
     await page.locator('table').scrollIntoViewIfNeeded();
+    await legende('Sous chaque nom, la barre de progression de sa formation : la part des critères acquis.', 0);
+    await page.locator('.avancement').first().scrollIntoViewIfNeeded();
+    await pause(4000);
     await legende('Pour chaque élève : son niveau préparé et son CACI.', 3500);
     await legende('CACI : vert, plus d\'un mois ; orange, moins d\'un mois ; rouge, moins de 15 jours ; ⚠ expiré.', 5000);
 

@@ -6,7 +6,7 @@ import { couleurCaci, libelleCaci } from '../../core/caci';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
-import { GroupeEntrainementVue, LigneRoster, RosterVue } from '../../core/modeles';
+import { AvancementFormation, GroupeEntrainementVue, LigneRoster, RosterVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DateFrPipe } from '../../core/date-fr';
@@ -85,6 +85,16 @@ const LIBELLES: Record<string, string> = {
                     }
                     <div class="identite-cellule">
                       <span class="nom">{{ e.eleve }}</span>
+                      @if (e.avancement; as a) {
+                        <!-- Masquée aux lecteurs d'écran : le nom du lien reste celui de l'élève. -->
+                        <span class="avancement" aria-hidden="true"
+                              [title]="'Progression de la formation : ' + a.pourcentage + ' % (' + detailAvancement(a) + ')'">
+                          <span class="barre">
+                            <span class="remplissage" [style.width.%]="a.pourcentage"></span>
+                          </span>
+                          <span class="pourcentage">{{ a.pourcentage }} %</span>
+                        </span>
+                      }
                     </div>
                   </a>
                 </td>
@@ -181,6 +191,13 @@ const LIBELLES: Record<string, string> = {
     td.figee { background: var(--carte); }
     .identite-cellule { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
     .identite-cellule .nom { font-weight: 700; color: var(--profond); text-decoration: underline; }
+    /* Progression de la formation sous le nom : critères effectués sur le total. */
+    .avancement { display: flex; align-items: center; gap: 6px; }
+    .avancement .barre {
+      flex: 1; min-width: 80px; height: 8px; border-radius: 4px; background: var(--trait); overflow: hidden;
+    }
+    .avancement .remplissage { display: block; height: 100%; background: var(--acquis); }
+    .avancement .pourcentage { font-size: .75rem; font-weight: 700; color: var(--craie); min-width: 3ch; }
     .alerte-cellule { color: #B3261E; font-weight: 700; }
     /* Échéance du CACI : plus d'un mois, moins d'un mois, moins de 15 jours. */
     .caci-vert { color: var(--acquis); font-weight: 700; }
@@ -296,6 +313,11 @@ export class RosterComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     for (const url of this.urlsPhotos().values()) URL.revokeObjectURL(url);
+  }
+
+  detailAvancement(a: AvancementFormation): string {
+    return `${a.criteresEffectues} critère${a.criteresEffectues > 1 ? 's' : ''} acquis sur ${a.criteresTotal}, `
+      + `${a.competencesValidees} compétence${a.competencesValidees > 1 ? 's' : ''} validée${a.competencesValidees > 1 ? 's' : ''} sur ${a.competences}`;
   }
 
   libelle(code: string | undefined): string {
