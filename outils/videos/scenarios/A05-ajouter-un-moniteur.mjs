@@ -6,7 +6,7 @@ export default {
   id: 'A5',
   titre: 'Ajouter un moniteur',
   public: 'Administrateur',
-  resume: 'Créer le compte d\'un encadrant : niveau d\'encadrement, niveau de plongeur, rôles, CACI.',
+  resume: 'Créer le compte d\'un encadrant : niveau d\'encadrement, niveau de plongeur, rôles, CACI ; et les comptes « Sécurité surface ».',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -24,11 +24,18 @@ export default {
     await choisir('#niveau-plongeur', 'N4', { exact: false });
     await legende('Pour le CACI, la date de l\'examen suffit : il vaut un an.', 0);
     await dater('#caciExamen', '2026-08-31');
-    await legende('Deux rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel).', 4000);
+    await legende('Des rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel), TIV.', 4000);
+    await legende('Julien est E2 : pour qu\'il établisse les fiches de sécurité comme un E3, cochez ce droit.', 0);
+    await cocher('input[name="ficheSecurite"]');
+    await pause(1500);
     await vignette();
     await toucher(page.getByRole('button', { name: 'Ajouter le moniteur' }), { apres: 2000 });
     await legende('Julien reçoit un e-mail pour choisir son mot de passe.', 3500);
     await legende('Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l\'image.', 4000);
+    const surface = page.getByRole('heading', { name: 'Sécurité surface' });
+    await surface.scrollIntoViewIfNeeded();
+    await legende('En bas, les comptes « Sécurité surface » : une personne qui n\'est pas moniteur du club.', 4000);
+    await legende('Elle ne voit que les fiches de sécurité, et ne fait que les compléter au retour de plongée.', 4000);
     await legende(null, 0);
     await pause(500);
   }

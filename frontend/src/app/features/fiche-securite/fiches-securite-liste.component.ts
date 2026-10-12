@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
@@ -52,7 +53,14 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
       }
     </section>
 
-    @if (filtreDate() && fichesDuJour() > 0) {
+    @if (!auth.etablitFichesSecurite()) {
+      <p class="secondaire">
+        Vous pouvez compléter les fiches au retour de plongée. Les établir ou les modifier
+        revient aux moniteurs E3 ou E4, ou à ceux qui en ont reçu le droit.
+      </p>
+    }
+
+    @if (filtreDate() && fichesDuJour() > 0 && (auth.estMoniteur() || auth.estAdmin())) {
       <div class="impression-jour">
         <button type="button" class="bouton-principal" (click)="imprimerFichesDuJour()" [disabled]="impressionEnCours()">
           {{ impressionEnCours() ? 'Génération…' : 'Imprimer les fiches du ' + (filtreDate() | dateFr) + ' (PDF)' }}
@@ -121,9 +129,15 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
                 @if (aUneFiche(s)) {
                   <span class="etiquette">Fiche enregistrée</span>
                 }
-                <a [routerLink]="['/fiches-securite', s.id]" class="bouton-discret">
-                  {{ aUneFiche(s) ? 'Modifier la fiche' : 'Établir la fiche' }}
-                </a>
+                @if (auth.etablitFichesSecurite()) {
+                  <a [routerLink]="['/fiches-securite', s.id]" class="bouton-discret">
+                    {{ aUneFiche(s) ? 'Modifier la fiche' : 'Établir la fiche' }}
+                  </a>
+                } @else if (aUneFiche(s) && (auth.estMoniteur() || auth.estAdmin())) {
+                  <a [routerLink]="['/fiches-securite', s.id]" class="bouton-discret">Voir la fiche</a>
+                } @else if (!aUneFiche(s)) {
+                  <span class="secondaire">Pas encore établie</span>
+                }
                 @if (aUneFiche(s)) {
                   <a [routerLink]="['/fiches-securite', s.id, 'realise']" class="bouton-discret">
                     Compléter au retour de plongée
@@ -169,6 +183,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 export class FichesSecuriteListeComponent {
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
+  auth = inject(AuthService);
 
   /** Une fiche établie hors ligne, pas encore partie, compte déjà. */
   aUneFiche(s: SeanceVue): boolean {

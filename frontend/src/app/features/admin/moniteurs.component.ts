@@ -10,6 +10,7 @@ import { MoniteurVue } from '../../core/modeles';
 import { CACI_LIMITES, EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
+import { ComptesSecuriteSurfaceComponent } from './comptes-securite-surface.component';
 
 type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
 
@@ -19,7 +20,8 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
+  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent,
+            ComptesSecuriteSurfaceComponent],
   template: `
     <div class="entete">
       <div>
@@ -27,6 +29,7 @@ function aVerifier(m: MoniteurVue): boolean {
         <p class="secondaire">
           Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
           administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
+          En bas de la page, les comptes « Sécurité surface », pour qui n'est pas moniteur du club.
         </p>
       </div>
       <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouveau moniteur</button>
@@ -88,6 +91,11 @@ function aVerifier(m: MoniteurVue): boolean {
       <label class="case">
         <input type="checkbox" name="tiv" [(ngModel)]="tiv">
         TIV (fiches d'inspection des blocs)
+      </label>
+      <label class="case">
+        <input type="checkbox" name="ficheSecurite" [(ngModel)]="ficheSecurite"
+               [disabled]="niveauEncadrement === 'E3' || niveauEncadrement === 'E4'">
+        Établir les fiches de sécurité sans être E3 ni E4
       </label>
 
       <div class="actions-dialogue">
@@ -152,6 +160,7 @@ function aVerifier(m: MoniteurVue): boolean {
                 @if (m.admin) { <span class="etat admin">Admin</span> }
                 @if (m.directeurTechnique) { <span class="etat admin" title="Directeur technique">DT</span> }
                 @if (m.tiv) { <span class="etat admin" title="Technicien en inspection visuelle">TIV</span> }
+                @if (m.ficheSecurite) { <span class="etat admin" title="Établit les fiches de sécurité sans être E3 ni E4">Fiches sécu</span> }
                 <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
                   {{ m.actif ? 'Actif' : 'Désactivé' }}
                 </span>
@@ -263,6 +272,15 @@ function aVerifier(m: MoniteurVue): boolean {
           <input type="checkbox" name="editionTiv" [(ngModel)]="edition.tiv">
           TIV (fiches d'inspection des blocs)
         </label>
+        <label class="case">
+          <input type="checkbox" name="editionFicheSecurite" [(ngModel)]="edition.ficheSecurite"
+                 [disabled]="edition.niveauEncadrement === 'E3' || edition.niveauEncadrement === 'E4'">
+          Établir les fiches de sécurité sans être E3 ni E4
+        </label>
+        <p class="secondaire">
+          Les E3 et E4 établissent les fiches de sécurité d'office ; tous les moniteurs les complètent
+          au retour de plongée. Ce droit ne fait pas du moniteur un directeur de plongée.
+        </p>
 
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" (click)="modifier(m)" [disabled]="envoiEdition()">
@@ -302,6 +320,8 @@ function aVerifier(m: MoniteurVue): boolean {
         </div>
       }
     </app-dialogue>
+
+    <app-comptes-securite-surface />
 
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.moniteur.prenom + ' ' + r.moniteur.nom"
@@ -408,6 +428,7 @@ export class MoniteursComponent {
   admin = false;
   directeurTechnique = false;
   tiv = false;
+  ficheSecurite = false;
   envoiCreation = signal(false);
   creationOuverte = signal(false);
 
@@ -416,7 +437,7 @@ export class MoniteursComponent {
               niveauEncadrementPrepare: '', niveauPlongeur: '',
               numeroLicence: '',
               caciDateExamen: '', caciMedecin: '', caciActivites: [] as string[],
-              admin: false, directeurTechnique: false, tiv: false };
+              admin: false, directeurTechnique: false, tiv: false, ficheSecurite: false };
 
   /** Moniteur dont on consulte le détail du CACI. */
   caciOuvert = signal<MoniteurVue | null>(null);
@@ -510,7 +531,8 @@ export class MoniteursComponent {
       caciActivites: this.caciActivites,
       admin: this.admin,
       directeurTechnique: this.directeurTechnique,
-      tiv: this.tiv
+      tiv: this.tiv,
+      ficheSecurite: this.ficheSecurite
     }).subscribe({
       next: m => {
         this.envoiCreation.set(false);
@@ -528,6 +550,7 @@ export class MoniteursComponent {
         this.admin = false;
         this.directeurTechnique = false;
         this.tiv = false;
+        this.ficheSecurite = false;
         this.message.set(`${m.prenom} ${m.nom} a été ajouté·e ; un lien pour définir son mot de passe lui a été envoyé.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -573,7 +596,8 @@ export class MoniteursComponent {
       caciActivites: [...(m.caciActivites ?? [])],
       admin: m.admin,
       directeurTechnique: m.directeurTechnique,
-      tiv: m.tiv
+      tiv: m.tiv,
+      ficheSecurite: m.ficheSecurite
     };
     this.moniteurEdite.set(m.id);
   }

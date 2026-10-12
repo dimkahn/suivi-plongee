@@ -175,7 +175,18 @@ du tuteur ; la notation (`HabilitationService`) et le choix du DP n'en
 tiennent pas compte. Le **directeur de plongée d'une fiche de sécurité est E3 minimum, quel
 que soit le milieu** (choix du club, 2026 ; `FicheSecuriteService`,
 constante `NIVEAU_DP_MINIMUM` — règle de sécurité générale, pas du MFT,
-donc pas une colonne du référentiel).
+donc pas une colonne du référentiel). **Droits sur la fiche (choix du club,
+2026, V71)** : l'établir ou la modifier (et proposer les palanquées, lier
+les séances) est réservé aux E3/E4, aux ADMIN et aux moniteurs qui ont le
+rôle `FICHE_SECURITE` (donné dans l'écran Moniteurs ; ne fait pas d'eux
+des DP) — `HabilitationService.peutEtablirFicheSecurite`, refus 422 lisible ;
+pour les autres l'écran est en lecture seule. La compléter au retour
+(`PUT …/fiche-securite/realise`) est ouvert à tous les moniteurs et au rôle
+`SECURITE_SURFACE` : un compte qui n'est **pas** moniteur (sécurité surface
+d'une sortie), créé en bas de l'écran Moniteurs
+(`AdminSecuriteSurfaceController`), qui ne voit que la liste des fiches et
+l'écran de complément (`gardeFichesSecurite`). Démo : `e2@club.fr` a le
+droit, `surface@club.fr` (V116).
 
 **Planning du bassin : espaces et groupes d'entraînement (lot 1, 2026).**
 Remplace le tableur « Planning » du lundi soir (groupes × dates, chaque case

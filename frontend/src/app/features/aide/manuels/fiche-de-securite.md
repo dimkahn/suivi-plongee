@@ -3,18 +3,26 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter
 questions:
 - Comment composer les palanquées automatiquement ?
 - Comment remplir une fiche de sécurité ?
 - Comment ajouter une palanquée ?
 - Qui peut être directeur de plongée ?
+- Qui peut établir ou modifier une fiche de sécurité ?
+- Qui peut compléter la fiche au retour de plongée ?
+- La sécurité surface peut-elle remplir la fiche sans être moniteur ?
 - Comment saisir les paramètres réalisés après la plongée ?
 - Comment exporter une fiche de sécurité ?
 - Comment imprimer toutes les fiches de sécurité d'un séjour ?
 - Comment imprimer toutes les fiches palanquées d'un jour ?
 ---
 Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plongée, les conditions, puis composez les palanquées. Au retour, on complète les heures, profondeurs et paliers réalisés.
+
+## Qui fait quoi
+
+- **Établir ou modifier** la fiche (DP, conditions, palanquées, proposition automatique, liaison avec une autre séance) : les moniteurs E3 et E4, les administrateurs, et les moniteurs à qui un administrateur en a donné le droit (écran « Moniteurs »). Pour les autres, la fiche s'ouvre en lecture seule.
+- **Compléter au retour de plongée** (heures, profondeurs, durées, paliers) : tous les moniteurs, et les comptes « Sécurité surface », pour une personne qui n'est pas moniteur du club. Ces comptes ne voient que la liste des fiches de sécurité et l'écran « Compléter au retour de plongée ».
 
 ## Avant la mise à l'eau
 

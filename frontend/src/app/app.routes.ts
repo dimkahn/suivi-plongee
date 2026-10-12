@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
-import { gardeAdmin, gardeConnecte, gardeEncadrant, gardeInspectionBlocs, gardeMateriel, gardeSorties } from './core/gardes';
+import {
+  gardeAdmin, gardeConnecte, gardeEncadrant, gardeFichesSecurite, gardeInspectionBlocs, gardeMateriel, gardeSorties
+} from './core/gardes';
 
 export const routes: Routes = [
   // Page d'accueil : « Aujourd'hui », la séance du jour. Un compte sans rôle
@@ -92,7 +94,7 @@ export const routes: Routes = [
   { path: 'seances/generer', pathMatch: 'full', redirectTo: 'admin/seances/generer' },
   {
     path: 'fiches-securite',
-    canActivate: [gardeConnecte, gardeEncadrant],
+    canActivate: [gardeConnecte, gardeFichesSecurite],
     loadComponent: () => import('./features/fiche-securite/fiches-securite-liste.component')
       .then(m => m.FichesSecuriteListeComponent)
   },
@@ -104,7 +106,7 @@ export const routes: Routes = [
   },
   {
     path: 'fiches-securite/:id/realise',
-    canActivate: [gardeConnecte, gardeEncadrant],
+    canActivate: [gardeConnecte, gardeFichesSecurite],
     loadComponent: () => import('./features/fiche-securite/fiche-securite-realise.component')
       .then(m => m.FicheSecuriteRealiseComponent)
   },

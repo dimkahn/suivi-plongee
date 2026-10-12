@@ -42,9 +42,13 @@ public class AdminMoniteurController {
                               String numeroLicence,
                               LocalDate certificatValideJusquAu, LocalDate caciDateExamen, MedecinCaci caciMedecin,
                               Set<ActiviteCaci> caciActivites, boolean admin, boolean directeurTechnique,
-                              boolean tiv, boolean autorisationImage, boolean aPhoto) {}
+                              boolean tiv, boolean ficheSecurite, boolean autorisationImage, boolean aPhoto) {}
 
-    /** {@code admin}, {@code directeurTechnique} et {@code tiv} facultatifs : absents, le moniteur est cree sans ces roles. */
+    /**
+     * {@code admin}, {@code directeurTechnique}, {@code tiv} et {@code ficheSecurite}
+     * facultatifs : absents, le moniteur est cree sans ces roles.
+     * {@code ficheSecurite} : etablir les fiches de securite sans etre E3 ni E4.
+     */
     public record DemandeCreationMoniteur(@NotBlank @Email String email, @NotBlank String nom,
                                           @NotBlank String prenom,
                                           @NotNull NiveauEncadrement niveauEncadrement,
@@ -55,7 +59,8 @@ public class AdminMoniteurController {
                                           /** La fin de validité du CACI se déduit de la date de l'examen. */
                                           LocalDate caciDateExamen, MedecinCaci caciMedecin,
                                           Set<ActiviteCaci> caciActivites,
-                                          Boolean admin, Boolean directeurTechnique, Boolean tiv) {
+                                          Boolean admin, Boolean directeurTechnique, Boolean tiv,
+                                          Boolean ficheSecurite) {
         Caci caci() {
             return new Caci(caciDateExamen, caciMedecin, caciActivites);
         }
@@ -74,7 +79,8 @@ public class AdminMoniteurController {
                                               String numeroLicence,
                                               LocalDate caciDateExamen, MedecinCaci caciMedecin,
                                               Set<ActiviteCaci> caciActivites,
-                                              Boolean admin, Boolean directeurTechnique, Boolean tiv) {
+                                              Boolean admin, Boolean directeurTechnique, Boolean tiv,
+                                              Boolean ficheSecurite) {
         Caci caci() {
             return new Caci(caciDateExamen, caciMedecin, caciActivites);
         }
@@ -107,7 +113,8 @@ public class AdminMoniteurController {
         return vue(service.creer(demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.niveauEncadrementPrepare(), demande.niveauPlongeur(), demande.numeroLicence(),
                 demande.caci(), Boolean.TRUE.equals(demande.admin()),
-                Boolean.TRUE.equals(demande.directeurTechnique()), Boolean.TRUE.equals(demande.tiv())));
+                Boolean.TRUE.equals(demande.directeurTechnique()), Boolean.TRUE.equals(demande.tiv()),
+                Boolean.TRUE.equals(demande.ficheSecurite())));
     }
 
     @PutMapping("/{id}")
@@ -116,7 +123,8 @@ public class AdminMoniteurController {
                                 @AuthenticationPrincipal UtilisateurPrincipal auteur) {
         return vue(service.modifier(id, auteur.id(), demande.email(), demande.nom(), demande.prenom(),
                 demande.niveauEncadrement(), demande.niveauEncadrementPrepare(), demande.niveauPlongeur(), demande.numeroLicence(),
-                demande.caci(), demande.admin(), demande.directeurTechnique(), demande.tiv()));
+                demande.caci(), demande.admin(), demande.directeurTechnique(), demande.tiv(),
+                demande.ficheSecurite()));
     }
 
     @PutMapping("/{id}/activation")
@@ -180,6 +188,7 @@ public class AdminMoniteurController {
                 u.getCaci().dateExamen(), u.getCaci().medecin(), u.getCaci().activites(),
                 u.getRoles().contains(RoleNom.ADMIN),
                 u.getRoles().contains(RoleNom.DIRECTEUR_TECHNIQUE), u.getRoles().contains(RoleNom.TIV),
+                u.getRoles().contains(RoleNom.FICHE_SECURITE),
                 u.isAutorisationImage(), u.isAutorisationImage() && photos.existsById(u.getId()));
     }
 }

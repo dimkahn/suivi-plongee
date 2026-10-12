@@ -1,5 +1,6 @@
 package fr.club.plongee.formation;
 
+import fr.club.plongee.evaluation.service.HabilitationService;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.formation.service.*;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalTime;
@@ -29,6 +31,13 @@ import java.util.List;
  * avant la mise à l'eau, fixe le DP, les conditions et la composition des
  * palanquées ; la seconde, au retour, ne touche que le profil réellement
  * plongé, sans avoir à ressaisir la liste des plongeurs.
+ *
+ * <p>Droits (choix du club, 2026) : établir, modifier, proposer les
+ * palanquées et lier les séances est réservé aux E3, E4, administrateurs et
+ * moniteurs qui ont le rôle FICHE_SECURITE
+ * ({@link HabilitationService#peutEtablirFicheSecurite}) ; lire et compléter
+ * au retour est ouvert à tous les moniteurs et à la sécurité surface
+ * (rôle SECURITE_SURFACE, compte qui n'est pas moniteur).
  *
  * <p>Toute la lecture des entités (dp, seance, palanquees, membres — toutes
  * chargées à la demande) reste dans {@link FicheSecuriteService}, dont les
@@ -71,10 +80,16 @@ public class FicheSecuriteController {
 
     private final FicheSecuriteService service;
     private final PropositionPalanqueesService propositions;
+    private final HabilitationService habilitation;
 
-    public FicheSecuriteController(FicheSecuriteService service, PropositionPalanqueesService propositions) {
+    /** Lecture et complément au retour : tous les moniteurs, les administrateurs et la sécurité surface. */
+    static final String LECTURE_ET_COMPLEMENT = "hasAnyRole('MONITEUR','ADMIN','SECURITE_SURFACE')";
+
+    public FicheSecuriteController(FicheSecuriteService service, PropositionPalanqueesService propositions,
+                                   HabilitationService habilitation) {
         this.service = service;
         this.propositions = propositions;
+        this.habilitation = habilitation;
     }
 
     /**
@@ -84,7 +99,9 @@ public class FicheSecuriteController {
     @PostMapping("/proposition")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public PropositionPalanqueesService.PropositionVue proposer(@PathVariable Long seanceId,
-                                                                @Valid @RequestBody DemandeProposition demande) {
+                                                                @Valid @RequestBody DemandeProposition demande,
+                                                                Authentication authentication) {
+        habilitation.verifierEtablissementFicheSecurite(authentication);
         return propositions.proposer(seanceId, new PropositionPalanqueesService.Demande(
                 demande.profondeur(), demande.type(),
                 demande.maxPlongeurs() == null ? ProposeurPalanquees.MAX_PLONGEURS_ENCADRES : demande.maxPlongeurs(),
@@ -103,7 +120,7 @@ public class FicheSecuriteController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @PreAuthorize(LECTURE_ET_COMPLEMENT)
     public FicheSecuriteService.FicheSecuriteVue consulter(@PathVariable Long seanceId) {
         return service.consulter(seanceId);
     }
@@ -112,7 +129,9 @@ public class FicheSecuriteController {
     @PutMapping
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public FicheSecuriteService.FicheSecuriteVue enregistrer(@PathVariable Long seanceId,
-                                                             @Valid @RequestBody DemandeFicheSecurite demande) {
+                                                             @Valid @RequestBody DemandeFicheSecurite demande,
+                                                             Authentication authentication) {
+        habilitation.verifierEtablissementFicheSecurite(authentication);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(
                 demande.dpId(), demande.meteo(), demande.etatMer(), demande.visibilite(),
                 demande.courant(), demande.maree(), demande.temperatureEau(),
@@ -127,7 +146,7 @@ public class FicheSecuriteController {
 
     /** Complément, au retour de plongée : le profil réellement plongé, palanquée par palanquée. */
     @PutMapping("/realise")
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @PreAuthorize(LECTURE_ET_COMPLEMENT)
     public FicheSecuriteService.FicheSecuriteVue enregistrerRealise(@PathVariable Long seanceId,
                                                                     @Valid @RequestBody List<DemandeProfilRealise> demande) {
         List<FicheSecuriteService.ProfilRealise> profils = demande.stream()
@@ -145,13 +164,16 @@ public class FicheSecuriteController {
     @PutMapping("/liaison")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public FicheSecuriteService.FicheSecuriteVue lier(@PathVariable Long seanceId,
-                                                      @Valid @RequestBody DemandeLiaison demande) {
+                                                      @Valid @RequestBody DemandeLiaison demande,
+                                                      Authentication authentication) {
+        habilitation.verifierEtablissementFicheSecurite(authentication);
         return service.lier(seanceId, demande.seanceId());
     }
 
     @DeleteMapping("/liaison")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
-    public FicheSecuriteService.FicheSecuriteVue delier(@PathVariable Long seanceId) {
+    public FicheSecuriteService.FicheSecuriteVue delier(@PathVariable Long seanceId, Authentication authentication) {
+        habilitation.verifierEtablissementFicheSecurite(authentication);
         return service.delier(seanceId);
     }
 
@@ -164,7 +186,7 @@ public class FicheSecuriteController {
     }
 
     @GetMapping(value = "/fiche.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @PreAuthorize(LECTURE_ET_COMPLEMENT)
     public ResponseEntity<byte[]> fichePdf(@PathVariable Long seanceId) {
         FicheSecuritePdfService.FichePdf pdf = service.genererPdf(seanceId);
         return ResponseEntity.ok()
@@ -174,7 +196,7 @@ public class FicheSecuriteController {
 
     @GetMapping(value = "/fiche.xlsx",
             produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    @PreAuthorize(LECTURE_ET_COMPLEMENT)
     public ResponseEntity<byte[]> ficheExcel(@PathVariable Long seanceId) {
         FicheSecuriteExcelService.FicheExcel excel = service.genererExcel(seanceId);
         return ResponseEntity.ok()

@@ -34,6 +34,18 @@ export class AuthService {
   /** Consulter le matériel et remplir les fiches d'inspection des blocs : en plus, le TIV. */
   readonly inspecteBlocs = computed(() => this.gereMateriel() || this.estTiv());
   readonly niveau = computed(() => this.session()?.niveauEncadrement ?? null);
+  /**
+   * Établir ou modifier une fiche de sécurité : E3 ou E4, un admin, ou un
+   * moniteur qui en a reçu le droit (règle tenue par le serveur,
+   * HabilitationService.peutEtablirFicheSecurite).
+   */
+  readonly etablitFichesSecurite = computed(() => this.estAdmin()
+    || (this.estMoniteur() && (this.roles().includes('FICHE_SECURITE')
+      || ORDRE_ENCADREMENT.indexOf(this.niveau() ?? '') >= ORDRE_ENCADREMENT.indexOf('E3'))));
+  /** Sécurité surface qui n'est pas moniteur du club : ne fait que compléter les fiches au retour. */
+  readonly estSecuriteSurface = computed(() => this.roles().includes('SECURITE_SURFACE'));
+  /** Lire et compléter une fiche au retour de plongée. */
+  readonly completeFichesSecurite = computed(() => this.estMoniteur() || this.estAdmin() || this.estSecuriteSurface());
 
   get jeton(): string | null {
     return this.session()?.jetonAcces ?? null;

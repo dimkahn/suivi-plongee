@@ -101,7 +101,10 @@ export class NavigationService {
         return { libelle: 'Parcours de formation', lien: '/parcours' };
       case 'fiches-securite':
         if (s.length === 2) return { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
-        if (s.length === 3) return { libelle: 'Fiche de sécurité', lien: `/fiches-securite/${s[1]}` };
+        // La sécurité surface n'ouvre pas la fiche elle-même : elle remonte à la liste.
+        if (s.length === 3) return encadrant
+          ? { libelle: 'Fiche de sécurité', lien: `/fiches-securite/${s[1]}` }
+          : { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
         return null;
       case 'groupes-entrainement':
         return { libelle: 'Infos élèves', lien: '/eleves', parametres: { groupe: q['groupe'] ?? null } };

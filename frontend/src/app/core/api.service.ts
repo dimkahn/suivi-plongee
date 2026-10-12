@@ -5,7 +5,7 @@ import {
   AdhesionVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   DemandePropositionPalanquees, PropositionPalanqueesVue,
   EleveVue, EvaluationVue, FicheSecuriteVue,GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
-  MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
+  CompteSurfaceVue, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
@@ -487,11 +487,12 @@ export class ApiService {
     admin?: boolean;
     directeurTechnique?: boolean;
     tiv?: boolean;
+    ficheSecurite?: boolean;
   }): Observable<MoniteurVue> {
     return this.http.post<MoniteurVue>('/api/admin/moniteurs', demande);
   }
 
-  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique, TIV) d'un moniteur changent. */
+  /** Seul endroit où le niveau d'encadrement et les rôles (admin, directeur technique, TIV, fiches de sécurité) d'un moniteur changent. */
   modifierMoniteur(id: number, demande: {
     email: string;
     nom: string;
@@ -506,8 +507,35 @@ export class ApiService {
     admin: boolean;
     directeurTechnique: boolean;
     tiv: boolean;
+    ficheSecurite: boolean;
   }): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}`, demande);
+  }
+
+  // Comptes « sécurité surface » (pas moniteurs du club) : ADMIN, réseau obligatoire.
+
+  comptesSurface(): Observable<CompteSurfaceVue[]> {
+    return this.http.get<CompteSurfaceVue[]>('/api/admin/securite-surface');
+  }
+
+  creerCompteSurface(demande: { email: string; nom: string; prenom: string }): Observable<CompteSurfaceVue> {
+    return this.http.post<CompteSurfaceVue>('/api/admin/securite-surface', demande);
+  }
+
+  modifierCompteSurface(id: number, demande: { email: string; nom: string; prenom: string }): Observable<CompteSurfaceVue> {
+    return this.http.put<CompteSurfaceVue>(`/api/admin/securite-surface/${id}`, demande);
+  }
+
+  changerActivationCompteSurface(id: number, actif: boolean): Observable<CompteSurfaceVue> {
+    return this.http.put<CompteSurfaceVue>(`/api/admin/securite-surface/${id}/activation`, { actif });
+  }
+
+  envoyerLienReinitialisationCompteSurface(id: number): Observable<unknown> {
+    return this.http.post(`/api/admin/securite-surface/${id}/lien-reinitialisation`, {});
+  }
+
+  supprimerCompteSurface(id: number): Observable<unknown> {
+    return this.http.delete(`/api/admin/securite-surface/${id}`);
   }
 
   changerActivationMoniteur(id: number, actif: boolean): Observable<MoniteurVue> {

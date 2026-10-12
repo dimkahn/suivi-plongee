@@ -466,8 +466,19 @@ export interface MoniteurVue {
   directeurTechnique: boolean;
   /** Technicien en inspection visuelle : remplit les fiches d'inspection des blocs. */
   tiv: boolean;
+  /** Établit les fiches de sécurité sans être E3 ni E4. */
+  ficheSecurite: boolean;
   autorisationImage: boolean;
   aPhoto: boolean;
+}
+
+/** Compte « sécurité surface » : pas moniteur du club, ne fait que compléter les fiches de sécurité au retour. */
+export interface CompteSurfaceVue {
+  id: number;
+  email: string;
+  nom: string;
+  prenom: string;
+  actif: boolean;
 }
 
 export interface SeanceEnTete {

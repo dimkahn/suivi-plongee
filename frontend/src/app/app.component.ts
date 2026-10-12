@@ -76,6 +76,11 @@ const ICONES = {
                 Parcours
               </a>
             }
+            @if (auth.estSecuriteSurface() && !auth.estMoniteur() && !auth.estAdmin()) {
+              <a routerLink="/fiches-securite" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Fiches de sécurité
+              </a>
+            }
             @if (auth.inspecteBlocs()) {
               <a routerLink="/materiel" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Matériel
@@ -276,6 +281,10 @@ export class AppComponent {
     }
     if (this.auth.inspecteBlocs()) {
       return [{ lien: '/materiel', libelle: 'Matériel', icone: ICONES.materiel },
+              { lien: '/aide', libelle: 'Aide', icone: ICONES.aide }];
+    }
+    if (this.auth.estSecuriteSurface()) {
+      return [{ lien: '/fiches-securite', libelle: 'Fiches', icone: ICONES.presences },
               { lien: '/aide', libelle: 'Aide', icone: ICONES.aide }];
     }
     return [{ lien: '/cursus', libelle: 'Ma formation', icone: ICONES.formation },
