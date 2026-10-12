@@ -50,6 +50,9 @@ public class SecurityConfig {
                         .requestMatchers("/h2-console/**").permitAll()
                         // Nom, logo, couleurs et icônes : lus par la page de connexion, avant tout jeton.
                         .requestMatchers(HttpMethod.GET, "/api/identite", "/api/identite/**").permitAll()
+                        // Frais d'un séjour pour un participant sans compte : contrôlés par le code
+                        // de l'adresse et le jeton reçu après le code par e-mail (AccesFraisController).
+                        .requestMatchers("/api/public/frais/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/referentiels/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

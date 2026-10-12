@@ -200,6 +200,12 @@ function participantVide(): BrouillonParticipant {
                 @if (s.gere) {
                   <div class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirParticipant(p)">Modifier</button>
+                    @if (p.email && p.utilisateurId === null) {
+                      <button type="button" class="bouton-discret" (click)="envoyerAccesFrais(p)" [disabled]="envoi()"
+                              title="Un lien et un code par e-mail, pour voir et saisir ses frais sans compte">
+                        Envoyer le lien des frais
+                      </button>
+                    }
                     <button type="button" class="bouton-discret danger" (click)="supprimerParticipant(p)">Retirer</button>
                   </div>
                 }
@@ -366,7 +372,15 @@ function participantVide(): BrouillonParticipant {
       <!-- Frais partagés -->
       @if (voir('frais')) {
         <section>
-          <app-sejour-frais [sejour]="s" (maj)="sejour.set($event)" />
+          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" />
+          @if (s.gere) {
+            <p class="secondaire sans-impression acces-frais">
+              Les participants sans compte peuvent voir et saisir leurs frais par un lien et un code reçus par e-mail.
+              <button type="button" class="bouton-discret" (click)="envoyerAccesFrais(null)" [disabled]="envoi()">
+                Envoyer le lien des frais aux participants sans compte
+              </button>
+            </p>
+          }
         </section>
       }
 
@@ -653,6 +667,7 @@ function participantVide(): BrouillonParticipant {
       .heure { width: 4.5rem; }
     }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
+    .acces-frais { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     @media print {
       .sans-impression { display: none !important; }
       .carte { break-inside: avoid; box-shadow: none; }
@@ -855,6 +870,31 @@ export class SejourComponent {
   imprimer(): void {
     this.onglet.set('tout');
     setTimeout(() => window.print(), 100);
+  }
+
+  /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
+  readonly portFrais = this.api.portFrais(this.id, s => this.sejour.set(s));
+
+  /** Le lien des frais et la façon d'entrer (code par e-mail) ; null : à tous les participants sans compte. */
+  envoyerAccesFrais(p: ParticipantVue | null): void {
+    if (!confirm(p ? `Envoyer à ${nomComplet(p)} le lien des frais du séjour ?`
+      : 'Envoyer le lien des frais à tous les participants sans compte qui ont un e-mail ?')) return;
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.envoyerAccesFrais(this.id, p?.id ?? null).subscribe({
+      next: b => {
+        this.envoi.set(false);
+        this.message.set([
+          b.envoyes.length ? `Lien des frais envoyé à : ${b.envoyes.join(', ')}.` : 'Aucun lien envoyé.',
+          b.sansEmail.length ? `Sans e-mail : ${b.sansEmail.join(', ')}.` : '',
+          b.echecs.length ? `Échec de l'envoi pour : ${b.echecs.join(', ')}.` : ''
+        ].filter(Boolean).join(' '));
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "Le lien n'a pas pu être envoyé.");
+      }
+    });
   }
 
   envoyerCarnet(): void {

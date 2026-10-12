@@ -420,6 +420,14 @@ Compte : `e2@club.fr` · format téléphone · manuel : `parcours-de-formation.m
 
 _Pas encore tournée : le texte viendra au premier enregistrement._
 
+### M25 — Noter une dépense du séjour
+
+Inscrit au séjour, le moniteur note ce qu'il a payé, ou ce qu'un élève a payé, avec la photo de la note.
+
+Compte : `e2@club.fr` · format téléphone
+
+_Pas encore tournée : le texte viendra au premier enregistrement._
+
 ## Administrateur
 
 ### A1 — Tour de l'administration

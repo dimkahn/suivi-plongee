@@ -34,9 +34,9 @@ class FraisSejourTest {
         // Anne paie le gîte 300 € pour trois, Bruno les courses 60 € pour trois.
         List<Depense> depenses = List.of(
                 new Depense(1L, "Gîte", CategorieDepense.HEBERGEMENT, 30000, 1L, null,
-                        List.of(part(1, 1), part(2, 1), part(3, 1))),
+                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null),
                 new Depense(2L, "Courses", CategorieDepense.REPAS, 6000, 2L, null,
-                        List.of(part(1, 1), part(2, 1), part(3, 1))));
+                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null));
         Comptes c = FraisSejour.calculer(List.of(1L, 2L, 3L), depenses, List.of());
         assertThat(c.totalCentimes()).isEqualTo(36000);
         // Chacun doit 120 € : Anne +180, Bruno -60, Chloé -120.
@@ -46,7 +46,7 @@ class FraisSejourTest {
 
         // Chloé a déjà remboursé Anne : il ne reste que Bruno.
         Comptes apres = FraisSejour.calculer(List.of(1L, 2L, 3L), depenses,
-                List.of(new Versement(1L, 3L, 1L, 12000, null)));
+                List.of(new Versement(1L, 3L, 1L, 12000, null, null, null)));
         assertThat(apres.soldes()).extracting(Solde::soldeCentimes).containsExactly(6000L, -6000L, 0L);
         assertThat(apres.remboursements()).containsExactly(new Remboursement(2L, 1L, 6000));
     }
