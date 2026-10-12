@@ -1,6 +1,6 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
-import { ouvrirGrille, critere, noter } from '../grille.mjs';
+// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+import { ouvrirGrille, critere, noter, choisirExercice } from '../grille.mjs';
 
 export default {
   id: 'M4',
@@ -48,6 +48,12 @@ export default {
     await saisir(ligne.locator('textarea'), 'Tient 30 s, jambes trop pliées.');
     await toucher(ligne.getByRole('button', { name: 'Enregistrer le commentaire' }), { apres: 1500 });
     await legende('Le commentaire reste affiché sous le critère.', 3000);
+
+    await legende('Il a aussi tenté le parcours de surface : plusieurs exercices se notent sur un même critère.', 0);
+    await toucher(ligne.getByRole('button', { name: '+ Noter un autre exercice' }), { apres: 300 });
+    await choisirExercice(g, 'Parcours de surface en PMT');
+    await noter(g, 'Palmage de sustentation', 'En cours');
+    await legende('« Exercices déjà notés » garde chacun avec son état ; touchez-en un pour le noter de nouveau.', 4500);
 
     await legende('Une compétence marquée « En retard » a passé l\'échéance prévue par la progression.', 3500);
     await legende('Pas de réseau ? La note est gardée sur le téléphone, « En attente d\'envoi ».', 4000);

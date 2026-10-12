@@ -114,7 +114,7 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 1. Dans « Infos élèves », touchez le nom de l'élève.
 2. Sa grille : niveau préparé, critères acquis, séances suivies.
 3. La jauge descend vers la profondeur du brevet à mesure qu'il progresse.
-4. Avant de noter, choisissez la séance du jour.
+4. Sa dernière séance où il était présent est déjà choisie ; touchez-la pour en changer.
 5. Seules les séances où l'élève est noté présent sont proposées : faites l'appel d'abord.
 6. Référent du groupe ? « Noter au nom de » rattrape la note d'un encadrant : laissez « Moi-même » pour noter à votre nom.
 7. « Au programme » : les compétences que la progression prévoit ce mois-ci.
@@ -129,8 +129,10 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 16. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
 17. … on laisse un mot pour le prochain encadrant.
 18. Le commentaire reste affiché sous le critère.
-19. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
-20. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
+19. Il a aussi tenté le parcours de surface : plusieurs exercices se notent sur un même critère.
+20. « Exercices déjà notés » garde chacun avec son état ; touchez-en un pour le noter de nouveau.
+21. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
+22. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 

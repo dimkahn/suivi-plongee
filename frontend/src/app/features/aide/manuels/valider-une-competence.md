@@ -35,5 +35,5 @@ Le message dit pourquoi. Les causes les plus courantes :
 
 ## Bon à savoir
 
-- Une fois validée, les critères de la compétence ne se modifient plus.
+- Une fois validée, les critères de la compétence ne se modifient plus. Ses exercices, eux, se notent encore (exercice choisi sous le critère, ou « + Noter un autre exercice ») : l'élève continue de s'y entraîner sans que la validation bouge.
 - Le brevet lui-même est délivré par un administrateur, à la fin de la formation.
