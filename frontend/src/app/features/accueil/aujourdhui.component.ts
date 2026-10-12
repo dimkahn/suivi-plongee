@@ -105,7 +105,7 @@ interface BilanSeance {
             <a class="bouton-discret" [routerLink]="['/seances', s.id, 'programme']" [queryParams]="lienGroupe()">
               Programme d'exercices
             </a>
-            @if (s.milieu === 'NATUREL' || s.ficheSecurite) {
+            @if (s.ficheSecurite || (s.milieu === 'NATUREL' && auth.etablitFichesSecurite())) {
               <a class="bouton-discret" [routerLink]="['/fiches-securite', s.id]">
                 {{ s.ficheSecurite ? 'Fiche de sécurité' : 'Établir la fiche de sécurité' }}
               </a>

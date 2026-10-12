@@ -38,6 +38,7 @@ export default {
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer les paramètres réalisés' }), { apres: 2000 });
     await legende('La fiche est complète. Elle s\'exporte en PDF ou en tableur pour les archives du club.', 4500);
+    await legende('Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n\'est pas moniteur.', 4500);
     await legende(null, 0);
     await pause(500);
   }

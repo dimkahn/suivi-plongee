@@ -2,6 +2,7 @@ import { Component, DestroyRef, computed, inject, signal, ChangeDetectionStrateg
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
@@ -34,7 +35,11 @@ import { lieuEtSite } from '../../core/seance-lieu';
     } @else if (!ficheEtablie()) {
       <p class="vide">
         Cette séance n'a pas encore de fiche de sécurité établie.
-        <a [routerLink]="['/fiches-securite', seanceId]">Établir la fiche</a> d'abord.
+        @if (auth.etablitFichesSecurite()) {
+          <a [routerLink]="['/fiches-securite', seanceId]">Établir la fiche</a> d'abord.
+        } @else {
+          Un moniteur E3 ou E4 (ou qui en a reçu le droit) doit d'abord l'établir.
+        }
       </p>
     } @else {
       <p class="secondaire">
@@ -116,7 +121,7 @@ import { lieuEtSite } from '../../core/seance-lieu';
         <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
           {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
         </button>
-        @if (sortie(); as so) {
+        @if ((auth.estMoniteur() || auth.estAdmin()) && sortie(); as so) {
           <button type="button" class="bouton-discret" (click)="telechargerPdfSortie(so.id)"
                   [disabled]="exportSortieEnCours()">
             {{ exportSortieEnCours() ? 'Génération…' : 'Toutes les fiches de « ' + so.nom + ' » (PDF)' }}
@@ -167,6 +172,7 @@ export class FicheSecuriteRealiseComponent {
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
+  auth = inject(AuthService);
 
   seanceId = Number(this.route.snapshot.paramMap.get('id'));
 

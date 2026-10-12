@@ -50,12 +50,26 @@ export const gardeAdmin: CanActivateFn = () => {
   );
 };
 
-/** Encadrants au sens large : moniteurs et administrateurs. */
+/**
+ * Encadrants au sens large : moniteurs et administrateurs. La sécurité
+ * surface, qui n'a que les fiches de sécurité, y est renvoyée (c'est aussi
+ * sa page d'accueil).
+ */
 export const gardeEncadrant: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return apresResolutionSession().pipe(
-    map(() => auth.estMoniteur() || auth.estAdmin() || router.createUrlTree(['/cursus']))
+    map(() => auth.estMoniteur() || auth.estAdmin()
+      || router.createUrlTree([auth.estSecuriteSurface() ? '/fiches-securite' : '/cursus']))
+  );
+};
+
+/** Liste des fiches de sécurité et complément au retour : les encadrants et la sécurité surface. */
+export const gardeFichesSecurite: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return apresResolutionSession().pipe(
+    map(() => auth.completeFichesSecurite() || router.createUrlTree(['/cursus']))
   );
 };
 

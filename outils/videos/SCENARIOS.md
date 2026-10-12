@@ -214,12 +214,13 @@ Compte : `e2@club.fr` · format téléphone · 52 s
 
 1. « Plus », puis « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
 2. On retrouve la séance par sa date.
-3. Le directeur de plongée : seuls les E3 et E4 sont proposés.
-4. Les conditions du jour…
-5. Puis les palanquées : une est prête, « + Palanquée » en ajoute d'autres.
-6. Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.
-7. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
-8. Au retour de plongée, on la complète : c'est la vidéo suivante.
+3. Établir la fiche : les E3, E4, ou un moniteur qui en a reçu le droit, comme Flora ici.
+4. Le directeur de plongée : seuls les E3 et E4 sont proposés.
+5. Les conditions du jour…
+6. Puis les palanquées : une est prête, « + Palanquée » en ajoute d'autres.
+7. Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.
+8. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
+9. Au retour de plongée, on la complète : c'est la vidéo suivante.
 
 ### M11 — Compléter la fiche après la plongée
 
@@ -231,6 +232,7 @@ Compte : `e2@club.fr` · format téléphone · 36 s
 2. Pendant la plongée, « Marquer l'immersion » puis « Marquer la sortie » notent l'heure.
 3. Après coup, on saisit ce qui a été réalisé.
 4. La fiche est complète. Elle s'exporte en PDF ou en tableur pour les archives du club.
+5. Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n'est pas moniteur.
 
 ### M12 — Groupes de plongeurs pour un séjour
 
@@ -480,16 +482,19 @@ Compte : `presidente@club.fr` · format ordinateur · 38 s
 
 ### A5 — Ajouter un moniteur
 
-Créer le compte d'un encadrant : niveau d'encadrement, niveau de plongeur, rôles, CACI.
+Créer le compte d'un encadrant : niveau d'encadrement, niveau de plongeur, rôles, CACI ; et les comptes « Sécurité surface ».
 
 Compte : `presidente@club.fr` · format ordinateur · 42 s
 
 1. La liste des encadrants, avec l'état de leur CACI.
 2. Niveau d'encadrement et niveau de plongeur sont distincts : un E1 peut n'être que N2.
 3. Pour le CACI, la date de l'examen suffit : il vaut un an.
-4. Deux rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel).
-5. Julien reçoit un e-mail pour choisir son mot de passe.
-6. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
+4. Des rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel), TIV.
+5. Julien est E2 : pour qu'il établisse les fiches de sécurité comme un E3, cochez ce droit.
+6. Julien reçoit un e-mail pour choisir son mot de passe.
+7. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
+8. En bas, les comptes « Sécurité surface » : une personne qui n'est pas moniteur du club.
+9. Elle ne voit que les fiches de sécurité, et ne fait que les compléter au retour de plongée.
 
 ### A6 — Créer le dossier d'un élève
 

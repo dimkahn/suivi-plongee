@@ -1,6 +1,8 @@
 package fr.club.plongee.evaluation.service;
 
+import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.formation.domain.Cursus;
+import fr.club.plongee.formation.service.FicheSecuriteService;
 import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
@@ -58,6 +60,32 @@ public class HabilitationService {
         NiveauEncadrement requis = bloc.getReferentiel().getNiveauEncadrantValidation();
         return p != null && p.actif() && p.niveauEncadrement() != null
                 && p.niveauEncadrement().auMoins(requis);
+    }
+
+    /**
+     * Droit d'établir ou de modifier une fiche de sécurité (choix du club,
+     * 2026) : un moniteur E3 ou E4 (le niveau d'un directeur de plongée), un
+     * administrateur, ou un moniteur qui a reçu le rôle FICHE_SECURITE. Le
+     * complément au retour de plongée reste ouvert à tous les moniteurs et à
+     * la sécurité surface : voir {@code FicheSecuriteController}.
+     */
+    public boolean peutEtablirFicheSecurite(Authentication authentication) {
+        UtilisateurPrincipal p = principal(authentication);
+        if (p == null || !p.actif()) return false;
+        if (aLeRole(authentication, RoleNom.ADMIN)) return true;
+        if (!aLeRole(authentication, RoleNom.MONITEUR)) return false;
+        return aLeRole(authentication, RoleNom.FICHE_SECURITE)
+                || (p.niveauEncadrement() != null
+                    && p.niveauEncadrement().auMoins(FicheSecuriteService.NIVEAU_DP_MINIMUM));
+    }
+
+    /** Même règle, avec un refus lisible par le moniteur (422) plutôt qu'un simple « accès refusé ». */
+    public void verifierEtablissementFicheSecurite(Authentication authentication) {
+        if (!peutEtablirFicheSecurite(authentication)) {
+            throw new RegleMetierException("Seuls les moniteurs " + FicheSecuriteService.NIVEAU_DP_MINIMUM
+                    + " ou E4, ou ceux qui en ont reçu le droit (écran Moniteurs), peuvent établir ou modifier "
+                    + "une fiche de sécurité. Vous pouvez la compléter au retour de plongée.");
+        }
     }
 
     public static UtilisateurPrincipal principal(Authentication authentication) {

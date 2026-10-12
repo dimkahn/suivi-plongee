@@ -21,6 +21,7 @@ export default {
     await toucher(dialogue.locator('button.jour[aria-label*="séance"]:not([disabled])').first(), { apres: 1200 });
     await page.keyboard.press('Escape').catch(() => {});
     await pause(600);
+    await legende('Établir la fiche : les E3, E4, ou un moniteur qui en a reçu le droit, comme Flora ici.', 0);
     await toucher(page.getByRole('link', { name: 'Établir la fiche' }).first(), { apres: 1800 });
 
     await legende('Le directeur de plongée : seuls les E3 et E4 sont proposés.', 0);

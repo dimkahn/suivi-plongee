@@ -62,8 +62,9 @@ Mot de passe commun : `plongee2026`.
 |---|---|---|
 | `presidente@club.fr` | ADMIN + E4 | Tout, y compris délivrer les brevets |
 | `e3@club.fr` | MONITEUR E3, DIRECTEUR_TECHNIQUE | Noter et valider N1, N2 et N3 ; matériel et prêts |
-| `e2@club.fr` | MONITEUR E2, TIV | Noter et valider N1 et N2 ; inspecter les blocs (fiche TIV) |
-| `e1@club.fr` | MONITEUR E1 | Noter et valider N1 uniquement |
+| `e2@club.fr` | MONITEUR E2, TIV, FICHE_SECURITE | Noter et valider N1 et N2 ; inspecter les blocs (fiche TIV) ; établir les fiches de sécurité sans être E3 |
+| `e1@club.fr` | MONITEUR E1 | Noter et valider N1 uniquement ; compléter une fiche de sécurité au retour, sans pouvoir l'établir |
+| `surface@club.fr` | SECURITE_SURFACE | Sécurité surface qui n'est pas moniteur : compléter les fiches de sécurité au retour de plongée, rien d'autre |
 | `eleve@club.fr` | ELEVE | Consulter sa propre grille, sans rien saisir |
 
 Ouvrir une grille N2 avec le compte E1 est la démonstration la plus parlante :

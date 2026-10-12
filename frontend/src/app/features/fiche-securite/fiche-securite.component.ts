@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
@@ -126,6 +127,14 @@ interface FormulaireEntete {
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (entete(); as f) {
+      @if (!auth.etablitFichesSecurite()) {
+        <div class="alerte" role="status">
+          Lecture seule : établir ou modifier la fiche revient aux moniteurs E3 ou E4, ou à ceux
+          qui en ont reçu le droit. Vous pouvez la compléter au retour de plongée.
+        </div>
+      }
+      <!-- Sans le droit d'établir, tout le formulaire est désactivé d'un coup (le serveur refuse de toute façon). -->
+      <fieldset class="lecture-seule" [disabled]="!auth.etablitFichesSecurite()">
       <h2 class="titre-etape">1. Établir la fiche, avant la mise à l'eau</h2>
       <p class="secondaire">
         Directeur de plongée, conditions, composition des palanquées et profil prévu
@@ -275,7 +284,7 @@ interface FormulaireEntete {
         </app-dialogue>
 
         @if (groupeSelectionne(); as g) {
-          <div cdkDropList id="pool" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
+          <div cdkDropList id="pool" [cdkDropListDisabled]="!auth.etablitFichesSecurite()" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
                class="pool-plongeurs">
             @for (m of poolDisponible(); track m) {
               <button type="button" class="jeton-plongeur" cdkDrag [cdkDragData]="m"
@@ -427,7 +436,7 @@ interface FormulaireEntete {
                    [name]="'dp-' + iP"></label>
           </div>
 
-          <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListData]="p.membres"
+          <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListDisabled]="!auth.etablitFichesSecurite()" [cdkDropListData]="p.membres"
                class="zone-membres" [class.zone-membres-vide]="p.membres.length === 0"
                [cdkDropListConnectedTo]="tousLesIds()" (cdkDropListDropped)="onDropPalanquee($event, iP)">
             @if (p.membres.length === 0) {
@@ -494,10 +503,14 @@ interface FormulaireEntete {
         </div>
       }
 
+      </fieldset>
+
       <div class="actions-bas">
-        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
-          {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
-        </button>
+        @if (auth.etablitFichesSecurite()) {
+          <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+            {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
+          </button>
+        }
         @if (dejaEnregistree()) {
           <a class="bouton-discret" [routerLink]="['/fiches-securite', seanceId, 'realise']">
             Compléter au retour de plongée →
@@ -509,6 +522,7 @@ interface FormulaireEntete {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin: var(--pas-3) 0 0; }
+    .lecture-seule { border: 0; margin: 0; padding: 0; min-width: 0; }
     .titre-etape { margin: var(--pas-3) 0 0; }
     .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     /*
@@ -639,6 +653,7 @@ export class FicheSecuriteComponent {
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
   private navigation = inject(NavigationService);
+  auth = inject(AuthService);
 
   seanceId = Number(this.route.snapshot.paramMap.get('id'));
 
