@@ -567,10 +567,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               }
             </div>
           }
-          @if (bloc.exercices?.length && peutSaisir() && !bloc.valide) {
+          @if (bloc.exercices?.length && peutSaisir()) {
             <p class="secondaire aide-exercice">
               Choisissez sous chaque critère l'exercice réalisé, puis notez cet exercice. Un exercice d'initiation ou de
               perfectionnement peut être « Acquis » ; le critère, lui, n'est acquis qu'avec un exercice de maîtrise acquis.
+              Pour un autre exercice sur le même critère, « + Noter un autre exercice » : chacun garde son état.
             </p>
           }
           <ul [id]="'criteres-' + bloc.id">
@@ -674,9 +675,14 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   <!-- D'abord l'exercice réalisé, puis la note : dans l'ordre des gestes du moniteur. -->
                   <div class="saisie">
                     <!-- Sous un exercice de la séance, la note porte sur cet exercice : pas de choix à faire. -->
-                    @if (peutSaisir() && !bloc.valide && aDesExercices(bloc, critere) && exerciceImpose(bloc, critere, exo) === null) {
+                    <!--
+                      Plusieurs exercices se notent sur un même critère (choix du club, 2026),
+                      même une compétence validée : chacun garde son état, rappelé ici.
+                    -->
+                    @if (peutSaisir() && aDesExercices(bloc, critere) && exerciceImpose(bloc, critere, exo) === null) {
                       @let choisi = exerciceChoisi(bloc, critere);
                       @let note = exerciceNote(bloc, critere);
+                      @let notes = exercicesNotes(bloc, critere);
                       <div class="choix-exercice">
                         <button type="button" class="choix-seance" [class.a-choisir]="!note" aria-haspopup="dialog"
                                 [attr.aria-label]="'Exercice réalisé pour ' + critere.savoirFaire"
@@ -690,6 +696,27 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                           }
                           <span class="changer">{{ note ? 'Changer' : 'Choisir' }}</span>
                         </button>
+                        @if (notes.length > 0) {
+                          <div class="exercices-notes" role="group" [attr.aria-label]="'Exercices déjà notés pour ' + critere.savoirFaire">
+                            <span class="secondaire">Exercices déjà notés :</span>
+                            @for (n of notes; track (n.exercice.id ?? n.exercice.intitule)) {
+                              <button type="button" class="exercice-deja-note"
+                                      [class.actif]="estExerciceCourant(bloc, critere, n.exercice)"
+                                      [attr.aria-pressed]="estExerciceCourant(bloc, critere, n.exercice)"
+                                      [disabled]="!n.selectionnable"
+                                      [title]="n.selectionnable ? 'Noter de nouveau cet exercice' : 'Plus proposé au choix'"
+                                      (click)="reprendreExercice(bloc, critere, n.exercice)">
+                                <app-pastille-phase [phase]="n.exercice.phase" [numero]="n.exercice.numero" [intitule]="n.exercice.intitule" />
+                                <span>{{ n.exercice.intitule }}</span>
+                                <span class="etat-exercice" [class.acquis]="n.statut === 'ACQUIS'">{{ sigleStatut(n.statut) }}</span>
+                              </button>
+                            }
+                            <button type="button" class="lien-historique" aria-haspopup="dialog"
+                                    (click)="ouvrirChoixExercice(bloc, critere)">
+                              + Noter un autre exercice
+                            </button>
+                          </div>
+                        }
                         @if (choisi?.critereReussite) {
                           <span class="secondaire">Réussite : {{ choisi!.critereReussite }}</span>
                         }
@@ -720,7 +747,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                                 [class]="'etat ' + choix.classe"
                                 [class.actif]="suivi.statut === choix.valeur"
                                 [class.differe]="suivi.enAttente && suivi.statut === choix.valeur"
-                                [disabled]="!peutSaisir() || (bloc.valide && !surExo) || suivi.enregistrement"
+                                [disabled]="!peutSaisir() || (bloc.valide && !parExercice) || suivi.enregistrement"
                                 [attr.aria-pressed]="suivi.statut === choix.valeur"
                                 [attr.aria-label]="choix.libelle" [title]="choix.libelle"
                                 (click)="noter(bloc, critere, choix.valeur, exo)">
@@ -732,7 +759,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 </div>
 
                 <div class="liens-critere">
-                  @if (peutSaisir() && (!bloc.valide || surExo)) {
+                  @if (peutSaisir() && (!bloc.valide || parExercice)) {
                     <button type="button" class="lien-historique"
                             [attr.aria-expanded]="commentairesOuverts().has(cleUi)"
                             (click)="basculerCommentaire(cleUi)">
@@ -745,7 +772,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   </button>
                 </div>
 
-                @if (commentairesOuverts().has(cleUi) && peutSaisir() && (!bloc.valide || surExo)) {
+                @if (commentairesOuverts().has(cleUi) && peutSaisir() && (!bloc.valide || parExercice)) {
                   <div class="ajout-commentaire">
                     <label class="secondaire" [for]="'commentaire-' + lieu + '-' + critere.id">
                       Ce qui a été travaillé, ce qui reste à revoir…
@@ -1013,6 +1040,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .choix-exercice .titre-choix { font-weight: 700; font-size: .875rem; }
     .choix-exercice .choix-seance { display: flex; align-items: center; gap: var(--pas); width: 100%; max-width: 520px; }
     .choix-exercice .secondaire { font-size: .8125rem; }
+    /* Exercices déjà notés sur le critère : un appui en reprend un pour le noter de nouveau. */
+    .exercices-notes { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--pas); max-width: 520px; }
+    .exercice-deja-note {
+      display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 var(--pas);
+      border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte); color: var(--encre);
+      font: inherit; font-size: .8125rem; text-align: left; cursor: pointer;
+    }
+    .exercice-deja-note.actif { border: 2px solid var(--profond); background: #EEF6F8; }
+    .exercice-deja-note:disabled { cursor: default; opacity: .7; }
     .exercice-note { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .etat-exercice { font-size: .8125rem; font-weight: 700; color: var(--en-cours); }
     .etat-exercice.acquis { color: var(--acquis); }
@@ -1704,6 +1740,53 @@ export class GrilleComponent implements OnDestroy {
                enregistrement: actif.enregistrement, le: actif.enAttente ? actif.le : etat.le };
     }
     return etat;
+  }
+
+  /**
+   * Exercices déjà notés sur ce critère (dans le suivi des boutons), avec
+   * leur état : plusieurs exercices se notent sur un même critère, chacun
+   * garde le sien. `selectionnable` : encore proposé au choix (de la base,
+   * ou libre et toujours au programme de la séance), donc re-notable d'un appui.
+   */
+  exercicesNotes(bloc: BlocAffiche, critere: CritereAffiche): { exercice: ExerciceNoteVue; statut: Statut;
+                                                                selectionnable: boolean }[] {
+    const entrainement = this.modeEntrainement();
+    const liste: { exercice: ExerciceNoteVue; statut: Statut; selectionnable: boolean }[] = [];
+    for (const x of critere.etatsExercices ?? []) {
+      if (x.entrainement !== entrainement) continue;
+      if (x.exerciceId != null) {
+        const base = this.exerciceDeLaFile({ exerciceId: x.exerciceId });
+        if (!base) continue;
+        const selectionnable = this.exercicesDuCritere(bloc, critere).some(e => e.id === x.exerciceId);
+        liste.push({ exercice: base, statut: x.statut, selectionnable });
+      } else if (x.exerciceLibre) {
+        const libre = this.exercicesLibresDuCritere(critere).find(e => e.intitule === x.exerciceLibre);
+        liste.push({
+          exercice: { id: null, numero: null, intitule: x.exerciceLibre, phase: libre?.phase ?? 'INITIATION',
+                      blocId: null, critereIds: null },
+          statut: x.statut, selectionnable: !!libre
+        });
+      }
+    }
+    // L'état affiché suit les saisies pas encore envoyées, comme les boutons.
+    return liste.map(n => ({ ...n, statut: this.etatDeLExercice(critere, n.exercice).statut }));
+  }
+
+  /** Sigle d'un état (NA / ECA / A), comme sur les boutons de note. */
+  sigleStatut(statut: Statut): string {
+    return this.etatsExercice.find(e => e.valeur === statut)?.court ?? '';
+  }
+
+  /** L'exercice noté est-il celui sur lequel portera la prochaine note ? */
+  estExerciceCourant(bloc: BlocAffiche, critere: CritereAffiche, exercice: ExerciceNoteVue): boolean {
+    const cible = this.exerciceNote(bloc, critere);
+    if (!cible) return false;
+    return exercice.id != null ? cible.id === exercice.id : cible.id == null && cible.intitule === exercice.intitule;
+  }
+
+  /** Reprend un exercice déjà noté pour lui donner une nouvelle note. */
+  reprendreExercice(bloc: BlocAffiche, critere: CritereAffiche, exercice: ExerciceNoteVue): void {
+    this.choisirExercice(bloc, critere, exercice.id ?? exercice.intitule);
   }
 
   /** État de l'exercice sur lequel portera la prochaine note du critère ; null sans exercice (on note le critère). */

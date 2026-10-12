@@ -496,6 +496,11 @@ une compétence validée). Même règle dans la compétence dès qu'un exercice
 est choisi : les boutons montrent l'état de l'exercice, celui du critère
 est rappelé dessous (« Critère : … ») et celui de la compétence en
 pastille (A / ECA / NT, recalculé à l'écran avec les notes en attente).
+Plusieurs exercices se notent sur un même critère (choix du club, 2026) :
+sous « 1. Exercice », « Exercices déjà notés » (lu dans `etatsExercices`)
+les rappelle avec leur état et en reprend un d'un appui, « + Noter un
+autre exercice » ouvre le choix ; comme sous le programme, la notation
+sur un exercice reste ouverte une compétence validée.
 Les boutons de note n'affichent que les sigles NA / ECA / A (place sur
 téléphone), avec une légende en haut de la fiche ; leur nom accessible
 reste le libellé complet (lu par les vidéos) ; la notation groupée propose de
