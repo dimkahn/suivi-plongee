@@ -552,8 +552,16 @@ le parcours, lu par les encadrants sur `/parcours` (`ParcoursComponent`),
 chaque exercice ouvrant `/exercices/:id` (`FicheExerciceComponent`).
 Le programme d'une séance propose d'abord les exercices de la période du
 mois. Le découpage reste **par mois** (pas séance par séance, choix de
-2026 maintenu). Contenu : une migration par niveau remplit conseils et
-exercices des périodes de V22, et complète les schémas manquants.
+2026 maintenu). Contenu : V65 (N1), V67 (N2), V69 (N3) remplissent les
+conseils (seulement s'ils sont vides) et les exercices des périodes de
+V22, initiation avant maîtrise, toutes les maîtrises N2/N3 dans la
+période en milieu naturel (les blocs des périodes, qui font le retard,
+ne changent pas) ; V66, V68, V70 (migrations Java) complètent les
+schémas pour que **chaque exercice ait le sien**, dessinés par
+`SchemasExercicesN1`, `SchemasExercicesN2Complements`,
+`SchemasExercicesN3Complements` (`-Dschemas.n1=`, `-Dschemas.n2c=`,
+`-Dschemas.n3c=`, même règle que les outils N2/N3 ci-dessous). Les photos
+et vidéos restent à fournir par le club.
 Réseau obligatoire pour la fiche et le parcours (les photos vues restent
 en cache comme les schémas).
 **Schémas** (V52, table `schema_exercice` à part comme `photo_eleve`,
