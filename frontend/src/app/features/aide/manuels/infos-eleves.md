@@ -3,13 +3,14 @@ titre: Infos élèves
 rubrique: Moniteur
 videos: M16, M22
 ecran: /eleves
-mots: élèves, liste, accueil, CACI, certificat médical, expiré, date de l'examen, cases cochées, apnée, compétition, contact d'urgence, téléphone, séances suivies, rechercher, synthèse des compétences, avancement du groupe
+mots: élèves, liste, accueil, CACI, certificat médical, expiré, date de l'examen, cases cochées, apnée, compétition, contact d'urgence, téléphone, séances suivies, rechercher, synthèse des compétences, avancement du groupe, taille, gilet, combinaison, modifier les tailles, plus d'actions
 questions:
 - Où voir la liste des élèves ?
 - Quand expire le certificat médical d'un élève ?
 - Que veulent dire les couleurs du CACI ?
 - Quelles activités le CACI d'un élève couvre-t-il ?
 - Comment trouver le contact d'urgence d'un élève ?
+- Comment modifier la taille de gilet ou de combinaison d'un élève ?
 - Comment noter un élève sur une séance depuis Infos élèves ?
 ---
 « Infos élèves » montre toute la saison : chaque élève avec son niveau préparé, son CACI et ses séances suivies.
@@ -22,7 +23,8 @@ questions:
 4. Touchez un nom pour ouvrir la fiche de l'élève.
 5. Touchez la case d'un élève sous une date : sa grille s'ouvre, **cette séance déjà choisie**, prête à noter.
 6. Touchez une date en haut de colonne : la feuille de cette séance s'ouvre (présences, programme d'exercices, « Noter les présents »).
-7. Dans la fiche, « Plus d'actions », puis « Informations supplémentaires » : téléphone et contact d'urgence.
+7. Dans la fiche, « Plus d'actions », puis « Informations supplémentaires » : une fenêtre donne téléphone, contact d'urgence et tailles de matériel.
+8. Pour corriger la taille de gilet ou de combinaison : « Plus d'actions », puis « Modifier les tailles ».
 
 ## Les couleurs du CACI
 

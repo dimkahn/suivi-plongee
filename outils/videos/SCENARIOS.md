@@ -179,7 +179,8 @@ Compte : `e2@club.fr` · format téléphone · 37 s
 3. Par défaut, seulement les séances où il a été noté.
 4. Pour préparer la prochaine séance : seulement ce qui n'est pas encore acquis.
 5. Retour à la grille. « Plus d'actions », puis « Exporter en PDF » : la fiche de suivi à imprimer ou envoyer.
-6. Le PDF arrive dans les téléchargements du téléphone. Il demande le réseau.
+6. Une fenêtre s'ouvre : « Télécharger le PDF ».
+7. Le PDF arrive dans les téléchargements du téléphone. Il demande le réseau.
 
 ### M9 — Travailler sans réseau au bord du bassin
 
@@ -301,6 +302,7 @@ Compte : `e2@club.fr` · format téléphone · 49 s
 8. Touchez son nom pour ouvrir sa fiche.
 9. « Plus d'actions », puis « Informations supplémentaires » : téléphone et contact d'urgence.
 10. Aucune donnée de santé n'est enregistrée : seule la date de fin du certificat.
+11. Les tailles de gilet et de combinaison se corrigent par « Plus d'actions », puis « Modifier les tailles ».
 
 ### M17 — Noter les présents en une fois
 
@@ -761,4 +763,4 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 1. Camille est élève : son compte ne voit que sa propre formation.
 2. Sa grille N2 : ce qui est acquis, ce qui reste à travailler, ce qui est au programme.
 3. Les notes et commentaires des moniteurs, en lecture seule.
-4. « Plus d'actions », puis « Exporter en PDF », lui donne aussi sa fiche de suivi.
+4. « Plus d'actions », puis « Exporter en PDF » et « Télécharger le PDF », lui donne aussi sa fiche de suivi.
