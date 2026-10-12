@@ -476,6 +476,16 @@ export interface LigneRoster {
   /** Clé = id de séance ; valeur = atelier (NAGE/BLOC/…) ou statut (ABSENT/EXCUSE). */
   presencesParSeance: Record<number, string>;
   aPhoto: boolean;
+  /** Barre de progression : critères effectués (compétence validée = tous ses critères) sur le total. */
+  avancement: AvancementFormation;
+}
+
+export interface AvancementFormation {
+  pourcentage: number;
+  criteresEffectues: number;
+  criteresTotal: number;
+  competencesValidees: number;
+  competences: number;
 }
 
 export interface RosterVue {
