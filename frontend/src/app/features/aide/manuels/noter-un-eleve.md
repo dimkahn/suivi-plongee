@@ -3,7 +3,7 @@ titre: Noter un élève pendant la séance
 rubrique: Moniteur
 videos: M4, M19, M20
 ecran: /eleves
-mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions
+mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme
 questions:
 - Comment noter pour un encadrant qui ne l'a pas fait ?
 - Je suis référent : comment noter au nom d'un autre moniteur ?
@@ -11,6 +11,7 @@ questions:
 - Comment mettre un critère acquis ?
 - Pourquoi je ne peux pas mettre « Acquis » ?
 - Comment indiquer l'exercice réalisé ?
+- Comment noter les critères d'un exercice de la séance ?
 - Pourquoi un exercice de maîtrise réussi en fosse ne valide pas le critère d'un N2 ou d'un N3 ?
 - Comment laisser un commentaire sur un élève ?
 - Pourquoi je ne trouve pas la séance dans la grille ?
@@ -29,6 +30,12 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 4. Juste en dessous, « 2. Note » : touchez l'état de l'exercice : non abordé, en cours ou acquis.
 5. Votre nom, la date et l'exercice s'affichent sous le critère.
 6. Pour laisser un mot au prochain encadrant, écrivez un commentaire sur le critère : il reste affiché dessous.
+
+## Noter directement sous les exercices de la séance
+
+Si le programme de la séance a été préparé, la carte « Exercices de la séance » (en haut de la grille) donne, **sous chaque exercice, les critères qu'il fait évaluer**, avec le nom de leur compétence. On y note exactement comme dans la compétence : les trois états, « Commenter » et « Voir l'historique ». La note et le commentaire portent alors **sur cet exercice**, sans avoir à le choisir. C'est le plus simple pendant la séance : on suit le programme, exercice après exercice.
+
+Les mêmes critères restent dans leur compétence, plus bas : une note prise à un endroit s'affiche aussitôt à l'autre. Un exercice libre sans phase ne sert pas à noter : sous lui, « 1. Exercice » reste à choisir comme d'habitude.
 
 ## L'exercice réalisé : initiation, perfectionnement, maîtrise
 
@@ -70,7 +77,7 @@ Seuls les référents du groupe de l'élève voient ce choix, et seuls les encad
 - Seules les séances où l'élève est **noté présent** sont proposées : faites l'appel d'abord.
 - Les notes attendent le jour de la séance : on ne note pas à l'avance.
 - « Au programme » : les compétences que la progression prévoit ce mois-ci (« Ouvrir les … compétences au programme » les déplie d'un coup). « En retard » : une compétence qui a passé l'échéance prévue sans être acquise.
-- Les critères travaillés par les exercices de la séance portent le nom de l'exercice.
+- Les critères travaillés par les exercices de la séance portent le nom de l'exercice ; ils se notent aussi directement sous chaque exercice, dans « Exercices de la séance ».
 - Sans réseau, la note reste sur le téléphone, « En attente d'envoi ».
 - Tout un groupe a fait le même exercice ? Voir « Noter les présents en une fois ».
 - Venu de la feuille de présence (« Noter » ou « Pas encore évalué »), le haut de la grille propose l'**élève précédent** et l'**élève suivant** parmi les présents du groupe filtré, avec sa place (« 3 / 8 ») : on note tout le groupe sans repasser par la feuille.

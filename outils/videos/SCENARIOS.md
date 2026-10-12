@@ -113,16 +113,17 @@ Compte : `e2@club.fr` · format téléphone · 61 s
 5. Seules les séances où l'élève est noté présent sont proposées : faites l'appel d'abord.
 6. Référent du groupe ? « Noter au nom de » rattrape la note d'un encadrant : laissez « Moi-même » pour noter à votre nom.
 7. « Au programme » : les compétences que la progression prévoit ce mois-ci.
-8. Chaque critère a trois états : non abordé, en cours, acquis.
-9. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
-10. La note porte sur l'exercice réalisé : « 1. Exercice », juste au-dessus des boutons. S'il manque, l'appli le demande au moment de noter.
-11. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
-12. Votre nom et la date s'affichent sous le critère.
-13. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
-14. … on laisse un mot pour le prochain encadrant.
-15. Le commentaire reste affiché sous le critère.
-16. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
-17. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
+8. Si son groupe a préparé la séance, ses exercices s'affichent aussi, chacun avec ses critères à noter juste dessous.
+9. Chaque critère a trois états : non abordé, en cours, acquis.
+10. Tiago l'avait noté « en cours » la semaine dernière. Aujourd'hui, il réussit le parcours de surface.
+11. La note porte sur l'exercice réalisé : « 1. Exercice », juste au-dessus des boutons. S'il manque, l'appli le demande au moment de noter.
+12. Seul un exercice de maîtrise, comme celui-ci, fait passer le critère à « Acquis ».
+13. Votre nom et la date s'affichent sous le critère.
+14. Le palmage de sustentation est en cours, sur l'exercice d'initiation…
+15. … on laisse un mot pour le prochain encadrant.
+16. Le commentaire reste affiché sous le critère.
+17. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
+18. Pas de réseau ? La note est gardée sur le téléphone, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 

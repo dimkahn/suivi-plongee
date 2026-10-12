@@ -2,6 +2,7 @@ import {
   Component, ElementRef, OnDestroy, computed, effect, inject, input, signal, untracked, viewChild,
   ChangeDetectionStrategy
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -83,7 +84,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   selector: 'app-grille',
   standalone: true,
   imports: [
-    FormsModule, RouterLink, DateFrPipe, PlurielPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
+    NgTemplateOutlet, FormsModule, RouterLink, DateFrPipe, PlurielPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
     SchemaExerciceComponent
   ],
   template: `
@@ -404,7 +405,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
         <section class="carte programme exercices-seance" aria-label="Exercices de la séance">
           <p class="periode"><span class="etiquette-programme">Exercices de la séance</span></p>
           <ol>
-            @for (e of exercicesSeance(); track $index) {
+            @for (e of exercicesSeance(); track $index; let i = $index) {
               <li>
                 @if (e.exerciceBase; as base) {
                   <app-pastille-phase [phase]="base.phase" [intitule]="base.intitule" />
@@ -434,6 +435,22 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                       <app-schema-exercice [seanceId]="seance" [schemaId]="e.schemaId ?? null" [libelle]="e.intitule" />
                     }
                   }
+                }
+                <!-- Les critères que l'exercice fait travailler, notés ici sur cet exercice. -->
+                @let aEvaluer = criteresDeLExercice(e);
+                @if (aEvaluer.length > 0) {
+                  <ul class="criteres criteres-exercice" [attr.aria-label]="'Critères à évaluer sur ' + e.intitule">
+                    @for (c of aEvaluer; track c.critere.id) {
+                      <li>
+                        @if (c.bloc.valide) {
+                          <span class="secondaire competence-du-critere">{{ c.bloc.intitule }} · compétence validée</span>
+                        } @else {
+                          <span class="secondaire competence-du-critere">{{ c.bloc.intitule }}</span>
+                        }
+                        <ng-container *ngTemplateOutlet="ligneCritere; context: { bloc: c.bloc, critere: c.critere, exo: e, lieu: 'x' + i }" />
+                      </li>
+                    }
+                  </ul>
                 }
               </li>
             }
@@ -538,13 +555,30 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
           }
           <ul [id]="'criteres-' + bloc.id">
             @for (critere of bloc.criteres; track critere.id) {
+              <li>
+                <ng-container *ngTemplateOutlet="ligneCritere; context: { bloc: bloc, critere: critere, exo: null, lieu: 'b' }" />
+              </li>
+            }
+          </ul>
+          }
+        </section>
+        }
+      }
+
+      <!--
+        Un critère : sa note, son commentaire, son historique. Affiché sous sa
+        compétence (exo null), et sous chaque exercice de la séance qui le
+        travaille (exo : cet exercice, sur lequel portent alors la note et le
+        commentaire). « lieu » distingue les deux affichages d'un même critère.
+      -->
+      <ng-template #ligneCritere let-bloc="bloc" let-critere="critere" let-exo="exo" let-lieu="lieu">
               @let actif = suiviActif(critere);
               @let rappel = suiviRappele(critere);
-              <li>
+              @let cleUi = lieu + ':' + critere.id;
                 <div class="ligne">
                   <div class="libelle">
                     <span>{{ critere.savoirFaire }}</span>
-                    @if (critereExercices().get(critere.id); as exercices) {
+                    @if (!exo && critereExercices().get(critere.id); as exercices) {
                       <span class="exercice-critere">Exercice : {{ exercices }}</span>
                     }
                     @if (critere.critereRealisation) {
@@ -559,11 +593,11 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                     } @else if (actif.parQui) {
                       <span class="secondaire trace">{{ actif.parQui }} · {{ actif.le | dateFr }}</span>
                     }
-                    @if (actif.exercice; as exo) {
+                    @if (actif.exercice; as exoNote) {
                       <span class="exercice-note">
                         <span class="secondaire">Noté sur</span>
-                        <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
-                        <span class="secondaire">{{ exo.intitule }}</span>
+                        <app-pastille-phase [phase]="exoNote.phase" [numero]="exoNote.numero" [intitule]="exoNote.intitule" />
+                        <span class="secondaire">{{ exoNote.intitule }}</span>
                         @if (actif.statutExercice) {
                           <span class="etat-exercice" [class.acquis]="actif.statutExercice === 'ACQUIS'">
                             : exercice {{ libelleStatut(actif.statutExercice).toLowerCase() }}
@@ -589,7 +623,8 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 
                   <!-- D'abord l'exercice réalisé, puis la note : dans l'ordre des gestes du moniteur. -->
                   <div class="saisie">
-                    @if (peutSaisir() && !bloc.valide && aDesExercices(bloc, critere)) {
+                    <!-- Sous un exercice de la séance, la note porte sur cet exercice : pas de choix à faire. -->
+                    @if (peutSaisir() && !bloc.valide && aDesExercices(bloc, critere) && exerciceImpose(bloc, critere, exo) === null) {
                       @let choisi = exerciceChoisi(bloc, critere);
                       @let note = exerciceNote(bloc, critere);
                       <div class="choix-exercice">
@@ -636,7 +671,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                                 [class.differe]="actif.enAttente && actif.statut === choix.valeur"
                                 [disabled]="!peutSaisir() || bloc.valide || actif.enregistrement"
                                 [attr.aria-pressed]="actif.statut === choix.valeur"
-                                (click)="noter(bloc, critere, choix.valeur)">
+                                (click)="noter(bloc, critere, choix.valeur, exo)">
                           {{ choix.libelle }}
                         </button>
                       }
@@ -647,34 +682,34 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 <div class="liens-critere">
                   @if (peutSaisir() && !bloc.valide) {
                     <button type="button" class="lien-historique"
-                            [attr.aria-expanded]="commentairesOuverts().has(critere.id)"
-                            (click)="basculerCommentaire(critere.id)">
-                      {{ commentairesOuverts().has(critere.id) ? 'Annuler le commentaire' : 'Commenter' }}
+                            [attr.aria-expanded]="commentairesOuverts().has(cleUi)"
+                            (click)="basculerCommentaire(cleUi)">
+                      {{ commentairesOuverts().has(cleUi) ? 'Annuler le commentaire' : 'Commenter' }}
                     </button>
                   }
                   <button type="button" class="lien-historique"
-                          (click)="basculerHistorique(critere.id)">
-                    {{ historiqueOuverts().has(critere.id) ? 'Masquer l’historique' : 'Voir l’historique' }}
+                          (click)="basculerHistorique(critere.id, cleUi)">
+                    {{ historiqueOuverts().has(cleUi) ? 'Masquer l’historique' : 'Voir l’historique' }}
                   </button>
                 </div>
 
-                @if (commentairesOuverts().has(critere.id) && peutSaisir() && !bloc.valide) {
+                @if (commentairesOuverts().has(cleUi) && peutSaisir() && !bloc.valide) {
                   <div class="ajout-commentaire">
-                    <label class="secondaire" [for]="'commentaire-' + critere.id">
+                    <label class="secondaire" [for]="'commentaire-' + lieu + '-' + critere.id">
                       Ce qui a été travaillé, ce qui reste à revoir…
                     </label>
-                    <textarea [id]="'commentaire-' + critere.id" rows="2"
+                    <textarea [id]="'commentaire-' + lieu + '-' + critere.id" rows="2"
                               [ngModel]="brouillons()[critere.id] ?? ''"
                               (ngModelChange)="modifierBrouillon(critere.id, $event)"></textarea>
                     <button type="button" class="bouton-principal"
                             [disabled]="!(brouillons()[critere.id] ?? '').trim()"
-                            (click)="commenter(bloc, critere)">
+                            (click)="commenter(bloc, critere, exo, cleUi)">
                       Enregistrer le commentaire
                     </button>
                   </div>
                 }
 
-                @if (historiqueOuverts().has(critere.id)) {
+                @if (historiqueOuverts().has(cleUi)) {
                   <div class="historique">
                     @if (chargementHistorique().has(critere.id)) {
                       <p class="secondaire">Chargement…</p>
@@ -689,10 +724,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                               {{ entree.dateEvaluation | dateFr }} · {{ entree.parQui }}{{ entree.saisiPar ? ' (saisi par ' + entree.saisiPar + ')' : '' }} · {{ libelleStatut(entree.statut) }}
                               @if (entree.entrainement) { · <span class="etiquette-entrainement">piscine / fosse</span> }
                             </span>
-                            @if (entree.exercice; as exo) {
+                            @if (entree.exercice; as exoEntree) {
                               <span class="exercice-note">
-                                <app-pastille-phase [phase]="exo.phase" [numero]="exo.numero" [intitule]="exo.intitule" />
-                                {{ exo.intitule }}
+                                <app-pastille-phase [phase]="exoEntree.phase" [numero]="exoEntree.numero" [intitule]="exoEntree.intitule" />
+                                {{ exoEntree.intitule }}
                                 @if (entree.statutExercice && entree.statutExercice !== entree.statut) {
                                   <span class="critere-reste">
                                     (exercice {{ libelleStatut(entree.statutExercice).toLowerCase() }},
@@ -709,13 +744,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 
                   </div>
                 }
-              </li>
-            }
-          </ul>
-          }
-        </section>
-        }
-      }
+      </ng-template>
 
       <app-dialogue [ouvert]="choixExercice() !== null"
                     [titre]="'Exercice réalisé — ' + (choixExercice()?.critere?.savoirFaire ?? '')"
@@ -907,6 +936,13 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     /* Programme d'exercices de la séance choisie : ce qui a été travaillé, critère par critère. */
     .exercices-seance ol { margin: 0; padding-left: 1.5rem; display: grid; gap: 4px; font-size: .9375rem; }
     .exercices-seance .consignes { display: block; white-space: pre-line; }
+    /* Sous chaque exercice, ses critères à noter : toute la largeur de la carte, en retrait léger. */
+    .exercices-seance ol { align-self: stretch; }
+    .criteres-exercice {
+      margin-top: var(--pas); padding-left: var(--pas-2); border-left: 3px solid var(--accent-clair);
+    }
+    .criteres-exercice > li:first-child { border-top: none; }
+    .competence-du-critere { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .02em; }
     .exercice-critere {
       align-self: flex-start; padding: 0 8px; border-radius: var(--r-s);
       background: var(--profond); color: #fff; font-size: .75rem; font-weight: 700;
@@ -1084,8 +1120,12 @@ export class GrilleComponent implements OnDestroy {
   enregistrements = signal<Map<string, EnVol>>(new Map());
   validationEnCours = signal<number | null>(null);
 
-  /** Historique des critères consultés, tenu par critereId. */
-  historiqueOuverts = signal<Set<number>>(new Set());
+  /**
+   * Historiques dépliés, par affichage du critère (`lieu:critereId`) : un même
+   * critère paraît sous sa compétence et sous les exercices de la séance.
+   * Les entrées chargées, elles, restent tenues par critereId.
+   */
+  historiqueOuverts = signal<Set<string>>(new Set());
 
   /** Blocs dépliés : tous repliés à l'ouverture de la fiche, pour la parcourir d'un coup d'œil. */
   blocsOuverts = signal<Set<number>>(new Set());
@@ -1104,13 +1144,13 @@ export class GrilleComponent implements OnDestroy {
   chargementHistorique = signal<Set<number>>(new Set());
   historiques = signal<Record<number, EvaluationVue[]>>({});
   brouillons = signal<Record<number, string>>({});
-  /** Critères dont la zone « Commenter » est dépliée, indépendamment de l'historique. */
-  commentairesOuverts = signal<Set<number>>(new Set());
+  /** Zones « Commenter » dépliées (`lieu:critereId`), indépendamment de l'historique. */
+  commentairesOuverts = signal<Set<string>>(new Set());
 
-  basculerCommentaire(critereId: number): void {
+  basculerCommentaire(cleUi: string): void {
     const ouverts = new Set(this.commentairesOuverts());
-    if (ouverts.has(critereId)) ouverts.delete(critereId);
-    else ouverts.add(critereId);
+    if (ouverts.has(cleUi)) ouverts.delete(cleUi);
+    else ouverts.add(cleUi);
     this.commentairesOuverts.set(ouverts);
   }
 
@@ -1515,6 +1555,42 @@ export class GrilleComponent implements OnDestroy {
     };
   }
 
+  /**
+   * Critères travaillés par un exercice de la séance, avec leur compétence,
+   * pour les noter sous l'exercice lui-même. Ceux d'une autre formation (absents
+   * de la grille) sont ignorés.
+   */
+  criteresDeLExercice(e: ExerciceGrilleVue): { bloc: BlocAffiche; critere: CritereAffiche }[] {
+    const liste: { bloc: BlocAffiche; critere: CritereAffiche }[] = [];
+    for (const id of e.critereIds) {
+      for (const bloc of this.grilleAffichee()?.blocs ?? []) {
+        const critere = bloc.criteres.find(c => c.id === id);
+        if (critere) { liste.push({ bloc, critere }); break; }
+      }
+    }
+    return liste;
+  }
+
+  /**
+   * Exercice sur lequel porte une note prise sous un exercice de la séance :
+   * l'id de l'exercice de la base, ou l'intitulé d'un exercice libre qui a une
+   * phase. null quand il ne peut pas servir à noter ce critère (exercice
+   * désactivé, exercice libre sans phase) : le choix habituel reste alors proposé.
+   */
+  exerciceImpose(bloc: BlocAffiche, critere: CritereAffiche, exo: ExerciceGrilleVue | null): number | string | null {
+    if (!exo) return null;
+    if (exo.exerciceBase) {
+      const id = exo.exerciceBase.id;
+      return this.exercicesDuCritere(bloc, critere).some(x => x.id === id) ? id : null;
+    }
+    return this.exercicesLibresDuCritere(critere).some(x => x.intitule === exo.intitule) ? exo.intitule : null;
+  }
+
+  private imposerExercice(bloc: BlocAffiche, critere: CritereAffiche, exo: ExerciceGrilleVue | null): void {
+    const impose = this.exerciceImpose(bloc, critere, exo);
+    if (impose !== null) this.exercicesChoisis.set({ ...this.exercicesChoisis(), [critere.id]: impose });
+  }
+
   blocsDesExercices = computed(() => {
     const criteres = this.critereExercices();
     return new Set((this.grille()?.blocs ?? [])
@@ -1734,7 +1810,10 @@ export class GrilleComponent implements OnDestroy {
    * file, qui l'écrit localement puis l'envoie si elle peut. Un envoi réussi
    * n'est donc pas une condition pour que le geste soit pris en compte.
    */
-  async noter(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut): Promise<void> {
+  async noter(bloc: BlocAffiche, critere: CritereAffiche, statut: Statut,
+              exo: ExerciceGrilleVue | null = null): Promise<void> {
+    // Noté sous un exercice de la séance : la note porte sur cet exercice.
+    this.imposerExercice(bloc, critere, exo);
     // Rien de nouveau : même état, sur le même exercice que la dernière note.
     // (Un autre exercice, ou un exercice d'initiation acquis sur un critère en cours, se note toujours.)
     const actif = this.suiviActif(critere);
@@ -1909,14 +1988,14 @@ export class GrilleComponent implements OnDestroy {
    * Ouvre/ferme l'historique complet d'un critère (une ligne par saisie,
    * table en ajout seul). Chargé à la demande, une seule fois par ouverture.
    */
-  async basculerHistorique(critereId: number): Promise<void> {
+  async basculerHistorique(critereId: number, cleUi: string): Promise<void> {
     const ouverts = new Set(this.historiqueOuverts());
-    if (ouverts.has(critereId)) {
-      ouverts.delete(critereId);
+    if (ouverts.has(cleUi)) {
+      ouverts.delete(cleUi);
       this.historiqueOuverts.set(ouverts);
       return;
     }
-    ouverts.add(critereId);
+    ouverts.add(cleUi);
     this.historiqueOuverts.set(ouverts);
     await this.chargerHistorique(critereId);
   }
@@ -1946,9 +2025,11 @@ export class GrilleComponent implements OnDestroy {
    * l'état courant : la table étant en ajout seul, on ne modifie jamais une
    * saisie passée, on en ajoute une qui ne fait que commenter.
    */
-  async commenter(bloc: BlocAffiche, critere: CritereAffiche): Promise<void> {
+  async commenter(bloc: BlocAffiche, critere: CritereAffiche, exo: ExerciceGrilleVue | null = null,
+                  cleUi = 'b:' + critere.id): Promise<void> {
     const texte = (this.brouillons()[critere.id] ?? '').trim();
     if (!texte) return;
+    this.imposerExercice(bloc, critere, exo);
 
     const seance = this.seances().find(s => s.id === this.seanceId()) ?? null;
 
@@ -1978,12 +2059,13 @@ export class GrilleComponent implements OnDestroy {
     delete restants[critere.id];
     this.brouillons.set(restants);
     const ouverts = new Set(this.commentairesOuverts());
-    ouverts.delete(critere.id);
+    ouverts.delete(cleUi);
     this.commentairesOuverts.set(ouverts);
 
     // Le commentaire vient d'être ajouté hors ligne ou en ligne : l'historique
-    // affiché ne le montrera qu'une fois rechargé depuis le serveur.
-    if (this.historiqueOuverts().has(critere.id) && this.reseau.enLigne()) {
+    // affiché (sous la compétence ou sous un exercice) ne le montrera qu'une fois rechargé.
+    const historiqueAffiche = [...this.historiqueOuverts()].some(k => k.endsWith(':' + critere.id));
+    if (historiqueAffiche && this.reseau.enLigne()) {
       await this.chargerHistorique(critere.id);
     }
 

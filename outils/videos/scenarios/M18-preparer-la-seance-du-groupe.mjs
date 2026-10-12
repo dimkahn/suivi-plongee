@@ -1,5 +1,5 @@
 // M18 — Préparer la séance de son groupe : le programme d'exercices.
-// Tournage du 2026-10-12, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 8e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine, comme M17 : Hugo Lemaire (groupe
 // Débutants) y est noté présent dans les données de démo. e2 est référent
 // des Débutants : leur programme est le sien ; celui de « Prépa N2 » ne
@@ -75,11 +75,15 @@ export default {
     await legende('Dans la fiche de Hugo, du groupe Débutants, choisissez la séance du 21 septembre.', 0);
     await ouvrirGrille(g, 'Hugo Lemaire');
     await choisirSeanceDu('21/09/2026');
-    await legende('Les exercices de son groupe s\'affichent avec la séance.', 0);
+    await legende('Les exercices de son groupe s\'affichent avec la séance, et sous chacun les critères à évaluer.', 0);
     await page.locator('section.exercices-seance').scrollIntoViewIfNeeded();
+    await pause(1500);
+    await page.locator('.criteres-exercice').first().scrollIntoViewIfNeeded();
     await pause(3000);
+    await legende('On note directement sous l\'exercice : la note porte sur lui, rien à choisir. « Commenter » et « Voir l\'historique » sont là aussi.', 5000);
+    await legende('Les mêmes critères restent dans leur compétence, plus bas.', 0);
     await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences travaillées|la compétence travaillée)$/ }), { apres: 1200 });
-    await legende('Les critères travaillés portent le nom de l\'exercice : il ne reste qu\'à noter.', 0);
+    await legende('Ils y portent le nom de l\'exercice.', 0);
     await critere(page, 'Vidage du masque').scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollBy({ top: 120, behavior: 'smooth' }));
     await pause(3500);
