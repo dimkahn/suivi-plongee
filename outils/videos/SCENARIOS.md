@@ -401,9 +401,10 @@ Compte : `e2@club.fr` · format téléphone · manuel : `aujourdhui.md`
 5. Puis une carte par séance : le lundi, la piscine et la fosse.
 6. Le bilan de vos groupes : présents, et présents pas encore évalués.
 7. Programme d'exercices, fiche de sécurité en milieu naturel : tout part d'ici.
-8. Le premier bouton ouvre la feuille de présence de la séance, filtrée sur votre groupe.
-9. Sur téléphone, « Aujourd'hui » est aussi le premier onglet, en bas de l'écran.
-10. Après « Préparer hors ligne », la page s'ouvre même sans réseau.
+8. En milieu naturel, le jour même, « Compléter au retour de plongée » ouvre la saisie du profil réalisé.
+9. Le premier bouton ouvre la feuille de présence de la séance, filtrée sur votre groupe.
+10. Sur téléphone, « Aujourd'hui » est aussi le premier onglet, en bas de l'écran.
+11. Après « Préparer hors ligne », la page s'ouvre même sans réseau.
 
 ### M24 — Le parcours de formation
 

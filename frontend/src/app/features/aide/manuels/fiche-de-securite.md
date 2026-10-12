@@ -40,7 +40,7 @@ Règles appliquées : jamais un plongeur au-delà de son aptitude ; en enseignem
 ## Pendant et après la plongée
 
 1. « Marquer l'immersion » puis « Marquer la sortie » notent l'heure sur le moment.
-2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers.
+2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers. Le jour de la plongée, le bouton « Compléter au retour de plongée » de la page « Aujourd'hui » y mène directement.
 3. La fiche complète s'exporte en PDF ou en tableur pour les archives du club.
 4. Si la plongée fait partie d'une sortie (un séjour), « Toutes les fiches de … (PDF) » réunit les fiches de toutes ses plongées dans un seul PDF, une par page : tout s'imprime d'un coup. Les plongées sans fiche sont sautées.
 5. Pour imprimer toutes les fiches d'une journée (plusieurs plongées, plusieurs bateaux), choisissez la date dans la liste « Fiches de sécurité » puis « Imprimer les fiches du … (PDF) » : une fiche par page, dans l'ordre des plongées. Les séances sans fiche sont sautées ; une fiche saisie hors ligne n'y figure qu'une fois envoyée.

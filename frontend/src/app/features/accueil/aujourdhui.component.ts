@@ -24,7 +24,7 @@ interface BilanSeance {
  * Page d'accueil des encadrants : la séance du jour (ou la prochaine) et
  * tout ce qui s'y fait, au même endroit — où va mon groupe au bassin, ma
  * réponse de présence, l'appel, le programme d'exercices, la fiche de
- * sécurité et les élèves présents pas encore évalués. Chaque bloc renvoie à
+ * sécurité (et, le jour même, sa saisie au retour de plongée) et les élèves présents pas encore évalués. Chaque bloc renvoie à
  * l'écran complet ; rien ne s'y saisit, sauf la réponse de présence (même
  * appel que l'écran Planning). Tout vient de données déjà embarquées par
  * « Préparer hors ligne » : la page s'ouvre sans réseau.
@@ -108,6 +108,11 @@ interface BilanSeance {
             @if (s.milieu === 'NATUREL' || s.ficheSecurite) {
               <a class="bouton-discret" [routerLink]="['/fiches-securite', s.id]">
                 {{ s.ficheSecurite ? 'Fiche de sécurité' : 'Établir la fiche de sécurité' }}
+              </a>
+            }
+            @if (s.milieu === 'NATUREL' && s.ficheSecurite && s.date <= aujourdhui) {
+              <a class="bouton-discret" [routerLink]="['/fiches-securite', s.id, 'realise']">
+                Compléter au retour de plongée
               </a>
             }
           </div>
