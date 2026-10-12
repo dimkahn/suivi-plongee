@@ -1,5 +1,5 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-11, 3e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-12, 8e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter } from '../grille.mjs';
 
 export default {
@@ -27,7 +27,7 @@ export default {
     await page.locator('section.programme').scrollIntoViewIfNeeded();
     await pause(3000);
     await toucher(page.getByRole('button', { name: /^Ouvrir (les \d+ compétences|la compétence) au programme$/ }), { apres: 1200 });
-    await legende('Si son groupe a préparé la séance, ses exercices s\'affichent aussi, et les critères travaillés portent le nom de l\'exercice.', 4500);
+    await legende('Si son groupe a préparé la séance, ses exercices s\'affichent aussi, chacun avec ses critères à noter juste dessous.', 4500);
 
     await legende('Chaque critère a trois états : non abordé, en cours, acquis.', 0);
     await critere(page, 'Palmage dorsal').scrollIntoViewIfNeeded();
