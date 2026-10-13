@@ -1,5 +1,5 @@
 // M2 — Mon compte : photo, e-mail, mot de passe.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,9 +29,10 @@ export default {
 
     await legende('Votre photo apparaît dans le trombinoscope des moniteurs.', 3000);
     await legende('La déposer vaut accord pour cet affichage ; vous pouvez la retirer à tout moment.', 3500);
+    await legende('« Prendre une photo » ouvre l\'appareil photo ; « Choisir dans mes photos », la galerie du téléphone.', 0);
     const [choix] = await Promise.all([
       page.waitForEvent('filechooser'),
-      toucher(page.getByText('Déposer ma photo'), { apres: 300 })
+      toucher(page.getByText('Choisir dans mes photos'), { apres: 300 })
     ]);
     await choix.setFiles(fichier);
     await pause(1200);

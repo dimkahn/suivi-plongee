@@ -3,7 +3,7 @@ titre: Le trombinoscope
 rubrique: Moniteur
 videos: M15
 ecran: /trombinoscope
-mots: photo, photos, visage, trombi, trombinoscope, droit à l'image, prénom, reconnaître, exporter, image, télécharger, masquer, cacher
+mots: photo, photos, visage, trombi, trombinoscope, droit à l'image, prénom, reconnaître, exporter, image, télécharger, masquer, cacher, appareil photo, galerie, prendre une photo
 questions:
 - Comment mettre un nom sur un visage ?
 - Pourquoi un élève n'a pas de photo ?
@@ -27,4 +27,5 @@ Menu, « Trombinoscope » : les élèves de la saison rangés par groupe d'entra
 - **Sur l'image exportée, une photo masquée et une absence de photo donnent la même icône** : on ne peut pas deviner qui a été masqué. L'image est fabriquée sur votre appareil, rien n'est enregistré sur le serveur.
 
 - **Pas de photo sans droit à l'image** : c'est un accord distinct de l'autorisation de plonger, recueilli par un administrateur dans le dossier de l'élève.
+- Une carte sans photo : une fois le droit à l'image enregistré, « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » la galerie du téléphone.
 - Votre propre photo se dépose depuis « Mon compte ».
