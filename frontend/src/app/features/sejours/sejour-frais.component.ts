@@ -63,13 +63,22 @@ interface PhotoAEnvoyer {
       <p class="vide">Aucune dépense pour l'instant. Gîte, location de voiture, courses, plongées : chacun note
         ce qu'il a avancé, avec la photo de la note ; l'appli calcule qui doit combien à qui.</p>
     } @else {
-      <p class="total">Total des dépenses : <strong>{{ euros(f.comptes.totalCentimes) }}</strong></p>
+      @if (monSolde(); as m) {
+        <div class="carte mon-solde" [class.doit]="m.doit" [class.a-jour]="m.lignes.length === 0">
+          <span class="etiquette">Votre solde</span>
+          @if (m.lignes.length === 0) {
+            <strong>Vous êtes à jour.</strong>
+          } @else {
+            @for (l of m.lignes; track $index) { <strong>{{ l }}</strong> }
+          }
+        </div>
+      }
 
       <h3>Qui doit combien à qui</h3>
       @if (f.comptes.remboursements.length === 0) {
         <p class="carte solde-ok">Les comptes sont soldés.</p>
       } @else {
-        <ul class="cartes">
+        <ul class="lignes-cartes">
           @for (r of f.comptes.remboursements; track r.deId + '-' + r.aId) {
             <li class="carte remboursement" [class.moi]="r.deId === d.moiId || r.aId === d.moiId">
               <span><strong>{{ nomDe(r.deId) }}</strong> doit <strong>{{ euros(r.montantCentimes) }}</strong>
@@ -83,75 +92,85 @@ interface PhotoAEnvoyer {
         </ul>
       }
 
-      <h3>Le compte de chacun</h3>
-      <div class="defilement">
-        <table class="soldes">
-          <thead><tr><th scope="col">Participant</th><th scope="col">A payé</th><th scope="col">Sa part</th>
-            <th scope="col">Solde</th></tr></thead>
-          <tbody>
-            @for (c of f.comptes.soldes; track c.participantId) {
-              <tr [class.moi]="c.participantId === d.moiId">
-                <th scope="row">{{ nomDe(c.participantId) }}</th>
-                <td>{{ euros(c.payeCentimes) }}</td>
-                <td>{{ euros(c.duCentimes) }}</td>
-                <td [class.positif]="c.soldeCentimes > 0" [class.negatif]="c.soldeCentimes < 0">
-                  {{ c.soldeCentimes > 0 ? '+' : '' }}{{ euros(c.soldeCentimes) }}
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <div class="titre-depenses">
+        <h3>Dépenses</h3>
+        <span class="secondaire">{{ f.depenses.length }} · total <strong>{{ euros(f.comptes.totalCentimes) }}</strong></span>
       </div>
-      <p class="secondaire">Solde positif : on lui doit de l'argent ; négatif : il en doit. Les remboursements
-        déjà faits sont comptés.</p>
-
-      <h3>Dépenses</h3>
-      <ul class="cartes">
+      <ul class="lignes-cartes">
         @for (dep of f.depenses; track dep.id) {
-          <li class="carte">
-            <div class="ligne">
-              <span class="nom">{{ dep.libelle }}</span>
-              <span class="montant">{{ euros(dep.montantCentimes) }}</span>
-            </div>
-            <p class="secondaire">{{ libelleCategorie(dep.categorie) }}@if (dep.jour) { · {{ dateFr(dep.jour) }}}
-              · payé par {{ nomDe(dep.payeurId) }}</p>
-            <p>Partagé entre {{ partage(dep) }}</p>
-            @if (dep.photos.length > 0) {
-              <div class="vignettes">
-                @for (ph of dep.photos; track ph) {
-                  <button type="button" class="vignette" (click)="agrandir(dep.id, ph)"
-                          [attr.aria-label]="'Voir la photo de la note : ' + dep.libelle">
-                    @if (urlPhoto(dep.id, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
-                  </button>
-                }
-              </div>
-            } @else {
-              <p class="secondaire sans-note">Pas de photo de la note.</p>
-            }
-            @if (d.depensesModifiables.includes(dep.id)) {
-              <div class="actions sans-impression">
-                <button type="button" class="bouton-discret" (click)="ouvrirDepense(dep)">Modifier</button>
-                <button type="button" class="bouton-discret danger" (click)="supprimerDepense(dep)">Supprimer</button>
-              </div>
-            }
+          <li class="carte depense">
+            <details [open]="deplie()">
+              <summary>
+                <span class="quoi">
+                  <span class="nom">{{ dep.libelle }}</span>
+                  <span class="secondaire">payé par {{ nomDe(dep.payeurId) }}</span>
+                </span>
+                @if (dep.photos.length > 0) { <span aria-label="avec la photo de la note" title="Photo de la note">📎</span> }
+                <span class="montant">{{ euros(dep.montantCentimes) }}</span>
+              </summary>
+              <p class="secondaire">{{ libelleCategorie(dep.categorie) }}@if (dep.jour) { · {{ dateFr(dep.jour) }}}</p>
+              <p>Partagé entre {{ partage(dep) }}</p>
+              @if (dep.photos.length > 0) {
+                <div class="vignettes">
+                  @for (ph of dep.photos; track ph) {
+                    <button type="button" class="vignette" (click)="agrandir(dep.id, ph)"
+                            [attr.aria-label]="'Voir la photo de la note : ' + dep.libelle">
+                      @if (urlPhoto(dep.id, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
+                    </button>
+                  }
+                </div>
+              }
+              @if (d.depensesModifiables.includes(dep.id)) {
+                <div class="actions sans-impression">
+                  <button type="button" class="bouton-discret" (click)="ouvrirDepense(dep)">Modifier</button>
+                  <button type="button" class="bouton-discret danger" (click)="supprimerDepense(dep)">Supprimer</button>
+                </div>
+              }
+            </details>
           </li>
         }
       </ul>
     }
 
-    @if (f.versements.length > 0) {
-      <h3>Remboursements faits</h3>
-      <ul class="lignes-simples">
-        @for (v of f.versements; track v.id) {
-          <li>
-            <span>{{ nomDe(v.deId) }} → {{ nomDe(v.aId) }} : {{ euros(v.montantCentimes) }}@if (v.jour) {, le {{ dateFr(v.jour) }}}</span>
-            @if (d.versementsSupprimables.includes(v.id)) {
-              <button type="button" class="bouton-discret danger sans-impression"
-                      (click)="supprimerVersement(v.id)">Annuler</button>
+    @if (f.depenses.length > 0 || f.versements.length > 0) {
+      <details class="carte detail-comptes" [open]="deplie()">
+        <summary>Détail des comptes{{ f.versements.length ? ' et remboursements faits' : '' }}</summary>
+        <div class="defilement">
+          <table class="soldes">
+            <thead><tr><th scope="col">Participant</th><th scope="col">A payé</th><th scope="col">Sa part</th>
+              <th scope="col">Solde</th></tr></thead>
+            <tbody>
+              @for (c of f.comptes.soldes; track c.participantId) {
+                <tr [class.moi]="c.participantId === d.moiId">
+                  <th scope="row">{{ nomDe(c.participantId) }}</th>
+                  <td>{{ euros(c.payeCentimes) }}</td>
+                  <td>{{ euros(c.duCentimes) }}</td>
+                  <td [class.positif]="c.soldeCentimes > 0" [class.negatif]="c.soldeCentimes < 0">
+                    {{ c.soldeCentimes > 0 ? '+' : '' }}{{ euros(c.soldeCentimes) }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="secondaire">Solde positif : on lui doit de l'argent ; négatif : il en doit. Les remboursements
+          déjà faits sont comptés.</p>
+
+        @if (f.versements.length > 0) {
+          <h3>Remboursements faits</h3>
+          <ul class="lignes-simples">
+            @for (v of f.versements; track v.id) {
+              <li>
+                <span>{{ nomDe(v.deId) }} → {{ nomDe(v.aId) }} : {{ euros(v.montantCentimes) }}@if (v.jour) {, le {{ dateFr(v.jour) }}}</span>
+                @if (d.versementsSupprimables.includes(v.id)) {
+                  <button type="button" class="bouton-discret danger sans-impression"
+                          (click)="supprimerVersement(v.id)">Annuler</button>
+                }
+              </li>
             }
-          </li>
+          </ul>
         }
-      </ul>
+      </details>
     }
 
     <app-dialogue [ouvert]="photoAgrandie() !== null" titre="Photo de la note" [large]="true"
@@ -220,27 +239,40 @@ interface PhotoAEnvoyer {
 
       <fieldset>
         <legend>Partagé entre</legend>
-        <div class="actions">
-          <button type="button" class="bouton-discret" (click)="cocher('tous')">Tout le monde</button>
-          <button type="button" class="bouton-discret" (click)="cocher('plongeurs')">Les plongeurs</button>
-          <button type="button" class="bouton-discret" (click)="cocher('personne')">Personne</button>
-        </div>
-        <ul class="partage">
-          @for (p of participants(); track p.id) {
-            <li>
-              <label class="case"><input type="checkbox" [checked]="(depense.parts[p.id] ?? 0) > 0"
-                                         (change)="basculerPart(p.id)"> {{ nomComplet(p) }}</label>
-              @if ((depense.parts[p.id] ?? 0) > 0) {
-                <label class="parts">parts
-                  <input type="number" min="1" max="20" [(ngModel)]="depense.parts[p.id]" (ngModelChange)="calculerApercu()"
-                         [attr.aria-label]="'Parts de ' + nomComplet(p)">
-                </label>
-                <span class="secondaire">{{ apercu()[p.id] ?? '' }}</span>
-              }
-            </li>
-          }
-        </ul>
-        <p class="secondaire">Une part chacun ; 2 parts pour quelqu'un qui compte double (un couple…).</p>
+        @if (!choixPartage()) {
+          <!-- Le cas courant en une ligne : tout le monde, une part chacun. -->
+          <div class="partage-simple">
+            <span>{{ resumePartage() }}</span>
+            <button type="button" class="bouton-discret" (click)="choixPartage.set(true)">Choisir qui partage</button>
+          </div>
+        } @else {
+          <div class="actions">
+            <button type="button" class="bouton-discret" (click)="cocher('tous')">Tout le monde</button>
+            <button type="button" class="bouton-discret" (click)="cocher('plongeurs')">Les plongeurs</button>
+            <button type="button" class="bouton-discret" (click)="cocher('personne')">Personne</button>
+          </div>
+          <ul class="partage">
+            @for (p of participants(); track p.id) {
+              <li>
+                <label class="case"><input type="checkbox" [checked]="(depense.parts[p.id] ?? 0) > 0"
+                                           (change)="basculerPart(p.id)"> {{ nomComplet(p) }}</label>
+                @if ((depense.parts[p.id] ?? 0) > 0) {
+                  @if (partsInegales()) {
+                    <label class="parts">parts
+                      <input type="number" min="1" max="20" [(ngModel)]="depense.parts[p.id]" (ngModelChange)="calculerApercu()"
+                             [attr.aria-label]="'Parts de ' + nomComplet(p)">
+                    </label>
+                  }
+                  <span class="secondaire">{{ apercu()[p.id] ?? '' }}</span>
+                }
+              </li>
+            }
+          </ul>
+          <label class="case">
+            <input type="checkbox" [checked]="partsInegales()" (change)="basculerPartsInegales()">
+            Parts inégales (2 parts pour un couple…)
+          </label>
+        }
       </fieldset>
       <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="enregistrerDepense()" [disabled]="envoi()">
@@ -281,15 +313,27 @@ interface PhotoAEnvoyer {
     .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 var(--pas-2); }
     fieldset { border: 1px solid var(--trait); border-radius: var(--r-s); margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2); }
     legend { font-weight: 700; padding: 0 var(--pas); }
-    .total { font-size: 1.0625rem; }
-    .cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
-              grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-    .cartes > li { padding: var(--pas-2); }
-    .cartes p { margin: var(--pas) 0 0; }
-    .remboursement { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
+    .mon-solde { display: flex; flex-direction: column; gap: 4px; padding: var(--pas-2); margin: var(--pas-2) 0;
+                 border-left: 6px solid #047857; font-size: 1.125rem; }
+    .mon-solde.doit { border-left-color: var(--accent); }
+    .mon-solde .etiquette { font-size: .8125rem; font-weight: 700; text-transform: uppercase; color: var(--craie); }
+    .lignes-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
+    .lignes-cartes p { margin: var(--pas) 0 0; }
+    .remboursement { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap;
+                     padding: var(--pas) var(--pas-2); }
     .remboursement.moi { border-left: 4px solid var(--accent); }
     .solde-ok { padding: var(--pas-2); }
-    .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); }
+    .titre-depenses { display: flex; justify-content: space-between; align-items: baseline; gap: var(--pas);
+                      flex-wrap: wrap; margin-top: var(--pas-2); }
+    .depense { padding: 0 var(--pas-2); }
+    .depense details[open] { padding-bottom: var(--pas-2); }
+    summary { min-height: 44px; display: flex; align-items: center; gap: var(--pas); cursor: pointer; }
+    .depense .quoi { flex: 1; display: flex; flex-direction: column; padding: 6px 0; }
+    .depense .quoi .secondaire { font-size: .875rem; }
+    .detail-comptes { padding: 0 var(--pas-2); margin-top: var(--pas-2); }
+    .detail-comptes summary { font-weight: 700; }
+    .detail-comptes[open] { padding-bottom: var(--pas-2); }
+    .partage-simple { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .nom { font-weight: 700; }
     .montant { font-weight: 700; color: var(--profond-fonce); white-space: nowrap; }
     .defilement { overflow-x: auto; }
@@ -318,7 +362,6 @@ interface PhotoAEnvoyer {
                background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
     .choisir-photo { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; }
     .cache { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .sans-note { font-size: .875rem; }
     .grande { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
   `]
@@ -327,6 +370,8 @@ export class SejourFraisComponent {
   frais = input.required<FraisVue>();
   participants = input.required<ParticipantFrais[]>();
   port = input.required<PortFrais>();
+  /** Tout déplié (impression du carnet). */
+  deplie = input(false);
   /** Les frais à jour après chaque écriture. */
   maj = output<FraisVue>();
 
@@ -341,7 +386,23 @@ export class SejourFraisComponent {
 
   private readonly parId = computed(() => new Map(this.participants().map(p => [p.id, p])));
 
+  /** En tête de l'onglet : ce que le participant connecté doit, ou ce qu'on lui doit ; null s'il n'en est pas. */
+  readonly monSolde = computed(() => {
+    const f = this.frais();
+    const moi = f.droits.moiId;
+    if (moi === null) return null;
+    const lignes = f.comptes.remboursements
+      .filter(r => r.deId === moi || r.aId === moi)
+      .map(r => r.deId === moi
+        ? `Vous devez ${euros(r.montantCentimes)} à ${this.nomDe(r.aId)}.`
+        : `${this.nomDe(r.deId)} vous doit ${euros(r.montantCentimes)}.`);
+    return { lignes, doit: f.comptes.remboursements.some(r => r.deId === moi) };
+  });
+
   depenseOuverte = signal(false);
+  /** Faux : « tout le monde, une part chacun » en une ligne ; vrai : la liste à cocher. */
+  choixPartage = signal(false);
+  partsInegales = signal(false);
   depenseId: number | null = null;
   depense: BrouillonDepense = this.depenseVide();
   /** La part de chacun d'après le montant saisi, recalculée à chaque frappe (affichage seulement). */
@@ -419,8 +480,29 @@ export class SejourFraisComponent {
           payeurId: this.frais().droits.moiId ?? participants[0]?.id ?? null,
           parts: Object.fromEntries(participants.map(p => [p.id, 1]))
         };
+    const parts = Object.values(this.depense.parts);
+    this.partsInegales.set(parts.some(n => n > 1));
+    this.choixPartage.set(parts.length !== participants.length || this.partsInegales());
     this.calculerApercu();
     this.depenseOuverte.set(true);
+  }
+
+  /** « Tout le monde (8), une part chacun : 5,72 € chacun ». */
+  resumePartage(): string {
+    const n = Object.values(this.depense.parts).filter(p => p > 0).length;
+    const montant = enCentimes(this.depense.montant);
+    return `Tout le monde (${n}), une part chacun`
+      + (montant && montant > 0 && n > 0 ? ` : environ ${euros(Math.floor(montant / n))} chacun` : '');
+  }
+
+  /** Revenir à des parts égales remet une part à chacun de ceux qui partagent. */
+  basculerPartsInegales(): void {
+    const inegales = !this.partsInegales();
+    this.partsInegales.set(inegales);
+    if (!inegales) {
+      this.depense.parts = Object.fromEntries(Object.keys(this.depense.parts).map(id => [Number(id), 1]));
+      this.calculerApercu();
+    }
   }
 
   fermerDepense(): void {

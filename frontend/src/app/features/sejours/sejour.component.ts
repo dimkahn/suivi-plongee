@@ -17,8 +17,7 @@ import {
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
 
-type Onglet = 'programme' | 'participants' | 'trajets' | 'voitures' | 'chambres' | 'repas' | 'affaires' | 'frais'
-  | 'infos' | 'tout';
+type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'pratique';
 
 /** Une ligne du programme d'un jour : rendez-vous saisi, ou plongée de la sortie. */
 interface LigneProgramme {
@@ -56,8 +55,10 @@ function participantVide(): BrouillonParticipant {
 }
 
 /**
- * Le séjour d'une sortie, en onglets : programme, participants, arrivées et
- * départs, voitures, chambres, repas, affaires à prévoir, infos pratiques.
+ * Le séjour d'une sortie, en six onglets : programme ; participants et
+ * repas ; transports (arrivées et départs, voitures) ; hébergement ; frais ;
+ * pratique (affaires à prévoir, infos pratiques). Les points à vérifier
+ * sont comptés sur l'onglet qui permet de les régler.
  * L'admin et le directeur technique le remplissent (fenêtres de saisie) ;
  * les encadrants le lisent ; un participant qui a un compte lit son carnet
  * (sans les coordonnées ni les régimes des autres). « Imprimer le carnet »
@@ -88,28 +89,27 @@ function participantVide(): BrouillonParticipant {
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
-      @if (s.avertissements.length > 0) {
-        <ul class="avertissements sans-impression" aria-label="À vérifier">
-          @for (a of s.avertissements; track a) { <li>{{ a }}</li> }
-        </ul>
-      }
-
       @if (moi(); as m) {
-        <section class="carte mon-voyage">
-          <h2>Mon séjour</h2>
-          <p><strong>Arrivée :</strong> {{ texteTrajet(m.arrivee) }}</p>
-          <p><strong>Départ :</strong> {{ texteTrajet(m.depart) }}</p>
-          @for (v of voituresDe(m.id); track v.id) {
-            <p><strong>Voiture :</strong> « {{ v.nom }} »@if (v.trajet) {, {{ v.trajet }}}
-              — {{ v.conducteurId === m.id ? 'vous conduisez' : 'conduite par ' + nomDe(v.conducteurId) }}</p>
-          }
-          @if (chambreDe(m.id); as c) {
-            <p><strong>Chambre :</strong> « {{ c.chambre }} », {{ c.logement }}@if (c.avec.length) {, avec {{ c.avec.join(', ') }}}</p>
-          }
-          @for (r of mesRemboursements(m.id); track $index) {
-            <p><strong>Frais :</strong> {{ r }}</p>
-          }
-          <button type="button" class="bouton-principal sans-impression" (click)="mesInfosOuvertes.set(true)">
+        <section class="carte mon-voyage" aria-label="Mon séjour">
+          <details [open]="impression()">
+            <summary>
+              <span class="titre-replie">Mon séjour</span>
+              <span class="secondaire">{{ resumeMoi(m) }}</span>
+            </summary>
+            <p><strong>Arrivée :</strong> {{ texteTrajet(m.arrivee) }}</p>
+            <p><strong>Départ :</strong> {{ texteTrajet(m.depart) }}</p>
+            @for (v of voituresDe(m.id); track v.id) {
+              <p><strong>Voiture :</strong> « {{ v.nom }} »@if (v.trajet) {, {{ v.trajet }}}
+                — {{ v.conducteurId === m.id ? 'vous conduisez' : 'conduite par ' + nomDe(v.conducteurId) }}</p>
+            }
+            @if (chambreDe(m.id); as c) {
+              <p><strong>Chambre :</strong> « {{ c.chambre }} », {{ c.logement }}@if (c.avec.length) {, avec {{ c.avec.join(', ') }}}</p>
+            }
+            @for (r of mesRemboursements(m.id); track $index) {
+              <p><strong>Frais :</strong> {{ r }}</p>
+            }
+          </details>
+          <button type="button" class="bouton-discret sans-impression" (click)="mesInfosOuvertes.set(true)">
             Modifier mes informations
           </button>
         </section>
@@ -125,7 +125,11 @@ function participantVide(): BrouillonParticipant {
       <div class="onglets sans-impression" role="tablist">
         @for (o of onglets(); track o.code) {
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === o.code"
-                  [attr.aria-selected]="onglet() === o.code" (click)="onglet.set(o.code)">{{ o.libelle }}</button>
+                  [attr.aria-selected]="onglet() === o.code" (click)="onglet.set(o.code)">
+            {{ o.libelle }}@if (o.alertes > 0) {
+              <span class="compteur-alertes" [attr.aria-label]="o.alertes + ' à vérifier'">{{ o.alertes }}</span>
+            }
+          </button>
         }
       </div>
 
@@ -194,14 +198,27 @@ function participantVide(): BrouillonParticipant {
               </div>
             }
           </div>
-          @if (s.participants.length === 0) { <p class="vide">Personne d'inscrit pour l'instant.</p> }
-          <ul class="cartes">
+          @if (s.participants.length === 0) {
+            <p class="vide">Personne d'inscrit pour l'instant.</p>
+          } @else {
+            <p class="secondaire">{{ complets() }} sur {{ s.participants.length }} ont donné leur arrivée, leur départ et
+              la personne à prévenir. Touchez un nom pour voir sa fiche.</p>
+          }
+          <ul class="liste-participants">
             @for (p of s.participants; track p.id) {
               <li class="carte">
-                <div class="ligne">
-                  <span class="nom">{{ nomComplet(p) }}</span>
-                  <span class="pastille" [class.accompagnant]="!p.plongeur">{{ p.plongeur ? 'Plongeur' : 'Accompagnant' }}</span>
-                </div>
+                <details [open]="impression()">
+                  <summary>
+                    <span class="nom">{{ nomComplet(p) }}</span>
+                    <span class="pastille" [class.accompagnant]="!p.plongeur">{{ p.plongeur ? 'Plongeur' : 'Accompagnant' }}</span>
+                    @if (manque(p); as m) {
+                      @if (m.length === 0) {
+                        <span class="etat-infos complet">✓ Infos données</span>
+                      } @else {
+                        <span class="etat-infos">À compléter : {{ m.join(', ') }}</span>
+                      }
+                    }
+                  </summary>
                 @if (p.telephone || p.email) {
                   <p>
                     @if (p.telephone) { <a [href]="'tel:' + p.telephone">{{ p.telephone }}</a> }
@@ -230,14 +247,33 @@ function participantVide(): BrouillonParticipant {
                     <button type="button" class="bouton-discret danger" (click)="supprimerParticipant(p)">Retirer</button>
                   </div>
                 }
+                </details>
               </li>
             }
           </ul>
+
+          <h3>Repas</h3>
+          <p>{{ s.participants.length }} couverts, dont {{ sansRegime().length }} sans régime particulier.</p>
+          @if (repas().length > 0 || precisions().length > 0) {
+            <ul class="lignes-repas">
+              @for (r of repas(); track r.libelle) {
+                <li><strong>{{ r.libelle }} : {{ r.noms.length }}</strong> — {{ r.noms.join(', ') }}</li>
+              }
+              @for (p of precisions(); track p.id) {
+                <li>Précision pour la cuisine, <strong>{{ nomComplet(p) }}</strong> : {{ p.regimePrecision }}</li>
+              }
+            </ul>
+          }
         </section>
       }
 
-      <!-- Arrivées et départs -->
-      @if (voir('trajets')) {
+      <!-- Transports : arrivées et départs, voitures -->
+      @if (voir('transports') && avertissementsDe().transports.length > 0) {
+        <ul class="avertissements sans-impression" aria-label="À vérifier">
+          @for (a of avertissementsDe().transports; track a) { <li>{{ a }}</li> }
+        </ul>
+      }
+      @if (voir('transports')) {
         <section>
           <div class="titre-section">
             <h2>Arrivées et départs</h2>
@@ -276,8 +312,7 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      <!-- Voitures -->
-      @if (voir('voitures')) {
+      @if (voir('transports')) {
         <section>
           <div class="titre-section">
             <h2>Voitures</h2>
@@ -310,8 +345,13 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      <!-- Logements et chambres -->
-      @if (voir('chambres')) {
+      <!-- Hébergement : logements et chambres -->
+      @if (voir('hebergement') && avertissementsDe().hebergement.length > 0) {
+        <ul class="avertissements sans-impression" aria-label="À vérifier">
+          @for (a of avertissementsDe().hebergement; track a) { <li>{{ a }}</li> }
+        </ul>
+      }
+      @if (voir('hebergement')) {
         <section>
           <div class="titre-section">
             <h2>Logements et chambres</h2>
@@ -354,28 +394,8 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      <!-- Repas (encadrants) -->
-      @if (s.encadrant && voir('repas')) {
-        <section>
-          <h2>Repas</h2>
-          <p>{{ s.participants.length }} couverts, dont {{ sansRegime().length }} sans régime particulier.</p>
-          @if (repas().length === 0) { <p class="vide">Aucun régime particulier.</p> }
-          <ul class="cartes">
-            @for (r of repas(); track r.libelle) {
-              <li class="carte"><span class="nom">{{ r.libelle }} : {{ r.noms.length }}</span><p>{{ r.noms.join(', ') }}</p></li>
-            }
-          </ul>
-          @if (precisions().length > 0) {
-            <h3>Précisions pour la cuisine</h3>
-            <ul>
-              @for (p of precisions(); track p.id) { <li>{{ nomComplet(p) }} : {{ p.regimePrecision }}</li> }
-            </ul>
-          }
-        </section>
-      }
-
-      <!-- Affaires -->
-      @if (voir('affaires')) {
+      <!-- Pratique : affaires à prévoir, infos pratiques -->
+      @if (voir('pratique')) {
         <section>
           <div class="titre-section">
             <h2>Affaires à prévoir</h2>
@@ -405,21 +425,17 @@ function participantVide(): BrouillonParticipant {
       <!-- Frais partagés -->
       @if (voir('frais')) {
         <section>
-          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" />
+          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" [deplie]="impression()" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
-              Les participants qui ne sont pas moniteurs voient et saisissent leurs frais par un lien et un code reçus
-              par e-mail, avec leurs informations pour le séjour.
-              <button type="button" class="bouton-discret" (click)="envoyerInvitations(null)" [disabled]="envoi()">
-                Demander à chacun ses informations
-              </button>
+              Les participants qui ne sont pas moniteurs voient et saisissent leurs frais par le lien reçu avec
+              « Demander à chacun ses informations » (onglet Participants).
             </p>
           }
         </section>
       }
 
-      <!-- Infos pratiques -->
-      @if (voir('infos')) {
+      @if (voir('pratique')) {
         <section>
           <div class="titre-section">
             <h2>Infos pratiques</h2>
@@ -722,13 +738,29 @@ function participantVide(): BrouillonParticipant {
     textarea { resize: vertical; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; }
     .titre-section { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; flex-wrap: wrap; }
+    /* Une seule rangée d'onglets, qui défile sur téléphone plutôt que de s'empiler. */
+    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; overflow-x: auto; padding-bottom: 4px;
+               scrollbar-width: thin; }
+    .onglets button { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
     .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
+    .compteur-alertes { min-width: 1.4rem; height: 1.4rem; padding: 0 5px; border-radius: 999px; font-size: .75rem;
+                        font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+                        background: var(--en-cours); color: #fff; }
     .avertissements { margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2) var(--pas) 2rem; border-radius: var(--r-s);
                       background: var(--en-cours-clair); color: var(--en-cours); }
-    .mon-voyage { padding: var(--pas-2); margin: var(--pas-2) 0; }
-    .mon-voyage h2 { margin-top: 0; }
+    .mon-voyage { padding: var(--pas) var(--pas-2); margin: var(--pas-2) 0; display: flex; align-items: center;
+                  gap: var(--pas); flex-wrap: wrap; }
+    .mon-voyage details { flex: 1 1 20rem; }
     .mon-voyage p { margin: var(--pas) 0 0; }
+    summary { min-height: 44px; display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; cursor: pointer; }
+    .titre-replie { font-family: Poppins, sans-serif; font-weight: 700; font-size: 1.0625rem; }
+    .liste-participants { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: var(--pas); }
+    .liste-participants > li { padding: 0 var(--pas-2); }
+    .liste-participants details[open] { padding-bottom: var(--pas-2); }
+    .liste-participants p { margin: var(--pas) 0 0; }
+    .etat-infos { margin-left: auto; font-size: .8125rem; color: var(--en-cours); }
+    .etat-infos.complet { color: #047857; }
+    .lignes-repas { margin: 0; padding-left: 1.25rem; display: grid; gap: 4px; }
     .cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
               grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .cartes > li { padding: var(--pas-2); }
@@ -803,23 +835,36 @@ export class SejourComponent {
   erreur = signal<string | null>(null);
   envoi = signal(false);
   onglet = signal<Onglet>('programme');
+  /** Vrai le temps d'imprimer le carnet : tous les onglets, tout déplié. */
+  impression = signal(false);
+
+  /**
+   * Les avertissements du serveur (SejourService.avertissements), rangés
+   * dans l'onglet qui permet de les régler : chambres dans Hébergement,
+   * voitures dans Transports.
+   */
+  readonly avertissementsDe = computed(() => {
+    const liste = this.sejour()?.avertissements ?? [];
+    const chambre = (a: string) => a.startsWith('Chambre ') || a.startsWith('Sans chambre');
+    return { hebergement: liste.filter(chambre), transports: liste.filter(a => !chambre(a)) };
+  });
 
   readonly onglets = computed(() => {
     const s = this.sejour();
-    const liste: { code: Onglet; libelle: string }[] = [
-      { code: 'programme', libelle: 'Programme' },
-      { code: 'participants', libelle: 'Participants' },
-      { code: 'trajets', libelle: 'Arrivées et départs' },
-      { code: 'voitures', libelle: 'Voitures' },
-      { code: 'chambres', libelle: 'Chambres' },
-      { code: 'repas', libelle: 'Repas' },
-      { code: 'affaires', libelle: 'Affaires' },
-      { code: 'frais', libelle: 'Frais' },
-      { code: 'infos', libelle: 'Infos pratiques' },
-      { code: 'tout', libelle: 'Tout' }
+    const a = this.avertissementsDe();
+    const liste: { code: Onglet; libelle: string; alertes: number }[] = [
+      { code: 'programme', libelle: 'Programme', alertes: 0 },
+      { code: 'participants', libelle: 'Participants', alertes: 0 },
+      { code: 'transports', libelle: 'Transports', alertes: a.transports.length },
+      { code: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
+      { code: 'frais', libelle: 'Frais', alertes: 0 },
+      { code: 'pratique', libelle: 'Pratique', alertes: 0 }
     ];
-    return s?.encadrant ? liste : liste.filter(o => o.code !== 'participants' && o.code !== 'repas');
+    return s?.encadrant ? liste : liste.filter(o => o.code !== 'participants');
   });
+
+  /** Ceux qui ont tout renseigné (arrivée, départ, personne à prévenir), pour l'onglet Participants. */
+  readonly complets = computed(() => (this.sejour()?.participants ?? []).filter(p => this.manque(p).length === 0).length);
 
   readonly moi = computed(() => this.sejour()?.participants.find(p => p.moi) ?? null);
   private readonly parId = computed(() => new Map((this.sejour()?.participants ?? []).map(p => [p.id, p])));
@@ -887,7 +932,30 @@ export class SejourComponent {
   }
 
   voir(o: Onglet): boolean {
-    return this.onglet() === o || this.onglet() === 'tout';
+    return this.onglet() === o || this.impression();
+  }
+
+  /** Ce qu'un participant n'a pas encore renseigné ; vide s'il a tout donné. */
+  manque(p: ParticipantVue): string[] {
+    const rien = (t: Trajet | null) => !t?.date && !t?.heure;
+    return [
+      rien(p.arrivee) ? 'arrivée' : null,
+      rien(p.depart) ? 'départ' : null,
+      !p.urgenceNom && !p.urgenceTelephone ? 'personne à prévenir' : null
+    ].filter((x): x is string => x !== null);
+  }
+
+  /** « arrivée vendredi 03/06 à 18h30 · voiture « Gwendoline » · chambre 2 · vous devez 25,00 € à Inès Roux ». */
+  resumeMoi(m: ParticipantVue): string {
+    const t = m.arrivee;
+    const arrivee = t?.date ? 'arrivée ' + jourLong(t.date).slice(0, -5).toLowerCase() + (t.heure ? ' à ' + heure(t.heure) : '')
+      : 'arrivée à préciser';
+    return [
+      arrivee,
+      ...this.voituresDe(m.id).map(v => `voiture « ${v.nom} »`),
+      this.chambreDe(m.id) ? `chambre « ${this.chambreDe(m.id)!.chambre} »` : null,
+      ...this.mesRemboursements(m.id)
+    ].filter(Boolean).join(' · ');
   }
 
   majuscule(t: string): string {
@@ -1039,8 +1107,10 @@ export class SejourComponent {
     return (this.sejour()?.affaires ?? []).filter(a => a.categorie === c);
   }
 
+  /** Tous les onglets, dépliés, le temps de l'impression ; puis retour à l'onglet ouvert. */
   imprimer(): void {
-    this.onglet.set('tout');
+    this.impression.set(true);
+    window.addEventListener('afterprint', () => this.impression.set(false), { once: true });
     setTimeout(() => window.print(), 100);
   }
 

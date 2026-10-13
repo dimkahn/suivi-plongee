@@ -19,7 +19,7 @@ L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donn
 2. Donnez l'adresse e-mail que vous avez donnée à l'organisateur, puis « Recevoir le code ».
 3. Entrez le code à 6 chiffres reçu par e-mail, puis « Entrer ».
 4. « Mes informations » : votre téléphone, **votre arrivée et votre départ** (jour, heure, avion ou train, **numéro de vol ou de train**, aéroport ou gare), vos repas (régime), la personne à prévenir en cas d'urgence, un mot pour l'organisateur. « Enregistrer mes informations ».
-5. « Frais » : les dépenses du séjour, et qui doit combien à qui. « Ajouter une dépense » pour noter ce que vous avez payé, avec la photo de la note : « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » reprend une photo déjà prise.
+5. « Frais » : en tête, **votre solde** (ce que vous devez, à qui, ou ce qu'on vous doit), puis qui doit combien à qui et les dépenses, une ligne chacune (touchez-en une pour le détail et la photo). « Ajouter une dépense » pour noter ce que vous avez payé, avec la photo de la note : « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » reprend une photo déjà prise. Elle est partagée entre tout le monde, sauf si vous touchez « Choisir qui partage ».
 
 ## Bon à savoir
 

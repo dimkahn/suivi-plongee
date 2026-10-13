@@ -3,7 +3,7 @@ titre: Le carnet du séjour
 rubrique: Élève
 videos: E2
 ecran: /sejours
-mots: séjour, carnet, voyage, vol, arrivée, départ, voiture, chambre, programme, affaires, valise, liste, frais, rembourser, argent, dépenses
+mots: séjour, carnet, mon séjour, solde, transports, hébergement, pratique, voyage, vol, arrivée, départ, voiture, chambre, programme, affaires, valise, liste, frais, rembourser, argent, dépenses
 questions:
 - Où trouver le programme du séjour ?
 - Dans quelle voiture et quelle chambre suis-je ?
@@ -17,10 +17,10 @@ Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, vo
 ## Pas à pas
 
 1. « Plus », puis « Séjours », et touchez le séjour.
-2. En haut, « Mon séjour » : votre arrivée, votre départ, votre voiture, votre chambre, et ce que vous devez (ou ce qu'on vous doit). « **Modifier mes informations** » : votre téléphone, votre arrivée et votre départ (numéro de vol ou de train), vos repas, la personne à prévenir.
-3. Les onglets : Programme, Arrivées et départs, Voitures, Chambres, Affaires, Frais, Infos pratiques.
-4. « Frais » : les dépenses du séjour avec la photo de leur note, le compte de chacun et qui doit combien à qui. Vous avez payé quelque chose ? Donnez la note à un moniteur du séjour : il la saisit pour vous.
-5. « Imprimer le carnet » : tout sur une page, à imprimer ou enregistrer en PDF pour l'avoir sans réseau.
+2. En haut, « Mon séjour » tient sur une ligne : votre arrivée, votre voiture, votre chambre et ce que vous devez. Touchez-la pour le détail (arrivée, départ, voiture, chambre, frais). « **Modifier mes informations** » : votre téléphone, votre arrivée et votre départ (numéro de vol ou de train), vos repas, la personne à prévenir.
+3. Les onglets : Programme, Transports (arrivées, départs et voitures), Hébergement (chambres), Frais, Pratique (affaires à prévoir et infos pratiques).
+4. « Frais » : en tête, **votre solde** (ce que vous devez, à qui, ou ce qu'on vous doit), puis qui doit combien à qui et les dépenses, une ligne chacune ; touchez une dépense pour voir le partage et la photo de la note. Le compte de chacun est dans « Détail des comptes », en bas. Vous avez payé quelque chose ? Donnez la note à un moniteur du séjour : il la saisit pour vous.
+5. « Imprimer le carnet » : tous les onglets sur une page, à imprimer ou enregistrer en PDF pour l'avoir sans réseau.
 
 ## Bon à savoir
 

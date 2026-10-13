@@ -1,4 +1,4 @@
-// A17 — Organiser un séjour : vols, voitures, chambres, repas, affaires, programme.
+// A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
 // Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
@@ -6,7 +6,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Demander à chacun ses informations, puis les vols, les voitures, les chambres, les régimes, les affaires, le programme et le partage des frais.',
+  resume: 'Les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -16,23 +16,29 @@ export default {
     await legende('Menu « Séjours » : chaque sortie a son séjour.', 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
-    await legende('En haut, ce qui reste à régler : ici, Mateo n\'a pas encore de chambre.', 4000);
+    await legende('Six onglets. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
 
-    await legende('« Participants » : vol, repas, personne à prévenir de chacun.', 0);
-    await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 1500 });
+    await legende('« Participants » : une ligne par personne, avec ce qu\'elle n\'a pas encore donné.', 0);
+    await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 2500 });
+    await legende('On touche un nom pour voir sa fiche : vol, repas, personne à prévenir.', 0);
+    await toucher(page.locator('.liste-participants summary').first(), { apres: 3000 });
     await legende('Pas besoin de tout saisir : « Demander à chacun ses informations » leur envoie un e-mail.', 4500);
     await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
+    await legende('En bas, les repas : le nombre de couverts et les régimes, pour la cuisine.', 0);
+    await defiler(900, 3000);
+    await enHaut();
 
-    await legende('« Arrivées et départs » : les participants regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
-    await toucher(page.getByRole('tab', { name: 'Arrivées et départs' }), { apres: 2500 });
+    await legende('« Transports » : les arrivées et les départs, regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
+    await toucher(page.getByRole('tab', { name: 'Transports' }), { apres: 2500 });
     await legende('Plusieurs personnes sur le même vol ? On le saisit une fois, et on coche qui le prend.', 0);
     await toucher(page.getByRole('button', { name: /Ajouter des personnes à ce vol/ }).first(), { apres: 3500 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
-    await legende('« Voitures » : le conducteur et ses passagers, et les places qui restent.', 0);
-    await toucher(page.getByRole('tab', { name: 'Voitures' }), { apres: 3500 });
+    await legende('Dessous, les voitures : le conducteur, ses passagers et les places qui restent.', 0);
+    await defiler(700, 3500);
+    await enHaut();
 
-    await legende('« Chambres » : le gîte, ses chambres et leurs occupants.', 0);
-    await toucher(page.getByRole('tab', { name: 'Chambres' }), { apres: 1500 });
+    await legende('« Hébergement » : le gîte, ses chambres et leurs occupants. En haut, Mateo n\'a pas encore de chambre.', 0);
+    await toucher(page.getByRole('tab', { name: 'Hébergement' }), { apres: 3000 });
     await toucher(page.getByRole('button', { name: 'Modifier' }).first(), { apres: 1000 });
     await legende('Mateo prend la chambre 3.', 0);
     const chambre3 = page.locator('fieldset').filter({ hasText: 'Chambre 3' });
@@ -41,10 +47,8 @@ export default {
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
     await vignette();
 
-    await legende('« Repas » : le nombre de couverts et les régimes de chacun, pour la cuisine.', 0);
-    await toucher(page.getByRole('tab', { name: 'Repas' }), { apres: 3500 });
-    await legende('« Affaires » : papiers, plongée, séjour. « Partir de la liste type » la remplit d\'un coup.', 0);
-    await toucher(page.getByRole('tab', { name: 'Affaires' }), { apres: 3500 });
+    await legende('« Pratique » : les affaires à prévoir, et les infos pratiques. « Partir de la liste type » remplit la liste d\'un coup.', 0);
+    await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
 
     await legende('« Programme » : les rendez-vous, et les plongées de la sortie.', 0);
     await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1200 });
@@ -63,7 +67,11 @@ export default {
     const remboursement = page.locator('.remboursement').filter({ hasText: 'Mateo' }).first();
     await toucher(remboursement.getByRole('button', { name: 'C\'est remboursé' }), { apres: 1000 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
-    await legende('Chaque dépense garde la photo de sa note. Les participants notent aussi leurs propres frais.', 4000);
+    await legende('Les dépenses, une ligne chacune. On en touche une pour voir le partage et la photo de la note.', 0);
+    const depense = page.locator('.depense summary').first();
+    await depense.scrollIntoViewIfNeeded();
+    await toucher(depense, { apres: 3500 });
+    await legende('Le compte de chacun est replié en bas, dans « Détail des comptes ».', 3500);
     await legende('Les participants notent aussi leurs frais, dans l\'appli ou par le lien reçu par e-mail.', 4500);
     await enHaut();
     await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 5000);
