@@ -89,6 +89,30 @@ function participantVide(): BrouillonParticipant {
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
+      <!-- Frais partagés : en tête de page, pour qu'on les trouve sans chercher (demande du club, 2026). -->
+      <section class="carte encart-frais sans-impression" aria-label="Frais du séjour">
+        <div class="encart-frais-texte">
+          <h2>Frais du séjour</h2>
+          <p>
+            <strong>{{ euros(s.frais.comptes.totalCentimes) }}</strong> dépensés
+            · {{ s.frais.depenses.length }} dépense{{ s.frais.depenses.length > 1 ? 's' : '' }}
+            · @if (s.frais.comptes.remboursements.length) {
+              {{ s.frais.comptes.remboursements.length }} remboursement{{ s.frais.comptes.remboursements.length > 1 ? 's' : '' }} à faire
+            } @else {
+              comptes à l'équilibre
+            }
+          </p>
+          @if (moi(); as m) {
+            @for (r of mesRemboursements(m.id); track $index) {
+              <p class="encart-frais-moi">{{ majuscule(r) }}</p>
+            }
+          }
+        </div>
+        <button type="button" class="bouton-principal" (click)="ouvrirFrais()">
+          {{ s.frais.droits.peutAjouter ? 'Gérer les frais' : 'Voir les frais' }}
+        </button>
+      </section>
+
       @if (moi(); as m) {
         <section class="carte mon-voyage" aria-label="Mon séjour">
           <details [open]="impression()">
@@ -424,7 +448,7 @@ function participantVide(): BrouillonParticipant {
 
       <!-- Frais partagés -->
       @if (voir('frais')) {
-        <section>
+        <section id="frais-sejour">
           <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" [deplie]="impression()" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
@@ -748,6 +772,13 @@ function participantVide(): BrouillonParticipant {
                         background: var(--en-cours); color: #fff; }
     .avertissements { margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2) var(--pas) 2rem; border-radius: var(--r-s);
                       background: var(--en-cours-clair); color: var(--en-cours); }
+    .encart-frais { margin: var(--pas-2) 0; padding: var(--pas-2); display: flex; align-items: center; gap: var(--pas-2);
+                    flex-wrap: wrap; border-left: 6px solid var(--accent); }
+    .encart-frais-texte { flex: 1 1 18rem; }
+    .encart-frais h2 { margin: 0; }
+    .encart-frais p { margin: var(--pas) 0 0; }
+    .encart-frais-moi { font-weight: 700; color: var(--profond); }
+    .encart-frais .bouton-principal { min-height: 48px; font-size: 1.0625rem; }
     .mon-voyage { padding: var(--pas) var(--pas-2); margin: var(--pas-2) 0; display: flex; align-items: center;
                   gap: var(--pas); flex-wrap: wrap; }
     .mon-voyage details { flex: 1 1 20rem; }
@@ -818,6 +849,7 @@ export class SejourComponent {
   private route = inject(ActivatedRoute);
 
   readonly periode = periode;
+  readonly euros = euros;
   readonly jourLong = jourLong;
   readonly nomComplet = nomComplet;
   readonly regimes = REGIMES;
@@ -853,11 +885,11 @@ export class SejourComponent {
     const s = this.sejour();
     const a = this.avertissementsDe();
     const liste: { code: Onglet; libelle: string; alertes: number }[] = [
+      { code: 'frais', libelle: 'Frais', alertes: 0 },
       { code: 'programme', libelle: 'Programme', alertes: 0 },
       { code: 'participants', libelle: 'Participants', alertes: 0 },
       { code: 'transports', libelle: 'Transports', alertes: a.transports.length },
       { code: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
-      { code: 'frais', libelle: 'Frais', alertes: 0 },
       { code: 'pratique', libelle: 'Pratique', alertes: 0 }
     ];
     return s?.encadrant ? liste : liste.filter(o => o.code !== 'participants');
@@ -1112,6 +1144,12 @@ export class SejourComponent {
     this.impression.set(true);
     window.addEventListener('afterprint', () => this.impression.set(false), { once: true });
     setTimeout(() => window.print(), 100);
+  }
+
+  /** Le bouton de l'encart en tête de page : ouvre l'onglet « Frais » et y descend. */
+  ouvrirFrais(): void {
+    this.onglet.set('frais');
+    setTimeout(() => document.getElementById('frais-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */

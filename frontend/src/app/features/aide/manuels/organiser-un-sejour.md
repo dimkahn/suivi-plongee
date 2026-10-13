@@ -3,7 +3,7 @@ titre: Organiser un séjour
 rubrique: Administrateur
 videos: A17, M25
 ecran: /sejours
-mots: séjour, onglets, transports, hébergement, pratique, à vérifier, à compléter, solde, parts inégales, choisir qui partage, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte, note, ticket, facture, photo, galerie, appareil photo, justificatif, lien, code, invité, sans compte, otp, demander, formulaire, questionnaire, inscription
+mots: séjour, onglets, gérer les frais, encart, où sont les frais, transports, hébergement, pratique, à vérifier, à compléter, solde, parts inégales, choisir qui partage, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte, note, ticket, facture, photo, galerie, appareil photo, justificatif, lien, code, invité, sans compte, otp, demander, formulaire, questionnaire, inscription
 questions:
 - Comment noter les vols d'arrivée et de départ des participants ?
 - Comment demander à chaque participant de remplir ses informations ?
@@ -23,7 +23,7 @@ questions:
 - Comment partager une dépense entre quelques participants seulement ?
 - Où sont les affaires à prévoir et les infos pratiques du séjour ?
 ---
-Menu « Séjours », puis la sortie. Six onglets : **Programme**, **Participants** (avec les repas), **Transports** (arrivées, départs et voitures), **Hébergement** (logements et chambres), **Frais** et **Pratique** (affaires à prévoir, infos pratiques). Les participants reçoivent ensuite leur carnet.
+Menu « Séjours », puis la sortie. Tout en haut, l'encart **Frais du séjour** : le total dépensé, le nombre de dépenses et de remboursements à faire, et le bouton « **Gérer les frais** » qui ouvre l'onglet Frais. Puis six onglets : **Frais** (en premier), **Programme**, **Participants** (avec les repas), **Transports** (arrivées, départs et voitures), **Hébergement** (logements et chambres) et **Pratique** (affaires à prévoir, infos pratiques). Les participants reçoivent ensuite leur carnet.
 
 ## Pas à pas
 
@@ -41,6 +41,7 @@ Menu « Séjours », puis la sortie. Six onglets : **Programme**, **Participants
 
 ## L'onglet Frais
 
+- On l'ouvre par le bouton « Gérer les frais » de l'encart en haut de la page, ou par l'onglet « Frais », le premier de la rangée.
 - En tête, si vous êtes du séjour, **votre solde** : ce que vous devez et à qui, ou ce qu'on vous doit.
 - Puis **qui doit combien à qui**, et la liste des **dépenses**, une ligne chacune (quoi, payé par qui, montant, 📎 s'il y a la photo de la note). Touchez une dépense pour voir sa catégorie, son jour, le partage, la photo, et la modifier.
 - « **Détail des comptes** », replié en bas : ce que chacun a payé, sa part et son solde, et les remboursements déjà faits (que vous pouvez annuler).
