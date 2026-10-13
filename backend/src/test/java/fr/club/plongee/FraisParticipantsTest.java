@@ -74,7 +74,7 @@ class FraisParticipantsTest {
         return "Bearer " + json.readTree(reponse).get("jetonAcces").asText();
     }
 
-    /** {@code jeton} : « Bearer … » pour un compte, sinon le jeton des frais (en-tête X-Jeton-Frais), ou null. */
+    /** {@code jeton} : « Bearer … » pour un compte, sinon le jeton du lien (en-tête X-Jeton-Sejour), ou null. */
     private JsonNode envoyer(String methode, String url, String jeton, String corps, int attendu) throws Exception {
         var requete = switch (methode) {
             case "POST" -> post(url);
@@ -84,7 +84,7 @@ class FraisParticipantsTest {
         };
         if (jeton != null) {
             requete = jeton.startsWith("Bearer ") ? requete.header("Authorization", jeton)
-                    : requete.header("X-Jeton-Frais", jeton);
+                    : requete.header("X-Jeton-Sejour", jeton);
         }
         String reponse = mvc.perform(requete.contentType(MediaType.APPLICATION_JSON).content(corps == null ? "" : corps))
                 .andExpect(status().is(attendu)).andReturn().getResponse().getContentAsString();
@@ -139,7 +139,8 @@ class FraisParticipantsTest {
         long pFlora = ajouter(base, dt, """
                 {"utilisateurId":%d,"nom":"Vasseur","prenom":"Flora","plongeur":true}""".formatted(flora));
         long pCamille = ajouter(base, dt, """
-                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true}""".formatted(camille));
+                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true,
+                 "email":"camille.sejour@exemple.fr"}""".formatted(camille));
         long pPaul = ajouter(base, dt, """
                 {"nom":"Invité","prenom":"Paul","plongeur":false,"email":"paul@exemple.fr"}""");
         long pLina = ajouter(base, dt, """
@@ -167,13 +168,21 @@ class FraisParticipantsTest {
         mvc.perform(get(base + "/depenses/" + glaces + "/photos/" + photo).header("Authorization", jeton("eleve@club.fr")))
                 .andExpect(status().isOk()).andExpect(header().string("Content-Type", "image/png"));
 
-        // L'organisateur envoie l'adresse des frais aux participants sans compte qui ont un e-mail.
-        JsonNode bilan = envoyer("POST", base + "/acces-frais", dt, null, 200);
+        // L'organisateur demande à chacun ses informations : la moniteur dans l'appli, les autres par le lien.
+        JsonNode bilan = envoyer("POST", base + "/invitations", dt, null, 200);
         assertThat(bilan.get("envoyes").toString()).contains("Paul Invité").contains("Lina Sanscompte")
-                .doesNotContain("Flora").doesNotContain("Camille");
-        String code = extraire(dernierPour("paul@exemple.fr").corps(), "/frais/([A-Za-z0-9_-]+)");
-        String pub = "/api/public/frais/" + code;
+                .contains("Flora Vasseur").contains("Camille Berthier");
+        String courrielFlora = dernierPour("e2@club.fr").corps();
+        assertThat(courrielFlora).contains("/sejours/" + sortie).doesNotContain("/sejour/");
+        String code = extraire(dernierPour("paul@exemple.fr").corps(), "/sejour/([A-Za-z0-9_-]+)");
+        assertThat(dernierPour("camille.sejour@exemple.fr").corps()).contains("/sejour/" + code);
+        String pub = "/api/public/sejour/" + code;
         assertThat(envoyer("GET", pub, null, null, 200).get("nom").asText()).isEqualTo("Séjour frais");
+
+        // Flora est moniteur : elle n'entre pas par le lien (aucun code envoyé), elle a l'appli.
+        int avantFlora = COURRIELS.size();
+        envoyer("POST", pub + "/code", null, "{\"email\":\"e2@club.fr\"}", 204);
+        assertThat(COURRIELS).hasSize(avantFlora);
 
         // Un e-mail inconnu : même réponse, et aucun courriel.
         int avant = COURRIELS.size();
@@ -196,13 +205,33 @@ class FraisParticipantsTest {
         assertThat(vuePaul.get("frais").get("droits").get("peutAjouter").asBoolean()).isTrue();
         assertThat(vuePaul.get("frais").get("depenses")).hasSize(1);
 
+        // Paul renseigne ses informations : son vol, son régime ; un départ avant l'arrivée est refusé.
+        assertThat(envoyer("GET", pub + "/moi", jetonPaul, null, 200).get("moi").get("prenom").asText())
+                .isEqualTo("Paul");
+        envoyer("PUT", pub + "/moi", jetonPaul, """
+                {"arrivee":{"date":"%s"},"depart":{"date":"%s"}}""".formatted(debut.plusDays(2), debut), 422);
+        JsonNode infos = envoyer("PUT", pub + "/moi", jetonPaul, """
+                {"telephone":"0612345678","regimes":["VEGETARIEN"],"urgenceNom":"Marie","urgenceTelephone":"0600000001",
+                 "arrivee":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF7520","lieu":"Toulon"}}"""
+                .formatted(debut), 200);
+        assertThat(infos.get("moi").get("arrivee").get("numero").asText()).isEqualTo("AF7520");
+        // L'organisateur le voit ; le nom n'a pas changé.
+        JsonNode vuDt = envoyer("GET", base, dt, null, 200);
+        for (JsonNode p : vuDt.get("participants")) {
+            if (p.get("id").asLong() == pPaul) {
+                assertThat(p.get("regimes").toString()).contains("VEGETARIEN");
+                assertThat(p.get("nom").asText()).isEqualTo("Invité");
+                assertThat(p.get("email").asText()).isEqualTo("paul@exemple.fr");
+            }
+        }
+
         // Paul saisit ce qu'il a payé, avec la photo ; pas pour un autre, ni la dépense de Flora.
         envoyer("POST", pub + "/depenses", jetonPaul, depense("Pain", pFlora, pPaul), 422);
         long pain = envoyer("POST", pub + "/depenses", jetonPaul, depense("Pain", pPaul, pPaul, pFlora), 200)
                 .get("depenseId").asLong();
         mvc.perform(multipart(pub + "/depenses/" + pain + "/photos")
                         .file(new MockMultipartFile("fichier", "pain.png", "image/png", PNG))
-                        .header("X-Jeton-Frais", jetonPaul))
+                        .header("X-Jeton-Sejour", jetonPaul))
                 .andExpect(status().isOk());
         envoyer("DELETE", pub + "/depenses/" + glaces, jetonPaul, null, 422);
         // Flora lui rembourse sa part ; Paul note le remboursement reçu.
@@ -240,8 +269,21 @@ class FraisParticipantsTest {
         envoyer("POST", pub + "/deconnexion", jetonLina, null, 204);
         envoyer("GET", pub + "/frais", jetonLina, null, 403);
 
-        // Un participant qui a un compte ne reçoit pas de lien : il a l'appli.
-        envoyer("POST", base + "/acces-frais?participantId=" + pFlora, dt, null, 422);
+        // Camille, élève avec un compte : elle entre aussi par le lien (pas moniteur), en lecture seule pour les frais.
+        envoyer("POST", pub + "/code", null, "{\"email\":\"camille.sejour@exemple.fr\"}", 204);
+        String codeCamille = extraire(dernierPour("camille.sejour@exemple.fr").corps(), "(\\d{6})");
+        String jetonCamille = envoyer("POST", pub + "/connexion", null,
+                "{\"email\":\"camille.sejour@exemple.fr\",\"code\":\"%s\"}".formatted(codeCamille), 200)
+                .get("jeton").asText();
+        assertThat(envoyer("GET", pub + "/frais", jetonCamille, null, 200).get("frais").get("droits")
+                .get("peutAjouter").asBoolean()).isFalse();
+        // Dans l'appli, elle complète aussi ses informations ; un moniteur hors du séjour ne le peut pas.
+        envoyer("PUT", base + "/mes-informations", jeton("eleve@club.fr"), """
+                {"regimes":["SANS_PORC"],"remarques":"Arrive avec ses parents"}""", 200);
+        envoyer("PUT", base + "/mes-informations", jeton("e1@club.fr"), "{}", 422);
+
+        // Une demande à un seul participant.
+        envoyer("POST", base + "/invitations?participantId=" + pFlora, dt, null, 200);
 
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
     }

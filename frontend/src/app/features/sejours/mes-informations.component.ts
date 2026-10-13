@@ -1,0 +1,135 @@
+import { Component, ChangeDetectionStrategy, effect, input, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { DemandeMesInformations, ParticipantVue, REGIMES, RegimeAlimentaire, TRANSPORTS, Trajet } from './sejour-api';
+
+type Brouillon = DemandeMesInformations & { arrivee: Trajet; depart: Trajet };
+
+function trajetVide(): Trajet {
+  return { date: null, heure: null, transport: null, numero: null, lieu: null };
+}
+
+/**
+ * Ce qu'un participant renseigne lui-même pour le séjour : téléphone,
+ * arrivée et départ (numéro de vol ou de train), repas, personne à
+ * prévenir, message à l'organisateur. Sert dans l'appli (« Modifier mes
+ * informations ») et sur la page du lien reçu par e-mail ; le parent
+ * envoie au serveur. Aucune information médicale.
+ */
+@Component({
+  selector: 'app-mes-informations',
+  imports: [FormsModule],
+  template: `
+    <form (ngSubmit)="valider()">
+      <label for="mi-tel">Mon téléphone</label>
+      <input id="mi-tel" name="tel" type="tel" autocomplete="tel" maxlength="30" [(ngModel)]="b.telephone">
+
+      @for (sens of sens; track sens.code) {
+        <fieldset>
+          <legend>{{ sens.libelle }}</legend>
+          <div class="grille">
+            <div><label [for]="'mi-' + sens.code + '-date'">Jour</label>
+              <input [id]="'mi-' + sens.code + '-date'" [name]="sens.code + '-date'" type="date" [(ngModel)]="b[sens.code].date"></div>
+            <div><label [for]="'mi-' + sens.code + '-heure'">Heure</label>
+              <input [id]="'mi-' + sens.code + '-heure'" [name]="sens.code + '-heure'" type="time" [(ngModel)]="b[sens.code].heure"></div>
+            <div><label [for]="'mi-' + sens.code + '-moyen'">Moyen</label>
+              <select [id]="'mi-' + sens.code + '-moyen'" [name]="sens.code + '-moyen'" [(ngModel)]="b[sens.code].transport">
+                <option [ngValue]="null">—</option>
+                @for (t of transports; track t.code) { <option [ngValue]="t.code">{{ t.libelle }}</option> }
+              </select></div>
+            <div><label [for]="'mi-' + sens.code + '-numero'">N° de vol ou de train</label>
+              <input [id]="'mi-' + sens.code + '-numero'" [name]="sens.code + '-numero'" maxlength="30"
+                     placeholder="AF7520" [(ngModel)]="b[sens.code].numero"></div>
+            <div><label [for]="'mi-' + sens.code + '-lieu'">Aéroport, gare, lieu</label>
+              <input [id]="'mi-' + sens.code + '-lieu'" [name]="sens.code + '-lieu'" maxlength="120" [(ngModel)]="b[sens.code].lieu"></div>
+          </div>
+        </fieldset>
+      }
+
+      <fieldset>
+        <legend>Mes repas</legend>
+        <div class="cases">
+          @for (r of regimes; track r.code) {
+            <label class="case"><input type="checkbox" [checked]="b.regimes.includes(r.code)"
+                                       (change)="basculer(r.code)"> {{ r.libelle }}</label>
+          }
+        </div>
+        <label for="mi-precision">Précision pour la cuisine</label>
+        <input id="mi-precision" name="precision" maxlength="300" placeholder="Pas de poisson cru…" [(ngModel)]="b.regimePrecision">
+        <p class="secondaire">Aucune information médicale ici (allergie, traitement) : voyez-la avec l'organisateur.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Personne à prévenir en cas d'urgence</legend>
+        <div class="grille">
+          <div><label for="mi-urg-nom">Nom</label>
+            <input id="mi-urg-nom" name="urgNom" maxlength="120" [(ngModel)]="b.urgenceNom"></div>
+          <div><label for="mi-urg-tel">Téléphone</label>
+            <input id="mi-urg-tel" name="urgTel" type="tel" maxlength="30" [(ngModel)]="b.urgenceTelephone"></div>
+        </div>
+      </fieldset>
+
+      <label for="mi-remarques">Un mot pour l'organisateur</label>
+      <textarea id="mi-remarques" name="remarques" rows="2" [(ngModel)]="b.remarques"></textarea>
+
+      <div class="actions-dialogue">
+        <button type="submit" class="bouton-principal" [disabled]="envoi()">
+          {{ envoi() ? 'Enregistrement…' : 'Enregistrer mes informations' }}
+        </button>
+        @if (annulable()) {
+          <button type="button" class="bouton-discret" (click)="annuler.emit()">Annuler</button>
+        }
+      </div>
+    </form>
+  `,
+  changeDetection: ChangeDetectionStrategy.Eager,
+  styles: [`
+    label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
+    .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 var(--pas-2); }
+    fieldset { border: 1px solid var(--trait); border-radius: var(--r-s); margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2); }
+    legend { font-weight: 700; padding: 0 var(--pas); }
+    textarea { resize: vertical; }
+    .cases { display: flex; flex-wrap: wrap; gap: 0 var(--pas-2); }
+    .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
+    .case input { width: auto; flex: none; }
+  `]
+})
+export class MesInformationsComponent {
+  participant = input.required<ParticipantVue>();
+  envoi = input(false);
+  annulable = input(true);
+  enregistrer = output<DemandeMesInformations>();
+  annuler = output<void>();
+
+  readonly regimes = REGIMES;
+  readonly transports = TRANSPORTS;
+  readonly sens = [
+    { code: 'arrivee' as const, libelle: 'Mon arrivée' },
+    { code: 'depart' as const, libelle: 'Mon départ' }
+  ];
+
+  b: Brouillon = this.brouillon(null);
+
+  constructor() {
+    effect(() => { this.b = this.brouillon(this.participant()); });
+  }
+
+  basculer(code: RegimeAlimentaire): void {
+    const r = this.b.regimes;
+    this.b.regimes = r.includes(code) ? r.filter(x => x !== code) : [...r, code];
+  }
+
+  valider(): void {
+    const trajet = (t: Trajet): Trajet | null =>
+      !t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim() ? null : t;
+    this.enregistrer.emit({ ...this.b, arrivee: trajet(this.b.arrivee), depart: trajet(this.b.depart) });
+  }
+
+  private brouillon(p: ParticipantVue | null): Brouillon {
+    const copie = (t: Trajet | null): Trajet => t ? { ...t, heure: t.heure?.slice(0, 5) ?? null } : trajetVide();
+    return {
+      telephone: p?.telephone ?? null, regimes: [...(p?.regimes ?? [])], regimePrecision: p?.regimePrecision ?? null,
+      urgenceNom: p?.urgenceNom ?? null, urgenceTelephone: p?.urgenceTelephone ?? null,
+      arrivee: copie(p?.arrivee ?? null), depart: copie(p?.depart ?? null), remarques: p?.remarques ?? null
+    };
+  }
+}

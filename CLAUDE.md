@@ -435,16 +435,26 @@ remboursement se note par celui qui le reçoit. `FraisVue.droits` dit à
 l'écran ce qui est permis (le serveur revérifie). Photos des notes :
 `sejour_depense_photo` (6 au plus, JPEG/PNG vérifiés par
 `PhotoPretService.verifierImage`, réduites par le téléphone), lues par
-tous les participants. **Participants sans compte** (ni compte ni dossier
-élève relié à un compte, avec e-mail) : page publique `/frais/{code}`
-(`FraisInviteComponent`, `AccesFraisController` sous `/api/public/frais/**`,
-ouvert dans SecurityConfig) ; `sejour.code_frais` secret, code à
-6 chiffres par e-mail (`AccesFraisService` : empreinte SHA-256 seulement,
-10 min, 5 essais, un envoi par minute, même réponse si l'e-mail est
-inconnu), puis jeton (empreinte en base, en-tête `X-Jeton-Frais`, gardé
-en IndexedDB) valable jusqu'à 60 jours après le séjour. Envoi du lien :
-`POST /api/sejours/{id}/acces-frais`. L'onglet et la page publique
-partagent `SejourFraisComponent` par un `PortFrais`.
+tous les participants. **Demande d'informations et accès par lien (choix
+du club, 2026)** : « Demander à chacun ses informations »
+(`POST /api/sejours/{id}/invitations`, `AccesSejourService.envoyerInvitations`)
+envoie à chaque participant qui a un e-mail de quoi renseigner lui-même
+téléphone, arrivée/départ, régimes, personne à prévenir, remarques
+(`SejourService.DemandeMesInformations` : jamais nom, e-mail ni rôle) et
+voir/saisir les frais. Un **encadrant** (compte MONITEUR, ADMIN ou DT,
+propre ou via le dossier élève) reçoit le lien de l'appli et y complète
+par « Modifier mes informations » (`PUT /api/sejours/{id}/mes-informations`,
+ouvert à tout participant connecté) ; **tous les autres** (élèves, avec
+ou sans compte, invités) la page publique `/sejour/{code}` (`/frais/{code}`,
+ancienne adresse, ouvre les frais ; `EspaceParticipantComponent`,
+`AccesSejourController` sous `/api/public/sejour/**`, ouvert dans
+SecurityConfig) : `sejour.code_frais` secret, code à 6 chiffres par e-mail
+(empreinte SHA-256 seulement, 10 min, 5 essais, un envoi par minute, même
+réponse si l'e-mail est inconnu ou celui d'un encadrant), puis jeton
+(empreinte en base, en-tête `X-Jeton-Sejour`, gardé en IndexedDB) valable
+jusqu'à 60 jours après le séjour ; onglets « Mes informations »
+(`MesInformationsComponent`, partagé avec l'appli) et « Frais ». L'onglet
+et la page publique partagent `SejourFraisComponent` par un `PortFrais`.
 
 **`evaluation` est une table en ajout seul.** Une correction crée une ligne ;
 l'état courant d'un critère est la dernière saisie (le plus grand `id`). Cela

@@ -43,10 +43,10 @@ public class SejourController {
     private final SejourService service;
     private final CarnetSejourService carnets;
     private final FraisService frais;
-    private final AccesFraisService acces;
+    private final AccesSejourService acces;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
-                            AccesFraisService acces) {
+                            AccesSejourService acces) {
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
@@ -266,14 +266,27 @@ public class SejourController {
     }
 
     /**
-     * Envoie l'adresse des frais (lien + code par e-mail) aux participants
-     * sans compte ; {@code participantId} : à lui seul.
+     * Demande à chaque participant de renseigner ses informations (et lui
+     * ouvre les frais) : l'encadrant dans l'appli, les autres par un lien et
+     * un code par e-mail ; {@code participantId} : à lui seul.
      */
-    @PostMapping("/{id}/acces-frais")
+    @PostMapping("/{id}/invitations")
     @PreAuthorize(GERE)
-    public AccesFraisService.BilanEnvoiAcces envoyerAccesFrais(@PathVariable Long id,
-                                                               @RequestParam(required = false) Long participantId) {
-        return acces.envoyerAcces(id, participantId);
+    public AccesSejourService.BilanEnvoiAcces envoyerInvitations(@PathVariable Long id,
+                                                                 @RequestParam(required = false) Long participantId) {
+        return acces.envoyerInvitations(id, participantId);
+    }
+
+    /** Le participant connecté complète ses propres informations (voyage, repas, personne à prévenir). */
+    @PutMapping("/{id}/mes-informations")
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue modifierMesInformations(@PathVariable Long id,
+                                             @Valid @RequestBody DemandeMesInformations d,
+                                             @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        Long participant = frais.acteur(id, moi).participantId();
+        if (participant == null) throw new RegleMetierException("Vous n'êtes pas inscrit à ce séjour.");
+        service.modifierMesInformations(participant, d);
+        return service.lire(id, moi);
     }
 
     static byte[] octets(MultipartFile fichier) {

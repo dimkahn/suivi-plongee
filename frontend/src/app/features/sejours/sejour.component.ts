@@ -10,10 +10,12 @@ import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component
 import { periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
-  DemandeVoiture, EvenementVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire, SejourApi, SejourVue,
+  DemandeMesInformations, DemandeVoiture, EvenementVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
+  SejourApi, SejourVue,
   TRANSPORTS, Trajet, VoitureVue, euros, heure, jourLong, nomComplet
 } from './sejour-api';
 import { SejourFraisComponent } from './sejour-frais.component';
+import { MesInformationsComponent } from './mes-informations.component';
 
 type Onglet = 'programme' | 'participants' | 'trajets' | 'voitures' | 'chambres' | 'repas' | 'affaires' | 'frais'
   | 'infos' | 'tout';
@@ -60,7 +62,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, DialogueComponent, ComboboxComponent, SejourFraisComponent],
+  imports: [FormsModule, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent],
   template: `
     @if (sejour(); as s) {
       <div class="entete">
@@ -104,7 +106,17 @@ function participantVide(): BrouillonParticipant {
           @for (r of mesRemboursements(m.id); track $index) {
             <p><strong>Frais :</strong> {{ r }}</p>
           }
+          <button type="button" class="bouton-principal sans-impression" (click)="mesInfosOuvertes.set(true)">
+            Modifier mes informations
+          </button>
         </section>
+        <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
+                      (fermer)="mesInfosOuvertes.set(false)">
+          @if (mesInfosOuvertes()) {
+            <app-mes-informations [participant]="m" [envoi]="envoi()" (enregistrer)="enregistrerMesInformations($event)"
+                                  (annuler)="mesInfosOuvertes.set(false)" />
+          }
+        </app-dialogue>
       }
 
       <div class="onglets sans-impression" role="tablist">
@@ -161,6 +173,12 @@ function participantVide(): BrouillonParticipant {
             @if (s.gere) {
               <div class="actions sans-impression">
                 <button type="button" class="bouton-principal" (click)="ouvrirParticipant(null)">Ajouter un participant</button>
+                @if (s.participants.length > 0) {
+                  <button type="button" class="bouton-discret" (click)="envoyerInvitations(null)" [disabled]="envoi()"
+                          title="Chacun reçoit un e-mail pour renseigner son voyage, ses repas, la personne à prévenir et ses frais">
+                    Demander à chacun ses informations
+                  </button>
+                }
                 @if (s.groupesProposes.length > 0) {
                   <select aria-label="Inscrire un groupe de plongeurs" [ngModel]="null"
                           (ngModelChange)="importerGroupe($event)">
@@ -200,10 +218,10 @@ function participantVide(): BrouillonParticipant {
                 @if (s.gere) {
                   <div class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirParticipant(p)">Modifier</button>
-                    @if (p.email && p.utilisateurId === null) {
-                      <button type="button" class="bouton-discret" (click)="envoyerAccesFrais(p)" [disabled]="envoi()"
-                              title="Un lien et un code par e-mail, pour voir et saisir ses frais sans compte">
-                        Envoyer le lien des frais
+                    @if (p.email) {
+                      <button type="button" class="bouton-discret" (click)="envoyerInvitations(p)" [disabled]="envoi()"
+                              title="Un e-mail pour qu'il renseigne lui-même son voyage, ses repas, la personne à prévenir et ses frais">
+                        Lui demander ses informations
                       </button>
                     }
                     <button type="button" class="bouton-discret danger" (click)="supprimerParticipant(p)">Retirer</button>
@@ -375,9 +393,10 @@ function participantVide(): BrouillonParticipant {
           <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
-              Les participants sans compte peuvent voir et saisir leurs frais par un lien et un code reçus par e-mail.
-              <button type="button" class="bouton-discret" (click)="envoyerAccesFrais(null)" [disabled]="envoi()">
-                Envoyer le lien des frais aux participants sans compte
+              Les participants qui ne sont pas moniteurs voient et saisissent leurs frais par un lien et un code reçus
+              par e-mail, avec leurs informations pour le séjour.
+              <button type="button" class="bouton-discret" (click)="envoyerInvitations(null)" [disabled]="envoi()">
+                Demander à chacun ses informations
               </button>
             </p>
           }
@@ -875,17 +894,30 @@ export class SejourComponent {
   /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
   readonly portFrais = this.api.portFrais(this.id, s => this.sejour.set(s));
 
-  /** Le lien des frais et la façon d'entrer (code par e-mail) ; null : à tous les participants sans compte. */
-  envoyerAccesFrais(p: ParticipantVue | null): void {
-    if (!confirm(p ? `Envoyer à ${nomComplet(p)} le lien des frais du séjour ?`
-      : 'Envoyer le lien des frais à tous les participants sans compte qui ont un e-mail ?')) return;
+  mesInfosOuvertes = signal(false);
+
+  /** Le participant connecté complète ses informations (voyage, repas, personne à prévenir). */
+  enregistrerMesInformations(d: DemandeMesInformations): void {
+    this.ecrire(this.api.modifierMesInformations(this.id, d), () => {
+      this.mesInfosOuvertes.set(false);
+      this.message.set('Vos informations sont enregistrées.');
+    });
+  }
+
+  /**
+   * Un e-mail à chacun (null) ou à un participant pour qu'il renseigne ses informations et ses frais :
+   * un moniteur dans l'appli, les autres par un lien et un code.
+   */
+  envoyerInvitations(p: ParticipantVue | null): void {
+    if (!confirm(p ? `Envoyer à ${nomComplet(p)} un e-mail pour qu'il renseigne ses informations pour le séjour ?`
+      : 'Envoyer à chaque participant qui a un e-mail une demande pour qu’il renseigne ses informations pour le séjour ?')) return;
     this.envoi.set(true);
     this.message.set(null);
-    this.api.envoyerAccesFrais(this.id, p?.id ?? null).subscribe({
+    this.api.envoyerInvitations(this.id, p?.id ?? null).subscribe({
       next: b => {
         this.envoi.set(false);
         this.message.set([
-          b.envoyes.length ? `Lien des frais envoyé à : ${b.envoyes.join(', ')}.` : 'Aucun lien envoyé.',
+          b.envoyes.length ? `Demande envoyée à : ${b.envoyes.join(', ')}.` : 'Aucune demande envoyée.',
           b.sansEmail.length ? `Sans e-mail : ${b.sansEmail.join(', ')}.` : '',
           b.echecs.length ? `Échec de l'envoi pour : ${b.echecs.join(', ')}.` : ''
         ].filter(Boolean).join(' '));
@@ -1124,7 +1156,7 @@ export class SejourComponent {
         this.envoi.set(false);
         const texte = e.error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).";
         this.erreur.set(texte);
-        if (!this.participantOuvert() && !this.voitureOuverte() && !this.logementOuvert()
+        if (!this.participantOuvert() && !this.voitureOuverte() && !this.logementOuvert() && !this.mesInfosOuvertes()
           && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes()) {
           this.message.set(texte);
         }

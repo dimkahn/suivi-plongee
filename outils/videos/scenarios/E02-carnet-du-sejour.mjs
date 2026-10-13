@@ -6,7 +6,7 @@ export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'Son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone.',
+  resume: 'Son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, vignette }) {
@@ -17,6 +17,9 @@ export default {
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('« Mon séjour » : son vol aller et retour, sa voiture depuis l\'aéroport, sa chambre.', 4500);
     await vignette();
+    await legende('« Modifier mes informations » : son vol, ses repas, la personne à prévenir.', 0);
+    await toucher(page.getByRole('button', { name: 'Modifier mes informations' }), { apres: 3500 });
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Puis le programme, jour par jour.', 0);
     await defiler(600, 2000);
     await legende('« Affaires » : ce qu\'il faut emporter.', 0);

@@ -6,7 +6,10 @@ import { Observable, firstValueFrom, map } from 'rxjs';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from '../../core/base-locale';
 import { periode } from '../../core/date-fr';
 import { SejourFraisComponent } from './sejour-frais.component';
-import { FraisVue, ParticipantFrais, PortFrais, formulairePhoto } from './sejour-api';
+import { MesInformationsComponent } from './mes-informations.component';
+import {
+  DemandeMesInformations, FraisVue, ParticipantFrais, ParticipantVue, PortFrais, formulairePhoto
+} from './sejour-api';
 
 interface EnteteVue {
   nom: string;
@@ -22,35 +25,60 @@ interface FraisPublicVue {
   frais: FraisVue;
 }
 
-/** Le jeton des frais, gardé sur l'appareil (IndexedDB, comme le reste : pas de localStorage). */
+interface MesInformationsVue {
+  sejour: EnteteVue;
+  moi: ParticipantVue;
+}
+
+/** Le jeton du lien, gardé sur l'appareil (IndexedDB, comme le reste : pas de localStorage). */
 interface JetonGarde {
   cle: string;
   valeur: string;
 }
 
 /**
- * Les frais d'un séjour pour un participant sans compte, à l'adresse
- * envoyée par l'organisateur : il donne son e-mail, reçoit un code à
- * 6 chiffres, puis voit les frais et saisit ce qu'il a payé, avec la photo
- * de la note (élève : lecture seule, il passe par un moniteur). Sans
- * connexion à l'appli ; le jeton reste sur l'appareil jusqu'à
- * « Se déconnecter » ou 60 jours après le séjour.
+ * Le séjour pour un participant qui n'est pas moniteur, à l'adresse reçue
+ * par e-mail (/sejour/…, et l'ancienne /frais/… qui ouvre les frais) : il
+ * donne son e-mail, reçoit un code à 6 chiffres, puis renseigne ses
+ * informations (voyage, repas, personne à prévenir) et voit et saisit les
+ * frais (un élève les consulte seulement). Sans connexion à l'appli ; le
+ * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après
+ * le séjour.
  */
 @Component({
-  selector: 'app-frais-invite',
-  imports: [FormsModule, SejourFraisComponent],
+  selector: 'app-espace-participant',
+  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent],
   template: `
     @if (entete(); as e) {
       <h1>{{ e.nom }}</h1>
-      <p class="secondaire">{{ majuscule(periode(e.dateDebut, e.dateFin)) }}@if (e.lieu) { · {{ e.lieu }}} · frais partagés</p>
+      <p class="secondaire">{{ majuscule(periode(e.dateDebut, e.dateFin)) }}@if (e.lieu) { · {{ e.lieu }}}</p>
 
-      @if (vue(); as v) {
+      @if (frais(); as v) {
         <div class="qui">
           <span>Vous êtes <strong>{{ v.moi.prenom }} {{ v.moi.nom }}</strong>.</span>
           <button type="button" class="bouton-discret" (click)="deconnecter()">Se déconnecter</button>
         </div>
-        <app-sejour-frais [frais]="v.frais" [participants]="v.participants" [port]="port"
-                          (maj)="majFrais($event)" />
+        <div class="onglets" role="tablist">
+          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'infos'"
+                  [attr.aria-selected]="onglet() === 'infos'" (click)="onglet.set('infos')">Mes informations</button>
+          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'frais'"
+                  [attr.aria-selected]="onglet() === 'frais'" (click)="onglet.set('frais')">Frais</button>
+        </div>
+        @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+        @if (onglet() === 'infos') {
+          @if (moi(); as p) {
+            <p class="secondaire">Votre voyage, vos repas et la personne à prévenir : l'organisateur s'en sert pour
+              les voitures, les chambres et la cuisine.</p>
+            @if (erreur(); as m) { <div class="alerte" role="alert">{{ m }}</div> }
+            <app-mes-informations [participant]="p" [envoi]="envoi()" [annulable]="false"
+                                  (enregistrer)="enregistrerInfos($event)" />
+          } @else {
+            <p class="vide">Chargement…</p>
+          }
+        } @else {
+          <app-sejour-frais [frais]="v.frais" [participants]="v.participants" [port]="port"
+                            (maj)="majFrais($event)" />
+        }
       } @else if (!chargement()) {
         <section class="carte connexion">
           <h2>Entrer</h2>
@@ -76,6 +104,7 @@ interface JetonGarde {
               </div>
             </form>
           }
+          <p class="secondaire">Moniteur du club ? Connectez-vous à l'appli : le séjour est dans « Séjours ».</p>
         </section>
       }
     } @else if (erreur(); as m) {
@@ -88,6 +117,8 @@ interface JetonGarde {
   styles: [`
     .qui { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap;
            margin: var(--pas-2) 0; }
+    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; flex-wrap: wrap; }
+    .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
     .connexion { padding: var(--pas-2); max-width: 32rem; margin-top: var(--pas-2); }
     .connexion h2 { margin-top: 0; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; }
@@ -95,30 +126,35 @@ interface JetonGarde {
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; }
   `]
 })
-export class FraisInviteComponent {
+export class EspaceParticipantComponent {
   private http = inject(HttpClient);
-  private readonly code = inject(ActivatedRoute).snapshot.paramMap.get('code') ?? '';
-  private readonly base = `/api/public/frais/${encodeURIComponent(this.code)}`;
-  private readonly cle = `jeton-frais:${this.code}`;
+  private route = inject(ActivatedRoute);
+  private readonly code = this.route.snapshot.paramMap.get('code') ?? '';
+  private readonly base = `/api/public/sejour/${encodeURIComponent(this.code)}`;
+  private readonly cle = `jeton-sejour:${this.code}`;
   private jeton: string | null = null;
 
   readonly periode = periode;
 
   entete = signal<EnteteVue | null>(null);
-  vue = signal<FraisPublicVue | null>(null);
+  frais = signal<FraisPublicVue | null>(null);
+  moi = signal<ParticipantVue | null>(null);
+  /** L'ancienne adresse /frais/… ouvre directement les frais. */
+  onglet = signal<'infos' | 'frais'>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'infos');
   chargement = signal(true);
   erreur = signal<string | null>(null);
+  message = signal<string | null>(null);
   envoi = signal(false);
   etape = signal<'email' | 'code'>('email');
   email = '';
   /** Le code à 6 chiffres tapé (« code » est celui de l'adresse). */
   codeSaisi = '';
 
-  /** Les écritures des frais, avec le jeton de l'invité. */
+  /** Les écritures des frais, avec le jeton du lien. */
   readonly port: PortFrais = {
     enregistrerDepense: (depenseId, d) => depenseId === null
       ? this.http.post<{ depenseId: number; vue: FraisPublicVue }>(`${this.base}/depenses`, d, this.options())
-        .pipe(map(r => { this.vue.set(r.vue); return { depenseId: r.depenseId, frais: r.vue.frais }; }))
+        .pipe(map(r => { this.frais.set(r.vue); return { depenseId: r.depenseId, frais: r.vue.frais }; }))
       : this.suivre(this.http.put<FraisPublicVue>(`${this.base}/depenses/${depenseId}`, d, this.options()))
         .pipe(map(frais => ({ depenseId, frais }))),
     supprimerDepense: depenseId => this.suivre(
@@ -142,9 +178,24 @@ export class FraisInviteComponent {
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  majFrais(frais: FraisVue): void {
-    const v = this.vue();
-    if (v) this.vue.set({ ...v, frais });
+  majFrais(f: FraisVue): void {
+    const v = this.frais();
+    if (v) this.frais.set({ ...v, frais: f });
+  }
+
+  async enregistrerInfos(d: DemandeMesInformations): Promise<void> {
+    this.envoi.set(true);
+    this.erreur.set(null);
+    this.message.set(null);
+    try {
+      const r = await firstValueFrom(this.http.put<MesInformationsVue>(`${this.base}/moi`, d, this.options()));
+      this.moi.set(r.moi);
+      this.message.set('Vos informations sont enregistrées. Merci !');
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).");
+    } finally {
+      this.envoi.set(false);
+    }
   }
 
   async demanderCode(): Promise<void> {
@@ -173,7 +224,7 @@ export class FraisInviteComponent {
         { email: this.email.trim(), code: this.codeSaisi.trim() }));
       this.jeton = c.jeton;
       await ecrire<JetonGarde>(MAGASIN_CACHE, { cle: this.cle, valeur: c.jeton });
-      await this.chargerFrais();
+      await this.charger();
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'entrée n'a pas abouti (réseau nécessaire).");
     } finally {
@@ -192,7 +243,7 @@ export class FraisInviteComponent {
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).status === 404
         ? 'Adresse inconnue : vérifiez le lien reçu, ou demandez-le à l’organisateur du séjour.'
-        : 'Impossible d’ouvrir les frais du séjour (réseau nécessaire).');
+        : 'Impossible d’ouvrir le séjour (réseau nécessaire).');
       this.chargement.set(false);
       return;
     }
@@ -200,14 +251,20 @@ export class FraisInviteComponent {
       this.jeton = (await lire<JetonGarde>(MAGASIN_CACHE, this.cle))?.valeur ?? null;
     } catch { this.jeton = null; }
     if (this.jeton) {
-      try { await this.chargerFrais(); } catch { /* jeton expiré : on redemande le code */ }
+      try { await this.charger(); } catch { /* jeton expiré : on redemande le code */ }
     }
     this.chargement.set(false);
   }
 
-  private async chargerFrais(): Promise<void> {
+  /** Les frais et ses informations, ensemble ; un jeton refusé ramène à l'entrée. */
+  private async charger(): Promise<void> {
     try {
-      this.vue.set(await firstValueFrom(this.http.get<FraisPublicVue>(`${this.base}/frais`, this.options())));
+      const [frais, infos] = await Promise.all([
+        firstValueFrom(this.http.get<FraisPublicVue>(`${this.base}/frais`, this.options())),
+        firstValueFrom(this.http.get<MesInformationsVue>(`${this.base}/moi`, this.options()))
+      ]);
+      this.frais.set(frais);
+      this.moi.set(infos.moi);
     } catch (e) {
       if ((e as HttpErrorResponse).status === 403) {
         await this.oublierJeton();
@@ -219,17 +276,18 @@ export class FraisInviteComponent {
 
   private async oublierJeton(): Promise<void> {
     this.jeton = null;
-    this.vue.set(null);
+    this.frais.set(null);
+    this.moi.set(null);
     this.etape.set('email');
     try { await supprimer(MAGASIN_CACHE, this.cle); } catch { /* rien à effacer */ }
   }
 
   private suivre(o: Observable<FraisPublicVue>): Observable<FraisVue> {
-    return o.pipe(map(v => { this.vue.set(v); return v.frais; }));
+    return o.pipe(map(v => { this.frais.set(v); return v.frais; }));
   }
 
   private entetes(): HttpHeaders {
-    return new HttpHeaders(this.jeton ? { 'X-Jeton-Frais': this.jeton } : {});
+    return new HttpHeaders(this.jeton ? { 'X-Jeton-Sejour': this.jeton } : {});
   }
 
   private options() {

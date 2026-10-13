@@ -75,6 +75,10 @@ export interface ParticipantVue {
 
 export type DemandeParticipant = Omit<ParticipantVue, 'id' | 'moi'>;
 
+/** Ce que le participant renseigne lui-même (le nom et le reste restent à l'organisateur). */
+export type DemandeMesInformations = Pick<ParticipantVue, 'telephone' | 'regimes' | 'regimePrecision' | 'urgenceNom'
+  | 'urgenceTelephone' | 'arrivee' | 'depart' | 'remarques'>;
+
 export interface VoitureVue {
   id: number;
   nom: string;
@@ -391,10 +395,18 @@ export class SejourApi {
     };
   }
 
-  /** L'adresse des frais (lien + code par e-mail) aux participants sans compte ; participantId : à lui seul. */
-  envoyerAccesFrais(id: number, participantId: number | null): Observable<BilanEnvoiAcces> {
+  /**
+   * Demande à chaque participant de renseigner ses informations (et lui ouvre les frais) :
+   * l'encadrant dans l'appli, les autres par un lien et un code par e-mail ; participantId : à lui seul.
+   */
+  envoyerInvitations(id: number, participantId: number | null): Observable<BilanEnvoiAcces> {
     const params: Record<string, number> = participantId === null ? {} : { participantId };
-    return this.http.post<BilanEnvoiAcces>(`/api/sejours/${id}/acces-frais`, {}, { params });
+    return this.http.post<BilanEnvoiAcces>(`/api/sejours/${id}/invitations`, {}, { params });
+  }
+
+  /** Le participant connecté complète ses propres informations. */
+  modifierMesInformations(id: number, d: DemandeMesInformations): Observable<SejourVue> {
+    return this.http.put<SejourVue>(`/api/sejours/${id}/mes-informations`, d);
   }
 
   envoyerCarnet(id: number): Observable<BilanEnvoiCarnet> {

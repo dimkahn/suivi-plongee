@@ -21,25 +21,35 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * Accès aux frais d'un séjour sans compte (V77) : pour un participant qui
- * n'a ni compte ni dossier élève relié à un compte, mais dont on connaît
- * l'e-mail (un invité, un conjoint...).
+ * Le séjour par un lien et un code reçu par e-mail (V77), pour tout
+ * participant qui n'est pas encadrant (moniteur, admin, directeur
+ * technique) : élève, invité, conjoint... qu'il ait un compte ou non. Il y
+ * renseigne ses informations (voyage, repas, personne à prévenir) et
+ * y voit et saisit les frais.
  * <p>
- * L'organisateur lui envoie l'adresse des frais du séjour,
- * {@code /frais/{code}} ({@code sejour.code_frais}, secret, tiré au
- * hasard). Sur cette page il donne son e-mail et reçoit un code à usage
+ * L'organisateur envoie la demande d'informations à chacun
+ * ({@link #envoyerInvitations}) : l'encadrant reçoit l'adresse du séjour
+ * dans l'appli, où il est connecté ; les autres l'adresse
+ * {@code /sejour/{code}} ({@code sejour.code_frais}, secret, tiré au
+ * hasard). Sur cette page on donne son e-mail et reçoit un code à usage
  * unique de 6 chiffres (10 minutes, 5 essais, un envoi par minute au
  * plus) ; le bon code ouvre un jeton, gardé par son navigateur, valable
  * jusqu'à 60 jours après la fin du séjour. En base, ni code ni jeton en
  * clair : leur empreinte SHA-256 seulement.
  * <p>
- * Ce qu'il peut faire ensuite est réglé par {@link FraisService} : lire les
- * frais, et saisir les dépenses qu'il a payées, sauf s'il est élève.
- * La réponse à une demande de code est la même que l'e-mail soit connu ou
- * non : la page ne dit pas qui participe.
+ * Les droits sur les frais sont ceux de {@link FraisService} (un élève
+ * consulte seulement) ; ses informations, chacun les modifie. La réponse à
+ * une demande de code est la même que l'e-mail soit connu ou non : la page
+ * ne dit pas qui participe.
  */
 @Service
-public class AccesFraisService {
+public class AccesSejourService {
+
+    /** Ces comptes sont dans l'appli : ils n'entrent pas par le lien. */
+    private static final String EST_ENCADRANT = """
+            EXISTS (SELECT 1 FROM utilisateur_role r
+                     WHERE r.role IN ('MONITEUR', 'ADMIN', 'DIRECTEUR_TECHNIQUE')
+                       AND (r.utilisateur_id = p.utilisateur_id OR r.utilisateur_id = e.utilisateur_id))""";
 
     static final int MINUTES_VALIDITE_CODE = 10;
     static final int ESSAIS_MAX = 5;
@@ -59,17 +69,23 @@ public class AccesFraisService {
 
     public record BilanEnvoiAcces(List<String> envoyes, List<String> sansEmail, List<String> echecs) {}
 
+    /** Ce que le participant entré par le lien renseigne lui-même, et le séjour dont il s'agit. */
+    public record MesInformationsVue(EnteteVue sejour, SejourService.ParticipantVue moi) {}
+
     private final NamedParameterJdbcTemplate jdbc;
     private final FraisService frais;
+    private final SejourService sejours;
     private final ServiceNotification notification;
     private final IdentiteStructureService identite;
     private final String urlFrontend;
     private final SecureRandom hasard = new SecureRandom();
 
-    public AccesFraisService(NamedParameterJdbcTemplate jdbc, FraisService frais, ServiceNotification notification,
-                             IdentiteStructureService identite, @Value("${app.frontend-url}") String urlFrontend) {
+    public AccesSejourService(NamedParameterJdbcTemplate jdbc, FraisService frais, SejourService sejours,
+                              ServiceNotification notification, IdentiteStructureService identite,
+                              @Value("${app.frontend-url}") String urlFrontend) {
         this.jdbc = jdbc;
         this.frais = frais;
+        this.sejours = sejours;
         this.notification = notification;
         this.identite = identite;
         this.urlFrontend = urlFrontend;
@@ -80,44 +96,59 @@ public class AccesFraisService {
     // ------------------------------------------------------------------
 
     /**
-     * Envoie l'adresse des frais aux participants sans compte qui ont un
-     * e-mail ({@code participantId} null : à tous ceux-là).
+     * Demande à chaque participant qui a un e-mail de renseigner ses
+     * informations pour le séjour et lui donne accès aux frais
+     * ({@code participantId} null : à tous). L'encadrant reçoit le lien du
+     * séjour dans l'appli ; les autres le lien et la façon d'entrer par code.
      */
     @Transactional
-    public BilanEnvoiAcces envoyerAcces(Long sortieId, Long participantId) {
+    public BilanEnvoiAcces envoyerInvitations(Long sortieId, Long participantId) {
         String code = codeFrais(sortieId);
         EnteteVue sejour = entete(code);
         var p = new MapSqlParameterSource("sortie", sortieId).addValue("pid", participantId);
-        List<Map<String, Object>> sansCompte = jdbc.queryForList("""
-                SELECT p.id, p.prenom, p.nom, p.email FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
-                 WHERE p.sortie_id = :sortie AND p.utilisateur_id IS NULL AND e.utilisateur_id IS NULL"""
+        List<Map<String, Object>> participants = jdbc.queryForList("""
+                SELECT p.id, p.prenom, p.nom, p.email, CASE WHEN %s THEN 1 ELSE 0 END AS encadrant
+                  FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
+                 WHERE p.sortie_id = :sortie""".formatted(EST_ENCADRANT)
                 + (participantId == null ? "" : " AND p.id = :pid") + " ORDER BY p.nom, p.prenom", p);
-        if (participantId != null && sansCompte.isEmpty()) {
-            throw new RegleMetierException("Ce participant a un compte : il voit les frais dans l'appli, menu « Séjours ».");
+        if (participantId != null && participants.isEmpty()) {
+            throw new RessourceIntrouvableException("Participant introuvable dans ce séjour");
         }
         List<String> envoyes = new ArrayList<>(), sansEmail = new ArrayList<>(), echecs = new ArrayList<>();
-        String lien = urlFrontend + "/frais/" + code;
-        for (Map<String, Object> ligne : sansCompte) {
+        for (Map<String, Object> ligne : participants) {
             String nom = ligne.get("prenom") + " " + ligne.get("nom");
             String email = (String) ligne.get("email");
             if (SejourService.blanc(email)) {
                 sansEmail.add(nom);
                 continue;
             }
-            String corps = "Bonjour " + ligne.get("prenom") + ",\n\n"
-                    + "Voici l'adresse des frais partagés du séjour « " + sejour.nom() + " » : vous y verrez les "
-                    + "dépenses de chacun et qui doit combien à qui, et vous pourrez y noter ce que vous avez payé, "
-                    + "avec la photo de la note.\n\n" + lien + "\n\n"
-                    + "Donnez-y cette adresse e-mail (" + email.trim() + ") : vous recevrez un code à 6 chiffres "
-                    + "pour entrer. Pas de compte ni de mot de passe à créer.\n\n"
-                    + "Bon séjour,\n" + identite.nom() + "\n";
-            if (notification.envoyerCourriel(email.trim(), "Frais du séjour — " + sejour.nom(), corps)) {
+            boolean encadrant = ((Number) ligne.get("encadrant")).intValue() == 1;
+            String debut = "Bonjour " + ligne.get("prenom") + ",\n\n"
+                    + "Pour préparer le séjour « " + sejour.nom() + " » (" + periode(sejour) + "), merci de "
+                    + "renseigner vos informations : votre arrivée et votre départ (avec le numéro de vol ou de "
+                    + "train), votre téléphone, vos repas (régime alimentaire) et la personne à prévenir en cas "
+                    + "d'urgence. Vous y trouverez aussi les frais partagés du séjour : notez-y ce que vous payez, "
+                    + "avec la photo de la note.\n\n";
+            String corps = encadrant
+                    ? debut + "Dans l'appli, menu « Séjours », puis « Modifier mes informations » :\n"
+                            + urlFrontend + "/sejours/" + sortieId + "\n\n"
+                    : debut + urlFrontend + "/sejour/" + code + "\n\n"
+                            + "Donnez-y cette adresse e-mail (" + email.trim() + ") : vous recevrez un code à "
+                            + "6 chiffres pour entrer. Pas de compte ni de mot de passe à créer.\n\n";
+            corps += "Bon séjour,\n" + identite.nom() + "\n";
+            if (notification.envoyerCourriel(email.trim(), "Vos informations pour le séjour — " + sejour.nom(), corps)) {
                 envoyes.add(nom);
             } else {
                 echecs.add(nom);
             }
         }
         return new BilanEnvoiAcces(envoyes, sansEmail, echecs);
+    }
+
+    private static String periode(EnteteVue s) {
+        return s.dateFin() == null || s.dateFin().equals(s.dateDebut())
+                ? "le " + s.dateDebut().format(Calendrier.DATE_FR)
+                : "du " + s.dateDebut().format(Calendrier.DATE_FR) + " au " + s.dateFin().format(Calendrier.DATE_FR);
     }
 
     /** Le code secret de l'adresse des frais, tiré au premier besoin. */
@@ -157,7 +188,7 @@ public class AccesFraisService {
     @Transactional
     public void demanderCode(String code, String email) {
         EnteteVue sejour = entete(code);
-        Optional<Long> participant = participantSansCompte(code, email);
+        Optional<Long> participant = participantPourLien(code, email);
         if (participant.isEmpty()) return;
         var p = new MapSqlParameterSource("p", participant.get())
                 .addValue("depuis", maintenant().minusSeconds(SECONDES_ENTRE_DEUX_ENVOIS));
@@ -175,8 +206,8 @@ public class AccesFraisService {
                         .addValue("maintenant", maintenant()));
         // À l'adresse enregistrée pour le participant, pas à celle tapée sur la page.
         String adresse = jdbc.queryForObject("SELECT email FROM sejour_participant WHERE id = :p", p, String.class);
-        notification.envoyerCourriel(adresse.trim(), "Votre code — frais du séjour " + sejour.nom(),
-                "Votre code pour les frais du séjour « " + sejour.nom() + " » : " + chiffres + "\n\n"
+        notification.envoyerCourriel(adresse.trim(), "Votre code — séjour " + sejour.nom(),
+                "Votre code pour entrer dans le séjour « " + sejour.nom() + " » : " + chiffres + "\n\n"
                         + "Il est valable " + MINUTES_VALIDITE_CODE + " minutes. Si vous n'avez rien demandé, "
                         + "ignorez ce message.\n\n" + identite.nom() + "\n");
     }
@@ -185,7 +216,7 @@ public class AccesFraisService {
     @Transactional(noRollbackFor = RegleMetierException.class)
     public Connexion connecter(String code, String email, String saisie) {
         EnteteVue sejour = entete(code);
-        Long participant = participantSansCompte(code, email)
+        Long participant = participantPourLien(code, email)
                 .orElseThrow(() -> new RegleMetierException("Code incorrect ou expiré : demandez-en un nouveau."));
         var p = new MapSqlParameterSource("p", participant);
         record CodeEnBase(long id, String empreinte, LocalDateTime expire, int essais) {}
@@ -256,19 +287,30 @@ public class AccesFraisService {
                 frais.lire(a.sortieId(), frais.acteurParticipant(a.participantId())));
     }
 
+    @Transactional(readOnly = true)
+    public MesInformationsVue mesInformations(String code, Acces a) {
+        return new MesInformationsVue(entete(code), sejours.participant(a.participantId()));
+    }
+
+    @Transactional
+    public MesInformationsVue modifierMesInformations(String code, Acces a, SejourService.DemandeMesInformations d) {
+        sejours.modifierMesInformations(a.participantId(), d);
+        return mesInformations(code, a);
+    }
+
     // ------------------------------------------------------------------
     //  Outils
     // ------------------------------------------------------------------
 
-    private Optional<Long> participantSansCompte(String code, String email) {
+    /** Le participant de cet e-mail, s'il peut entrer par le lien : tout participant qui n'est pas encadrant. */
+    private Optional<Long> participantPourLien(String code, String email) {
         if (email == null || email.isBlank()) return Optional.empty();
         List<Long> ids = jdbc.queryForList("""
                 SELECT p.id FROM sejour_participant p
                   JOIN sejour s ON s.sortie_id = p.sortie_id
                   LEFT JOIN eleve e ON e.id = p.eleve_id
-                 WHERE s.code_frais = :code AND LOWER(p.email) = :email
-                   AND p.utilisateur_id IS NULL AND e.utilisateur_id IS NULL
-                 ORDER BY p.id""",
+                 WHERE s.code_frais = :code AND LOWER(p.email) = :email AND NOT %s
+                 ORDER BY p.id""".formatted(EST_ENCADRANT),
                 new MapSqlParameterSource("code", code).addValue("email", email.trim().toLowerCase(Locale.ROOT)),
                 Long.class);
         return ids.isEmpty() ? Optional.empty() : Optional.of(ids.getFirst());
