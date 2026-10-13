@@ -91,6 +91,15 @@ public class SejourController {
         return service.lire(id, moi);
     }
 
+    /** Le même vol ou train (arrivée ou départ) pour plusieurs participants d'un coup. */
+    @PutMapping("/{id}/trajets")
+    @PreAuthorize(GERE)
+    public SejourVue appliquerTrajet(@PathVariable Long id, @Valid @RequestBody DemandeTrajetCommun d,
+                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.appliquerTrajet(id, d);
+        return service.lire(id, moi);
+    }
+
     @PutMapping("/{id}/participants/{participantId}")
     @PreAuthorize(GERE)
     public SejourVue modifierParticipant(@PathVariable Long id, @PathVariable Long participantId,

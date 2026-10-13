@@ -7,6 +7,7 @@ mots: séjour, voyage, vol, avion, train, numéro de vol, arrivée, départ, aé
 questions:
 - Comment noter les vols d'arrivée et de départ des participants ?
 - Comment demander à chaque participant de remplir ses informations ?
+- Plusieurs participants prennent le même vol : comment le saisir une seule fois ?
 - Comment répartir les participants dans les voitures ?
 - Comment répartir les chambres d'un gîte ?
 - Comment connaître les régimes alimentaires du groupe ?
@@ -26,7 +27,7 @@ Menu « Séjours », puis la sortie : participants, arrivées et départs, voitu
 1. Créez d'abord la sortie (Administration, « Sorties ») ; « Gérer le séjour » ouvre son séjour.
 2. **Participants** : « Ajouter un participant » (cherchez un élève ou un encadrant du club, ou saisissez un invité), ou inscrivez d'un coup un groupe de plongeurs. Pour chacun : téléphone, **e-mail**, plongeur ou accompagnant, **arrivée et départ** (jour, heure, avion ou train, **numéro de vol**, aéroport ou gare), **régime alimentaire**, personne à prévenir.
 3. Plutôt que tout saisir : « **Demander à chacun ses informations** ». Chaque participant qui a un e-mail reçoit une demande : les moniteurs complètent dans l'appli (« Modifier mes informations »), les autres (élèves, invités) par un lien et un code à 6 chiffres reçu par e-mail, sans mot de passe. Vous voyez leurs réponses dans « Participants ». « Lui demander ses informations » relance une seule personne.
-4. **Arrivées et départs** : les participants sont regroupés par vol ou par train, pour savoir qui aller chercher et quand.
+4. **Arrivées et départs** : les participants sont regroupés par vol ou par train, pour savoir qui aller chercher et quand. Plusieurs personnes sur le même vol ? « **Un même vol pour plusieurs** » : saisissez le vol une fois et cochez qui le prend ; ou, sous un vol déjà saisi, « **Ajouter des personnes à ce vol** ». Dans la fiche d'un participant, « **Même voyage que…** » reprend l'arrivée et le départ d'un autre.
 5. **Voitures** : « Ajouter une voiture », son nombre de places (conducteur compris), le **conducteur** et les passagers.
 6. **Chambres** : « Ajouter un logement » (gîte, hôtel), puis ses chambres, leurs couchages et leurs occupants.
 7. **Repas** : le nombre de couverts et, régime par régime, qui est concerné.

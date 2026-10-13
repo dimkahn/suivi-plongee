@@ -97,6 +97,23 @@ class SejourTest {
                 {"nom":"Roux","prenom":"Inès","plongeur":true,
                  "arrivee":{"date":"%s"},"depart":{"date":"%s"}}""".formatted(debut.plusDays(2), debut), 422);
 
+        // Le vol de Camille, posé d'un coup sur Inès et Léo ; le départ d'Inès avant cette arrivée est refusé.
+        envoyer("PUT", base + "/participants/" + ines, dt, """
+                {"nom":"Roux","prenom":"Inès","plongeur":true,"depart":{"date":"%s"}}""".formatted(debut.minusDays(1)), 200);
+        envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"ARRIVEE","trajet":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF1234"},
+                 "participantIds":[%d,%d]}""".formatted(debut, ines, leo), 422);
+        envoyer("PUT", base + "/participants/" + ines, dt, """
+                {"nom":"Roux","prenom":"Inès","plongeur":true}""", 200);
+        s = envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"ARRIVEE","trajet":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF1234"},
+                 "participantIds":[%d,%d]}""".formatted(debut, ines, leo), 200);
+        for (JsonNode p : s.get("participants")) {
+            assertThat(p.get("arrivee").get("numero").asText()).isEqualTo("AF1234");
+        }
+        envoyer("PUT", base + "/trajets", jeton("e1@club.fr"), """
+                {"sens":"DEPART","trajet":null,"participantIds":[%d]}""".formatted(ines), 403);
+
         // Une voiture de 2 places pour 3 : avertissement, pas refus.
         s = envoyer("POST", base + "/voitures", dt, """
                 {"nom":"Clio de Léo","places":2,"conducteurId":%d,"passagerIds":[%d,%d,%d]}"""
