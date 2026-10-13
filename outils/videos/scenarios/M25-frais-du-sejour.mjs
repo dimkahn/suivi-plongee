@@ -15,8 +15,8 @@ export default {
     await legende('Flora part au séjour à Port-Cros. « Plus », puis « Séjours ».', 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
-    await legende('« Frais » : les dépenses de chacun et qui doit combien à qui.', 0);
-    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 2500 });
+    await legende('« Frais » : en tête, son solde ; puis qui doit combien à qui, et les dépenses.', 0);
+    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3000 });
 
     await legende('Camille, élève, a payé les glaces : elle donne la note à Flora, qui la saisit pour elle.', 0);
     await toucher(page.getByRole('button', { name: 'Ajouter une dépense' }), { apres: 900 });
@@ -24,7 +24,8 @@ export default {
     await saisir('#d-montant', '18,00');
     await choisir('#d-payeur', 'Camille Berthier');
     await legende('« Prendre une photo » ouvre l\'appareil photo sur la note ; « Choisir dans mes photos », la galerie du téléphone.', 4500);
-    await legende('Partagée entre tout le monde, ou seulement ceux qui en ont profité.', 0);
+    await legende('Par défaut, partagée entre tout le monde. « Choisir qui partage » : seulement ceux qui en ont profité.', 0);
+    await toucher(page.getByRole('button', { name: 'Choisir qui partage' }), { apres: 1200 });
     await toucher(page.getByRole('button', { name: 'Les plongeurs' }), { apres: 1500 });
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2000 });

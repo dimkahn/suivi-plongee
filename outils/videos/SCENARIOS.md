@@ -656,7 +656,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-Demander à chacun ses informations, puis les vols, les voitures, les chambres, les régimes, les affaires, le programme et le partage des frais.
+Les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.
 
 Compte : `presidente@club.fr` · format ordinateur
 
