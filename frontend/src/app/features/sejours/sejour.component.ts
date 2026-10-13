@@ -35,6 +35,9 @@ interface GroupeTrajet {
   comment: string;
   lieu: string | null;
   noms: string[];
+  /** Le trajet commun et ceux qui le prennent, pour y ajouter d'autres participants. */
+  trajet: Trajet;
+  ids: number[];
 }
 
 function trajetVide(): Trajet {
@@ -236,7 +239,13 @@ function participantVide(): BrouillonParticipant {
       <!-- Arrivées et départs -->
       @if (voir('trajets')) {
         <section>
-          <h2>Arrivées et départs</h2>
+          <div class="titre-section">
+            <h2>Arrivées et départs</h2>
+            @if (s.gere) {
+              <button type="button" class="bouton-principal sans-impression" (click)="ouvrirVolCommun('ARRIVEE', null)"
+                      [disabled]="s.participants.length === 0">Un même vol pour plusieurs</button>
+            }
+          </div>
           <div class="deux-colonnes">
             @for (sens of sensTrajets; track sens.code) {
               <div>
@@ -249,6 +258,12 @@ function participantVide(): BrouillonParticipant {
                       @if (g.comment) { <span> · {{ g.comment }}</span> }
                       @if (g.lieu) { <span class="secondaire"> · {{ g.lieu }}</span> }
                       <p>{{ g.noms.join(', ') }}</p>
+                      @if (s.gere) {
+                        <button type="button" class="bouton-discret sans-impression"
+                                (click)="ouvrirVolCommun(sens.code === 'arrivee' ? 'ARRIVEE' : 'DEPART', g)">
+                          Ajouter des personnes à ce {{ g.trajet.transport === 'TRAIN' ? 'train' : 'vol' }}
+                        </button>
+                      }
                     </li>
                   }
                 </ul>
@@ -444,6 +459,17 @@ function participantVide(): BrouillonParticipant {
       </div>
       <label class="case"><input type="checkbox" [(ngModel)]="participant.plongeur"> Plonge (sinon : accompagnant)</label>
 
+      @if ((sejour()?.participants ?? []).length > 0) {
+        <label for="p-meme-voyage">Même voyage que…</label>
+        <select id="p-meme-voyage" [ngModel]="null" (ngModelChange)="memeVoyageQue($event)">
+          <option [ngValue]="null">— reprendre l'arrivée et le départ d'un autre participant —</option>
+          @for (autre of sejour()?.participants ?? []; track autre.id) {
+            @if (autre.id !== participantId && (autre.arrivee || autre.depart)) {
+              <option [ngValue]="autre.id">{{ nomComplet(autre) }} ({{ texteTrajet(autre.arrivee) }})</option>
+            }
+          }
+        </select>
+      }
       @for (sens of sensTrajets; track sens.code) {
         <fieldset>
           <legend>{{ sens.libelle }}</legend>
@@ -593,6 +619,63 @@ function participantVide(): BrouillonParticipant {
       </div>
     </app-dialogue>
 
+    <app-dialogue [ouvert]="volOuvert()" [large]="true" [erreur]="erreur()" titre="Un même vol pour plusieurs participants"
+                  (fermer)="volOuvert.set(false)">
+      <div class="grille">
+        <div><label for="vc-sens">C'est</label>
+          <select id="vc-sens" [(ngModel)]="vol.sens">
+            <option ngValue="ARRIVEE">Une arrivée</option>
+            <option ngValue="DEPART">Un départ</option>
+          </select></div>
+        @if (volsConnus().length > 0) {
+          <div><label for="vc-connu">Partir d'un vol déjà saisi</label>
+            <select id="vc-connu" [ngModel]="null" (ngModelChange)="reprendreVol($event)">
+              <option [ngValue]="null">—</option>
+              @for (g of volsConnus(); track $index; let i = $index) {
+                <option [ngValue]="i">{{ g.quand }}@if (g.comment) { · {{ g.comment }}} ({{ g.noms.length }})</option>
+              }
+            </select></div>
+        }
+      </div>
+      <div class="grille">
+        <div><label for="vc-date">Jour</label><input id="vc-date" type="date" [(ngModel)]="vol.trajet.date"></div>
+        <div><label for="vc-heure">Heure</label><input id="vc-heure" type="time" [(ngModel)]="vol.trajet.heure"></div>
+        <div><label for="vc-moyen">Moyen</label>
+          <select id="vc-moyen" [(ngModel)]="vol.trajet.transport">
+            <option [ngValue]="null">—</option>
+            @for (t of transports; track t.code) { <option [ngValue]="t.code">{{ t.libelle }}</option> }
+          </select></div>
+        <div><label for="vc-numero">N° de vol ou de train</label>
+          <input id="vc-numero" [(ngModel)]="vol.trajet.numero" maxlength="30" placeholder="AF7520"></div>
+        <div><label for="vc-lieu">Aéroport, gare, lieu</label>
+          <input id="vc-lieu" [(ngModel)]="vol.trajet.lieu" maxlength="120"></div>
+      </div>
+      <fieldset>
+        <legend>Qui prend ce {{ vol.trajet.transport === 'TRAIN' ? 'train' : 'vol' }}</legend>
+        <div class="actions">
+          <button type="button" class="bouton-discret" (click)="cocherVol('tous')">Tout le monde</button>
+          <button type="button" class="bouton-discret" (click)="cocherVol('sans')">Ceux qui n'ont rien</button>
+          <button type="button" class="bouton-discret" (click)="cocherVol('personne')">Personne</button>
+        </div>
+        <ul class="liste-vol">
+          @for (p of sejour()?.participants ?? []; track p.id) {
+            <li>
+              <label class="case"><input type="checkbox" [checked]="vol.ids.includes(p.id)" (change)="basculer(vol.ids, p.id)">
+                {{ nomComplet(p) }}</label>
+              <span class="secondaire">{{ trajetActuel(p) }}</span>
+            </li>
+          }
+        </ul>
+        <p class="secondaire">Les personnes cochées prennent ce trajet ; celui qu'elles avaient est remplacé. Les autres ne changent pas.</p>
+      </fieldset>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrerVolCommun()" [disabled]="envoi()">
+          Enregistrer pour {{ vol.ids.length }} personne{{ vol.ids.length > 1 ? 's' : '' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="volOuvert.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
+
     <app-dialogue [ouvert]="evenementOuvert()" [erreur]="erreur()"
                   [titre]="evenementId === null ? 'Ajouter un rendez-vous' : 'Modifier le rendez-vous'"
                   (fermer)="evenementOuvert.set(false)">
@@ -678,6 +761,10 @@ function participantVide(): BrouillonParticipant {
     .regimes { display: flex; flex-wrap: wrap; gap: 0 var(--pas-2); }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; }
+    .liste-vol { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 0 var(--pas-2);
+                 grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .liste-vol li { display: flex; flex-direction: column; padding-bottom: var(--pas); }
+    .liste-vol .secondaire { font-size: .8125rem; margin-left: calc(var(--pas) + 20px); }
     .edition-affaires { list-style: none; margin: var(--pas-2) 0; padding: 0; display: grid; gap: var(--pas); }
     .edition-affaires li { display: grid; grid-template-columns: 10rem 1fr auto auto; gap: var(--pas); align-items: center; }
     .edition-affaires input, .edition-affaires select { margin: 0; }
@@ -870,12 +957,78 @@ export class SejourComponent {
         tri: `${t.date ?? ''} ${t.heure ?? ''}`,
         quand: t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : 'à ' + heure(t.heure),
         comment: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' '),
-        lieu: t.lieu, noms: []
+        lieu: t.lieu, noms: [], trajet: t, ids: []
       };
       g.noms.push(nomComplet(p));
+      g.ids.push(p.id);
       groupes.set(cle, g);
     }
     return [...groupes.values()].sort((a, b) => a.tri.localeCompare(b.tri));
+  }
+
+  /** Recopie l'arrivée et le départ d'un autre participant dans la fiche ouverte. */
+  memeVoyageQue(id: number | null): void {
+    const autre = (this.sejour()?.participants ?? []).find(p => p.id === id);
+    if (!autre) return;
+    const copie = (t: Trajet | null): Trajet => t ? { ...t, heure: t.heure?.slice(0, 5) ?? null } : trajetVide();
+    this.participant.arrivee = copie(autre.arrivee);
+    this.participant.depart = copie(autre.depart);
+  }
+
+  // ---------------- Un même vol pour plusieurs ----------------
+
+  volOuvert = signal(false);
+  vol: { sens: 'ARRIVEE' | 'DEPART'; trajet: Trajet; ids: number[] } = { sens: 'ARRIVEE', trajet: trajetVide(), ids: [] };
+  /** Les vols déjà saisis pour ce sens, pour en partir sans rien recopier. */
+  volsConnus = signal<GroupeTrajet[]>([]);
+
+  /** g : un vol déjà saisi, à compléter de nouvelles personnes ; null : un vol à saisir. */
+  ouvrirVolCommun(sens: 'ARRIVEE' | 'DEPART', g: GroupeTrajet | null): void {
+    this.erreur.set(null);
+    this.vol = {
+      sens,
+      trajet: g ? { ...g.trajet, heure: g.trajet.heure?.slice(0, 5) ?? null } : trajetVide(),
+      ids: g ? [...g.ids] : []
+    };
+    this.volsConnus.set(this.groupesTrajets(sens === 'ARRIVEE' ? 'arrivee' : 'depart'));
+    this.volOuvert.set(true);
+  }
+
+  reprendreVol(i: number | null): void {
+    const g = i === null ? null : this.volsConnus()[i];
+    if (!g) return;
+    this.vol.trajet = { ...g.trajet, heure: g.trajet.heure?.slice(0, 5) ?? null };
+    this.vol.ids = [...new Set([...this.vol.ids, ...g.ids])];
+  }
+
+  cocherVol(qui: 'tous' | 'sans' | 'personne'): void {
+    const sens = this.vol.sens === 'ARRIVEE' ? 'arrivee' : 'depart';
+    this.vol.ids = (this.sejour()?.participants ?? [])
+      .filter(p => qui === 'tous' || (qui === 'sans' && !p[sens]?.date && !p[sens]?.heure))
+      .map(p => p.id);
+  }
+
+  /** « déjà : vendredi 03/06/2027 à 18h30, avion AF7520 » sous chaque nom. */
+  trajetActuel(p: ParticipantVue): string {
+    const t = this.vol.sens === 'ARRIVEE' ? p.arrivee : p.depart;
+    return t ? 'déjà : ' + this.texteTrajet(t) : '';
+  }
+
+  enregistrerVolCommun(): void {
+    const t = this.vol.trajet;
+    if (!t.date && !t.heure) {
+      this.erreur.set('Indiquez au moins le jour ou l’heure.');
+      return;
+    }
+    if (this.vol.ids.length === 0) {
+      this.erreur.set('Cochez au moins une personne.');
+      return;
+    }
+    const trajet = { ...t, numero: t.numero?.trim() || null, lieu: t.lieu?.trim() || null };
+    this.ecrire(this.api.appliquerTrajet(this.id, this.vol.sens, trajet, this.vol.ids), () => {
+      this.volOuvert.set(false);
+      this.message.set(`Trajet enregistré pour ${this.vol.ids.length} personne${this.vol.ids.length > 1 ? 's' : ''}.`);
+    });
   }
 
   sansTrajet(sens: 'arrivee' | 'depart'): string[] {
@@ -1157,6 +1310,7 @@ export class SejourComponent {
         const texte = e.error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).";
         this.erreur.set(texte);
         if (!this.participantOuvert() && !this.voitureOuverte() && !this.logementOuvert() && !this.mesInfosOuvertes()
+          && !this.volOuvert()
           && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes()) {
           this.message.set(texte);
         }

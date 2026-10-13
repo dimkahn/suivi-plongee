@@ -328,6 +328,11 @@ export class SejourApi {
     return this.http.post<SejourVue>(`/api/sejours/${id}/participants`, d);
   }
 
+  /** Le même vol ou train (arrivée ou départ) pour plusieurs participants ; trajet null : l'effacer. */
+  appliquerTrajet(id: number, sens: 'ARRIVEE' | 'DEPART', trajet: Trajet | null, participantIds: number[]): Observable<SejourVue> {
+    return this.http.put<SejourVue>(`/api/sejours/${id}/trajets`, { sens, trajet, participantIds });
+  }
+
   importerGroupe(id: number, groupeId: number): Observable<SejourVue> {
     return this.http.post<SejourVue>(`/api/sejours/${id}/participants/groupe`, { groupeId });
   }

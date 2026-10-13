@@ -473,6 +473,41 @@ public class SejourService {
                  WHERE id = :pid""", p);
     }
 
+    /** Le même vol (ou train) pour plusieurs participants : arrivée ou départ, sans rien recopier. */
+    public enum SensTrajet { ARRIVEE, DEPART }
+
+    public record DemandeTrajetCommun(@NotNull SensTrajet sens, @Valid Trajet trajet, @NotNull List<Long> participantIds) {}
+
+    /**
+     * Pose ce trajet sur chacun des participants donnés (les autres ne
+     * changent pas). Refus, sans rien écrire, si l'un d'eux partirait avant
+     * d'arriver.
+     */
+    @Transactional
+    public void appliquerTrajet(Long sortieId, DemandeTrajetCommun d) {
+        sorties.sortie(sortieId);
+        List<Long> ids = d.participantIds().stream().filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) throw new RegleMetierException("Cochez au moins un participant.");
+        verifierParticipants(sortieId, ids);
+        Trajet t = d.trajet() == null || d.trajet().vide() ? null : d.trajet();
+        for (Long id : ids) {
+            ParticipantVue p = participant(id);
+            LocalDateTime arrivee = moment(d.sens() == SensTrajet.ARRIVEE ? t : p.arrivee());
+            LocalDateTime depart = moment(d.sens() == SensTrajet.DEPART ? t : p.depart());
+            if (arrivee != null && depart != null && depart.isBefore(arrivee)) {
+                throw new RegleMetierException("Le départ de " + p.prenom() + " " + p.nom()
+                        + " serait avant son arrivée : vérifiez la date.");
+            }
+        }
+        String sens = d.sens() == SensTrajet.ARRIVEE ? "arrivee" : "depart";
+        var p = new MapSqlParameterSource("ids", ids).addValue("sortie", sortieId);
+        trajet(p, "t", t);
+        jdbc.update("""
+                UPDATE sejour_participant SET %1$s_date = :tDate, %1$s_heure = :tHeure, %1$s_transport = :tTransport,
+                       %1$s_numero = :tNumero, %1$s_lieu = :tLieu
+                 WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens), p);
+    }
+
     /** Il quitte aussi sa voiture et sa chambre ; une voiture qu'il conduisait n'a plus de conducteur. */
     @Transactional
     public void supprimerParticipant(Long sortieId, Long participantId) {

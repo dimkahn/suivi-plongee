@@ -24,7 +24,10 @@ export default {
     await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
 
     await legende('« Arrivées et départs » : les participants regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
-    await toucher(page.getByRole('tab', { name: 'Arrivées et départs' }), { apres: 3500 });
+    await toucher(page.getByRole('tab', { name: 'Arrivées et départs' }), { apres: 2500 });
+    await legende('Plusieurs personnes sur le même vol ? On le saisit une fois, et on coche qui le prend.', 0);
+    await toucher(page.getByRole('button', { name: /Ajouter des personnes à ce vol/ }).first(), { apres: 3500 });
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('« Voitures » : le conducteur et ses passagers, et les places qui restent.', 0);
     await toucher(page.getByRole('tab', { name: 'Voitures' }), { apres: 3500 });
 
