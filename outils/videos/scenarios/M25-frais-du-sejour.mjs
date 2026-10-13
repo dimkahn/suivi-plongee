@@ -23,7 +23,7 @@ export default {
     await saisir('#d-libelle', 'Glaces sur le port');
     await saisir('#d-montant', '18,00');
     await choisir('#d-payeur', 'Camille Berthier');
-    await legende('« Prendre ou choisir la photo » : l\'appareil photo du téléphone s\'ouvre sur la note.', 4000);
+    await legende('« Prendre une photo » ouvre l\'appareil photo sur la note ; « Choisir dans mes photos », la galerie du téléphone.', 4500);
     await legende('Partagée entre tout le monde, ou seulement ceux qui en ont profité.', 0);
     await toucher(page.getByRole('button', { name: 'Les plongeurs' }), { apres: 1500 });
     await vignette();
