@@ -41,7 +41,8 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/fiches-securite/:x/realise', manuels: ['fiche-de-securite'] },
   { adresse: '/groupes', manuels: ['groupes-de-plongeurs'] },
   { adresse: '/sejours', manuels: ['organiser-un-sejour', 'carnet-du-sejour'], pourEleve: ['carnet-du-sejour'] },
-  { adresse: '/frais/:x', manuels: ['frais-sans-compte'] },
+  { adresse: '/sejour/:x', manuels: ['sejour-par-lien'] },
+  { adresse: '/frais/:x', manuels: ['sejour-par-lien'] },
   { adresse: '/sejours/:x', manuels: ['organiser-un-sejour', 'carnet-du-sejour'], pourEleve: ['carnet-du-sejour'] },
 
   { adresse: '/admin', manuels: ['administration', 'ouvrir-une-saison'] },

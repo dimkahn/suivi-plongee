@@ -78,6 +78,17 @@ public class SejourService {
                                      @Size(max = 120) String urgenceNom, @Size(max = 30) String urgenceTelephone,
                                      @Valid Trajet arrivee, @Valid Trajet depart, String remarques) {}
 
+    /**
+     * Ce qu'un participant renseigne lui-même, par le lien reçu par e-mail
+     * ou par « Mon séjour » dans l'appli : ses coordonnées, son voyage, ses
+     * repas, la personne à prévenir. Ni nom, ni rôle de plongeur, ni dossier :
+     * cela reste à l'organisateur.
+     */
+    public record DemandeMesInformations(@Size(max = 30) String telephone, Set<RegimeAlimentaire> regimes,
+                                         @Size(max = 300) String regimePrecision,
+                                         @Size(max = 120) String urgenceNom, @Size(max = 30) String urgenceTelephone,
+                                         @Valid Trajet arrivee, @Valid Trajet depart, String remarques) {}
+
     public record VoitureVue(Long id, String nom, int places, Long conducteurId, String trajet, String remarques,
                              List<Long> passagerIds) {}
 
@@ -412,6 +423,46 @@ public class SejourService {
                 UPDATE sejour_participant SET eleve_id = :eleve, utilisateur_id = :utilisateur, nom = :nom,
                        prenom = :prenom, plongeur = :plongeur, telephone = :telephone, email = :email,
                        regimes = :regimes, regime_precision = :regimePrecision, urgence_nom = :urgenceNom,
+                       urgence_telephone = :urgenceTelephone,
+                       arrivee_date = :arriveeDate, arrivee_heure = :arriveeHeure,
+                       arrivee_transport = :arriveeTransport, arrivee_numero = :arriveeNumero,
+                       arrivee_lieu = :arriveeLieu,
+                       depart_date = :departDate, depart_heure = :departHeure,
+                       depart_transport = :departTransport, depart_numero = :departNumero,
+                       depart_lieu = :departLieu, remarques = :remarques
+                 WHERE id = :pid""", p);
+    }
+
+    /** Sa propre ligne, entière (il la voit et la complète lui-même). */
+    @Transactional(readOnly = true)
+    public ParticipantVue participant(Long participantId) {
+        List<ParticipantVue> lignes = jdbc.query("""
+                SELECT p.*, e.utilisateur_id AS compte_eleve
+                  FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
+                 WHERE p.id = :pid""", new MapSqlParameterSource("pid", participantId), (rs, i) -> participant(rs, null));
+        if (lignes.isEmpty()) throw new RessourceIntrouvableException("Participant introuvable");
+        ParticipantVue p = lignes.getFirst();
+        return new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(), p.nom(), p.prenom(), p.plongeur(),
+                p.telephone(), p.email(), p.regimes(), p.regimePrecision(), p.urgenceNom(), p.urgenceTelephone(),
+                p.arrivee(), p.depart(), p.remarques(), true);
+    }
+
+    /** Le participant complète ses informations : le reste de sa ligne ne change pas. */
+    @Transactional
+    public void modifierMesInformations(Long participantId, DemandeMesInformations d) {
+        ParticipantVue actuel = participant(participantId);
+        LocalDateTime arrivee = moment(d.arrivee());
+        LocalDateTime depart = moment(d.depart());
+        if (arrivee != null && depart != null && depart.isBefore(arrivee)) {
+            throw new RegleMetierException("Votre départ est avant votre arrivée : vérifiez les dates.");
+        }
+        var p = parametres(null, new DemandeParticipant(actuel.eleveId(), actuel.utilisateurId(), actuel.nom(),
+                actuel.prenom(), actuel.plongeur(), d.telephone(), actuel.email(), d.regimes(), d.regimePrecision(),
+                d.urgenceNom(), d.urgenceTelephone(), d.arrivee(), d.depart(), d.remarques()))
+                .addValue("pid", participantId);
+        jdbc.update("""
+                UPDATE sejour_participant SET telephone = :telephone, regimes = :regimes,
+                       regime_precision = :regimePrecision, urgence_nom = :urgenceNom,
                        urgence_telephone = :urgenceTelephone,
                        arrivee_date = :arriveeDate, arrivee_heure = :arriveeHeure,
                        arrivee_transport = :arriveeTransport, arrivee_numero = :arriveeNumero,

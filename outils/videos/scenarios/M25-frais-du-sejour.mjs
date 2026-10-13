@@ -29,7 +29,7 @@ export default {
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2000 });
     await legende('Les comptes se recalculent aussitôt. Flora ne modifie que ce qu\'elle a saisi.', 4000);
-    await legende('Les invités sans compte reçoivent un lien et un code par e-mail pour noter leurs frais eux-mêmes.', 4500);
+    await legende('Les participants qui ne sont pas moniteurs reçoivent un lien et un code par e-mail pour noter les leurs.', 4500);
     await legende(null, 0);
     await pause(500);
   }

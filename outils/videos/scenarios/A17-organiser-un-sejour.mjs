@@ -6,7 +6,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Les vols de chacun, qui conduit quelle voiture, qui dort où, les régimes, les affaires, le programme et le partage des frais.',
+  resume: 'Demander à chacun ses informations, puis les vols, les voitures, les chambres, les régimes, les affaires, le programme et le partage des frais.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -17,6 +17,11 @@ export default {
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('En haut, ce qui reste à régler : ici, Mateo n\'a pas encore de chambre.', 4000);
+
+    await legende('« Participants » : vol, repas, personne à prévenir de chacun.', 0);
+    await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 1500 });
+    await legende('Pas besoin de tout saisir : « Demander à chacun ses informations » leur envoie un e-mail.', 4500);
+    await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
 
     await legende('« Arrivées et départs » : les participants regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
     await toucher(page.getByRole('tab', { name: 'Arrivées et départs' }), { apres: 3500 });
@@ -56,7 +61,7 @@ export default {
     await toucher(remboursement.getByRole('button', { name: 'C\'est remboursé' }), { apres: 1000 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
     await legende('Chaque dépense garde la photo de sa note. Les participants notent aussi leurs propres frais.', 4000);
-    await legende('Sans compte ? « Envoyer le lien des frais » : un lien, puis un code reçu par e-mail.', 4500);
+    await legende('Les participants notent aussi leurs frais, dans l\'appli ou par le lien reçu par e-mail.', 4500);
     await enHaut();
     await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);

@@ -655,7 +655,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-Les vols de chacun, qui conduit quelle voiture, qui dort où, les régimes, les affaires, le programme et le partage des frais.
+Demander à chacun ses informations, puis les vols, les voitures, les chambres, les régimes, les affaires, le programme et le partage des frais.
 
 Compte : `presidente@club.fr` · format ordinateur
 
@@ -809,7 +809,7 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 
 ### E2 — Le carnet du séjour
 
-Son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone.
+Son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations.
 
 Compte : `eleve@club.fr` · format téléphone
 

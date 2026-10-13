@@ -1,6 +1,6 @@
 package fr.club.plongee.sejour;
 
-import fr.club.plongee.sejour.AccesFraisService.*;
+import fr.club.plongee.sejour.AccesSejourService.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -10,18 +10,19 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Les frais d'un séjour pour un participant sans compte, à l'adresse
- * {@code /frais/{code}} de l'appli. Hors de la connexion habituelle
+ * Le séjour pour un participant qui n'est pas encadrant, à l'adresse
+ * {@code /sejour/{code}} de l'appli : ses informations (voyage, repas,
+ * personne à prévenir) et les frais. Hors de la connexion habituelle
  * ({@code /api/public/**} est ouvert dans SecurityConfig) : le contrôle se
  * fait ici, par le code de l'adresse puis le jeton reçu après le code à
- * 6 chiffres, dans l'en-tête {@code X-Jeton-Frais}. Les droits sont ceux de
- * {@link FraisService} pour ce participant.
+ * 6 chiffres, dans l'en-tête {@code X-Jeton-Sejour}. Les droits sur les
+ * frais sont ceux de {@link FraisService} pour ce participant.
  */
 @RestController
-@RequestMapping("/api/public/frais/{code}")
-public class AccesFraisController {
+@RequestMapping("/api/public/sejour/{code}")
+public class AccesSejourController {
 
-    public static final String EN_TETE_JETON = "X-Jeton-Frais";
+    public static final String EN_TETE_JETON = "X-Jeton-Sejour";
 
     public record DemandeCode(@NotBlank String email) {}
 
@@ -29,12 +30,25 @@ public class AccesFraisController {
 
     public record DepenseCreeePublique(long depenseId, FraisPublicVue vue) {}
 
-    private final AccesFraisService acces;
+    private final AccesSejourService acces;
     private final FraisService frais;
 
-    public AccesFraisController(AccesFraisService acces, FraisService frais) {
+    public AccesSejourController(AccesSejourService acces, FraisService frais) {
         this.acces = acces;
         this.frais = frais;
+    }
+
+    @GetMapping("/moi")
+    public MesInformationsVue mesInformations(@PathVariable String code,
+                                              @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        return acces.mesInformations(code, acces.acces(code, jeton));
+    }
+
+    @PutMapping("/moi")
+    public MesInformationsVue modifierMesInformations(@PathVariable String code,
+                                                      @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                                      @Valid @RequestBody SejourService.DemandeMesInformations d) {
+        return acces.modifierMesInformations(code, acces.acces(code, jeton), d);
     }
 
     @GetMapping
