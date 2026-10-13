@@ -1,12 +1,12 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo de la note.
-// Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-13, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M25',
   titre: 'Noter une dépense du séjour',
   public: 'Moniteur',
-  resume: 'Inscrit au séjour, le moniteur note ce qu\'il a payé, ou ce qu\'un élève a payé, avec la photo de la note.',
+  resume: 'Inscrit au séjour, le moniteur ouvre les frais par l\'encart en haut de la page et note ce qu\'il a payé, ou ce qu\'un élève a payé, avec la photo de la note.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, choisir, menu, vignette }) {
@@ -15,8 +15,9 @@ export default {
     await legende('Flora part au séjour à Port-Cros. « Plus », puis « Séjours ».', 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
-    await legende('« Frais » : en tête, son solde ; puis qui doit combien à qui, et les dépenses.', 0);
-    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3000 });
+    await legende('Tout en haut, l\'encart « Frais du séjour » : le total dépensé, et ce qu\'elle doit ou ce qu\'on lui doit.', 4000);
+    await legende('« Gérer les frais » : son solde, puis qui doit combien à qui, et les dépenses.', 0);
+    await toucher(page.getByRole('button', { name: 'Gérer les frais' }), { apres: 3000 });
 
     await legende('Camille, élève, a payé les glaces : elle donne la note à Flora, qui la saisit pour elle.', 0);
     await toucher(page.getByRole('button', { name: 'Ajouter une dépense' }), { apres: 900 });

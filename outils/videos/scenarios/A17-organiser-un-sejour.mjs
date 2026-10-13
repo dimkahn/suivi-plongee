@@ -1,12 +1,12 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-13, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.',
+  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -16,7 +16,8 @@ export default {
     await legende('Menu « Séjours » : chaque sortie a son séjour.', 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
-    await legende('Six onglets. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
+    await legende('Tout en haut, l\'encart « Frais du séjour » : le total dépensé, et « Gérer les frais » pour les ouvrir.', 4500);
+    await legende('Puis six onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
 
     await legende('« Participants » : une ligne par personne, avec ce qu\'elle n\'a pas encore donné.', 0);
     await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 2500 });
@@ -61,8 +62,8 @@ export default {
     await defiler(400, 1500);
     await enHaut();
 
-    await legende('« Frais » : qui a avancé quoi, pour qui. L\'appli calcule qui doit combien à qui.', 0);
-    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3500 });
+    await legende('« Gérer les frais » : qui a avancé quoi, pour qui. L\'appli calcule qui doit combien à qui.', 0);
+    await toucher(page.getByRole('button', { name: 'Gérer les frais' }), { apres: 3500 });
     await legende('Mateo rembourse Gwendoline : « C\'est remboursé », et les comptes se mettent à jour.', 0);
     const remboursement = page.locator('.remboursement').filter({ hasText: 'Mateo' }).first();
     await toucher(remboursement.getByRole('button', { name: 'C\'est remboursé' }), { apres: 1000 });

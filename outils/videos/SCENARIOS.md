@@ -423,7 +423,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### M25 — Noter une dépense du séjour
 
-Inscrit au séjour, le moniteur note ce qu'il a payé, ou ce qu'un élève a payé, avec la photo de la note.
+Inscrit au séjour, le moniteur ouvre les frais par l'encart en haut de la page et note ce qu'il a payé, ou ce qu'un élève a payé, avec la photo de la note.
 
 Compte : `e2@club.fr` · format téléphone
 
@@ -656,7 +656,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-Les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.
+L'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.
 
 Compte : `presidente@club.fr` · format ordinateur
 
