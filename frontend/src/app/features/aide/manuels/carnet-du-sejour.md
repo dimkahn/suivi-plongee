@@ -12,7 +12,7 @@ questions:
 - J'ai payé quelque chose pendant le séjour : comment le noter ?
 - Comment donner mon numéro de vol et mon régime pour le séjour ?
 ---
-Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, votre voiture, votre chambre, le programme jour par jour, les affaires à prévoir et les frais partagés.
+Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, votre voiture, votre chambre, le programme jour par jour, les affaires à prévoir et les frais partagés. **Élèves** : les comptes élèves ne sont pas encore ouverts au club ; passez par le lien de l'e-mail « Vos informations pour le séjour » (voir « Mon séjour, par le lien reçu par e-mail »).
 
 ## Pas à pas
 
@@ -28,3 +28,4 @@ Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, vo
 - Vous ne voyez ni le téléphone ni le régime des autres participants.
 - Vous pouvez aussi passer par le lien de l'e-mail « Vos informations pour le séjour », avec un code reçu par e-mail.
 - Sans compte, le carnet arrive aussi par e-mail quand l'organisateur l'envoie.
+- Cette page décrit l'appli pour un participant qui a un compte (un moniteur, ou un élève le jour où les comptes élèves seront ouverts).

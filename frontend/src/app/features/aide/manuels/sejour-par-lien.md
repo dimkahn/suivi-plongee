@@ -27,5 +27,5 @@ L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donn
 - Pas de code ? Regardez dans les indésirables, vérifiez l'adresse (celle donnée à l'organisateur), et redemandez-en un au bout d'une minute.
 - Revenez quand vous voulez compléter ou corriger (un vol changé, par exemple) : l'organisateur voit tout de suite la mise à jour.
 - **Pas d'information médicale** (allergie, traitement) dans l'appli : voyez-la directement avec l'organisateur.
-- Un élève voit les frais mais passe par un moniteur du séjour pour noter une dépense.
+- **Élèves** : c'est votre façon d'entrer, les comptes élèves ne sont pas encore ouverts au club. Vous voyez les frais, mais passez par un moniteur du séjour pour noter une dépense.
 - Les moniteurs du club n'utilisent pas ce lien : ils se connectent à l'appli, menu « Séjours ».

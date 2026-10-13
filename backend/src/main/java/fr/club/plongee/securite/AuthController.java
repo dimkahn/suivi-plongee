@@ -76,6 +76,13 @@ public class AuthController {
     private final MonCompteService monCompte;
     private final Duration dureeRefresh;
     private final Duration dureeSession;
+    /**
+     * Comptes élèves fermés (choix du club, 2026, en attendant une campagne de
+     * création) : un compte qui n'a que le rôle ELEVE ne se connecte pas. Les
+     * élèves passent par le lien et le code des séjours. Ouverts en profil dev
+     * pour la démonstration (eleve@club.fr).
+     */
+    private final boolean comptesElevesOuverts;
 
     public AuthController(AuthenticationManager authManager, DetailsUtilisateurService detailsService,
                           UtilisateurRepository utilisateurs, RefreshTokenRepository refreshTokens,
@@ -83,7 +90,9 @@ public class AuthController {
                           ReinitialisationMotDePasseService reinitialisations,
                           MonCompteService monCompte,
                           @Value("${app.jwt.duree-refresh-jours}") long jours,
-                          @Value("${app.jwt.duree-session-heures}") long heuresSession) {
+                          @Value("${app.jwt.duree-session-heures}") long heuresSession,
+                          @Value("${app.comptes-eleves-ouverts}") boolean comptesElevesOuverts) {
+        this.comptesElevesOuverts = comptesElevesOuverts;
         this.authManager = authManager;
         this.detailsService = detailsService;
         this.utilisateurs = utilisateurs;
@@ -102,6 +111,10 @@ public class AuthController {
         authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(demande.email(), demande.motDePasse()));
         Utilisateur u = utilisateurs.findByEmailIgnoreCase(demande.email()).orElseThrow();
+        if (compteEleveFerme(u)) {
+            throw new RegleMetierException("Les comptes élèves ne sont pas encore ouverts. Pour un séjour, "
+                    + "utilisez le lien reçu par e-mail ; pour le reste, voyez votre moniteur.");
+        }
         poserCookieRefresh(u, !Boolean.FALSE.equals(demande.seSouvenir()), reponse);
         return session(UtilisateurPrincipal.de(u), u);
     }
@@ -118,8 +131,15 @@ public class AuthController {
         // rotation : le jeton presente est revoque et remplace
         enregistre.setRevoque(true);
         Utilisateur u = enregistre.getUtilisateur();
+        if (compteEleveFerme(u)) throw new BadCredentialsException("Session expiree");
         poserCookieRefresh(u, enregistre.isPersistant(), reponse);
         return session(UtilisateurPrincipal.de(u), u);
+    }
+
+    /** Un compte qui n'a que le rôle ELEVE, tant que les comptes élèves sont fermés. */
+    private boolean compteEleveFerme(Utilisateur u) {
+        return !comptesElevesOuverts && u.getRoles().contains(RoleNom.ELEVE)
+                && u.getRoles().stream().allMatch(r -> r == RoleNom.ELEVE);
     }
 
     @PostMapping("/deconnexion")

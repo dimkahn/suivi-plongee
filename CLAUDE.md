@@ -832,6 +832,17 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
   `logoPng()` à chaque génération ; ne plus utiliser `app.club.nom`
   directement.
 
+**Comptes élèves fermés (choix du club, 2026).** Aucun écran ne crée de
+compte élève, et un compte qui n'a que le rôle `ELEVE` ne se connecte pas
+(`AuthController.compteEleveFerme`, 422 lisible à la connexion, refus au
+rafraîchissement) tant que `app.comptes-eleves-ouverts` est faux : défaut
+`COMPTES_ELEVES_OUVERTS=false`, vrai seulement en profil `dev` pour la
+démonstration (`eleve@club.fr`, vidéos E1/E2, tests ; `ComptesElevesFermesTest`
+vérifie la fermeture). Les élèves passent par le lien et le code des séjours.
+Le code pour élève connecté (grille en lecture, carnet, « Modifier mes
+informations ») reste en place pour une ouverture ultérieure, avec une
+campagne de création de comptes à écrire.
+
 ## Données personnelles
 
 Le club suit des mineurs. Le certificat médical n'est **jamais** stocké,

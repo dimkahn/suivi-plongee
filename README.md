@@ -65,7 +65,7 @@ Mot de passe commun : `plongee2026`.
 | `e2@club.fr` | MONITEUR E2, TIV, FICHE_SECURITE | Noter et valider N1 et N2 ; inspecter les blocs (fiche TIV) ; établir les fiches de sécurité sans être E3 |
 | `e1@club.fr` | MONITEUR E1 | Noter et valider N1 uniquement ; compléter une fiche de sécurité au retour, sans pouvoir l'établir |
 | `surface@club.fr` | SECURITE_SURFACE | Sécurité surface qui n'est pas moniteur : compléter les fiches de sécurité au retour de plongée, rien d'autre |
-| `eleve@club.fr` | ELEVE | Consulter sa propre grille, sans rien saisir |
+| `eleve@club.fr` | ELEVE | Consulter sa propre grille, sans rien saisir. **Démonstration seulement** : en production les comptes élèves sont fermés (`COMPTES_ELEVES_OUVERTS=false` par défaut), les élèves passent par le lien et le code des séjours |
 
 Ouvrir une grille N2 avec le compte E1 est la démonstration la plus parlante :
 les boutons sont désactivés et l'écran explique pourquoi.
