@@ -194,8 +194,11 @@ function aVerifier(m: MoniteurVue): boolean {
                       {{ m.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
                     </button>
                     @if (m.autorisationImage) {
+                      <button type="button" role="menuitem" (click)="appareilPhoto.click()">
+                        📷 {{ m.aPhoto ? 'Reprendre la photo' : 'Prendre une photo' }}
+                      </button>
                       <button type="button" role="menuitem" (click)="fichierPhoto.click()">
-                        {{ m.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
+                        🖼️ Choisir dans mes photos
                       </button>
                     }
                     <button type="button" role="menuitem" class="danger" (click)="supprimer(m)">
@@ -204,7 +207,10 @@ function aVerifier(m: MoniteurVue): boolean {
                   </div>
                 }
               </div>
-              <!-- Hors du menu : le menu se ferme avant que la photo soit choisie. -->
+              <!-- Hors du menu : le menu se ferme avant que la photo soit choisie.
+                   « capture » ouvre directement l'appareil photo ; sans lui, la galerie. -->
+              <input #appareilPhoto type="file" accept="image/jpeg,image/png" capture="environment" hidden
+                     (change)="choisirPhoto(m, $event)">
               <input #fichierPhoto type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto(m, $event)">
             </div>
 

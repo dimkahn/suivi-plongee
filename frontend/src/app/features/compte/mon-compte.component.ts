@@ -56,8 +56,13 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
             <div class="avatar silhouette" aria-label="Pas de photo">{{ initiales() }}</div>
           }
           <div class="actions-photo">
+            <!-- « capture » ouvre directement l'appareil photo (côté écran : un selfie) ; sans lui, la galerie. -->
             <label class="bouton-discret upload">
-              {{ urlPhoto() ? 'Changer ma photo' : 'Déposer ma photo' }}
+              📷 Prendre une photo
+              <input type="file" accept="image/jpeg,image/png" capture="user" hidden (change)="choisirPhoto($event)">
+            </label>
+            <label class="bouton-discret upload">
+              🖼️ Choisir dans mes photos
               <input type="file" accept="image/jpeg,image/png" hidden (change)="choisirPhoto($event)">
             </label>
             @if (urlPhoto()) {

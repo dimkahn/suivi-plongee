@@ -3,7 +3,7 @@ titre: Créer le dossier d'un élève
 rubrique: Administrateur
 videos: A6
 ecran: /admin/eleves
-mots: élève, dossier, créer, nouveau, CACI, certificat médical, date de l'examen, cases cochées, mineur, autorisation parentale, responsable légal, droit à l'image, photo, archiver, tailles
+mots: élève, dossier, créer, nouveau, CACI, certificat médical, date de l'examen, cases cochées, mineur, autorisation parentale, responsable légal, droit à l'image, photo, appareil photo, galerie, prendre une photo, archiver, tailles
 questions:
 - Comment ajouter un nouvel élève ?
 - Où saisir le certificat médical ?
@@ -18,7 +18,7 @@ Administration, « Élèves » : identité, CACI (date de l'examen, fin de valid
 2. Ajoutez un élève : identité, contact d'urgence.
 3. Recopiez la date de l'examen : la fin de validité se calcule seule, un an plus tard. Puis le médecin signataire et les mêmes cases que sur le CACI FFESSM. « L'ensemble des activités » exclut les cases « ou bien seulement ». Les moniteurs voient tout cela en touchant la case CACI d'« Infos élèves ».
 4. Pour un mineur, cochez l'autorisation du responsable légal : elle couvre la pratique.
-5. Le droit à l'image est un accord à part : sans lui, pas de photo.
+5. Le droit à l'image est un accord à part : sans lui, pas de photo. Avec lui, « Prendre une photo » ouvre l'appareil photo du téléphone, « Choisir dans mes photos » reprend une photo de la galerie ; recadrez, validez. Pour un élève déjà créé : menu « Actions » de sa ligne, mêmes choix.
 6. Enregistrez, puis inscrivez-le en formation (voir « Inscrire un élève en formation »).
 
 ## Bon à savoir

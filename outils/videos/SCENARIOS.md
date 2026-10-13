@@ -64,12 +64,13 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 3. Ils sont saisis par un administrateur : c'est à lui qu'on remet un nouveau certificat.
 4. Votre photo apparaît dans le trombinoscope des moniteurs.
 5. La déposer vaut accord pour cet affichage ; vous pouvez la retirer à tout moment.
-6. Recadrez si besoin, puis validez.
-7. C'est fait.
-8. Plus bas : votre numéro de licence…
-9. … l'e-mail qui sert à vous connecter…
-10. … et votre mot de passe : 10 caractères au moins. Vos autres appareils seront déconnectés.
-11. Votre nom est sur les fiches de sécurité et l'historique des notes : pour le corriger, voyez un administrateur.
+6. « Prendre une photo » ouvre l'appareil photo ; « Choisir dans mes photos », la galerie du téléphone.
+7. Recadrez si besoin, puis validez.
+8. C'est fait.
+9. Plus bas : votre numéro de licence…
+10. … l'e-mail qui sert à vous connecter…
+11. … et votre mot de passe : 10 caractères au moins. Vos autres appareils seront déconnectés.
+12. Votre nom est sur les fiches de sécurité et l'historique des notes : pour le corriger, voyez un administrateur.
 
 ### M3 — Faire l'appel d'une séance
 

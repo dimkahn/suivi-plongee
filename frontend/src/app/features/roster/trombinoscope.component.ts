@@ -191,10 +191,17 @@ function idCible(c: Cible): number {
                 {{ envoi() ? 'Enregistrement…' : "Enregistrer le droit à l'image" }}
               </button>
             } @else {
-              <label class="bouton-discret upload">
-                Prendre ou choisir une photo
-                <input type="file" accept="image/*" hidden (change)="choisirPhoto($event)">
-              </label>
+              <!-- « capture » ouvre directement l'appareil photo ; sans lui, la galerie du téléphone. -->
+              <div class="choix-photo">
+                <label class="bouton-discret upload">
+                  📷 Prendre une photo
+                  <input type="file" accept="image/*" capture="environment" hidden (change)="choisirPhoto($event)">
+                </label>
+                <label class="bouton-discret upload">
+                  🖼️ Choisir dans mes photos
+                  <input type="file" accept="image/*" hidden (change)="choisirPhoto($event)">
+                </label>
+              </div>
             }
           </section>
         }
@@ -283,6 +290,7 @@ function idCible(c: Cible): number {
     .liste-export { list-style: none; padding: 0; margin: 0 0 var(--pas-2); }
     .liste-export .case { align-items: center; }
     .liste-export .case input { margin-top: 0; }
+    .choix-photo { display: grid; gap: var(--pas); }
     .upload { display: flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
               border: 1px solid var(--trait); border-radius: var(--r-s); }
   `]

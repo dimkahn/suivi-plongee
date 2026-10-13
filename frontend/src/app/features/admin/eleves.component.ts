@@ -167,8 +167,14 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           @if (apercuCreation(); as apercu) {
             <img [src]="apercu" alt="Photo choisie pour le nouvel élève">
           }
+          <!-- « capture » ouvre directement l'appareil photo ; sans lui, la galerie du téléphone. -->
           <label class="bouton-discret upload" [class.inactif]="!autorisationImageCreation">
-            {{ apercuCreation() ? 'Changer la photo' : 'Choisir une photo' }}
+            📷 Prendre une photo
+            <input type="file" accept="image/jpeg,image/png" capture="environment" hidden
+                   [disabled]="!autorisationImageCreation" (change)="choisirPhotoCreation($event)">
+          </label>
+          <label class="bouton-discret upload" [class.inactif]="!autorisationImageCreation">
+            🖼️ Choisir dans mes photos
             <input type="file" accept="image/jpeg,image/png" hidden [disabled]="!autorisationImageCreation"
                    (change)="choisirPhotoCreation($event)">
           </label>
@@ -307,8 +313,11 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                         {{ e.autorisationImage ? "Retirer le droit à l'image" : "Recueillir le droit à l'image" }}
                       </button>
                       @if (e.autorisationImage) {
+                        <button type="button" role="menuitem" (click)="appareilPhoto.click()">
+                          📷 {{ e.aPhoto ? 'Reprendre la photo' : 'Prendre une photo' }}
+                        </button>
                         <button type="button" role="menuitem" (click)="fichierPhoto.click()">
-                          {{ e.aPhoto ? 'Remplacer la photo' : 'Déposer une photo' }}
+                          🖼️ Choisir dans mes photos
                         </button>
                       }
                       @if (filtreSaisonId() && !aCursus(e)) {
@@ -330,7 +339,10 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                     </div>
                   }
                 </div>
-                <!-- Hors du menu : le menu se ferme avant que la photo soit choisie. -->
+                <!-- Hors du menu : le menu se ferme avant que la photo soit choisie.
+                     « capture » ouvre directement l'appareil photo ; sans lui, la galerie. -->
+                <input #appareilPhoto type="file" accept="image/jpeg,image/png" capture="environment" hidden
+                       (change)="choisirPhoto(e, $event)">
                 <input #fichierPhoto type="file" accept="image/jpeg,image/png" hidden
                        (change)="choisirPhoto(e, $event)">
               </div>

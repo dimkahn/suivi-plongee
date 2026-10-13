@@ -3,7 +3,7 @@ titre: Ajouter un moniteur
 rubrique: Administrateur
 videos: A5
 ecran: /admin/moniteurs
-mots: moniteur, encadrant, compte, créer, niveau d'encadrement, E1, E2, E3, rôle, administrateur, directeur technique, TIV, désactiver, lien, CACI, certificat médical, cases cochées, médecin, niveau préparé, stagiaire, formation, tuteur, fiche de sécurité, droit, sécurité surface, pas moniteur, bateau
+mots: moniteur, encadrant, compte, créer, niveau d'encadrement, E1, E2, E3, rôle, administrateur, directeur technique, TIV, désactiver, lien, CACI, certificat médical, cases cochées, médecin, niveau préparé, stagiaire, formation, tuteur, fiche de sécurité, droit, sécurité surface, photo, appareil photo, galerie, pas moniteur, bateau
 questions:
 - Comment permettre à un moniteur qui n'est pas E3 d'établir les fiches de sécurité ?
 - Comment créer un compte pour la sécurité surface, qui n'est pas moniteur ?
@@ -30,7 +30,7 @@ Administration, « Moniteurs » : créez le compte avec le niveau d'encadrement,
 - Le niveau d'encadrement décide de ce qu'il peut noter (E1 → N1, E2 → N2, E3 → N3).
 - « Niveau d'encadrement préparé » : pour un moniteur en formation (par exemple un E2 qui prépare le E3), toujours au-dessus de son niveau. Un stagiaire E3 encadre comme un E3 dans la proposition automatique des palanquées, sous la responsabilité de son tuteur. Ce qu'il peut noter ne change pas.
 - Dans la liste, touchez la date du CACI d'un moniteur pour voir son détail (médecin, cases cochées). « · limites » signale un CACI avec limites et préconisations : le détail est sur le certificat papier, pas dans l'appli.
-- Depuis la même liste : désactiver un compte, renvoyer le lien de mot de passe, recueillir le droit à l'image et déposer une photo.
+- Depuis la même liste : désactiver un compte, renvoyer le lien de mot de passe, recueillir le droit à l'image et mettre une photo (« Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » la galerie du téléphone).
 - Fiches de sécurité : les E3, E4 et administrateurs les établissent et les modifient d'office ; un autre moniteur seulement si vous lui donnez ce droit (case « Établir les fiches de sécurité sans être E3 ni E4 », badge « Fiches sécu » dans la liste). Ce droit ne fait pas de lui un directeur de plongée, qui reste E3 minimum. Tous les moniteurs complètent les fiches au retour de plongée.
 
 ## Comptes « Sécurité surface »
