@@ -1,5 +1,6 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { IdentiteService } from '../../core/identite.service';
@@ -135,9 +136,10 @@ export class ConnexionComponent {
         const retour = this.route.snapshot.queryParamMap.get('retour');
         this.router.navigateByUrl(retour ?? '/');
       },
-      error: () => {
+      error: (e: HttpErrorResponse) => {
         this.envoi.set(false);
-        this.erreur.set('E-mail ou mot de passe incorrect.');
+        // 422 : compte reconnu mais pas encore ouvert (compte élève) ; sinon, identifiants refusés.
+        this.erreur.set(e.status === 422 && e.error?.detail ? e.error.detail : 'E-mail ou mot de passe incorrect.');
       }
     });
   }

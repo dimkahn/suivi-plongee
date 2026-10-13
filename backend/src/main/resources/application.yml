@@ -40,6 +40,10 @@ app:
   club:
     # Nom de la structure, en-tete obligatoire de la fiche de securite (A322-72).
     nom: ${CLUB_NOM:Club de plongee}
+  # Comptes eleves fermes (choix du club, 2026) : un compte qui n'a que le role
+  # ELEVE ne peut pas se connecter. Les eleves passent par le lien et le code
+  # des sejours. A rouvrir (true) le jour ou le club cree des comptes eleves.
+  comptes-eleves-ouverts: ${COMPTES_ELEVES_OUVERTS:false}
 
 # Seul /actuator/health est exposé (autorisé sans jeton dans SecurityConfig),
 # pour le contrôle de santé du déploiement. Le serveur SMTP n'y est pas
@@ -72,6 +76,9 @@ spring:
       enabled: true
   flyway:
     locations: classpath:db/migration, classpath:db/demo
+# La demonstration garde le compte eleve@club.fr (videos, tests).
+app:
+  comptes-eleves-ouverts: true
 
 ---
 spring:

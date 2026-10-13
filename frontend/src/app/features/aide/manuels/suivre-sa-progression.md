@@ -21,5 +21,6 @@ Un compte élève ne voit que sa propre formation : la grille de compétences, e
 
 ## Bon à savoir
 
+- **Les comptes élèves ne sont pas encore ouverts au club** : pour l'instant, demandez votre fiche de suivi à vos moniteurs (ils l'exportent en PDF). Cette page décrit ce qui sera possible quand ils le seront.
 - Vous ne pouvez rien saisir : ce sont les moniteurs qui notent.
 - Une erreur sur votre fiche ? Parlez-en aux encadrants de votre groupe.
