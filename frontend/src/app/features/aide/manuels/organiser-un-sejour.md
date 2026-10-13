@@ -3,7 +3,7 @@ titre: Organiser un séjour
 rubrique: Administrateur
 videos: A17, M25
 ecran: /sejours
-mots: séjour, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte, note, ticket, facture, photo, justificatif, lien, code, invité, sans compte, otp, demander, formulaire, questionnaire, inscription
+mots: séjour, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte, note, ticket, facture, photo, galerie, appareil photo, justificatif, lien, code, invité, sans compte, otp, demander, formulaire, questionnaire, inscription
 questions:
 - Comment noter les vols d'arrivée et de départ des participants ?
 - Comment demander à chaque participant de remplir ses informations ?
@@ -33,7 +33,7 @@ Menu « Séjours », puis la sortie : participants, arrivées et départs, voitu
 7. **Repas** : le nombre de couverts et, régime par régime, qui est concerné.
 8. **Affaires** : « Modifier la liste », « Partir de la liste type », puis ajoutez ou retirez des lignes : papiers, plongée, séjour.
 9. **Programme** : « Ajouter un rendez-vous » (jour, heure, lieu). Les plongées de la sortie s'y ajoutent toutes seules.
-10. **Frais** : « Ajouter une dépense » (quoi, montant, qui l'a payé, partagé entre qui ; 2 parts pour quelqu'un qui compte double) et la **photo de la note**. L'appli calcule le compte de chacun et **qui doit combien à qui**, au centime près ; « C'est remboursé » note le remboursement fait. Les participants saisissent aussi leurs propres dépenses (voir plus bas), dans l'appli ou par le lien reçu avec la demande d'informations.
+10. **Frais** : « Ajouter une dépense » (quoi, montant, qui l'a payé, partagé entre qui ; 2 parts pour quelqu'un qui compte double) et la **photo de la note** (« Prendre une photo » ou « Choisir dans mes photos », la galerie du téléphone). L'appli calcule le compte de chacun et **qui doit combien à qui**, au centime près ; « C'est remboursé » note le remboursement fait. Les participants saisissent aussi leurs propres dépenses (voir plus bas), dans l'appli ou par le lien reçu avec la demande d'informations.
 11. **Infos pratiques** : numéros d'urgence, centre de plongée, caisson le plus proche.
 12. « Envoyer le carnet par e-mail » : chaque participant reçoit son voyage, sa voiture, sa chambre, le programme, la liste des affaires et ses frais. « Imprimer le carnet » met tout sur une page, à imprimer ou enregistrer en PDF.
 

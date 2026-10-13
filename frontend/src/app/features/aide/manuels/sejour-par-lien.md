@@ -3,7 +3,7 @@ titre: Mon séjour, par le lien reçu par e-mail
 rubrique: Découverte
 videos: A17
 ecran: /aide
-mots: séjour, lien, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, rembourser
+mots: séjour, lien, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, appareil photo, rembourser
 questions:
 - J'ai reçu un e-mail pour le séjour : comment entrer ?
 - Comment donner mon numéro de vol et mes horaires d'arrivée ?
@@ -19,7 +19,7 @@ L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donn
 2. Donnez l'adresse e-mail que vous avez donnée à l'organisateur, puis « Recevoir le code ».
 3. Entrez le code à 6 chiffres reçu par e-mail, puis « Entrer ».
 4. « Mes informations » : votre téléphone, **votre arrivée et votre départ** (jour, heure, avion ou train, **numéro de vol ou de train**, aéroport ou gare), vos repas (régime), la personne à prévenir en cas d'urgence, un mot pour l'organisateur. « Enregistrer mes informations ».
-5. « Frais » : les dépenses du séjour, et qui doit combien à qui. « Ajouter une dépense » pour noter ce que vous avez payé, avec la photo de la note.
+5. « Frais » : les dépenses du séjour, et qui doit combien à qui. « Ajouter une dépense » pour noter ce que vous avez payé, avec la photo de la note : « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » reprend une photo déjà prise.
 
 ## Bon à savoir
 

@@ -205,8 +205,15 @@ interface PhotoAEnvoyer {
             </span>
           }
         </div>
-        <label class="bouton-discret choisir-photo" for="d-photo">📷 Prendre ou choisir la photo</label>
-        <input id="d-photo" class="cache" type="file" accept="image/*" capture="environment" multiple
+        <!-- Deux champs : « capture » ouvre directement l'appareil photo,
+             sans lui le téléphone propose la galerie. -->
+        <div class="actions">
+          <label class="bouton-discret choisir-photo" for="d-photo-prendre">📷 Prendre une photo</label>
+          <label class="bouton-discret choisir-photo" for="d-photo-choisir">🖼️ Choisir dans mes photos</label>
+        </div>
+        <input id="d-photo-prendre" class="cache" type="file" accept="image/*" capture="environment"
+               (change)="choisirPhotos($event)">
+        <input id="d-photo-choisir" class="cache" type="file" accept="image/*" multiple
                (change)="choisirPhotos($event)">
         <p class="secondaire">Une photo lisible du ticket ou de la facture : chacun peut la voir.</p>
       </fieldset>
