@@ -578,18 +578,27 @@ function participantVide(): BrouillonParticipant {
         <div><label for="v-conducteur">Conducteur</label>
           <select id="v-conducteur" [(ngModel)]="voiture.conducteurId">
             <option [ngValue]="null">À trouver</option>
-            @for (p of sejour()?.participants ?? []; track p.id) { <option [ngValue]="p.id">{{ nomComplet(p) }}</option> }
+            @for (p of sejour()?.participants ?? []; track p.id) {
+              @let ailleurs = autreVoiture(p.id);
+              <option [ngValue]="p.id" [disabled]="!!ailleurs">{{ nomComplet(p) }}@if (ailleurs) { (déjà dans « {{ ailleurs }} »)}</option>
+            }
           </select></div>
         <div><label for="v-trajet">Trajet</label>
           <input id="v-trajet" [(ngModel)]="voiture.trajet" maxlength="200" placeholder="Aller-retour depuis le club"></div>
       </div>
       <fieldset>
         <legend>Passagers</legend>
+        <p class="aide">Une personne n'est que dans une seule voiture : celles déjà dans une autre
+          voiture (conducteur ou passager) sont grisées.</p>
         <div class="regimes">
           @for (p of sejour()?.participants ?? []; track p.id) {
             @if (p.id !== voiture.conducteurId) {
-              <label class="case"><input type="checkbox" [checked]="voiture.passagerIds.includes(p.id)"
-                                         (change)="basculer(voiture.passagerIds, p.id)"> {{ nomComplet(p) }}</label>
+              @let ailleurs = autreVoiture(p.id);
+              <label class="case" [class.indisponible]="ailleurs">
+                <input type="checkbox" [checked]="voiture.passagerIds.includes(p.id)"
+                       [disabled]="!!ailleurs && !voiture.passagerIds.includes(p.id)"
+                       (change)="basculer(voiture.passagerIds, p.id)"> {{ nomComplet(p) }}
+                @if (ailleurs) { <small>(déjà dans « {{ ailleurs }} »)</small> }</label>
             }
           }
         </div>
@@ -838,6 +847,8 @@ function participantVide(): BrouillonParticipant {
     .regimes { display: flex; flex-wrap: wrap; gap: 0 var(--pas-2); }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; }
+    .case.indisponible { color: var(--craie); }
+    .aide { margin: 0 0 var(--pas); font-size: .9rem; color: var(--craie); }
     .liste-vol { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 0 var(--pas-2);
                  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
     .liste-vol li { display: flex; flex-direction: column; padding-bottom: var(--pas); }
@@ -1022,6 +1033,11 @@ export class SejourComponent {
 
   voituresDe(id: number): VoitureVue[] {
     return (this.sejour()?.voitures ?? []).filter(v => v.conducteurId === id || v.passagerIds.includes(id));
+  }
+
+  /** Le nom de l'autre voiture où est déjà ce participant (une seule voiture par personne), sinon null. */
+  autreVoiture(id: number): string | null {
+    return this.voituresDe(id).find(v => v.id !== this.voitureId)?.nom ?? null;
   }
 
   chambreDe(id: number): { chambre: string; logement: string; avec: string[] } | null {

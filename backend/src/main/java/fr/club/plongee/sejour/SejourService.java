@@ -43,7 +43,10 @@ import java.util.stream.Collectors;
  * <p>
  * Les avertissements (voiture ou chambre trop pleine, participant sans
  * chambre...) sont calculés ici et ne bloquent jamais : l'organisateur
- * peut avoir ses raisons (une voiture à l'aller, une autre au retour).
+ * peut avoir ses raisons. Seule exception : une personne n'est que dans
+ * une seule voiture, conducteur ou passager (refus à l'enregistrement) ;
+ * l'avertissement « plusieurs voitures » ne sert plus qu'aux séjours
+ * saisis avant cette règle.
  */
 @Service
 public class SejourService {
@@ -396,7 +399,7 @@ public class SejourService {
         voituresDe.forEach((p, liste) -> {
             if (liste.size() > 1) {
                 resultat.add(noms.get(p) + " est dans plusieurs voitures (« " + String.join(" », « ", liste)
-                        + " ») : vérifiez que c'est voulu (aller et retour ?).");
+                        + " ») : retirez-le de l'une d'elles.");
             }
         });
 
@@ -697,7 +700,7 @@ public class SejourService {
     @Transactional
     public void creerVoiture(Long sortieId, DemandeVoiture d) {
         sorties.sortie(sortieId);
-        List<Long> passagers = verifier(sortieId, d);
+        List<Long> passagers = verifier(sortieId, null, d);
         KeyHolder cle = new GeneratedKeyHolder();
         jdbc.update("""
                 INSERT INTO sejour_voiture (sortie_id, nom, places, conducteur_id, trajet, remarques)
@@ -709,7 +712,7 @@ public class SejourService {
     @Transactional
     public void modifierVoiture(Long sortieId, Long voitureId, DemandeVoiture d) {
         voitureDe(sortieId, voitureId);
-        List<Long> passagers = verifier(sortieId, d);
+        List<Long> passagers = verifier(sortieId, voitureId, d);
         jdbc.update("""
                 UPDATE sejour_voiture SET nom = :nom, places = :places, conducteur_id = :conducteur,
                        trajet = :trajet, remarques = :remarques WHERE id = :voiture""",
@@ -724,8 +727,12 @@ public class SejourService {
         jdbc.update("DELETE FROM sejour_voiture WHERE id = :v", new MapSqlParameterSource("v", voitureId));
     }
 
-    /** Les passagers retenus : sans doublon, et sans le conducteur, qui ne se compte pas deux fois. */
-    private List<Long> verifier(Long sortieId, DemandeVoiture d) {
+    /**
+     * Les passagers retenus : sans doublon, et sans le conducteur, qui ne se compte pas deux fois.
+     * Chacun n'est que dans une seule voiture du séjour, conducteur ou passager (choix du club,
+     * 2026) : un conducteur ne peut pas être passager d'une autre voiture.
+     */
+    private List<Long> verifier(Long sortieId, Long voitureId, DemandeVoiture d) {
         if (d.places() < 1 || d.places() > 9) {
             throw new RegleMetierException("Une voiture compte de 1 à 9 places, conducteur compris.");
         }
@@ -734,6 +741,26 @@ public class SejourService {
         List<Long> tous = new ArrayList<>(passagers);
         if (d.conducteurId() != null) tous.add(d.conducteurId());
         verifierParticipants(sortieId, tous);
+        if (!tous.isEmpty()) {
+            MapSqlParameterSource p = new MapSqlParameterSource("sortie", sortieId).addValue("ids", tous)
+                    .addValue("voiture", voitureId == null ? -1L : voitureId);
+            List<String> dejaPris = jdbc.query("""
+                    SELECT pa.prenom || ' ' || pa.nom AS qui, v.nom AS voiture, 'conducteur' AS role
+                      FROM sejour_voiture v JOIN sejour_participant pa ON pa.id = v.conducteur_id
+                     WHERE v.sortie_id = :sortie AND v.id <> :voiture AND v.conducteur_id IN (:ids)
+                    UNION ALL
+                    SELECT pa.prenom || ' ' || pa.nom, v.nom, 'passager'
+                      FROM sejour_voiture_passager vp
+                      JOIN sejour_voiture v ON v.id = vp.voiture_id
+                      JOIN sejour_participant pa ON pa.id = vp.participant_id
+                     WHERE v.sortie_id = :sortie AND v.id <> :voiture AND vp.participant_id IN (:ids)""",
+                    p, (rs, i) -> rs.getString(1) + " est déjà " + rs.getString(3)
+                            + " de la voiture « " + rs.getString(2) + " »");
+            if (!dejaPris.isEmpty()) {
+                throw new RegleMetierException(String.join(" ; ", dejaPris)
+                        + ". Une personne ne peut être que dans une seule voiture : retirez-la d'abord de l'autre.");
+            }
+        }
         return passagers;
     }
 

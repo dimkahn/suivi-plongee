@@ -39,6 +39,10 @@ export default {
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Dessous, les voitures : le conducteur, ses passagers et les places qui restent.', 0);
     await defiler(700, 3500);
+    await legende('Chacun n\'est que dans une seule voiture : celui qui conduit ou qui a déjà une place ailleurs est grisé.', 0);
+    await toucher(page.locator('li.carte').filter({ hasText: 'Voiture de Gwendoline' })
+      .getByRole('button', { name: 'Modifier' }), { apres: 4000 });
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await enHaut();
 
     await legende('« Hébergement » : le gîte, ses chambres et leurs occupants. En haut, Mateo n\'a pas encore de chambre.', 0);

@@ -3,7 +3,7 @@ titre: Organiser un séjour
 rubrique: Administrateur
 videos: A17, M25
 ecran: /sejours
-mots: séjour, onglets, gérer les frais, encart, où sont les frais, transports, hébergement, pratique, à vérifier, à compléter, solde, parts inégales, choisir qui partage, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte, note, ticket, facture, photo, galerie, appareil photo, justificatif, lien, code, invité, sans compte, otp, demander, formulaire, questionnaire, inscription, aujourd'hui, programme du jour, rappel, veille, heure de départ, à quelle heure, embarquement
+mots: séjour, onglets, gérer les frais, encart, où sont les frais, transports, hébergement, pratique, à vérifier, à compléter, solde, parts inégales, choisir qui partage, voyage, vol, avion, train, numéro de vol, arrivée, départ, aéroport, voiture, covoiturage, conducteur, passager, grisé, une seule voiture, changer de voiture, logement, gîte, hôtel, chambre, lit, couchage, repas, régime, végétarien, sans porc, halal, cuisine, affaires, valise, liste, matériel, programme, planning, rendez-vous, infos pratiques, urgence, carnet, imprimer, e-mail, frais, dépenses, partage, rembourser, remboursement, tricount, argent, euros, comptes, solde, cagnotte, note, ticket, facture, photo, galerie, appareil photo, justificatif, lien, code, invité, sans compte, otp, demander, formulaire, questionnaire, inscription, aujourd'hui, programme du jour, rappel, veille, heure de départ, à quelle heure, embarquement
 questions:
 - Où voir le programme du jour pendant le séjour ?
 - Comment l'appli dit-elle aux participants à quelle heure être à l'aéroport ?
@@ -11,6 +11,7 @@ questions:
 - Comment demander à chaque participant de remplir ses informations ?
 - Plusieurs participants prennent le même vol : comment le saisir une seule fois ?
 - Comment répartir les participants dans les voitures ?
+- Pourquoi un participant est-il grisé dans la liste des passagers d'une voiture ?
 - Comment répartir les chambres d'un gîte ?
 - Comment connaître les régimes alimentaires du groupe ?
 - Comment faire la liste des affaires à emporter ?
@@ -34,7 +35,7 @@ Menu « Séjours », puis la sortie. Tout en haut, l'encart **Frais du séjour**
 3. Plutôt que tout saisir : « **Demander à chacun ses informations** », en haut de l'onglet Participants. Chaque participant qui a un e-mail reçoit une demande : les moniteurs complètent dans l'appli (« Modifier mes informations »), les autres (élèves, invités) par un lien et un code à 6 chiffres reçu par e-mail, sans mot de passe. Vous voyez leurs réponses dans « Participants ». « Lui demander ses informations » relance une seule personne.
 4. **Repas**, en bas de l'onglet Participants : le nombre de couverts et, régime par régime, qui est concerné.
 5. **Transports**, arrivées et départs : les participants sont regroupés par vol ou par train, pour savoir qui aller chercher et quand. Plusieurs personnes sur le même vol ? « **Un même vol pour plusieurs** » : saisissez le vol une fois (pour une arrivée, avec son heure de départ) et cochez qui le prend ; ou, sous un vol déjà saisi, « **Ajouter des personnes à ce vol** ». Dans la fiche d'un participant, « **Même voyage que…** » reprend l'arrivée et le départ d'un autre.
-6. **Transports**, voitures : « Ajouter une voiture », son nombre de places (conducteur compris), le **conducteur** et les passagers.
+6. **Transports**, voitures : « Ajouter une voiture », son nombre de places (conducteur compris), le **conducteur** et les passagers. Chacun n'est que dans **une seule voiture** : un conducteur ne peut pas être passager d'une autre voiture, ni un passager monter dans deux. Ceux qui ont déjà une place ailleurs sont grisés, avec le nom de leur voiture ; pour changer quelqu'un de voiture, retirez-le d'abord de la première.
 7. **Hébergement** : « Ajouter un logement » (gîte, hôtel), puis ses chambres, leurs couchages et leurs occupants.
 8. **Programme** : « Ajouter un rendez-vous » (jour, heure, lieu). Les plongées de la sortie s'y ajoutent toutes seules.
 9. **Frais** : « Ajouter une dépense » (quoi, montant, qui l'a payé) et la **photo de la note** (« Prendre une photo » ou « Choisir dans mes photos », la galerie du téléphone). Par défaut la dépense est partagée entre tout le monde, une part chacun ; « **Choisir qui partage** » ouvre la liste à cocher (tout le monde, les plongeurs, ou au cas par cas), et « **Parts inégales** » donne 2 parts à quelqu'un qui compte double. L'appli calcule **qui doit combien à qui**, au centime près ; « C'est remboursé » note le remboursement fait. Les participants saisissent aussi leurs propres dépenses (voir plus bas), dans l'appli ou par le lien reçu avec la demande d'informations.
@@ -57,7 +58,7 @@ Menu « Séjours », puis la sortie. Tout en haut, l'encart **Frais du séjour**
 
 ## Bon à savoir
 
-- Les **points à vérifier** sont comptés par un rond orange sur l'onglet qui permet de les régler, et listés en haut de cet onglet : voiture trop pleine, sans conducteur ou participant dans deux voitures dans **Transports** ; chambre trop pleine ou participant sans chambre dans **Hébergement**. Ils ne bloquent rien.
+- Les **points à vérifier** sont comptés par un rond orange sur l'onglet qui permet de les régler, et listés en haut de cet onglet : voiture trop pleine ou sans conducteur (et, pour un séjour saisi avant la règle « une seule voiture », participant dans deux voitures) dans **Transports** ; chambre trop pleine ou participant sans chambre dans **Hébergement**. Ils ne bloquent rien.
 - Sur téléphone, la rangée d'onglets défile de côté si elle ne tient pas sur l'écran.
 - Un participant ne dort que dans une chambre ; un départ avant l'arrivée est refusé.
 - **Qui saisit les frais** : l'organisateur, tout ; un **moniteur inscrit au séjour**, toute dépense, y compris pour un élève (les élèves passent par lui) ; les autres participants, ce qu'ils ont payé eux-mêmes. Chacun ne modifie que ce qu'il a saisi. Un remboursement se note par celui qui le reçoit, ou par un moniteur du séjour. Les photos des notes sont visibles de tous les participants.
