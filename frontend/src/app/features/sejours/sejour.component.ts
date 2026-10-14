@@ -18,6 +18,7 @@ import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
+import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 
 type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'pratique';
 
@@ -60,7 +61,8 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, JourneeSejourComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent],
+  imports: [FormsModule, JourneeSejourComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
+            MonSejourComponent],
   template: `
     @if (sejour(); as s) {
       <div class="entete">
@@ -113,29 +115,7 @@ function participantVide(): BrouillonParticipant {
       </section>
 
       @if (moi(); as m) {
-        <section class="carte mon-voyage" aria-label="Mon séjour">
-          <details [open]="impression()">
-            <summary>
-              <span class="titre-replie">Mon séjour</span>
-              <span class="secondaire">{{ resumeMoi(m) }}</span>
-            </summary>
-            <p><strong>Arrivée :</strong> {{ texteTrajet(m.arrivee) }}</p>
-            <p><strong>Départ :</strong> {{ texteTrajet(m.depart) }}</p>
-            @for (v of voituresDe(m.id); track v.id) {
-              <p><strong>Voiture :</strong> « {{ v.nom }} »@if (v.trajet) {, {{ v.trajet }}}
-                — {{ v.conducteurId === m.id ? 'vous conduisez' : 'conduite par ' + nomDe(v.conducteurId) }}</p>
-            }
-            @if (chambreDe(m.id); as c) {
-              <p><strong>Chambre :</strong> « {{ c.chambre }} », {{ c.logement }}@if (c.avec.length) {, avec {{ c.avec.join(', ') }}}</p>
-            }
-            @for (r of mesRemboursements(m.id); track $index) {
-              <p><strong>Frais :</strong> {{ r }}</p>
-            }
-          </details>
-          <button type="button" class="bouton-discret sans-impression" (click)="mesInfosOuvertes.set(true)">
-            Modifier mes informations
-          </button>
-        </section>
+        <app-mon-sejour [sejour]="s" [moi]="m" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
                       (fermer)="mesInfosOuvertes.set(false)">
           @if (mesInfosOuvertes()) {
@@ -145,7 +125,7 @@ function participantVide(): BrouillonParticipant {
         </app-dialogue>
       }
 
-      <div class="onglets sans-impression" role="tablist">
+      <div class="onglets sans-impression" role="tablist" id="onglets-sejour">
         @for (o of onglets(); track o.code) {
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === o.code"
                   [attr.aria-selected]="onglet() === o.code" (click)="onglet.set(o.code)">
@@ -801,12 +781,7 @@ function participantVide(): BrouillonParticipant {
     .encart-frais p { margin: var(--pas) 0 0; }
     .encart-frais-moi { font-weight: 700; color: var(--profond); }
     .encart-frais .bouton-principal { min-height: 48px; font-size: 1.0625rem; }
-    .mon-voyage { padding: var(--pas) var(--pas-2); margin: var(--pas-2) 0; display: flex; align-items: center;
-                  gap: var(--pas); flex-wrap: wrap; }
-    .mon-voyage details { flex: 1 1 20rem; }
-    .mon-voyage p { margin: var(--pas) 0 0; }
     summary { min-height: 44px; display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; cursor: pointer; }
-    .titre-replie { font-family: Poppins, sans-serif; font-weight: 700; font-size: 1.0625rem; }
     .liste-participants { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: var(--pas); }
     .liste-participants > li { padding: 0 var(--pas-2); }
     .liste-participants details[open] { padding-bottom: var(--pas-2); }
@@ -1001,19 +976,6 @@ export class SejourComponent {
     ].filter((x): x is string => x !== null);
   }
 
-  /** « arrivée vendredi 03/06 à 18h30 · voiture « Gwendoline » · chambre 2 · vous devez 25,00 € à Inès Roux ». */
-  resumeMoi(m: ParticipantVue): string {
-    const t = m.arrivee;
-    const arrivee = t?.date ? 'arrivée ' + jourLong(t.date).slice(0, -5).toLowerCase() + (t.heure ? ' à ' + heure(t.heure) : '')
-      : 'arrivée à préciser';
-    return [
-      arrivee,
-      ...this.voituresDe(m.id).map(v => `voiture « ${v.nom} »`),
-      this.chambreDe(m.id) ? `chambre « ${this.chambreDe(m.id)!.chambre} »` : null,
-      ...this.mesRemboursements(m.id)
-    ].filter(Boolean).join(' · ');
-  }
-
   majuscule(t: string): string {
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
@@ -1038,17 +1000,6 @@ export class SejourComponent {
   /** Le nom de l'autre voiture où est déjà ce participant (une seule voiture par personne), sinon null. */
   autreVoiture(id: number): string | null {
     return this.voituresDe(id).find(v => v.id !== this.voitureId)?.nom ?? null;
-  }
-
-  chambreDe(id: number): { chambre: string; logement: string; avec: string[] } | null {
-    for (const l of this.sejour()?.logements ?? []) {
-      for (const c of l.chambres) {
-        if (c.occupantIds.includes(id)) {
-          return { chambre: c.nom, logement: l.nom, avec: c.occupantIds.filter(o => o !== id).map(o => this.nomDe(o)) };
-        }
-      }
-    }
-    return null;
   }
 
   /** « vous devez 25,00 € à Inès Roux », « Léo Durand vous doit 10,00 € ». */
@@ -1186,6 +1137,18 @@ export class SejourComponent {
   ouvrirFrais(): void {
     this.onglet.set('frais');
     setTimeout(() => document.getElementById('frais-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
+  /** Une tuile de « Mon séjour » : la fenêtre « Mes informations », ou l'onglet qui en donne le détail. */
+  ouvrirDepuisMonSejour(cible: CibleMonSejour): void {
+    if (cible === 'infos') {
+      this.mesInfosOuvertes.set(true);
+    } else if (cible === 'frais') {
+      this.ouvrirFrais();
+    } else {
+      this.onglet.set(cible);
+      setTimeout(() => document.getElementById('onglets-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
   }
 
   /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
