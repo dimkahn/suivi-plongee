@@ -1,5 +1,5 @@
 // A1 — Tour de l'administration.
-// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-14, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -31,6 +31,10 @@ export default {
       ['Personnes', 'Les personnes :', [
         ['Moniteurs', 'Les comptes des encadrants : niveau, rôles, CACI.'],
         ['Élèves', 'Les dossiers : autorisations, droit à l\'image, photo, tailles de matériel.']
+      ]],
+      ['Matériel', 'Le matériel du club, que l\'administrateur gère avec le directeur technique :', [
+        ['Inventaire du matériel', 'Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.'],
+        ['Prêts de matériel', 'Prêter, rendre, avec les photos avant et après.']
       ]],
       ['Contenu pédagogique', 'Puis le contenu pédagogique, qui se règle rarement :', [
         ['Référentiel MFT', 'Les compétences fédérales, niveau par niveau.'],

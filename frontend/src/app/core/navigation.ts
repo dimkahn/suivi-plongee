@@ -109,6 +109,8 @@ export class NavigationService {
         return null;
       case 'sejours':
         return s.length === 2 ? { libelle: 'Séjours', lien: '/sejours' } : null;
+      case 'groupes':
+        return { libelle: 'Séjours', lien: '/sejours' };
       case 'groupes-entrainement':
         return { libelle: 'Infos élèves', lien: '/eleves', parametres: { groupe: q['groupe'] ?? null } };
 
@@ -129,7 +131,8 @@ export class NavigationService {
       }
 
       case 'materiel':
-        if (s.length === 1) return null;
+        // L'administrateur l'ouvre depuis « Administration » ; le DT et le TIV, depuis le menu.
+        if (s.length === 1) return this.auth.estAdmin() ? { libelle: 'Administration', lien: '/admin' } : null;
         if (s.length === 3 && s[2] === 'tiv') return { libelle: 'Fiche du bloc', lien: `/materiel/${s[1]}` };
         return { libelle: 'Matériel', lien: '/materiel' };
 

@@ -3,8 +3,9 @@ titre: Tour de l'administration et début de saison
 rubrique: Administrateur
 videos: A1
 ecran: /admin
-mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club
+mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club, matériel, inventaire, prêts
 questions:
+- Où est le matériel quand je suis administrateur ?
 - Que faire en début de saison ?
 - Dans quel ordre préparer la rentrée ?
 - Que contient l'administration ?
@@ -31,6 +32,10 @@ La page « Administration » les range par moment de l'année.
 
 - **Moniteurs** : les comptes des encadrants (niveau, rôles, CACI).
 - **Élèves** : les dossiers (autorisations, droit à l'image, photo, tailles de matériel).
+
+**Matériel**
+
+- **Inventaire du matériel** et **Prêts de matériel** : le domaine du directeur technique, que l'administrateur supplée. Le directeur technique, lui, garde « Matériel » dans son menu.
 
 **Contenu pédagogique**
 

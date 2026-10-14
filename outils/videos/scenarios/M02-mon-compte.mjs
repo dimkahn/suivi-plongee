@@ -1,5 +1,5 @@
 // M2 — Mon compte : photo, e-mail, mot de passe.
-// Tournage du 2026-10-13, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-14, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { writeFile, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -52,6 +52,8 @@ export default {
     await pause(4000);
     await legende('Votre nom est sur les fiches de sécurité et l\'historique des notes : '
       + 'pour le corriger, voyez un administrateur.', 4500);
+    await defiler(500);
+    await legende('Tout en bas, « Se déconnecter » : à faire sur un appareil partagé.', 3500);
     await enHaut();
     await legende(null, 0);
     await pause(500);

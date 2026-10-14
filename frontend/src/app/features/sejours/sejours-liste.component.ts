@@ -24,6 +24,13 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
       }
     </p>
 
+    @if (auth.estMoniteur() || auth.estAdmin()) {
+      <a class="carte groupes" routerLink="/groupes">
+        <span class="nom">Groupes de plongeurs</span>
+        <span class="secondaire">La liste des plongeurs d'un séjour, reprise dans ses fiches de sécurité.</span>
+      </a>
+    }
+
     @if (encadrant()) {
       <div class="onglets" role="tablist">
         <button type="button" role="tab" class="bouton-discret" [class.actif]="!toutes()"
@@ -60,6 +67,8 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
     .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; }
     .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
     .sejours { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    .groupes { display: flex; flex-direction: column; gap: 2px; padding: var(--pas-2); min-height: 44px;
+               margin: var(--pas-2) 0; text-decoration: none; color: inherit; }
     .sejours a { display: flex; flex-direction: column; gap: 2px; padding: var(--pas-2); min-height: 44px;
                  text-decoration: none; color: inherit; }
     .nom { font-weight: 700; color: var(--profond-fonce); }

@@ -1,5 +1,5 @@
 // M12 — Groupes de plongeurs pour un séjour.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-14, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -13,8 +13,10 @@ export default {
     const { page, pause, legende, toucher, saisir, menu, vignette } = g;
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('Un séjour, c\'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Groupes ».', 0);
-    await menu('Groupes');
+    await legende('Un séjour, c\'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Séjours ».', 0);
+    await menu('Séjours');
+    await legende('En haut de la page : « Groupes de plongeurs ».', 0);
+    await toucher(page.getByRole('link', { name: /Groupes de plongeurs/ }), { apres: 1200 });
     await legende('On saisit la liste une seule fois : « Nouveau groupe ».', 0);
     await toucher(page.getByRole('button', { name: 'Nouveau groupe' }), { apres: 800 });
     await saisir('#nomNouveauGroupe', 'Séjour mer — mai 2027');
