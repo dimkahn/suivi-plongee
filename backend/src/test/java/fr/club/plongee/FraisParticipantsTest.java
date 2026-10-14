@@ -212,9 +212,14 @@ class FraisParticipantsTest {
                 {"arrivee":{"date":"%s"},"depart":{"date":"%s"}}""".formatted(debut.plusDays(2), debut), 422);
         JsonNode infos = envoyer("PUT", pub + "/moi", jetonPaul, """
                 {"telephone":"0612345678","regimes":["VEGETARIEN"],"urgenceNom":"Marie","urgenceTelephone":"0600000001",
-                 "arrivee":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF7520","lieu":"Toulon"}}"""
+                 "arrivee":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF7520","lieu":"Toulon",
+                            "heureDepart":"09:05","lieuDepart":"Paris-Orly"}}"""
                 .formatted(debut), 200);
         assertThat(infos.get("moi").get("arrivee").get("numero").asText()).isEqualTo("AF7520");
+        assertThat(infos.get("moi").get("arrivee").get("lieuDepart").asText()).isEqualTo("Paris-Orly");
+        // Avec le programme du séjour, pour son encart « Aujourd'hui ».
+        assertThat(infos.get("programme").has("evenements")).isTrue();
+        assertThat(infos.get("programme").get("plongees").isArray()).isTrue();
         // L'organisateur le voit ; le nom n'a pas changé.
         JsonNode vuDt = envoyer("GET", base, dt, null, 200);
         for (JsonNode p : vuDt.get("participants")) {

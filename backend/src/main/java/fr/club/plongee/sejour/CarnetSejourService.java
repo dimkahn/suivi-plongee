@@ -81,8 +81,8 @@ public class CarnetSejourService {
                 .append(", ").append(periode(s.sortie().dateDebut(), s.sortie().dateFin())).append(".\n");
 
         t.append("\nVOTRE VOYAGE\n");
-        t.append("  Arrivée : ").append(trajet(moi.arrivee())).append("\n");
-        t.append("  Départ : ").append(trajet(moi.depart())).append("\n");
+        t.append("  Arrivée : ").append(trajet(moi.arrivee(), true)).append("\n");
+        t.append("  Départ : ").append(trajet(moi.depart(), false)).append("\n");
         for (VoitureVue v : s.voitures()) {
             boolean conduit = moi.id().equals(v.conducteurId());
             if (!conduit && !v.passagerIds().contains(moi.id())) continue;
@@ -163,7 +163,8 @@ public class CarnetSejourService {
         return t.toString();
     }
 
-    private static String trajet(Trajet tr) {
+    /** aller : le voyage d'arrivée au séjour (le conseil porte sur l'heure de départ de chez soi). */
+    private static String trajet(Trajet tr, boolean aller) {
         if (tr == null) return "à préciser";
         List<String> morceaux = new ArrayList<>();
         if (tr.date() != null) morceaux.add(jour(tr.date()) + (tr.heure() == null ? "" : " à " + tr.heure().format(HEURE)));
@@ -174,7 +175,13 @@ public class CarnetSejourService {
             morceaux.add(tr.numero().trim());
         }
         if (!SejourService.blanc(tr.lieu())) morceaux.add(tr.lieu().trim());
-        return String.join(", ", morceaux);
+        // Arrivée : d'où et à quelle heure part l'avion ou le train ; départ : l'heure est déjà celle du départ.
+        if (aller && (tr.heureDepart() != null || !SejourService.blanc(tr.lieuDepart()))) {
+            morceaux.add("départ" + (tr.heureDepart() == null ? "" : " à " + tr.heureDepart().format(HEURE))
+                    + (SejourService.blanc(tr.lieuDepart()) ? "" : " de " + tr.lieuDepart().trim()));
+        }
+        String conseil = tr.transport() == null ? null : tr.transport().conseil(aller ? tr.heureDepart() : tr.heure(), HEURE);
+        return String.join(", ", morceaux) + (conseil == null ? "" : " : " + conseil);
     }
 
     private static String horaire(LocalTime debut, LocalTime fin) {

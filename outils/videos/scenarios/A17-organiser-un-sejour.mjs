@@ -1,12 +1,12 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-13, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-14, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.',
+  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -33,6 +33,9 @@ export default {
     await toucher(page.getByRole('tab', { name: 'Transports' }), { apres: 2500 });
     await legende('Plusieurs personnes sur le même vol ? On le saisit une fois, et on coche qui le prend.', 0);
     await toucher(page.getByRole('button', { name: /Ajouter des personnes à ce vol/ }).first(), { apres: 3500 });
+    await legende('Pour une arrivée, l\'heure de départ de l\'avion : le jour venu, chacun voit à quelle heure être à l\'aéroport.', 0);
+    await page.locator('#vc-heure-depart').scrollIntoViewIfNeeded();
+    await pause(4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Dessous, les voitures : le conducteur, ses passagers et les places qui restent.', 0);
     await defiler(700, 3500);
@@ -76,6 +79,7 @@ export default {
     await legende('Les participants notent aussi leurs frais, dans l\'appli ou par le lien reçu par e-mail.', 4500);
     await enHaut();
     await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 5000);
+    await legende('Pendant le séjour, un encart « Aujourd\'hui » en haut de la page : le programme du jour, les vols à prendre, et la veille un rappel.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);
     await legende(null, 0);
     await pause(500);

@@ -106,10 +106,16 @@ class SejourTest {
         envoyer("PUT", base + "/participants/" + ines, dt, """
                 {"nom":"Roux","prenom":"Inès","plongeur":true}""", 200);
         s = envoyer("PUT", base + "/trajets", dt, """
-                {"sens":"ARRIVEE","trajet":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF1234"},
+                {"sens":"ARRIVEE","trajet":{"date":"%s","heure":"10:35","transport":"AVION","numero":"AF1234",
+                 "heureDepart":"09:10","lieuDepart":"Paris-Orly"},
                  "participantIds":[%d,%d]}""".formatted(debut, ines, leo), 200);
         for (JsonNode p : s.get("participants")) {
             assertThat(p.get("arrivee").get("numero").asText()).isEqualTo("AF1234");
+            if (p.get("id").asLong() != camille) {
+                // L'heure et le lieu de départ de l'avion aller, pour le conseil « soyez à l'aéroport vers… ».
+                assertThat(p.get("arrivee").get("heureDepart").asText()).startsWith("09:10");
+                assertThat(p.get("arrivee").get("lieuDepart").asText()).isEqualTo("Paris-Orly");
+            }
         }
         envoyer("PUT", base + "/trajets", jeton("e1@club.fr"), """
                 {"sens":"DEPART","trajet":null,"participantIds":[%d]}""".formatted(ines), 403);

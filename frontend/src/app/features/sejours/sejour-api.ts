@@ -50,6 +50,28 @@ export interface Trajet {
   numero: string | null;
   /** Aéroport, gare, adresse. */
   lieu: string | null;
+  /**
+   * Arrivée seulement : l'heure à laquelle part l'avion ou le train, et d'où
+   * (pour conseiller l'heure à laquelle être à l'aéroport). Le départ n'en a
+   * pas besoin : son heure et son lieu sont déjà ceux du départ.
+   */
+  heureDepart?: string | null;
+  lieuDepart?: string | null;
+}
+
+/** Un trajet à modifier dans un formulaire : heures au format des champs (« 10:35 »), vide s'il n'y en a pas. */
+export function copieTrajet(t: Trajet | null): Trajet {
+  return {
+    date: t?.date ?? null, heure: t?.heure?.slice(0, 5) ?? null, transport: t?.transport ?? null,
+    numero: t?.numero ?? null, lieu: t?.lieu ?? null,
+    heureDepart: t?.heureDepart?.slice(0, 5) ?? null, lieuDepart: t?.lieuDepart ?? null
+  };
+}
+
+/** Le trajet saisi, ou null s'il est resté vide. */
+export function trajetSaisi(t: Trajet | null): Trajet | null {
+  return !t || (!t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim()
+    && !t.heureDepart && !t.lieuDepart?.trim()) ? null : t;
 }
 
 export interface ParticipantVue {

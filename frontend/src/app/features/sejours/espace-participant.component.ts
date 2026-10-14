@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
@@ -7,8 +7,12 @@ import { MAGASIN_CACHE, ecrire, lire, supprimer } from '../../core/base-locale';
 import { periode } from '../../core/date-fr';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
+import { SeanceSortieVue } from '../../core/modeles';
+import { JourneeSejourComponent } from './journee-sejour.component';
+import { programmeParJour } from './programme-du-jour';
 import {
-  DemandeMesInformations, FraisVue, ParticipantFrais, ParticipantVue, PortFrais, formulairePhoto
+  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, ParticipantFrais, ParticipantVue, PortFrais, euros,
+  formulairePhoto
 } from './sejour-api';
 
 interface EnteteVue {
@@ -28,6 +32,8 @@ interface FraisPublicVue {
 interface MesInformationsVue {
   sejour: EnteteVue;
   moi: ParticipantVue;
+  /** Pour l'encart « Aujourd'hui ». */
+  programme: { evenements: EvenementVue[]; plongees: SeanceSortieVue[]; affaires: AffaireVue[] };
 }
 
 /** Le jeton du lien, gardé sur l'appareil (IndexedDB, comme le reste : pas de localStorage). */
@@ -41,13 +47,14 @@ interface JetonGarde {
  * par e-mail (/sejour/…, et l'ancienne /frais/… qui ouvre les frais) : il
  * donne son e-mail, reçoit un code à 6 chiffres, puis renseigne ses
  * informations (voyage, repas, personne à prévenir) et voit et saisit les
- * frais (un élève les consulte seulement). Sans connexion à l'appli ; le
+ * frais (un élève les consulte seulement). Pendant le séjour, l'encart
+ * « Aujourd'hui » : son voyage du jour, le programme, le rappel de la veille. Sans connexion à l'appli ; le
  * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après
  * le séjour.
  */
 @Component({
   selector: 'app-espace-participant',
-  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent],
+  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent, JourneeSejourComponent],
   template: `
     @if (entete(); as e) {
       <h1>{{ e.nom }}</h1>
@@ -58,6 +65,11 @@ interface JetonGarde {
           <span>Vous êtes <strong>{{ v.moi.prenom }} {{ v.moi.nom }}</strong>.</span>
           <button type="button" class="bouton-discret" (click)="deconnecter()">Se déconnecter</button>
         </div>
+        @if (moi(); as p) {
+          <app-journee-sejour [participants]="[p]" [moiId]="p.id" [dateDebut]="e.dateDebut" [dateFin]="e.dateFin"
+                              [programme]="programme()" [affaires]="affaires()" [comptes]="mesComptes()"
+                              ouCompleter="Mes informations" />
+        }
         <div class="onglets" role="tablist">
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'infos'"
                   [attr.aria-selected]="onglet() === 'infos'" (click)="onglet.set('infos')">Mes informations</button>
@@ -139,6 +151,26 @@ export class EspaceParticipantComponent {
   entete = signal<EnteteVue | null>(null);
   frais = signal<FraisPublicVue | null>(null);
   moi = signal<ParticipantVue | null>(null);
+  private contenu = signal<MesInformationsVue['programme'] | null>(null);
+  readonly programme = computed(() => {
+    const c = this.contenu();
+    return c ? programmeParJour(c.evenements, c.plongees) : [];
+  });
+  readonly affaires = computed(() => this.contenu()?.affaires ?? []);
+  /** « vous devez 25,00 € à Inès Roux », rappelé la veille du retour. */
+  readonly mesComptes = computed(() => {
+    const v = this.frais();
+    if (!v) return [];
+    const nom = (id: number) => {
+      const p = v.participants.find(x => x.id === id);
+      return p ? `${p.prenom} ${p.nom}` : '?';
+    };
+    return v.frais.comptes.remboursements
+      .filter(r => r.deId === v.moi.id || r.aId === v.moi.id)
+      .map(r => r.deId === v.moi.id
+        ? `vous devez ${euros(r.montantCentimes)} à ${nom(r.aId)}`
+        : `${nom(r.deId)} vous doit ${euros(r.montantCentimes)}`);
+  });
   /** L'ancienne adresse /frais/… ouvre directement les frais. */
   onglet = signal<'infos' | 'frais'>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'infos');
   chargement = signal(true);
@@ -190,6 +222,7 @@ export class EspaceParticipantComponent {
     try {
       const r = await firstValueFrom(this.http.put<MesInformationsVue>(`${this.base}/moi`, d, this.options()));
       this.moi.set(r.moi);
+      this.contenu.set(r.programme);
       this.message.set('Vos informations sont enregistrées. Merci !');
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).");
@@ -265,6 +298,7 @@ export class EspaceParticipantComponent {
       ]);
       this.frais.set(frais);
       this.moi.set(infos.moi);
+      this.contenu.set(infos.programme);
     } catch (e) {
       if ((e as HttpErrorResponse).status === 403) {
         await this.oublierJeton();

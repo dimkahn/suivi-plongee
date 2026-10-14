@@ -1,12 +1,10 @@
 import { Component, ChangeDetectionStrategy, effect, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DemandeMesInformations, ParticipantVue, REGIMES, RegimeAlimentaire, TRANSPORTS, Trajet } from './sejour-api';
+import {
+  DemandeMesInformations, ParticipantVue, REGIMES, RegimeAlimentaire, TRANSPORTS, Trajet, copieTrajet, trajetSaisi
+} from './sejour-api';
 
 type Brouillon = DemandeMesInformations & { arrivee: Trajet; depart: Trajet };
-
-function trajetVide(): Trajet {
-  return { date: null, heure: null, transport: null, numero: null, lieu: null };
-}
 
 /**
  * Ce qu'un participant renseigne lui-même pour le séjour : téléphone,
@@ -29,7 +27,7 @@ function trajetVide(): Trajet {
           <div class="grille">
             <div><label [for]="'mi-' + sens.code + '-date'">Jour</label>
               <input [id]="'mi-' + sens.code + '-date'" [name]="sens.code + '-date'" type="date" [(ngModel)]="b[sens.code].date"></div>
-            <div><label [for]="'mi-' + sens.code + '-heure'">Heure</label>
+            <div><label [for]="'mi-' + sens.code + '-heure'">{{ sens.heure }}</label>
               <input [id]="'mi-' + sens.code + '-heure'" [name]="sens.code + '-heure'" type="time" [(ngModel)]="b[sens.code].heure"></div>
             <div><label [for]="'mi-' + sens.code + '-moyen'">Moyen</label>
               <select [id]="'mi-' + sens.code + '-moyen'" [name]="sens.code + '-moyen'" [(ngModel)]="b[sens.code].transport">
@@ -39,9 +37,19 @@ function trajetVide(): Trajet {
             <div><label [for]="'mi-' + sens.code + '-numero'">N° de vol ou de train</label>
               <input [id]="'mi-' + sens.code + '-numero'" [name]="sens.code + '-numero'" maxlength="30"
                      placeholder="AF7520" [(ngModel)]="b[sens.code].numero"></div>
-            <div><label [for]="'mi-' + sens.code + '-lieu'">Aéroport, gare, lieu</label>
+            <div><label [for]="'mi-' + sens.code + '-lieu'">{{ sens.lieu }}</label>
               <input [id]="'mi-' + sens.code + '-lieu'" [name]="sens.code + '-lieu'" maxlength="120" [(ngModel)]="b[sens.code].lieu"></div>
+            @if (sens.code === 'arrivee') {
+              <div><label for="mi-arrivee-heure-depart">Heure de départ de l'avion ou du train</label>
+                <input id="mi-arrivee-heure-depart" name="arrivee-heure-depart" type="time" [(ngModel)]="b.arrivee.heureDepart"></div>
+              <div><label for="mi-arrivee-lieu-depart">Aéroport ou gare de départ</label>
+                <input id="mi-arrivee-lieu-depart" name="arrivee-lieu-depart" maxlength="120" placeholder="Paris-Orly"
+                       [(ngModel)]="b.arrivee.lieuDepart"></div>
+            }
           </div>
+          @if (sens.code === 'arrivee') {
+            <p class="secondaire">L'heure de départ sert à vous dire, le jour venu, à quelle heure être à l'aéroport ou à la gare.</p>
+          }
         </fieldset>
       }
 
@@ -103,8 +111,8 @@ export class MesInformationsComponent {
   readonly regimes = REGIMES;
   readonly transports = TRANSPORTS;
   readonly sens = [
-    { code: 'arrivee' as const, libelle: 'Mon arrivée' },
-    { code: 'depart' as const, libelle: 'Mon départ' }
+    { code: 'arrivee' as const, libelle: 'Mon arrivée', heure: "Heure d'arrivée", lieu: "Aéroport, gare ou lieu d'arrivée" },
+    { code: 'depart' as const, libelle: 'Mon départ', heure: 'Heure de départ', lieu: 'Aéroport, gare ou lieu de départ' }
   ];
 
   b: Brouillon = this.brouillon(null);
@@ -119,17 +127,14 @@ export class MesInformationsComponent {
   }
 
   valider(): void {
-    const trajet = (t: Trajet): Trajet | null =>
-      !t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim() ? null : t;
-    this.enregistrer.emit({ ...this.b, arrivee: trajet(this.b.arrivee), depart: trajet(this.b.depart) });
+    this.enregistrer.emit({ ...this.b, arrivee: trajetSaisi(this.b.arrivee), depart: trajetSaisi(this.b.depart) });
   }
 
   private brouillon(p: ParticipantVue | null): Brouillon {
-    const copie = (t: Trajet | null): Trajet => t ? { ...t, heure: t.heure?.slice(0, 5) ?? null } : trajetVide();
     return {
       telephone: p?.telephone ?? null, regimes: [...(p?.regimes ?? [])], regimePrecision: p?.regimePrecision ?? null,
       urgenceNom: p?.urgenceNom ?? null, urgenceTelephone: p?.urgenceTelephone ?? null,
-      arrivee: copie(p?.arrivee ?? null), depart: copie(p?.depart ?? null), remarques: p?.remarques ?? null
+      arrivee: copieTrajet(p?.arrivee ?? null), depart: copieTrajet(p?.depart ?? null), remarques: p?.remarques ?? null
     };
   }
 }
