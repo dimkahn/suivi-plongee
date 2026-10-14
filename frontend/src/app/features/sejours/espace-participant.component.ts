@@ -72,18 +72,18 @@ interface JetonGarde {
                               [programme]="programme()" [affaires]="affaires()" [comptes]="mesComptes()"
                               ouCompleter="Mes informations" />
         }
-        <div class="onglets" role="tablist">
+        <div class="onglets" role="tablist" id="onglets-participant">
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'carnet'"
-                  [attr.aria-selected]="onglet() === 'carnet'" (click)="onglet.set('carnet')">Carnet</button>
+                  [attr.aria-selected]="onglet() === 'carnet'" (click)="changerOnglet('carnet')">Carnet</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'infos'"
-                  [attr.aria-selected]="onglet() === 'infos'" (click)="onglet.set('infos')">Mes informations</button>
+                  [attr.aria-selected]="onglet() === 'infos'" (click)="changerOnglet('infos')">Mes informations</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'frais'"
-                  [attr.aria-selected]="onglet() === 'frais'" (click)="onglet.set('frais')">Frais</button>
+                  [attr.aria-selected]="onglet() === 'frais'" (click)="changerOnglet('frais')">Frais</button>
         </div>
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
-            <app-carnet-sejour [sejour]="c" />
+            <app-carnet-sejour [sejour]="c" (ouvrirOnglet)="changerOnglet($event)" />
           } @else {
             <p class="vide">Chargement…</p>
           }
@@ -225,6 +225,21 @@ export class EspaceParticipantComponent {
   majFrais(f: FraisVue): void {
     const v = this.frais();
     if (v) this.frais.set({ ...v, frais: f });
+    // « Mes comptes » du carnet suit les frais.
+    const c = this.carnet();
+    if (c) this.carnet.set({ ...c, frais: f });
+  }
+
+  /** Un onglet, en haut de son contenu ; le message d'un autre onglet ne le suit pas. */
+  changerOnglet(o: 'carnet' | 'infos' | 'frais'): void {
+    this.message.set(null);
+    this.erreur.set(null);
+    this.onglet.set(o);
+    this.remonter();
+  }
+
+  private remonter(): void {
+    setTimeout(() => document.getElementById('onglets-participant')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   async enregistrerInfos(d: DemandeMesInformations): Promise<void> {
@@ -235,11 +250,14 @@ export class EspaceParticipantComponent {
       const r = await firstValueFrom(this.http.put<MesInformationsVue>(`${this.base}/moi`, d, this.options()));
       this.moi.set(r.moi);
       this.contenu.set(r.programme);
-      this.message.set('Vos informations sont enregistrées. Merci !');
-      // Son voyage a pu changer dans le carnet.
+      // Retour au carnet, en haut : le message, et « Mon séjour » à jour.
       this.carnet.set(await firstValueFrom(this.http.get<SejourVue>(`${this.base}/carnet`, this.options())));
+      this.onglet.set('carnet');
+      this.message.set('Vos informations sont enregistrées. Merci !');
+      this.remonter();
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).");
+      this.remonter();
     } finally {
       this.envoi.set(false);
     }

@@ -466,7 +466,9 @@ SecurityConfig) : `sejour.code_frais` secret, code à 6 chiffres par e-mail
 réponse si l'e-mail est inconnu ou celui d'un encadrant), puis jeton
 (empreinte en base, en-tête `X-Jeton-Sejour`, gardé en IndexedDB) valable
 jusqu'à 60 jours après le séjour ; onglets « Carnet » (ouvert d'abord,
-`CarnetSejourComponent`, lecture seule, `GET …/carnet` =
+`CarnetSejourComponent` : la carte `MonSejourComponent` de l'appli puis
+un sommaire et les seules rubriques non vides, lecture seule ; « Enregistrer
+mes informations » y ramène ; `GET …/carnet` =
 `SejourService.carnetDuParticipant` : le carnet filtré comme pour un
 participant connecté, toujours à jour), « Mes informations »
 (`MesInformationsComponent`, partagé avec l'appli) et « Frais ». L'onglet
