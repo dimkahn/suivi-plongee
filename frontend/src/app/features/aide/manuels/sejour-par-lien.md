@@ -3,26 +3,27 @@ titre: Mon séjour, par le lien reçu par e-mail
 rubrique: Découverte
 videos: A17
 ecran: /aide
-mots: séjour, lien, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, appareil photo, rembourser, aujourd'hui, programme du jour, rappel, à quelle heure, aéroport, heure de départ
+mots: séjour, lien, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, appareil photo, rembourser, aujourd'hui, programme du jour, rappel, à quelle heure, aéroport, heure de départ
 questions:
 - À quelle heure dois-je être à l'aéroport pour le séjour ?
 - J'ai reçu un e-mail pour le séjour : comment entrer ?
+- Où voir le programme, ma voiture et ma chambre pour le séjour ?
 - Comment donner mon numéro de vol et mes horaires d'arrivée ?
 - Comment indiquer mon régime alimentaire pour le séjour ?
 - Je n'ai pas de compte : comment noter ce que j'ai payé ?
 - Je n'ai pas reçu le code
 ---
-L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donnez votre adresse e-mail et entrez le code à 6 chiffres reçu : vous renseignez vos informations pour le séjour (voyage, repas, personne à prévenir) et vous voyez les frais partagés.
+L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donnez votre adresse e-mail et entrez le code à 6 chiffres reçu : vous lisez le carnet du séjour, toujours à jour, vous renseignez vos informations (voyage, repas, personne à prévenir) et vous voyez les frais partagés.
 
 ## Pas à pas
 
 1. Ouvrez le lien de l'e-mail « Vos informations pour le séjour ».
 2. Donnez l'adresse e-mail que vous avez donnée à l'organisateur, puis « Recevoir le code ».
 3. Entrez le code à 6 chiffres reçu par e-mail, puis « Entrer ».
-4. « Mes informations » : votre téléphone, **votre arrivée et votre départ** (jour, heure, avion ou train, **numéro de vol ou de train**, aéroport ou gare ; pour l'arrivée, aussi **l'heure de départ de l'avion ou du train et d'où il part**), vos repas (régime), la personne à prévenir en cas d'urgence, un mot pour l'organisateur. « Enregistrer mes informations ».
-5. « Frais » : en tête, **votre solde** (ce que vous devez, à qui, ou ce qu'on vous doit), puis qui doit combien à qui et les dépenses, une ligne chacune (touchez-en une pour le détail et la photo). « Ajouter une dépense » pour noter ce que vous avez payé, avec la photo de la note : « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » reprend une photo déjà prise. Elle est partagée entre tout le monde, sauf si vous touchez « Choisir qui partage ».
-
-6. Pendant le séjour, en haut de la page, l'encart **Aujourd'hui** : le programme du jour et, le jour de votre voyage, **l'heure à laquelle être à l'aéroport ou à la gare** (2 h avant un avion, 30 min avant un train). La veille, un rappel : votre vol du lendemain, les affaires indispensables avant l'aller, ce que vous devez encore avant le retour.
+4. « Carnet », l'onglet qui s'ouvre en premier : **votre voyage** (arrivée, départ, votre voiture et qui conduit, votre chambre et avec qui), puis le **programme** jour par jour avec les plongées, toutes les **voitures**, les **logements et chambres**, les **affaires à prévoir** et les **infos pratiques**. C'est le carnet reçu par e-mail, mais tenu à jour : ce que l'organisateur change s'y voit tout de suite. Vous y voyez les noms des autres participants, pas leur téléphone, leur régime ni leur personne à prévenir.
+5. « Mes informations » : votre téléphone, **votre arrivée et votre départ** (jour, heure, avion ou train, **numéro de vol ou de train**, aéroport ou gare ; pour l'arrivée, aussi **l'heure de départ de l'avion ou du train et d'où il part**), vos repas (régime), la personne à prévenir en cas d'urgence, un mot pour l'organisateur. « Enregistrer mes informations ».
+6. « Frais » : en tête, **votre solde** (ce que vous devez, à qui, ou ce qu'on vous doit), puis qui doit combien à qui et les dépenses, une ligne chacune (touchez-en une pour le détail et la photo). « Ajouter une dépense » pour noter ce que vous avez payé, avec la photo de la note : « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » reprend une photo déjà prise. Elle est partagée entre tout le monde, sauf si vous touchez « Choisir qui partage ».
+7. Pendant le séjour, en haut de la page, l'encart **Aujourd'hui** : le programme du jour et, le jour de votre voyage, **l'heure à laquelle être à l'aéroport ou à la gare** (2 h avant un avion, 30 min avant un train). La veille, un rappel : votre vol du lendemain, les affaires indispensables avant l'aller, ce que vous devez encore avant le retour.
 
 ## Bon à savoir
 

@@ -9,9 +9,10 @@ import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
 import { SeanceSortieVue } from '../../core/modeles';
 import { JourneeSejourComponent } from './journee-sejour.component';
+import { CarnetSejourComponent } from './carnet-sejour.component';
 import { programmeParJour } from './programme-du-jour';
 import {
-  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, ParticipantFrais, ParticipantVue, PortFrais, euros,
+  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, ParticipantFrais, ParticipantVue, PortFrais, SejourVue, euros,
   formulairePhoto
 } from './sejour-api';
 
@@ -45,8 +46,9 @@ interface JetonGarde {
 /**
  * Le séjour pour un participant qui n'est pas moniteur, à l'adresse reçue
  * par e-mail (/sejour/…, et l'ancienne /frais/… qui ouvre les frais) : il
- * donne son e-mail, reçoit un code à 6 chiffres, puis renseigne ses
- * informations (voyage, repas, personne à prévenir) et voit et saisit les
+ * donne son e-mail, reçoit un code à 6 chiffres, puis lit le carnet du
+ * séjour, toujours à jour (programme, voitures, chambres, affaires, infos
+ * pratiques), renseigne ses informations (voyage, repas, personne à prévenir) et voit et saisit les
  * frais (un élève les consulte seulement). Pendant le séjour, l'encart
  * « Aujourd'hui » : son voyage du jour, le programme, le rappel de la veille. Sans connexion à l'appli ; le
  * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après
@@ -54,7 +56,7 @@ interface JetonGarde {
  */
 @Component({
   selector: 'app-espace-participant',
-  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent, JourneeSejourComponent],
+  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent, JourneeSejourComponent, CarnetSejourComponent],
   template: `
     @if (entete(); as e) {
       <h1>{{ e.nom }}</h1>
@@ -71,13 +73,21 @@ interface JetonGarde {
                               ouCompleter="Mes informations" />
         }
         <div class="onglets" role="tablist">
+          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'carnet'"
+                  [attr.aria-selected]="onglet() === 'carnet'" (click)="onglet.set('carnet')">Carnet</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'infos'"
                   [attr.aria-selected]="onglet() === 'infos'" (click)="onglet.set('infos')">Mes informations</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'frais'"
                   [attr.aria-selected]="onglet() === 'frais'" (click)="onglet.set('frais')">Frais</button>
         </div>
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
-        @if (onglet() === 'infos') {
+        @if (onglet() === 'carnet') {
+          @if (carnet(); as c) {
+            <app-carnet-sejour [sejour]="c" />
+          } @else {
+            <p class="vide">Chargement…</p>
+          }
+        } @else if (onglet() === 'infos') {
           @if (moi(); as p) {
             <p class="secondaire">Votre voyage, vos repas et la personne à prévenir : l'organisateur s'en sert pour
               les voitures, les chambres et la cuisine.</p>
@@ -151,6 +161,8 @@ export class EspaceParticipantComponent {
   entete = signal<EnteteVue | null>(null);
   frais = signal<FraisPublicVue | null>(null);
   moi = signal<ParticipantVue | null>(null);
+  /** Tout le séjour vu par ce participant (onglet « Carnet »). */
+  carnet = signal<SejourVue | null>(null);
   private contenu = signal<MesInformationsVue['programme'] | null>(null);
   readonly programme = computed(() => {
     const c = this.contenu();
@@ -172,7 +184,7 @@ export class EspaceParticipantComponent {
         : `${nom(r.deId)} vous doit ${euros(r.montantCentimes)}`);
   });
   /** L'ancienne adresse /frais/… ouvre directement les frais. */
-  onglet = signal<'infos' | 'frais'>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'infos');
+  onglet = signal<'carnet' | 'infos' | 'frais'>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'carnet');
   chargement = signal(true);
   erreur = signal<string | null>(null);
   message = signal<string | null>(null);
@@ -224,6 +236,8 @@ export class EspaceParticipantComponent {
       this.moi.set(r.moi);
       this.contenu.set(r.programme);
       this.message.set('Vos informations sont enregistrées. Merci !');
+      // Son voyage a pu changer dans le carnet.
+      this.carnet.set(await firstValueFrom(this.http.get<SejourVue>(`${this.base}/carnet`, this.options())));
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).");
     } finally {
@@ -292,11 +306,13 @@ export class EspaceParticipantComponent {
   /** Les frais et ses informations, ensemble ; un jeton refusé ramène à l'entrée. */
   private async charger(): Promise<void> {
     try {
-      const [frais, infos] = await Promise.all([
+      const [frais, infos, carnet] = await Promise.all([
         firstValueFrom(this.http.get<FraisPublicVue>(`${this.base}/frais`, this.options())),
-        firstValueFrom(this.http.get<MesInformationsVue>(`${this.base}/moi`, this.options()))
+        firstValueFrom(this.http.get<MesInformationsVue>(`${this.base}/moi`, this.options())),
+        firstValueFrom(this.http.get<SejourVue>(`${this.base}/carnet`, this.options()))
       ]);
       this.frais.set(frais);
+      this.carnet.set(carnet);
       this.moi.set(infos.moi);
       this.contenu.set(infos.programme);
     } catch (e) {
@@ -312,6 +328,7 @@ export class EspaceParticipantComponent {
     this.jeton = null;
     this.frais.set(null);
     this.moi.set(null);
+    this.carnet.set(null);
     this.etape.set('email');
     try { await supprimer(MAGASIN_CACHE, this.cle); } catch { /* rien à effacer */ }
   }

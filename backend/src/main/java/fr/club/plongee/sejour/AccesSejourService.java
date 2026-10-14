@@ -297,6 +297,12 @@ public class AccesSejourService {
                 sejours.programme(a.sortieId()));
     }
 
+    /** Tout le séjour vu par ce participant : son carnet, sans les coordonnées ni les régimes des autres. */
+    @Transactional(readOnly = true)
+    public SejourService.SejourVue carnet(Acces a) {
+        return sejours.carnetDuParticipant(a.sortieId(), a.participantId());
+    }
+
     @Transactional
     public MesInformationsVue modifierMesInformations(String code, Acces a, SejourService.DemandeMesInformations d) {
         sejours.modifierMesInformations(a.participantId(), d);

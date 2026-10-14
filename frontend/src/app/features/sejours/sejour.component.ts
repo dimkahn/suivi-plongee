@@ -12,7 +12,7 @@ import {
   AFFAIRES_TYPE, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
-  TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, trajetSaisi
+  TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
@@ -1015,19 +1015,7 @@ export class SejourComponent {
     return REGIMES.filter(r => codes.includes(r.code)).map(r => r.libelle.toLowerCase()).join(', ');
   }
 
-  /** « Vendredi 03/06/2027 à 18h30, avion AF7520, Aéroport de Toulon-Hyères ». */
-  texteTrajet(t: Trajet | null): string {
-    if (!t) return 'à préciser';
-    const moyen = TRANSPORTS.find(x => x.code === t.transport)?.libelle.toLowerCase();
-    return [
-      t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : (t.heure ? 'à ' + heure(t.heure) : null),
-      [moyen, t.numero].filter(Boolean).join(' ') || null,
-      t.lieu,
-      t.heureDepart || t.lieuDepart
-        ? 'départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
-        : null
-    ].filter(Boolean).join(', ') || 'à préciser';
-  }
+  readonly texteTrajet = texteTrajet;
 
   /** Les arrivées (ou départs) regroupées par jour, heure et vol : qui attendre ensemble. */
   groupesTrajets(sens: 'arrivee' | 'depart'): GroupeTrajet[] {

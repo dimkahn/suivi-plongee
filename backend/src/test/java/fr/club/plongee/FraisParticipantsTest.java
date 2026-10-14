@@ -254,6 +254,25 @@ class FraisParticipantsTest {
                 "{\"email\":\"lina@exemple.fr\",\"code\":\"%s\"}".formatted(codeLina), 200).get("jeton").asText();
         assertThat(envoyer("GET", pub + "/frais", jetonLina, null, 200).get("frais").get("depenses")).hasSize(2);
 
+        // Le carnet par le lien : tout le séjour, avec ses propres informations, sans celles des autres.
+        envoyer("POST", base + "/voitures", dt, """
+                {"nom":"Voiture de Flora","places":4,"conducteurId":%d,"passagerIds":[%d]}""".formatted(pFlora, pLina), 200);
+        JsonNode carnetLina = envoyer("GET", pub + "/carnet", jetonLina, null, 200);
+        assertThat(carnetLina.get("encadrant").asBoolean()).isFalse();
+        assertThat(carnetLina.get("voitures").get(0).get("passagerIds").toString()).contains(String.valueOf(pLina));
+        for (JsonNode p : carnetLina.get("participants")) {
+            if (p.get("id").asLong() == pLina) {
+                assertThat(p.get("moi").asBoolean()).isTrue();
+                assertThat(p.get("email").asText()).isEqualTo("Lina@Exemple.fr");
+            } else {
+                assertThat(p.get("moi").asBoolean()).isFalse();
+                assertThat(p.get("telephone").isNull()).isTrue();
+                assertThat(p.get("urgenceNom").isNull()).isTrue();
+                assertThat(p.get("regimes")).isEmpty();
+            }
+        }
+        envoyer("GET", pub + "/carnet", null, null, 403);
+
         // Anis, élève sans compte : il entre par le lien pour lire, mais passe par un moniteur pour saisir.
         long anis = 0;
         for (JsonNode c : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {

@@ -656,7 +656,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-L'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l'encart « Aujourd'hui ».
+L'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l'encart « Aujourd'hui ».
 
 Compte : `presidente@club.fr` · format ordinateur
 
