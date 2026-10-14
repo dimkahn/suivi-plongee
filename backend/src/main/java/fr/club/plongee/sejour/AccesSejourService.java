@@ -69,8 +69,12 @@ public class AccesSejourService {
 
     public record BilanEnvoiAcces(List<String> envoyes, List<String> sansEmail, List<String> echecs) {}
 
-    /** Ce que le participant entré par le lien renseigne lui-même, et le séjour dont il s'agit. */
-    public record MesInformationsVue(EnteteVue sejour, SejourService.ParticipantVue moi) {}
+    /**
+     * Ce que le participant entré par le lien renseigne lui-même, le séjour
+     * dont il s'agit, et son programme (encart « Aujourd'hui »).
+     */
+    public record MesInformationsVue(EnteteVue sejour, SejourService.ParticipantVue moi,
+                                     SejourService.ProgrammeVue programme) {}
 
     private final NamedParameterJdbcTemplate jdbc;
     private final FraisService frais;
@@ -289,7 +293,8 @@ public class AccesSejourService {
 
     @Transactional(readOnly = true)
     public MesInformationsVue mesInformations(String code, Acces a) {
-        return new MesInformationsVue(entete(code), sejours.participant(a.participantId()));
+        return new MesInformationsVue(entete(code), sejours.participant(a.participantId()),
+                sejours.programme(a.sortieId()));
     }
 
     @Transactional

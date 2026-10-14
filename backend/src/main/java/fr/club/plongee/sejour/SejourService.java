@@ -52,10 +52,19 @@ public class SejourService {
     static final int JOURS_AUTOUR_DU_PROGRAMME = 7;
     static final int AFFAIRES_MAX = 200;
 
+    /**
+     * Un voyage. Pour l'arrivée : {@code heure} et {@code lieu} sont ceux où
+     * l'on arrive sur place, {@code heureDepart} et {@code lieuDepart} ceux
+     * d'où part l'avion ou le train (pour conseiller l'heure à laquelle être à
+     * l'aéroport). Pour le départ : {@code heure} et {@code lieu} sont déjà
+     * ceux du départ, les deux derniers restent vides.
+     */
     public record Trajet(LocalDate date, LocalTime heure, MoyenTransport transport,
-                         @Size(max = 30) String numero, @Size(max = 120) String lieu) {
+                         @Size(max = 30) String numero, @Size(max = 120) String lieu,
+                         LocalTime heureDepart, @Size(max = 120) String lieuDepart) {
         boolean vide() {
-            return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu);
+            return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu)
+                    && heureDepart == null && blanc(lieuDepart);
         }
     }
 
@@ -263,21 +272,8 @@ public class SejourService {
                 (rs, i) -> new LogementVue(rs.getLong("id"), rs.getString("nom"), rs.getString("adresse"),
                         rs.getString("remarques"), chambres.getOrDefault(rs.getLong("id"), List.of())));
 
-        List<AffaireVue> affaires = jdbc.query(
-                "SELECT * FROM sejour_affaire WHERE sortie_id = :id ORDER BY ordre, id", id,
-                (rs, i) -> new AffaireVue(rs.getLong("id"), CategorieAffaire.valueOf(rs.getString("categorie")),
-                        rs.getString("libelle"), rs.getBoolean("indispensable")));
-
-        List<EvenementVue> evenements = jdbc.query(
-                        "SELECT * FROM sejour_evenement WHERE sortie_id = :id", id,
-                        (rs, i) -> new EvenementVue(rs.getLong("id"), rs.getObject("jour", LocalDate.class),
-                                rs.getObject("heure_debut", LocalTime.class), rs.getObject("heure_fin", LocalTime.class),
-                                rs.getString("titre"), rs.getString("lieu"), rs.getString("details")))
-                .stream()
-                .sorted(Comparator.comparing(EvenementVue::jour)
-                        .thenComparing(e -> e.heureDebut() == null ? LocalTime.MIN : e.heureDebut())
-                        .thenComparing(EvenementVue::id))
-                .toList();
+        List<AffaireVue> affaires = affaires(sortieId);
+        List<EvenementVue> evenements = evenements(sortieId);
 
         List<GroupeProposeVue> groupes = !gere ? List.of() : jdbc.query("""
                 SELECT g.id, g.nom, (SELECT COUNT(*) FROM membre_groupe_plongeurs m WHERE m.groupe_id = g.id) AS n
@@ -289,6 +285,38 @@ public class SejourService {
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
                 voitures, logements, affaires, evenements, frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
                 avertissements(participants, voitures, logements), groupes);
+    }
+
+    /**
+     * Le programme (rendez-vous et plongées de la sortie) et les affaires à
+     * prévoir, pour la page du participant entré par le lien : son encart
+     * « Aujourd'hui ». Rien de personnel.
+     */
+    public record ProgrammeVue(List<EvenementVue> evenements, List<SortieService.SeanceSortieVue> plongees,
+                               List<AffaireVue> affaires) {}
+
+    @Transactional(readOnly = true)
+    public ProgrammeVue programme(Long sortieId) {
+        return new ProgrammeVue(evenements(sortieId), sorties.lire(sortieId).seances(), affaires(sortieId));
+    }
+
+    private List<AffaireVue> affaires(Long sortieId) {
+        return jdbc.query("SELECT * FROM sejour_affaire WHERE sortie_id = :id ORDER BY ordre, id",
+                new MapSqlParameterSource("id", sortieId),
+                (rs, i) -> new AffaireVue(rs.getLong("id"), CategorieAffaire.valueOf(rs.getString("categorie")),
+                        rs.getString("libelle"), rs.getBoolean("indispensable")));
+    }
+
+    private List<EvenementVue> evenements(Long sortieId) {
+        return jdbc.query("SELECT * FROM sejour_evenement WHERE sortie_id = :id", new MapSqlParameterSource("id", sortieId),
+                        (rs, i) -> new EvenementVue(rs.getLong("id"), rs.getObject("jour", LocalDate.class),
+                                rs.getObject("heure_debut", LocalTime.class), rs.getObject("heure_fin", LocalTime.class),
+                                rs.getString("titre"), rs.getString("lieu"), rs.getString("details")))
+                .stream()
+                .sorted(Comparator.comparing(EvenementVue::jour)
+                        .thenComparing(e -> e.heureDebut() == null ? LocalTime.MIN : e.heureDebut())
+                        .thenComparing(EvenementVue::id))
+                .toList();
     }
 
     /** Le même séjour, avec les frais vus par celui qui agit (ce qu'il peut saisir, modifier). */
@@ -320,9 +348,12 @@ public class SejourService {
 
     private static Trajet trajet(ResultSet rs, String sens) throws SQLException {
         String transport = rs.getString(sens + "_transport");
+        boolean aller = sens.equals("arrivee");
         Trajet t = new Trajet(rs.getObject(sens + "_date", LocalDate.class), rs.getObject(sens + "_heure", LocalTime.class),
                 transport == null ? null : MoyenTransport.valueOf(transport),
-                rs.getString(sens + "_numero"), rs.getString(sens + "_lieu"));
+                rs.getString(sens + "_numero"), rs.getString(sens + "_lieu"),
+                aller ? rs.getObject("arrivee_heure_depart", LocalTime.class) : null,
+                aller ? rs.getString("arrivee_lieu_depart") : null);
         return t.vide() ? null : t;
     }
 
@@ -426,7 +457,8 @@ public class SejourService {
                        urgence_telephone = :urgenceTelephone,
                        arrivee_date = :arriveeDate, arrivee_heure = :arriveeHeure,
                        arrivee_transport = :arriveeTransport, arrivee_numero = :arriveeNumero,
-                       arrivee_lieu = :arriveeLieu,
+                       arrivee_lieu = :arriveeLieu, arrivee_heure_depart = :arriveeHeureDepart,
+                       arrivee_lieu_depart = :arriveeLieuDepart,
                        depart_date = :departDate, depart_heure = :departHeure,
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, remarques = :remarques
@@ -466,7 +498,8 @@ public class SejourService {
                        urgence_telephone = :urgenceTelephone,
                        arrivee_date = :arriveeDate, arrivee_heure = :arriveeHeure,
                        arrivee_transport = :arriveeTransport, arrivee_numero = :arriveeNumero,
-                       arrivee_lieu = :arriveeLieu,
+                       arrivee_lieu = :arriveeLieu, arrivee_heure_depart = :arriveeHeureDepart,
+                       arrivee_lieu_depart = :arriveeLieuDepart,
                        depart_date = :departDate, depart_heure = :departHeure,
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, remarques = :remarques
@@ -502,10 +535,12 @@ public class SejourService {
         String sens = d.sens() == SensTrajet.ARRIVEE ? "arrivee" : "depart";
         var p = new MapSqlParameterSource("ids", ids).addValue("sortie", sortieId);
         trajet(p, "t", t);
+        String departAller = d.sens() == SensTrajet.ARRIVEE
+                ? ", arrivee_heure_depart = :tHeureDepart, arrivee_lieu_depart = :tLieuDepart" : "";
         jdbc.update("""
                 UPDATE sejour_participant SET %1$s_date = :tDate, %1$s_heure = :tHeure, %1$s_transport = :tTransport,
-                       %1$s_numero = :tNumero, %1$s_lieu = :tLieu
-                 WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens), p);
+                       %1$s_numero = :tNumero, %1$s_lieu = :tLieu%2$s
+                 WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens, departAller), p);
     }
 
     /** Il quitte aussi sa voiture et sa chambre ; une voiture qu'il conduisait n'a plus de conducteur. */
@@ -613,10 +648,12 @@ public class SejourService {
                 INSERT INTO sejour_participant (sortie_id, eleve_id, utilisateur_id, nom, prenom, plongeur,
                        telephone, email, regimes, regime_precision, urgence_nom, urgence_telephone,
                        arrivee_date, arrivee_heure, arrivee_transport, arrivee_numero, arrivee_lieu,
+                       arrivee_heure_depart, arrivee_lieu_depart,
                        depart_date, depart_heure, depart_transport, depart_numero, depart_lieu, remarques)
                 VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :telephone, :email, :regimes,
                        :regimePrecision, :urgenceNom, :urgenceTelephone,
                        :arriveeDate, :arriveeHeure, :arriveeTransport, :arriveeNumero, :arriveeLieu,
+                       :arriveeHeureDepart, :arriveeLieuDepart,
                        :departDate, :departHeure, :departTransport, :departNumero, :departLieu, :remarques)""",
                 parametres(sortieId, d));
     }
@@ -643,7 +680,9 @@ public class SejourService {
                 .addValue(sens + "Heure", t == null ? null : t.heure())
                 .addValue(sens + "Transport", t == null || t.transport() == null ? null : t.transport().name())
                 .addValue(sens + "Numero", t == null ? null : nettoyer(t.numero()))
-                .addValue(sens + "Lieu", t == null ? null : nettoyer(t.lieu()));
+                .addValue(sens + "Lieu", t == null ? null : nettoyer(t.lieu()))
+                .addValue(sens + "HeureDepart", t == null ? null : t.heureDepart())
+                .addValue(sens + "LieuDepart", t == null ? null : nettoyer(t.lieuDepart()));
     }
 
     private static LocalDateTime moment(Trajet t) {

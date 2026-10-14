@@ -7,26 +7,19 @@ import { ApiService } from '../../core/api.service';
 import { PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
-import { periode } from '../../core/date-fr';
+import { dateDuJour, periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
-  TRANSPORTS, Trajet, VoitureVue, euros, heure, jourLong, nomComplet
+  TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, trajetSaisi
 } from './sejour-api';
+import { programmeParJour } from './programme-du-jour';
+import { JourneeSejourComponent } from './journee-sejour.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
 
 type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'pratique';
-
-/** Une ligne du programme d'un jour : rendez-vous saisi, ou plongée de la sortie. */
-interface LigneProgramme {
-  heure: string;
-  titre: string;
-  lieu: string | null;
-  details: string | null;
-  evenement: EvenementVue | null;
-}
 
 /** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
 interface GroupeTrajet {
@@ -40,7 +33,7 @@ interface GroupeTrajet {
 }
 
 function trajetVide(): Trajet {
-  return { date: null, heure: null, transport: null, numero: null, lieu: null };
+  return copieTrajet(null);
 }
 
 /** Le brouillon de la fenêtre : arrivée et départ toujours présents, vidés à l'envoi s'ils sont restés vides. */
@@ -58,7 +51,8 @@ function participantVide(): BrouillonParticipant {
  * Le séjour d'une sortie, en six onglets : programme ; participants et
  * repas ; transports (arrivées et départs, voitures) ; hébergement ; frais ;
  * pratique (affaires à prévoir, infos pratiques). Les points à vérifier
- * sont comptés sur l'onglet qui permet de les régler.
+ * sont comptés sur l'onglet qui permet de les régler. Pendant le séjour,
+ * l'encart « Aujourd'hui » (JourneeSejourComponent) passe avant tout.
  * L'admin et le directeur technique le remplissent (fenêtres de saisie) ;
  * les encadrants le lisent ; un participant qui a un compte lit son carnet
  * (sans les coordonnées ni les régimes des autres). « Imprimer le carnet »
@@ -66,7 +60,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent],
+  imports: [FormsModule, JourneeSejourComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent],
   template: `
     @if (sejour(); as s) {
       <div class="entete">
@@ -88,6 +82,11 @@ function participantVide(): BrouillonParticipant {
       </div>
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
+
+      <!-- Le programme du jour, du voyage aller au voyage retour ; la veille, un rappel (demande du club, 2026). -->
+      <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant"
+                          [moiId]="moi()?.id ?? null" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
+                          [programme]="programme()" [affaires]="s.affaires" [comptes]="mesComptes()" />
 
       <!-- Frais partagés : en tête de page, pour qu'on les trouve sans chercher (demande du club, 2026). -->
       <section class="carte encart-frais sans-impression" aria-label="Frais du séjour">
@@ -172,8 +171,8 @@ function participantVide(): BrouillonParticipant {
             <p class="vide">Rien au programme pour l'instant.</p>
           }
           @for (j of programme(); track j.jour) {
-            <div class="carte jour">
-              <h3>{{ jourLong(j.jour) }}</h3>
+            <div class="carte jour" [class.aujourdhui]="j.jour === aujourdhui()">
+              <h3>{{ jourLong(j.jour) }}@if (j.jour === aujourdhui()) { · aujourd'hui}</h3>
               <ul class="lignes">
                 @for (l of j.lignes; track $index) {
                   <li>
@@ -516,7 +515,7 @@ function participantVide(): BrouillonParticipant {
           <div class="grille">
             <div><label [for]="'p-' + sens.code + '-date'">Jour</label>
               <input [id]="'p-' + sens.code + '-date'" type="date" [(ngModel)]="participant[sens.code].date"></div>
-            <div><label [for]="'p-' + sens.code + '-heure'">Heure</label>
+            <div><label [for]="'p-' + sens.code + '-heure'">{{ sens.heure }}</label>
               <input [id]="'p-' + sens.code + '-heure'" type="time" [(ngModel)]="participant[sens.code].heure"></div>
             <div><label [for]="'p-' + sens.code + '-moyen'">Moyen</label>
               <select [id]="'p-' + sens.code + '-moyen'" [(ngModel)]="participant[sens.code].transport">
@@ -526,8 +525,15 @@ function participantVide(): BrouillonParticipant {
             <div><label [for]="'p-' + sens.code + '-numero'">N° de vol ou de train</label>
               <input [id]="'p-' + sens.code + '-numero'" [(ngModel)]="participant[sens.code].numero" maxlength="30"
                      placeholder="AF7520"></div>
-            <div><label [for]="'p-' + sens.code + '-lieu'">Aéroport, gare, lieu</label>
+            <div><label [for]="'p-' + sens.code + '-lieu'">{{ sens.lieu }}</label>
               <input [id]="'p-' + sens.code + '-lieu'" [(ngModel)]="participant[sens.code].lieu" maxlength="120"></div>
+            @if (sens.code === 'arrivee') {
+              <div><label for="p-arrivee-heure-depart">Heure de départ de l'avion ou du train</label>
+                <input id="p-arrivee-heure-depart" type="time" [(ngModel)]="participant.arrivee.heureDepart"></div>
+              <div><label for="p-arrivee-lieu-depart">Aéroport ou gare de départ</label>
+                <input id="p-arrivee-lieu-depart" [(ngModel)]="participant.arrivee.lieuDepart" maxlength="120"
+                       placeholder="Paris-Orly"></div>
+            }
           </div>
         </fieldset>
       }
@@ -679,7 +685,8 @@ function participantVide(): BrouillonParticipant {
       </div>
       <div class="grille">
         <div><label for="vc-date">Jour</label><input id="vc-date" type="date" [(ngModel)]="vol.trajet.date"></div>
-        <div><label for="vc-heure">Heure</label><input id="vc-heure" type="time" [(ngModel)]="vol.trajet.heure"></div>
+        <div><label for="vc-heure">{{ vol.sens === 'ARRIVEE' ? "Heure d'arrivée" : 'Heure de départ' }}</label>
+          <input id="vc-heure" type="time" [(ngModel)]="vol.trajet.heure"></div>
         <div><label for="vc-moyen">Moyen</label>
           <select id="vc-moyen" [(ngModel)]="vol.trajet.transport">
             <option [ngValue]="null">—</option>
@@ -687,8 +694,14 @@ function participantVide(): BrouillonParticipant {
           </select></div>
         <div><label for="vc-numero">N° de vol ou de train</label>
           <input id="vc-numero" [(ngModel)]="vol.trajet.numero" maxlength="30" placeholder="AF7520"></div>
-        <div><label for="vc-lieu">Aéroport, gare, lieu</label>
+        <div><label for="vc-lieu">{{ vol.sens === 'ARRIVEE' ? "Aéroport, gare ou lieu d'arrivée" : 'Aéroport, gare ou lieu de départ' }}</label>
           <input id="vc-lieu" [(ngModel)]="vol.trajet.lieu" maxlength="120"></div>
+        @if (vol.sens === 'ARRIVEE') {
+          <div><label for="vc-heure-depart">Heure de départ de l'avion ou du train</label>
+            <input id="vc-heure-depart" type="time" [(ngModel)]="vol.trajet.heureDepart"></div>
+          <div><label for="vc-lieu-depart">Aéroport ou gare de départ</label>
+            <input id="vc-lieu-depart" [(ngModel)]="vol.trajet.lieuDepart" maxlength="120" placeholder="Paris-Orly"></div>
+        }
       </div>
       <fieldset>
         <legend>Qui prend ce {{ vol.trajet.transport === 'TRAIN' ? 'train' : 'vol' }}</legend>
@@ -804,6 +817,7 @@ function participantVide(): BrouillonParticipant {
     .pastille.plein { background: var(--en-cours-clair); color: var(--en-cours); }
     .texte-libre { white-space: pre-line; display: block; }
     .jour { padding: var(--pas-2); margin-bottom: var(--pas-2); }
+    .jour.aujourdhui { border-left: 6px solid var(--profond); }
     .jour h3 { margin-top: 0; }
     .lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
     .lignes li { display: flex; gap: var(--pas-2); align-items: flex-start; }
@@ -856,8 +870,8 @@ export class SejourComponent {
   readonly transports = TRANSPORTS;
   readonly categories = CATEGORIES;
   readonly sensTrajets = [
-    { code: 'arrivee' as const, libelle: 'Arrivées' },
-    { code: 'depart' as const, libelle: 'Départs' }
+    { code: 'arrivee' as const, libelle: 'Arrivées', heure: "Heure d'arrivée", lieu: "Aéroport, gare ou lieu d'arrivée" },
+    { code: 'depart' as const, libelle: 'Départs', heure: 'Heure de départ', lieu: 'Aéroport, gare ou lieu de départ' }
   ];
 
   private readonly id = Number(this.route.snapshot.paramMap.get('id'));
@@ -904,22 +918,21 @@ export class SejourComponent {
   /** Les jours du séjour (et ceux des rendez-vous hors de ses dates), avec rendez-vous puis plongées. */
   readonly programme = computed(() => {
     const s = this.sejour();
-    if (!s) return [];
-    const jours = new Map<string, LigneProgramme[]>();
-    const ajouter = (jour: string, l: LigneProgramme) => jours.set(jour, [...(jours.get(jour) ?? []), l]);
-    for (const e of s.evenements) {
-      ajouter(e.jour, {
-        heure: e.heureDebut ? heure(e.heureDebut) + (e.heureFin ? ' – ' + heure(e.heureFin) : '') : '',
-        titre: e.titre, lieu: e.lieu, details: e.details, evenement: e
-      });
-    }
-    for (const se of s.sortie.seances) {
-      ajouter(se.date, {
-        heure: '', titre: 'Plongée' + (se.ordre ? ' ' + se.ordre : ''),
-        lieu: [se.lieu, se.site].filter(Boolean).join(' – ') || null, details: se.commentaire, evenement: null
-      });
-    }
-    return [...jours.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([jour, lignes]) => ({ jour, lignes }));
+    return s ? programmeParJour(s.evenements, s.sortie.seances) : [];
+  });
+
+  /** La date de l'appareil : le jour du programme est marqué « aujourd'hui ». */
+  readonly aujourdhui = signal(dateDuJour());
+
+  /** Les voyages de l'encart « Aujourd'hui » : un encadrant voit ceux de tous, un participant les siens. */
+  readonly voyageurs = computed(() => {
+    const s = this.sejour();
+    const moi = this.moi();
+    return s?.encadrant ? s.participants : moi ? [moi] : [];
+  });
+  readonly mesComptes = computed(() => {
+    const moi = this.moi();
+    return moi ? this.mesRemboursements(moi.id) : [];
   });
 
   readonly sansRegime = computed(() => (this.sejour()?.participants ?? []).filter(p => p.regimes.length === 0));
@@ -1042,7 +1055,10 @@ export class SejourComponent {
     return [
       t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : (t.heure ? 'à ' + heure(t.heure) : null),
       [moyen, t.numero].filter(Boolean).join(' ') || null,
-      t.lieu
+      t.lieu,
+      t.heureDepart || t.lieuDepart
+        ? 'départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
+        : null
     ].filter(Boolean).join(', ') || 'à préciser';
   }
 
@@ -1052,7 +1068,8 @@ export class SejourComponent {
     for (const p of this.sejour()?.participants ?? []) {
       const t = p[sens];
       if (!t || (!t.date && !t.heure)) continue;
-      const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu].join('|');
+      const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu, t.heureDepart?.slice(0, 5), t.lieuDepart]
+        .join('|');
       const g = groupes.get(cle) ?? {
         tri: `${t.date ?? ''} ${t.heure ?? ''}`,
         quand: t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : 'à ' + heure(t.heure),
@@ -1070,9 +1087,8 @@ export class SejourComponent {
   memeVoyageQue(id: number | null): void {
     const autre = (this.sejour()?.participants ?? []).find(p => p.id === id);
     if (!autre) return;
-    const copie = (t: Trajet | null): Trajet => t ? { ...t, heure: t.heure?.slice(0, 5) ?? null } : trajetVide();
-    this.participant.arrivee = copie(autre.arrivee);
-    this.participant.depart = copie(autre.depart);
+    this.participant.arrivee = copieTrajet(autre.arrivee);
+    this.participant.depart = copieTrajet(autre.depart);
   }
 
   // ---------------- Un même vol pour plusieurs ----------------
@@ -1087,7 +1103,7 @@ export class SejourComponent {
     this.erreur.set(null);
     this.vol = {
       sens,
-      trajet: g ? { ...g.trajet, heure: g.trajet.heure?.slice(0, 5) ?? null } : trajetVide(),
+      trajet: copieTrajet(g?.trajet ?? null),
       ids: g ? [...g.ids] : []
     };
     this.volsConnus.set(this.groupesTrajets(sens === 'ARRIVEE' ? 'arrivee' : 'depart'));
@@ -1097,7 +1113,7 @@ export class SejourComponent {
   reprendreVol(i: number | null): void {
     const g = i === null ? null : this.volsConnus()[i];
     if (!g) return;
-    this.vol.trajet = { ...g.trajet, heure: g.trajet.heure?.slice(0, 5) ?? null };
+    this.vol.trajet = copieTrajet(g.trajet);
     this.vol.ids = [...new Set([...this.vol.ids, ...g.ids])];
   }
 
@@ -1124,7 +1140,11 @@ export class SejourComponent {
       this.erreur.set('Cochez au moins une personne.');
       return;
     }
-    const trajet = { ...t, numero: t.numero?.trim() || null, lieu: t.lieu?.trim() || null };
+    const aller = this.vol.sens === 'ARRIVEE';
+    const trajet = {
+      ...t, numero: t.numero?.trim() || null, lieu: t.lieu?.trim() || null,
+      heureDepart: aller ? t.heureDepart || null : null, lieuDepart: aller ? t.lieuDepart?.trim() || null : null
+    };
     this.ecrire(this.api.appliquerTrajet(this.id, this.vol.sens, trajet, this.vol.ids), () => {
       this.volOuvert.set(false);
       this.message.set(`Trajet enregistré pour ${this.vol.ids.length} personne${this.vol.ids.length > 1 ? 's' : ''}.`);
@@ -1218,8 +1238,8 @@ export class SejourComponent {
       eleveId: p.eleveId, utilisateurId: p.utilisateurId, nom: p.nom, prenom: p.prenom, plongeur: p.plongeur,
       telephone: p.telephone, email: p.email, regimes: [...p.regimes], regimePrecision: p.regimePrecision,
       urgenceNom: p.urgenceNom, urgenceTelephone: p.urgenceTelephone,
-      arrivee: { ...(p.arrivee ?? trajetVide()), heure: p.arrivee?.heure?.slice(0, 5) ?? null },
-      depart: { ...(p.depart ?? trajetVide()), heure: p.depart?.heure?.slice(0, 5) ?? null },
+      arrivee: copieTrajet(p.arrivee),
+      depart: copieTrajet(p.depart),
       remarques: p.remarques
     } : participantVide();
     this.participantOuvert.set(true);
@@ -1248,9 +1268,7 @@ export class SejourComponent {
       this.erreur.set('Le prénom et le nom sont obligatoires.');
       return;
     }
-    const trajet = (t: Trajet | null): Trajet | null =>
-      !t || (!t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim()) ? null : t;
-    const demande = { ...d, arrivee: trajet(d.arrivee), depart: trajet(d.depart) };
+    const demande = { ...d, arrivee: trajetSaisi(d.arrivee), depart: trajetSaisi(d.depart) };
     this.ecrire(this.participantId === null
       ? this.api.ajouterParticipant(this.id, demande)
       : this.api.modifierParticipant(this.id, this.participantId, demande), () => this.participantOuvert.set(false));

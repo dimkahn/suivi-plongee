@@ -410,7 +410,17 @@ téléphone, e-mail, régime ni personne à prévenir des autres (filtré par le
 serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail ;
 « Imprimer le carnet » côté écran. Avertissements jamais bloquants
 (voiture ou chambre trop pleine, sans conducteur, sans chambre, dans deux
-voitures). **Pas de champ médical** (allergie, traitement) : demandé par
+voitures). **Encart « Aujourd'hui »** (`JourneeSejourComponent`, calcul pur
+dans `programme-du-jour.ts`, date de l'appareil ; dans le séjour et sur la
+page du lien, qui reçoit le programme par `MesInformationsVue.programme`) :
+du jour du premier voyage aller au dernier retour, le programme du jour et
+les voyages qui partent ce jour-là avec l'heure à laquelle être sur place
+(avance par moyen de transport, `MoyenTransport` côté serveur pour le
+carnet par e-mail, `AVANCES_TRANSPORT` côté écran : avion 2 h, train
+30 min, bateau 45 min, car 15 min) ; la veille, un rappel. L'arrivée porte
+l'heure et le lieu de départ du voyage aller (V78,
+`arrivee_heure_depart`/`arrivee_lieu_depart` ; plus tard que l'heure
+d'arrivée = départ la veille). **Pas de champ médical** (allergie, traitement) : demandé par
 le club en 2026, écarté par la règle « Données personnelles » ci-dessous
 tant qu'elle n'est pas révisée. Réseau obligatoire. Démo : V117 (Port-Cros,
 juin 2027, Camille y participe).

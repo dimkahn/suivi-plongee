@@ -656,7 +656,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-L'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires.
+L'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations, puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l'encart « Aujourd'hui ».
 
 Compte : `presidente@club.fr` · format ordinateur
 
@@ -810,7 +810,7 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 
 ### E2 — Le carnet du séjour
 
-Son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations.
+La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour. Puis son vol, sa voiture, sa chambre, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations.
 
 Compte : `eleve@club.fr` · format téléphone
 
