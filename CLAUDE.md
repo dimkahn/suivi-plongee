@@ -465,7 +465,10 @@ SecurityConfig) : `sejour.code_frais` secret, code à 6 chiffres par e-mail
 (empreinte SHA-256 seulement, 10 min, 5 essais, un envoi par minute, même
 réponse si l'e-mail est inconnu ou celui d'un encadrant), puis jeton
 (empreinte en base, en-tête `X-Jeton-Sejour`, gardé en IndexedDB) valable
-jusqu'à 60 jours après le séjour ; onglets « Mes informations »
+jusqu'à 60 jours après le séjour ; onglets « Carnet » (ouvert d'abord,
+`CarnetSejourComponent`, lecture seule, `GET …/carnet` =
+`SejourService.carnetDuParticipant` : le carnet filtré comme pour un
+participant connecté, toujours à jour), « Mes informations »
 (`MesInformationsComponent`, partagé avec l'appli) et « Frais ». L'onglet
 et la page publique partagent `SejourFraisComponent` par un `PortFrais`.
 

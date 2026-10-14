@@ -463,3 +463,17 @@ export function heure(h: string | null): string {
 export function nomComplet(p: { prenom: string; nom: string }): string {
   return `${p.prenom} ${p.nom}`;
 }
+
+/** « Vendredi 03/06/2027 à 18h30, avion AF7520, Aéroport de Toulon-Hyères ». */
+export function texteTrajet(t: Trajet | null): string {
+  if (!t) return 'à préciser';
+  const moyen = TRANSPORTS.find(x => x.code === t.transport)?.libelle.toLowerCase();
+  return [
+    t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : (t.heure ? 'à ' + heure(t.heure) : null),
+    [moyen, t.numero].filter(Boolean).join(' ') || null,
+    t.lieu,
+    t.heureDepart || t.lieuDepart
+      ? 'départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
+      : null
+  ].filter(Boolean).join(', ') || 'à préciser';
+}

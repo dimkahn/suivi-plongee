@@ -322,6 +322,24 @@ public class SejourService {
                 .toList();
     }
 
+    /**
+     * Le carnet d'un participant entré par le lien et le code (sans compte) :
+     * le même que celui d'un participant connecté à l'appli, « moi » étant
+     * repéré par sa ligne et non par un compte.
+     */
+    @Transactional(readOnly = true)
+    public SejourVue carnetDuParticipant(Long sortieId, Long participantId) {
+        SejourVue complet = vueComplete(sortieId, null, false, false);
+        List<ParticipantVue> participants = complet.participants().stream()
+                .map(p -> !p.id().equals(participantId) ? p : new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(),
+                        p.nom(), p.prenom(), p.plongeur(), p.telephone(), p.email(), p.regimes(), p.regimePrecision(),
+                        p.urgenceNom(), p.urgenceTelephone(), p.arrivee(), p.depart(), p.remarques(), true))
+                .toList();
+        return carnet(new SejourVue(complet.sortie(), false, false, complet.infosPratiques(), participants,
+                complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(),
+                frais.lire(sortieId, frais.acteurParticipant(participantId)), List.of(), List.of()));
+    }
+
     /** Le même séjour, avec les frais vus par celui qui agit (ce qu'il peut saisir, modifier). */
     private static SejourVue avecFrais(SejourVue s, FraisService.FraisVue f) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),

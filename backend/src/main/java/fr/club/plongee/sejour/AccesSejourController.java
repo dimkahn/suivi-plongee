@@ -11,8 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Le séjour pour un participant qui n'est pas encadrant, à l'adresse
- * {@code /sejour/{code}} de l'appli : ses informations (voyage, repas,
- * personne à prévenir) et les frais. Hors de la connexion habituelle
+ * {@code /sejour/{code}} de l'appli : le carnet du séjour, ses informations
+ * (voyage, repas, personne à prévenir) et les frais. Hors de la connexion habituelle
  * ({@code /api/public/**} est ouvert dans SecurityConfig) : le contrôle se
  * fait ici, par le code de l'adresse puis le jeton reçu après le code à
  * 6 chiffres, dans l'en-tête {@code X-Jeton-Sejour}. Les droits sur les
@@ -42,6 +42,13 @@ public class AccesSejourController {
     public MesInformationsVue mesInformations(@PathVariable String code,
                                               @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
         return acces.mesInformations(code, acces.acces(code, jeton));
+    }
+
+    /** Le carnet du séjour (programme, voitures, chambres, affaires, infos pratiques), tenu à jour. */
+    @GetMapping("/carnet")
+    public SejourService.SejourVue carnet(@PathVariable String code,
+                                          @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        return acces.carnet(acces.acces(code, jeton));
     }
 
     @PutMapping("/moi")
