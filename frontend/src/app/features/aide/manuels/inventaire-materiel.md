@@ -10,11 +10,11 @@ questions:
 - Que veut dire « à régulariser » ?
 - Qui a accès au matériel ?
 ---
-Menu, « Matériel » : blocs, détendeurs, gilets et combinaisons du club, avec leur état et les échéances proches ou dépassées.
+Menu, « Matériel » (pour un administrateur : « Administration », puis « Inventaire du matériel ») : blocs, détendeurs, gilets et combinaisons du club, avec leur état et les échéances proches ou dépassées.
 
 ## Pas à pas
 
-1. Menu, puis « Matériel ».
+1. Menu, puis « Matériel ». Un administrateur passe par « Administration », rubrique « Matériel ».
 2. En haut, les compteurs : disponible, prêté, à régulariser, hors service.
 3. « À surveiller » : les échéances proches ou dépassées, calculées par l'appli.
 4. Filtrez par type, ou cherchez une référence.

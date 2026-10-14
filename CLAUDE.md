@@ -830,7 +830,11 @@ tests remplacent la source par une fausse (`GenerationSaisonTest`).
   droite « Comment faire ? », qui ouvre dans une fenêtre les manuels de
   l'écran (`features/aide/comment-faire.ts`, chargé au premier appui). Ne
   plus écrire de lien de retour dans un écran ; un nouvel écran = une entrée
-  dans ces deux fichiers.
+  dans ces deux fichiers. Menu allégé (choix du club, 2026) : les groupes
+  de plongeurs s'ouvrent depuis « Séjours », « Se déconnecter » est en bas
+  de « Mon compte » (le nom dans le menu), et le matériel est une rubrique
+  d'« Administration » pour l'ADMIN (le DT et le TIV non admin gardent
+  « Matériel » au menu, faute d'accès à l'administration).
 - Identité visuelle alignée sur celle du club (cppjvo.fr) : palette
   océan/corail, Poppins pour les titres, Nunito pour le texte courant.
   Jetons de design dans `frontend/src/styles.css`. Ne pas introduire de

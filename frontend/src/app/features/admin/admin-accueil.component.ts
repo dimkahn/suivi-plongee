@@ -45,6 +45,15 @@ const RUBRIQUES: { titre: string; aide: string; ecrans: Ecran[] }[] = [
     ]
   },
   {
+    titre: 'Matériel',
+    aide: 'Le domaine du directeur technique, que l\'administrateur supplée.',
+    ecrans: [
+      { lien: '/materiel', nom: 'Inventaire du matériel',
+        detail: 'Blocs, détendeurs, gilets, combinaisons : fiches, contrôles, TIV, étiquettes, import Excel' },
+      { lien: '/materiel/prets', nom: 'Prêts de matériel', detail: 'Prêter, rendre, photos avant et après' }
+    ]
+  },
+  {
     titre: 'Contenu pédagogique',
     aide: 'Ce qui se règle rarement : le MFT, ses exercices et les progressions du club.',
     ecrans: [

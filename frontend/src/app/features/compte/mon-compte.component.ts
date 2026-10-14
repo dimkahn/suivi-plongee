@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -7,18 +7,21 @@ import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { etatCaci, libelleCaci } from '../../core/caci';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
+import { DialogueComponent } from '../../core/dialogue.component';
+import { FileAttenteService } from '../../core/file-attente.service';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
 
 type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
 
 /**
  * Le moniteur modifie lui-même son identité, son e-mail, son mot de passe et
- * sa photo du trombinoscope.
+ * sa photo du trombinoscope ; c'est aussi ici qu'on se déconnecte.
  * Le niveau d'encadrement est affiché mais reste réservé à l'administrateur :
  * c'est lui qui détermine quels niveaux on a le droit de noter.
  */
 @Component({
   selector: 'app-mon-compte',
-  imports: [FormsModule, RecadragePhotoComponent, DetailCaciComponent],
+  imports: [FormsModule, RecadragePhotoComponent, DetailCaciComponent, DialogueComponent],
   template: `
     <h1>Mon compte</h1>
     @if (auth.niveau(); as n) {
@@ -141,6 +144,27 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
         {{ envoi() === 'motDePasse' ? 'Enregistrement…' : 'Changer le mot de passe' }}
       </button>
     </section>
+
+    <section class="carte panneau">
+      <h2>Se déconnecter</h2>
+      <p class="secondaire">Sur un appareil partagé, pensez à vous déconnecter en partant.</p>
+      <button type="button" class="bouton-discret danger deconnexion" (click)="deconnecter()">Se déconnecter</button>
+    </section>
+
+    <app-dialogue [ouvert]="confirmationDeconnexion()" titre="Se déconnecter ?"
+                  (fermer)="confirmationDeconnexion.set(false)">
+      <p>
+        {{ enAttente() > 1 ? enAttente() + ' saisies ne sont pas encore envoyées.'
+                           : 'Une saisie n’est pas encore envoyée.' }}
+        Elles restent sur cet appareil et partiront à votre prochaine connexion, avec du réseau.
+      </p>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="confirmationDeconnexion.set(false)">
+          Rester connecté
+        </button>
+        <button type="button" class="bouton-discret" (click)="confirmerDeconnexion()">Se déconnecter quand même</button>
+      </div>
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -168,6 +192,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
     .actions-photo { display: flex; flex-direction: column; gap: var(--pas); }
     .upload { margin: 0; cursor: pointer; font-size: inherit; }
     .danger { color: #B3261E; border-color: #B3261E; }
+    .deconnexion { width: 100%; margin-top: var(--pas-2); }
     .succes {
       background: var(--acquis-clair); color: var(--acquis); border-radius: var(--r-s);
       padding: var(--pas-2); font-weight: 700;
@@ -177,6 +202,8 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
 export class MonCompteComponent implements OnDestroy {
   auth = inject(AuthService);
   private api = inject(ApiService);
+  private file = inject(FileAttenteService);
+  private ecritures = inject(FileEcrituresService);
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
 
@@ -260,6 +287,23 @@ export class MonCompteComponent implements OnDestroy {
         this.message('photo', false, e.error?.detail ?? "La photo n'a pas pu être retirée.");
       }
     });
+  }
+
+  /** Saisies pas encore envoyées : on prévient plutôt que de les laisser en plan sans le dire. */
+  readonly enAttente = computed(() => this.file.enAttente().length + this.ecritures.enAttente().length);
+  confirmationDeconnexion = signal(false);
+
+  deconnecter(): void {
+    if (this.enAttente() > 0) {
+      this.confirmationDeconnexion.set(true);
+      return;
+    }
+    this.auth.deconnexion();
+  }
+
+  confirmerDeconnexion(): void {
+    this.confirmationDeconnexion.set(false);
+    this.auth.deconnexion();
   }
 
   ngOnDestroy(): void {

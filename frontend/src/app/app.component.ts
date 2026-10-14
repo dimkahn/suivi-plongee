@@ -6,7 +6,6 @@ import { FileEcrituresService } from './core/file-ecritures.service';
 import { MiseAJourService } from './core/mise-a-jour.service';
 import { IdentiteService } from './core/identite.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
-import { DialogueComponent } from './core/dialogue.component';
 import { BarrePageComponent } from './core/barre-page.component';
 
 /**
@@ -36,7 +35,7 @@ const ICONES = {
 
 @Component({
   selector: 'app-racine',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, DialogueComponent, BarrePageComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, BarrePageComponent],
   host: { '(document:keydown.escape)': 'fermerMenu()' },
   template: `
     @if (pret()) {
@@ -69,9 +68,6 @@ const ICONES = {
               <a routerLink="/fiches-securite" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Fiches de sécurité
               </a>
-              <a routerLink="/groupes" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
-                Groupes
-              </a>
               <a routerLink="/parcours" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()"
                  title="Le parcours de chaque niveau, période par période, et la fiche de chaque exercice">
                 Parcours
@@ -88,7 +84,8 @@ const ICONES = {
                 Fiches de sécurité
               </a>
             }
-            @if (auth.inspecteBlocs()) {
+            <!-- L'administrateur trouve le matériel dans « Administration ». -->
+            @if (auth.inspecteBlocs() && !auth.estAdmin()) {
               <a routerLink="/materiel" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
                 Matériel
               </a>
@@ -109,13 +106,10 @@ const ICONES = {
               Aide
             </a>
             <a routerLink="/mon-compte" routerLinkActive="actif" class="qui" (click)="fermerMenu()"
-               title="Mon compte : nom, e-mail, mot de passe">
+               title="Mon compte : photo, e-mail, mot de passe, se déconnecter">
               {{ auth.session()?.nomComplet }}
               @if (auth.niveau(); as n) { <span class="niveau">{{ n }}</span> }
             </a>
-            <button type="button" class="bouton-discret" (click)="deconnecter(); fermerMenu()">
-              Se déconnecter
-            </button>
           </nav>
         </header>
 
@@ -150,21 +144,6 @@ const ICONES = {
 
       <main [class.avec-onglets]="auth.connecte()"><app-barre-page /><router-outlet /></main>
       <footer class="version" [class.avec-onglets]="auth.connecte()">Version {{ version }}</footer>
-
-      <app-dialogue [ouvert]="confirmationDeconnexion()" titre="Se déconnecter ?"
-                    (fermer)="confirmationDeconnexion.set(false)">
-        <p>
-          {{ enAttente() > 1 ? enAttente() + ' saisies ne sont pas encore envoyées.'
-                             : 'Une saisie n’est pas encore envoyée.' }}
-          Elles restent sur cet appareil et partiront à votre prochaine connexion, avec du réseau.
-        </p>
-        <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="confirmationDeconnexion.set(false)">
-            Rester connecté
-          </button>
-          <button type="button" class="bouton-discret" (click)="confirmerDeconnexion()">Se déconnecter quand même</button>
-        </div>
-      </app-dialogue>
     } @else {
       <p class="vide">Ouverture de la session…</p>
     }
@@ -314,22 +293,5 @@ export class AppComponent {
 
   fermerMenu(): void {
     this.menuOuvert.set(false);
-  }
-
-  /** Saisies pas encore envoyées : on prévient plutôt que de les laisser en plan sans le dire. */
-  readonly enAttente = computed(() => this.file.enAttente().length + this.ecritures.enAttente().length);
-  confirmationDeconnexion = signal(false);
-
-  deconnecter(): void {
-    if (this.enAttente() > 0) {
-      this.confirmationDeconnexion.set(true);
-      return;
-    }
-    this.auth.deconnexion();
-  }
-
-  confirmerDeconnexion(): void {
-    this.confirmationDeconnexion.set(false);
-    this.auth.deconnexion();
   }
 }

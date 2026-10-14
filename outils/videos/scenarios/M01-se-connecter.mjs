@@ -1,5 +1,5 @@
 // M1 — Se connecter et s'y retrouver.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-14, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -10,7 +10,7 @@ export default {
   compte: 'e2@club.fr',
   connecte: false,
 
-  async jouer({ page, pause, legende, toucher, saisir, menu }) {
+  async jouer({ page, pause, legende, toucher, saisir }) {
     await page.goto(`${APPLI}/connexion`);
     await pause(800);
     await legende('Sur votre téléphone, ouvrez l\'adresse de l\'appli du club.', 3000);
@@ -29,9 +29,10 @@ export default {
     await legende('Tout le reste est derrière « Plus ».', 0);
     const plus = page.locator('nav.onglets').getByRole('button', { name: 'Plus' });
     await toucher(plus, { apres: 800 });
-    await legende('Trombinoscope, fiches de sécurité, groupes…', 3500);
+    await legende('Trombinoscope, fiches de sécurité, séjours…', 3500);
     await legende('« Préparer hors ligne » avant d\'aller au bassin, s\'il n\'y a pas de réseau.', 3500);
-    await legende('« Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe).', 4000);
+    await legende('« Aide » : les questions fréquentes et les vidéos. '
+      + 'Votre nom : votre compte (photo, e-mail, mot de passe), et « Se déconnecter ».', 4500);
     await toucher(plus, { apres: 600 });
 
     await legende('Sur chaque écran, « Comment faire ? », en haut à droite, ouvre les manuels et vidéos de cet écran.', 0);
@@ -43,8 +44,11 @@ export default {
     await legende('Astuce : ajoutez l\'appli à l\'écran d\'accueil du téléphone, '
       + 'elle s\'ouvrira comme une application.', 4000);
 
-    await legende('Mot de passe oublié ? Déconnectons-nous pour voir.', 0);
-    await menu('Se déconnecter');
+    await legende('Mot de passe oublié ? Déconnectons-nous pour voir : votre nom, puis « Se déconnecter » tout en bas.', 0);
+    const plusFin = page.locator('nav.onglets').getByRole('button', { name: 'Plus' });
+    if (await plusFin.isVisible()) await toucher(plusFin, { apres: 700 });
+    await toucher(page.locator('#menu-principal a.qui'), { apres: 1200 });
+    await toucher(page.locator('main').getByRole('button', { name: 'Se déconnecter' }), { apres: 1200 });
     await toucher(page.getByRole('button', { name: 'Mot de passe oublié ?' }));
     await saisir('#email-oubli', 'e2@club.fr');
     await toucher(page.getByRole('button', { name: 'Envoyer le lien' }), { apres: 1200 });

@@ -43,14 +43,14 @@ Compte : `e2@club.fr` · format téléphone · 62 s
 5. Vous arrivez sur « Aujourd'hui » : la séance du jour, où va votre groupe, l'appel. Voir la vidéo M23.
 6. En bas de l'écran, à portée du pouce : Aujourd'hui, Présences, Élèves et Planning.
 7. Tout le reste est derrière « Plus ».
-8. Trombinoscope, fiches de sécurité, groupes…
+8. Trombinoscope, fiches de sécurité, séjours…
 9. « Préparer hors ligne » avant d'aller au bassin, s'il n'y a pas de réseau.
-10. « Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe).
+10. « Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe), et « Se déconnecter ».
 11. Sur chaque écran, « Comment faire ? », en haut à droite, ouvre les manuels et vidéos de cet écran.
 12. Votre saisie reste en place derrière la fenêtre : « Revenir à l'écran » la retrouve.
 13. En haut à gauche des autres écrans, « ← … » remonte d'un cran, toujours au même endroit.
 14. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
-15. Mot de passe oublié ? Déconnectons-nous pour voir.
+15. Mot de passe oublié ? Déconnectons-nous pour voir : votre nom, puis « Se déconnecter » tout en bas.
 16. Un lien de réinitialisation part par e-mail. Il suffit de le suivre.
 
 ### M2 — Mon compte
@@ -71,6 +71,7 @@ Compte : `e2@club.fr` · format téléphone · 56 s
 10. … l'e-mail qui sert à vous connecter…
 11. … et votre mot de passe : 10 caractères au moins. Vos autres appareils seront déconnectés.
 12. Votre nom est sur les fiches de sécurité et l'historique des notes : pour le corriger, voyez un administrateur.
+13. Tout en bas, « Se déconnecter » : à faire sur un appareil partagé.
 
 ### M3 — Faire l'appel d'une séance
 
@@ -245,10 +246,11 @@ Saisir une fois les plongeurs d'un séjour, puis reprendre le groupe dans chaque
 
 Compte : `e2@club.fr` · format téléphone · 42 s
 
-1. Un séjour, c'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Groupes ».
-2. On saisit la liste une seule fois.
-3. Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
-4. Il suffit ensuite de les répartir dans les palanquées.
+1. Un séjour, c'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Séjours ».
+2. En haut de la page : « Groupes de plongeurs ».
+3. On saisit la liste une seule fois.
+4. Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
+5. Il suffit ensuite de les répartir dans les palanquées.
 
 ### M13 — Consulter le planning du bassin
 
@@ -450,11 +452,14 @@ Compte : `presidente@club.fr` · format ordinateur · 61 s
 11. Les personnes :
 12. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
 13. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
-14. Puis le contenu pédagogique, qui se règle rarement :
-15. Référentiel MFT : Les compétences fédérales, niveau par niveau.
-16. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
-17. Enfin la structure, réglée une fois à l'installation :
-18. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
+14. Le matériel du club, que l'administrateur gère avec le directeur technique :
+15. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
+16. Prêts de matériel : Prêter, rendre, avec les photos avant et après.
+17. Puis le contenu pédagogique, qui se règle rarement :
+18. Référentiel MFT : Les compétences fédérales, niveau par niveau.
+19. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
+20. Enfin la structure, réglée une fois à l'installation :
+21. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
 
 _À retourner (tournage du 2026-10-12)._
 

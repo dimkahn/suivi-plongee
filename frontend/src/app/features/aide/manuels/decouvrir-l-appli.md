@@ -18,8 +18,10 @@ L'appli du club remplace le classeur partagé : elle se manie au téléphone, au
 - **Présences** : l'appel de chaque séance.
 - **Planning** : où va chaque groupe le lundi soir, et qui sera là.
 - **Fiches de sécurité** : la fiche du directeur de plongée, prête avant la mise à l'eau.
+- **Séjours** : voyages, voitures, chambres, frais, et les groupes de plongeurs des fiches de sécurité.
 - **Matériel** : l'inventaire, les contrôles et les prêts du club (directeur technique).
-- **Administration** : saisons, séances, élèves, inscriptions, groupes (administrateurs).
+- **Administration** : saisons, séances, élèves, inscriptions, groupes, et le matériel (administrateurs).
+- **Votre nom** : votre compte (photo, e-mail, mot de passe) et « Se déconnecter ».
 
 ## Bon à savoir
 

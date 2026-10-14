@@ -9,6 +9,7 @@ questions:
 - J'ai oublié mon mot de passe
 - Comment installer l'appli sur mon téléphone ?
 - Où sont les écrans ?
+- Comment me déconnecter ?
 - Où est passé le menu ?
 - Où sont les vidéos d'aide ?
 - Comment avoir de l'aide sur l'écran où je suis ?
@@ -22,7 +23,7 @@ On se connecte avec son adresse e-mail et son mot de passe. Sur téléphone, les
 2. Saisissez votre adresse e-mail et votre mot de passe, puis « Se connecter ».
 3. Vous arrivez sur « Aujourd'hui » : la séance du jour ou la prochaine, où va votre groupe, l'appel (voir « La page Aujourd'hui »).
 4. En bas de l'écran, à portée du pouce : « Aujourd'hui », « Présences », « Élèves » et « Planning ».
-5. « Plus », au bout de la barre, ouvre tout le reste : trombinoscope, fiches de sécurité, groupes, « Préparer hors ligne », « Aide » (questions fréquentes et vidéos), votre compte et « Se déconnecter ». Touchez-le de nouveau, ou à côté, pour le refermer.
+5. « Plus », au bout de la barre, ouvre tout le reste : trombinoscope, fiches de sécurité, séjours (dont les groupes de plongeurs), « Préparer hors ligne », « Aide » (questions fréquentes et vidéos) et votre nom, qui ouvre votre compte (c'est là qu'on se déconnecte). Un administrateur trouve le matériel dans « Administration ». Touchez-le de nouveau, ou à côté, pour le refermer.
 
 ## Comment faire ? et le retour
 
