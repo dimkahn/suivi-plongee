@@ -409,8 +409,11 @@ un compte (son dossier élève ou son compte) lit le **carnet** : sans
 téléphone, e-mail, régime ni personne à prévenir des autres (filtré par le
 serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail ;
 « Imprimer le carnet » côté écran. Avertissements jamais bloquants
-(voiture ou chambre trop pleine, sans conducteur, sans chambre, dans deux
-voitures). **Encart « Aujourd'hui »** (`JourneeSejourComponent`, calcul pur
+(voiture ou chambre trop pleine, sans conducteur, sans chambre). **Une
+seule voiture par personne** (choix du club, 2026) : conducteur ou
+passager, refus 422 à l'enregistrement d'une voiture (pas de contrainte en
+base, conducteur et passagers sont dans deux tables) ; l'avertissement
+« dans plusieurs voitures » ne reste que pour les séjours saisis avant. **Encart « Aujourd'hui »** (`JourneeSejourComponent`, calcul pur
 dans `programme-du-jour.ts`, date de l'appareil ; dans le séjour et sur la
 page du lien, qui reçoit le programme par `MesInformationsVue.programme`) :
 du jour du premier voyage aller au dernier retour, le programme du jour et

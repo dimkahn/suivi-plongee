@@ -128,6 +128,16 @@ class SejourTest {
         assertThat(voiture.get("passagerIds")).hasSize(2); // le conducteur ne se compte pas deux fois
         assertThat(s.get("avertissements").toString()).contains("3 personnes pour 2 places");
 
+        // Une seule voiture par personne : le conducteur Léo ne monte pas dans une autre, Inès non plus.
+        envoyer("POST", base + "/voitures", dt, """
+                {"nom":"Kangoo","places":5,"conducteurId":%d,"passagerIds":[]}""".formatted(leo), 422);
+        envoyer("POST", base + "/voitures", dt, """
+                {"nom":"Kangoo","places":5,"conducteurId":null,"passagerIds":[%d]}""".formatted(ines), 422);
+        // Modifier la voiture elle-même reste possible (on ne se compte pas contre soi).
+        envoyer("PUT", base + "/voitures/" + voiture.get("id").asLong(), dt, """
+                {"nom":"Clio de Léo","places":2,"conducteurId":%d,"passagerIds":[%d,%d]}"""
+                .formatted(leo, camille, ines), 200);
+
         // Un gîte : Camille et Inès dans la chambre 1, Léo sans chambre.
         s = envoyer("POST", base + "/logements", dt, """
                 {"nom":"Gîte","chambres":[{"nom":"Chambre 1","couchages":2,"occupantIds":[%d,%d]},
