@@ -18,7 +18,8 @@ frontend/frontend-dev.pid
 .vscode/
 *.iml
 .DS_Store
-.claude/
+.claude/*
+!.claude/rules/
 .~lock.*#
 
 # Secrets : jamais versionnés
