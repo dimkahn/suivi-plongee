@@ -10,6 +10,7 @@ import { MesInformationsComponent } from './mes-informations.component';
 import { SeanceSortieVue } from '../../core/modeles';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { CarnetSejourComponent } from './carnet-sejour.component';
+import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
   AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, PalanqueeVue, ParticipantFrais, ParticipantVue, PortFrais, SejourVue, euros,
@@ -56,8 +57,12 @@ interface JetonGarde {
  */
 @Component({
   selector: 'app-espace-participant',
-  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent, JourneeSejourComponent, CarnetSejourComponent],
+  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent, JourneeSejourComponent, CarnetSejourComponent,
+            CarnetImprimableComponent],
   template: `
+    @if (imprimable() && carnet(); as c) {
+      <app-carnet-imprimable [sejour]="c" (fermer)="imprimable.set(false)" />
+    } @else {
     @if (entete(); as e) {
       <h1>{{ e.nom }}</h1>
       <p class="secondaire">{{ majuscule(periode(e.dateDebut, e.dateFin)) }}@if (e.lieu) { · {{ e.lieu }}}</p>
@@ -84,6 +89,9 @@ interface JetonGarde {
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
             <app-carnet-sejour [sejour]="c" (ouvrirOnglet)="changerOnglet($event)" />
+            <p class="version-imprimable">
+              <button type="button" class="bouton-discret" (click)="ouvrirImprimable()">Version imprimable</button>
+            </p>
           } @else {
             <p class="vide">Chargement…</p>
           }
@@ -134,6 +142,7 @@ interface JetonGarde {
     } @else {
       <p class="vide">Chargement…</p>
     }
+    }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -163,6 +172,13 @@ export class EspaceParticipantComponent {
   moi = signal<ParticipantVue | null>(null);
   /** Tout le séjour vu par ce participant (onglet « Carnet »). */
   carnet = signal<SejourVue | null>(null);
+  /** Le carnet mis en page pour le papier, à la place de la page. */
+  imprimable = signal(false);
+
+  ouvrirImprimable(): void {
+    this.imprimable.set(true);
+    window.scrollTo(0, 0);
+  }
   private contenu = signal<MesInformationsVue['programme'] | null>(null);
   readonly programme = computed(() => {
     const c = this.contenu();

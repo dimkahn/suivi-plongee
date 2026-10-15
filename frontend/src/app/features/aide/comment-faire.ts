@@ -44,6 +44,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/sejour/:x', manuels: ['sejour-par-lien'] },
   { adresse: '/frais/:x', manuels: ['sejour-par-lien'] },
   { adresse: '/sejours/:x', manuels: ['organiser-un-sejour', 'carnet-du-sejour'], pourEleve: ['carnet-du-sejour'] },
+  { adresse: '/sejours/:x/imprimer', manuels: ['organiser-un-sejour', 'carnet-du-sejour'], pourEleve: ['carnet-du-sejour'] },
 
   { adresse: '/admin', manuels: ['administration', 'ouvrir-une-saison'] },
   { adresse: '/admin/moniteurs', manuels: ['ajouter-un-moniteur'] },

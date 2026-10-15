@@ -136,6 +136,12 @@ export const routes: Routes = [
       .then(m => m.SejourComponent)
   },
   {
+    path: 'sejours/:id/imprimer',
+    canActivate: [gardeConnecte],
+    loadComponent: () => import('./features/sejours/carnet-imprimable.component')
+      .then(m => m.CarnetImprimableComponent)
+  },
+  {
     path: 'groupes-entrainement/synthese',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/groupes/synthese-groupe.component')

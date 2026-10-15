@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-15, 16e série, créateur et organisateurs du séjour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 17e série, bandeau d'organisation et version imprimable (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -18,6 +18,7 @@ export default {
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('Gwendoline a créé la sortie : elle est la créatrice du séjour, et seule à pouvoir le modifier.', 4500);
+    await legende('Sous le titre, le bandeau « Organisation » : qui organise, et « Vous pouvez modifier » ou « Lecture seule ».', 4500);
     await legende('« Choisir les organisateurs » : elle coche les moniteurs qui l\'aident. Les autres le lisent seulement.', 0);
     await toucher(page.getByRole('button', { name: 'Choisir les organisateurs' }), { apres: 4000 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
@@ -30,7 +31,7 @@ export default {
     await legende('On touche un nom pour voir sa fiche : vol, repas, personne à prévenir.', 0);
     await toucher(page.locator('.liste-participants summary').first(), { apres: 3000 });
     await legende('Un plongeur inscrit avec son groupe de plongeurs y reste lié : nom, prénom et e-mail suivent d\'un côté à l\'autre.', 4500);
-    await legende('Pas besoin de tout saisir : « Demander à chacun ses informations » leur envoie un e-mail.', 4500);
+    await legende('Pas besoin de tout saisir : « Demander les informations… », en haut de la page, leur envoie un e-mail.', 4500);
     await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
     await legende('Par ce lien, ils lisent aussi le carnet du séjour, toujours à jour : programme, voitures, chambres, affaires.', 4500);
     await legende('En bas, les repas : le nombre de couverts et les régimes, pour la cuisine.', 0);
@@ -90,13 +91,20 @@ export default {
     await legende('Le compte de chacun est replié en bas, dans « Détail des comptes ».', 3500);
     await legende('Les participants notent aussi leurs frais, dans l\'appli ou par le lien reçu par e-mail.', 4500);
     await enHaut();
-    await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 0);
-    await toucher(page.getByRole('button', { name: 'Envoyer le carnet par e-mail' }), { apres: 2500 });
+    await legende('« Envoyer le carnet… » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 0);
+    await toucher(page.getByRole('button', { name: 'Envoyer le carnet…' }), { apres: 2500 });
     await legende('On choisit à qui l\'envoyer : quelqu\'un ne l\'a pas reçu ? « Personne », puis on coche lui seul.', 0);
     await toucher(page.getByRole('button', { name: 'Personne' }), { apres: 1200 });
     await toucher(page.locator('.liste-vol input[type=checkbox]:not([disabled])').first(), { apres: 2500 });
-    await legende('Même choix pour « Demander à chacun ses informations ». Ici, on n\'envoie rien.', 0);
+    await legende('Même choix pour « Demander les informations… ». Ici, on n\'envoie rien.', 0);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 1500 });
+    await legende('« Version imprimable » : le carnet mis en page pour le papier, en tableaux.', 0);
+    await toucher(page.getByRole('link', { name: 'Version imprimable' }), { apres: 2500 });
+    await legende('On coche les rubriques à imprimer. Les téléphones, repas et personnes à prévenir n\'y sont que si on le demande.', 4500);
+    await defiler(700, 2500);
+    await legende('« Imprimer ou enregistrer en PDF », puis on revient au séjour.', 0);
+    await page.goBack();
+    await pause(1500);
     await legende('Pendant le séjour, un encart « Aujourd\'hui » en haut de la page : le programme du jour, les vols à prendre, et la veille un rappel.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);
     await legende(null, 0);

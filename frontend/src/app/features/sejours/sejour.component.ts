@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -57,49 +57,64 @@ function participantVide(): BrouillonParticipant {
  * l'encart « Aujourd'hui » (JourneeSejourComponent) passe avant tout.
  * Son créateur (qui a créé la sortie) et les organisateurs qu'il désigne le
  * remplissent (fenêtres de saisie) ; les autres encadrants le lisent ; un participant qui a un compte lit son carnet
- * (sans les coordonnées ni les régimes des autres). « Imprimer le carnet »
- * met tout sur une page, à imprimer ou enregistrer en PDF.
+ * (sans les coordonnées ni les régimes des autres). « Version imprimable »
+ * ouvre le carnet mis en page pour le papier (CarnetImprimableComponent).
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
+  imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
             MonSejourComponent],
   template: `
     @if (sejour(); as s) {
-      <div class="entete">
-        <div>
-          <h1>{{ s.sortie.nom }}</h1>
-          <p class="secondaire">
-            {{ majuscule(periode(s.sortie.dateDebut, s.sortie.dateFin)) }}@if (s.sortie.lieu) { · {{ s.sortie.lieu }}}
-            · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
-          </p>
-          <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
-          <p class="organisateurs">
-            @if (s.organisateurs.length) {
-              Organisé par
+      <header class="entete">
+        <h1>{{ s.sortie.nom }}</h1>
+        <p class="secondaire">
+          {{ majuscule(periode(s.sortie.dateDebut, s.sortie.dateFin)) }}@if (s.sortie.lieu) { · {{ s.sortie.lieu }}}
+          · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
+        </p>
+      </header>
+
+      <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
+      <section class="carte bandeau-organisation" aria-label="Organisation du séjour">
+        <div class="organisateurs">
+          <span class="etiquette">Organisation</span>
+          @if (s.organisateurs.length) {
+            <span>
               @for (o of s.organisateurs; track o.id) {
-                {{ $first ? '' : ($last ? ' et ' : ', ') }}<strong>{{ o.nomComplet }}</strong>@if (o.createur) { (créateur) }
+                {{ $first ? '' : ($last ? ' et ' : ', ') }}<strong>{{ o.nomComplet }}</strong>@if (o.createur) { <span class="secondaire"> (créateur)</span> }
               }
-            } @else if (s.encadrant) {
-              Aucun organisateur : un administrateur peut en désigner un.
-            }
-            @if (s.encadrant && !s.gere) { <span class="secondaire"> · lecture seule</span> }
-            @if (s.peutDesigner) {
-              <button type="button" class="bouton-discret sans-impression" (click)="ouvrirOrganisateurs()">
-                Choisir les organisateurs
-              </button>
-            }
-          </p>
-        </div>
-        <div class="actions sans-impression">
-          <button type="button" class="bouton-discret" (click)="imprimer()">Imprimer le carnet</button>
+            </span>
+          } @else if (s.encadrant) {
+            <span class="secondaire">Aucun organisateur : un administrateur peut en désigner un.</span>
+          }
           @if (s.gere) {
-            <button type="button" class="bouton-discret" (click)="choisirDestinataires('carnet')" [disabled]="envoi()">
-              Envoyer le carnet par e-mail
+            <span class="pastille droit">Vous pouvez modifier</span>
+          } @else if (s.encadrant) {
+            <span class="pastille">Lecture seule</span>
+          }
+          @if (s.peutDesigner) {
+            <button type="button" class="bouton-lien" (click)="ouvrirOrganisateurs()">
+              Choisir les organisateurs
             </button>
           }
         </div>
-      </div>
+        <div class="barre-actions" role="group" aria-label="Partager le carnet">
+          <a class="bouton-discret action" [routerLink]="['/sejours', s.sortie.id, 'imprimer']">
+            <span aria-hidden="true">🖨</span> Version imprimable
+          </a>
+          @if (s.gere) {
+            <button type="button" class="bouton-discret action" (click)="choisirDestinataires('carnet')" [disabled]="envoi()">
+              <span aria-hidden="true">✉</span> Envoyer le carnet…
+            </button>
+            @if (s.participants.length > 0) {
+              <button type="button" class="bouton-discret action" (click)="choisirDestinataires('invitations')" [disabled]="envoi()"
+                      title="Les personnes choisies reçoivent un e-mail pour renseigner leur voyage, leurs repas, la personne à prévenir et leurs frais">
+                <span aria-hidden="true">✎</span> Demander les informations…
+              </button>
+            }
+          }
+        </div>
+      </section>
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
@@ -207,7 +222,7 @@ function participantVide(): BrouillonParticipant {
                 @if (s.participants.length > 0) {
                   <button type="button" class="bouton-discret" (click)="choisirDestinataires('invitations')" [disabled]="envoi()"
                           title="Les personnes choisies reçoivent un e-mail pour renseigner leur voyage, leurs repas, la personne à prévenir et leurs frais">
-                    Demander à chacun ses informations
+                    Demander les informations…
                   </button>
                 }
                 @if (s.groupesProposes.length > 0) {
@@ -231,7 +246,7 @@ function participantVide(): BrouillonParticipant {
           <ul class="liste-participants">
             @for (p of s.participants; track p.id) {
               <li class="carte">
-                <details [open]="impression()">
+                <details>
                   <summary>
                     <span class="nom">{{ nomComplet(p) }}</span>
                     <span class="pastille" [class.accompagnant]="!p.plongeur">{{ p.plongeur ? 'Plongeur' : 'Accompagnant' }}</span>
@@ -450,7 +465,7 @@ function participantVide(): BrouillonParticipant {
       <!-- Frais partagés -->
       @if (voir('frais')) {
         <section id="frais-sejour">
-          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" [deplie]="impression()" />
+          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
               Les participants qui ne sont pas moniteurs voient et saisissent leurs frais par le lien reçu avec
@@ -854,10 +869,22 @@ function participantVide(): BrouillonParticipant {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
-    .entete h1 { margin-bottom: var(--pas); }
-    .organisateurs { margin: 0; display: flex; align-items: center; gap: 0 4px; flex-wrap: wrap; }
-    .organisateurs button { margin-left: var(--pas); }
+    .entete h1 { margin-bottom: 4px; }
+    .entete p { margin: 0 0 var(--pas-2); }
+    .bandeau-organisation { display: flex; justify-content: space-between; align-items: center; gap: var(--pas) var(--pas-2);
+                            flex-wrap: wrap; padding: var(--pas) var(--pas-2); margin-bottom: var(--pas-2); }
+    .organisateurs { display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; min-height: 44px; }
+    .etiquette { font-size: .8125rem; text-transform: uppercase; letter-spacing: .04em; color: var(--craie); font-weight: 700; }
+    .pastille.droit { background: var(--acquis-clair); color: var(--acquis); }
+    .bouton-lien { background: none; border: none; padding: 0 4px; min-height: 44px; color: var(--profond); font: inherit;
+                   font-weight: 700; text-decoration: underline; cursor: pointer; }
+    .barre-actions { display: flex; gap: var(--pas); flex-wrap: wrap; }
+    .barre-actions .action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; text-decoration: none;
+                             border: 1px solid var(--trait); border-radius: var(--r-s); color: var(--encre); }
+    @media (max-width: 640px) {
+      .barre-actions { width: 100%; }
+      .barre-actions .action { flex: 1 1 100%; justify-content: center; }
+    }
     h2 { margin: var(--pas-3, 24px) 0 var(--pas); }
     h3 { margin: var(--pas) 0; font-size: 1rem; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
@@ -970,8 +997,6 @@ export class SejourComponent {
   erreur = signal<string | null>(null);
   envoi = signal(false);
   onglet = signal<Onglet>('programme');
-  /** Vrai le temps d'imprimer le carnet : tous les onglets, tout déplié. */
-  impression = signal(false);
 
   /**
    * Les avertissements du serveur (SejourService.avertissements), rangés
@@ -1070,7 +1095,7 @@ export class SejourComponent {
   }
 
   voir(o: Onglet): boolean {
-    return this.onglet() === o || this.impression();
+    return this.onglet() === o;
   }
 
   /** Ce qu'un participant n'a pas encore renseigné ; vide s'il a tout donné. */
@@ -1222,12 +1247,6 @@ export class SejourComponent {
   }
 
   /** Tous les onglets, dépliés, le temps de l'impression ; puis retour à l'onglet ouvert. */
-  imprimer(): void {
-    this.impression.set(true);
-    window.addEventListener('afterprint', () => this.impression.set(false), { once: true });
-    setTimeout(() => window.print(), 100);
-  }
-
   /** Le bouton de l'encart en tête de page : ouvre l'onglet « Frais » et y descend. */
   ouvrirFrais(): void {
     this.onglet.set('frais');

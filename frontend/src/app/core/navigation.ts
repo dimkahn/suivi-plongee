@@ -108,7 +108,9 @@ export class NavigationService {
           : { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
         return null;
       case 'sejours':
-        return s.length === 2 ? { libelle: 'Séjours', lien: '/sejours' } : null;
+        if (s.length === 2) return { libelle: 'Séjours', lien: '/sejours' };
+        // La version imprimable : le nom du séjour, précisé une fois chargé.
+        return s.length === 3 ? { libelle: 'Séjour', lien: `/sejours/${s[1]}` } : null;
       case 'groupes':
         return { libelle: 'Séjours', lien: '/sejours' };
       case 'groupes-entrainement':

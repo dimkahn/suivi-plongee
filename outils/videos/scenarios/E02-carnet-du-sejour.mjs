@@ -44,7 +44,7 @@ export default {
     await legende('Les frais sont en haut de la page : « Voir les frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
     await toucher(page.getByRole('button', { name: 'Voir les frais' }), { apres: 3500 });
     await legende('Elle a payé quelque chose ? Elle donne la note à un moniteur du séjour, qui la saisit pour elle.', 4000);
-    await legende('« Imprimer le carnet » : tout sur une page, à garder sans réseau.', 4000);
+    await legende('En haut de la page, « Version imprimable » : le carnet mis en page pour le papier, à garder sans réseau.', 4000);
     await legende(null, 0);
     await pause(500);
   }

@@ -3,7 +3,7 @@ titre: Le carnet du séjour
 rubrique: Élève
 videos: E2
 ecran: /sejours
-mots: séjour, carnet, voir les frais, mon séjour, mes comptes, mes informations, à compléter, solde, transports, hébergement, pratique, voyage, vol, arrivée, départ, voiture, chambre, programme, affaires, valise, liste, frais, rembourser, argent, dépenses, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, encadrant, fonction, binôme, rappel, veille, à quelle heure, aéroport, gare, embarquement, heure de départ, retard
+mots: séjour, carnet, voir les frais, mon séjour, mes comptes, mes informations, à compléter, solde, transports, hébergement, pratique, voyage, vol, arrivée, départ, voiture, chambre, programme, affaires, valise, liste, frais, rembourser, argent, dépenses, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, encadrant, fonction, binôme, rappel, veille, à quelle heure, aéroport, gare, embarquement, heure de départ, retard
 questions:
 - Où trouver le programme du séjour ?
 - Qu'est-ce qu'on fait aujourd'hui pendant le séjour ?
@@ -25,7 +25,7 @@ Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, vo
 4. En haut aussi, l'encart **Frais du séjour** : le total dépensé, ce que vous devez ou ce qu'on vous doit, et le bouton « **Voir les frais** ».
 5. Les onglets : Frais, Programme (le jour même y est marqué « aujourd'hui » ; votre palanquée sous chaque plongée), Transports (arrivées, départs et voitures), Hébergement (chambres), Pratique (affaires à prévoir et infos pratiques).
 6. « Frais » : en tête, **votre solde** (ce que vous devez, à qui, ou ce qu'on vous doit), puis qui doit combien à qui et les dépenses, une ligne chacune ; touchez une dépense pour voir le partage et la photo de la note. Le compte de chacun est dans « Détail des comptes », en bas. Vous avez payé quelque chose ? Donnez la note à un moniteur du séjour : il la saisit pour vous.
-7. « Imprimer le carnet » : tous les onglets sur une page, à imprimer ou enregistrer en PDF pour l'avoir sans réseau.
+7. « Version imprimable », en haut de la page : le carnet mis en page pour le papier (programme avec votre palanquée, participants, transports, chambres, affaires à cocher, infos pratiques, frais). Décochez les rubriques inutiles, puis « Imprimer ou enregistrer en PDF » pour l'avoir sans réseau.
 
 ## Bon à savoir
 

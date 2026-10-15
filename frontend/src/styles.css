@@ -200,6 +200,8 @@ input, select, textarea {
 @media print {
   body:has(app-etiquettes-materiel) app-racine > :not(main) { display: none !important; }
   body:has(app-etiquettes-materiel) main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+  body:has(app-carnet-imprimable) app-racine > :not(main) { display: none !important; }
+  body:has(app-carnet-imprimable) main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
 }
 
 /* Menu « Actions » d'une ligne de liste (écrans Moniteurs et Élèves) :
