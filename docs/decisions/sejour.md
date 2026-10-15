@@ -50,6 +50,7 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 
 - **Date** : 2026, V82.
 - **Décision** : le mail de réservation du loueur collé en HTML, nettoyé par jsoup (`NettoyageHtml`) avant d'être gardé, montré seulement aux occupants de la voiture.
+- **Révision (octobre 2026)** : fonctionnalité retirée à la demande. V83 supprime la colonne `sejour_voiture.location_html` ; V82 reste dans le dépôt, inchangée, car elle a pu être appliquée en production (`MigrationLocationRetireeTest`).
 
 ## Palanquées dans le programme
 

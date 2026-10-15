@@ -668,7 +668,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; l'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures (avec le mail de réservation du loueur, vérifié), les chambres, les régimes, le programme, le partage des frais et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l'encart « Aujourd'hui ».
+Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; l'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l'encart « Aujourd'hui ».
 
 Compte : `e3@club.fr` (créatrice du séjour de démonstration) · format ordinateur
 

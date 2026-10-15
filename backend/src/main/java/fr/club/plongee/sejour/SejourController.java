@@ -6,7 +6,6 @@ import fr.club.plongee.sejour.SejourService.*;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +33,6 @@ public class SejourController {
     public record DemandeInfos(String infosPratiques) {}
 
     public record DemandeGroupe(@NotNull Long groupeId) {}
-
-    /** Le mail de réservation d'une voiture de location, à vérifier. */
-    public record DemandeHtml(@Size(max = 1_000_000) String html) {}
 
     public record DemandeAffaires(@NotNull List<@Valid DemandeAffaire> affaires) {}
 
@@ -144,16 +140,6 @@ public class SejourController {
                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.creerVoiture(id, d);
         return service.lire(id, moi);
-    }
-
-    /**
-     * Vérifie le mail du loueur avant de l'enregistrer : l'aperçu tel qu'il
-     * sera gardé, et ce qui en sera retiré. N'écrit rien.
-     */
-    @PostMapping("/{id}/voitures/verifier-location")
-    @PreAuthorize(GERE)
-    public NettoyageHtml.Resultat verifierLocation(@PathVariable Long id, @Valid @RequestBody DemandeHtml d) {
-        return NettoyageHtml.nettoyer(d.html());
     }
 
     @PutMapping("/{id}/voitures/{voitureId}")
