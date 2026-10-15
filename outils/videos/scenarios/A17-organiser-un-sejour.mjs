@@ -1,13 +1,14 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-15, 15e série, choix des destinataires des e-mails du séjour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 16e série, créateur et organisateurs du séjour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies ; pendant le séjour, l\'encart « Aujourd\'hui ».',
-  compte: 'presidente@club.fr',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  compte: 'e3@club.fr',
   format: 'ordinateur',
 
   async jouer({ page, pause, legende, toucher, saisir, dater, menu, defiler, enHaut, vignette }) {
@@ -16,6 +17,11 @@ export default {
     await legende('Menu « Séjours » : chaque sortie a son séjour.', 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
+    await legende('Gwendoline a créé la sortie : elle est la créatrice du séjour, et seule à pouvoir le modifier.', 4500);
+    await legende('« Choisir les organisateurs » : elle coche les moniteurs qui l\'aident. Les autres le lisent seulement.', 0);
+    await toucher(page.getByRole('button', { name: 'Choisir les organisateurs' }), { apres: 4000 });
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
+    await legende('Les participants, eux, le lisent par le lien et le code reçus par e-mail.', 4000);
     await legende('Tout en haut, l\'encart « Frais du séjour » : le total dépensé, et « Gérer les frais » pour les ouvrir.', 4500);
     await legende('Puis six onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
 

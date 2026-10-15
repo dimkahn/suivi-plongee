@@ -19,7 +19,7 @@ Administration, « Sorties » : nom, lieu, dates, puis les plongées de la sorti
 3. Ajoutez ses plongées, par exemple deux par jour sur le site prévu : elles sont créées et rattachées à la sortie.
 4. Les moniteurs y établissent les fiches de sécurité.
 5. « Imprimer les fiches de sécurité » télécharge toutes les fiches déjà établies de la sortie dans un seul PDF, une par page, à imprimer d'un coup.
-6. « Gérer le séjour » : participants, vols, voitures, chambres, repas, affaires à prévoir et programme (voir « Organiser un séjour »).
+6. « Gérer le séjour » : participants, vols, voitures, chambres, repas, affaires à prévoir et programme (voir « Organiser un séjour »). Celui qui crée la sortie est le **créateur** de son séjour : lui seul le modifie, avec les organisateurs qu'il désigne.
 
 ## Bon à savoir
 

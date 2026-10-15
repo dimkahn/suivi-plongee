@@ -417,4 +417,80 @@ class SejourTest {
         envoyer("GET", "/api/sejours/" + sortie, jeton("eleve@club.fr"), null, 403);
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
     }
+
+    private long moniteur(String jeton, String nom) throws Exception {
+        for (JsonNode m : envoyer("GET", "/api/moniteurs", jeton, null, 200)) {
+            if (m.get("nomComplet").asText().contains(nom)) return m.get("id").asLong();
+        }
+        throw new AssertionError(nom + " introuvable");
+    }
+
+    @Test
+    @DisplayName("Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; les autres le lisent")
+    void organisateursDuSejour() throws Exception {
+        String dt = jeton("e3@club.fr"), admin = jeton("presidente@club.fr"), e2 = jeton("e2@club.fr"),
+                e1 = jeton("e1@club.fr");
+        LocalDate debut = AUJOURDHUI.plusDays(260);
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour organisé","dateDebut":"%s"}""".formatted(debut), 201).get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+        String participant = """
+                {"nom":"Roux","prenom":"Inès","plongeur":true}""";
+
+        // Le créateur (la directrice technique, qui a créé la sortie) modifie et désigne.
+        JsonNode s = envoyer("GET", base, dt, null, 200);
+        assertThat(s.get("gere").asBoolean()).isTrue();
+        assertThat(s.get("peutDesigner").asBoolean()).isTrue();
+        assertThat(s.get("organisateurs")).hasSize(1);
+        assertThat(s.get("organisateurs").get(0).get("createur").asBoolean()).isTrue();
+        envoyer("POST", base + "/participants", dt, participant, 200);
+
+        // Être ADMIN ne suffit plus pour modifier : il lit, et peut seulement désigner les organisateurs.
+        s = envoyer("GET", base, admin, null, 200);
+        assertThat(s.get("gere").asBoolean()).isFalse();
+        assertThat(s.get("peutDesigner").asBoolean()).isTrue();
+        envoyer("PUT", base + "/infos", admin, """
+                {"infosPratiques":"Rendez-vous au port"}""", 403);
+        // Un autre moniteur lit tout, sans rien modifier ni désigner.
+        s = envoyer("GET", base, e2, null, 200);
+        assertThat(s.get("gere").asBoolean()).isFalse();
+        assertThat(s.get("peutDesigner").asBoolean()).isFalse();
+        envoyer("PUT", base + "/infos", e2, """
+                {"infosPratiques":"Rendez-vous au port"}""", 403);
+        envoyer("PUT", base + "/organisateurs", e2, """
+                {"utilisateurIds":[%d]}""".formatted(moniteur(e2, "Vasseur")), 403);
+
+        // Le créateur désigne Flora : elle modifie, sans pouvoir désigner à son tour.
+        s = envoyer("PUT", base + "/organisateurs", dt, """
+                {"utilisateurIds":[%d]}""".formatted(moniteur(dt, "Vasseur")), 200);
+        assertThat(s.get("organisateurs")).hasSize(2);
+        s = envoyer("PUT", base + "/infos", e2, """
+                {"infosPratiques":"Rendez-vous au port"}""", 200);
+        assertThat(s.get("gere").asBoolean()).isTrue();
+        assertThat(s.get("peutDesigner").asBoolean()).isFalse();
+        envoyer("POST", base + "/participants", e2, """
+                {"nom":"Durand","prenom":"Léo","plongeur":false}""", 200);
+        envoyer("PUT", base + "/organisateurs", e2, """
+                {"utilisateurIds":[]}""", 403);
+        assertThat(envoyer("GET", base, e1, null, 200).get("gere").asBoolean()).isFalse();
+        envoyer("PUT", base + "/infos", e1, """
+                {"infosPratiques":"Autre"}""", 403);
+
+        // Seul un compte d'encadrant actif s'y désigne.
+        JsonNode refus = envoyer("PUT", base + "/organisateurs", dt, """
+                {"utilisateurIds":[999999]}""", 422);
+        assertThat(refus.get("detail").asText()).contains("encadrant");
+
+        // Retirée de la liste, Flora ne modifie plus ; l'ADMIN peut reprendre le séjour en se désignant.
+        envoyer("PUT", base + "/organisateurs", dt, """
+                {"utilisateurIds":[]}""", 200);
+        envoyer("PUT", base + "/infos", e2, """
+                {"infosPratiques":"Rendez-vous au ponton"}""", 403);
+        envoyer("PUT", base + "/organisateurs", admin, """
+                {"utilisateurIds":[%d]}""".formatted(moniteur(admin, "Ferrand")), 200);
+        envoyer("PUT", base + "/infos", admin, """
+                {"infosPratiques":"Rendez-vous au ponton"}""", 200);
+
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
 }

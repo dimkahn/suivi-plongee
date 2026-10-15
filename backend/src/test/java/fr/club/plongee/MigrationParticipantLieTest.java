@@ -70,7 +70,7 @@ class MigrationParticipantLieTest {
         for (String t : tables) avant.put(t, jdbc.queryForList("SELECT * FROM " + t + " ORDER BY 1"));
 
         // La mise en production.
-        Flyway.configure().dataSource(base).locations("classpath:db/migration").load().migrate();
+        Flyway.configure().dataSource(base).locations("classpath:db/migration").target("79").load().migrate();
 
         // Tout est là, à l'identique ; les participants n'ont qu'une colonne de plus, vide.
         for (String t : tables) {

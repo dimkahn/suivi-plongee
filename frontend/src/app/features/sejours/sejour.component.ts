@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { PlongeurConnuVue } from '../../core/modeles';
+import { MoniteurOptionVue, PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { dateDuJour, periode } from '../../core/date-fr';
@@ -54,8 +54,8 @@ function participantVide(): BrouillonParticipant {
  * pratique (affaires à prévoir, infos pratiques). Les points à vérifier
  * sont comptés sur l'onglet qui permet de les régler. Pendant le séjour,
  * l'encart « Aujourd'hui » (JourneeSejourComponent) passe avant tout.
- * L'admin et le directeur technique le remplissent (fenêtres de saisie) ;
- * les encadrants le lisent ; un participant qui a un compte lit son carnet
+ * Son créateur (qui a créé la sortie) et les organisateurs qu'il désigne le
+ * remplissent (fenêtres de saisie) ; les autres encadrants le lisent ; un participant qui a un compte lit son carnet
  * (sans les coordonnées ni les régimes des autres). « Imprimer le carnet »
  * met tout sur une page, à imprimer ou enregistrer en PDF.
  */
@@ -71,6 +71,23 @@ function participantVide(): BrouillonParticipant {
           <p class="secondaire">
             {{ majuscule(periode(s.sortie.dateDebut, s.sortie.dateFin)) }}@if (s.sortie.lieu) { · {{ s.sortie.lieu }}}
             · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
+          </p>
+          <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
+          <p class="organisateurs">
+            @if (s.organisateurs.length) {
+              Organisé par
+              @for (o of s.organisateurs; track o.id) {
+                {{ $first ? '' : ($last ? ' et ' : ', ') }}<strong>{{ o.nomComplet }}</strong>@if (o.createur) { (créateur) }
+              }
+            } @else if (s.encadrant) {
+              Aucun organisateur : un administrateur peut en désigner un.
+            }
+            @if (s.encadrant && !s.gere) { <span class="secondaire"> · lecture seule</span> }
+            @if (s.peutDesigner) {
+              <button type="button" class="bouton-discret sans-impression" (click)="ouvrirOrganisateurs()">
+                Choisir les organisateurs
+              </button>
+            }
           </p>
         </div>
         <div class="actions sans-impression">
@@ -808,11 +825,35 @@ function participantVide(): BrouillonParticipant {
         <button type="button" class="bouton-discret" (click)="infosOuvertes.set(false)">Annuler</button>
       </div>
     </app-dialogue>
+
+    <app-dialogue [ouvert]="organisateursOuverts()" [erreur]="erreur()" titre="Organisateurs du séjour"
+                  (fermer)="organisateursOuverts.set(false)">
+      <p class="aide">
+        Les organisateurs modifient le séjour avec vous : participants, voitures, hébergement, programme, frais,
+        envois par e-mail. Les autres moniteurs le lisent avec leur compte, les participants par le lien reçu par e-mail.
+      </p>
+      @if (candidats().length === 0) {
+        <p class="secondaire">Chargement des moniteurs…</p>
+      }
+      @for (m of candidats(); track m.id) {
+        <label class="case" [class.indisponible]="estCreateur(m.id)">
+          <input type="checkbox" [checked]="estCreateur(m.id) || organisateursChoisis().has(m.id)"
+                 [disabled]="estCreateur(m.id)" (change)="basculerOrganisateur(m.id)" />
+          {{ m.nomComplet }}@if (estCreateur(m.id)) { (créateur, toujours organisateur) }
+        </label>
+      }
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrerOrganisateurs()" [disabled]="envoi()">Enregistrer</button>
+        <button type="button" class="bouton-discret" (click)="organisateursOuverts.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete h1 { margin-bottom: var(--pas); }
+    .organisateurs { margin: 0; display: flex; align-items: center; gap: 0 4px; flex-wrap: wrap; }
+    .organisateurs button { margin-left: var(--pas); }
     h2 { margin: var(--pas-3, 24px) 0 var(--pas); }
     h3 { margin: var(--pas) 0; font-size: 1rem; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
@@ -1015,6 +1056,10 @@ export class SejourComponent {
 
   infosOuvertes = signal(false);
   infos = '';
+
+  organisateursOuverts = signal(false);
+  candidats = signal<MoniteurOptionVue[]>([]);
+  organisateursChoisis = signal<Set<number>>(new Set());
 
   constructor() {
     void this.charger();
@@ -1526,6 +1571,34 @@ export class SejourComponent {
     this.ecrire(this.api.definirInfos(this.id, this.infos.trim() || null), () => this.infosOuvertes.set(false));
   }
 
+  // ---------------- Organisateurs ----------------
+
+  estCreateur(id: number): boolean {
+    return this.sejour()?.organisateurs.some(o => o.createur && o.id === id) ?? false;
+  }
+
+  async ouvrirOrganisateurs(): Promise<void> {
+    this.erreur.set(null);
+    this.organisateursChoisis.set(new Set((this.sejour()?.organisateurs ?? []).filter(o => !o.createur).map(o => o.id)));
+    this.organisateursOuverts.set(true);
+    try {
+      this.candidats.set(await this.apiClub.moniteursActifs());
+    } catch {
+      this.erreur.set('Impossible de charger la liste des moniteurs (réseau nécessaire).');
+    }
+  }
+
+  basculerOrganisateur(id: number): void {
+    const choisis = new Set(this.organisateursChoisis());
+    if (!choisis.delete(id)) choisis.add(id);
+    this.organisateursChoisis.set(choisis);
+  }
+
+  enregistrerOrganisateurs(): void {
+    this.ecrire(this.api.definirOrganisateurs(this.id, [...this.organisateursChoisis()]),
+      () => this.organisateursOuverts.set(false));
+  }
+
   /** Toute écriture renvoie le séjour à jour ; un refus s'affiche dans la fenêtre ouverte (ou en haut). */
   private ecrire(appel: Observable<SejourVue>, ensuite?: () => void): void {
     this.envoi.set(true);
@@ -1543,7 +1616,7 @@ export class SejourComponent {
         this.erreur.set(texte);
         if (!this.participantOuvert() && !this.voitureOuverte() && !this.logementOuvert() && !this.mesInfosOuvertes()
           && !this.volOuvert()
-          && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes()) {
+          && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes() && !this.organisateursOuverts()) {
           this.message.set(texte);
         }
       }
