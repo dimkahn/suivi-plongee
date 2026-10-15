@@ -11,8 +11,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -492,5 +494,55 @@ class SejourTest {
                 {"infosPratiques":"Rendez-vous au ponton"}""", 200);
 
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
+
+    @Test
+    @DisplayName("Dans le programme : l'encadrant voit toutes les palanquées, Camille seulement la sienne")
+    void palanqueesDuProgramme() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate samedi = AUJOURDHUI.plusDays(250).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        long seance = envoyer("POST", "/api/seances/serie", dt, """
+                {"dateDebut":"%s","dateFin":"%s","plongeesParJour":1,"milieu":"NATUREL","lieu":"Cassis"}"""
+                .formatted(samedi, samedi), 201).get(0).get("id").asLong();
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour palanquées","dateDebut":"%s"}""".formatted(samedi), 201).get("id").asLong();
+        envoyer("PUT", "/api/sorties/" + sortie + "/seances", dt, "{\"seanceIds\":[" + seance + "]}", 200);
+        String base = "/api/sejours/" + sortie;
+        long eleveId = eleveCamille(dt);
+        envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true}""".formatted(eleveId), 200);
+        envoyer("POST", base + "/participants", dt, """
+                {"nom":"Roux","prenom":"Inès","plongeur":true}""", 200);
+
+        long dpId = -1;
+        for (JsonNode m : envoyer("GET", "/api/admin/moniteurs", jeton("presidente@club.fr"), null, 200)) {
+            if ("e3@club.fr".equals(m.get("email").asText())) dpId = m.get("id").asLong();
+        }
+        envoyer("PUT", "/api/seances/" + seance + "/fiche-securite", dt, """
+                {"dpId":%d,"palanquees":[
+                  {"numero":1,"profondeurPrevue":20,"dureePrevue":40,"membres":[
+                    {"eleveId":%d,"nom":"Berthier","prenom":"Camille","aptitude":"PE20","fonction":"PLONGEUR"},
+                    {"nom":"Dulac","prenom":"Anis","aptitude":"E2","fonction":"ENCADRANT"}]},
+                  {"numero":2,"membres":[
+                    {"nom":"ROUX","prenom":"Ines","aptitude":"N2","fonction":"PLONGEUR"},
+                    {"nom":"Morel","prenom":"Sami","aptitude":"N4","fonction":"GUIDE_PALANQUEE"}]}]}"""
+                .formatted(dpId, eleveId), 200);
+
+        // L'encadrant : toutes les palanquées, encadrant puis guide en tête, avec le DP.
+        JsonNode complet = envoyer("GET", base, dt, null, 200).get("palanquees");
+        assertThat(complet).hasSize(2);
+        assertThat(complet.get(0).get("membres").get(0).get("fonction").asText()).isEqualTo("ENCADRANT");
+        assertThat(complet.get(0).get("profondeur").asInt()).isEqualTo(20);
+        assertThat(complet.get(0).get("directeurPlongee").asText()).isNotBlank();
+        assertThat(complet.get(0).get("seanceId").asLong()).isEqualTo(seance);
+
+        // Camille : sa palanquée seulement, où elle est « moi ».
+        JsonNode siennes = envoyer("GET", base, jeton("eleve@club.fr"), null, 200).get("palanquees");
+        assertThat(siennes).hasSize(1);
+        assertThat(siennes.get(0).get("numero").asInt()).isEqualTo(1);
+        assertThat(siennes.get(0).get("membres").toString()).contains("Anis").doesNotContain("Sami");
+        for (JsonNode m : siennes.get(0).get("membres")) {
+            assertThat(m.get("moi").asBoolean()).isEqualTo(m.get("prenom").asText().equals("Camille"));
+        }
     }
 }

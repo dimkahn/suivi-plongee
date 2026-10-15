@@ -300,7 +300,7 @@ public class AccesSejourService {
     @Transactional(readOnly = true)
     public MesInformationsVue mesInformations(String code, Acces a) {
         return new MesInformationsVue(entete(code), sejours.participant(a.participantId()),
-                sejours.programme(a.sortieId()));
+                sejours.programme(a.sortieId(), a.participantId()));
     }
 
     /** Tout le séjour vu par ce participant : son carnet, sans les coordonnées ni les régimes des autres. */

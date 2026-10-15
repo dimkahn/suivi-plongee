@@ -445,7 +445,13 @@ carnet par e-mail, `AVANCES_TRANSPORT` côté écran : avion 2 h, train
 30 min, bateau 45 min, car 15 min) ; la veille, un rappel. L'arrivée porte
 l'heure et le lieu de départ du voyage aller (V78,
 `arrivee_heure_depart`/`arrivee_lieu_depart` ; plus tard que l'heure
-d'arrivée = départ la veille). **Pas de champ médical** (allergie, traitement) : demandé par
+d'arrivée = départ la veille). **Palanquées dans le programme** (demande du
+club, 2026, `PalanqueesSejourService`, `SejourVue.palanquees` et
+`ProgrammeVue.palanquees`) : lues sur les fiches de sécurité des plongées
+de la sortie, sous chaque plongée (`PalanqueesPlongeeComponent`), avec la
+fonction, l'aptitude et le niveau préparé de chacun ; un encadrant les voit
+toutes, un participant seulement la sienne (filtré par le serveur, retrouvé
+par dossier élève, compte, sinon nom et prénom). Démo : V121. **Pas de champ médical** (allergie, traitement) : demandé par
 le club en 2026, écarté par la règle « Données personnelles » ci-dessous
 tant qu'elle n'est pas révisée. Réseau obligatoire. Démo : V117 (Port-Cros,
 juin 2027, Camille y participe ; créé par `e3@club.fr`, V120, sans

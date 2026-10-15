@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
-import { SortieVue } from '../../core/modeles';
+import { FonctionPalanquee, SortieVue } from '../../core/modeles';
 
 // ----------------------------------------------------------------
 //  Le séjour d'une sortie (SejourController) : participants, trajets,
@@ -319,6 +319,30 @@ export interface SejourVue {
   frais: FraisVue;
   avertissements: string[];
   groupesProposes: GroupeProposeVue[];
+  /** Palanquées des plongées (fiches de sécurité) : toutes pour un encadrant, la sienne pour un participant. */
+  palanquees: PalanqueeVue[];
+}
+
+/** Un plongeur d'une palanquée ; moi : celui qui regarde. */
+export interface MembrePalanqueeVue {
+  prenom: string;
+  nom: string;
+  fonction: FonctionPalanquee;
+  aptitude: string | null;
+  qualificationPreparee: string | null;
+  moi: boolean;
+}
+
+/** Une palanquée d'une plongée de la sortie ; profondeur et durée réalisées si saisies, sinon prévues. */
+export interface PalanqueeVue {
+  seanceId: number;
+  numero: number;
+  directeurPlongee: string | null;
+  profondeur: number | null;
+  duree: number | null;
+  realise: boolean;
+  heureImmersion: string | null;
+  membres: MembrePalanqueeVue[];
 }
 
 export interface SejourResumeVue {
