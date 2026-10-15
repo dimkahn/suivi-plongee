@@ -20,6 +20,7 @@ frontend/frontend-dev.pid
 .DS_Store
 .claude/*
 !.claude/rules/
+!.claude/skills/
 .~lock.*#
 
 # Secrets : jamais versionnés
