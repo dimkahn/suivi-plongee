@@ -2,6 +2,7 @@ import { Manuel, lireManuel } from '../manuel';
 
 import decouvrirLAppli from './decouvrir-l-appli.md';
 import seConnecter from './se-connecter.md';
+import installerLAppli from './installer-l-appli.md';
 import monCompte from './mon-compte.md';
 import horsLigne from './hors-ligne.md';
 
@@ -65,6 +66,7 @@ import sejourParLien from './sejour-par-lien.md';
 const SOURCES: Record<string, string> = {
   'decouvrir-l-appli': decouvrirLAppli,
   'se-connecter': seConnecter,
+  'installer-l-appli': installerLAppli,
   'mon-compte': monCompte,
   'hors-ligne': horsLigne,
 

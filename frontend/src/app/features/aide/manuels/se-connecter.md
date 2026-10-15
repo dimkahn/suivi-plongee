@@ -7,7 +7,6 @@ mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écra
 questions:
 - Comment me connecter ?
 - J'ai oublié mon mot de passe
-- Comment installer l'appli sur mon téléphone ?
 - Où sont les écrans ?
 - Comment me déconnecter ?
 - Où est passé le menu ?
@@ -41,6 +40,6 @@ En haut de chaque écran, la même barre :
 ## Bon à savoir
 
 - « Se souvenir de moi » garde la session sur votre téléphone. Décochez-le sur un appareil partagé.
-- Ajoutez l'appli à l'écran d'accueil du téléphone (menu du navigateur, « Ajouter à l'écran d'accueil ») : elle s'ouvrira comme une application.
+- Installez l'appli sur l'écran d'accueil du téléphone : elle s'ouvrira comme une application (voir « Installer l'appli sur son téléphone »).
 - Les vidéos d'aide sont dans « Aide » et derrière « Comment faire ? » : chaque réponse montre la sienne, et « Toutes les vidéos » les liste toutes.
 - Pas encore de compte ? C'est un administrateur du club qui le crée : vous recevez alors un e-mail pour choisir votre mot de passe.

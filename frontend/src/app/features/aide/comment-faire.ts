@@ -12,10 +12,10 @@ import { MANUELS } from './manuels';
  * pèsent pas sur l'ouverture de l'appli.
  */
 const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
-  { adresse: '/connexion', manuels: ['se-connecter'] },
+  { adresse: '/connexion', manuels: ['se-connecter', 'installer-l-appli'] },
   { adresse: '/reinitialiser-mot-de-passe', manuels: ['se-connecter'] },
   { adresse: '/aujourdhui', manuels: ['aujourdhui', 'hors-ligne'] },
-  { adresse: '/mon-compte', manuels: ['mon-compte'] },
+  { adresse: '/mon-compte', manuels: ['mon-compte', 'installer-l-appli'] },
   { adresse: '/videos', manuels: ['decouvrir-l-appli'] },
 
   { adresse: '/cursus', manuels: ['suivre-sa-progression'] },

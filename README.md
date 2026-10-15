@@ -250,6 +250,18 @@ Côté données personnelles :
 
 ---
 
+## Installer l'appli sur un téléphone
+
+L'appli est une application web installable (PWA : `src/manifest.webmanifest`,
+service worker Angular `ngsw-config.json`, actif hors profil de
+développement). Elle ne passe par aucun store : on l'installe depuis Chrome
+sur Android (menu ⋮, « Installer l'application ») ou depuis Safari sur
+iPhone/iPad (Partager, « Sur l'écran d'accueil »). Il faut l'adresse en
+HTTPS (Caddy s'en charge en production, voir `DEPLOIEMENT.md`). Le pas à
+pas pour les moniteurs, problèmes fréquents compris, est le manuel
+« Installer l'appli sur son téléphone » de la page Aide
+(`/aide?m=installer-l-appli`).
+
 ## Mode hors ligne
 
 Les moniteurs saisissent au bord du bassin ou sur un bateau, où le réseau est
