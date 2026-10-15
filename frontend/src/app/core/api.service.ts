@@ -451,6 +451,11 @@ export class ApiService {
     return this.http.put<GroupePlongeursVue>(`/api/groupes-plongeurs/${id}`, demande);
   }
 
+  /** Le créateur (ou un administrateur) choisit qui modifie le groupe avec lui. */
+  definirOrganisateursGroupe(id: number, utilisateurIds: number[]): Observable<GroupePlongeursVue> {
+    return this.http.put<GroupePlongeursVue>(`/api/groupes-plongeurs/${id}/organisateurs`, { utilisateurIds });
+  }
+
   /** Fin de séjour : chaque plongeur du groupe reçoit les paramètres de ses seules plongées de la sortie. */
   envoyerParametresSejour(groupeId: number, sortieId: number): Observable<BilanEnvoiParametres> {
     return this.http.post<BilanEnvoiParametres>(`/api/groupes-plongeurs/${groupeId}/envoi-parametres`, { sortieId });

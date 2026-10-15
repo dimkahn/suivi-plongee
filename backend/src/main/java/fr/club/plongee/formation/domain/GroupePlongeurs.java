@@ -33,6 +33,14 @@ public class GroupePlongeurs {
     @Column(nullable = false)
     private LocalDate dateCreation = LocalDate.now();
 
+    /**
+     * Le compte qui a créé la liste (V81) : lui et les organisateurs qu'il
+     * désigne la modifient (voir {@code DroitsGroupePlongeurs}). Null pour un
+     * groupe créé avant V81.
+     */
+    @Column(name = "createur_id")
+    private Long createurId;
+
     @OneToMany(mappedBy = "groupe", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MembreGroupePlongeurs> membres = new ArrayList<>();
 
@@ -66,6 +74,14 @@ public class GroupePlongeurs {
 
     public void setDateCreation(LocalDate dateCreation) {
         this.dateCreation = dateCreation;
+    }
+
+    public Long getCreateurId() {
+        return createurId;
+    }
+
+    public void setCreateurId(Long createurId) {
+        this.createurId = createurId;
     }
 
     public List<MembreGroupePlongeurs> getMembres() {

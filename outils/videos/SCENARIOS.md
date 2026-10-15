@@ -242,16 +242,20 @@ Compte : `e2@club.fr` · format téléphone · 36 s
 
 ### M12 — Groupes de plongeurs pour un séjour
 
-Saisir une fois les plongeurs d'un séjour, puis reprendre le groupe dans chaque fiche de sécurité.
+Saisir une fois les plongeurs d'un séjour (ceux du club d'un geste, un extérieur en quelques champs), puis reprendre le groupe dans chaque fiche de sécurité. Seuls le créateur de la liste et les organisateurs qu'il désigne la modifient.
 
-Compte : `e2@club.fr` · format téléphone · 42 s
+Compte : `e2@club.fr` · format téléphone
 
 1. Un séjour, c'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Séjours ».
 2. En haut de la page : « Groupes de plongeurs ».
-3. On saisit la liste une seule fois.
-4. Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
-5. Il suffit ensuite de les répartir dans les palanquées.
-6. Inscrit au séjour, chaque plongeur y reste lié : son nom ou son e-mail corrigé ici l'est aussi dans le séjour.
+3. On saisit la liste une seule fois : « Nouveau groupe ».
+4. Un plongeur du club se cherche en haut : son niveau et son e-mail viennent de son dossier.
+5. Chacun tient sur une ligne, le dernier ajouté en tête de liste.
+6. Un plongeur d'un autre club : « + Plongeur extérieur au club », sa ligne s'ouvre en tête.
+7. Vous en êtes le créateur : vous seul, et les organisateurs que vous choisissez, la modifiez.
+8. Les autres moniteurs la voient en lecture seule et la reprennent dans leurs fiches de sécurité.
+9. Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
+10. Inscrit au séjour, chaque plongeur y reste lié : son nom ou son e-mail corrigé ici l'est aussi dans le séjour.
 
 ### M13 — Consulter le planning du bassin
 

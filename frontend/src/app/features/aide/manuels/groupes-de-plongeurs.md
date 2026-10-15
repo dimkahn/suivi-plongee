@@ -3,8 +3,11 @@ titre: Groupes de plongeurs pour un séjour
 rubrique: Moniteur
 videos: M12
 ecran: /groupes
-mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, participant, lien, lié, synchroniser, même personne
+mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, participant, lien, lié, synchroniser, même personne, créateur, organisateur, organisateurs, droits, qui modifie, lecture seule, choisir les organisateurs, ajouter un plongeur, chercher, rechercher, modifier un plongeur
 questions:
+- Qui peut modifier un groupe de plongeurs ?
+- Pourquoi je ne peux pas modifier ce groupe ?
+- Comment ajouter un plongeur au groupe ?
 - Si je corrige un plongeur du groupe, est-ce corrigé aussi dans le séjour ?
 - Comment éviter de ressaisir les plongeurs à chaque plongée d'un séjour ?
 - Comment créer un groupe de plongeurs ?
@@ -19,9 +22,18 @@ Menu, « Séjours », puis « Groupes de plongeurs » en haut de la page : saisi
 
 1. Menu, « Séjours », puis « Groupes de plongeurs ».
 2. « Nouveau groupe » : donnez-lui un nom (par exemple « Séjour Égypte mai 2026 »).
-3. « + Plongeur » pour chaque plongeur : cherchez-le parmi ceux du club, ou saisissez son prénom, son nom et son aptitude s'il vient d'ailleurs.
-4. « Créer le groupe », puis dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
-5. Répartissez ensuite les plongeurs dans les palanquées.
+3. En haut de la fenêtre, **« Ajouter un plongeur »** : tapez quelques lettres et touchez un plongeur du club. Il s'ajoute en tête de la liste, avec son niveau, le niveau qu'il prépare et l'e-mail de son dossier ; le champ se vide pour le suivant. Un plongeur déjà dans la liste n'est plus proposé.
+4. Un plongeur d'un autre club : **« + Plongeur extérieur au club »**. Sa ligne s'ouvre en tête : prénom, nom, aptitude, qualification préparée, e-mail. « OK » la referme.
+5. Chaque plongeur tient sur **une ligne** (nom, niveau, e-mail). « Modifier » ouvre son détail, « ✕ » le retire. Au-delà de six plongeurs, un champ « Chercher dans la liste… » retrouve quelqu'un sans faire défiler.
+6. « Créer le groupe » (ou « Enregistrer »), puis dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
+7. Répartissez ensuite les plongeurs dans les palanquées.
+
+## Qui modifie un groupe
+
+- **Le créateur** de la liste (le compte qui l'a créée, ici ou depuis une fiche de sécurité) et **les organisateurs qu'il désigne** : « Choisir les organisateurs » sur le groupe, cochez des moniteurs, « Enregistrer ». Sous le nom du groupe, « Organisé par … ».
+- Les autres moniteurs la **voient** (« Voir », lecture seule), la reprennent dans leurs fiches de sécurité et envoient les paramètres de fin de séjour, mais ne la modifient ni ne la suppriment.
+- Être administrateur ne suffit pas pour modifier : un administrateur peut seulement choisir les organisateurs, pour reprendre un groupe dont le créateur a quitté le club ou un groupe créé avant cette règle (« Aucun organisateur »).
+- Corriger le nom ou l'e-mail d'un participant dans un séjour le corrige aussi dans le groupe lié, même si vous n'organisez pas le groupe.
 
 ## Un groupe réparti sur deux séances du même jour
 
@@ -38,7 +50,7 @@ Lier ou délier demande le réseau.
 
 Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, site, profondeur, durée, heures d'immersion et de sortie, paliers, et les membres de sa palanquée.
 
-1. Renseignez l'e-mail de chaque plongeur dans le groupe (« Modifier »). Pour un plongeur du club, laissez vide : l'e-mail de son dossier sert, il est rappelé en grisé dans le champ.
+1. Renseignez l'e-mail de chaque plongeur dans le groupe (« Modifier » sur le groupe, puis sur le plongeur). Pour un plongeur du club, laissez vide : l'e-mail de son dossier sert, il est rappelé sur sa ligne (« (dossier) ») et en grisé dans le champ. Une ligne « sans e-mail » n'en a aucun.
 2. Sur le groupe, « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».
 3. Le bilan indique qui l'a reçu, et qui n'a rien reçu faute d'e-mail ou parce qu'il n'était dans aucune palanquée de la sortie.
 
