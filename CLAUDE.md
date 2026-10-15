@@ -430,7 +430,7 @@ téléphone, e-mail, régime ni personne à prévenir des autres (filtré par le
 serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail
 (ou aux seuls participants cochés : `participantIds` dans le corps, de
 même pour la demande d'informations, pour relancer qui ne l'a pas reçu) ;
-« Imprimer le carnet » côté écran. Avertissements jamais bloquants
+« Version imprimable » (`/sejours/:id/imprimer`, `CarnetImprimableComponent`, aussi dans la page du lien) : le carnet composé pour le papier en tableaux, rubriques à cocher ; téléphones, repas et personnes à prévenir seulement sur demande d'un encadrant (non par défaut, un carnet imprimé se distribue). Le bandeau « Organisation » sous le titre du séjour réunit organisateurs, droits, version imprimable, envoi du carnet et demande d'informations. Avertissements jamais bloquants
 (voiture ou chambre trop pleine, sans conducteur, sans chambre). **Une
 seule voiture par personne** (choix du club, 2026) : conducteur ou
 passager, refus 422 à l'enregistrement d'une voiture (pas de contrainte en
