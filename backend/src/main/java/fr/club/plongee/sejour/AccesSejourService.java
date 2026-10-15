@@ -102,20 +102,26 @@ public class AccesSejourService {
     /**
      * Demande à chaque participant qui a un e-mail de renseigner ses
      * informations pour le séjour et lui donne accès aux frais
-     * ({@code participantId} null : à tous). L'encadrant reçoit le lien du
-     * séjour dans l'appli ; les autres le lien et la façon d'entrer par code.
+     * ({@code participantIds} null : à tous ; sinon aux seuls participants
+     * choisis, pour relancer ceux qui ne l'ont pas reçu). L'encadrant reçoit
+     * le lien du séjour dans l'appli ; les autres le lien et la façon
+     * d'entrer par code.
      */
     @Transactional
-    public BilanEnvoiAcces envoyerInvitations(Long sortieId, Long participantId) {
+    public BilanEnvoiAcces envoyerInvitations(Long sortieId, Collection<Long> participantIds) {
+        Set<Long> choisis = participantIds == null ? null : new HashSet<>(participantIds);
+        if (choisis != null && choisis.isEmpty()) {
+            throw new RegleMetierException("Choisissez au moins un participant.");
+        }
         String code = codeFrais(sortieId);
         EnteteVue sejour = entete(code);
-        var p = new MapSqlParameterSource("sortie", sortieId).addValue("pid", participantId);
+        var p = new MapSqlParameterSource("sortie", sortieId).addValue("pids", choisis);
         List<Map<String, Object>> participants = jdbc.queryForList("""
                 SELECT p.id, p.prenom, p.nom, p.email, CASE WHEN %s THEN 1 ELSE 0 END AS encadrant
                   FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
                  WHERE p.sortie_id = :sortie""".formatted(EST_ENCADRANT)
-                + (participantId == null ? "" : " AND p.id = :pid") + " ORDER BY p.nom, p.prenom", p);
-        if (participantId != null && participants.isEmpty()) {
+                + (choisis == null ? "" : " AND p.id IN (:pids)") + " ORDER BY p.nom, p.prenom", p);
+        if (choisis != null && participants.size() < choisis.size()) {
             throw new RessourceIntrouvableException("Participant introuvable dans ce séjour");
         }
         List<String> envoyes = new ArrayList<>(), sansEmail = new ArrayList<>(), echecs = new ArrayList<>();

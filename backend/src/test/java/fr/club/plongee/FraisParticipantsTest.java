@@ -179,6 +179,19 @@ class FraisParticipantsTest {
         String pub = "/api/public/sejour/" + code;
         assertThat(envoyer("GET", pub, null, null, 200).get("nom").asText()).isEqualTo("Séjour frais");
 
+        // Renvoyer aux seuls participants choisis (ceux qui ne l'ont pas reçu), demande et carnet.
+        int avantChoix = COURRIELS.size();
+        bilan = envoyer("POST", base + "/invitations", dt,
+                "{\"participantIds\":[%d,%d]}".formatted(pPaul, pLina), 200);
+        assertThat(bilan.get("envoyes")).hasSize(2);
+        assertThat(bilan.get("envoyes").toString()).contains("Paul Invité").contains("Lina Sanscompte");
+        assertThat(COURRIELS).hasSize(avantChoix + 2);
+        bilan = envoyer("POST", base + "/envoi-carnet", dt, "{\"participantIds\":[%d]}".formatted(pCamille), 200);
+        assertThat(bilan.get("envoyes").toString()).isEqualTo("[\"Camille Berthier\"]");
+        assertThat(COURRIELS).hasSize(avantChoix + 3);
+        envoyer("POST", base + "/envoi-carnet", dt, "{\"participantIds\":[]}", 422);
+        envoyer("POST", base + "/invitations", dt, "{\"participantIds\":[%d,999999]}".formatted(pPaul), 404);
+
         // Flora est moniteur : elle n'entre pas par le lien (aucun code envoyé), elle a l'appli.
         int avantFlora = COURRIELS.size();
         envoyer("POST", pub + "/code", null, "{\"email\":\"e2@club.fr\"}", 204);

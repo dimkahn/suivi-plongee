@@ -35,6 +35,9 @@ public class SejourController {
 
     public record DemandeAffaires(@NotNull List<@Valid DemandeAffaire> affaires) {}
 
+    /** À qui envoyer un e-mail du séjour : {@code participantIds} absent = à tous les participants. */
+    public record DemandeDestinataires(List<@NotNull Long> participantIds) {}
+
     private static final String GERE = "hasAnyRole('ADMIN','DIRECTEUR_TECHNIQUE')";
 
     /** La dépense créée (pour y joindre la photo de la note) et le séjour à jour. */
@@ -277,13 +280,16 @@ public class SejourController {
     /**
      * Demande à chaque participant de renseigner ses informations (et lui
      * ouvre les frais) : l'encadrant dans l'appli, les autres par un lien et
-     * un code par e-mail ; {@code participantId} : à lui seul.
+     * un code par e-mail ; {@code participantId} : à lui seul ;
+     * {@code participantIds} dans le corps : aux seuls participants choisis.
      */
     @PostMapping("/{id}/invitations")
     @PreAuthorize(GERE)
     public AccesSejourService.BilanEnvoiAcces envoyerInvitations(@PathVariable Long id,
-                                                                 @RequestParam(required = false) Long participantId) {
-        return acces.envoyerInvitations(id, participantId);
+                                                                 @RequestParam(required = false) Long participantId,
+                                                                 @RequestBody(required = false) DemandeDestinataires d) {
+        List<Long> choisis = participantId != null ? List.of(participantId) : d == null ? null : d.participantIds();
+        return acces.envoyerInvitations(id, choisis);
     }
 
     /** Le participant connecté complète ses propres informations (voyage, repas, personne à prévenir). */
@@ -312,10 +318,14 @@ public class SejourController {
                 .body(p.contenu());
     }
 
-    /** Chaque participant reçoit son carnet : son voyage, sa voiture, sa chambre, le programme, les affaires. */
+    /**
+     * Chaque participant reçoit son carnet : son voyage, sa voiture, sa chambre, le programme, les affaires ;
+     * {@code participantIds} dans le corps : les seuls participants choisis.
+     */
     @PostMapping("/{id}/envoi-carnet")
     @PreAuthorize(GERE)
-    public BilanEnvoiCarnet envoyerCarnet(@PathVariable Long id) {
-        return carnets.envoyer(id);
+    public BilanEnvoiCarnet envoyerCarnet(@PathVariable Long id,
+                                          @RequestBody(required = false) DemandeDestinataires d) {
+        return carnets.envoyer(id, d == null ? null : d.participantIds());
     }
 }

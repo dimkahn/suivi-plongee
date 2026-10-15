@@ -1,6 +1,8 @@
 package fr.club.plongee.sejour;
 
 import fr.club.plongee.commun.Calendrier;
+import fr.club.plongee.commun.RegleMetierException;
+import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.service.SortieService.SeanceSortieVue;
 import fr.club.plongee.identite.IdentiteStructureService;
 import fr.club.plongee.notification.service.ServiceNotification;
@@ -45,13 +47,26 @@ public class CarnetSejourService {
         this.identite = identite;
     }
 
+    /**
+     * {@code participantIds} null : à tous ; sinon aux seuls participants
+     * choisis (relancer ceux qui ne l'ont pas reçu sans le renvoyer à tous).
+     */
     @Transactional(readOnly = true)
-    public BilanEnvoiCarnet envoyer(Long sortieId) {
+    public BilanEnvoiCarnet envoyer(Long sortieId, Collection<Long> participantIds) {
+        Set<Long> choisis = participantIds == null ? null : new HashSet<>(participantIds);
+        if (choisis != null && choisis.isEmpty()) {
+            throw new RegleMetierException("Choisissez au moins un participant.");
+        }
         SejourVue s = sejours.vueComplete(sortieId, null, true, true);
+        List<ParticipantVue> destinataires = s.participants().stream()
+                .filter(p -> choisis == null || choisis.contains(p.id())).toList();
+        if (choisis != null && destinataires.size() < choisis.size()) {
+            throw new RessourceIntrouvableException("Participant introuvable dans ce séjour");
+        }
         List<String> envoyes = new ArrayList<>();
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
-        for (ParticipantVue p : s.participants()) {
+        for (ParticipantVue p : destinataires) {
             String nom = p.prenom() + " " + p.nom();
             if (SejourService.blanc(p.email())) {
                 sansEmail.add(nom);
