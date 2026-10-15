@@ -448,7 +448,16 @@ même pour la demande d'informations, pour relancer qui ne l'a pas reçu) ;
 seule voiture par personne** (choix du club, 2026) : conducteur ou
 passager, refus 422 à l'enregistrement d'une voiture (pas de contrainte en
 base, conducteur et passagers sont dans deux tables) ; l'avertissement
-« dans plusieurs voitures » ne reste que pour les séjours saisis avant. **Encart « Aujourd'hui »** (`JourneeSejourComponent`, calcul pur
+« dans plusieurs voitures » ne reste que pour les séjours saisis avant.
+**Voiture de location** (V82, `sejour_voiture.location_html`) : le mail de
+réservation du loueur, collé en HTML par un organisateur. Le serveur ne
+garde que le HTML nettoyé par `NettoyageHtml` (jsoup : texte, tableaux,
+liens ouverts dans un nouvel onglet ; ni script, ni image, ni style) ;
+« Vérifier » (`POST …/voitures/verifier-location`, n'écrit rien) montre
+l'aperçu et ce qui est retiré. Affiché par `MailLoueurComponent`
+(`[innerHTML]`, nettoyé encore par Angular) ; dans le carnet, seulement
+pour le conducteur et les passagers de la voiture (filtré par le serveur),
+en texte dans leur carnet par e-mail ; pas dans la version imprimable. **Encart « Aujourd'hui »** (`JourneeSejourComponent`, calcul pur
 dans `programme-du-jour.ts`, date de l'appareil ; dans le séjour et sur la
 page du lien, qui reçoit le programme par `MesInformationsVue.programme`) :
 du jour du premier voyage aller au dernier retour, le programme du jour et

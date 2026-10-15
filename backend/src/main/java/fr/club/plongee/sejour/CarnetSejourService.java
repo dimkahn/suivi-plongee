@@ -108,6 +108,10 @@ public class CarnetSejourService {
             else t.append(" : conduite par ").append(v.conducteurId() == null ? "(à préciser)" : nom.apply(v.conducteurId()));
             if (!autres.isEmpty()) t.append(conduit ? ", avec " : " ; avec ").append(String.join(", ", autres));
             t.append("\n");
+            if (v.locationHtml() != null) {
+                t.append("    Réservation du loueur :\n    ")
+                        .append(NettoyageHtml.enTexte(v.locationHtml()).replace("\n", "\n    ")).append("\n");
+            }
         }
         for (LogementVue l : s.logements()) {
             for (ChambreVue c : l.chambres()) {

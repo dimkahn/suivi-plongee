@@ -12,7 +12,7 @@ import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
-  TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
+  TRANSPORTS, Trajet, VerificationHtml, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
@@ -20,6 +20,7 @@ import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
+import { MailLoueurComponent } from './mail-loueur.component';
 
 type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'pratique';
 
@@ -63,7 +64,7 @@ function participantVide(): BrouillonParticipant {
 @Component({
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
-            MonSejourComponent],
+            MonSejourComponent, MailLoueurComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -373,6 +374,7 @@ function participantVide(): BrouillonParticipant {
                 <p><strong>Conducteur :</strong> {{ v.conducteurId ? nomDe(v.conducteurId) : 'à trouver' }}</p>
                 <p><strong>Passagers :</strong> {{ v.passagerIds.length ? noms(v.passagerIds) : 'aucun' }}</p>
                 @if (v.remarques) { <p class="texte-libre secondaire">{{ v.remarques }}</p> }
+                @if (v.locationHtml) { <app-mail-loueur [html]="v.locationHtml" /> }
                 @if (s.gere) {
                   <div class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirVoiture(v)">Modifier</button>
@@ -640,6 +642,29 @@ function participantVide(): BrouillonParticipant {
       </fieldset>
       <label for="v-remarques">Remarques</label>
       <textarea id="v-remarques" rows="2" [(ngModel)]="voiture.remarques"></textarea>
+      <label for="v-location">Voiture de location : mail de réservation du loueur (code HTML)</label>
+      <p class="aide">Collez le code HTML du mail du loueur (dans votre messagerie : « Afficher la source » ou
+        « Afficher l'original »). Il est vérifié : seuls le texte, les tableaux et les liens sont gardés ; scripts,
+        images et mise en forme sont retirés. Le conducteur et les passagers de cette voiture le voient dans leur carnet.</p>
+      <textarea id="v-location" rows="5" class="code" [(ngModel)]="voiture.locationHtml"
+                (ngModelChange)="verificationLocation.set(null)" placeholder="<html>…</html>"></textarea>
+      @if (voiture.locationHtml?.trim()) {
+        <button type="button" class="bouton-discret" (click)="verifierLocation()" [disabled]="envoi()">Vérifier</button>
+      }
+      @if (verificationLocation(); as v) {
+        <div class="verification-location" role="status">
+          @if (v.retraits.length) {
+            <p><strong>Retiré du mail :</strong> {{ v.retraits.join(', ') }}.</p>
+          } @else {
+            <p><strong>Rien à retirer.</strong></p>
+          }
+          @if (v.html) {
+            <app-mail-loueur [html]="v.html" [ouvert]="true" />
+          } @else {
+            <p>Il ne reste aucun texte : rien ne sera enregistré.</p>
+          }
+        </div>
+      }
       <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="enregistrerVoiture()" [disabled]="envoi()">Enregistrer</button>
         <button type="button" class="bouton-discret" (click)="voitureOuverte.set(false)">Annuler</button>
@@ -892,6 +917,8 @@ function participantVide(): BrouillonParticipant {
     fieldset { border: 1px solid var(--trait); border-radius: var(--r-s); margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2); }
     legend { font-weight: 700; padding: 0 var(--pas); }
     textarea { resize: vertical; }
+    textarea.code { font-family: ui-monospace, monospace; font-size: .85rem; }
+    .verification-location { margin-top: var(--pas); }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; }
     .titre-section { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     /* Une seule rangée d'onglets, qui défile sur téléphone plutôt que de s'empiler. */
@@ -1070,7 +1097,9 @@ export class SejourComponent {
 
   voitureOuverte = signal(false);
   voitureId: number | null = null;
-  voiture: DemandeVoiture = { nom: '', places: 5, conducteurId: null, trajet: null, remarques: null, passagerIds: [] };
+  voiture: DemandeVoiture = { nom: '', places: 5, conducteurId: null, trajet: null, remarques: null, passagerIds: [],
+    locationHtml: null };
+  verificationLocation = signal<VerificationHtml | null>(null);
 
   logementOuvert = signal(false);
   logementId: number | null = null;
@@ -1466,9 +1495,23 @@ export class SejourComponent {
     this.voitureId = v?.id ?? null;
     this.voiture = v
       ? { nom: v.nom, places: v.places, conducteurId: v.conducteurId, trajet: v.trajet, remarques: v.remarques,
-          passagerIds: [...v.passagerIds] }
-      : { nom: '', places: 5, conducteurId: null, trajet: null, remarques: null, passagerIds: [] };
+          passagerIds: [...v.passagerIds], locationHtml: v.locationHtml }
+      : { nom: '', places: 5, conducteurId: null, trajet: null, remarques: null, passagerIds: [], locationHtml: null };
+    this.verificationLocation.set(null);
     this.voitureOuverte.set(true);
+  }
+
+  /** Montre le mail du loueur tel que le serveur le gardera, et ce qu'il en retire. */
+  verifierLocation(): void {
+    this.erreur.set(null);
+    this.envoi.set(true);
+    this.api.verifierLocation(this.id, this.voiture.locationHtml ?? '').subscribe({
+      next: v => { this.verificationLocation.set(v); this.envoi.set(false); },
+      error: (e: HttpErrorResponse) => {
+        this.erreur.set(e.error?.detail ?? "La vérification n'a pas abouti (réseau nécessaire).");
+        this.envoi.set(false);
+      }
+    });
   }
 
   basculer(liste: number[], id: number): void {

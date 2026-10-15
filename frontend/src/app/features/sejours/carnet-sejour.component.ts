@@ -6,6 +6,7 @@ import {
 import { programmeParJour } from './programme-du-jour';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
+import { MailLoueurComponent } from './mail-loueur.component';
 
 type Rubrique = 'programme' | 'transports' | 'logements' | 'affaires' | 'pratique';
 
@@ -30,7 +31,7 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
  */
 @Component({
   selector: 'app-carnet-sejour',
-  imports: [MonSejourComponent, PalanqueesPlongeeComponent],
+  imports: [MonSejourComponent, PalanqueesPlongeeComponent, MailLoueurComponent],
   template: `
     @let s = sejour();
     @if (moi(); as m) {
@@ -94,6 +95,7 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
                 <p><strong>Conducteur :</strong> {{ v.conducteurId ? nomDe(v.conducteurId) : 'à trouver' }}</p>
                 <p><strong>Passagers :</strong> {{ v.passagerIds.length ? noms(v.passagerIds) : 'aucun' }}</p>
                 @if (v.remarques) { <p class="texte-libre secondaire">{{ v.remarques }}</p> }
+                @if (v.locationHtml) { <app-mail-loueur [html]="v.locationHtml" /> }
               </li>
             }
           </ul>
