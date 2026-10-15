@@ -586,17 +586,19 @@ Compte : `presidente@club.fr` · format ordinateur · 39 s
 
 ### A11 — Tenir le planning des soirées
 
-La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, DP fosse et DP piscine.
+La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, plusieurs cases d'un coup, DP fosse et DP piscine.
 
-Compte : `presidente@club.fr` · format ordinateur · 36 s
+Compte : `presidente@club.fr` · format ordinateur · 46 s
 
 1. Une ligne par groupe, une colonne par soirée : comme le tableur du lundi.
 2. Une case grisée = la ligne attitrée du groupe. On ne note que les écarts.
 3. Les débutants occupent deux lignes : « 5+6 ». Les sorties en milieu naturel n'y figurent pas.
 4. Un prénom rayé dans une case : un encadrant du groupe absent ce soir-là.
 5. Ce soir-là, la Prépa N2 descend en fosse :
-6. Les lignes « DP fosse » et « DP piscine » : le directeur de plongée de chaque bassin, et une note pour tous.
-7. Les encadrants voient aussitôt leur soirée sur leur téléphone (« Planning »).
+6. Plusieurs cases d'un coup : glissez la souris dessus ; sur téléphone, appui long puis touchez les autres.
+7. Une barre en bas : « Pas de séance » pour ces groupes et ces dates, ou retour aux lignes attitrées.
+8. Les lignes « DP fosse » et « DP piscine » : le directeur de plongée de chaque bassin, et une note pour tous.
+9. Les encadrants voient aussitôt leur soirée sur leur téléphone (« Planning »).
 
 ### A12 — Les avertissements du planning
 

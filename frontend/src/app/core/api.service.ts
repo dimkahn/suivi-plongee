@@ -937,6 +937,12 @@ export class ApiService {
       `/api/planning/saison/${saisonId}/soirees/${date}/groupes/${groupeId}`, demande);
   }
 
+  /** Même consigne pour plusieurs cases (tout ou rien) ; renvoie les soirées touchées, recalculées. */
+  definirCasesPlanning(saisonId: number, cases: { date: string; groupeId: number }[],
+                       consigne: DemandeCasePlanning): Observable<SoireePlanningVue[]> {
+    return this.http.put<SoireePlanningVue[]>(`/api/planning/saison/${saisonId}/cases`, { cases, consigne });
+  }
+
   definirSoireePlanning(saisonId: number, date: string,
                         demande: { dpFosseId: number | null; dpPiscineId: number | null; note: string | null }
   ): Observable<SoireePlanningVue> {

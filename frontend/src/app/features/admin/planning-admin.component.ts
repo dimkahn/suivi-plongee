@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -33,7 +33,30 @@ interface EditionCase {
   espaceId: number | null;
   profondeurLimitee: number;
   activite: string;
+  /** Cases sélectionnées qui reçoivent toutes le même choix ; null : la seule case groupe × date. */
+  cibles: CibleCase[] | null;
 }
+
+interface CibleCase {
+  date: string;
+  groupeId: number;
+}
+
+/** Appui en cours sur une case : glisser à la souris, ou appui long au doigt. */
+interface Appui {
+  groupe: number;
+  soiree: number;
+  souris: boolean;
+  x: number;
+  y: number;
+  glisse: boolean;
+  /** Sélection d'avant le glisser (Ctrl enfoncé), à laquelle s'ajoute le rectangle. */
+  base: Set<string>;
+  minuterie: ReturnType<typeof setTimeout> | null;
+}
+
+/** Durée d'un appui long au doigt, en millisecondes. */
+const DUREE_APPUI_LONG = 500;
 
 interface EditionSoiree {
   date: string;
@@ -58,6 +81,11 @@ interface EditionSoiree {
       Touchez une case pour placer un groupe ce soir-là, ou les lignes « DP fosse » et « DP piscine » pour
       choisir les directeurs de plongée et les présences annoncées des encadrants. Une case en gris clair est la ligne
       attitrée du groupe.
+    </p>
+    <p class="secondaire aide-selection">
+      Plusieurs cases d'un coup : glissez la souris sur les cases (Ctrl + clic pour en ajouter ou en retirer) ;
+      sur téléphone, appui long sur une case puis touchez les autres. Une barre en bas propose alors
+      « Pas de séance », « Lignes attitrées » ou un autre choix pour toutes.
     </p>
     <p class="secondaire">
       Les soirées du planning sont les dates de la saison qui ont une séance en piscine ou en fosse (les
@@ -171,11 +199,16 @@ interface EditionSoiree {
                     <span class="nom-groupe">{{ g.nom }}</span>
                     <span class="detail-groupe">{{ encadrantsCourts(g) }}</span>
                   </th>
-                  @for (s of soireesAffichees(); track s.date) {
+                  @for (s of soireesAffichees(); track s.date; let j = $index) {
                     @let c = s.cases[i];
+                    @let choisie = selection().has(cle(g.id, s.date));
                     <td>
-                      <button type="button" class="case" [class]="'case type-' + c.type + (c.espaceType === 'FOSSE' ? ' fosse' : '')"
-                              (click)="editerCase(g, s, c)"
+                      <button type="button" class="case"
+                              [class]="'case type-' + c.type + (c.espaceType === 'FOSSE' ? ' fosse' : '') + (choisie ? ' selectionnee' : '')"
+                              [attr.aria-pressed]="enSelection() ? choisie : null"
+                              (pointerdown)="debutAppui($event, i, j)" (pointerenter)="survolAppui(i, j)"
+                              (contextmenu)="menuContextuel($event)"
+                              (click)="toucherCase($event, g, s, c)"
                               [attr.aria-label]="g.nom + ', ' + dateLongue(s.date) + ' : ' + c.libelle
                                 + (absentsDuGroupe(g, s).length ? ', absents : ' + absentsDuGroupe(g, s).join(', ') : '')
                                 + (venusCeSoir(c).length ? ', venus d\\'un autre groupe : ' + venusCeSoir(c).join(', ') : '')">
@@ -201,6 +234,25 @@ interface EditionSoiree {
           · +Prénom : encadrant venu d'un autre groupe ce soir-là
         </p>
 
+        @if (ciblesSelection().length > 0) {
+          <div class="barre-selection" role="region" aria-label="Cases sélectionnées">
+            <p>
+              <strong>{{ ciblesSelection().length }} case{{ ciblesSelection().length > 1 ? 's' : '' }}
+                sélectionnée{{ ciblesSelection().length > 1 ? 's' : '' }}</strong>
+              <span class="secondaire"> · touchez une case pour l'ajouter ou la retirer</span>
+            </p>
+            <div class="actions-selection">
+              <button type="button" class="bouton-principal" [disabled]="envoi()"
+                      (click)="appliquerSelection({ type: 'ABSENT' })">Pas de séance</button>
+              <button type="button" class="bouton-discret" [disabled]="envoi()"
+                      (click)="appliquerSelection({ type: 'ATTITREE' })">Lignes attitrées</button>
+              <button type="button" class="bouton-discret" [disabled]="envoi()" (click)="editerSelection()">Autre choix…</button>
+              <button type="button" class="bouton-discret" (click)="viderSelection()">Annuler la sélection</button>
+            </div>
+          </div>
+          <div class="reserve-barre" aria-hidden="true"></div>
+        }
+
         @if (avertissements().length > 0) {
           <section class="carte avertissements" aria-label="Avertissements">
             <h2>À vérifier</h2>
@@ -216,17 +268,26 @@ interface EditionSoiree {
 
     <dialog #dialogue class="dialogue" (close)="fermer()" aria-labelledby="titre-dialogue">
       @if (editionCase(); as e) {
-        <h2 id="titre-dialogue">{{ e.groupe.nom }}</h2>
-        <p class="secondaire">{{ dateLongue(e.date) }} · {{ e.groupe.nombreEleves }} élèves</p>
-        <p class="secondaire">
-          Encadrants ce soir : {{ encadrantsCase(e) || 'aucun' }}. Pour mettre un encadrant dans un autre groupe,
-          touchez la ligne « Encadrants » de la soirée.
-        </p>
+        @if (e.cibles; as cibles) {
+          <h2 id="titre-dialogue">{{ cibles.length }} cases sélectionnées</h2>
+          <p class="secondaire">Le choix s'applique à chaque groupe, pour chaque soirée sélectionnée.</p>
+        } @else {
+          <h2 id="titre-dialogue">{{ e.groupe.nom }}</h2>
+          <p class="secondaire">{{ dateLongue(e.date) }} · {{ e.groupe.nombreEleves }} élèves</p>
+          <p class="secondaire">
+            Encadrants ce soir : {{ encadrantsCase(e) || 'aucun' }}. Pour mettre un encadrant dans un autre groupe,
+            touchez la ligne « Encadrants » de la soirée.
+          </p>
+        }
         <fieldset class="choix">
           <legend class="visuellement-cache">Place du groupe</legend>
           <label class="option">
             <input type="radio" name="choix" [checked]="e.choix === 'ATTITREE'" (change)="e.choix = 'ATTITREE'">
-            {{ e.groupe.espaceAttitreIds.length > 1 ? 'Ses lignes attitrées' : 'Sa ligne attitrée' }}{{ e.groupe.espacesAttitres ? ' (' + e.groupe.espacesAttitres + ')' : ' (aucune)' }}
+            @if (e.cibles) {
+              Les lignes attitrées de chaque groupe
+            } @else {
+              {{ e.groupe.espaceAttitreIds.length > 1 ? 'Ses lignes attitrées' : 'Sa ligne attitrée' }}{{ e.groupe.espacesAttitres ? ' (' + e.groupe.espacesAttitres + ')' : ' (aucune)' }}
+            }
           </label>
           @if (espacesLignes().length > 0) {
             <p class="sous-titre">Autres lignes d'eau ce soir-là (une ou plusieurs)</p>
@@ -359,6 +420,19 @@ interface EditionSoiree {
       border-radius: var(--r-s); background: none; font: inherit; font-weight: 700; cursor: pointer; color: var(--encre);
     }
     .case:hover { border-color: var(--trait); }
+    /* Glisser à la souris ou appui long au doigt : ni sélection de texte, ni menu du téléphone. */
+    .case { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    .case.selectionnee { outline: 3px solid var(--accent); outline-offset: -3px; background-color: #FDE7E1; }
+    .barre-selection {
+      /* Au-dessus de la barre d'onglets du téléphone, le temps de la sélection. */
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+      padding: var(--pas-2) var(--pas-3) calc(var(--pas-2) + env(safe-area-inset-bottom, 0px));
+      background: var(--carte); border-top: 1px solid var(--trait); box-shadow: 0 -6px 16px rgba(0,0,0,.15);
+    }
+    .barre-selection p { margin: 0 0 var(--pas); }
+    .actions-selection { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .actions-selection button { width: auto; min-height: 44px; flex: 1 1 auto; }
+    .reserve-barre { height: 140px; }
     .type-ATTITREE { color: var(--craie); font-weight: 400; }
     .type-AUCUN { color: #B3261E; }
     .fosse { background: #E0F2F7; color: var(--profond-fonce); }
@@ -421,6 +495,21 @@ export class PlanningAdminComponent {
   periode = signal('tout');
   editionCase = signal<EditionCase | null>(null);
   editionSoiree = signal<EditionSoiree | null>(null);
+  /** Cases sélectionnées (clé groupe|date) pour leur donner le même choix d'un coup. */
+  selection = signal<Set<string>>(new Set());
+  private appui: Appui | null = null;
+  private ignorerClic = false;
+
+  /** Cases sélectionnées encore affichées (un changement de filtre ne modifie pas ce qu'on ne voit pas). */
+  ciblesSelection = computed<CibleCase[]>(() => {
+    const choix = this.selection();
+    if (choix.size === 0) return [];
+    const groupes = this.planning()?.groupes ?? [];
+    return this.soireesAffichees().flatMap(s => groupes
+      .filter(g => choix.has(this.cle(g.id, s.date)))
+      .map(g => ({ date: s.date, groupeId: g.id })));
+  });
+  enSelection = computed(() => this.ciblesSelection().length > 0);
 
   joursDisponibles = computed(() => {
     const compte = new Map<number, number>();
@@ -476,6 +565,7 @@ export class PlanningAdminComponent {
 
   async choisirSaison(id: number): Promise<void> {
     this.saisonId.set(id);
+    this.viderSelection();
     try {
       const p = await firstValueFrom(this.api.planning(id));
       if (this.saisonId() !== id) return;
@@ -571,9 +661,152 @@ export class PlanningAdminComponent {
     this.editionSoiree.set(null);
     this.editionCase.set({
       groupe: g, date: s.date, choix, lignes, espaceId: fosse ? c.espaceId : null,
-      profondeurLimitee: c.profondeurLimitee ?? 6, activite: c.activite ?? ''
+      profondeurLimitee: c.profondeurLimitee ?? 6, activite: c.activite ?? '', cibles: null
     });
     this.dialogue().nativeElement.showModal();
+  }
+
+  // --- Sélection de plusieurs cases -------------------------------------
+
+  cle(groupeId: number, date: string): string {
+    return `${groupeId}|${date}`;
+  }
+
+  /** Clic (ou toucher) sur une case : en sélection, l'ajoute ou la retire ; sinon ouvre son éditeur. */
+  toucherCase(ev: MouseEvent, g: GroupePlanningVue, s: SoireePlanningVue, c: CasePlanningVue): void {
+    if (this.ignorerClic) {
+      this.ignorerClic = false;
+      return;
+    }
+    if (ev.ctrlKey || ev.metaKey || this.enSelection()) {
+      this.basculerSelection(this.cle(g.id, s.date));
+      return;
+    }
+    this.editerCase(g, s, c);
+  }
+
+  /** Souris : début d'un glisser. Doigt : un appui long entre en sélection. */
+  debutAppui(ev: PointerEvent, groupe: number, soiree: number): void {
+    this.annulerAppui();
+    const souris = ev.pointerType === 'mouse';
+    if (souris && ev.button !== 0) return;
+    const appui: Appui = {
+      groupe, soiree, souris, x: ev.clientX, y: ev.clientY, glisse: false,
+      base: souris && (ev.ctrlKey || ev.metaKey) ? new Set(this.selection()) : new Set(), minuterie: null
+    };
+    if (!souris) {
+      appui.minuterie = setTimeout(() => {
+        appui.minuterie = null;
+        this.ignorerClic = true;
+        this.appui = null;
+        const p = this.planning();
+        const s = this.soireesAffichees()[soiree];
+        if (p && s) this.basculerSelection(this.cle(p.groupes[groupe].id, s.date));
+        navigator.vibrate?.(30);
+      }, DUREE_APPUI_LONG);
+    }
+    this.appui = appui;
+  }
+
+  /** Souris enfoncée qui passe sur une autre case : sélectionne le rectangle depuis la première. */
+  survolAppui(groupe: number, soiree: number): void {
+    const a = this.appui;
+    if (!a?.souris || (!a.glisse && groupe === a.groupe && soiree === a.soiree)) return;
+    a.glisse = true;
+    const groupes = this.planning()?.groupes ?? [];
+    const soirees = this.soireesAffichees();
+    const choix = new Set(a.base);
+    for (let i = Math.min(a.groupe, groupe); i <= Math.max(a.groupe, groupe); i++) {
+      for (let j = Math.min(a.soiree, soiree); j <= Math.max(a.soiree, soiree); j++) {
+        choix.add(this.cle(groupes[i].id, soirees[j].date));
+      }
+    }
+    this.selection.set(choix);
+  }
+
+  /** Le doigt bouge (défilement du tableau) : ce n'est pas un appui long. */
+  @HostListener('document:pointermove', ['$event'])
+  bougerAppui(ev: PointerEvent): void {
+    const a = this.appui;
+    if (a && !a.souris && Math.hypot(ev.clientX - a.x, ev.clientY - a.y) > 10) this.annulerAppui();
+  }
+
+  @HostListener('document:pointerup')
+  @HostListener('document:pointercancel')
+  finAppui(): void {
+    if (this.appui?.glisse) {
+      // Le clic qui suit la fin d'un glisser ne doit pas rebasculer la case.
+      this.ignorerClic = true;
+    }
+    this.annulerAppui();
+    if (this.ignorerClic) setTimeout(() => this.ignorerClic = false);
+  }
+
+  /** Pas de menu du navigateur sur un appui long au doigt. */
+  menuContextuel(ev: MouseEvent): void {
+    if (this.ignorerClic || this.appui || ('pointerType' in ev && (ev as PointerEvent).pointerType !== 'mouse')) {
+      ev.preventDefault();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  echap(): void {
+    if (!this.dialogue().nativeElement.open) this.viderSelection();
+  }
+
+  viderSelection(): void {
+    this.selection.set(new Set());
+  }
+
+  private basculerSelection(cle: string): void {
+    const choix = new Set(this.selection());
+    if (!choix.delete(cle)) choix.add(cle);
+    this.selection.set(choix);
+  }
+
+  private annulerAppui(): void {
+    if (this.appui?.minuterie) clearTimeout(this.appui.minuterie);
+    this.appui = null;
+  }
+
+  /** Une consigne simple (pas de séance, lignes attitrées) appliquée tout de suite aux cases sélectionnées. */
+  appliquerSelection(demande: DemandeCasePlanning): void {
+    this.envoyerCases(this.ciblesSelection(), demande);
+  }
+
+  /** Ouvre l'éditeur pour donner un autre choix (fosse, lignes, activité) à toutes les cases sélectionnées. */
+  editerSelection(): void {
+    const cibles = this.ciblesSelection();
+    const groupe = this.planning()?.groupes.find(g => g.id === cibles[0]?.groupeId);
+    if (!groupe) return;
+    this.message.set(null);
+    this.editionSoiree.set(null);
+    this.editionCase.set({
+      groupe, date: cibles[0].date, choix: 'ABSENT', lignes: [], espaceId: null, profondeurLimitee: 6,
+      activite: '', cibles
+    });
+    this.dialogue().nativeElement.showModal();
+  }
+
+  private envoyerCases(cibles: CibleCase[], demande: DemandeCasePlanning): void {
+    const saisonId = this.saisonId();
+    if (saisonId === null || cibles.length === 0) return;
+    this.message.set(null);
+    this.envoi.set(true);
+    this.api.definirCasesPlanning(saisonId, cibles, demande).subscribe({
+      next: soirees => {
+        this.envoi.set(false);
+        soirees.forEach(s => this.remplacerSoiree(s));
+        this.fermer();
+        this.viderSelection();
+        this.message.set(`${cibles.length} case${cibles.length > 1 ? 's' : ''} modifiée${cibles.length > 1 ? 's' : ''}.`);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.fermer();
+        this.message.set(err.error?.detail ?? "Les cases n'ont pas pu être modifiées : rien n'a été enregistré.");
+      }
+    });
   }
 
   editerSoiree(s: SoireePlanningVue): void {
@@ -598,7 +831,7 @@ export class PlanningAdminComponent {
       case 'LIGNES': {
         // Exactement les lignes attitrées : rien à retenir, la case suit la ligne attitrée.
         const attitrees = e.groupe.espaceAttitreIds;
-        demande = attitrees.length === e.lignes.length && attitrees.every(id => e.lignes.includes(id))
+        demande = !e.cibles && attitrees.length === e.lignes.length && attitrees.every(id => e.lignes.includes(id))
           ? { type: 'ATTITREE' } : { type: 'ESPACE', espaceIds: e.lignes };
         break;
       }
@@ -606,6 +839,10 @@ export class PlanningAdminComponent {
       case 'FOSSE_LIMITEE': demande = { type: 'ESPACE', espaceId: e.espaceId, profondeurLimitee: e.profondeurLimitee }; break;
       case 'ACTIVITE': demande = { type: 'ACTIVITE', activite: e.activite }; break;
       default: demande = { type: e.choix };
+    }
+    if (e.cibles) {
+      this.envoyerCases(e.cibles, demande);
+      return;
     }
     this.envoyer(this.api.definirCasePlanning(saisonId, e.date, e.groupe.id, demande));
   }

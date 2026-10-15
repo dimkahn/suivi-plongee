@@ -24,7 +24,9 @@ import fr.club.plongee.planning.repository.SoireePlanningRepository;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.repository.UtilisateurRepository;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.stereotype.Service;
@@ -117,6 +119,13 @@ public class PlanningService {
     public record DemandeCase(@NotNull TypeCase type, Long espaceId, List<Long> espaceIds,
                               @Min(1) Integer profondeurLimitee, @Size(max = 80) String activite) {}
 
+    /** Une case du planning : un groupe, une soirée. */
+    public record CibleCase(@NotNull LocalDate date, @NotNull Long groupeId) {}
+
+    /** La même consigne pour plusieurs cases choisies ensemble (sélection dans la grille). */
+    public record DemandeCases(@NotEmpty @Size(max = 2000) List<@Valid @NotNull CibleCase> cases,
+                               @NotNull @Valid DemandeCase consigne) {}
+
     public record DemandeSoiree(Long dpFosseId, Long dpPiscineId, @Size(max = 200) String note) {}
 
     /** {@code reponse} vide : efface la réponse (« pas encore répondu »). */
@@ -178,6 +187,28 @@ public class PlanningService {
     @Transactional
     public SoireeVue definirCase(Long saisonId, LocalDate date, Long groupeId, DemandeCase demande) {
         Saison saison = saison(saisonId);
+        appliquerCase(saison, date, groupeId, demande);
+        return soiree(contexte(saison), date);
+    }
+
+    /**
+     * Même consigne pour plusieurs cases d'un coup (« pas de séance »,
+     * retour aux lignes attitrées…) ; tout ou rien : une case refusée
+     * n'enregistre aucune des autres. Renvoie les soirées touchées, recalculées.
+     */
+    @Transactional
+    public List<SoireeVue> definirCases(Long saisonId, DemandeCases demande) {
+        Saison saison = saison(saisonId);
+        Set<LocalDate> dates = new TreeSet<>();
+        for (CibleCase c : new LinkedHashSet<>(demande.cases())) {
+            appliquerCase(saison, c.date(), c.groupeId(), demande.consigne());
+            dates.add(c.date());
+        }
+        Contexte ctx = contexte(saison);
+        return dates.stream().map(d -> soiree(ctx, d)).toList();
+    }
+
+    private void appliquerCase(Saison saison, LocalDate date, Long groupeId, DemandeCase demande) {
         verifierSoiree(saison, date);
         GroupeEntrainement groupe = groupes.findById(groupeId)
                 .filter(g -> g.getSaison().getId().equals(saison.getId()))
@@ -213,7 +244,6 @@ public class PlanningService {
             }
             affectations.save(a);
         }
-        return soiree(contexte(saison), date);
     }
 
     /**
