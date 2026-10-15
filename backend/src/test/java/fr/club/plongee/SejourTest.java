@@ -69,6 +69,60 @@ class SejourTest {
     }
 
     @Test
+    @DisplayName("Voiture de location : le mail du loueur est nettoyé, et ne va qu'à ceux qui montent dedans")
+    void mailDuLoueur() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate debut = AUJOURDHUI.plusDays(210);
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour location","lieu":"Ajaccio","dateDebut":"%s","dateFin":"%s"}"""
+                .formatted(debut, debut.plusDays(3)), 201).get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+        envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true}""".formatted(eleveCamille(dt)), 200);
+        JsonNode s = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Durand","prenom":"Léo","plongeur":false}""", 200);
+        long camille = idDe(s, "Camille"), leo = idDe(s, "Léo");
+
+        String mail = "<html><head><title>Hertz</title><style>body{color:red}</style></head><body>"
+                + "<h2 style=\\\"color:red\\\">Réservation H123</h2><p onclick=\\\"alert(1)\\\">Comptoir au terminal 1</p>"
+                + "<img src=\\\"https://loueur.fr/pixel.gif\\\"><script>alert(2)</script>"
+                + "<a href=\\\"javascript:alert(3)\\\">piège</a> <a href=\\\"https://loueur.fr/r/H123\\\">Gérer</a></body></html>";
+
+        // La vérification montre ce qui sera retiré, sans rien écrire ; réservée aux organisateurs.
+        JsonNode verifie = envoyer("POST", base + "/voitures/verifier-location", dt,
+                "{\"html\":\"" + mail + "\"}", 200);
+        assertThat(verifie.get("retraits").toString())
+                .contains("1 image").contains("2 scripts").contains("1 lien non sûr").contains("mise en forme");
+        assertThat(verifie.get("html").asText())
+                .contains("Réservation H123").contains("https://loueur.fr/r/H123").contains("target=\"_blank\"")
+                .doesNotContain("script").doesNotContain("onclick").doesNotContain("javascript")
+                .doesNotContain("pixel").doesNotContain("style").doesNotContain("Hertz");
+        envoyer("POST", base + "/voitures/verifier-location", jeton("e1@club.fr"), "{\"html\":\"<p>x</p>\"}", 403);
+
+        s = envoyer("POST", base + "/voitures", dt, """
+                {"nom":"Location Hertz","places":5,"conducteurId":%d,"passagerIds":[],"locationHtml":"%s"}"""
+                .formatted(leo, mail), 200);
+        JsonNode voiture = s.get("voitures").get(0);
+        assertThat(voiture.get("locationHtml").asText()).isEqualTo(verifie.get("html").asText());
+
+        // Camille n'y monte pas : son carnet a la voiture, pas le mail du loueur.
+        String eleve = jeton("eleve@club.fr");
+        assertThat(envoyer("GET", base, eleve, null, 200).get("voitures").get(0).get("locationHtml").isNull()).isTrue();
+        envoyer("PUT", base + "/voitures/" + voiture.get("id").asLong(), dt, """
+                {"nom":"Location Hertz","places":5,"conducteurId":%d,"passagerIds":[%d],"locationHtml":"%s"}"""
+                .formatted(leo, camille, mail), 200);
+        assertThat(envoyer("GET", base, eleve, null, 200).get("voitures").get(0).get("locationHtml").asText())
+                .contains("Comptoir au terminal 1");
+
+        // Vidé : plus rien de gardé.
+        s = envoyer("PUT", base + "/voitures/" + voiture.get("id").asLong(), dt, """
+                {"nom":"Location Hertz","places":5,"conducteurId":%d,"passagerIds":[%d],"locationHtml":"  "}"""
+                .formatted(leo, camille), 200);
+        assertThat(s.get("voitures").get(0).get("locationHtml").isNull()).isTrue();
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
+
+    @Test
     @DisplayName("Le directeur technique organise le séjour ; Camille lit son carnet sans les données des autres")
     void organiserUnSejour() throws Exception {
         String dt = jeton("e3@club.fr");

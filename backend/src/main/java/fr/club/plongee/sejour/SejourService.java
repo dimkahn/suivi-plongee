@@ -112,11 +112,19 @@ public class SejourService {
                                          @Size(max = 120) String urgenceNom, @Size(max = 30) String urgenceTelephone,
                                          @Valid Trajet arrivee, @Valid Trajet depart, String remarques) {}
 
+    /**
+     * {@code locationHtml} : le mail de réservation du loueur, pour une
+     * voiture de location (V82), déjà nettoyé ({@link NettoyageHtml}). Dans
+     * le carnet, seuls le conducteur et les passagers de cette voiture le
+     * reçoivent.
+     */
     public record VoitureVue(Long id, String nom, int places, Long conducteurId, String trajet, String remarques,
-                             List<Long> passagerIds) {}
+                             List<Long> passagerIds, String locationHtml) {}
 
+    /** Un mail de loueur fait vite quelques centaines de kilo-octets de HTML : seul le résultat nettoyé est gardé. */
     public record DemandeVoiture(@NotBlank @Size(max = 120) String nom, @NotNull Integer places, Long conducteurId,
-                                 @Size(max = 200) String trajet, String remarques, List<Long> passagerIds) {}
+                                 @Size(max = 200) String trajet, String remarques, List<Long> passagerIds,
+                                 @Size(max = 1_000_000) String locationHtml) {}
 
     public record ChambreVue(Long id, String nom, int couchages, String remarques, List<Long> occupantIds) {}
 
@@ -275,7 +283,8 @@ public class SejourService {
                 "SELECT * FROM sejour_voiture WHERE sortie_id = :id ORDER BY id", id,
                 (rs, i) -> new VoitureVue(rs.getLong("id"), rs.getString("nom"), rs.getInt("places"),
                         (Long) rs.getObject("conducteur_id", Long.class), rs.getString("trajet"),
-                        rs.getString("remarques"), passagers.getOrDefault(rs.getLong("id"), List.of())));
+                        rs.getString("remarques"), passagers.getOrDefault(rs.getLong("id"), List.of()),
+                        rs.getString("location_html")));
 
         Map<Long, List<Long>> occupants = new HashMap<>();
         jdbc.query("""
@@ -466,13 +475,22 @@ public class SejourService {
                 s.organisateurs(), peutDesigner, s.palanquees());
     }
 
-    /** Le carnet d'un participant : ses propres données, et des autres seulement ce qui organise le séjour. */
+    /**
+     * Le carnet d'un participant : ses propres données, et des autres seulement ce qui organise le séjour.
+     * Le mail du loueur d'une voiture (nom, téléphone de qui a réservé) ne va qu'à ceux qui y montent.
+     */
     private static SejourVue carnet(SejourVue s) {
         List<ParticipantVue> participants = s.participants().stream()
                 .map(p -> p.moi() ? p : new ParticipantVue(p.id(), null, null, p.nom(), p.prenom(), p.plongeur(),
                         null, null, Set.of(), null, null, null, p.arrivee(), p.depart(), null, false, null, null))
                 .toList();
-        return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
+        Long moi = participants.stream().filter(ParticipantVue::moi).map(ParticipantVue::id).findFirst().orElse(null);
+        List<VoitureVue> voitures = s.voitures().stream()
+                .map(v -> moi != null && (moi.equals(v.conducteurId()) || v.passagerIds().contains(moi)) ? v
+                        : new VoitureVue(v.id(), v.nom(), v.places(), v.conducteurId(), v.trajet(), v.remarques(),
+                                v.passagerIds(), null))
+                .toList();
+        return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, voitures,
                 s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of(),
                 s.organisateurs(), false, s.palanquees());
     }
@@ -937,8 +955,8 @@ public class SejourService {
         List<Long> passagers = verifier(sortieId, null, d);
         KeyHolder cle = new GeneratedKeyHolder();
         jdbc.update("""
-                INSERT INTO sejour_voiture (sortie_id, nom, places, conducteur_id, trajet, remarques)
-                VALUES (:sortie, :nom, :places, :conducteur, :trajet, :remarques)""",
+                INSERT INTO sejour_voiture (sortie_id, nom, places, conducteur_id, trajet, remarques, location_html)
+                VALUES (:sortie, :nom, :places, :conducteur, :trajet, :remarques, :location)""",
                 parametres(sortieId, d), cle, new String[]{"id"});
         ecrirePassagers(cle.getKey().longValue(), passagers);
     }
@@ -949,7 +967,8 @@ public class SejourService {
         List<Long> passagers = verifier(sortieId, voitureId, d);
         jdbc.update("""
                 UPDATE sejour_voiture SET nom = :nom, places = :places, conducteur_id = :conducteur,
-                       trajet = :trajet, remarques = :remarques WHERE id = :voiture""",
+                       trajet = :trajet, remarques = :remarques, location_html = :location
+                 WHERE id = :voiture""",
                 parametres(sortieId, d).addValue("voiture", voitureId));
         jdbc.update("DELETE FROM sejour_voiture_passager WHERE voiture_id = :v", new MapSqlParameterSource("v", voitureId));
         ecrirePassagers(voitureId, passagers);
@@ -1001,7 +1020,8 @@ public class SejourService {
     private static MapSqlParameterSource parametres(Long sortieId, DemandeVoiture d) {
         return new MapSqlParameterSource("sortie", sortieId).addValue("nom", d.nom().trim())
                 .addValue("places", d.places()).addValue("conducteur", d.conducteurId())
-                .addValue("trajet", nettoyer(d.trajet())).addValue("remarques", nettoyer(d.remarques()));
+                .addValue("trajet", nettoyer(d.trajet())).addValue("remarques", nettoyer(d.remarques()))
+                .addValue("location", NettoyageHtml.nettoyer(d.locationHtml()).html());
     }
 
     private void ecrirePassagers(Long voitureId, List<Long> passagers) {

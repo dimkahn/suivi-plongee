@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-15, 17e série, bandeau d'organisation et version imprimable (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 18e série, mail du loueur d'une voiture de location (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures (avec le mail de réservation du loueur, vérifié), les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -51,6 +51,16 @@ export default {
     await legende('Chacun n\'est que dans une seule voiture : celui qui conduit ou qui a déjà une place ailleurs est grisé.', 0);
     await toucher(page.locator('li.carte').filter({ hasText: 'Voiture de Gwendoline' })
       .getByRole('button', { name: 'Modifier' }), { apres: 4000 });
+    await legende('Une voiture de location ? On colle ici le code HTML du mail du loueur, puis « Vérifier ».', 0);
+    const mailLoueur = page.locator('#v-location');
+    await mailLoueur.scrollIntoViewIfNeeded();
+    await mailLoueur.fill('<h2 style="color:red">Réservation H123</h2><p>Comptoir au terminal 1, de 8 h à 20 h.</p>'
+      + '<img src="https://loueur.example/pixel.gif"><p><a href="https://loueur.example/r/H123">Gérer ma réservation</a></p>');
+    await pause(1500);
+    await toucher(page.getByRole('button', { name: 'Vérifier', exact: true }), { apres: 1500 });
+    await legende('L\'appli ne garde que le texte, les tableaux et les liens : images et mise en forme sont retirées.', 0);
+    await page.locator('.verification-location').scrollIntoViewIfNeeded();
+    await pause(4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await enHaut();
 
