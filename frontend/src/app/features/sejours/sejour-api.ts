@@ -117,20 +117,9 @@ export interface VoitureVue {
   trajet: string | null;
   remarques: string | null;
   passagerIds: number[];
-  /**
-   * Voiture de location : le mail de réservation du loueur, en HTML nettoyé
-   * par le serveur. Dans le carnet, seulement pour qui monte dans la voiture.
-   */
-  locationHtml: string | null;
 }
 
 export type DemandeVoiture = Omit<VoitureVue, 'id'>;
-
-/** Le HTML collé, vérifié : ce qui sera gardé (null s'il ne reste aucun texte) et ce qui est retiré. */
-export interface VerificationHtml {
-  html: string | null;
-  retraits: string[];
-}
 
 export interface ChambreVue {
   id: number;
@@ -441,11 +430,6 @@ export class SejourApi {
     return voitureId === null
       ? this.http.post<SejourVue>(`/api/sejours/${id}/voitures`, d)
       : this.http.put<SejourVue>(`/api/sejours/${id}/voitures/${voitureId}`, d);
-  }
-
-  /** Le mail du loueur tel qu'il sera gardé, et ce qui en sera retiré. N'écrit rien. */
-  verifierLocation(id: number, html: string): Observable<VerificationHtml> {
-    return this.http.post<VerificationHtml>(`/api/sejours/${id}/voitures/verifier-location`, { html });
   }
 
   supprimerVoiture(id: number, voitureId: number): Observable<SejourVue> {
