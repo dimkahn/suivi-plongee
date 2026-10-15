@@ -4,6 +4,7 @@ import {
   CATEGORIES, CategorieAffaire, ParticipantVue, SejourVue, TRANSPORTS, heure, jourLong, nomComplet
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
+import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 
 type Rubrique = 'programme' | 'transports' | 'logements' | 'affaires' | 'pratique';
@@ -29,7 +30,7 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
  */
 @Component({
   selector: 'app-carnet-sejour',
-  imports: [MonSejourComponent],
+  imports: [MonSejourComponent, PalanqueesPlongeeComponent],
   template: `
     @let s = sejour();
     @if (moi(); as m) {
@@ -57,6 +58,7 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
                 <span class="quoi">
                   <strong>{{ l.titre }}</strong>@if (l.lieu) { <span class="secondaire"> — {{ l.lieu }}</span>}
                   @if (l.details) { <span class="texte-libre secondaire">{{ l.details }}</span> }
+                  @if (l.palanquees.length > 0) { <app-palanquees-plongee [palanquees]="l.palanquees" /> }
                 </span>
               </li>
             }
@@ -200,7 +202,7 @@ export class CarnetSejourComponent {
   readonly aujourdhui = dateDuJour();
 
   readonly moi = computed(() => this.sejour().participants.find(p => p.moi) ?? null);
-  readonly programme = computed(() => programmeParJour(this.sejour().evenements, this.sejour().sortie.seances));
+  readonly programme = computed(() => programmeParJour(this.sejour().evenements, this.sejour().sortie.seances, this.sejour().palanquees));
   private readonly parId = computed(() => new Map(this.sejour().participants.map(p => [p.id, p])));
 
   /** Arrivées et départs regroupés par jour, heure et vol : qui voyage ensemble. */

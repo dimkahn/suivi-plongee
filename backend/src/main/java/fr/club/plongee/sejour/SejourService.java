@@ -157,14 +157,16 @@ public class SejourService {
      * {@code gere} : le compte peut modifier le séjour (créateur ou
      * organisateur) ; {@code encadrant} : il voit tout (sinon, c'est le
      * carnet d'un participant) ; {@code peutDesigner} : il choisit les
-     * organisateurs (le créateur, ou un ADMIN).
+     * organisateurs (le créateur, ou un ADMIN). {@code palanquees} : celles
+     * des plongées de la sortie, toutes pour un encadrant, la sienne seulement
+     * pour un participant.
      */
     public record SejourVue(SortieVue sortie, boolean gere, boolean encadrant, String infosPratiques,
                             List<ParticipantVue> participants, List<VoitureVue> voitures,
                             List<LogementVue> logements, List<AffaireVue> affaires,
                             List<EvenementVue> evenements, FraisService.FraisVue frais, List<String> avertissements,
                             List<GroupeProposeVue> groupesProposes, List<OrganisateurVue> organisateurs,
-                            boolean peutDesigner) {}
+                            boolean peutDesigner, List<PalanqueesSejourService.PalanqueeVue> palanquees) {}
 
     /** Une ligne de la liste des séjours. */
     public record SejourResumeVue(Long sortieId, String nom, String lieu, LocalDate dateDebut, LocalDate dateFin,
@@ -174,13 +176,15 @@ public class SejourService {
     private final SortieService sorties;
     private final FraisService frais;
     private final DroitsSejour droits;
+    private final PalanqueesSejourService palanquees;
 
     public SejourService(NamedParameterJdbcTemplate jdbc, SortieService sorties, FraisService frais,
-                         DroitsSejour droits) {
+                         DroitsSejour droits, PalanqueesSejourService palanquees) {
         this.jdbc = jdbc;
         this.sorties = sorties;
         this.frais = frais;
         this.droits = droits;
+        this.palanquees = palanquees;
     }
 
     // ------------------------------------------------------------------
@@ -301,10 +305,12 @@ public class SejourService {
         List<EvenementVue> evenements = evenements(sortieId);
 
         List<GroupeProposeVue> groupes = !gere ? List.of() : groupesProposes(sortie.dateDebut());
+        Long monId = participants.stream().filter(ParticipantVue::moi).map(ParticipantVue::id).findFirst().orElse(null);
 
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
                 voitures, logements, affaires, evenements, frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
-                avertissements(participants, voitures, logements), groupes, organisateurs(sortieId), false);
+                avertissements(participants, voitures, logements), groupes, organisateurs(sortieId), false,
+                palanquees.palanquees(sortieId, monId, encadrant));
     }
 
     /** Le créateur d'abord, puis les organisateurs qu'il a désignés. */
@@ -397,14 +403,15 @@ public class SejourService {
     /**
      * Le programme (rendez-vous et plongées de la sortie) et les affaires à
      * prévoir, pour la page du participant entré par le lien : son encart
-     * « Aujourd'hui ». Rien de personnel.
+     * « Aujourd'hui ». Rien de personnel, hormis sa palanquée.
      */
     public record ProgrammeVue(List<EvenementVue> evenements, List<SortieService.SeanceSortieVue> plongees,
-                               List<AffaireVue> affaires) {}
+                               List<AffaireVue> affaires, List<PalanqueesSejourService.PalanqueeVue> palanquees) {}
 
     @Transactional(readOnly = true)
-    public ProgrammeVue programme(Long sortieId) {
-        return new ProgrammeVue(evenements(sortieId), sorties.lire(sortieId).seances(), affaires(sortieId));
+    public ProgrammeVue programme(Long sortieId, Long participantId) {
+        return new ProgrammeVue(evenements(sortieId), sorties.lire(sortieId).seances(), affaires(sortieId),
+                palanquees.palanquees(sortieId, participantId, false));
     }
 
     private List<AffaireVue> affaires(Long sortieId) {
@@ -443,20 +450,20 @@ public class SejourService {
         return carnet(new SejourVue(complet.sortie(), false, false, complet.infosPratiques(), participants,
                 complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(),
                 frais.lire(sortieId, frais.acteurParticipant(participantId)), List.of(), List.of(),
-                complet.organisateurs(), false));
+                complet.organisateurs(), false, palanquees.palanquees(sortieId, participantId, false)));
     }
 
     /** Le même séjour, avec les frais vus par celui qui agit (ce qu'il peut saisir, modifier). */
     private static SejourVue avecFrais(SejourVue s, FraisService.FraisVue f) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), f, s.avertissements(), s.groupesProposes(),
-                s.organisateurs(), s.peutDesigner());
+                s.organisateurs(), s.peutDesigner(), s.palanquees());
     }
 
     private static SejourVue avecDesignation(SejourVue s, boolean peutDesigner) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
-                s.organisateurs(), peutDesigner);
+                s.organisateurs(), peutDesigner, s.palanquees());
     }
 
     /** Le carnet d'un participant : ses propres données, et des autres seulement ce qui organise le séjour. */
@@ -467,7 +474,7 @@ public class SejourService {
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of(),
-                s.organisateurs(), false);
+                s.organisateurs(), false, s.palanquees());
     }
 
     private static ParticipantVue participant(ResultSet rs, Long moi) throws SQLException {

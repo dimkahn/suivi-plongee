@@ -16,6 +16,7 @@ import {
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
+import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
@@ -61,7 +62,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, JourneeSejourComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
+  imports: [FormsModule, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
             MonSejourComponent],
   template: `
     @if (sejour(); as s) {
@@ -103,7 +104,7 @@ function participantVide(): BrouillonParticipant {
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
       <!-- Le programme du jour, du voyage aller au voyage retour ; la veille, un rappel (demande du club, 2026). -->
-      <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant"
+      <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant" [encadrant]="s.encadrant"
                           [moiId]="moi()?.id ?? null" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
                           [programme]="programme()" [affaires]="s.affaires" [comptes]="mesComptes()" />
 
@@ -177,6 +178,9 @@ function participantVide(): BrouillonParticipant {
                     <span class="quoi">
                       <strong>{{ l.titre }}</strong>@if (l.lieu) { <span class="secondaire"> — {{ l.lieu }}</span>}
                       @if (l.details) { <span class="texte-libre secondaire">{{ l.details }}</span> }
+                      @if (l.palanquees.length > 0) {
+                        <app-palanquees-plongee [palanquees]="l.palanquees" [encadrant]="s.encadrant" />
+                      }
                     </span>
                     @if (s.gere && l.evenement; as e) {
                       <span class="sans-impression boutons-ligne">
@@ -1003,7 +1007,7 @@ export class SejourComponent {
   /** Les jours du séjour (et ceux des rendez-vous hors de ses dates), avec rendez-vous puis plongées. */
   readonly programme = computed(() => {
     const s = this.sejour();
-    return s ? programmeParJour(s.evenements, s.sortie.seances) : [];
+    return s ? programmeParJour(s.evenements, s.sortie.seances, s.palanquees) : [];
   });
 
   /** La date de l'appareil : le jour du programme est marqué « aujourd'hui ». */

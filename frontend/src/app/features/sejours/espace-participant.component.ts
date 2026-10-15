@@ -12,7 +12,7 @@ import { JourneeSejourComponent } from './journee-sejour.component';
 import { CarnetSejourComponent } from './carnet-sejour.component';
 import { programmeParJour } from './programme-du-jour';
 import {
-  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, ParticipantFrais, ParticipantVue, PortFrais, SejourVue, euros,
+  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, PalanqueeVue, ParticipantFrais, ParticipantVue, PortFrais, SejourVue, euros,
   formulairePhoto
 } from './sejour-api';
 
@@ -34,7 +34,7 @@ interface MesInformationsVue {
   sejour: EnteteVue;
   moi: ParticipantVue;
   /** Pour l'encart « Aujourd'hui ». */
-  programme: { evenements: EvenementVue[]; plongees: SeanceSortieVue[]; affaires: AffaireVue[] };
+  programme: { evenements: EvenementVue[]; plongees: SeanceSortieVue[]; affaires: AffaireVue[]; palanquees: PalanqueeVue[] };
 }
 
 /** Le jeton du lien, gardé sur l'appareil (IndexedDB, comme le reste : pas de localStorage). */
@@ -166,7 +166,7 @@ export class EspaceParticipantComponent {
   private contenu = signal<MesInformationsVue['programme'] | null>(null);
   readonly programme = computed(() => {
     const c = this.contenu();
-    return c ? programmeParJour(c.evenements, c.plongees) : [];
+    return c ? programmeParJour(c.evenements, c.plongees, c.palanquees) : [];
   });
   readonly affaires = computed(() => this.contenu()?.affaires ?? []);
   /** « vous devez 25,00 € à Inès Roux », rappelé la veille du retour. */

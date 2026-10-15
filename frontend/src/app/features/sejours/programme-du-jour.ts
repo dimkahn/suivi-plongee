@@ -1,5 +1,5 @@
 import { SeanceSortieVue } from '../../core/modeles';
-import { EvenementVue, MoyenTransport, ParticipantVue, TRANSPORTS, Trajet, heure, nomComplet } from './sejour-api';
+import { EvenementVue, MoyenTransport, PalanqueeVue, ParticipantVue, TRANSPORTS, Trajet, heure, nomComplet } from './sejour-api';
 
 // ----------------------------------------------------------------
 //  L'encart « Aujourd'hui » du séjour : le séjour commence dès le voyage
@@ -28,23 +28,27 @@ export interface LigneProgramme {
   lieu: string | null;
   details: string | null;
   evenement: EvenementVue | null;
+  /** Plongée : ses palanquées reçues (toutes pour un encadrant, la sienne sinon). */
+  palanquees: PalanqueeVue[];
 }
 
 /** Les jours du programme (et ceux des rendez-vous hors des dates de la sortie), rendez-vous puis plongées. */
-export function programmeParJour(evenements: EvenementVue[], plongees: SeanceSortieVue[])
+export function programmeParJour(evenements: EvenementVue[], plongees: SeanceSortieVue[],
+                                  palanquees: PalanqueeVue[] = [])
   : { jour: string; lignes: LigneProgramme[] }[] {
   const jours = new Map<string, LigneProgramme[]>();
   const ajouter = (jour: string, l: LigneProgramme) => jours.set(jour, [...(jours.get(jour) ?? []), l]);
   for (const e of evenements) {
     ajouter(e.jour, {
       heure: e.heureDebut ? heure(e.heureDebut) + (e.heureFin ? ' – ' + heure(e.heureFin) : '') : '',
-      titre: e.titre, lieu: e.lieu, details: e.details, evenement: e
+      titre: e.titre, lieu: e.lieu, details: e.details, evenement: e, palanquees: []
     });
   }
   for (const se of plongees) {
     ajouter(se.date, {
       heure: '', titre: 'Plongée' + (se.ordre ? ' ' + se.ordre : ''),
-      lieu: [se.lieu, se.site].filter(Boolean).join(' – ') || null, details: se.commentaire, evenement: null
+      lieu: [se.lieu, se.site].filter(Boolean).join(' – ') || null, details: se.commentaire, evenement: null,
+      palanquees: palanquees.filter(p => p.seanceId === se.id)
     });
   }
   return [...jours.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([jour, lignes]) => ({ jour, lignes }));

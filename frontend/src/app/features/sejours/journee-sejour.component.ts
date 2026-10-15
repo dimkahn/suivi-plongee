@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { dateDuJour } from '../../core/date-fr';
 import { AffaireVue, ParticipantVue, jourLong } from './sejour-api';
 import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage, voyagesDuJour } from './programme-du-jour';
@@ -17,7 +18,7 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
  */
 @Component({
   selector: 'app-journee-sejour',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, PalanqueesPlongeeComponent],
   template: `
     @if (journee(); as a) {
       <section class="carte encart-jour" aria-label="Aujourd'hui">
@@ -34,6 +35,9 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
                   <span class="quoi">
                     <strong>{{ l.titre }}</strong>@if (l.lieu) { <span class="secondaire"> — {{ l.lieu }}</span>}
                     @if (l.details) { <span class="texte-libre secondaire">{{ l.details }}</span> }
+                    @if (l.palanquees.length > 0) {
+                      <app-palanquees-plongee [palanquees]="l.palanquees" [encadrant]="encadrant()" />
+                    }
                   </span>
                 </li>
               }
@@ -96,6 +100,8 @@ export class JourneeSejourComponent {
   participants = input.required<ParticipantVue[]>();
   /** Encadrant : le nom de ceux qui prennent chaque avion ou train. */
   montrerNoms = input(false);
+  /** Encadrant : toutes les palanquées de chaque plongée, pas seulement la sienne. */
+  encadrant = input(false);
   moiId = input<number | null>(null);
   dateDebut = input.required<string>();
   dateFin = input.required<string>();
