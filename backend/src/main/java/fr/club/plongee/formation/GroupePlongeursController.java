@@ -24,7 +24,8 @@ import java.util.List;
 @RequestMapping("/api/groupes-plongeurs")
 public class GroupePlongeursController {
 
-    public record DemandeMembre(Long eleveId, Long utilisateurId, @NotBlank String nom,
+    /** {@code id} : celui du plongeur déjà dans le groupe, vide pour un nouveau. */
+    public record DemandeMembre(Long id, Long eleveId, Long utilisateurId, @NotBlank String nom,
                                 @NotBlank String prenom, String aptitude, String qualificationPreparee,
                                 @Email @Size(max = 255) String email) {}
 
@@ -81,7 +82,7 @@ public class GroupePlongeursController {
     private GroupePlongeursService.Saisie saisie(DemandeGroupePlongeurs demande) {
         return new GroupePlongeursService.Saisie(demande.nom(), demande.saisonId(),
                 demande.membres().stream()
-                        .map(m -> new GroupePlongeursService.Membre(m.eleveId(), m.utilisateurId(),
+                        .map(m -> new GroupePlongeursService.Membre(m.id(), m.eleveId(), m.utilisateurId(),
                                 m.nom(), m.prenom(), m.aptitude(), m.qualificationPreparee(), m.email()))
                         .toList());
     }

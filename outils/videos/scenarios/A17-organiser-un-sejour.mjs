@@ -1,12 +1,12 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-14, 13e série, carnet par le lien (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 14e série, participant lié à un plongeur du groupe (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -23,6 +23,7 @@ export default {
     await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 2500 });
     await legende('On touche un nom pour voir sa fiche : vol, repas, personne à prévenir.', 0);
     await toucher(page.locator('.liste-participants summary').first(), { apres: 3000 });
+    await legende('Un plongeur inscrit avec son groupe de plongeurs y reste lié : nom, prénom et e-mail suivent d\'un côté à l\'autre.', 4500);
     await legende('Pas besoin de tout saisir : « Demander à chacun ses informations » leur envoie un e-mail.', 4500);
     await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
     await legende('Par ce lien, ils lisent aussi le carnet du séjour, toujours à jour : programme, voitures, chambres, affaires.', 4500);

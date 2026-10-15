@@ -93,9 +93,16 @@ export interface ParticipantVue {
   remarques: string | null;
   /** Le compte connecté. */
   moi: boolean;
+  /**
+   * Le plongeur d'un groupe de plongeurs qu'il est aussi : nom, prénom et
+   * e-mail suivent de l'un à l'autre. Null pour un accompagnant.
+   */
+  membreGroupeId: number | null;
+  /** Le nom de ce groupe. */
+  groupe: string | null;
 }
 
-export type DemandeParticipant = Omit<ParticipantVue, 'id' | 'moi'>;
+export type DemandeParticipant = Omit<ParticipantVue, 'id' | 'moi' | 'groupe'>;
 
 /** Ce que le participant renseigne lui-même (le nom et le reste restent à l'organisateur). */
 export type DemandeMesInformations = Pick<ParticipantVue, 'telephone' | 'regimes' | 'regimePrecision' | 'urgenceNom'
@@ -268,10 +275,22 @@ export function enCentimes(saisie: string | number | null): number | null {
   return Number.isFinite(n) ? Math.round(n * 100) : null;
 }
 
+/** Un plongeur d'un groupe, auquel lier un participant. */
+export interface PlongeurGroupeVue {
+  id: number;
+  eleveId: number | null;
+  utilisateurId: number | null;
+  nom: string;
+  prenom: string;
+  email: string | null;
+  aptitude: string | null;
+}
+
 export interface GroupeProposeVue {
   id: number;
   nom: string;
   membres: number;
+  plongeurs: PlongeurGroupeVue[];
 }
 
 export interface SejourVue {

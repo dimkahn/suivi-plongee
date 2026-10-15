@@ -1,5 +1,5 @@
 // M12 — Groupes de plongeurs pour un séjour.
-// Tournage du 2026-10-14, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 13e série, lien avec le séjour (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -37,6 +37,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Créer le groupe' }), { apres: 1800 });
     await legende('Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d\'un coup.', 4500);
     await legende('Il suffit ensuite de les répartir dans les palanquées.', 3500);
+    await legende('Inscrit au séjour, chaque plongeur y reste lié : son nom ou son e-mail corrigé ici l\'est aussi dans le séjour.', 4500);
     await legende(null, 0);
     await pause(500);
   }

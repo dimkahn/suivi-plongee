@@ -10,7 +10,7 @@ import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component
 import { dateDuJour, periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
-  DemandeMesInformations, DemandeVoiture, EvenementVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
+  DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
   TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
@@ -44,7 +44,7 @@ function participantVide(): BrouillonParticipant {
   return {
     eleveId: null, utilisateurId: null, nom: '', prenom: '', plongeur: true, telephone: null, email: null,
     regimes: [], regimePrecision: null, urgenceNom: null, urgenceTelephone: null,
-    arrivee: trajetVide(), depart: trajetVide(), remarques: null
+    arrivee: trajetVide(), depart: trajetVide(), remarques: null, membreGroupeId: null
   };
 }
 
@@ -214,6 +214,7 @@ function participantVide(): BrouillonParticipant {
                   <summary>
                     <span class="nom">{{ nomComplet(p) }}</span>
                     <span class="pastille" [class.accompagnant]="!p.plongeur">{{ p.plongeur ? 'Plongeur' : 'Accompagnant' }}</span>
+                    @if (p.groupe) { <span class="secondaire">Groupe « {{ p.groupe }} »</span> }
                     @if (manque(p); as m) {
                       @if (m.length === 0) {
                         <span class="etat-infos complet">✓ Infos données</span>
@@ -476,7 +477,25 @@ function participantVide(): BrouillonParticipant {
         <div><label for="p-tel">Téléphone</label><input id="p-tel" type="tel" [(ngModel)]="participant.telephone" maxlength="30"></div>
         <div><label for="p-email">E-mail</label><input id="p-email" type="email" [(ngModel)]="participant.email" maxlength="180"></div>
       </div>
-      <label class="case"><input type="checkbox" [(ngModel)]="participant.plongeur"> Plonge (sinon : accompagnant)</label>
+      <label class="case"><input type="checkbox" [ngModel]="participant.plongeur" (ngModelChange)="changerPlongeur($event)">
+        Plonge (sinon : accompagnant)</label>
+      @if (participant.plongeur && (participant.membreGroupeId !== null || plongeursLiables().length > 0)) {
+        <label for="p-plongeur-groupe">Plongeur du groupe</label>
+        <select id="p-plongeur-groupe" [ngModel]="participant.membreGroupeId" (ngModelChange)="lierAuPlongeur($event)">
+          <option [ngValue]="null">— aucun groupe de plongeurs —</option>
+          @for (g of sejour()?.groupesProposes ?? []; track g.id) {
+            <optgroup [label]="g.nom">
+              @for (m of g.plongeurs; track m.id) {
+                @if (m.id === participant.membreGroupeId || estLiable(m.id)) {
+                  <option [ngValue]="m.id">{{ m.prenom }} {{ m.nom }}@if (m.aptitude) { ({{ m.aptitude }})}</option>
+                }
+              }
+            </optgroup>
+          }
+        </select>
+        <p class="secondaire">Lié à un plongeur du groupe, le nom, le prénom et l'e-mail suivent : changés ici, ils le
+          sont dans le groupe, et inversement.</p>
+      }
 
       @if ((sejour()?.participants ?? []).length > 0) {
         <label for="p-meme-voyage">Même voyage que…</label>
@@ -1207,7 +1226,8 @@ export class SejourComponent {
       urgenceNom: p.urgenceNom, urgenceTelephone: p.urgenceTelephone,
       arrivee: copieTrajet(p.arrivee),
       depart: copieTrajet(p.depart),
-      remarques: p.remarques
+      remarques: p.remarques,
+      membreGroupeId: p.membreGroupeId
     } : participantVide();
     this.participantOuvert.set(true);
     if (!p && this.connus().length === 0) {
@@ -1222,6 +1242,45 @@ export class SejourComponent {
     this.participant.utilisateurId = c.utilisateurId;
     this.participant.nom = c.nom;
     this.participant.prenom = c.prenom;
+  }
+
+  /**
+   * Les plongeurs des groupes de la saison qu'on peut lier à ce participant :
+   * ceux qui ne le sont pas déjà à un autre participant du séjour.
+   */
+  plongeursLiables(): GroupeProposeVue[] {
+    const s = this.sejour();
+    if (!s) return [];
+    const pris = new Set(s.participants.filter(p => p.id !== this.participantId && p.membreGroupeId !== null)
+      .map(p => p.membreGroupeId));
+    return s.groupesProposes.map(g => ({ ...g, plongeurs: g.plongeurs.filter(m => !pris.has(m.id)) }))
+      .filter(g => g.plongeurs.length > 0);
+  }
+
+  estLiable(membreId: number): boolean {
+    return this.plongeursLiables().some(g => g.plongeurs.some(m => m.id === membreId));
+  }
+
+  /** Lié à un plongeur d'un groupe : nom, prénom, e-mail et dossier en sont repris. */
+  lierAuPlongeur(membreId: number | null): void {
+    this.participant.membreGroupeId = membreId;
+    if (membreId === null) return;
+    const m = this.sejour()?.groupesProposes.flatMap(g => g.plongeurs).find(x => x.id === membreId);
+    if (!m) return;
+    this.participant.plongeur = true;
+    this.participant.nom = m.nom;
+    this.participant.prenom = m.prenom;
+    if (m.email) this.participant.email = m.email;
+    if (m.eleveId !== null || m.utilisateurId !== null) {
+      this.participant.eleveId = m.eleveId;
+      this.participant.utilisateurId = m.utilisateurId;
+    }
+  }
+
+  /** Un accompagnant ne plonge pas : il n'a pas de plongeur de groupe. */
+  changerPlongeur(plonge: boolean): void {
+    this.participant.plongeur = plonge;
+    if (!plonge) this.participant.membreGroupeId = null;
   }
 
   basculerRegime(code: RegimeAlimentaire): void {
@@ -1249,7 +1308,8 @@ export class SejourComponent {
   importerGroupe(groupeId: number | null): void {
     if (groupeId === null) return;
     this.ecrire(this.api.importerGroupe(this.id, groupeId),
-      () => this.message.set('Les membres du groupe qui n’étaient pas encore inscrits ont été ajoutés.'));
+      () => this.message.set('Les membres du groupe qui n’étaient pas encore inscrits ont été ajoutés, '
+        + 'chacun lié à son plongeur du groupe.'));
   }
 
   // ---------------- Voitures ----------------

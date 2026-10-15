@@ -3,8 +3,9 @@ titre: Groupes de plongeurs pour un séjour
 rubrique: Moniteur
 videos: M12
 ecran: /groupes
-mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée
+mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, participant, lien, lié, synchroniser, même personne
 questions:
+- Si je corrige un plongeur du groupe, est-ce corrigé aussi dans le séjour ?
 - Comment éviter de ressaisir les plongeurs à chaque plongée d'un séjour ?
 - Comment créer un groupe de plongeurs ?
 - Où sont passés les groupes de plongeurs ?
@@ -40,6 +41,13 @@ Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, sit
 1. Renseignez l'e-mail de chaque plongeur dans le groupe (« Modifier »). Pour un plongeur du club, laissez vide : l'e-mail de son dossier sert, il est rappelé en grisé dans le champ.
 2. Sur le groupe, « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».
 3. Le bilan indique qui l'a reçu, et qui n'a rien reçu faute d'e-mail ou parce qu'il n'était dans aucune palanquée de la sortie.
+
+## Le groupe et le séjour
+
+Inscrit à un séjour (onglet « Participants », « Inscrire un groupe de plongeurs… »), chaque plongeur du groupe devient un participant **lié** à sa ligne du groupe. Ce sont deux fiches : le groupe garde l'aptitude et la qualification préparée, le séjour le voyage, les repas et la personne à prévenir. Mais le **nom**, le **prénom** et l'**e-mail** suivent : corrigés dans le groupe (« Modifier »), ils le sont dans le séjour, et inversement. Un e-mail laissé vide d'un côté ne vide pas l'autre.
+
+- Retirer un plongeur du groupe le laisse dans le séjour, sans lien.
+- Un accompagnant qui ne plonge pas n'a pas de lien.
 
 ## Bon à savoir
 

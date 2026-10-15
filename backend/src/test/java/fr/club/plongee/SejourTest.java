@@ -235,6 +235,82 @@ class SejourTest {
     }
 
     @Test
+    @DisplayName("Un participant lié à un plongeur d'un groupe : nom, prénom et e-mail suivent dans les deux sens")
+    void participantLieAuGroupeDePlongeurs() throws Exception {
+        String dt = jeton("e3@club.fr");
+        JsonNode saison = null;
+        for (JsonNode x : envoyer("GET", "/api/saisons", dt, null, 200)) if (x.get("ouverte").asBoolean()) saison = x;
+        assertThat(saison).isNotNull();
+        LocalDate debut = LocalDate.parse(saison.get("dateFin").asText()).minusDays(5);
+        JsonNode groupe = envoyer("POST", "/api/groupes-plongeurs", dt, """
+                {"nom":"Groupe lié","saisonId":%d,"membres":[
+                  {"nom":"Ferry","prenom":"Anis","aptitude":"PA40","email":"anis@exemple.fr"},
+                  {"nom":"Morel","prenom":"Béa","aptitude":"PE40"}]}""".formatted(saison.get("id").asLong()), 200);
+        long groupeId = groupe.get("id").asLong();
+        long anisMembre = groupe.get("membres").get(0).get("id").asLong();
+        long beaMembre = groupe.get("membres").get(1).get("id").asLong();
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour lié","dateDebut":"%s","dateFin":"%s"}""".formatted(debut, debut.plusDays(2)), 201)
+                .get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+
+        // Inscrire le groupe : chaque participant est lié à son plongeur.
+        JsonNode s = envoyer("GET", base, dt, null, 200);
+        assertThat(s.get("groupesProposes").toString()).contains("Groupe lié").contains("\"aptitude\":\"PA40\"");
+        s = envoyer("POST", base + "/participants/groupe", dt, "{\"groupeId\":" + groupeId + "}", 200);
+        long anis = idDe(s, "Anis"), bea = idDe(s, "Béa");
+        for (JsonNode p : s.get("participants")) {
+            assertThat(p.get("groupe").asText()).isEqualTo("Groupe lié");
+            assertThat(p.get("membreGroupeId").asLong()).isIn(anisMembre, beaMembre);
+        }
+
+        // Corrigé dans le groupe (la ligne garde son id) : le participant suit.
+        envoyer("PUT", "/api/groupes-plongeurs/" + groupeId, dt, """
+                {"nom":"Groupe lié","saisonId":%d,"membres":[
+                  {"id":%d,"nom":"Ferry","prenom":"Anis-Karim","aptitude":"PA40","email":"ak@exemple.fr"},
+                  {"id":%d,"nom":"Morel","prenom":"Béa","aptitude":"PE40"}]}"""
+                .formatted(saison.get("id").asLong(), anisMembre, beaMembre), 200);
+        s = envoyer("GET", base, dt, null, 200);
+        assertThat(idDe(s, "Anis-Karim")).isEqualTo(anis);
+        assertThat(s.toString()).contains("ak@exemple.fr");
+
+        // Corrigé dans le séjour : le plongeur du groupe suit.
+        envoyer("PUT", base + "/participants/" + bea, dt, """
+                {"nom":"Morel","prenom":"Béatrice","plongeur":true,"email":"bea@exemple.fr","membreGroupeId":%d}"""
+                .formatted(beaMembre), 200);
+        JsonNode lu = null;
+        for (JsonNode g : envoyer("GET", "/api/groupes-plongeurs?saisonId=" + saison.get("id").asLong(), dt, null, 200)) {
+            if (g.get("id").asLong() == groupeId) lu = g;
+        }
+        assertThat(lu.get("membres").get(1).get("prenom").asText()).isEqualTo("Béatrice");
+        assertThat(lu.get("membres").get(1).get("email").asText()).isEqualTo("bea@exemple.fr");
+
+        // Un accompagnant n'a pas de lien ; un plongeur n'est lié qu'à un participant du séjour.
+        s = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Ferry","prenom":"Lou","plongeur":false}""", 200);
+        long lou = idDe(s, "Lou");
+        for (JsonNode p : s.get("participants")) {
+            if (p.get("id").asLong() == lou) assertThat(p.get("membreGroupeId").isNull()).isTrue();
+        }
+        envoyer("PUT", base + "/participants/" + lou, dt, """
+                {"nom":"Ferry","prenom":"Lou","plongeur":true,"membreGroupeId":%d}""".formatted(anisMembre), 422);
+
+        // Retiré du groupe : le participant reste, sans lien.
+        envoyer("PUT", "/api/groupes-plongeurs/" + groupeId, dt, """
+                {"nom":"Groupe lié","saisonId":%d,"membres":[
+                  {"id":%d,"nom":"Ferry","prenom":"Anis-Karim","aptitude":"PA40"}]}"""
+                .formatted(saison.get("id").asLong(), anisMembre), 200);
+        s = envoyer("GET", base, dt, null, 200);
+        for (JsonNode p : s.get("participants")) {
+            if (p.get("id").asLong() == bea) assertThat(p.get("membreGroupeId").isNull()).isTrue();
+            if (p.get("id").asLong() == anis) assertThat(p.get("membreGroupeId").asLong()).isEqualTo(anisMembre);
+        }
+
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+        envoyer("DELETE", "/api/groupes-plongeurs/" + groupeId, dt, null, 204);
+    }
+
+    @Test
     @DisplayName("Un élève qui ne participe pas au séjour ne le lit pas")
     void horsDuSejour() throws Exception {
         String dt = jeton("e3@club.fr");

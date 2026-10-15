@@ -11,7 +11,7 @@ import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component
 import { DialogueComponent } from '../../core/dialogue.component';
 
 function membreVide(): MembreGroupeVue {
-  return { eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null };
+  return { id: null, eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null };
 }
 
 /**
@@ -30,7 +30,8 @@ function membreVide(): MembreGroupeVue {
       Composez une fois la liste des plongeurs d'un séjour, puis réutilisez le
       groupe dans plusieurs fiches de sécurité sans ressaisie. Un groupe peut
       aussi être créé directement depuis une fiche, à partir des plongeurs déjà
-      saisis.
+      saisis. Un plongeur inscrit à un séjour y est lié : son nom, son prénom et
+      son e-mail corrigés ici le sont aussi dans le séjour, et inversement.
     </p>
 
     <label for="saison">Saison</label>

@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -47,6 +48,10 @@ import java.util.stream.Collectors;
  * une seule voiture, conducteur ou passager (refus à l'enregistrement) ;
  * l'avertissement « plusieurs voitures » ne sert plus qu'aux séjours
  * saisis avant cette règle.
+ * <p>
+ * Un participant qui plonge peut être lié à un plongeur d'un groupe de
+ * plongeurs de la saison (V79) : deux fiches, mais nom, prénom et e-mail
+ * suivent de l'une à l'autre. Un accompagnant n'a pas de lien.
  */
 @Service
 public class SejourService {
@@ -74,13 +79,16 @@ public class SejourService {
     /**
      * {@code moi} : ce participant est le compte connecté. Dans le carnet
      * d'un participant, coordonnées, régimes, personne à prévenir et
-     * remarques des autres sont vides.
+     * remarques des autres sont vides. {@code membreGroupeId} : le plongeur
+     * d'un groupe de plongeurs qu'il est aussi (V79), {@code groupe} le nom
+     * de ce groupe ; null pour un accompagnant ou un plongeur hors groupe.
      */
     public record ParticipantVue(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
                                  boolean plongeur, String telephone, String email,
                                  Set<RegimeAlimentaire> regimes, String regimePrecision,
                                  String urgenceNom, String urgenceTelephone,
-                                 Trajet arrivee, Trajet depart, String remarques, boolean moi) {}
+                                 Trajet arrivee, Trajet depart, String remarques, boolean moi,
+                                 Long membreGroupeId, String groupe) {}
 
     public record DemandeParticipant(Long eleveId, Long utilisateurId,
                                      @NotBlank @Size(max = 120) String nom, @NotBlank @Size(max = 120) String prenom,
@@ -88,7 +96,8 @@ public class SejourService {
                                      @Size(max = 180) String email, Set<RegimeAlimentaire> regimes,
                                      @Size(max = 300) String regimePrecision,
                                      @Size(max = 120) String urgenceNom, @Size(max = 30) String urgenceTelephone,
-                                     @Valid Trajet arrivee, @Valid Trajet depart, String remarques) {}
+                                     @Valid Trajet arrivee, @Valid Trajet depart, String remarques,
+                                     Long membreGroupeId) {}
 
     /**
      * Ce qu'un participant renseigne lui-même, par le lien reçu par e-mail
@@ -129,8 +138,15 @@ public class SejourService {
                                    @NotBlank @Size(max = 160) String titre, @Size(max = 160) String lieu,
                                    String details) {}
 
-    /** Un groupe de plongeurs de la saison de la sortie, pour en inscrire tous les membres d'un coup. */
-    public record GroupeProposeVue(Long id, String nom, int membres) {}
+    /** Un plongeur d'un groupe, auquel lier un participant. */
+    public record PlongeurGroupeVue(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
+                                    String email, String aptitude) {}
+
+    /**
+     * Un groupe de plongeurs de la saison de la sortie, pour en inscrire tous
+     * les membres d'un coup, ou lier un participant à l'un d'eux.
+     */
+    public record GroupeProposeVue(Long id, String nom, int membres, List<PlongeurGroupeVue> plongeurs) {}
 
     /**
      * {@code gere} : le compte peut modifier le séjour ; {@code encadrant} :
@@ -227,10 +243,8 @@ public class SejourService {
 
         List<String> infos = jdbc.queryForList(
                 "SELECT infos_pratiques FROM sejour WHERE sortie_id = :id", id, String.class);
-        List<ParticipantVue> participants = jdbc.query("""
-                SELECT p.*, e.utilisateur_id AS compte_eleve
-                  FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
-                 WHERE p.sortie_id = :id""", id, (rs, i) -> participant(rs, moi));
+        List<ParticipantVue> participants = jdbc.query(SELECT_PARTICIPANT + " WHERE p.sortie_id = :id", id,
+                (rs, i) -> participant(rs, moi));
         participants = participants.stream()
                 .sorted(Comparator.comparing((ParticipantVue p) -> p.nom().toLowerCase(Locale.ROOT))
                         .thenComparing(p -> p.prenom().toLowerCase(Locale.ROOT)))
@@ -278,16 +292,44 @@ public class SejourService {
         List<AffaireVue> affaires = affaires(sortieId);
         List<EvenementVue> evenements = evenements(sortieId);
 
-        List<GroupeProposeVue> groupes = !gere ? List.of() : jdbc.query("""
-                SELECT g.id, g.nom, (SELECT COUNT(*) FROM membre_groupe_plongeurs m WHERE m.groupe_id = g.id) AS n
-                  FROM groupe_plongeurs g JOIN saison s ON s.id = g.saison_id
-                 WHERE :debut BETWEEN s.date_debut AND s.date_fin
-                 ORDER BY g.nom""", new MapSqlParameterSource("debut", sortie.dateDebut()),
-                (rs, i) -> new GroupeProposeVue(rs.getLong("id"), rs.getString("nom"), rs.getInt("n")));
+        List<GroupeProposeVue> groupes = !gere ? List.of() : groupesProposes(sortie.dateDebut());
 
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
                 voitures, logements, affaires, evenements, frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
                 avertissements(participants, voitures, logements), groupes);
+    }
+
+    private static final String SELECT_PARTICIPANT = """
+            SELECT p.*, e.utilisateur_id AS compte_eleve, g.nom AS nom_groupe
+              FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
+              LEFT JOIN membre_groupe_plongeurs m ON m.id = p.membre_groupe_id
+              LEFT JOIN groupe_plongeurs g ON g.id = m.groupe_id""";
+
+    /** Les groupes de plongeurs de la saison du séjour, avec leurs plongeurs. */
+    private List<GroupeProposeVue> groupesProposes(LocalDate debut) {
+        var saison = new MapSqlParameterSource("debut", debut);
+        Map<Long, List<PlongeurGroupeVue>> plongeurs = new HashMap<>();
+        jdbc.query("""
+                SELECT m.*, COALESCE(m.email, e.email, u.email) AS email_effectif
+                  FROM membre_groupe_plongeurs m
+                  JOIN groupe_plongeurs g ON g.id = m.groupe_id JOIN saison s ON s.id = g.saison_id
+                  LEFT JOIN eleve e ON e.id = m.eleve_id LEFT JOIN utilisateur u ON u.id = m.utilisateur_id
+                 WHERE :debut BETWEEN s.date_debut AND s.date_fin
+                 ORDER BY LOWER(m.nom), LOWER(m.prenom)""", saison,
+                rs -> {
+                    plongeurs.computeIfAbsent(rs.getLong("groupe_id"), k -> new ArrayList<>()).add(new PlongeurGroupeVue(
+                            rs.getLong("id"), rs.getObject("eleve_id", Long.class),
+                            rs.getObject("utilisateur_id", Long.class), rs.getString("nom"), rs.getString("prenom"),
+                            rs.getString("email_effectif"), rs.getString("aptitude")));
+                });
+        return jdbc.query("""
+                SELECT g.id, g.nom FROM groupe_plongeurs g JOIN saison s ON s.id = g.saison_id
+                 WHERE :debut BETWEEN s.date_debut AND s.date_fin
+                 ORDER BY g.nom""", saison,
+                (rs, i) -> {
+                    List<PlongeurGroupeVue> liste = plongeurs.getOrDefault(rs.getLong("id"), List.of());
+                    return new GroupeProposeVue(rs.getLong("id"), rs.getString("nom"), liste.size(), liste);
+                });
     }
 
     /**
@@ -333,7 +375,8 @@ public class SejourService {
         List<ParticipantVue> participants = complet.participants().stream()
                 .map(p -> !p.id().equals(participantId) ? p : new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(),
                         p.nom(), p.prenom(), p.plongeur(), p.telephone(), p.email(), p.regimes(), p.regimePrecision(),
-                        p.urgenceNom(), p.urgenceTelephone(), p.arrivee(), p.depart(), p.remarques(), true))
+                        p.urgenceNom(), p.urgenceTelephone(), p.arrivee(), p.depart(), p.remarques(), true,
+                        p.membreGroupeId(), p.groupe()))
                 .toList();
         return carnet(new SejourVue(complet.sortie(), false, false, complet.infosPratiques(), participants,
                 complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(),
@@ -350,7 +393,7 @@ public class SejourService {
     private static SejourVue carnet(SejourVue s) {
         List<ParticipantVue> participants = s.participants().stream()
                 .map(p -> p.moi() ? p : new ParticipantVue(p.id(), null, null, p.nom(), p.prenom(), p.plongeur(),
-                        null, null, Set.of(), null, null, null, p.arrivee(), p.depart(), null, false))
+                        null, null, Set.of(), null, null, null, p.arrivee(), p.depart(), null, false, null, null))
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of());
@@ -364,7 +407,8 @@ public class SejourService {
                 rs.getString("nom"), rs.getString("prenom"), rs.getBoolean("plongeur"),
                 rs.getString("telephone"), rs.getString("email"), lireRegimes(rs.getString("regimes")),
                 rs.getString("regime_precision"), rs.getString("urgence_nom"), rs.getString("urgence_telephone"),
-                trajet(rs, "arrivee"), trajet(rs, "depart"), rs.getString("remarques"), estMoi);
+                trajet(rs, "arrivee"), trajet(rs, "depart"), rs.getString("remarques"), estMoi,
+                rs.getObject("membre_groupe_id", Long.class), rs.getString("nom_groupe"));
     }
 
     private static Trajet trajet(ResultSet rs, String sens) throws SQLException {
@@ -463,7 +507,9 @@ public class SejourService {
     public void ajouterParticipant(Long sortieId, DemandeParticipant d) {
         sorties.sortie(sortieId);
         verifier(sortieId, null, d);
-        inserer(sortieId, completerDuDossier(d));
+        DemandeParticipant complet = completerDuDossier(d);
+        inserer(sortieId, complet);
+        reporterSurLePlongeur(complet);
     }
 
     @Transactional
@@ -473,7 +519,8 @@ public class SejourService {
         var p = parametres(sortieId, d).addValue("pid", participantId);
         jdbc.update("""
                 UPDATE sejour_participant SET eleve_id = :eleve, utilisateur_id = :utilisateur, nom = :nom,
-                       prenom = :prenom, plongeur = :plongeur, telephone = :telephone, email = :email,
+                       prenom = :prenom, plongeur = :plongeur, membre_groupe_id = :membreGroupe,
+                       telephone = :telephone, email = :email,
                        regimes = :regimes, regime_precision = :regimePrecision, urgence_nom = :urgenceNom,
                        urgence_telephone = :urgenceTelephone,
                        arrivee_date = :arriveeDate, arrivee_heure = :arriveeHeure,
@@ -484,20 +531,33 @@ public class SejourService {
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, remarques = :remarques
                  WHERE id = :pid""", p);
+        reporterSurLePlongeur(d);
+    }
+
+    /**
+     * Le participant est aussi un plongeur d'un groupe de plongeurs : nom,
+     * prénom et e-mail suivent dans le groupe (l'inverse est fait par
+     * {@code GroupePlongeursService}). Un e-mail vide laisse celui du groupe.
+     */
+    private void reporterSurLePlongeur(DemandeParticipant d) {
+        if (d.membreGroupeId() == null) return;
+        jdbc.update("""
+                UPDATE membre_groupe_plongeurs SET nom = :nom, prenom = :prenom, email = COALESCE(:email, email)
+                 WHERE id = :membre""",
+                new MapSqlParameterSource("membre", d.membreGroupeId()).addValue("nom", d.nom().trim())
+                        .addValue("prenom", d.prenom().trim()).addValue("email", nettoyer(d.email()), Types.VARCHAR));
     }
 
     /** Sa propre ligne, entière (il la voit et la complète lui-même). */
     @Transactional(readOnly = true)
     public ParticipantVue participant(Long participantId) {
-        List<ParticipantVue> lignes = jdbc.query("""
-                SELECT p.*, e.utilisateur_id AS compte_eleve
-                  FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
-                 WHERE p.id = :pid""", new MapSqlParameterSource("pid", participantId), (rs, i) -> participant(rs, null));
+        List<ParticipantVue> lignes = jdbc.query(SELECT_PARTICIPANT + " WHERE p.id = :pid",
+                new MapSqlParameterSource("pid", participantId), (rs, i) -> participant(rs, null));
         if (lignes.isEmpty()) throw new RessourceIntrouvableException("Participant introuvable");
         ParticipantVue p = lignes.getFirst();
         return new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(), p.nom(), p.prenom(), p.plongeur(),
                 p.telephone(), p.email(), p.regimes(), p.regimePrecision(), p.urgenceNom(), p.urgenceTelephone(),
-                p.arrivee(), p.depart(), p.remarques(), true);
+                p.arrivee(), p.depart(), p.remarques(), true, p.membreGroupeId(), p.groupe());
     }
 
     /** Le participant complète ses informations : le reste de sa ligne ne change pas. */
@@ -511,7 +571,7 @@ public class SejourService {
         }
         var p = parametres(null, new DemandeParticipant(actuel.eleveId(), actuel.utilisateurId(), actuel.nom(),
                 actuel.prenom(), actuel.plongeur(), d.telephone(), actuel.email(), d.regimes(), d.regimePrecision(),
-                d.urgenceNom(), d.urgenceTelephone(), d.arrivee(), d.depart(), d.remarques()))
+                d.urgenceNom(), d.urgenceTelephone(), d.arrivee(), d.depart(), d.remarques(), actuel.membreGroupeId()))
                 .addValue("pid", participantId);
         jdbc.update("""
                 UPDATE sejour_participant SET telephone = :telephone, regimes = :regimes,
@@ -579,7 +639,11 @@ public class SejourService {
         jdbc.update("DELETE FROM sejour_participant WHERE id = :pid", new MapSqlParameterSource("pid", participantId));
     }
 
-    /** Inscrit les membres d'un groupe de plongeurs qui ne sont pas déjà du séjour ; renvoie leur nombre. */
+    /**
+     * Inscrit les membres d'un groupe de plongeurs qui ne sont pas déjà du
+     * séjour, chacun lié à son plongeur du groupe ; celui qui était déjà
+     * inscrit sans lien y est lié. Renvoie le nombre d'inscrits.
+     */
     @Transactional
     public int importerGroupe(Long sortieId, Long groupeId) {
         sorties.sortie(sortieId);
@@ -588,14 +652,24 @@ public class SejourService {
             throw new RessourceIntrouvableException("Groupe de plongeurs introuvable");
         }
         List<DemandeParticipant> membres = jdbc.query("""
-                SELECT eleve_id, utilisateur_id, nom, prenom, email FROM membre_groupe_plongeurs
+                SELECT id, eleve_id, utilisateur_id, nom, prenom, email FROM membre_groupe_plongeurs
                  WHERE groupe_id = :groupe ORDER BY id""", g,
                 (rs, i) -> new DemandeParticipant(rs.getObject("eleve_id", Long.class),
                         rs.getObject("utilisateur_id", Long.class), rs.getString("nom"), rs.getString("prenom"),
-                        true, null, rs.getString("email"), Set.of(), null, null, null, null, null, null));
+                        true, null, rs.getString("email"), Set.of(), null, null, null, null, null, null,
+                        rs.getLong("id")));
         int ajoutes = 0;
         for (DemandeParticipant m : membres) {
-            if (doublon(sortieId, null, m) != null) continue;
+            if (compter("SELECT COUNT(*) FROM sejour_participant WHERE sortie_id = :sortie AND membre_groupe_id = :x",
+                    m.membreGroupeId(), sortieId) > 0) continue;
+            Inscrit deja = doublon(sortieId, null, m);
+            if (deja != null) {
+                jdbc.update("""
+                        UPDATE sejour_participant SET membre_groupe_id = :membre, plongeur = TRUE
+                         WHERE id = :pid AND membre_groupe_id IS NULL""",
+                        new MapSqlParameterSource("membre", m.membreGroupeId()).addValue("pid", deja.id()));
+                continue;
+            }
             inserer(sortieId, completerDuDossier(m));
             ajoutes++;
         }
@@ -603,9 +677,12 @@ public class SejourService {
     }
 
     private void verifier(Long sortieId, Long participantId, DemandeParticipant d) {
-        String deja = doublon(sortieId, participantId, d);
+        Inscrit deja = doublon(sortieId, participantId, d);
         if (deja != null) {
-            throw new RegleMetierException("« " + deja + " » participe déjà au séjour.");
+            throw new RegleMetierException("« " + deja.nom() + " » participe déjà au séjour.");
+        }
+        if (d.membreGroupeId() != null) {
+            verifierPlongeurDuGroupe(sortieId, participantId, d.membreGroupeId());
         }
         if (d.eleveId() != null && compter("SELECT COUNT(*) FROM eleve WHERE id = :x", d.eleveId()) == 0) {
             throw new RessourceIntrouvableException("Élève introuvable");
@@ -622,8 +699,31 @@ public class SejourService {
         }
     }
 
-    /** Le nom de celui qui est déjà inscrit : même dossier, même compte, ou mêmes nom et prénom. */
-    private String doublon(Long sortieId, Long participantId, DemandeParticipant d) {
+    /** Un plongeur d'un groupe de la saison du séjour, qui n'est pas déjà lié à un autre participant. */
+    private void verifierPlongeurDuGroupe(Long sortieId, Long participantId, Long membreId) {
+        var p = new MapSqlParameterSource("membre", membreId).addValue("debut", sorties.lire(sortieId).dateDebut());
+        Integer trouve = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM membre_groupe_plongeurs m
+                  JOIN groupe_plongeurs g ON g.id = m.groupe_id JOIN saison s ON s.id = g.saison_id
+                 WHERE m.id = :membre AND :debut BETWEEN s.date_debut AND s.date_fin""", p, Integer.class);
+        if (trouve == null || trouve == 0) {
+            throw new RegleMetierException("Ce plongeur n'est dans aucun groupe de plongeurs de la saison du séjour.");
+        }
+        List<String> autres = jdbc.queryForList("""
+                SELECT prenom || ' ' || nom FROM sejour_participant
+                 WHERE sortie_id = :sortie AND membre_groupe_id = :membre AND id <> :pid""",
+                p.addValue("sortie", sortieId).addValue("pid", participantId == null ? -1L : participantId),
+                String.class);
+        if (!autres.isEmpty()) {
+            throw new RegleMetierException("Ce plongeur du groupe est déjà lié à « " + autres.getFirst()
+                    + " » dans ce séjour.");
+        }
+    }
+
+    private record Inscrit(Long id, String nom) {}
+
+    /** Celui qui est déjà inscrit : même dossier, même compte, ou mêmes nom et prénom. */
+    private Inscrit doublon(Long sortieId, Long participantId, DemandeParticipant d) {
         var p = new MapSqlParameterSource("id", sortieId).addValue("pid", participantId == null ? -1L : participantId)
                 .addValue("eleve", d.eleveId()).addValue("utilisateur", d.utilisateurId())
                 .addValue("nom", d.nom().trim().toLowerCase(Locale.ROOT))
@@ -631,11 +731,12 @@ public class SejourService {
         // Conditions écrites seulement pour un lien donné : Postgres ne sait pas typer « :x IS NULL ».
         String memeDossier = (d.eleveId() == null ? "" : " OR eleve_id = :eleve")
                 + (d.utilisateurId() == null ? "" : " OR utilisateur_id = :utilisateur");
-        List<String> noms = jdbc.queryForList("""
-                SELECT prenom || ' ' || nom FROM sejour_participant
+        List<Inscrit> inscrits = jdbc.query("""
+                SELECT id, prenom || ' ' || nom FROM sejour_participant
                  WHERE sortie_id = :id AND id <> :pid
-                   AND ((LOWER(nom) = :nom AND LOWER(prenom) = :prenom)""" + memeDossier + ")", p, String.class);
-        return noms.isEmpty() ? null : noms.getFirst();
+                   AND ((LOWER(nom) = :nom AND LOWER(prenom) = :prenom)""" + memeDossier + ") ORDER BY id", p,
+                (rs, i) -> new Inscrit(rs.getLong(1), rs.getString(2)));
+        return inscrits.isEmpty() ? null : inscrits.getFirst();
     }
 
     /** Coordonnées et personne à prévenir reprises du dossier élève (ou l'e-mail du compte) quand elles manquent. */
@@ -661,17 +762,17 @@ public class SejourService {
         }
         return new DemandeParticipant(d.eleveId(), d.utilisateurId(), d.nom(), d.prenom(), d.plongeur(), telephone,
                 email, d.regimes(), d.regimePrecision(), urgenceNom, urgenceTelephone, d.arrivee(), d.depart(),
-                d.remarques());
+                d.remarques(), d.membreGroupeId());
     }
 
     private void inserer(Long sortieId, DemandeParticipant d) {
         jdbc.update("""
                 INSERT INTO sejour_participant (sortie_id, eleve_id, utilisateur_id, nom, prenom, plongeur,
-                       telephone, email, regimes, regime_precision, urgence_nom, urgence_telephone,
+                       membre_groupe_id, telephone, email, regimes, regime_precision, urgence_nom, urgence_telephone,
                        arrivee_date, arrivee_heure, arrivee_transport, arrivee_numero, arrivee_lieu,
                        arrivee_heure_depart, arrivee_lieu_depart,
                        depart_date, depart_heure, depart_transport, depart_numero, depart_lieu, remarques)
-                VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :telephone, :email, :regimes,
+                VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :membreGroupe, :telephone, :email, :regimes,
                        :regimePrecision, :urgenceNom, :urgenceTelephone,
                        :arriveeDate, :arriveeHeure, :arriveeTransport, :arriveeNumero, :arriveeLieu,
                        :arriveeHeureDepart, :arriveeLieuDepart,
@@ -683,7 +784,9 @@ public class SejourService {
         var p = new MapSqlParameterSource("sortie", sortieId)
                 .addValue("eleve", d.eleveId()).addValue("utilisateur", d.utilisateurId())
                 .addValue("nom", d.nom().trim()).addValue("prenom", d.prenom().trim())
-                .addValue("plongeur", d.plongeur())
+                // Lié à un plongeur d'un groupe : il plonge (un accompagnant n'a pas de lien).
+                .addValue("plongeur", d.plongeur() || d.membreGroupeId() != null)
+                .addValue("membreGroupe", d.membreGroupeId(), Types.BIGINT)
                 .addValue("telephone", nettoyer(d.telephone())).addValue("email", nettoyer(d.email()))
                 .addValue("regimes", d.regimes() == null || d.regimes().isEmpty() ? null
                         : d.regimes().stream().sorted().map(Enum::name).collect(Collectors.joining(",")))
