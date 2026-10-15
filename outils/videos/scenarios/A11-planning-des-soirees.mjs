@@ -1,12 +1,12 @@
 // A11 — Tenir le planning des soirées.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A11',
   titre: 'Tenir le planning des soirées',
   public: 'Administrateur',
-  resume: 'La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, DP fosse et DP piscine.',
+  resume: 'La grille groupes × soirées qui remplace le tableur : fosse, F6, activité, absence, plusieurs cases d\'un coup, DP fosse et DP piscine.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -26,6 +26,23 @@ export default {
     const dialogue = page.locator('dialog[open]');
     await toucher(dialogue.locator('label.option').filter({ hasText: /^\s*Fosse/ }).first(), { apres: 600 });
     await toucher(dialogue.getByRole('button', { name: 'Enregistrer' }), { apres: 1500 });
+
+    // Sélection de plusieurs cases : glisser à la souris (appui long puis touchers sur téléphone).
+    await legende('Plusieurs cases d\'un coup : glissez la souris dessus ; sur téléphone, appui long puis touchez les autres.', 0);
+    const lignesGroupes = page.locator('tbody tr');
+    const depart = lignesGroupes.nth(3).locator('button.case').nth(5);
+    const arrivee = lignesGroupes.nth(4).locator('button.case').nth(6);
+    await depart.scrollIntoViewIfNeeded();
+    await pause(600);
+    const a = await depart.boundingBox();
+    const b = await arrivee.boundingBox();
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 15 });
+    await page.mouse.up();
+    await pause(1500);
+    await legende('Une barre en bas : « Pas de séance » pour ces groupes et ces dates, ou retour aux lignes attitrées.', 0);
+    await toucher(page.locator('.barre-selection').getByRole('button', { name: 'Pas de séance' }), { apres: 2000 });
 
     await legende('Les lignes « DP fosse » et « DP piscine » : le directeur de plongée de chaque bassin, et une note pour tous.', 0);
     await toucher(page.locator('button.case.dp-piscine').nth(3), { apres: 900 });

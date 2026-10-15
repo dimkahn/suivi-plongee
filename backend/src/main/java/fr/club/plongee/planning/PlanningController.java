@@ -4,6 +4,7 @@ import fr.club.plongee.evaluation.service.HabilitationService;
 import fr.club.plongee.planning.service.PlanningService;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.planning.service.PlanningService.DemandeCase;
+import fr.club.plongee.planning.service.PlanningService.DemandeCases;
 import fr.club.plongee.planning.service.PlanningService.DemandeDisponibilite;
 import fr.club.plongee.planning.service.PlanningService.DemandeGroupeEncadrant;
 import fr.club.plongee.planning.service.PlanningService.DemandeSoiree;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Planning des soirées d'entraînement : consulté par les encadrants, tenu
@@ -47,6 +49,13 @@ public class PlanningController {
                                  @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                  @PathVariable Long groupeId, @Valid @RequestBody DemandeCase demande) {
         return service.definirCase(saisonId, date, groupeId, demande);
+    }
+
+    /** Même consigne pour plusieurs cases choisies ensemble ; renvoie les soirées touchées. */
+    @PutMapping("/saison/{saisonId}/cases")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<SoireeVue> definirCases(@PathVariable Long saisonId, @Valid @RequestBody DemandeCases demande) {
+        return service.definirCases(saisonId, demande);
     }
 
     @PutMapping("/saison/{saisonId}/soirees/{date}")

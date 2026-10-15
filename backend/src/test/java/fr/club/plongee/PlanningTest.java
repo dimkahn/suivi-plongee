@@ -73,6 +73,53 @@ class PlanningTest {
     }
 
     @Test
+    @DisplayName("Plusieurs cases sélectionnées reçoivent la même consigne d'un coup, tout ou rien")
+    void plusieursCasesDUnCoup() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        JsonNode p = planning(admin);
+        long saison = p.get("saisonId").asLong();
+        String date1 = p.get("soirees").get(3).get("date").asText();
+        String date2 = p.get("soirees").get(4).get("date").asText();
+        long g1 = p.get("groupes").get(0).get("id").asLong();
+        long g2 = p.get("groupes").get(1).get("id").asLong();
+        String url = "/api/planning/saison/" + saison + "/cases";
+        String cases = """
+                [{"date":"%s","groupeId":%d},{"date":"%s","groupeId":%d},{"date":"%s","groupeId":%d}]"""
+                .formatted(date1, g1, date1, g2, date2, g1);
+
+        JsonNode soirees = json.readTree(mvc.perform(put(url).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cases\":" + cases + ",\"consigne\":{\"type\":\"ABSENT\"}}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(soirees).hasSize(2);
+        assertThat(soirees.get(0).get("date").asText()).isEqualTo(date1);
+        assertThat(soirees.get(0).get("cases").get(0).get("type").asText()).isEqualTo("ABSENT");
+        assertThat(soirees.get(0).get("cases").get(1).get("type").asText()).isEqualTo("ABSENT");
+        assertThat(soirees.get(1).get("cases").get(0).get("type").asText()).isEqualTo("ABSENT");
+        assertThat(soirees.get(1).get("cases").get(1).get("type").asText()).isNotEqualTo("ABSENT");
+
+        // Une date qui n'est pas une soirée : rien n'est enregistré, pas même les cases valables.
+        String horsSaison = """
+                [{"date":"%s","groupeId":%d},{"date":"1999-01-04","groupeId":%d}]""".formatted(date2, g2, g2);
+        mvc.perform(put(url).header("Authorization", admin).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cases\":" + horsSaison + ",\"consigne\":{\"type\":\"ABSENT\"}}"))
+                .andExpect(status().is4xxClientError());
+        JsonNode soiree2 = planning(admin).get("soirees").get(4);
+        assertThat(soiree2.get("cases").get(1).get("type").asText()).isNotEqualTo("ABSENT");
+
+        soirees = json.readTree(mvc.perform(put(url).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cases\":" + cases + ",\"consigne\":{\"type\":\"ATTITREE\"}}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(soirees.get(0).get("cases").get(0).get("type").asText()).isEqualTo("ATTITREE");
+        assertThat(soirees.get(1).get("cases").get(0).get("type").asText()).isEqualTo("ATTITREE");
+
+        mvc.perform(put(url).header("Authorization", jeton("e1@club.fr")).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"cases\":" + cases + ",\"consigne\":{\"type\":\"ABSENT\"}}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @DisplayName("Un soir donné, un groupe peut être mis sur plusieurs lignes d'eau, mais la fosse se donne seule")
     void plusieursLignesUnSoir() throws Exception {
         String admin = jeton("presidente@club.fr");

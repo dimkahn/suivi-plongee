@@ -3,8 +3,10 @@ titre: Tenir le planning des soirées
 rubrique: Administrateur
 videos: A11, A12
 ecran: /admin/planning
-mots: planning, soirée, lundi, grille, case, écart, fosse, F6, activité, absence, DP fosse, DP piscine, avertissement, capacité, E3, répondre à sa place, changer de groupe, remplacer, remplaçant, renfort, autre groupe
+mots: planning, soirée, lundi, grille, case, écart, fosse, F6, activité, absence, DP fosse, DP piscine, avertissement, capacité, E3, répondre à sa place, changer de groupe, remplacer, remplaçant, renfort, autre groupe, sélection, plusieurs cases, glisser, appui long, pas de séance, vacances, annuler, lignes par défaut
 questions:
+- Comment mettre « pas de séance » sur plusieurs groupes et plusieurs dates d'un coup ?
+- Comment remettre plusieurs cases sur les lignes attitrées ?
 - Comment mettre un moniteur dans un autre groupe pour une séance ?
 - Comment envoyer un groupe en fosse un soir ?
 - Comment désigner le DP fosse et le DP piscine ?
@@ -18,9 +20,10 @@ Administration, « Planning du bassin » : une ligne par groupe, une colonne par
 
 1. Administration, puis « Planning du bassin ».
 2. Une case grisée = la ligne attitrée du groupe. Touchez une case pour noter un écart : autre ligne (une ou plusieurs), fosse, fosse limitée à 6 m (« F6 »), activité ou absence du groupe.
-3. Les lignes « DP fosse » et « DP piscine » désignent le directeur de plongée de chaque bassin, avec une note pour tous.
-4. La ligne « Encadrants » ouvre les présences de la soirée. Le menu sous le nom d'un encadrant le met dans un autre groupe pour ce soir seulement (remplacer un collègue absent, renforcer un groupe) ; « Son groupe » le remet dans ses groupes attitrés. Dans la grille, « +Prénom » signale l'encadrant venu d'un autre groupe.
-5. Les encadrants voient aussitôt leur soirée dans « Planning ».
+3. Plusieurs cases d'un coup (vacances d'un groupe, soirée annulée…) : sur ordinateur, glissez la souris d'une case à l'autre (Ctrl + clic ajoute ou retire une case) ; sur téléphone, appui long sur une case, puis touchez chaque case à ajouter ou retirer. La barre en bas propose « Pas de séance », « Lignes attitrées » (retour aux lignes par défaut) ou « Autre choix… » (fosse, lignes, activité) pour toutes les cases choisies. « Annuler la sélection » (ou Échap) en sort.
+4. Les lignes « DP fosse » et « DP piscine » désignent le directeur de plongée de chaque bassin, avec une note pour tous.
+5. La ligne « Encadrants » ouvre les présences de la soirée. Le menu sous le nom d'un encadrant le met dans un autre groupe pour ce soir seulement (remplacer un collègue absent, renforcer un groupe) ; « Son groupe » le remet dans ses groupes attitrés. Dans la grille, « +Prénom » signale l'encadrant venu d'un autre groupe.
+6. Les encadrants voient aussitôt leur soirée dans « Planning ».
 
 ## Les avertissements (⚠)
 

@@ -267,7 +267,11 @@ retouchées. Un écart « espace » met le groupe ce soir-là, à la place de
 toutes ses lignes attitrées, soit sur **une ou plusieurs lignes** cochées
 (V38 : `espace_id` garde la première, `affectation_groupe_ligne` les
 autres), soit dans la fosse **seule** (règle du service) ; `CaseVue.espaces`
-liste tous les espaces occupés, lus par les avertissements. `soiree_planning` porte le **DP fosse** et le
+liste tous les espaces occupés, lus par les avertissements. Plusieurs cases
+reçoivent la même consigne d'un coup (sélection à la souris en glissant, ou
+appui long puis touchers au téléphone ; barre « Pas de séance » / « Lignes
+attitrées » / « Autre choix… ») : `PUT /api/planning/saison/{id}/cases`,
+`PlanningService.definirCases`, tout ou rien. `soiree_planning` porte le **DP fosse** et le
 **DP piscine** (V41, choix du club 2026 : ils remplacent l'ancien
 « responsable de séance » ; le DP fosse reste dans la colonne historique
 `responsable_id`, écrite par la démo V107, d'où la reprise des responsables
