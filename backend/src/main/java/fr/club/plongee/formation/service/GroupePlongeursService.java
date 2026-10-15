@@ -4,6 +4,7 @@ import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
+import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.securite.repository.UtilisateurRepository;
 
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -12,11 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -37,7 +34,16 @@ public class GroupePlongeursService {
     public record MembreVue(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
                             String aptitude, String qualificationPreparee, String email, String emailDossier) {}
 
-    public record GroupePlongeursVue(Long id, String nom, Long saisonId, List<MembreVue> membres) {}
+    /** Le créateur de la liste et les organisateurs qu'il a désignés (V81). */
+    public record OrganisateurVue(Long id, String nomComplet, boolean createur) {}
+
+    /**
+     * {@code gere} : le compte qui lit peut modifier le groupe (créateur ou
+     * organisateur) ; {@code peutDesigner} : il choisit les organisateurs (le
+     * créateur, ou un ADMIN).
+     */
+    public record GroupePlongeursVue(Long id, String nom, Long saisonId, List<MembreVue> membres,
+                                     List<OrganisateurVue> organisateurs, boolean gere, boolean peutDesigner) {}
 
     /** {@code id} : le plongeur déjà dans le groupe (gardé, avec son lien aux séjours), null pour un nouveau. */
     public record Membre(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
@@ -61,13 +67,21 @@ public class GroupePlongeursService {
         this.jdbc = jdbc;
     }
 
+    /** {@code moi} : le compte qui lit, pour dire ce qu'il peut faire de chaque groupe (null : rien). */
     @Transactional(readOnly = true)
-    public List<GroupePlongeursVue> lister(Long saisonId) {
-        return groupes.findBySaisonIdOrderByNomAsc(saisonId).stream().map(this::vue).toList();
+    public List<GroupePlongeursVue> lister(Long saisonId, UtilisateurPrincipal moi) {
+        return groupes.findBySaisonIdOrderByNomAsc(saisonId).stream().map(g -> vue(g, moi)).toList();
     }
 
+    @Transactional(readOnly = true)
+    public GroupePlongeursVue lire(Long groupeId, UtilisateurPrincipal moi) {
+        return vue(groupes.findById(groupeId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Groupe de plongeurs introuvable")), moi);
+    }
+
+    /** Le compte qui crée la liste en devient le créateur : lui seul, et ceux qu'il désigne, la modifient. */
     @Transactional
-    public GroupePlongeursVue creer(Saisie saisie) {
+    public GroupePlongeursVue creer(Saisie saisie, UtilisateurPrincipal moi) {
         Saison saison = saisons.findById(saisie.saisonId())
                 .orElseThrow(() -> new RessourceIntrouvableException("Saison introuvable"));
         if (saisie.nom() == null || saisie.nom().isBlank()) {
@@ -77,12 +91,13 @@ public class GroupePlongeursService {
         GroupePlongeurs groupe = new GroupePlongeurs();
         groupe.setSaison(saison);
         groupe.setNom(saisie.nom());
+        groupe.setCreateurId(moi == null ? null : moi.id());
         appliquerMembres(groupe, saisie.membres());
-        return vue(groupes.save(groupe));
+        return vue(groupes.save(groupe), moi);
     }
 
     @Transactional
-    public GroupePlongeursVue modifier(Long groupeId, Saisie saisie) {
+    public GroupePlongeursVue modifier(Long groupeId, Saisie saisie, UtilisateurPrincipal moi) {
         GroupePlongeurs groupe = groupes.findById(groupeId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Groupe de plongeurs introuvable"));
         if (saisie.nom() == null || saisie.nom().isBlank()) {
@@ -90,7 +105,35 @@ public class GroupePlongeursService {
         }
         groupe.setNom(saisie.nom());
         appliquerMembres(groupe, saisie.membres());
-        return vue(groupes.save(groupe));
+        return vue(groupes.save(groupe), moi);
+    }
+
+    /**
+     * Les organisateurs désignés (le créateur l'est toujours, il n'est pas
+     * dans la liste) : des encadrants qui ont un compte actif.
+     */
+    @Transactional
+    public void definirOrganisateurs(Long groupeId, List<Long> utilisateurIds) {
+        GroupePlongeurs groupe = groupes.findById(groupeId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Groupe de plongeurs introuvable"));
+        Set<Long> choisis = new LinkedHashSet<>(utilisateurIds);
+        if (groupe.getCreateurId() != null) choisis.remove(groupe.getCreateurId());
+        if (!choisis.isEmpty()) {
+            List<Long> encadrants = jdbc.queryForList("""
+                    SELECT DISTINCT u.id FROM utilisateur u JOIN utilisateur_role r ON r.utilisateur_id = u.id
+                     WHERE u.id IN (:ids) AND u.actif = TRUE
+                       AND r.role IN ('MONITEUR', 'ADMIN', 'DIRECTEUR_TECHNIQUE')""",
+                    new MapSqlParameterSource("ids", choisis), Long.class);
+            if (encadrants.size() != choisis.size()) {
+                throw new RegleMetierException("Seul un encadrant qui a un compte actif peut organiser le groupe.");
+            }
+        }
+        var id = new MapSqlParameterSource("id", groupeId);
+        jdbc.update("DELETE FROM groupe_plongeurs_organisateur WHERE groupe_id = :id", id);
+        for (Long u : choisis) {
+            jdbc.update("INSERT INTO groupe_plongeurs_organisateur (groupe_id, utilisateur_id) VALUES (:id, :u)",
+                    new MapSqlParameterSource("id", groupeId).addValue("u", u));
+        }
     }
 
     @Transactional
@@ -192,7 +235,30 @@ public class GroupePlongeursService {
                         .addValue("prenom", m.prenom().trim()).addValue("email", email, Types.VARCHAR));
     }
 
-    private GroupePlongeursVue vue(GroupePlongeurs g) {
+    /** Le créateur d'abord, puis les organisateurs qu'il a désignés. */
+    private List<OrganisateurVue> organisateurs(GroupePlongeurs g) {
+        List<OrganisateurVue> liste = new ArrayList<>(jdbc.query("""
+                SELECT id, prenom, nom FROM utilisateur
+                 WHERE id = :createur
+                    OR id IN (SELECT utilisateur_id FROM groupe_plongeurs_organisateur WHERE groupe_id = :id)""",
+                new MapSqlParameterSource("id", g.getId()).addValue("createur", g.getCreateurId(), Types.BIGINT),
+                (rs, i) -> new OrganisateurVue(rs.getLong("id"), rs.getString("prenom") + " " + rs.getString("nom"),
+                        Objects.equals(rs.getLong("id"), g.getCreateurId()))));
+        liste.sort(Comparator.comparing((OrganisateurVue o) -> !o.createur())
+                .thenComparing(o -> o.nomComplet().toLowerCase(Locale.ROOT)));
+        return liste;
+    }
+
+    private GroupePlongeursVue vue(GroupePlongeurs g, UtilisateurPrincipal moi) {
+        List<OrganisateurVue> organisateurs = organisateurs(g);
+        boolean gere = moi != null && organisateurs.stream().anyMatch(o -> o.id().equals(moi.id()));
+        boolean peutDesigner = moi != null && (Objects.equals(g.getCreateurId(), moi.id())
+                || moi.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+        return vueMembres(g, organisateurs, gere, peutDesigner);
+    }
+
+    private GroupePlongeursVue vueMembres(GroupePlongeurs g, List<OrganisateurVue> organisateurs,
+                                          boolean gere, boolean peutDesigner) {
         List<MembreVue> membres = g.getMembres().stream()
                 .map(m -> new MembreVue(m.getId(),
                         m.getEleve() == null ? null : m.getEleve().getId(),
@@ -201,6 +267,7 @@ public class GroupePlongeursService {
                         m.getEleve() != null ? m.getEleve().getEmail()
                                 : m.getUtilisateur() != null ? m.getUtilisateur().getEmail() : null))
                 .toList();
-        return new GroupePlongeursVue(g.getId(), g.getNom(), g.getSaison().getId(), membres);
+        return new GroupePlongeursVue(g.getId(), g.getNom(), g.getSaison().getId(), membres,
+                organisateurs, gere, peutDesigner);
     }
 }

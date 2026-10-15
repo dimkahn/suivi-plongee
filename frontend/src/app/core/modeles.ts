@@ -917,11 +917,24 @@ export interface BilanEnvoiParametres {
  * séjour), glissé-déposé ensuite dans les palanquées de plusieurs fiches de
  * sécurité successives — voir fiche-securite.component.ts.
  */
+/** Le créateur d'un groupe de plongeurs et les organisateurs qu'il a désignés (V81). */
+export interface OrganisateurGroupeVue {
+  id: number;
+  nomComplet: string;
+  createur: boolean;
+}
+
 export interface GroupePlongeursVue {
   id: number;
   nom: string;
   saisonId: number;
   membres: MembreGroupeVue[];
+  /** Le créateur d'abord ; vide pour un groupe d'avant V81 (un administrateur en désigne). */
+  organisateurs: OrganisateurGroupeVue[];
+  /** Peut modifier ou supprimer : le créateur et les organisateurs qu'il a désignés. */
+  gere: boolean;
+  /** Choisit les organisateurs : le créateur, ou un administrateur. */
+  peutDesigner: boolean;
 }
 
 export type StatutPresence = 'PRESENT' | 'ABSENT' | 'EXCUSE';

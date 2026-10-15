@@ -228,7 +228,16 @@ par l'admin (`/admin/groupes-entrainement`), avec une suggestion tirée de
 saison (règle du service). Choix du club (2026) : le suivi d'un élève passe
 par les référents de son groupe ; l'ancien « moniteur référent » propre à
 chaque cursus (`cursus.moniteur_referent_id`) a été supprimé par V36. **Sans rapport avec `GroupePlongeurs`** (V13), qui
-compose les palanquées d'un séjour (e-mail facultatif par membre, V44 —
+compose les palanquées d'un séjour (**modifié par son créateur et les
+organisateurs qu'il désigne, seulement**, choix du club 2026, V81 :
+`groupe_plongeurs.createur_id` posé à la création, ici ou depuis une fiche
+de sécurité, `groupe_plongeurs_organisateur`, `DroitsGroupePlongeurs` dans
+les `@PreAuthorize`, `PUT …/organisateurs` ; un ADMIN désigne seulement ;
+les groupes d'avant V81 n'ont pas de créateur, l'entité n'étant pas
+auditée ; les autres encadrants les lisent, les reprennent dans une fiche
+et envoient les paramètres ; le report nom/e-mail depuis un séjour lié
+reste ouvert aux organisateurs du séjour ; écran : une ligne par membre,
+ajout en tête depuis les plongeurs connus) (e-mail facultatif par membre, V44 —
 vide, celui du dossier ; en fin de séjour `EnvoiParametresSejourService`
 envoie à chacun les seules plongées de la sortie où il figure, lues sur les
 fiches de sécurité ; des séances du même jour peuvent être
