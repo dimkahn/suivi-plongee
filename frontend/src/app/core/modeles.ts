@@ -890,6 +890,8 @@ export interface SeanceLieeVue {
 
 /** Un plongeur au sein d'un GroupePlongeursVue : même logique d'instantané éditable que PlongeurConnuVue. */
 export interface MembreGroupeVue {
+  /** Gardé à l'enregistrement : le plongeur garde son lien aux participants d'un séjour. Vide pour un nouveau. */
+  id?: number | null;
   eleveId: number | null;
   utilisateurId: number | null;
   nom: string;

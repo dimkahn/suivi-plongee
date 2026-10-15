@@ -395,7 +395,13 @@ la fiche de gestion.
 écrans `/sejours` et `/sejours/:id` (bouton « Gérer le séjour » de
 `/admin/sorties`). Tout dépend de la `Sortie` et disparaît avec elle :
 participants (`sejour_participant`, instantané éditable comme un membre de
-groupe de plongeurs, pré-rempli du dossier élève ou du compte ; arrivée et
+groupe de plongeurs, pré-rempli du dossier élève ou du compte ; un participant
+qui plonge peut être **lié** à un membre d'un groupe de plongeurs de la saison
+(V79, `sejour_participant.membre_groupe_id`, posé par « Inscrire un groupe »
+ou choisi dans sa fiche ; un par séjour) : deux fiches, mais nom, prénom et
+e-mail sont reportés de l'une à l'autre (`SejourService.reporterSurLePlongeur`,
+`GroupePlongeursService.reporterSurLesParticipants`, qui garde désormais
+l'id des membres à l'enregistrement d'un groupe) ; arrivée et
 départ avec moyen, numéro de vol ou de train, lieu ; régimes alimentaires
 en cases `RegimeAlimentaire` + une précision pour la cuisine ; personne à
 prévenir), voitures (places conducteur compris, conducteur, passagers),
