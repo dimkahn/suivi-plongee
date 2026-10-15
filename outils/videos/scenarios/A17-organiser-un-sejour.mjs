@@ -1,12 +1,12 @@
 // A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-15, 14e série, participant lié à un plongeur du groupe (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-15, 15e série, choix des destinataires des e-mails du séjour (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'L\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -84,7 +84,13 @@ export default {
     await legende('Le compte de chacun est replié en bas, dans « Détail des comptes ».', 3500);
     await legende('Les participants notent aussi leurs frais, dans l\'appli ou par le lien reçu par e-mail.', 4500);
     await enHaut();
-    await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 5000);
+    await legende('« Envoyer le carnet par e-mail » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 0);
+    await toucher(page.getByRole('button', { name: 'Envoyer le carnet par e-mail' }), { apres: 2500 });
+    await legende('On choisit à qui l\'envoyer : quelqu\'un ne l\'a pas reçu ? « Personne », puis on coche lui seul.', 0);
+    await toucher(page.getByRole('button', { name: 'Personne' }), { apres: 1200 });
+    await toucher(page.locator('.liste-vol input[type=checkbox]:not([disabled])').first(), { apres: 2500 });
+    await legende('Même choix pour « Demander à chacun ses informations ». Ici, on n\'envoie rien.', 0);
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 1500 });
     await legende('Pendant le séjour, un encart « Aujourd\'hui » en haut de la page : le programme du jour, les vols à prendre, et la veille un rappel.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);
     await legende(null, 0);

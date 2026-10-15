@@ -419,7 +419,9 @@ de la sortie s'y ajoutent à l'affichage) et infos pratiques. Tables en SQL
 Géré par ADMIN/DT, lu en entier par les encadrants ; un participant qui a
 un compte (son dossier élève ou son compte) lit le **carnet** : sans
 téléphone, e-mail, régime ni personne à prévenir des autres (filtré par le
-serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail ;
+serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail
+(ou aux seuls participants cochés : `participantIds` dans le corps, de
+même pour la demande d'informations, pour relancer qui ne l'a pas reçu) ;
 « Imprimer le carnet » côté écran. Avertissements jamais bloquants
 (voiture ou chambre trop pleine, sans conducteur, sans chambre). **Une
 seule voiture par personne** (choix du club, 2026) : conducteur ou

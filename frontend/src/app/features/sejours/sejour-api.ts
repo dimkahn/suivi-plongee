@@ -443,11 +443,10 @@ export class SejourApi {
 
   /**
    * Demande à chaque participant de renseigner ses informations (et lui ouvre les frais) :
-   * l'encadrant dans l'appli, les autres par un lien et un code par e-mail ; participantId : à lui seul.
+   * l'encadrant dans l'appli, les autres par un lien et un code par e-mail ; participantIds : à eux seuls.
    */
-  envoyerInvitations(id: number, participantId: number | null): Observable<BilanEnvoiAcces> {
-    const params: Record<string, number> = participantId === null ? {} : { participantId };
-    return this.http.post<BilanEnvoiAcces>(`/api/sejours/${id}/invitations`, {}, { params });
+  envoyerInvitations(id: number, participantIds: number[] | null): Observable<BilanEnvoiAcces> {
+    return this.http.post<BilanEnvoiAcces>(`/api/sejours/${id}/invitations`, { participantIds });
   }
 
   /** Le participant connecté complète ses propres informations. */
@@ -455,8 +454,9 @@ export class SejourApi {
     return this.http.put<SejourVue>(`/api/sejours/${id}/mes-informations`, d);
   }
 
-  envoyerCarnet(id: number): Observable<BilanEnvoiCarnet> {
-    return this.http.post<BilanEnvoiCarnet>(`/api/sejours/${id}/envoi-carnet`, {});
+  /** Le carnet par e-mail ; participantIds : à eux seuls (null : à tous). */
+  envoyerCarnet(id: number, participantIds: number[] | null): Observable<BilanEnvoiCarnet> {
+    return this.http.post<BilanEnvoiCarnet>(`/api/sejours/${id}/envoi-carnet`, { participantIds });
   }
 }
 

@@ -9,7 +9,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { dateDuJour, periode } from '../../core/date-fr';
 import {
-  AFFAIRES_TYPE, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
+  AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
   TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
@@ -76,7 +76,7 @@ function participantVide(): BrouillonParticipant {
         <div class="actions sans-impression">
           <button type="button" class="bouton-discret" (click)="imprimer()">Imprimer le carnet</button>
           @if (s.gere) {
-            <button type="button" class="bouton-discret" (click)="envoyerCarnet()" [disabled]="envoi()">
+            <button type="button" class="bouton-discret" (click)="choisirDestinataires('carnet')" [disabled]="envoi()">
               Envoyer le carnet par e-mail
             </button>
           }
@@ -184,8 +184,8 @@ function participantVide(): BrouillonParticipant {
               <div class="actions sans-impression">
                 <button type="button" class="bouton-principal" (click)="ouvrirParticipant(null)">Ajouter un participant</button>
                 @if (s.participants.length > 0) {
-                  <button type="button" class="bouton-discret" (click)="envoyerInvitations(null)" [disabled]="envoi()"
-                          title="Chacun reçoit un e-mail pour renseigner son voyage, ses repas, la personne à prévenir et ses frais">
+                  <button type="button" class="bouton-discret" (click)="choisirDestinataires('invitations')" [disabled]="envoi()"
+                          title="Les personnes choisies reçoivent un e-mail pour renseigner leur voyage, leurs repas, la personne à prévenir et leurs frais">
                     Demander à chacun ses informations
                   </button>
                 }
@@ -670,6 +670,45 @@ function participantVide(): BrouillonParticipant {
       <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="enregistrerAffaires()" [disabled]="envoi()">Enregistrer</button>
         <button type="button" class="bouton-discret" (click)="affairesOuvertes.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
+
+    <!-- Choisir à qui envoyer un e-mail du séjour : relancer ceux qui ne l'ont pas reçu sans l'envoyer à tous (demande du club, 2026). -->
+    <app-dialogue [ouvert]="destinatairesOuverts()" [large]="true" [erreur]="erreur()"
+                  [titre]="envoiChoisi === 'carnet' ? 'Envoyer le carnet par e-mail' : 'Demander leurs informations'"
+                  (fermer)="destinatairesOuverts.set(false)">
+      <p>
+        {{ envoiChoisi === 'carnet'
+          ? 'Chaque personne cochée reçoit son carnet du séjour à jour.'
+          : 'Chaque personne cochée reçoit un e-mail pour renseigner son voyage, ses repas, la personne à prévenir et ses frais.' }}
+        Les autres ne reçoivent rien.
+      </p>
+      <fieldset>
+        <legend>À qui envoyer</legend>
+        <div class="actions">
+          <button type="button" class="bouton-discret" (click)="cocherDestinataires('tous')">Tout le monde</button>
+          @if (envoiChoisi === 'invitations') {
+            <button type="button" class="bouton-discret" (click)="cocherDestinataires('incomplets')">Ceux à qui il manque des infos</button>
+          }
+          <button type="button" class="bouton-discret" (click)="cocherDestinataires('personne')">Personne</button>
+        </div>
+        <ul class="liste-vol">
+          @for (p of sejour()?.participants ?? []; track p.id) {
+            <li>
+              <label class="case"><input type="checkbox" [disabled]="!p.email" [checked]="destinataires.includes(p.id)"
+                                         (change)="basculer(destinataires, p.id)">
+                {{ nomComplet(p) }}</label>
+              <span class="secondaire">{{ p.email ?? "pas d'e-mail" }}</span>
+            </li>
+          }
+        </ul>
+      </fieldset>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="envoyerAuxDestinataires()"
+                [disabled]="envoi() || destinataires.length === 0">
+          Envoyer à {{ destinataires.length }} personne{{ destinataires.length > 1 ? 's' : '' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="destinatairesOuverts.set(false)">Annuler</button>
       </div>
     </app-dialogue>
 
@@ -1172,45 +1211,62 @@ export class SejourComponent {
   }
 
   /**
-   * Un e-mail à chacun (null) ou à un participant pour qu'il renseigne ses informations et ses frais :
+   * Un e-mail à un participant pour qu'il renseigne ses informations et ses frais :
    * un moniteur dans l'appli, les autres par un lien et un code.
    */
-  envoyerInvitations(p: ParticipantVue | null): void {
-    if (!confirm(p ? `Envoyer à ${nomComplet(p)} un e-mail pour qu'il renseigne ses informations pour le séjour ?`
-      : 'Envoyer à chaque participant qui a un e-mail une demande pour qu’il renseigne ses informations pour le séjour ?')) return;
-    this.envoi.set(true);
-    this.message.set(null);
-    this.api.envoyerInvitations(this.id, p?.id ?? null).subscribe({
-      next: b => {
-        this.envoi.set(false);
-        this.message.set([
-          b.envoyes.length ? `Demande envoyée à : ${b.envoyes.join(', ')}.` : 'Aucune demande envoyée.',
-          b.sansEmail.length ? `Sans e-mail : ${b.sansEmail.join(', ')}.` : '',
-          b.echecs.length ? `Échec de l'envoi pour : ${b.echecs.join(', ')}.` : ''
-        ].filter(Boolean).join(' '));
-      },
-      error: (e: HttpErrorResponse) => {
-        this.envoi.set(false);
-        this.message.set(e.error?.detail ?? "Le lien n'a pas pu être envoyé.");
-      }
-    });
+  envoyerInvitations(p: ParticipantVue): void {
+    if (!confirm(`Envoyer à ${nomComplet(p)} un e-mail pour qu'il renseigne ses informations pour le séjour ?`)) return;
+    this.envoyerEmails('invitations', [p.id]);
   }
 
-  envoyerCarnet(): void {
-    if (!confirm('Envoyer à chaque participant son carnet du séjour par e-mail ?')) return;
+  destinatairesOuverts = signal(false);
+  envoiChoisi: 'invitations' | 'carnet' = 'carnet';
+  destinataires: number[] = [];
+
+  /** La fenêtre « À qui envoyer » : tous ceux qui ont un e-mail cochés, à décocher au besoin. */
+  choisirDestinataires(envoi: 'invitations' | 'carnet'): void {
+    this.erreur.set(null);
+    this.envoiChoisi = envoi;
+    this.cocherDestinataires('tous');
+    this.destinatairesOuverts.set(true);
+  }
+
+  cocherDestinataires(qui: 'tous' | 'incomplets' | 'personne'): void {
+    this.destinataires = (this.sejour()?.participants ?? [])
+      .filter(p => p.email && (qui === 'tous' || (qui === 'incomplets' && this.manque(p).length > 0)))
+      .map(p => p.id);
+  }
+
+  envoyerAuxDestinataires(): void {
+    if (this.destinataires.length === 0) {
+      this.erreur.set('Cochez au moins une personne.');
+      return;
+    }
+    this.envoyerEmails(this.envoiChoisi, [...this.destinataires], () => this.destinatairesOuverts.set(false));
+  }
+
+  private envoyerEmails(envoi: 'invitations' | 'carnet', ids: number[], ensuite?: () => void): void {
     this.envoi.set(true);
-    this.api.envoyerCarnet(this.id).subscribe({
+    this.message.set(null);
+    this.erreur.set(null);
+    const requete: Observable<BilanEnvoiCarnet> = envoi === 'carnet'
+      ? this.api.envoyerCarnet(this.id, ids) : this.api.envoyerInvitations(this.id, ids);
+    requete.subscribe({
       next: b => {
         this.envoi.set(false);
+        ensuite?.();
         this.message.set([
-          `Carnet envoyé à ${b.envoyes.length} participant${b.envoyes.length > 1 ? 's' : ''}.`,
+          b.envoyes.length
+            ? `${envoi === 'carnet' ? 'Carnet envoyé' : 'Demande envoyée'} à : ${b.envoyes.join(', ')}.`
+            : 'Aucun e-mail envoyé.',
           b.sansEmail.length ? `Sans e-mail : ${b.sansEmail.join(', ')}.` : '',
           b.echecs.length ? `Échec de l'envoi pour : ${b.echecs.join(', ')}.` : ''
         ].filter(Boolean).join(' '));
       },
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);
-        this.message.set(e.error?.detail ?? "Le carnet n'a pas pu être envoyé.");
+        const texte = e.error?.detail ?? "L'e-mail n'a pas pu être envoyé (réseau nécessaire).";
+        if (this.destinatairesOuverts()) this.erreur.set(texte); else this.message.set(texte);
       }
     });
   }
