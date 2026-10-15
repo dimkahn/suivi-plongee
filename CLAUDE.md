@@ -401,7 +401,13 @@ qui plonge peut être **lié** à un membre d'un groupe de plongeurs de la saiso
 ou choisi dans sa fiche ; un par séjour) : deux fiches, mais nom, prénom et
 e-mail sont reportés de l'une à l'autre (`SejourService.reporterSurLePlongeur`,
 `GroupePlongeursService.reporterSurLesParticipants`, qui garde désormais
-l'id des membres à l'enregistrement d'un groupe) ; arrivée et
+l'id des membres à l'enregistrement d'un groupe, et, sans id — appli
+restée à l'ancienne version, groupe repris d'une fiche — les retrouve par
+dossier puis nom et prénom, `retrouver`) ; l'e-mail du dossier n'est jamais
+figé dans le groupe ; un participant déjà inscrit dont nom ou e-mail diffère
+n'est pas lié par « Inscrire un groupe » (rien n'est écrasé sans être vu).
+`MigrationParticipantLieTest` rejoue la mise en production de V79 sur une
+base remplie (Flyway jusqu'à V78 puis V79) ; arrivée et
 départ avec moyen, numéro de vol ou de train, lieu ; régimes alimentaires
 en cases `RegimeAlimentaire` + une précision pour la cuisine ; personne à
 prévenir), voitures (places conducteur compris, conducteur, passagers),

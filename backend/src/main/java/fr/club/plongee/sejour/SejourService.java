@@ -59,6 +59,8 @@ public class SejourService {
     /** Un rendez-vous du programme peut tomber un peu avant ou après la sortie (voyage). */
     static final int JOURS_AUTOUR_DU_PROGRAMME = 7;
     static final int AFFAIRES_MAX = 200;
+    /** Une adresse plausible : quelque chose, une arobase, un domaine avec un point. */
+    private static final java.util.regex.Pattern EMAIL = java.util.regex.Pattern.compile("[^@\\s]+@[^@\\s]+\\.[^@\\s]+");
 
     /**
      * Un voyage. Pour l'arrivée : {@code heure} et {@code lieu} sont ceux où
@@ -537,15 +539,26 @@ public class SejourService {
     /**
      * Le participant est aussi un plongeur d'un groupe de plongeurs : nom,
      * prénom et e-mail suivent dans le groupe (l'inverse est fait par
-     * {@code GroupePlongeursService}). Un e-mail vide laisse celui du groupe.
+     * {@code GroupePlongeursService}). Un e-mail vide laisse celui du groupe ;
+     * celui du dossier de l'élève ou de l'encadrant vide l'e-mail du groupe,
+     * qui suit alors le dossier (sinon une adresse changée plus tard dans le
+     * dossier resterait l'ancienne dans le groupe).
      */
     private void reporterSurLePlongeur(DemandeParticipant d) {
         if (d.membreGroupeId() == null) return;
-        jdbc.update("""
-                UPDATE membre_groupe_plongeurs SET nom = :nom, prenom = :prenom, email = COALESCE(:email, email)
-                 WHERE id = :membre""",
-                new MapSqlParameterSource("membre", d.membreGroupeId()).addValue("nom", d.nom().trim())
-                        .addValue("prenom", d.prenom().trim()).addValue("email", nettoyer(d.email()), Types.VARCHAR));
+        var p = new MapSqlParameterSource("membre", d.membreGroupeId());
+        List<Map<String, Object>> lignes = jdbc.queryForList("""
+                SELECT m.email, COALESCE(e.email, u.email) AS email_dossier FROM membre_groupe_plongeurs m
+                  LEFT JOIN eleve e ON e.id = m.eleve_id LEFT JOIN utilisateur u ON u.id = m.utilisateur_id
+                 WHERE m.id = :membre""", p);
+        if (lignes.isEmpty()) return;
+        String email = nettoyer(d.email());
+        String emailDossier = nettoyer((String) lignes.getFirst().get("email_dossier"));
+        String emailGroupe = email == null ? (String) lignes.getFirst().get("email")
+                : email.equalsIgnoreCase(emailDossier == null ? "" : emailDossier) ? null : email;
+        jdbc.update("UPDATE membre_groupe_plongeurs SET nom = :nom, prenom = :prenom, email = :email WHERE id = :membre",
+                p.addValue("nom", d.nom().trim()).addValue("prenom", d.prenom().trim())
+                        .addValue("email", emailGroupe, Types.VARCHAR));
     }
 
     /** Sa propre ligne, entière (il la voit et la complète lui-même). */
@@ -642,7 +655,9 @@ public class SejourService {
     /**
      * Inscrit les membres d'un groupe de plongeurs qui ne sont pas déjà du
      * séjour, chacun lié à son plongeur du groupe ; celui qui était déjà
-     * inscrit sans lien y est lié. Renvoie le nombre d'inscrits.
+     * inscrit sans lien y est lié s'il a les mêmes nom, prénom et e-mail
+     * (sinon l'écran le signale, à lier depuis sa fiche). Renvoie le nombre
+     * d'inscrits.
      */
     @Transactional
     public int importerGroupe(Long sortieId, Long groupeId) {
@@ -664,10 +679,12 @@ public class SejourService {
                     m.membreGroupeId(), sortieId) > 0) continue;
             Inscrit deja = doublon(sortieId, null, m);
             if (deja != null) {
-                jdbc.update("""
-                        UPDATE sejour_participant SET membre_groupe_id = :membre, plongeur = TRUE
-                         WHERE id = :pid AND membre_groupe_id IS NULL""",
-                        new MapSqlParameterSource("membre", m.membreGroupeId()).addValue("pid", deja.id()));
+                if (memesCoordonnees(deja.id(), m)) {
+                    jdbc.update("""
+                            UPDATE sejour_participant SET membre_groupe_id = :membre, plongeur = TRUE
+                             WHERE id = :pid AND membre_groupe_id IS NULL""",
+                            new MapSqlParameterSource("membre", m.membreGroupeId()).addValue("pid", deja.id()));
+                }
                 continue;
             }
             inserer(sortieId, completerDuDossier(m));
@@ -680,6 +697,10 @@ public class SejourService {
         Inscrit deja = doublon(sortieId, participantId, d);
         if (deja != null) {
             throw new RegleMetierException("« " + deja.nom() + " » participe déjà au séjour.");
+        }
+        // Le carnet et la demande d'informations partent à cette adresse, et elle passe dans le groupe de plongeurs lié.
+        if (!blanc(d.email()) && !EMAIL.matcher(d.email().trim()).matches()) {
+            throw new RegleMetierException("L'e-mail « " + d.email().trim() + " » n'est pas valide : vérifiez-le.");
         }
         if (d.membreGroupeId() != null) {
             verifierPlongeurDuGroupe(sortieId, participantId, d.membreGroupeId());
@@ -697,6 +718,22 @@ public class SejourService {
             throw new RegleMetierException("Le départ de " + d.prenom().trim() + " " + d.nom().trim()
                     + " est avant son arrivée : vérifiez les dates.");
         }
+    }
+
+    /**
+     * Le participant déjà inscrit a les mêmes nom, prénom et e-mail que le
+     * plongeur du groupe (un e-mail vide d'un côté ne compte pas). Sinon on ne
+     * le lie pas tout seul : le report suivant écraserait ce qui a été saisi
+     * dans le séjour sans que personne l'ait vu. L'organisateur le lie depuis
+     * sa fiche, où il voit les deux.
+     */
+    private boolean memesCoordonnees(Long participantId, DemandeParticipant membre) {
+        Map<String, Object> p = jdbc.queryForMap("SELECT nom, prenom, email FROM sejour_participant WHERE id = :p",
+                new MapSqlParameterSource("p", participantId));
+        String email = (String) p.get("email");
+        return membre.nom().trim().equalsIgnoreCase(((String) p.get("nom")).trim())
+                && membre.prenom().trim().equalsIgnoreCase(((String) p.get("prenom")).trim())
+                && (blanc(email) || blanc(membre.email()) || email.trim().equalsIgnoreCase(membre.email().trim()));
     }
 
     /** Un plongeur d'un groupe de la saison du séjour, qui n'est pas déjà lié à un autre participant. */

@@ -1307,9 +1307,32 @@ export class SejourComponent {
 
   importerGroupe(groupeId: number | null): void {
     if (groupeId === null) return;
-    this.ecrire(this.api.importerGroupe(this.id, groupeId),
-      () => this.message.set('Les membres du groupe qui n’étaient pas encore inscrits ont été ajoutés, '
-        + 'chacun lié à son plongeur du groupe.'));
+    this.ecrire(this.api.importerGroupe(this.id, groupeId), () => {
+      const nonLies = this.nonLiesDuGroupe(groupeId);
+      this.message.set('Les membres du groupe qui n’étaient pas encore inscrits ont été ajoutés, '
+        + 'chacun lié à son plongeur du groupe.'
+        + (nonLies.length === 0 ? '' : ` Déjà inscrits avec un autre nom ou un autre e-mail, donc pas liés : `
+          + `${nonLies.join(', ')}. Ouvrez leur fiche et choisissez-les dans « Plongeur du groupe » si c’est la même personne.`));
+    });
+  }
+
+  /**
+   * Les participants qui sont sans doute des plongeurs du groupe (même dossier,
+   * ou mêmes nom et prénom) mais que le serveur n'a pas liés : leur nom ou leur
+   * e-mail diffère, il n'écrase pas ce qui a été saisi.
+   */
+  private nonLiesDuGroupe(groupeId: number): string[] {
+    const s = this.sejour();
+    const g = s?.groupesProposes.find(x => x.id === groupeId);
+    if (!s || !g) return [];
+    const memeNom = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+    return g.plongeurs
+      .filter(m => !s.participants.some(p => p.membreGroupeId === m.id))
+      .map(m => s.participants.find(p => p.membreGroupeId === null && (
+        (m.eleveId !== null && p.eleveId === m.eleveId) || (m.utilisateurId !== null && p.utilisateurId === m.utilisateurId)
+        || (memeNom(p.nom, m.nom) && memeNom(p.prenom, m.prenom)))))
+      .filter((p): p is ParticipantVue => !!p)
+      .map(p => nomComplet(p));
   }
 
   // ---------------- Voitures ----------------

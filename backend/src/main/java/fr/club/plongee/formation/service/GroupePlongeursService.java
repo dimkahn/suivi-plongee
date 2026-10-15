@@ -13,9 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Groupes nommés et réutilisables de plongeurs (voir {@link GroupePlongeurs}) :
@@ -105,7 +107,7 @@ public class GroupePlongeursService {
      * Nom, prénom et e-mail saisis sont reportés sur les participants liés.
      */
     private void appliquerMembres(GroupePlongeurs groupe, List<Membre> membres) {
-        Map<Long, MembreGroupePlongeurs> existants = new HashMap<>();
+        Map<Long, MembreGroupePlongeurs> existants = new LinkedHashMap<>();
         groupe.getMembres().forEach(m -> existants.put(m.getId(), m));
         List<MembreGroupePlongeurs> gardes = new ArrayList<>();
         for (Membre m : membres) {
@@ -113,11 +115,11 @@ public class GroupePlongeursService {
                 throw new RegleMetierException(
                         "Un plongeur ne peut pas être à la fois un élève et un encadrant du club.");
             }
-            MembreGroupePlongeurs membre = m.id() == null ? null : existants.remove(m.id());
+            MembreGroupePlongeurs membre = retrouver(existants, m);
             if (membre == null) {
                 membre = new MembreGroupePlongeurs();
             } else {
-                reporterSurLesParticipants(m);
+                reporterSurLesParticipants(membre.getId(), m);
             }
             membre.setGroupe(groupe);
             membre.setEleve(null);
@@ -142,17 +144,51 @@ public class GroupePlongeursService {
     }
 
     /**
+     * Le plongeur déjà dans le groupe que désigne cette ligne, retiré des
+     * candidats ; null pour un nouveau. Par son id d'abord ; sans id (appli
+     * restée à une version d'avant V79 sur un téléphone, groupe repris d'une
+     * fiche de sécurité), par son dossier d'élève ou d'encadrant, sinon par
+     * ses nom et prénom : sa ligne et ses liens aux séjours ne se perdent pas.
+     */
+    static MembreGroupePlongeurs retrouver(Map<Long, MembreGroupePlongeurs> existants, Membre m) {
+        if (m.id() != null && existants.containsKey(m.id())) return existants.remove(m.id());
+        MembreGroupePlongeurs trouve = null;
+        if (m.eleveId() != null) {
+            trouve = premier(existants, e -> e.getEleve() != null && m.eleveId().equals(e.getEleve().getId()));
+        } else if (m.utilisateurId() != null) {
+            trouve = premier(existants,
+                    e -> e.getUtilisateur() != null && m.utilisateurId().equals(e.getUtilisateur().getId()));
+        }
+        if (trouve == null) {
+            String nom = normaliser(m.nom()), prenom = normaliser(m.prenom());
+            trouve = premier(existants, e -> normaliser(e.getNom()).equals(nom)
+                    && normaliser(e.getPrenom()).equals(prenom));
+        }
+        if (trouve != null) existants.remove(trouve.getId());
+        return trouve;
+    }
+
+    private static MembreGroupePlongeurs premier(Map<Long, MembreGroupePlongeurs> existants,
+                                                 Predicate<MembreGroupePlongeurs> condition) {
+        return existants.values().stream().filter(condition).findFirst().orElse(null);
+    }
+
+    private static String normaliser(String texte) {
+        return texte == null ? "" : texte.trim().toLowerCase(Locale.ROOT);
+    }
+
+    /**
      * Le même plongeur inscrit à un séjour : nom, prénom et e-mail suivent.
      * Un e-mail vide dans le groupe (celui du dossier sert) laisse celui du
      * participant.
      */
-    private void reporterSurLesParticipants(Membre m) {
+    private void reporterSurLesParticipants(Long membreId, Membre m) {
         String email = m.email() == null || m.email().isBlank() ? null : m.email().trim();
         jdbc.update("""
                 UPDATE sejour_participant SET nom = :nom, prenom = :prenom,
                        email = COALESCE(:email, email), plongeur = TRUE
                  WHERE membre_groupe_id = :id""",
-                new MapSqlParameterSource("id", m.id()).addValue("nom", m.nom().trim())
+                new MapSqlParameterSource("id", membreId).addValue("nom", m.nom().trim())
                         .addValue("prenom", m.prenom().trim()).addValue("email", email, Types.VARCHAR));
     }
 
