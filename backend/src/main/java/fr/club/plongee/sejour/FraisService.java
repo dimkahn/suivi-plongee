@@ -24,7 +24,8 @@ import java.util.*;
  * <p>
  * Droits (choix du club, 2026) :
  * <ul>
- *   <li>l'organisateur (ADMIN, directeur technique) fait tout ;</li>
+ *   <li>les organisateurs (le créateur du séjour et ceux qu'il a désignés,
+ *   {@link DroitsSejour}) font tout ;</li>
  *   <li>un moniteur inscrit au séjour saisit toute dépense, quel qu'en soit
  *   le payeur : c'est par lui que passent les élèves ;</li>
  *   <li>un autre participant (invité entré par le lien et le code, compte
@@ -82,10 +83,12 @@ public class FraisService {
 
     private final NamedParameterJdbcTemplate jdbc;
     private final SortieService sorties;
+    private final DroitsSejour droits;
 
-    public FraisService(NamedParameterJdbcTemplate jdbc, SortieService sorties) {
+    public FraisService(NamedParameterJdbcTemplate jdbc, SortieService sorties, DroitsSejour droits) {
         this.jdbc = jdbc;
         this.sorties = sorties;
+        this.droits = droits;
     }
 
     // ------------------------------------------------------------------
@@ -95,7 +98,7 @@ public class FraisService {
     /** L'acteur d'un compte connecté : sa ligne de participant s'il en a une (compte ou dossier élève). */
     @Transactional(readOnly = true)
     public ActeurFrais acteur(Long sortieId, UtilisateurPrincipal p) {
-        boolean gestionnaire = SejourService.gere(p);
+        boolean gestionnaire = droits.organise(sortieId, p.id());
         boolean moniteur = p.getAuthorities().stream().anyMatch(a -> "ROLE_MONITEUR".equals(a.getAuthority()));
         List<Map<String, Object>> lignes = jdbc.queryForList("""
                 SELECT p.id, p.eleve_id FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id

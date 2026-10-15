@@ -416,7 +416,15 @@ en base), affaires à prévoir (`CategorieAffaire`, liste remplacée d'un
 bloc, liste type côté écran), programme (`sejour_evenement`, les plongées
 de la sortie s'y ajoutent à l'affichage) et infos pratiques. Tables en SQL
 (`SejourService`, `NamedParameterJdbcTemplate`, pas d'entité ni d'Envers).
-Géré par ADMIN/DT, lu en entier par les encadrants ; un participant qui a
+**Modifié par son créateur et les organisateurs qu'il désigne, seulement**
+(choix du club, 2026, V80, `DroitsSejour`, `@droitsSejour.organise(#id, …)`
+sur chaque écriture) : le créateur est le compte qui a créé la sortie
+(`sejour.createur_id`, posé par `SortieController.creer` ; V80 l'a retrouvé
+dans `sortie_aud` pour les sorties existantes), les organisateurs sont dans
+`sejour_organisateur` (comptes d'encadrant actifs, `PUT …/organisateurs`).
+Être ADMIN ou DT ne suffit plus pour modifier ; un ADMIN peut seulement
+désigner les organisateurs (séjour sans créateur connu, créateur parti).
+Lu en entier par les autres encadrants ; un participant qui a
 un compte (son dossier élève ou son compte) lit le **carnet** : sans
 téléphone, e-mail, régime ni personne à prévenir des autres (filtré par le
 serveur). `CarnetSejourService` envoie à chacun son carnet par e-mail
@@ -440,7 +448,8 @@ l'heure et le lieu de départ du voyage aller (V78,
 d'arrivée = départ la veille). **Pas de champ médical** (allergie, traitement) : demandé par
 le club en 2026, écarté par la règle « Données personnelles » ci-dessous
 tant qu'elle n'est pas révisée. Réseau obligatoire. Démo : V117 (Port-Cros,
-juin 2027, Camille y participe).
+juin 2027, Camille y participe ; créé par `e3@club.fr`, V120, sans
+organisateur désigné).
 **Partage des frais** (V76, onglet « Frais », `SejourFraisComponent`) :
 dépenses avancées par un participant (`sejour_depense`, montants en
 **centimes**), réparties entre les participants cochés selon leurs parts
@@ -448,12 +457,12 @@ dépenses avancées par un participant (`sejour_depense`, montants en
 (`sejour_versement`). Soldes et remboursements à faire sont **calculés,
 jamais stockés** (`FraisSejour`, calcul pur testé à part : prorata arrondi
 au centime inférieur, centimes restants aux premiers ids ; plus gros
-débiteur vers plus gros créancier). Saisis par ADMIN/DT, lus aussi par les
+débiteur vers plus gros créancier). Saisis par les organisateurs, lus aussi par les
 participants (carnet compris, et dans l'e-mail du carnet). Un participant
 présent dans les frais ne se retire pas du séjour (422). Démo : V118.
 **Saisie par les participants, photos, accès sans compte (V77, choix du
 club 2026).** `FraisService` règle les droits selon qui agit
-(`ActeurFrais`, jamais le seul rôle) : ADMIN/DT tout ; **moniteur inscrit
+(`ActeurFrais`, jamais le seul rôle) : créateur et organisateurs tout ; **moniteur inscrit
 au séjour** toute dépense, quel qu'en soit le payeur (les élèves passent
 par lui) ; autre participant (invité, compte non élève) ce qu'il a payé
 lui-même ; **élève : lecture seule**. Chacun modifie ce qu'il a saisi

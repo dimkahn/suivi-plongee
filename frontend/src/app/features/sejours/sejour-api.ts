@@ -293,10 +293,21 @@ export interface GroupeProposeVue {
   plongeurs: PlongeurGroupeVue[];
 }
 
+/** Un compte qui modifie le séjour : son créateur (celui qui a créé la sortie) ou un organisateur qu'il a désigné. */
+export interface OrganisateurVue {
+  id: number;
+  nomComplet: string;
+  createur: boolean;
+}
+
 export interface SejourVue {
   sortie: SortieVue;
-  /** Peut modifier (admin, directeur technique). */
+  /** Peut modifier : le créateur du séjour et les organisateurs qu'il a désignés. */
   gere: boolean;
+  /** Le créateur d'abord, puis les organisateurs désignés. */
+  organisateurs: OrganisateurVue[];
+  /** Choisit les organisateurs : le créateur, ou un admin (pour reprendre un séjour). */
+  peutDesigner: boolean;
   /** Voit tout ; sinon c'est le carnet d'un participant, sans les données des autres. */
   encadrant: boolean;
   infosPratiques: string | null;
@@ -359,6 +370,11 @@ export class SejourApi {
 
   lire(id: number): Observable<SejourVue> {
     return this.http.get<SejourVue>(`/api/sejours/${id}`);
+  }
+
+  /** Les organisateurs désignés par le créateur (lui-même l'est toujours). */
+  definirOrganisateurs(id: number, utilisateurIds: number[]): Observable<SejourVue> {
+    return this.http.put<SejourVue>(`/api/sejours/${id}/organisateurs`, { utilisateurIds });
   }
 
   definirInfos(id: number, infosPratiques: string | null): Observable<SejourVue> {

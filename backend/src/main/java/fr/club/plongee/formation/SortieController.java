@@ -6,6 +6,8 @@ import fr.club.plongee.formation.service.SortieService;
 import fr.club.plongee.formation.service.SortieService.DemandeSortie;
 import fr.club.plongee.formation.service.SortieService.SeancePossibleVue;
 import fr.club.plongee.formation.service.SortieService.SortieVue;
+import fr.club.plongee.sejour.SejourService;
+import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,10 +33,12 @@ public class SortieController {
 
     private final SortieService service;
     private final FicheSecuriteService fichesSecurite;
+    private final SejourService sejours;
 
-    public SortieController(SortieService service, FicheSecuriteService fichesSecurite) {
+    public SortieController(SortieService service, FicheSecuriteService fichesSecurite, SejourService sejours) {
         this.service = service;
         this.fichesSecurite = fichesSecurite;
+        this.sejours = sejours;
     }
 
     /** {@code recentes} : à venir ou finies depuis peu (choix d'une sortie pour un prêt) ; sinon toutes. */
@@ -52,8 +57,12 @@ public class SortieController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN','DIRECTEUR_TECHNIQUE')")
-    public SortieVue creer(@Valid @RequestBody DemandeSortie demande) {
-        return service.creer(demande);
+    public SortieVue creer(@Valid @RequestBody DemandeSortie demande,
+                           @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        SortieVue sortie = service.creer(demande);
+        // Celui qui crée la sortie est le créateur de son séjour : lui seul (et ceux qu'il désigne) le modifie.
+        sejours.noterCreateur(sortie.id(), moi.id());
+        return sortie;
     }
 
     @PutMapping("/{id}")

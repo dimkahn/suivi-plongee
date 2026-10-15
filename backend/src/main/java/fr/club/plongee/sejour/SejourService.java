@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
  * Tables lues et écrites en SQL (pas d'entité, comme l'identité de la
  * structure) : tout dépend de la sortie et disparaît avec elle.
  * <p>
- * Géré par un ADMIN ou le directeur technique, comme les sorties ; lu en
- * entier par les encadrants. Un participant qui a un compte (son dossier
+ * Modifié par son créateur et les organisateurs qu'il a désignés
+ * ({@link DroitsSejour}, V80) ; lu en entier par les encadrants. Un participant qui a un compte (son dossier
  * élève ou son compte d'encadrant) lit le « carnet » : les mêmes données
  * sans les coordonnées, régimes et personnes à prévenir des autres.
  * <p>
@@ -150,15 +150,21 @@ public class SejourService {
      */
     public record GroupeProposeVue(Long id, String nom, int membres, List<PlongeurGroupeVue> plongeurs) {}
 
+    /** Un compte qui modifie le séjour : son créateur ou un organisateur qu'il a désigné. */
+    public record OrganisateurVue(Long id, String nomComplet, boolean createur) {}
+
     /**
-     * {@code gere} : le compte peut modifier le séjour ; {@code encadrant} :
-     * il voit tout (sinon, c'est le carnet d'un participant).
+     * {@code gere} : le compte peut modifier le séjour (créateur ou
+     * organisateur) ; {@code encadrant} : il voit tout (sinon, c'est le
+     * carnet d'un participant) ; {@code peutDesigner} : il choisit les
+     * organisateurs (le créateur, ou un ADMIN).
      */
     public record SejourVue(SortieVue sortie, boolean gere, boolean encadrant, String infosPratiques,
                             List<ParticipantVue> participants, List<VoitureVue> voitures,
                             List<LogementVue> logements, List<AffaireVue> affaires,
                             List<EvenementVue> evenements, FraisService.FraisVue frais, List<String> avertissements,
-                            List<GroupeProposeVue> groupesProposes) {}
+                            List<GroupeProposeVue> groupesProposes, List<OrganisateurVue> organisateurs,
+                            boolean peutDesigner) {}
 
     /** Une ligne de la liste des séjours. */
     public record SejourResumeVue(Long sortieId, String nom, String lieu, LocalDate dateDebut, LocalDate dateFin,
@@ -167,11 +173,14 @@ public class SejourService {
     private final NamedParameterJdbcTemplate jdbc;
     private final SortieService sorties;
     private final FraisService frais;
+    private final DroitsSejour droits;
 
-    public SejourService(NamedParameterJdbcTemplate jdbc, SortieService sorties, FraisService frais) {
+    public SejourService(NamedParameterJdbcTemplate jdbc, SortieService sorties, FraisService frais,
+                         DroitsSejour droits) {
         this.jdbc = jdbc;
         this.sorties = sorties;
         this.frais = frais;
+        this.droits = droits;
     }
 
     // ------------------------------------------------------------------
@@ -180,10 +189,6 @@ public class SejourService {
 
     static boolean encadrant(UtilisateurPrincipal p) {
         return aRole(p, "MONITEUR") || aRole(p, "ADMIN") || aRole(p, "DIRECTEUR_TECHNIQUE");
-    }
-
-    static boolean gere(UtilisateurPrincipal p) {
-        return aRole(p, "ADMIN") || aRole(p, "DIRECTEUR_TECHNIQUE");
     }
 
     private static boolean aRole(UtilisateurPrincipal p, String role) {
@@ -228,9 +233,10 @@ public class SejourService {
     @Transactional(readOnly = true)
     public SejourVue lire(Long sortieId, UtilisateurPrincipal principal) {
         boolean encadrant = encadrant(principal);
-        SejourVue complet = vueComplete(sortieId, principal.id(), gere(principal), encadrant);
+        boolean gere = encadrant && droits.organise(sortieId, principal.id());
+        SejourVue complet = vueComplete(sortieId, principal.id(), gere, encadrant);
         complet = avecFrais(complet, frais.lire(sortieId, frais.acteur(sortieId, principal)));
-        if (encadrant) return complet;
+        if (encadrant) return avecDesignation(complet, droits.peutDesigner(sortieId, principal));
         if (complet.participants().stream().noneMatch(ParticipantVue::moi)) {
             throw new AccessDeniedException("Ce séjour n'est ouvert qu'à ses participants et aux encadrants.");
         }
@@ -298,7 +304,61 @@ public class SejourService {
 
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
                 voitures, logements, affaires, evenements, frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
-                avertissements(participants, voitures, logements), groupes);
+                avertissements(participants, voitures, logements), groupes, organisateurs(sortieId), false);
+    }
+
+    /** Le créateur d'abord, puis les organisateurs qu'il a désignés. */
+    private List<OrganisateurVue> organisateurs(Long sortieId) {
+        var id = new MapSqlParameterSource("id", sortieId);
+        List<Long> createur = jdbc.queryForList(
+                "SELECT createur_id FROM sejour WHERE sortie_id = :id AND createur_id IS NOT NULL", id, Long.class);
+        List<OrganisateurVue> liste = new ArrayList<>(jdbc.query("""
+                SELECT id, prenom, nom FROM utilisateur
+                 WHERE id IN (SELECT createur_id FROM sejour WHERE sortie_id = :id)
+                    OR id IN (SELECT utilisateur_id FROM sejour_organisateur WHERE sortie_id = :id)""", id,
+                (rs, i) -> new OrganisateurVue(rs.getLong("id"), rs.getString("prenom") + " " + rs.getString("nom"),
+                        createur.contains(rs.getLong("id")))));
+        liste.sort(Comparator.comparing((OrganisateurVue o) -> !o.createur())
+                .thenComparing(o -> o.nomComplet().toLowerCase(Locale.ROOT)));
+        return liste;
+    }
+
+    /** Le compte qui crée la sortie devient le créateur de son séjour. */
+    @Transactional
+    public void noterCreateur(Long sortieId, Long utilisateurId) {
+        var p = new MapSqlParameterSource("id", sortieId).addValue("moi", utilisateurId);
+        if (jdbc.update("UPDATE sejour SET createur_id = :moi WHERE sortie_id = :id", p) == 0) {
+            jdbc.update("INSERT INTO sejour (sortie_id, createur_id) VALUES (:id, :moi)", p);
+        }
+    }
+
+    /**
+     * Les organisateurs désignés (le créateur n'y figure pas : il l'est
+     * toujours). Seulement des comptes d'encadrant actifs : ils modifient le
+     * séjour depuis l'appli.
+     */
+    @Transactional
+    public void definirOrganisateurs(Long sortieId, List<Long> utilisateurIds) {
+        sorties.lire(sortieId);
+        Set<Long> choisis = new LinkedHashSet<>(utilisateurIds);
+        var id = new MapSqlParameterSource("id", sortieId);
+        choisis.removeAll(jdbc.queryForList(
+                "SELECT createur_id FROM sejour WHERE sortie_id = :id AND createur_id IS NOT NULL", id, Long.class));
+        if (!choisis.isEmpty()) {
+            List<Long> encadrants = jdbc.queryForList("""
+                    SELECT DISTINCT u.id FROM utilisateur u JOIN utilisateur_role r ON r.utilisateur_id = u.id
+                     WHERE u.id IN (:ids) AND u.actif = TRUE
+                       AND r.role IN ('MONITEUR', 'ADMIN', 'DIRECTEUR_TECHNIQUE')""",
+                    new MapSqlParameterSource("ids", choisis), Long.class);
+            if (encadrants.size() != choisis.size()) {
+                throw new RegleMetierException("Seul un encadrant qui a un compte actif peut organiser le séjour.");
+            }
+        }
+        jdbc.update("DELETE FROM sejour_organisateur WHERE sortie_id = :id", id);
+        for (Long u : choisis) {
+            jdbc.update("INSERT INTO sejour_organisateur (sortie_id, utilisateur_id) VALUES (:id, :u)",
+                    new MapSqlParameterSource("id", sortieId).addValue("u", u));
+        }
     }
 
     private static final String SELECT_PARTICIPANT = """
@@ -382,13 +442,21 @@ public class SejourService {
                 .toList();
         return carnet(new SejourVue(complet.sortie(), false, false, complet.infosPratiques(), participants,
                 complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(),
-                frais.lire(sortieId, frais.acteurParticipant(participantId)), List.of(), List.of()));
+                frais.lire(sortieId, frais.acteurParticipant(participantId)), List.of(), List.of(),
+                complet.organisateurs(), false));
     }
 
     /** Le même séjour, avec les frais vus par celui qui agit (ce qu'il peut saisir, modifier). */
     private static SejourVue avecFrais(SejourVue s, FraisService.FraisVue f) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), f, s.avertissements(), s.groupesProposes());
+                s.logements(), s.affaires(), s.evenements(), f, s.avertissements(), s.groupesProposes(),
+                s.organisateurs(), s.peutDesigner());
+    }
+
+    private static SejourVue avecDesignation(SejourVue s, boolean peutDesigner) {
+        return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
+                s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
+                s.organisateurs(), peutDesigner);
     }
 
     /** Le carnet d'un participant : ses propres données, et des autres seulement ce qui organise le séjour. */
@@ -398,7 +466,8 @@ public class SejourService {
                         null, null, Set.of(), null, null, null, p.arrivee(), p.depart(), null, false, null, null))
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of());
+                s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of(),
+                s.organisateurs(), false);
     }
 
     private static ParticipantVue participant(ResultSet rs, Long moi) throws SQLException {

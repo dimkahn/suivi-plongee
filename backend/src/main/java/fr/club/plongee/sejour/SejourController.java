@@ -22,8 +22,9 @@ import java.util.List;
 /**
  * Le séjour d'une sortie. Lu par les encadrants (en entier) et par ses
  * participants qui ont un compte (le carnet, vérifié par le service) ;
- * géré par un admin ou le directeur technique, comme les sorties. Chaque
- * modification renvoie le séjour à jour.
+ * modifié par son créateur (qui a créé la sortie) et les organisateurs
+ * qu'il a désignés ({@link DroitsSejour}). Chaque modification renvoie le
+ * séjour à jour.
  */
 @RestController
 @RequestMapping("/api/sejours")
@@ -38,7 +39,11 @@ public class SejourController {
     /** À qui envoyer un e-mail du séjour : {@code participantIds} absent = à tous les participants. */
     public record DemandeDestinataires(List<@NotNull Long> participantIds) {}
 
-    private static final String GERE = "hasAnyRole('ADMIN','DIRECTEUR_TECHNIQUE')";
+    /** Le créateur du séjour et les organisateurs qu'il a désignés (DroitsSejour), quel que soit leur rôle. */
+    private static final String GERE = "@droitsSejour.organise(#id, authentication)";
+
+    /** Les organisateurs désignés par le créateur (lui-même l'est toujours). */
+    public record DemandeOrganisateurs(@NotNull List<@NotNull Long> utilisateurIds) {}
 
     /** La dépense créée (pour y joindre la photo de la note) et le séjour à jour. */
     public record DepenseCreee(long depenseId, SejourVue sejour) {}
@@ -67,6 +72,15 @@ public class SejourController {
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public SejourVue lire(@PathVariable Long id, @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return service.lire(id, moi);
+    }
+
+    /** Le créateur choisit qui organise avec lui ; un ADMIN aussi, pour reprendre un séjour. */
+    @PutMapping("/{id}/organisateurs")
+    @PreAuthorize("@droitsSejour.peutDesigner(#id, authentication)")
+    public SejourVue definirOrganisateurs(@PathVariable Long id, @Valid @RequestBody DemandeOrganisateurs d,
+                                          @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.definirOrganisateurs(id, d.utilisateurIds());
         return service.lire(id, moi);
     }
 

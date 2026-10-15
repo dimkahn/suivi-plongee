@@ -650,7 +650,7 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 1. Ses plongées : deux par jour, sur le site prévu.
 2. Elles sont créées et rattachées à la sortie, en un geste.
 3. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
-4. « Gérer le séjour » : vols, voitures, chambres, repas et programme. Voir la vidéo A17.
+4. « Gérer le séjour » : vols, voitures, chambres, repas et programme. Celui qui crée la sortie en est le créateur : lui seul le modifie, avec les organisateurs qu'il désigne. Voir la vidéo A17.
 
 ### A16 — La base d'exercices
 
@@ -662,9 +662,9 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-L'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies ; pendant le séjour, l'encart « Aujourd'hui ».
+Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; l'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies ; pendant le séjour, l'encart « Aujourd'hui ».
 
-Compte : `presidente@club.fr` · format ordinateur
+Compte : `e3@club.fr` (créatrice du séjour de démonstration) · format ordinateur
 
 _Pas encore tournée : le texte viendra au premier enregistrement._
 
