@@ -62,7 +62,7 @@ export interface VoyageDuJour {
   heureDepart: string;
   /** D'où l'on part. */
   lieuDepart: string | null;
-  /** Pour l'aller : l'arrivée sur place, « 18h30, Aéroport de Toulon-Hyères ». */
+  /** Pour l'aller : l'arrivée sur place, « 18h30, Aéroport de Toulon-Hyères » ; pour le retour : l'heure d'arrivée, « 21h35 ». */
   arrivee: string | null;
   /** « Soyez à l'aéroport vers 15h05 (2 h avant). » ; null s'il n'y a pas de conseil. */
   conseil: string | null;
@@ -113,13 +113,14 @@ export function voyagesDuJour(participants: ParticipantVue[], jour: string): Voy
       if (!t || jourDuDepart(t, sens) !== jour) continue;
       const depart = (sens === 'aller' ? t.heureDepart : t.heure)?.slice(0, 5) ?? null;
       const lieuDepart = (sens === 'aller' ? t.lieuDepart : t.lieu) ?? null;
-      const cle = [sens, t.transport, t.numero, depart, lieuDepart, sens === 'aller' ? t.heure : ''].join('|');
+      const cle = [sens, t.transport, t.numero, depart, lieuDepart, sens === 'aller' ? t.heure : t.heureArrivee].join('|');
       const v: VoyageDuJour & { tri: string } = groupes.get(cle) ?? {
         sens,
         moyen: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' ') || 'Voyage',
         heureDepart: heure(depart),
         lieuDepart,
-        arrivee: sens === 'aller' ? [heure(t.heure), t.lieu].filter(Boolean).join(', ') || null : null,
+        arrivee: sens === 'aller' ? [heure(t.heure), t.lieu].filter(Boolean).join(', ') || null
+          : t.heureArrivee ? heure(t.heureArrivee) : null,
         conseil: conseilDepart(t.transport, depart),
         heureManquante: !depart && !!t.transport && !!AVANCES_TRANSPORT[t.transport],
         noms: [], ids: [],

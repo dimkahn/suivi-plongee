@@ -61,6 +61,11 @@ class SejourTest {
         throw new AssertionError(prenom + " absent du séjour");
     }
 
+    private JsonNode participantDe(JsonNode sejour, long id) {
+        for (JsonNode p : sejour.get("participants")) if (p.get("id").asLong() == id) return p;
+        throw new AssertionError("Participant " + id + " absent du séjour");
+    }
+
     private long eleveCamille(String jeton) throws Exception {
         for (JsonNode p : envoyer("GET", "/api/plongeurs-connus", jeton, null, 200)) {
             if (p.get("prenom").asText().equals("Camille") && p.hasNonNull("eleveId")) return p.get("eleveId").asLong();
@@ -119,6 +124,13 @@ class SejourTest {
                 assertThat(p.get("arrivee").get("lieuDepart").asText()).isEqualTo("Paris-Orly");
             }
         }
+        // Le retour porte l'heure d'arrivée de l'avion (qui vient chercher qui, et quand, au retour).
+        s = envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"DEPART","trajet":{"date":"%s","heure":"18:20","transport":"AVION","numero":"AF1235",
+                 "lieu":"Marignane","heureArrivee":"19:35"},
+                 "participantIds":[%d]}""".formatted(debut.plusDays(2), ines), 200);
+        JsonNode retourInes = participantDe(s, ines).get("depart");
+        assertThat(retourInes.path("heureArrivee").asText()).startsWith("19:35");
         envoyer("PUT", base + "/trajets", jeton("e1@club.fr"), """
                 {"sens":"DEPART","trajet":null,"participantIds":[%d]}""".formatted(ines), 403);
 

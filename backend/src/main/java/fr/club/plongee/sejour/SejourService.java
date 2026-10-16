@@ -67,14 +67,17 @@ public class SejourService {
      * l'on arrive sur place, {@code heureDepart} et {@code lieuDepart} ceux
      * d'où part l'avion ou le train (pour conseiller l'heure à laquelle être à
      * l'aéroport). Pour le départ : {@code heure} et {@code lieu} sont déjà
-     * ceux du départ, les deux derniers restent vides.
+     * ceux du départ, {@code heureArrivee} l'heure à laquelle l'avion ou le
+     * train arrive au retour (V85) ; {@code heureDepart} et
+     * {@code lieuDepart} restent vides. À l'aller, {@code heureArrivee} reste
+     * vide ({@code heure} est déjà celle de l'arrivée).
      */
     public record Trajet(LocalDate date, LocalTime heure, MoyenTransport transport,
                          @Size(max = 30) String numero, @Size(max = 120) String lieu,
-                         LocalTime heureDepart, @Size(max = 120) String lieuDepart) {
+                         LocalTime heureDepart, @Size(max = 120) String lieuDepart, LocalTime heureArrivee) {
         boolean vide() {
             return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu)
-                    && heureDepart == null && blanc(lieuDepart);
+                    && heureDepart == null && blanc(lieuDepart) && heureArrivee == null;
         }
     }
 
@@ -496,7 +499,8 @@ public class SejourService {
                 transport == null ? null : MoyenTransport.valueOf(transport),
                 rs.getString(sens + "_numero"), rs.getString(sens + "_lieu"),
                 aller ? rs.getObject("arrivee_heure_depart", LocalTime.class) : null,
-                aller ? rs.getString("arrivee_lieu_depart") : null);
+                aller ? rs.getString("arrivee_lieu_depart") : null,
+                aller ? null : rs.getObject("depart_heure_arrivee", LocalTime.class));
         return t.vide() ? null : t;
     }
 
@@ -607,7 +611,8 @@ public class SejourService {
                        arrivee_lieu_depart = :arriveeLieuDepart,
                        depart_date = :departDate, depart_heure = :departHeure,
                        depart_transport = :departTransport, depart_numero = :departNumero,
-                       depart_lieu = :departLieu, remarques = :remarques
+                       depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
+                       remarques = :remarques
                  WHERE id = :pid""", p);
         reporterSurLePlongeur(d);
     }
@@ -672,7 +677,8 @@ public class SejourService {
                        arrivee_lieu_depart = :arriveeLieuDepart,
                        depart_date = :departDate, depart_heure = :departHeure,
                        depart_transport = :departTransport, depart_numero = :departNumero,
-                       depart_lieu = :departLieu, remarques = :remarques
+                       depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
+                       remarques = :remarques
                  WHERE id = :pid""", p);
     }
 
@@ -705,12 +711,13 @@ public class SejourService {
         String sens = d.sens() == SensTrajet.ARRIVEE ? "arrivee" : "depart";
         var p = new MapSqlParameterSource("ids", ids).addValue("sortie", sortieId);
         trajet(p, "t", t);
-        String departAller = d.sens() == SensTrajet.ARRIVEE
-                ? ", arrivee_heure_depart = :tHeureDepart, arrivee_lieu_depart = :tLieuDepart" : "";
+        String autreHoraire = d.sens() == SensTrajet.ARRIVEE
+                ? ", arrivee_heure_depart = :tHeureDepart, arrivee_lieu_depart = :tLieuDepart"
+                : ", depart_heure_arrivee = :tHeureArrivee";
         jdbc.update("""
                 UPDATE sejour_participant SET %1$s_date = :tDate, %1$s_heure = :tHeure, %1$s_transport = :tTransport,
                        %1$s_numero = :tNumero, %1$s_lieu = :tLieu%2$s
-                 WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens, departAller), p);
+                 WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens, autreHoraire), p);
     }
 
     /** Il quitte aussi sa voiture et sa chambre ; une voiture qu'il conduisait n'a plus de conducteur. */
@@ -884,12 +891,14 @@ public class SejourService {
                        membre_groupe_id, telephone, email, regimes, regime_precision, urgence_nom, urgence_telephone,
                        arrivee_date, arrivee_heure, arrivee_transport, arrivee_numero, arrivee_lieu,
                        arrivee_heure_depart, arrivee_lieu_depart,
-                       depart_date, depart_heure, depart_transport, depart_numero, depart_lieu, remarques)
+                       depart_date, depart_heure, depart_transport, depart_numero, depart_lieu,
+                       depart_heure_arrivee, remarques)
                 VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :membreGroupe, :telephone, :email, :regimes,
                        :regimePrecision, :urgenceNom, :urgenceTelephone,
                        :arriveeDate, :arriveeHeure, :arriveeTransport, :arriveeNumero, :arriveeLieu,
                        :arriveeHeureDepart, :arriveeLieuDepart,
-                       :departDate, :departHeure, :departTransport, :departNumero, :departLieu, :remarques)""",
+                       :departDate, :departHeure, :departTransport, :departNumero, :departLieu,
+                       :departHeureArrivee, :remarques)""",
                 parametres(sortieId, d));
     }
 
@@ -919,7 +928,8 @@ public class SejourService {
                 .addValue(sens + "Numero", t == null ? null : nettoyer(t.numero()))
                 .addValue(sens + "Lieu", t == null ? null : nettoyer(t.lieu()))
                 .addValue(sens + "HeureDepart", t == null ? null : t.heureDepart())
-                .addValue(sens + "LieuDepart", t == null ? null : nettoyer(t.lieuDepart()));
+                .addValue(sens + "LieuDepart", t == null ? null : nettoyer(t.lieuDepart()))
+                .addValue(sens + "HeureArrivee", t == null ? null : t.heureArrivee());
     }
 
     private static LocalDateTime moment(Trajet t) {

@@ -132,7 +132,8 @@ export class MonSejourComponent {
       [moyen, t?.lieu].filter(Boolean).join(' · ') || null,
       aller && (t?.heureDepart || t?.lieuDepart)
         ? 'Départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
-        : null
+        : null,
+      !aller && t?.heureArrivee ? 'Arrivée à ' + heure(t.heureArrivee) : null
     ].filter((x): x is string => !!x);
     return { cible: 'transports', etiquette, principal: saisi ? quand : null, details, aCompleter: !saisi, vide: 'À préciser' };
   }
