@@ -1,4 +1,4 @@
-package fr.club.plongee.sejour;
+package fr.club.plongee.sejour.domaine;
 
 import java.time.LocalDate;
 import java.util.*;

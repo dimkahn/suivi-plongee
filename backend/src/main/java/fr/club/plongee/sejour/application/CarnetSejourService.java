@@ -1,4 +1,4 @@
-package fr.club.plongee.sejour;
+package fr.club.plongee.sejour.application;
 
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
@@ -6,7 +6,8 @@ import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.service.SortieService.SeanceSortieVue;
 import fr.club.plongee.identite.IdentiteStructureService;
 import fr.club.plongee.notification.service.ServiceNotification;
-import fr.club.plongee.sejour.SejourService.*;
+import fr.club.plongee.sejour.application.SejourService.*;
+import fr.club.plongee.sejour.domaine.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,7 +69,7 @@ public class CarnetSejourService {
         List<String> echecs = new ArrayList<>();
         for (ParticipantVue p : destinataires) {
             String nom = p.prenom() + " " + p.nom();
-            if (SejourService.blanc(p.email())) {
+            if (Textes.blanc(p.email())) {
                 sansEmail.add(nom);
             } else if (notification.envoyerCourriel(p.email().trim(), "Carnet du séjour — " + s.sortie().nom(),
                     composer(s, p))) {
@@ -98,7 +99,7 @@ public class CarnetSejourService {
         t.append("\nVOTRE VOYAGE\n");
         t.append("  Arrivée : ").append(trajet(moi.arrivee(), true)).append("\n");
         t.append("  Départ : ").append(trajet(moi.depart(), false)).append("\n");
-        for (VoitureVue v : s.voitures()) {
+        for (Voiture v : s.voitures()) {
             boolean conduit = moi.id().equals(v.conducteurId());
             if (!conduit && !v.passagerIds().contains(moi.id())) continue;
             List<String> autres = v.passagerIds().stream().filter(id -> !id.equals(moi.id())).map(nom).toList();
@@ -109,8 +110,8 @@ public class CarnetSejourService {
             if (!autres.isEmpty()) t.append(conduit ? ", avec " : " ; avec ").append(String.join(", ", autres));
             t.append("\n");
         }
-        for (LogementVue l : s.logements()) {
-            for (ChambreVue c : l.chambres()) {
+        for (Logement l : s.logements()) {
+            for (Chambre c : l.chambres()) {
                 if (!c.occupantIds().contains(moi.id())) continue;
                 List<String> autres = c.occupantIds().stream().filter(id -> !id.equals(moi.id())).map(nom).toList();
                 t.append("  Chambre « ").append(c.nom()).append(" », ").append(l.nom());
@@ -121,7 +122,7 @@ public class CarnetSejourService {
         }
 
         Map<LocalDate, List<String>> programme = new TreeMap<>();
-        for (EvenementVue e : s.evenements()) {
+        for (Evenement e : s.evenements()) {
             String ligne = horaire(e.heureDebut(), e.heureFin()) + e.titre()
                     + (e.lieu() == null ? "" : " — " + e.lieu())
                     + (e.details() == null ? "" : "\n      " + e.details().replace("\n", "\n      "));
@@ -144,7 +145,7 @@ public class CarnetSejourService {
         if (!s.affaires().isEmpty()) {
             t.append("\nAFFAIRES À PRÉVOIR (* indispensable)\n");
             for (CategorieAffaire c : CategorieAffaire.values()) {
-                List<AffaireVue> liste = s.affaires().stream().filter(a -> a.categorie() == c).toList();
+                List<Affaire> liste = s.affaires().stream().filter(a -> a.categorie() == c).toList();
                 if (liste.isEmpty()) continue;
                 t.append("  ").append(c.libelle()).append("\n");
                 liste.forEach(a -> t.append("    - ").append(a.libelle()).append(a.indispensable() ? " *" : "").append("\n"));
@@ -185,15 +186,15 @@ public class CarnetSejourService {
         if (tr.date() != null) morceaux.add(jour(tr.date()) + (tr.heure() == null ? "" : " à " + tr.heure().format(HEURE)));
         else if (tr.heure() != null) morceaux.add("à " + tr.heure().format(HEURE));
         if (tr.transport() != null) {
-            morceaux.add(tr.transport().libelle() + (SejourService.blanc(tr.numero()) ? "" : " " + tr.numero().trim()));
-        } else if (!SejourService.blanc(tr.numero())) {
+            morceaux.add(tr.transport().libelle() + (Textes.blanc(tr.numero()) ? "" : " " + tr.numero().trim()));
+        } else if (!Textes.blanc(tr.numero())) {
             morceaux.add(tr.numero().trim());
         }
-        if (!SejourService.blanc(tr.lieu())) morceaux.add(tr.lieu().trim());
+        if (!Textes.blanc(tr.lieu())) morceaux.add(tr.lieu().trim());
         // Arrivée : d'où et à quelle heure part l'avion ou le train ; départ : l'heure est déjà celle du départ.
-        if (aller && (tr.heureDepart() != null || !SejourService.blanc(tr.lieuDepart()))) {
+        if (aller && (tr.heureDepart() != null || !Textes.blanc(tr.lieuDepart()))) {
             morceaux.add("départ" + (tr.heureDepart() == null ? "" : " à " + tr.heureDepart().format(HEURE))
-                    + (SejourService.blanc(tr.lieuDepart()) ? "" : " de " + tr.lieuDepart().trim()));
+                    + (Textes.blanc(tr.lieuDepart()) ? "" : " de " + tr.lieuDepart().trim()));
         }
         String conseil = tr.transport() == null ? null : tr.transport().conseil(aller ? tr.heureDepart() : tr.heure(), HEURE);
         return String.join(", ", morceaux) + (conseil == null ? "" : " : " + conseil);
