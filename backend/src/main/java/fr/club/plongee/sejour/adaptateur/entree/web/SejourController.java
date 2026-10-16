@@ -7,6 +7,9 @@ import fr.club.plongee.sejour.application.CarnetSejourService;
 import fr.club.plongee.sejour.application.CarnetSejourService.BilanEnvoiCarnet;
 import fr.club.plongee.sejour.application.DroitsSejour;
 import fr.club.plongee.sejour.application.FraisService;
+import fr.club.plongee.sejour.application.PretsSejourService;
+import fr.club.plongee.sejour.application.PretsSejourService.DemandeDeclarationPret;
+import fr.club.plongee.sejour.application.PretsSejourService.PretsSejourVue;
 import fr.club.plongee.sejour.application.SejourService;
 import fr.club.plongee.sejour.application.SejourService.*;
 import fr.club.plongee.sejour.domaine.*;
@@ -58,13 +61,15 @@ public class SejourController {
     private final CarnetSejourService carnets;
     private final FraisService frais;
     private final AccesSejourService acces;
+    private final PretsSejourService pretsSejour;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
-                            AccesSejourService acces) {
+                            AccesSejourService acces, PretsSejourService pretsSejour) {
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
         this.acces = acces;
+        this.pretsSejour = pretsSejour;
     }
 
     /** {@code toutes} : aussi les séjours passés (encadrants). Un participant ne voit que les siens. */
@@ -295,6 +300,38 @@ public class SejourController {
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         frais.supprimerVersement(id, versementId, frais.acteur(id, moi));
         return service.lire(id, moi);
+    }
+
+    // ------------------------------------------------------------------
+    //  Matériel emprunté : déclaré par les participants, comme les frais (PretsSejourService).
+    // ------------------------------------------------------------------
+
+    /** Un encadrant lit tous les emprunts du séjour ; un participant, les siens. */
+    @GetMapping("/{id}/prets")
+    @PreAuthorize("isAuthenticated()")
+    public PretsSejourVue prets(@PathVariable Long id, @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        FraisService.ActeurFrais acteur = frais.acteur(id, moi);
+        boolean encadrant = SejourService.encadrant(moi);
+        if (!encadrant && acteur.participantId() == null) {
+            throw new AccessDeniedException("Ce séjour n'est ouvert qu'à ses participants et aux encadrants.");
+        }
+        return pretsSejour.lire(id, acteur, encadrant);
+    }
+
+    @PostMapping("/{id}/prets")
+    @PreAuthorize("isAuthenticated()")
+    public PretsSejourVue declarerPret(@PathVariable Long id, @Valid @RequestBody DemandeDeclarationPret d,
+                                       @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        pretsSejour.declarer(id, d, frais.acteur(id, moi));
+        return prets(id, moi);
+    }
+
+    @DeleteMapping("/{id}/prets/{pretId}")
+    @PreAuthorize("isAuthenticated()")
+    public PretsSejourVue annulerPret(@PathVariable Long id, @PathVariable Long pretId,
+                                      @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        pretsSejour.annuler(id, pretId, frais.acteur(id, moi));
+        return prets(id, moi);
     }
 
     /**
