@@ -41,7 +41,7 @@ class ArchitectureHexagonaleTest {
     /** Domaines pas encore migrés. Ne jamais y ajouter un domaine. */
     private static final Set<String> DOMAINES_EN_COUCHES = Set.of(
             "admin", "delivrance", "evaluation", "formation", "identite", "materiel",
-            "notification", "planning", "progression", "referentiel", "securite");
+            "notification", "planning", "progression", "referentiel", "securite", "sejour");
 
     /** Seuls sous-paquets admis directement sous un domaine hexagonal. */
     private static final List<String> COUCHES = List.of("domaine", "application", "adaptateur");

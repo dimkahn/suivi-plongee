@@ -1,4 +1,4 @@
-package fr.club.plongee.sejour.domaine;
+package fr.club.plongee.sejour;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;

@@ -1,15 +1,9 @@
-package fr.club.plongee.sejour.adaptateur.entree.web;
+package fr.club.plongee.sejour;
 
 import fr.club.plongee.commun.RegleMetierException;
+import fr.club.plongee.sejour.CarnetSejourService.BilanEnvoiCarnet;
+import fr.club.plongee.sejour.SejourService.*;
 import fr.club.plongee.securite.UtilisateurPrincipal;
-import fr.club.plongee.sejour.application.AccesSejourService;
-import fr.club.plongee.sejour.application.CarnetSejourService;
-import fr.club.plongee.sejour.application.CarnetSejourService.BilanEnvoiCarnet;
-import fr.club.plongee.sejour.application.DroitsSejour;
-import fr.club.plongee.sejour.application.FraisService;
-import fr.club.plongee.sejour.application.SejourService;
-import fr.club.plongee.sejour.application.SejourService.*;
-import fr.club.plongee.sejour.domaine.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.CacheControl;
@@ -40,7 +34,7 @@ public class SejourController {
 
     public record DemandeGroupe(@NotNull Long groupeId) {}
 
-    public record DemandeAffaires(@NotNull List<@Valid FicheAffaire> affaires) {}
+    public record DemandeAffaires(@NotNull List<@Valid DemandeAffaire> affaires) {}
 
     /** À qui envoyer un e-mail du séjour : {@code participantIds} absent = à tous les participants. */
     public record DemandeDestinataires(List<@NotNull Long> participantIds) {}
@@ -70,7 +64,7 @@ public class SejourController {
     /** {@code toutes} : aussi les séjours passés (encadrants). Un participant ne voit que les siens. */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public List<ResumeSejour> lister(@RequestParam(defaultValue = "false") boolean toutes,
+    public List<SejourResumeVue> lister(@RequestParam(defaultValue = "false") boolean toutes,
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         return service.lister(toutes, moi);
     }
@@ -100,7 +94,7 @@ public class SejourController {
 
     @PostMapping("/{id}/participants")
     @PreAuthorize(GERE)
-    public SejourVue ajouterParticipant(@PathVariable Long id, @Valid @RequestBody FicheParticipant d,
+    public SejourVue ajouterParticipant(@PathVariable Long id, @Valid @RequestBody DemandeParticipant d,
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.ajouterParticipant(id, d);
         return service.lire(id, moi);
@@ -126,7 +120,7 @@ public class SejourController {
     @PutMapping("/{id}/participants/{participantId}")
     @PreAuthorize(GERE)
     public SejourVue modifierParticipant(@PathVariable Long id, @PathVariable Long participantId,
-                                         @Valid @RequestBody FicheParticipant d,
+                                         @Valid @RequestBody DemandeParticipant d,
                                          @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.modifierParticipant(id, participantId, d);
         return service.lire(id, moi);
@@ -142,7 +136,7 @@ public class SejourController {
 
     @PostMapping("/{id}/voitures")
     @PreAuthorize(GERE)
-    public SejourVue creerVoiture(@PathVariable Long id, @Valid @RequestBody FicheVoiture d,
+    public SejourVue creerVoiture(@PathVariable Long id, @Valid @RequestBody DemandeVoiture d,
                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.creerVoiture(id, d);
         return service.lire(id, moi);
@@ -151,7 +145,7 @@ public class SejourController {
     @PutMapping("/{id}/voitures/{voitureId}")
     @PreAuthorize(GERE)
     public SejourVue modifierVoiture(@PathVariable Long id, @PathVariable Long voitureId,
-                                     @Valid @RequestBody FicheVoiture d,
+                                     @Valid @RequestBody DemandeVoiture d,
                                      @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.modifierVoiture(id, voitureId, d);
         return service.lire(id, moi);
@@ -167,7 +161,7 @@ public class SejourController {
 
     @PostMapping("/{id}/logements")
     @PreAuthorize(GERE)
-    public SejourVue creerLogement(@PathVariable Long id, @Valid @RequestBody FicheLogement d,
+    public SejourVue creerLogement(@PathVariable Long id, @Valid @RequestBody DemandeLogement d,
                                    @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.creerLogement(id, d);
         return service.lire(id, moi);
@@ -176,7 +170,7 @@ public class SejourController {
     @PutMapping("/{id}/logements/{logementId}")
     @PreAuthorize(GERE)
     public SejourVue modifierLogement(@PathVariable Long id, @PathVariable Long logementId,
-                                      @Valid @RequestBody FicheLogement d,
+                                      @Valid @RequestBody DemandeLogement d,
                                       @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.modifierLogement(id, logementId, d);
         return service.lire(id, moi);
@@ -200,7 +194,7 @@ public class SejourController {
 
     @PostMapping("/{id}/evenements")
     @PreAuthorize(GERE)
-    public SejourVue creerEvenement(@PathVariable Long id, @Valid @RequestBody FicheEvenement d,
+    public SejourVue creerEvenement(@PathVariable Long id, @Valid @RequestBody DemandeEvenement d,
                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.creerEvenement(id, d);
         return service.lire(id, moi);
@@ -209,7 +203,7 @@ public class SejourController {
     @PutMapping("/{id}/evenements/{evenementId}")
     @PreAuthorize(GERE)
     public SejourVue modifierEvenement(@PathVariable Long id, @PathVariable Long evenementId,
-                                       @Valid @RequestBody FicheEvenement d,
+                                       @Valid @RequestBody DemandeEvenement d,
                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.modifierEvenement(id, evenementId, d);
         return service.lire(id, moi);

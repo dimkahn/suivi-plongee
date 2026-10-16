@@ -1,4 +1,4 @@
-package fr.club.plongee.sejour.domaine;
+package fr.club.plongee.sejour;
 
 /** Rubriques de la liste des affaires à prévoir. */
 public enum CategorieAffaire {

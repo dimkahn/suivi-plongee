@@ -1,9 +1,6 @@
-package fr.club.plongee.sejour.adaptateur.entree.web;
+package fr.club.plongee.sejour;
 
-import fr.club.plongee.sejour.application.AccesSejourService;
-import fr.club.plongee.sejour.application.AccesSejourService.*;
-import fr.club.plongee.sejour.application.FraisService;
-import fr.club.plongee.sejour.application.SejourService;
+import fr.club.plongee.sejour.AccesSejourService.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
