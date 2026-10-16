@@ -9,7 +9,6 @@ questions:
 - Pourquoi l'appli refuse de prêter un équipement ?
 - Faut-il désinfecter le détendeur ?
 - Comment prêter du matériel pour une sortie ?
-- D'où viennent les prêts « Déclaré depuis le séjour » ?
 ---
 Dans « Matériel », « Prêts » puis « Nouveau prêt » : l'emprunteur, le matériel choisi dans l'inventaire et la date de retour prévue. La désinfection d'un détendeur est confirmée à chaque changement d'utilisateur.
 
@@ -30,4 +29,3 @@ Le message dit pourquoi. Bloquent un prêt : rebut, hors service, dernier contr�
 - Une révision fabricant en retard laisse le prêt possible, avec un avertissement.
 - Depuis la fiche d'un équipement disponible, « Prêter » ouvre le prêt directement.
 - Photographiez l'état du matériel à la remise (voir « Photos avant et après le prêt »).
-- Pendant un séjour, les participants **déclarent eux-mêmes** ce qu'ils ont emprunté, dans l'onglet « Matériel » du séjour (voir « Déclarer le matériel emprunté pendant un séjour ») : mêmes contrôles qu'ici. Ces prêts s'ajoutent à votre liste, rattachés à la sortie, avec la remarque « Déclaré depuis le séjour par … » ; notez leur retour comme les autres.

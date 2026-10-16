@@ -126,99 +126,30 @@ public class PretService {
             p.setUtilisateur(u);
             p.setEmprunteurNom(u.nomComplet());
         }
-        p.setMotif(nettoyer(d.motif()));
-        p.setRemarques(nettoyer(d.remarques()));
-        Utilisateur auteur = personnes.referenceUtilisateur(auteurId);
-        p.setPretePar(auteur);
-        return enregistrer(p, d.sortieId(), d.datePret(), d.dateRetourPrevue(), d.equipementIds(),
-                d.detendeursDesinfectes(), auteur, true);
-    }
-
-    /**
-     * Un prêt déclaré par celui qui a emprunté le matériel (ou par un
-     * encadrant pour lui), depuis le séjour de la sortie : mêmes contrôles
-     * qu'un prêt saisi par le directeur technique, mais personne ne l'a
-     * « prêté » dans l'appli ; {@code declarePar} est noté dans ses remarques.
-     * L'emprunteur peut n'avoir ni dossier ni compte (invité) : son nom suffit.
-     * Un refus ne nomme pas l'emprunteur d'un équipement déjà prêté : celui
-     * qui déclare n'est pas le directeur technique, et les emprunteurs
-     * peuvent être mineurs.
-     */
-    public record DeclarationPret(Long eleveId, Long utilisateurId, String emprunteurNom, Long sortieId,
-                                  LocalDate datePret, List<Long> equipementIds, Boolean detendeursDesinfectes,
-                                  String declarePar, Long declareParUtilisateurId) {}
-
-    @Transactional
-    public PretVue declarer(DeclarationPret d) {
-        Pret p = new Pret();
-        p.setEleve(d.eleveId() == null ? null : personnes.eleve(d.eleveId()).orElse(null));
-        p.setUtilisateur(d.utilisateurId() == null ? null : personnes.utilisateur(d.utilisateurId()).orElse(null));
-        p.setEmprunteurNom(d.emprunteurNom().trim());
-        p.setRemarques("Déclaré depuis le séjour par " + d.declarePar().trim() + ".");
-        Utilisateur auteur = d.declareParUtilisateurId() == null ? null
-                : personnes.referenceUtilisateur(d.declareParUtilisateurId());
-        return enregistrer(p, d.sortieId(), d.datePret(), null, d.equipementIds(), d.detendeursDesinfectes(), auteur,
-                false);
-    }
-
-    /** Parmi ces équipements, un détendeur (sa désinfection est à attester). */
-    @Transactional(readOnly = true)
-    public boolean contientUnDetendeur(List<Long> equipementIds) {
-        return equipementIds.stream().map(materiel::equipement).anyMatch(e -> e.getType() == TypeEquipement.DETENDEUR);
-    }
-
-    /** Les prêts rattachés à une sortie, en cours ou rendus, les plus récents d'abord. */
-    @Transactional(readOnly = true)
-    public List<PretVue> parSortie(Long sortieId) {
-        return vues(prets.parSortie(sortieId));
-    }
-
-    /**
-     * Ce qui peut être emprunté maintenant et tenir jusqu'au {@code jusquAu} :
-     * ni prêté, ni au rebut, ni hors service, ni hors échéance (voir
-     * {@link EcheancesEquipement}). Par type puis référence.
-     */
-    @Transactional(readOnly = true)
-    public List<EquipementPreteVue> disponibles(LocalDate jusquAu) {
-        Set<Long> pretes = new HashSet<>();
-        for (Pret q : prets.enCours()) q.getEquipements().forEach(e -> pretes.add(e.getId()));
-        return materiel.utilisables(jusquAu).stream()
-                .filter(e -> !pretes.contains(e.getId()))
-                .map(PretService::vueEquipement)
-                .toList();
-    }
-
-    /**
-     * Les contrôles d'un prêt, puis son enregistrement : sortie et retour
-     * prévu, équipements ni déjà prêtés ni hors échéance jusqu'au retour,
-     * désinfection des détendeurs (inscrite au journal de chacun).
-     * {@code nommerEmprunteur} : le refus d'un équipement déjà prêté dit à qui.
-     */
-    private PretVue enregistrer(Pret p, Long sortieId, LocalDate datePret, LocalDate retourPrevuDemande,
-                                List<Long> equipementIds, Boolean detendeursDesinfectes, Utilisateur auteur,
-                                boolean nommerEmprunteur) {
-        LocalDate retourPrevu = retourPrevuDemande;
-        if (sortieId != null) {
-            Sortie s = sorties.sortie(sortieId);
+        LocalDate retourPrevu = d.dateRetourPrevue();
+        if (d.sortieId() != null) {
+            Sortie s = sorties.sortie(d.sortieId());
             p.setSortie(s);
             // Sans retour prévu, le matériel revient à la fin de la sortie : c'est jusque-là qu'il doit tenir.
-            if (retourPrevu == null && !s.getDateFin().isBefore(datePret)) retourPrevu = s.getDateFin();
+            if (retourPrevu == null && !s.getDateFin().isBefore(d.datePret())) retourPrevu = s.getDateFin();
         }
-        p.setDatePret(datePret);
+        p.setMotif(nettoyer(d.motif()));
+        p.setDatePret(d.datePret());
         p.setDateRetourPrevue(retourPrevu);
+        p.setRemarques(nettoyer(d.remarques()));
+        p.setPretePar(personnes.referenceUtilisateur(auteurId));
 
         // L'équipement doit rester utilisable jusqu'au retour prévu.
-        LocalDate finDuPret = retourPrevu != null ? retourPrevu : datePret;
+        LocalDate finDuPret = retourPrevu != null ? retourPrevu : d.datePret();
         Map<Long, Pret> enCours = new HashMap<>();
         for (Pret q : prets.enCours()) q.getEquipements().forEach(e -> enCours.put(e.getId(), q));
 
         List<String> refus = new ArrayList<>();
-        for (Long id : new LinkedHashSet<>(equipementIds)) {
+        for (Long id : new LinkedHashSet<>(d.equipementIds())) {
             Equipement e = materiel.equipement(id);
             Pret autre = enCours.get(id);
             if (autre != null) {
-                refus.add(e.designation() + " : déjà prêté"
-                        + (nommerEmprunteur ? " à " + autre.getEmprunteurNom() : "") + ".");
+                refus.add(e.designation() + " : déjà prêté à " + autre.getEmprunteurNom() + ".");
                 continue;
             }
             Etat etat = materiel.etat(e, finDuPret);
@@ -234,14 +165,15 @@ public class PretService {
 
         List<Equipement> detendeurs = p.getEquipements().stream()
                 .filter(e -> e.getType() == TypeEquipement.DETENDEUR).toList();
-        if (!detendeurs.isEmpty() && !Boolean.TRUE.equals(detendeursDesinfectes)) {
+        if (!detendeurs.isEmpty() && !Boolean.TRUE.equals(d.detendeursDesinfectes())) {
             throw new RegleMetierException("Les détendeurs se désinfectent avant d'être remis à un nouvel "
                     + "utilisateur (Code du sport, art. A322-81) : confirmez la désinfection.");
         }
 
         prets.save(p);
+        Utilisateur auteur = personnes.referenceUtilisateur(auteurId);
         for (Equipement e : detendeurs) {
-            materiel.journaliser(e, TypeIntervention.DESINFECTION, datePret, null,
+            materiel.journaliser(e, TypeIntervention.DESINFECTION, d.datePret(), null,
                     "Avant remise à " + p.getEmprunteurNom() + ".", p, auteur);
         }
         return vue(p);
@@ -312,7 +244,8 @@ public class PretService {
                 && p.getDateRetourPrevue().isBefore(Calendrier.aujourdhui());
         List<EquipementPreteVue> equipements = p.getEquipements().stream()
                 .sorted(Comparator.comparing(Equipement::getType).thenComparing(Equipement::getReference))
-                .map(PretService::vueEquipement)
+                .map(e -> new EquipementPreteVue(e.getId(), e.getType(), e.getType().libelle(), e.getReference(),
+                        description(e)))
                 .toList();
         return new PretVue(p.getId(), type, emprunteurId, p.getEmprunteurNom(),
                 sortie == null ? null : sortie.getId(), sortie == null ? null : sortie.getNom(),
@@ -323,10 +256,6 @@ public class PretService {
                 p.getRecuPar() == null ? null : p.getRecuPar().nomComplet(),
                 p.getRemarques(), equipements,
                 photosDuPret.getOrDefault(Moment.AVANT, 0L), photosDuPret.getOrDefault(Moment.APRES, 0L));
-    }
-
-    private static EquipementPreteVue vueEquipement(Equipement e) {
-        return new EquipementPreteVue(e.getId(), e.getType(), e.getType().libelle(), e.getReference(), description(e));
     }
 
     /** « Aqualung Legend », « Scubapro 5 mm, taille M », « 12 L acier ». */

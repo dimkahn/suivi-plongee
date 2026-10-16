@@ -13,12 +13,9 @@ import { CarnetSejourComponent } from './carnet-sejour.component';
 import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
-  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, PalanqueeVue, ParticipantFrais, ParticipantVue, PortFrais,
-  PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto
+  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, PalanqueeVue, ParticipantFrais, ParticipantVue, PortFrais, SejourVue, euros,
+  formulairePhoto
 } from './sejour-api';
-import { SejourMaterielComponent } from './sejour-materiel.component';
-
-type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel';
 
 interface EnteteVue {
   nom: string;
@@ -52,16 +49,16 @@ interface JetonGarde {
  * par e-mail (/sejour/…, et l'ancienne /frais/… qui ouvre les frais) : il
  * donne son e-mail, reçoit un code à 6 chiffres, puis lit le carnet du
  * séjour, toujours à jour (programme, voitures, chambres, affaires, infos
- * pratiques), renseigne ses informations (voyage, repas, personne à prévenir), voit et saisit les
- * frais (un élève les consulte seulement) et déclare le matériel du club qu'il a emprunté. Pendant le séjour, l'encart
+ * pratiques), renseigne ses informations (voyage, repas, personne à prévenir) et voit et saisit les
+ * frais (un élève les consulte seulement). Pendant le séjour, l'encart
  * « Aujourd'hui » : son voyage du jour, le programme, le rappel de la veille. Sans connexion à l'appli ; le
  * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après
  * le séjour.
  */
 @Component({
   selector: 'app-espace-participant',
-  imports: [FormsModule, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
-            CarnetSejourComponent, CarnetImprimableComponent],
+  imports: [FormsModule, SejourFraisComponent, MesInformationsComponent, JourneeSejourComponent, CarnetSejourComponent,
+            CarnetImprimableComponent],
   template: `
     @if (imprimable() && carnet(); as c) {
       <app-carnet-imprimable [sejour]="c" (fermer)="imprimable.set(false)" />
@@ -87,8 +84,6 @@ interface JetonGarde {
                   [attr.aria-selected]="onglet() === 'infos'" (click)="changerOnglet('infos')">Mes informations</button>
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'frais'"
                   [attr.aria-selected]="onglet() === 'frais'" (click)="changerOnglet('frais')">Frais</button>
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'materiel'"
-                  [attr.aria-selected]="onglet() === 'materiel'" (click)="changerOnglet('materiel')">Matériel</button>
         </div>
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
@@ -110,8 +105,6 @@ interface JetonGarde {
           } @else {
             <p class="vide">Chargement…</p>
           }
-        } @else if (onglet() === 'materiel') {
-          <app-sejour-materiel [port]="portPrets" />
         } @else {
           <app-sejour-frais [frais]="v.frais" [participants]="v.participants" [port]="port"
                             (maj)="majFrais($event)" />
@@ -207,7 +200,7 @@ export class EspaceParticipantComponent {
         : `${nom(r.deId)} vous doit ${euros(r.montantCentimes)}`);
   });
   /** L'ancienne adresse /frais/… ouvre directement les frais. */
-  onglet = signal<Onglet>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'carnet');
+  onglet = signal<'carnet' | 'infos' | 'frais'>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'carnet');
   chargement = signal(true);
   erreur = signal<string | null>(null);
   message = signal<string | null>(null);
@@ -237,13 +230,6 @@ export class EspaceParticipantComponent {
       this.http.delete<FraisPublicVue>(`${this.base}/versements/${versementId}`, this.options()))
   };
 
-  /** Le matériel emprunté, avec le jeton du lien. */
-  readonly portPrets: PortPrets = {
-    lire: () => this.http.get<PretsSejourVue>(`${this.base}/prets`, this.options()),
-    declarer: d => this.http.post<PretsSejourVue>(`${this.base}/prets`, d, this.options()),
-    annuler: pretId => this.http.delete<PretsSejourVue>(`${this.base}/prets/${pretId}`, this.options())
-  };
-
   constructor() {
     void this.demarrer();
   }
@@ -261,7 +247,7 @@ export class EspaceParticipantComponent {
   }
 
   /** Un onglet, en haut de son contenu ; le message d'un autre onglet ne le suit pas. */
-  changerOnglet(o: Onglet): void {
+  changerOnglet(o: 'carnet' | 'infos' | 'frais'): void {
     this.message.set(null);
     this.erreur.set(null);
     this.onglet.set(o);
