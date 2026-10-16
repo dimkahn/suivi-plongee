@@ -327,26 +327,21 @@ retrait le retire ; lecture via `/api/moniteurs/{id}/photo`).
 1. Import du classeur Google Sheets existant, pour démarrer la saison en cours
    avec les données réelles. Point d'attention : le tableur a un 4ᵉ statut
    (`NA`, non acquis) que `StatutAcquisition` ne représente pas encore.
-2. Écran d'administration : inscription des élèves, ouverture de saison faits
-   (`/admin/eleves`, `/admin/saisons`, `/admin/cursus`), y compris modification
-   des dates d'une saison. Import d'une révision du MFT fait pour N1, N2 et N3
-   (V7, V8 — voir la note plus haut sur le N2/N3 scindés en qualifications) ;
-   PA60 non importé (hors périmètre du brevet N3, voir plus haut).
-3. Relances automatiques : certificats médicaux qui expirent, RIFAP échus, et
+2. Relances automatiques : certificats médicaux qui expirent, RIFAP échus, et
    les 4 plongées en milieu naturel dues par un N1 certifié en piscine.
-4. ~~Export PDF de la fiche de suivi d'un élève.~~ Fait (`GET
-   /api/cursus/{id}/fiche.pdf`, bouton dans la grille).
-5. ~~Icônes PWA à fournir dans `frontend/public/icones/`.~~ Fait, depuis le
-   logo du club (voir `frontend/public/icones/LISEZ-MOI.txt`).
-6. ~~Envoi d'e-mail réel.~~ Fait (`ServiceNotificationEmail`, profil `!dev`,
-   `spring.mail.*` en profil `prod` dans `application.yml` — hôte/identifiants
-   par variables d'environnement `SMTP_HOTE`/`SMTP_UTILISATEUR`/
-   `SMTP_MOT_DE_PASSE`). `ServiceNotificationConsole` reste la seule
-   implémentation active en profil `dev` (pas de serveur SMTP local).
 
-## Avertissement
+E-mail : `ServiceNotificationEmail` en profil `!dev` (`spring.mail.*` du
+profil `prod`, variables `SMTP_HOTE`, `SMTP_UTILISATEUR`,
+`SMTP_MOT_DE_PASSE`) ; en `dev`, seulement `ServiceNotificationConsole`.
 
-Ce code a été écrit sans être compilé (Maven Central inaccessible dans
-l'environnement de génération). Attendre des ajustements d'imports et de
-signatures au premier `mvn spring-boot:run`. Commencer par faire passer
-`mvn test` avant d'ajouter des fonctionnalités.
+## Garde-fous pour l'IA (`.claude/settings.json`, partagé)
+
+- **Lecture interdite** de `.env`, `application-local.yml`, du classeur
+  « Fichier Suivi… » (données réelles de mineurs) et de `sauvegardes/`
+  (sauvegardes de la base) : ne pas chercher à contourner (cat, grep…). Pour
+  un besoin de données, passer par la démo (`V100…`, profil `dev`).
+- **`git push` et `git tag` demandent confirmation** : un tag `v…` sur
+  `master` met en production (voir « Commandes »). `push --force` est refusé.
+- **Une migration Flyway déjà sur `origin/master` ne se modifie pas** : le
+  hook `.claude/hooks/proteger-migrations.sh` refuse l'écriture ; créer la
+  migration suivante.
