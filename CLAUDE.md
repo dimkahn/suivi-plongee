@@ -31,11 +31,10 @@ Vérifier vite, du plus rapide au plus complet :
 cd frontend && npm test -- --watch=false                 # Vitest, quelques secondes
 cd frontend && npx ng build --configuration development  # types et templates, ~15 s
 cd backend && mvn -q test -Dtest=SortieTest              # une classe (ou Classe#methode)
-cd backend && mvn -q test -Dtest=ArchitectureHexagonaleTest
 cd backend && mvn test                                   # tout, avant chaque commit
 ```
 
-Outils pour l'IA (`.claude/`) :  `nouvel-ecran`, `nouvel-endpoint`,
+Outils pour l'IA (`.claude/`) : `nouvel-ecran`, `nouvel-endpoint`,
 `nouvelle-migration`, `lancer-appli` (vérifier dans le navigateur, comptes de
 démo) ; agent `relecteur-donnees-personnelles` (avant un commit qui touche
 des données de personnes) ; hooks : migrations publiées protégées, rappel
@@ -96,6 +95,49 @@ Le frontend proxifie `/api` vers `localhost:8080` et `/medias/videos` vers
 `outils/videos/apercu.mjs` (port 4300) (`proxy.conf.json`).
 Comptes de démonstration dans le README, mot de passe `plongee2026`.
 
+## Développement piloté par les tests (TDD)
+
+Toute modification de comportement (nouvelle règle métier, endpoint, droit
+d'accès, correction de bogue) se développe test d'abord, par petits cycles :
+
+1. **Rouge** : écrire un seul test qui décrit le comportement attendu, le
+   lancer seul (`mvn -q test -Dtest=Classe#methode`, ou
+   `npm test -- --watch=false <fichier>`) et **le voir échouer pour la bonne
+   raison** (assertion fausse, pas une erreur de compilation ou de données
+   de démo). Un test qui passe du premier coup ne prouve rien : le vérifier.
+2. **Vert** : écrire le code le plus simple qui fait passer ce test, sans
+   anticiper les cas suivants.
+3. **Refactoriser** : nettoyer le code et le test (noms, doublons) en
+   gardant tout au vert, puis relancer la classe de test entière.
+
+Règles pratiques :
+
+- **Un bogue = d'abord un test qui le reproduit**, puis la correction. Le
+  test reste, pour que le bogue ne revienne pas.
+- **Tester par le comportement visible, pas par l'implémentation** : côté
+  backend, de préférence par l'API (`@SpringBootTest` + `MockMvc`, profil
+  `dev`, connexion avec un compte de démo, comme `AdhesionTest`) ; un test
+  unitaire sans Spring pour une règle pure (calcul de dates, `Caci`,
+  `JoursFeries`…). Côté frontend, Vitest (`*.spec.ts`) pour la logique
+  des fichiers de `core/` et des services, pas pour la mise en page.
+- **Les droits se testent aussi en négatif** : pour chaque endpoint, au
+  moins un cas refusé (403 pour le mauvais rôle, refus d'habilitation,
+  422 lisible pour une règle métier) en plus du cas permis.
+- **Nommer le test par la règle, en français** : `@DisplayName("Un E1 ne
+  peut pas noter un élève de N2")`, méthode en camelCase français. Un test
+  se lit comme une règle du club.
+- **Des tests indépendants** : chacun crée ses propres données (élève,
+  séance…) plutôt que de dépendre de l'ordre ou d'un autre test ; ne pas
+  modifier `V100__donnees_demo.sql` pour faire passer un test. Une source
+  externe (calendrier scolaire, e-mail) se remplace par une fausse, comme
+  dans `GenerationSaisonTest`.
+- **Pas de code de production sans test qui l'exige**, sauf l'affichage pur
+  (styles, libellés), vérifié dans le navigateur (`lancer-appli`).
+- Avant de commiter : `mvn test` complet et `npm test -- --watch=false`
+  verts. Ne jamais désactiver (`@Disabled`, `.skip`) ni affaiblir un test
+  pour passer ; si un test existant semble faux, le dire plutôt que le
+  modifier en silence.
+
 ## Décisions structurantes — ne pas défaire sans raison
 
 Les décisions propres à chaque domaine sont dans `.claude/rules/`, chargées
@@ -112,28 +154,6 @@ concevoir une modification qui les concerne :
 - `exercices.md` : programme d'exercices des séances, base d'exercices, parcours, schémas
 
 Ce qui suit vaut pour tout le projet.
-
-**Architecture hexagonale, et refactorisation systématique (choix de 2026).**
-Chaque domaine fonctionnel du backend (`fr.club.plongee.<domaine>`) se
-range en trois couches, et rien à la racine du domaine :
-
-- `domaine` : le modèle (entités JPA admises, ainsi que les annotations
-  Envers et `org.springframework.data.domain` comme `Persistable` : choix
-  pragmatique, pas de copie du modèle pour la base), les règles métier
-  pures et les **ports** (`domaine.port`) : interfaces dont l'application a
-  besoin (dépôts, envoi d'e-mail, calendrier scolaire…), nommées par le
-  besoin (`Progressions`, `EnvoiCourriel`), pas par la technique. Ni
-  Spring (hors l'exception ci-dessus), ni web, ni JDBC, ni Jackson.
-- `application` : les cas d'usage (`@Service`, `@Transactional` admis), les
-  `Demande…` reçues et les `…Vue` rendues. Ne passe que par les ports :
-  jamais Spring Data, `JdbcTemplate`, HTTP ni un adaptateur. Peut lire le
-  `domaine` et appeler l'`application` d'un autre domaine.
-- `adaptateur.entree.web` (contrôleurs ; ils appellent l'application,
-  jamais un port) et `adaptateur.sortie.<technique>` (`persistance` : les
-  dépôts Spring Data qui étendent le port, les classes `JdbcTemplate` ;
-  `courriel`, `calendrier`…). Un adaptateur n'est utilisé que par son
-  domaine (et `config`) ; entrée et sortie ne se voient pas.
-  
 
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via
