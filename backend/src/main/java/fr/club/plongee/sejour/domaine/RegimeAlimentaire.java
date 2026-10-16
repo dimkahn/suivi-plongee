@@ -1,4 +1,4 @@
-package fr.club.plongee.sejour;
+package fr.club.plongee.sejour.domaine;
 
 /**
  * Régimes alimentaires d'un participant au séjour, pour la cuisine. Des

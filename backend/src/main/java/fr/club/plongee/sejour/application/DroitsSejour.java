@@ -1,8 +1,7 @@
-package fr.club.plongee.sejour;
+package fr.club.plongee.sejour.application;
 
 import fr.club.plongee.securite.UtilisateurPrincipal;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import fr.club.plongee.sejour.domaine.port.Sejours;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Component("droitsSejour")
 public class DroitsSejour {
 
-    private final NamedParameterJdbcTemplate jdbc;
+    private final Sejours sejours;
 
-    public DroitsSejour(NamedParameterJdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+    public DroitsSejour(Sejours sejours) {
+        this.sejours = sejours;
     }
 
     public boolean organise(Long sortieId, Authentication authentication) {
@@ -37,11 +36,7 @@ public class DroitsSejour {
     @Transactional(readOnly = true)
     public boolean organise(Long sortieId, Long utilisateurId) {
         if (sortieId == null || utilisateurId == null) return false;
-        Integer n = jdbc.queryForObject("""
-                SELECT (SELECT COUNT(*) FROM sejour WHERE sortie_id = :sortie AND createur_id = :moi)
-                     + (SELECT COUNT(*) FROM sejour_organisateur WHERE sortie_id = :sortie AND utilisateur_id = :moi)""",
-                new MapSqlParameterSource("sortie", sortieId).addValue("moi", utilisateurId), Integer.class);
-        return n != null && n > 0;
+        return sejours.organise(sortieId, utilisateurId);
     }
 
     public boolean peutDesigner(Long sortieId, Authentication authentication) {
@@ -52,8 +47,6 @@ public class DroitsSejour {
     @Transactional(readOnly = true)
     public boolean peutDesigner(Long sortieId, UtilisateurPrincipal p) {
         if (p.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))) return true;
-        Integer n = jdbc.queryForObject("SELECT COUNT(*) FROM sejour WHERE sortie_id = :sortie AND createur_id = :moi",
-                new MapSqlParameterSource("sortie", sortieId).addValue("moi", p.id()), Integer.class);
-        return n != null && n > 0;
+        return sejours.estCreateur(sortieId, p.id());
     }
 }

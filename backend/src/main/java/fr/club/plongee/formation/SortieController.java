@@ -6,7 +6,7 @@ import fr.club.plongee.formation.service.SortieService;
 import fr.club.plongee.formation.service.SortieService.DemandeSortie;
 import fr.club.plongee.formation.service.SortieService.SeancePossibleVue;
 import fr.club.plongee.formation.service.SortieService.SortieVue;
-import fr.club.plongee.sejour.SejourService;
+import fr.club.plongee.sejour.application.SejourService;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
