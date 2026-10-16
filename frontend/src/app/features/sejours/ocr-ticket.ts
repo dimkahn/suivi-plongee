@@ -1,4 +1,4 @@
-import { NoteLue } from './sejour-api';
+import { NoteLue, RegleLecture } from './sejour-api';
 import { analyserTicket } from './lecture-ticket';
 
 /**
@@ -10,8 +10,12 @@ import { analyserTicket } from './lecture-ticket';
  * Le programme et le dictionnaire français (~4,6 Mo, servis par l'appli
  * sous /ocr/, voir angular.json) ne sont téléchargés qu'à la première
  * lecture, puis gardés par le navigateur.
+ *
+ * Rend aussi le texte lu, gardé le temps de la saisie pour apprendre des
+ * corrections (`leconDuTicket`) ; il n'est jamais envoyé.
  */
-export async function lireTicketSurLeTelephone(photo: Blob): Promise<NoteLue> {
+export async function lireTicketSurLeTelephone(photo: Blob, regles: RegleLecture[]):
+  Promise<{ note: NoteLue; texte: string }> {
   const { createWorker, OEM } = await import('tesseract.js');
   const lecteur = await createWorker('fra', OEM.LSTM_ONLY, {
     workerPath: '/ocr/worker.min.js',
@@ -20,7 +24,7 @@ export async function lireTicketSurLeTelephone(photo: Blob): Promise<NoteLue> {
   });
   try {
     const { data } = await lecteur.recognize(photo);
-    return analyserTicket(data.text);
+    return { note: analyserTicket(data.text, regles), texte: data.text };
   } finally {
     await lecteur.terminate();
   }

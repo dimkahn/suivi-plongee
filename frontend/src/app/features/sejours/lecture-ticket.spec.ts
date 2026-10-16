@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyserTicket } from './lecture-ticket';
+import { analyserTicket, enseigneDuTicket, leconDuTicket } from './lecture-ticket';
 
 // Textes tels que les rend la reconnaissance de caractères : majuscules,
 // espaces en trop, lettres mal lues, lignes inutiles.
@@ -134,5 +134,44 @@ describe('Lecture du texte d’un ticket', () => {
 
   it('ne remplit rien quand le texte est illisible', () => {
     expect(analyserTicket('~~ ##@ ¤¤ ..')).toEqual({ montantCentimes: null, jour: null, categorie: null });
+  });
+});
+
+const CHEZ_MARCEL = `
+  * * *
+Chez Marcel
+Bienvenue
+2 Pastis        7,00
+1 Planche      18,50
+Sous-total     25,50
+Pourboire       2,00
+Addition       27,50
+CB 25,50
+`;
+
+describe('Apprendre des corrections', () => {
+  it('reconnaît le commerçant à la première ligne lisible du ticket', () => {
+    expect(enseigneDuTicket(CHEZ_MARCEL)).toBe('CHEZ MARCEL');
+    expect(enseigneDuTicket("TICKET CLIENT\nMcDonald's Hyères\n")).toBe("MCDONALD'S HYERES");
+    expect(enseigneDuTicket('12/06/2027\n~~ ##')).toBeNull();
+  });
+
+  it('retient la catégorie choisie et le libellé de la ligne qui portait le bon total', () => {
+    const lue = analyserTicket(CHEZ_MARCEL);
+    expect(lue.montantCentimes).toBe(2550);
+    expect(leconDuTicket(CHEZ_MARCEL, lue, { montantCentimes: 2750, categorie: 'REPAS' }))
+      .toEqual({ enseigne: 'CHEZ MARCEL', categorie: 'REPAS', libelleTotal: 'ADDITION' });
+  });
+
+  it("ne retient pas de libellé quand le total lu était juste, ni de catégorie laissée sur « Autre »", () => {
+    expect(leconDuTicket('Chez Marcel\nTOTAL 27,50', { montantCentimes: 2750, jour: null, categorie: null },
+      { montantCentimes: 2750, categorie: 'AUTRE' })).toBeNull();
+  });
+
+  it('applique les règles apprises : la catégorie du commerçant et la ligne de son total', () => {
+    const regles = [{ enseigne: 'CHEZ MARCEL', categorie: 'TRANSPORT' as const, libelleTotal: 'ADDITION' }];
+    expect(analyserTicket(CHEZ_MARCEL, regles)).toMatchObject({ montantCentimes: 2750, categorie: 'TRANSPORT' });
+    // Une règle ne vaut que pour son commerçant.
+    expect(analyserTicket('Autre commerce\nAddition 3,00\nTOTAL 5,00', regles).montantCentimes).toBe(500);
   });
 });

@@ -1,4 +1,4 @@
-import { CategorieDepense, NoteLue } from './sejour-api';
+import { CategorieDepense, LeconLecture, NoteLue, RegleLecture } from './sejour-api';
 
 // ----------------------------------------------------------------
 //  Lecture d'un ticket sans intelligence artificielle : le texte rendu
@@ -67,11 +67,78 @@ const MOTS_CATEGORIE: [CategorieDepense, string[]][] = [
     'VIN', 'VINS', 'PAIN', 'BAGUETTE', 'GLACE', 'GLACES', 'GLACIER']]
 ];
 
+/** Les lignes d'en-tête qui ne nomment pas le commerçant. */
+const LIGNE_SANS_ENSEIGNE = /^(TICKET|FACTURE|BIENVENUE|CAISSE|DUPLICATA|CLIENT|RECU|MERCI|BONJOUR|NOTE)\b/;
+
+/**
+ * Le commerçant du ticket, tel que les règles apprises le retiennent : la
+ * première ligne lisible (au moins trois lettres, ni date, ni montant, ni
+ * « Ticket client »…), en majuscules sans accents.
+ */
+export function enseigneDuTicket(texte: string): string | null {
+  for (const ligne of lignesDuTicket(texte)) {
+    const propre = ligne.replace(/[^A-Z0-9 &'-]/g, ' ').replace(/ +/g, ' ').trim().slice(0, 60).trim();
+    if (propre.replace(/[^A-Z]/g, '').length < 3) continue;
+    if (montants(ligne).length > 0 || date(ligne) !== null || LIGNE_SANS_ENSEIGNE.test(propre)) continue;
+    return propre;
+  }
+  return null;
+}
+
+/**
+ * Ce qu'une dépense enregistrée apprend de la lecture de son ticket ; null
+ * si rien. La catégorie choisie (sauf « Autre »), et, si le total lu a été
+ * corrigé, le libellé de la ligne qui portait le bon total (ou de la ligne
+ * au-dessus, quand le montant est écrit dessous). Ni photo, ni texte, ni
+ * montant : seulement le commerçant, la catégorie et le libellé.
+ */
+export function leconDuTicket(texte: string, lue: NoteLue,
+                              enregistree: { montantCentimes: number; categorie: CategorieDepense }): LeconLecture | null {
+  const enseigne = enseigneDuTicket(texte);
+  if (!enseigne) return null;
+  const categorie = enregistree.categorie !== 'AUTRE' ? enregistree.categorie : null;
+  let libelleTotal: string | null = null;
+  if (enregistree.montantCentimes !== lue.montantCentimes) {
+    const lignes = lignesDuTicket(texte);
+    const i = lignes.findIndex(l => montantDeLigne(l) === enregistree.montantCentimes);
+    libelleTotal = i < 0 ? null
+      : libelle(lignes[i]) ?? (i > 0 && montants(lignes[i - 1]).length === 0 ? libelle(lignes[i - 1]) : null);
+  }
+  return categorie || libelleTotal ? { enseigne, categorie, libelleTotal } : null;
+}
+
+/** Les lettres d'une ligne, sans montant ni chiffre : « ADDITION 27,50 » → « ADDITION » ; null si trop court. */
+function libelle(ligne: string): string | null {
+  const lettres = ligne.replace(/[^A-Z ]/g, ' ').replace(/ +/g, ' ').trim().slice(0, 40).trim();
+  return lettres.replace(/ /g, '').length >= 3 && !LIGNE_PAS_TOTAL.test(lettres) ? lettres : null;
+}
+
 /** Le total, la date et la catégorie trouvés dans le texte d'un ticket ; null pour ce qui n'y est pas. */
-export function analyserTicket(texte: string): NoteLue {
-  const lignes = normaliser(texte).split('\n').map(l => reparer(l.trim())).filter(l => l.length > 0);
+export function analyserTicket(texte: string, regles: RegleLecture[] = []): NoteLue {
+  const lignes = lignesDuTicket(texte);
   const tout = lignes.join('\n');
-  return { montantCentimes: total(lignes), jour: date(tout), categorie: categorie(tout) };
+  const enseigne = enseigneDuTicket(texte);
+  const regle = enseigne ? regles.find(r => r.enseigne === enseigne) : undefined;
+  return {
+    montantCentimes: (regle?.libelleTotal ? totalDuLibelle(lignes, regle.libelleTotal) : null) ?? total(lignes),
+    jour: date(tout),
+    categorie: regle?.categorie ?? categorie(tout)
+  };
+}
+
+/** Les lignes du ticket, en majuscules sans accents, confusions de lecture réparées. */
+function lignesDuTicket(texte: string): string[] {
+  return normaliser(texte).split('\n').map(l => reparer(l.trim())).filter(l => l.length > 0);
+}
+
+/** Le total sur la ligne du libellé appris pour ce commerçant (ou la ligne suivante). */
+function totalDuLibelle(lignes: string[], libelleAppris: string): number | null {
+  const candidats = lignes.flatMap((ligne, i) => {
+    if (!contientMot(ligne, libelleAppris) || LIGNE_PAS_TOTAL.test(ligne)) return [];
+    const montant = montantDeLigne(ligne) ?? (i + 1 < lignes.length ? montants(lignes[i + 1])[0] ?? null : null);
+    return montant === null ? [] : [montant];
+  });
+  return candidats.length > 0 ? Math.max(...candidats) : null;
 }
 
 /** Majuscules sans accents : « Net à payer » → « NET A PAYER ». */

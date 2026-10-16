@@ -9,6 +9,7 @@ import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -239,6 +240,23 @@ public class SejourController {
     public LecteurNote.NoteLue lireNote(@PathVariable Long id, @RequestParam("fichier") MultipartFile fichier,
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         return frais.lireNote(id, octets(fichier), fichier.getContentType(), frais.acteur(id, moi));
+    }
+
+    /** Les règles apprises des corrections, pour lire les notes sur le téléphone. */
+    @GetMapping("/{id}/lecture-notes/regles")
+    @PreAuthorize("isAuthenticated()")
+    public List<ReglesLectureService.RegleApprise> reglesLecture(@PathVariable Long id,
+                                                                @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return frais.reglesLecture(id, frais.acteur(id, moi));
+    }
+
+    /** Ce qui a été gardé ou corrigé après la lecture d'une note : commerçant, catégorie, libellé du total. */
+    @PostMapping("/{id}/lecture-notes/apprentissage")
+    @PreAuthorize("isAuthenticated()")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void apprendreLecture(@PathVariable Long id, @RequestBody ReglesLectureService.Lecon lecon,
+                                 @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        frais.apprendreLecture(id, lecon, frais.acteur(id, moi));
     }
 
     @PutMapping("/{id}/depenses/{depenseId}")

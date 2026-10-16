@@ -271,6 +271,10 @@ export interface PortFrais {
   lirePhoto(depenseId: number, photoId: number): Observable<Blob>;
   /** Montant total et date lus sur une photo pas encore enregistrée ; rien n'est gardé. */
   lireNote(fichier: File): Observable<NoteLue>;
+  /** Les règles apprises des corrections du club, pour la lecture sur le téléphone. */
+  reglesLecture(): Observable<RegleLecture[]>;
+  /** Ce qu'une dépense enregistrée apprend de la lecture de sa note. */
+  apprendreLecture(lecon: LeconLecture): Observable<void>;
   ajouterVersement(d: DemandeVersement): Observable<FraisVue>;
   supprimerVersement(versementId: number): Observable<FraisVue>;
 }
@@ -348,6 +352,20 @@ export interface NoteLue {
   montantCentimes: number | null;
   jour: string | null;
   categorie: CategorieDepense | null;
+}
+
+/** Pour un commerçant, la catégorie et le libellé du total appris des corrections du club. */
+export interface RegleLecture {
+  enseigne: string;
+  categorie: CategorieDepense | null;
+  libelleTotal: string | null;
+}
+
+/** Ce qu'une dépense enregistrée apprend de la lecture de son ticket (jamais la photo ni le texte). */
+export interface LeconLecture {
+  enseigne: string;
+  categorie: CategorieDepense | null;
+  libelleTotal: string | null;
 }
 
 /** Ce que la note lue remplit d'une dépense : seulement les champs encore vides (catégorie : encore « Autre »). */
@@ -580,6 +598,8 @@ export class SejourApi {
       lirePhoto: (depenseId, photoId) => this.http.get(`${base}/depenses/${depenseId}/photos/${photoId}`,
         { responseType: 'blob' }),
       lireNote: fichier => this.http.post<NoteLue>(`${base}/depenses/lecture-note`, formulairePhoto(fichier)),
+      reglesLecture: () => this.http.get<RegleLecture[]>(`${base}/lecture-notes/regles`),
+      apprendreLecture: lecon => this.http.post<void>(`${base}/lecture-notes/apprentissage`, lecon),
       ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),
       supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`))
     };
