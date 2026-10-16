@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { dateDuJour, dateFr } from '../../core/date-fr';
+import { nomEquipement } from '../../core/nom-equipement';
 import { contientUnDetendeur, filtrerDisponibles } from './materiel-sejour';
 import { PortPrets, PretSejourVue, PretsSejourVue, TypeEquipement, nomComplet } from './sejour-api';
 
@@ -49,7 +50,7 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
                 <span class="nom">{{ p.emprunteur }}</span>
                 <ul class="equipements">
                   @for (e of p.equipements; track e.id) {
-                    <li>{{ e.typeLibelle }} <strong>{{ e.reference }}</strong>@if (e.description) { — {{ e.description }}}</li>
+                    <li>{{ e.typeLibelle }} <strong>{{ nom(e) }}</strong>@if (e.description) { — {{ e.description }}}</li>
                   }
                 </ul>
                 <span class="secondaire">{{ quand(p) }}</span>
@@ -91,9 +92,9 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
                       [attr.aria-pressed]="type() === t.code" (click)="type.set(t.code)">{{ t.libelle }}</button>
             }
           </div>
-          <label for="m-recherche">Référence ou description</label>
+          <label for="m-recherche">Référence, ancien n° ou description</label>
           <input id="m-recherche" type="search" [ngModel]="recherche()" (ngModelChange)="recherche.set($event)"
-                 placeholder="G-12, taille M…">
+                 placeholder="G-12, ancien n°, taille M…">
           @if (affiches().length === 0) {
             <p class="vide">Aucun matériel disponible ici : il est déjà prêté, ou un contrôle est à faire.
               Voyez le directeur technique.</p>
@@ -103,7 +104,7 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
                 <li>
                   <label class="case">
                     <input type="checkbox" [checked]="choisis().includes(e.id)" (change)="basculer(e.id)">
-                    <span>{{ e.typeLibelle }} <strong>{{ e.reference }}</strong>
+                    <span>{{ e.typeLibelle }} <strong>{{ nom(e) }}</strong>
                       @if (e.description) { <span class="secondaire"> — {{ e.description }}</span> }</span>
                   </label>
                 </li>
@@ -168,6 +169,7 @@ export class SejourMaterielComponent implements OnInit {
 
   readonly types = TYPES;
   readonly nomComplet = nomComplet;
+  readonly nom = nomEquipement;
 
   vue = signal<PretsSejourVue | null>(null);
   message = signal<string | null>(null);
@@ -230,7 +232,7 @@ export class SejourMaterielComponent implements OnInit {
   }
 
   annuler(p: PretSejourVue): void {
-    const quoi = p.equipements.map(e => e.reference).join(', ');
+    const quoi = p.equipements.map(nomEquipement).join(', ');
     if (!confirm(`Annuler la déclaration de ${quoi} (${p.emprunteur}) ? Seulement si elle a été faite par erreur.`)) return;
     this.ecrire(this.port().annuler(p.id));
   }

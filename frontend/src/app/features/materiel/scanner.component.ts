@@ -62,7 +62,7 @@ const INTERVALLE_ANALYSE_MS = 250;
 
     <section class="carte bloc">
       <form class="reference" (ngSubmit)="chercherReference()">
-        <label for="reference">Étiquette illisible ? Référence du club</label>
+        <label for="reference">Étiquette illisible ? Référence du club ou ancien n°</label>
         <div class="ligne">
           <input id="reference" name="reference" [(ngModel)]="reference" placeholder="B-12, G-07…" maxlength="30"
                  autocapitalize="characters">

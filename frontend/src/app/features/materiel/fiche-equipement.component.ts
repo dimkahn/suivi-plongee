@@ -12,6 +12,7 @@ import {
 } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { descriptionEquipement } from './materiel';
+import { nomEquipement } from '../../core/nom-equipement';
 import { DialogueComponent } from '../../core/dialogue.component';
 
 function demandeVide(type: TypeEquipement): DemandeEquipement {
@@ -60,7 +61,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
     } @else if (creation() && !gere()) {
       <p class="vide">L'ajout d'équipements est réservé au directeur technique.</p>
     } @else if (creation() || edition()) {
-      <h1>{{ creation() ? 'Nouvel équipement' : 'Modifier ' + (fiche()?.equipement?.typeLibelle ?? '') + ' ' + (fiche()?.equipement?.reference ?? '') }}</h1>
+      <h1>{{ creation() ? 'Nouvel équipement' : 'Modifier ' + (fiche()?.equipement?.typeLibelle ?? '') + ' ' + (fiche()?.equipement ? nom(fiche()!.equipement) : '') }}</h1>
 
       <form class="carte formulaire" (ngSubmit)="enregistrer()">
         @if (creation()) {
@@ -556,6 +557,7 @@ export class FicheEquipementComponent {
   readonly types = TYPES_EQUIPEMENT;
   readonly libelleStatut = LIBELLES_STATUT_EQUIPEMENT;
   readonly description = descriptionEquipement;
+  readonly nom = nomEquipement;
   readonly aujourdhui = dateDuJour();
 
   id = signal<number | null>(null);

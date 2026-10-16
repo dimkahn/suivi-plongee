@@ -1413,7 +1413,8 @@ export interface PretVue {
   pretePar: string | null;
   recuPar: string | null;
   remarques: string | null;
-  equipements: { id: number; type: TypeEquipement; typeLibelle: string; reference: string; description: string }[];
+  equipements: { id: number; type: TypeEquipement; typeLibelle: string; reference: string;
+    ancienneReference: string | null; description: string }[];
   photosAvant: number;
   photosApres: number;
 }
@@ -1427,6 +1428,7 @@ export interface PhotoPretVue {
   /** Null : la photo montre tout le lot. */
   equipementId: number | null;
   equipementReference: string | null;
+  equipementAncienneReference: string | null;
   legende: string | null;
   priseLe: string;
   prisePar: string | null;

@@ -1,5 +1,5 @@
 // D5 — Prêter du matériel.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 13e série, ancien numéro du matériel (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -19,7 +19,7 @@ export default {
     const aujourdhui = new Date();
     const dans = n => new Date(aujourdhui.getTime() + n * 864e5).toISOString().slice(0, 10);
     await dater('#retourPrevu', dans(5));
-    await legende('On choisit le matériel dans l\'inventaire.', 0);
+    await legende('On choisit le matériel dans l\'inventaire, par type, référence ou ancien numéro.', 0);
     await toucher(page.locator('form, main').getByRole('button', { name: 'Détendeurs' }).first(), { apres: 800 });
     await cocher(page.locator('label.case').filter({ hasText: 'D-02' }).locator('input'));
     await toucher(page.locator('form, main').getByRole('button', { name: 'Combinaisons' }).first(), { apres: 800 });

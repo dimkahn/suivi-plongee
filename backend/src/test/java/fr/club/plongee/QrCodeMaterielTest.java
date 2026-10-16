@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -111,6 +112,41 @@ class QrCodeMaterielTest {
                         .content("{\"contenu\":\"https://www.ffessm.fr\"}"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.detail", containsString("aucun équipement")));
+    }
+
+    @Test
+    @DisplayName("Une étiquette illisible se retrouve aussi par l'ancien numéro du matériel")
+    void rechercheParAncienNumero() throws Exception {
+        String dt = jeton("e3@club.fr");
+        long id = json.readTree(mvc.perform(post("/api/materiel/equipements").header("Authorization", dt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"type":"GILET","reference":"G-QR4","ancienneReference":"Vieux-QR4"}"""))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        mvc.perform(post("/api/materiel/qr-code").header("Authorization", dt).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"contenu\":\" vieux-qr4 \"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.equipementId").value(id));
+    }
+
+    @Test
+    @DisplayName("Un ancien numéro porté par deux équipements ne choisit pas au hasard")
+    void ancienNumeroAmbigu() throws Exception {
+        String dt = jeton("e3@club.fr");
+        for (String reference : List.of("G-QR5", "G-QR6")) {
+            mvc.perform(post("/api/materiel/equipements").header("Authorization", dt)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                     {"type":"GILET","reference":"%s","ancienneReference":"Double-QR"}""".formatted(reference)))
+                    .andExpect(status().isCreated());
+        }
+
+        mvc.perform(post("/api/materiel/qr-code").header("Authorization", dt).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"contenu\":\"Double-QR\"}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail", containsString("G-QR5")))
+                .andExpect(jsonPath("$.detail", containsString("G-QR6")));
     }
 
     @Test

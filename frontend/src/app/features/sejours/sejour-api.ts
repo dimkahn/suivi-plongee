@@ -270,12 +270,13 @@ export interface PortFrais {
 
 export type TypeEquipement = 'BLOC' | 'DETENDEUR' | 'GILET' | 'COMBINAISON';
 
-/** Un équipement du club : « Gilet G-12 — Aqualung, taille M ». */
+/** Un équipement du club : « Gilet G-12 (ancien n° 30) — Aqualung, taille M ». */
 export interface EquipementSejourVue {
   id: number;
   type: TypeEquipement;
   typeLibelle: string;
   reference: string;
+  ancienneReference: string | null;
   description: string;
 }
 

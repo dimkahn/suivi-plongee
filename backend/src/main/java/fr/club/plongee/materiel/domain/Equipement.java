@@ -127,9 +127,9 @@ public class Equipement {
         return dateRebut != null;
     }
 
-    /** « Bloc B-12 », pour les messages. */
+    /** « Bloc B-12 », ou « Bloc B-12 (ancien n° 12) » s'il a été renuméroté, pour les messages. */
     public String designation() {
-        return type.libelle() + " " + reference;
+        return type.libelle() + " " + reference + (ancienneReference == null ? "" : " (ancien n° " + ancienneReference + ")");
     }
 
     public Long getId() {

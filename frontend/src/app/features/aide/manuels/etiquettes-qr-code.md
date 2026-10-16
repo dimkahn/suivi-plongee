@@ -2,7 +2,7 @@
 titre: Étiquettes QR code et scanner
 rubrique: Directeur technique
 ecran: /materiel/scanner
-mots: QR code, étiquette, étiquettes, scanner, scan, imprimer, appareil photo, coller, iPhone, référence
+mots: QR code, étiquette, étiquettes, scanner, scan, imprimer, appareil photo, coller, iPhone, référence, ancien numéro
 questions:
 - Comment imprimer les étiquettes QR code du matériel ?
 - Comment scanner l'étiquette d'un bloc ?
@@ -22,7 +22,7 @@ Chaque équipement peut porter une étiquette QR code : la scanner ouvre directe
 1. Dans « Matériel », « Scanner une étiquette ».
 2. Visez le QR code : la fiche s'ouvre toute seule.
 3. Sur iPhone, prenez l'étiquette en photo : elle est lue par le serveur.
-4. Étiquette illisible ? Saisissez la référence du club.
+4. Étiquette illisible ? Saisissez la référence du club, ou son ancien numéro. Si plusieurs équipements ont eu le même ancien numéro, l'appli les cite : saisissez alors la référence actuelle.
 
 ## Bon à savoir
 

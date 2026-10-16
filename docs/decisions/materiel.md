@@ -29,6 +29,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/materiel.m
 - **Décision** : import par titres de colonnes ; V33 a ajouté `proprietaire`, `constructeur`, `ancienne_reference`, `numero_robinet` pour ne rien perdre du classeur.
 - **Conséquences** : réimport sans doublon ; le fichier du club n'est pas dans le dépôt, le test fabrique le sien. Un export au même format a suivi, réimportable sans perte.
 
+## L'ancien numéro suit le matériel partout
+
+- **Date** : 2026-10.
+- **Contexte** : demande du club : un matériel renuméroté doit toujours montrer son nom et son ancien nom, à l'affichage comme à la recherche ; les vieilles étiquettes et les habitudes restent.
+- **Décision** : « B-12 (ancien n° 12) » partout (`core/nom-equipement.ts` côté écran, `Equipement.designation()` dans les messages du serveur) ; les vues de prêt, de photo de prêt et de séjour portent `ancienneReference`. Chaque recherche (inventaire, prêts, séjour, scanner) trouve aussi l'ancien numéro. Au scanner, la référence actuelle prime ; un ancien numéro porté par plusieurs équipements est refusé en les citant, plutôt que d'en choisir un.
+
 ## Fiche d'inspection TIV
 
 - **Date** : 2026, V34.
