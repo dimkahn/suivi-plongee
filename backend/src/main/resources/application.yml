@@ -44,6 +44,11 @@ app:
   # ELEVE ne peut pas se connecter. Les eleves passent par le lien et le code
   # des sejours. A rouvrir (true) le jour ou le club cree des comptes eleves.
   comptes-eleves-ouverts: ${COMPTES_ELEVES_OUVERTS:false}
+  # Lecture du total et de la date sur la photo d'une note de frais (sejour),
+  # par Claude (Anthropic, payant a l'usage). Cle vide = lecture non proposee.
+  lecture-notes:
+    cle-api: ${LECTURE_NOTES_CLE_API:}
+    modele: ${LECTURE_NOTES_MODELE:claude-sonnet-5}
 
 # Seul /actuator/health est exposé (autorisé sans jeton dans SecurityConfig),
 # pour le contrôle de santé du déploiement. Le serveur SMTP n'y est pas

@@ -99,6 +99,15 @@ public class AccesSejourController {
         return new DepenseCreeePublique(id, acces.vue(code, a));
     }
 
+    @PostMapping(value = "/depenses/lecture-note", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public LecteurNote.NoteLue lireNote(@PathVariable String code,
+                                        @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                        @RequestParam("fichier") MultipartFile fichier) {
+        Acces a = acces.acces(code, jeton);
+        return frais.lireNote(a.sortieId(), SejourController.octets(fichier), fichier.getContentType(),
+                frais.acteurParticipant(a.participantId()));
+    }
+
     @PutMapping("/depenses/{depenseId}")
     public FraisPublicVue modifierDepense(@PathVariable String code, @PathVariable Long depenseId,
                                           @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,

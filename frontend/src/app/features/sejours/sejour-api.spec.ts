@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { jourDuDepart, voyagesDuJour } from './programme-du-jour';
-import { ParticipantVue, copieTrajet, texteTrajet, trajetSaisi } from './sejour-api';
+import { ParticipantVue, completerAvecNote, copieTrajet, texteTrajet, trajetSaisi } from './sejour-api';
+
+describe('Montant et date lus sur la photo de la note', () => {
+  it('remplissent les champs vides de la dépense', () => {
+    expect(completerAvecNote({ montant: '', jour: null }, { montantCentimes: 4580, jour: '2027-06-12' }))
+      .toEqual({ montant: '45,80', jour: '2027-06-12', remplis: ['le montant', 'la date'] });
+  });
+
+  it("n'écrasent jamais ce qui a déjà été saisi", () => {
+    expect(completerAvecNote({ montant: '12', jour: null }, { montantCentimes: 4580, jour: '2027-06-12' }))
+      .toEqual({ montant: '12', jour: '2027-06-12', remplis: ['la date'] });
+  });
+
+  it('ne remplissent rien de ce qui est illisible', () => {
+    expect(completerAvecNote({ montant: '', jour: '' }, { montantCentimes: null, jour: null }))
+      .toEqual({ montant: '', jour: '', remplis: [] });
+  });
+});
 
 describe('Trajet du voyage retour', () => {
   const retour = {

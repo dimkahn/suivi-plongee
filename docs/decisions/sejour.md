@@ -76,6 +76,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Contexte** : un vol long (escale, décalage horaire) part deux jours avant l'arrivée ou arrive deux jours après le départ ; l'écran ne savait que deviner la veille (heure de départ plus tard que l'heure d'arrivée).
 - **Décision** : `arrivee_date_depart` et `depart_date_arrivee` (V87), facultatifs : vides, on garde le jour du trajet et la déduction de la veille. Montrés seulement s'ils diffèrent du jour du trajet (fiche, « Un même vol pour plusieurs », « Mes informations », Mon séjour, carnet par e-mail, encart « Aujourd'hui »). L'encart s'ouvre dès le jour de départ saisi. Un avion qui arriverait un jour avant celui où il part est refusé (422, `Trajet.verifierJours`).
 
+## Montant et date lus sur la photo de la note
+
+- **Date** : 2026-10, demande du club.
+- **Contexte** : on prend la photo de la note, puis on recopie à la main le total et la date qui y figurent.
+- **Décision** : à la photo choisie dans « Ajouter une dépense », l'écran demande au serveur (`POST …/depenses/lecture-note`, aussi sous `/api/public/sejour/{code}`) le total et la date ; ils remplissent les cases encore vides, jamais ce qui est saisi, et restent à vérifier. Lecture par Claude (Anthropic) plutôt qu'un OCR embarqué (Tesseract) : les tickets froissés ou thermiques sont bien mieux lus, et trouver « le total » parmi sous-totaux, TVA et monnaie rendue demande de comprendre la note. Réservé à qui peut saisir la dépense (`ActeurFrais.peutAjouter`), rien n'est gardé. Facultatif par installation : `LECTURE_NOTES_CLE_API` vide = rien n'est proposé (`FraisVue.droits.lireNotes`).
+- **Conséquences** : la photo de la note part chez Anthropic au moment de la lecture ; payant à l'usage (moins d'un centime par photo). Les tests remplacent le lecteur par un faux (`LectureNoteTest`).
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.

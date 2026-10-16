@@ -50,6 +50,7 @@ services:
       SMTP_MOT_DE_PASSE: ${SMTP_MOT_DE_PASSE:?definir SMTP_MOT_DE_PASSE dans .env (mot de passe d'application pour Gmail)}
       MAIL_EXPEDITEUR: ${MAIL_EXPEDITEUR:-Club de plongee <no-reply@cppjvo.fr>}
       CLUB_NOM: ${CLUB_NOM:-Club de plongee}
+      LECTURE_NOTES_CLE_API: ${LECTURE_NOTES_CLE_API:-}
     depends_on:
       db:
         condition: service_healthy
