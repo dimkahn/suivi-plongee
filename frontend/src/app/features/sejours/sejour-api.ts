@@ -223,7 +223,10 @@ export interface DroitsFrais {
   pourLesAutres: boolean;
   depensesModifiables: number[];
   versementsSupprimables: number[];
-  /** Montant et date lus sur la photo de la note (lecture réglée pour l'installation). */
+  /**
+   * Lecture des notes par l'IA, réglée pour l'installation ; sinon (ou si elle ne répond pas)
+   * la note est lue sur le téléphone (`ocr-ticket.ts`).
+   */
   lireNotes: boolean;
 }
 

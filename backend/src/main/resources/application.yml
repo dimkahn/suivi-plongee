@@ -45,7 +45,8 @@ app:
   # des sejours. A rouvrir (true) le jour ou le club cree des comptes eleves.
   comptes-eleves-ouverts: ${COMPTES_ELEVES_OUVERTS:false}
   # Lecture du total et de la date sur la photo d'une note de frais (sejour),
-  # par Claude (Anthropic, payant a l'usage). Cle vide = lecture non proposee.
+  # par Claude (Anthropic, payant a l'usage). Cle vide = lecture sur le
+  # telephone seulement (OCR Tesseract, cote ecran).
   lecture-notes:
     cle-api: ${LECTURE_NOTES_CLE_API:}
     modele: ${LECTURE_NOTES_MODELE:claude-sonnet-5}
