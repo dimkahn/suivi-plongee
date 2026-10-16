@@ -35,8 +35,7 @@ cd backend && mvn -q test -Dtest=ArchitectureHexagonaleTest
 cd backend && mvn test                                   # tout, avant chaque commit
 ```
 
-Outils pour l'IA (`.claude/`) : skills `refactoriser-hexagonal` (avant toute
-modification de logique), `nouvel-ecran`, `nouvel-endpoint`,
+Outils pour l'IA (`.claude/`) :  `nouvel-ecran`, `nouvel-endpoint`,
 `nouvelle-migration`, `lancer-appli` (vérifier dans le navigateur, comptes de
 démo) ; agent `relecteur-donnees-personnelles` (avant un commit qui touche
 des données de personnes) ; hooks : migrations publiées protégées, rappel
@@ -134,43 +133,7 @@ range en trois couches, et rien à la racine du domaine :
   dépôts Spring Data qui étendent le port, les classes `JdbcTemplate` ;
   `courriel`, `calendrier`…). Un adaptateur n'est utilisé que par son
   domaine (et `config`) ; entrée et sortie ne se voient pas.
-
-`commun`, `config` et `audit` sont techniques, hors de cette règle.
-`ArchitectureHexagonaleTest` (ArchUnit, dans `mvn test`) le vérifie. Les
-domaines pas encore migrés sont dans `DOMAINES_EN_COUCHES` : **cette liste
-ne fait que diminuer**, on n'y ajoute jamais rien, et un domaine neuf naît
-hexagonal.
-
-**Toujours refactoriser : exécuter le skill `refactoriser-hexagonal`
-(`.claude/skills/refactoriser-hexagonal/SKILL.md`) avant toute
-modification de logique (fonctionnalité, correction de bug, règle métier),
-backend ou frontend, sans attendre qu'on le demande** ; une retouche de
-texte, de style ou de documentation n'en relève pas. En bref : un domaine
-touché encore en couches est d'abord migré en
-entier vers l'hexagonal, dans un commit de refactorisation à part (aucun
-changement de comportement, `mvn test` vert, domaine retiré de
-`DOMAINES_EN_COUCHES`), puis vient la fonctionnalité dans un second
-commit ; et le code touché est remis au propre au passage.
-
-**Développement piloté par les tests (choix de 2026).** Aucune ligne de
-code de production sans un test qui échoue d'abord : fonctionnalité,
-règle métier ou correction de bug (le bug se reproduit d'abord par un test
-rouge). Cycle **rouge → vert → refactoriser**, à petits pas : écrire un
-seul test, le lancer et le **voir échouer pour la raison attendue** (une
-assertion, pas une faute de frappe) ; écrire le code le plus simple qui le
-fait passer ; remettre au propre, tests verts. Le détail (quel niveau de
-test, bonnes pratiques) est l'étape 3 du skill `refactoriser-hexagonal`.
-Règles qui ne se discutent pas :
-- on ne supprime, n'affaiblit ni ne désactive (`@Disabled`) un test pour
-  faire passer la suite ; un test devenu faux par un changement voulu se
-  corrige, et le résumé le dit ;
-- test et code partent dans le **même commit**, `mvn test` vert : jamais
-  de commit rouge sur `master` ;
-- le résumé nomme les tests écrits et dit qu'ils ont été vus rouges.
-Frontend : Vitest (`ng test`, fichiers `*.spec.ts` à côté du code). Une
-logique d'écran non triviale se place dans une fonction pure (`core/` ou à
-côté du composant) et se teste ainsi ; une règle métier va au serveur, où
-elle se teste aussi.
+  
 
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via
