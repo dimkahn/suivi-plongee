@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public interface LecteurNote {
 
     /** Ce qui a pu être lu ; un champ illisible reste null. */
-    record NoteLue(Long montantCentimes, LocalDate jour) {}
+    record NoteLue(Long montantCentimes, LocalDate jour, FraisSejour.CategorieDepense categorie) {}
 
     boolean actif();
 

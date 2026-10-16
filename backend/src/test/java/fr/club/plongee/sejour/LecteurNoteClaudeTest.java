@@ -20,22 +20,22 @@ class LecteurNoteClaudeTest {
     }
 
     @Test
-    @DisplayName("Le total en euros devient des centimes, la date un jour")
-    void totalEtDate() {
-        assertThat(interpreter("{\"montant_total\":45.8,\"date_achat\":\"2027-06-12\"}"))
-                .isEqualTo(new LecteurNote.NoteLue(4580L, LocalDate.of(2027, 6, 12)));
+    @DisplayName("Le total en euros devient des centimes, la date un jour, la catégorie celle des frais")
+    void totalDateEtCategorie() {
+        assertThat(interpreter("{\"montant_total\":45.8,\"date_achat\":\"2027-06-12\",\"categorie\":\"REPAS\"}"))
+                .isEqualTo(new LecteurNote.NoteLue(4580L, LocalDate.of(2027, 6, 12), FraisSejour.CategorieDepense.REPAS));
         assertThat(interpreter("{\"montant_total\":12.345,\"date_achat\":null}").montantCentimes()).isEqualTo(1235L);
     }
 
     @Test
     @DisplayName("Ce qui n'a pas pu être lu, ou n'a pas de sens, reste vide")
     void illisibleResteVide() {
-        assertThat(interpreter("{\"montant_total\":null,\"date_achat\":\"12/06/2027\"}"))
-                .isEqualTo(new LecteurNote.NoteLue(null, null));
-        assertThat(interpreter("{\"montant_total\":-3,\"date_achat\":\"2027-02-30\"}"))
-                .isEqualTo(new LecteurNote.NoteLue(null, null));
+        assertThat(interpreter("{\"montant_total\":null,\"date_achat\":\"12/06/2027\",\"categorie\":null}"))
+                .isEqualTo(new LecteurNote.NoteLue(null, null, null));
+        assertThat(interpreter("{\"montant_total\":-3,\"date_achat\":\"2027-02-30\",\"categorie\":\"GLACES\"}"))
+                .isEqualTo(new LecteurNote.NoteLue(null, null, null));
         assertThat(interpreter("{\"montant_total\":250000}").montantCentimes()).isNull();
         assertThat(LecteurNoteClaude.interpreter(json.readTree("{\"content\":[]}")))
-                .isEqualTo(new LecteurNote.NoteLue(null, null));
+                .isEqualTo(new LecteurNote.NoteLue(null, null, null));
     }
 }

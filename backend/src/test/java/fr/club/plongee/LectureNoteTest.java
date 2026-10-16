@@ -2,6 +2,7 @@ package fr.club.plongee;
 
 import fr.club.plongee.notification.service.ServiceNotification;
 import fr.club.plongee.securite.domain.Utilisateur;
+import fr.club.plongee.sejour.FraisSejour;
 import fr.club.plongee.sejour.LecteurNote;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,7 +68,7 @@ class LectureNoteTest {
             return new LecteurNote() {
                 @Override public boolean actif() { return lecteurActif; }
                 @Override public NoteLue lire(byte[] image, String type) {
-                    return new NoteLue(4580L, LocalDate.of(2027, 6, 12));
+                    return new NoteLue(4580L, LocalDate.of(2027, 6, 12), FraisSejour.CategorieDepense.REPAS);
                 }
             };
         }
@@ -138,6 +139,7 @@ class LectureNoteTest {
         JsonNode lue = lireNote(base, e2, 200);
         assertThat(lue.get("montantCentimes").asLong()).isEqualTo(4580);
         assertThat(lue.get("jour").asText()).isEqualTo("2027-06-12");
+        assertThat(lue.get("categorie").asText()).isEqualTo("REPAS");
     }
 
     @Test

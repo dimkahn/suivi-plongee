@@ -340,17 +340,19 @@ export function euros(centimes: number): string {
   return (centimes / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
 }
 
-/** Montant total et date lus sur la photo d'une note (null : illisible). */
+/** Montant total, date et catégorie lus sur la photo d'une note (null : illisible). */
 export interface NoteLue {
   montantCentimes: number | null;
   jour: string | null;
+  categorie: CategorieDepense | null;
 }
 
-/** Ce que la note lue remplit d'une dépense : seulement les champs encore vides. */
-export function completerAvecNote(saisie: { montant: string; jour: string | null }, note: NoteLue):
-  { montant: string; jour: string | null; remplis: string[] } {
+/** Ce que la note lue remplit d'une dépense : seulement les champs encore vides (catégorie : encore « Autre »). */
+export function completerAvecNote(saisie: { montant: string; jour: string | null; categorie: CategorieDepense },
+                                  note: NoteLue):
+  { montant: string; jour: string | null; categorie: CategorieDepense; remplis: string[] } {
   const remplis: string[] = [];
-  let { montant, jour } = saisie;
+  let { montant, jour, categorie } = saisie;
   if (!montant.trim() && note.montantCentimes) {
     montant = (note.montantCentimes / 100).toFixed(2).replace('.', ',');
     remplis.push('le montant');
@@ -359,7 +361,11 @@ export function completerAvecNote(saisie: { montant: string; jour: string | null
     jour = note.jour;
     remplis.push('la date');
   }
-  return { montant, jour, remplis };
+  if (categorie === 'AUTRE' && note.categorie && note.categorie !== 'AUTRE') {
+    categorie = note.categorie;
+    remplis.push('la catégorie');
+  }
+  return { montant, jour, categorie, remplis };
 }
 
 /** « 12,5 » ou « 12.50 » → 1250 ; null si ce n'est pas un montant. */

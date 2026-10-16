@@ -236,7 +236,7 @@ interface PhotoAEnvoyer {
                (change)="choisirPhotos($event)">
         @if (lectureNote(); as l) { <p class="lecture-note" role="status">{{ l }}</p> }
         <p class="secondaire">Une photo lisible du ticket ou de la facture : chacun peut la voir.
-          @if (d.lireNotes) { Le montant total et la date y sont lus pour remplir les cases vides : vérifiez-les. }</p>
+          @if (d.lireNotes) { Le montant total, la date et la catégorie y sont lus pour remplir les cases vides : vérifiez-les. }</p>
       </fieldset>
 
       <fieldset>
@@ -559,20 +559,28 @@ export class SejourFraisComponent {
     }
   }
 
-  /** Le montant total et la date lus sur la photo remplissent les cases encore vides, jamais ce qui est saisi. */
+  /**
+   * Le montant total, la date et la catégorie lus sur la photo remplissent les cases encore vides
+   * (catégorie encore « Autre »), jamais ce qui est saisi.
+   */
   private async lireNote(photo: File): Promise<void> {
-    if (!this.frais().droits.lireNotes || (this.depense.montant.trim() && this.depense.jour)) return;
+    const d = this.depense;
+    if (!this.frais().droits.lireNotes || (d.montant.trim() && d.jour && d.categorie !== 'AUTRE')) return;
     const ouverture = this.ouverture;
-    this.lectureNote.set('Lecture du montant et de la date sur la note…');
+    this.lectureNote.set('Lecture de la note…');
     try {
       const note = await firstValueFrom(this.port().lireNote(photo));
       if (ouverture !== this.ouverture) return;
       const c = completerAvecNote(this.depense, note);
       this.depense.montant = c.montant;
       this.depense.jour = c.jour;
+      this.depense.categorie = c.categorie;
       this.calculerApercu();
-      this.lectureNote.set(c.remplis.length
-        ? `Lu sur la note : ${c.remplis.join(' et ')}. Vérifiez avant d’enregistrer.`
+      const lus = c.remplis.length > 1
+        ? c.remplis.slice(0, -1).join(', ') + ' et ' + c.remplis[c.remplis.length - 1]
+        : c.remplis[0];
+      this.lectureNote.set(lus
+        ? `Lu sur la note : ${lus}. Vérifiez avant d’enregistrer.`
         : 'Rien de plus n’a pu être lu sur la note : complétez à la main.');
     } catch (e) {
       if (ouverture !== this.ouverture) return;
