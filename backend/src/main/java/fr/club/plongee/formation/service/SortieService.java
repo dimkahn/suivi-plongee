@@ -7,7 +7,7 @@ import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.domain.Sortie;
 import fr.club.plongee.formation.repository.SeanceRepository;
 import fr.club.plongee.formation.repository.SortieRepository;
-import fr.club.plongee.materiel.domaine.port.Prets;
+import fr.club.plongee.materiel.repository.PretRepository;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -45,9 +45,9 @@ public class SortieService {
 
     private final SortieRepository sorties;
     private final SeanceRepository seances;
-    private final Prets prets;
+    private final PretRepository prets;
 
-    public SortieService(SortieRepository sorties, SeanceRepository seances, Prets prets) {
+    public SortieService(SortieRepository sorties, SeanceRepository seances, PretRepository prets) {
         this.sorties = sorties;
         this.seances = seances;
         this.prets = prets;
