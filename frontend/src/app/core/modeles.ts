@@ -53,6 +53,15 @@ export interface CandidatInscription {
   motifProposition: string;
 }
 
+/** Inscription au club à jour pour une saison (V86) : présente = OK, absente = KO. */
+export interface InscriptionClubVue {
+  eleveId: number;
+  saisonId: number;
+  inscritLe: string;
+  /** Qui l'a notée ; null si son compte a été supprimé. */
+  saisiPar: string | null;
+}
+
 export interface AdhesionVue {
   id: number;
   eleveId: number;

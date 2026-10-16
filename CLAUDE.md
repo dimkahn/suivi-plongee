@@ -183,6 +183,14 @@ n'apparaît pas dans le roster de présence). Écran : `/admin/eleves`, filtre
 les présences d'un élève sans Cursus, c'est un vrai chantier sur
 `Participation`, pas une extension de `AdhesionSaison`.
 
+**L'inscription au club à jour se note par saison (choix du club, 2026).**
+Table `inscription_club` (V86, une ligne = OK, pas de ligne = KO),
+`/api/inscriptions-club`, ADMIN pour la changer, MONITEUR pour la lire.
+Pastille OK verte / KO rouge sur chaque carte de `/admin/eleves` pour la
+saison choisie, et filtre « Inscription au club ». Distincte
+d'`AdhesionSaison` et de `Cursus` (faire partie de la saison n'est pas
+avoir réglé son inscription) ; à la saison suivante tout repart à KO.
+
 **Le hors ligne passe par une file, pas par un cache d'écriture.** Une
 notation est écrite dans IndexedDB avec une référence client (UUID), puis
 rejouée par `POST /api/synchronisation/evaluations`, qui répond élément par

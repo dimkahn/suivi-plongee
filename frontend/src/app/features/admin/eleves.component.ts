@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
+import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, InscriptionClubVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
@@ -246,6 +246,15 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           <option value="A_VERIFIER">À vérifier (expiré, bientôt échu ou non renseigné)</option>
         </select>
       </div>
+      <div>
+        <label for="filtre-inscription">Inscription au club</label>
+        <select id="filtre-inscription" name="filtreInscription" [ngModel]="filtreInscription()"
+                (ngModelChange)="filtreInscription.set($event)">
+          <option value="TOUS">Tous</option>
+          <option value="KO">KO : pas à jour</option>
+          <option value="OK">OK : à jour</option>
+        </select>
+      </div>
     </section>
 
     @if (aVerifier() > 0) {
@@ -276,6 +285,14 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                   <span class="secondaire">
                     {{ e.numeroLicence ? 'Licence ' + e.numeroLicence : 'Sans licence' }}
                   </span>
+                  @if (filtreSaisonId(); as saisonId) {
+                    <button type="button" class="inscription-club" [class.ok]="inscrit(e)"
+                            [attr.aria-pressed]="inscrit(e)" [disabled]="envoiInscription() === e.id"
+                            [title]="inscrit(e) ? 'Toucher si l’inscription n’est plus à jour' : 'Toucher quand l’inscription est réglée'"
+                            (click)="basculerInscription(e)">
+                      Inscription {{ saisonLibelle(saisonId) }} : {{ inscrit(e) ? 'OK' : 'KO' }}
+                    </button>
+                  }
                   <span [class]="'caci caci-' + etatCaci(e.certificatValideJusquAu)">
                     {{ libelleCaci(e.certificatValideJusquAu) }}
                   </span>
@@ -440,6 +457,13 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     .caci-valide { color: var(--acquis); }
     .caci-bientot { color: var(--en-cours); }
     .caci-expire, .caci-absent { color: #B3261E; }
+    /* Inscription au club de la saison : OK en vert, KO en rouge ; un appui la change (ADMIN). */
+    .inscription-club {
+      align-self: flex-start; min-height: 44px; padding: 4px 14px; border-radius: 999px;
+      font-size: .875rem; font-weight: 700; color: #B3261E; background: #FDECEA; border: 1px solid #B3261E;
+    }
+    .inscription-club.ok { color: var(--acquis); background: color-mix(in srgb, var(--acquis) 12%, white);
+                           border-color: var(--acquis); }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -494,6 +518,8 @@ export class ElevesComponent {
   saisons = signal<SaisonVue[]>([]);
   cursusDeLaSaison = signal<CursusVue[]>([]);
   adhesionsDeLaSaison = signal<AdhesionVue[]>([]);
+  inscriptionsClub = signal<InscriptionClubVue[]>([]);
+  envoiInscription = signal<number | null>(null);
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
@@ -511,6 +537,7 @@ export class ElevesComponent {
   filtreSaisonId = signal<number | null>(null);
   filtreStatut = signal('TOUS');
   filtreCaci = signal<'TOUS' | 'A_VERIFIER'>('TOUS');
+  filtreInscription = signal<'TOUS' | 'OK' | 'KO'>('TOUS');
 
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
@@ -544,6 +571,7 @@ export class ElevesComponent {
     return this.liste().filter(e => {
       if (recherche && !`${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche)) return false;
       if (this.filtreCaci() === 'A_VERIFIER' && etatCaci(e.certificatValideJusquAu) === 'valide') return false;
+      if (this.filtreInscription() !== 'TOUS' && this.inscrit(e) !== (this.filtreInscription() === 'OK')) return false;
       if (statut === 'TOUS') return true;
       const cursus = cursusParEleve.get(e.id) ?? [];
       // Sans formation cette saison : compte comme rattaché s'il a une adhésion.
@@ -551,6 +579,31 @@ export class ElevesComponent {
       return cursus.some(c => c.statut === statut);
     });
   });
+
+  inscrit(e: EleveVue): boolean {
+    return this.inscriptionsClub().some(i => i.eleveId === e.id);
+  }
+
+  /** OK ↔ KO pour la saison choisie : un appui sur la pastille de la carte. */
+  basculerInscription(e: EleveVue): void {
+    const saisonId = this.filtreSaisonId();
+    if (!saisonId) return;
+    const aJour = !this.inscrit(e);
+    this.envoiInscription.set(e.id);
+    this.message.set(null);
+    this.api.changerInscriptionClub(saisonId, e.id, aJour).subscribe({
+      next: () => {
+        this.envoiInscription.set(null);
+        this.inscriptionsClub.set(aJour
+          ? [...this.inscriptionsClub(), { eleveId: e.id, saisonId, inscritLe: new Date().toISOString(), saisiPar: null }]
+          : this.inscriptionsClub().filter(i => i.eleveId !== e.id));
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoiInscription.set(null);
+        this.message.set(err.error?.detail ?? "L'inscription au club n'a pas pu être enregistrée.");
+      }
+    });
+  }
 
   aCursus(e: EleveVue): boolean {
     return this.cursusDeLaSaison().some(c => c.eleveId === e.id);
@@ -645,12 +698,14 @@ export class ElevesComponent {
   async changerSaison(saisonId: number): Promise<void> {
     this.filtreSaisonId.set(saisonId);
     try {
-      const [cursus, adhesions] = await Promise.all([
+      const [cursus, adhesions, inscriptions] = await Promise.all([
         firstValueFrom(this.api.cursusDeLaSaison(saisonId)),
-        firstValueFrom(this.api.adhesionsDeLaSaison(saisonId))
+        firstValueFrom(this.api.adhesionsDeLaSaison(saisonId)),
+        firstValueFrom(this.api.inscriptionsClub(saisonId))
       ]);
       this.cursusDeLaSaison.set(cursus);
       this.adhesionsDeLaSaison.set(adhesions);
+      this.inscriptionsClub.set(inscriptions);
     } catch {
       this.message.set("Impossible de charger les inscriptions de cette saison.");
     }

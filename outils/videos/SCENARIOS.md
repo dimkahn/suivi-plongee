@@ -525,7 +525,7 @@ Compte : `presidente@club.fr` · format ordinateur · 42 s
 
 ### A6 — Créer le dossier d'un élève
 
-Le dossier d'un élève : identité, CACI, contact d'urgence, autorisation de pratiquer et droit à l'image.
+Le dossier d'un élève : identité, CACI, contact d'urgence, autorisation de pratiquer, droit à l'image, et l'inscription au club de la saison.
 
 Compte : `presidente@club.fr` · format ordinateur · 41 s
 
@@ -533,7 +533,10 @@ Compte : `presidente@club.fr` · format ordinateur · 41 s
 2. Nathan est mineur : l'autorisation du responsable légal couvre la pratique…
 3. … le droit à l'image est un accord à part. Sans lui, pas de photo.
 4. Sa formation sera choisie à l'inscription (vidéo suivante).
-5. Un élève qui quitte le club s'archive : son historique reste.
+5. Sur chaque carte, l'inscription au club de la saison : OK en vert, KO en rouge.
+6. Anis a réglé son inscription : un appui sur sa pastille la passe à OK.
+7. Le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.
+8. Un élève qui quitte le club s'archive : son historique reste.
 
 ### A7 — Inscrire un élève en formation
 
