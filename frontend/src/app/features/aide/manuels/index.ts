@@ -58,6 +58,7 @@ import classeurExcelMateriel from './classeur-excel-materiel.md';
 import suivreSaProgression from './suivre-sa-progression.md';
 import carnetDuSejour from './carnet-du-sejour.md';
 import sejourParLien from './sejour-par-lien.md';
+import materielDuSejour from './materiel-du-sejour.md';
 
 /**
  * Tous les manuels, dans l'ordre d'affichage de chaque rubrique. Un nouveau
@@ -121,7 +122,8 @@ const SOURCES: Record<string, string> = {
 
   'suivre-sa-progression': suivreSaProgression,
   'carnet-du-sejour': carnetDuSejour,
-  'sejour-par-lien': sejourParLien
+  'sejour-par-lien': sejourParLien,
+  'materiel-du-sejour': materielDuSejour
 };
 
 export const MANUELS: Manuel[] = Object.entries(SOURCES).map(([id, source]) => lireManuel(id, source));

@@ -133,7 +133,7 @@ public class AccesSejourService {
                     + "renseigner vos informations : votre arrivée et votre départ (avec le numéro de vol ou de "
                     + "train), votre téléphone, vos repas (régime alimentaire) et la personne à prévenir en cas "
                     + "d'urgence. Vous y trouverez aussi les frais partagés du séjour : notez-y ce que vous payez, "
-                    + "avec la photo de la note.\n\n";
+                    + "avec la photo de la note ; et déclarez-y le matériel du club que vous empruntez.\n\n";
             String corps = d.encadrant()
                     ? debut + "Dans l'appli, menu « Séjours », puis « Modifier mes informations » :\n"
                             + urlFrontend + "/sejours/" + sortieId + "\n\n"

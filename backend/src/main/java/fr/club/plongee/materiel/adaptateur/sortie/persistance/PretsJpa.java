@@ -41,6 +41,16 @@ interface PretsJpa extends JpaRepository<Pret, Long>, Prets {
     List<Pret> parEquipement(@Param("equipementId") Long equipementId);
 
     @Override
+    @Query("""
+           select distinct p from Pret p
+             left join fetch p.equipements
+             left join fetch p.sortie
+            where p.sortie.id = :sortieId
+            order by p.datePret desc, p.id desc
+           """)
+    List<Pret> parSortie(@Param("sortieId") Long sortieId);
+
+    @Override
     boolean existsBySortieId(Long sortieId);
 
     @Override
