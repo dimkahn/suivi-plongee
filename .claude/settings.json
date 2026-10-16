@@ -21,10 +21,27 @@
       "Bash(git status *)",
       "Bash(git diff *)",
       "Bash(git log *)",
-      "Bash(git show *)"
+      "Bash(git show *)",
+      "Bash(mvn test *)",
+      "Bash(mvn -q test *)",
+      "Bash(npm test *)",
+      "Bash(npm run build *)",
+      "Bash(npx ng build *)",
+      "Bash(npx ng test *)",
+      "Bash(npx tsc *)"
     ]
   },
   "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/rappel-aide-videos.sh"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",

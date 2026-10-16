@@ -1,6 +1,6 @@
 ---
 name: refactoriser-hexagonal
-description: À exécuter OBLIGATOIREMENT avant toute modification du code (backend ou frontend) de suivi-plongee, fonctionnalité comme correction. Migre vers l'architecture hexagonale le domaine backend touché s'il est encore en couches (commit de refactorisation à part), fait la modification en TDD (rouge → vert → refactoriser), puis remet au propre le code touché. Aussi sur demande : « migre le domaine X en hexagonal », « refactorise ».
+description: À exécuter OBLIGATOIREMENT avant toute modification de logique dans suivi-plongee (fonctionnalité, correction de bug, règle métier, backend ou frontend). Pas pour une retouche de texte, de libellé, de style ou de documentation. Migre vers l'architecture hexagonale le domaine backend touché s'il est encore en couches (commit de refactorisation à part), fait la modification en TDD (rouge → vert → refactoriser), puis remet au propre le code touché. Aussi sur demande : « migre le domaine X en hexagonal », « refactorise ».
 argument-hint: "[domaine ou description de la modification]"
 ---
 
@@ -10,6 +10,14 @@ Règle du projet (CLAUDE.md, « Architecture hexagonale, et refactorisation
 systématique ») : on ne modifie jamais un domaine encore en couches, on le
 migre d'abord ; et le code touché est toujours remis au propre. Suivre les
 étapes dans l'ordre, sans en sauter.
+
+## 0. Est-ce une modification de logique ?
+
+- **Non** (texte, libellé, faute de frappe, style CSS, documentation, manuel,
+  scénario de vidéo, configuration) : ne pas migrer de domaine ni exiger de
+  test ; faire la retouche, puis l'étape 4 sur les lignes touchées seulement.
+- **Oui** (comportement, règle métier, donnée, droit, calcul, correction de
+  bug) : suivre toutes les étapes ci-dessous.
 
 ## 1. Repérer les domaines touchés
 
@@ -108,7 +116,7 @@ l'application. Un domaine neuf naît hexagonal.
 ### Le cycle, à répéter par petits pas
 
 1. **Rouge.** Écrire **un seul** test, pour le prochain comportement
-   attendu. Le lancer (`cd backend && mvn test -Dtest=<Classe>#<méthode>`)
+   attendu. Le lancer (`cd backend && mvn test -Dtest=<Classe>#<méthode>`, ou `cd frontend && npm test -- --watch=false`)
    et lire l'échec : il doit échouer **pour la raison attendue**
    (assertion), pas pour une erreur de compilation ou de données. Une
    classe ou méthode encore inexistante : la créer vide, relancer, voir
@@ -132,6 +140,7 @@ comportement :
 | règle métier pure (`domaine`) | JUnit + AssertJ, sans Spring, sans base | `EcheancesProgressionTest` |
 | cas d'usage (`application`) | sans Spring, ports remplacés par des **faux en mémoire** écrits dans le test (Mockito toléré pour un port appelé une fois, pas pour une entité) | `RegleDelivranceServiceTest` |
 | adaptateur de persistance (requête, SQL) | `@SpringBootTest` profil `dev`, base H2 | |
+| logique d'écran (frontend) | Vitest, fonction pure dans un `*.spec.ts` (`npm test -- --watch=false`) | `core/caci.spec.ts` |
 | bout en bout : URL, JSON, droits, refus 422 | `@SpringBootTest` + `@AutoConfigureMockMvc`, profil `dev` | `SortieTest` |
 
 Un nouveau comportement exposé à l'écran a au moins un test de bout en
