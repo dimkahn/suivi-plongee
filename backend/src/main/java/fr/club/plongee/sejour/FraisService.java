@@ -89,13 +89,15 @@ public class FraisService {
     private final SortieService sorties;
     private final DroitsSejour droits;
     private final LecteurNote lecteurNote;
+    private final ReglesLectureService reglesLecture;
 
     public FraisService(NamedParameterJdbcTemplate jdbc, SortieService sorties, DroitsSejour droits,
-                        LecteurNote lecteurNote) {
+                        LecteurNote lecteurNote, ReglesLectureService reglesLecture) {
         this.jdbc = jdbc;
         this.sorties = sorties;
         this.droits = droits;
         this.lecteurNote = lecteurNote;
+        this.reglesLecture = reglesLecture;
     }
 
     // ------------------------------------------------------------------
@@ -216,6 +218,20 @@ public class FraisService {
         }
         PhotoPretService.verifierImage(contenu, type);
         return lecteurNote.lire(contenu, type);
+    }
+
+    /** Les règles apprises des corrections, pour la lecture des notes sur le téléphone. */
+    public List<ReglesLectureService.RegleApprise> reglesLecture(Long sortieId, ActeurFrais acteur) {
+        sorties.sortie(sortieId);
+        verifierPeutAjouter(acteur);
+        return reglesLecture.regles();
+    }
+
+    /** Ce que celui qui saisit a gardé ou corrigé après la lecture d'une note. */
+    public void apprendreLecture(Long sortieId, ReglesLectureService.Lecon lecon, ActeurFrais acteur) {
+        sorties.sortie(sortieId);
+        verifierPeutAjouter(acteur);
+        reglesLecture.apprendre(lecon);
     }
 
     private static void verifierPeutAjouter(ActeurFrais acteur) {

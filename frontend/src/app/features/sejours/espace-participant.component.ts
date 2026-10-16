@@ -14,7 +14,7 @@ import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
   AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
-  PortFrais,
+  PortFrais, RegleLecture,
   PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
@@ -235,6 +235,8 @@ export class EspaceParticipantComponent {
       { headers: this.entetes(), responseType: 'blob' }),
     lireNote: fichier => this.http.post<NoteLue>(`${this.base}/depenses/lecture-note`, formulairePhoto(fichier),
       this.options()),
+    reglesLecture: () => this.http.get<RegleLecture[]>(`${this.base}/lecture-notes/regles`, this.options()),
+    apprendreLecture: lecon => this.http.post<void>(`${this.base}/lecture-notes/apprentissage`, lecon, this.options()),
     ajouterVersement: d => this.suivre(this.http.post<FraisPublicVue>(`${this.base}/versements`, d, this.options())),
     supprimerVersement: versementId => this.suivre(
       this.http.delete<FraisPublicVue>(`${this.base}/versements/${versementId}`, this.options()))

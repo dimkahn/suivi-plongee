@@ -6,9 +6,10 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { dateFr } from '../../core/date-fr';
 import { reduirePhoto } from '../../core/reduire-photo';
 import {
-  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, completerAvecNote,
-  enCentimes, euros, nomComplet
+  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, RegleLecture,
+  completerAvecNote, enCentimes, euros, nomComplet
 } from './sejour-api';
+import { leconDuTicket } from './lecture-ticket';
 
 /** Brouillon d'une dépense : le montant tel que tapé, les parts par participant (0 = ne partage pas). */
 interface BrouillonDepense {
@@ -417,6 +418,9 @@ export class SejourFraisComponent {
   lectureNote = signal<string | null>(null);
   /** Une lecture qui revient après la fermeture de la fenêtre (ou une autre dépense ouverte) est ignorée. */
   private ouverture = 0;
+  /** La dernière note lue sur le téléphone pour la dépense ouverte : son texte reste sur l'appareil. */
+  private lectureTelephone: { texte: string; lue: NoteLue } | null = null;
+  private regles?: Promise<RegleLecture[]>;
 
   versementOuvert = signal(false);
   versement = { deId: null as number | null, aId: null as number | null, montant: '', jour: null as string | null };
@@ -475,6 +479,7 @@ export class SejourFraisComponent {
     this.erreur.set(null);
     this.ouverture++;
     this.lectureNote.set(null);
+    this.lectureTelephone = null;
     this.depenseId = d?.id ?? null;
     this.viderPhotosAEnvoyer();
     this.photosExistantes.set(d?.photos ?? []);
@@ -570,8 +575,9 @@ export class SejourFraisComponent {
     const ouverture = this.ouverture;
     this.lectureNote.set('Lecture de la note… (la première fois, l’outil de lecture se télécharge)');
     try {
-      const note = await this.lireParIaOuSurLeTelephone(photo);
+      const { note, texte } = await this.lireParIaOuSurLeTelephone(photo);
       if (ouverture !== this.ouverture) return;
+      if (texte !== null) this.lectureTelephone = { texte, lue: note };
       const c = completerAvecNote(this.depense, note);
       this.depense.montant = c.montant;
       this.depense.jour = c.jour;
@@ -589,16 +595,37 @@ export class SejourFraisComponent {
     }
   }
 
-  private async lireParIaOuSurLeTelephone(photo: File): Promise<NoteLue> {
+  /** {@code texte} : le texte lu sur le téléphone (null pour une lecture par l'IA), pour apprendre des corrections. */
+  private async lireParIaOuSurLeTelephone(photo: File): Promise<{ note: NoteLue; texte: string | null }> {
     if (this.frais().droits.lireNotes) {
       try {
-        return await firstValueFrom(this.port().lireNote(photo));
+        return { note: await firstValueFrom(this.port().lireNote(photo)), texte: null };
       } catch {
         // L'IA ne répond pas : la lecture sur le téléphone prend le relais.
       }
     }
-    const { lireTicketSurLeTelephone } = await import('./ocr-ticket');
-    return lireTicketSurLeTelephone(photo);
+    const [{ lireTicketSurLeTelephone }, regles] = await Promise.all([import('./ocr-ticket'), this.reglesApprises()]);
+    return lireTicketSurLeTelephone(photo, regles);
+  }
+
+  /** Les règles apprises des corrections du club, demandées une fois ; sans réseau, aucune. */
+  private reglesApprises(): Promise<RegleLecture[]> {
+    this.regles ??= firstValueFrom(this.port().reglesLecture()).catch(() => []);
+    return this.regles;
+  }
+
+  /**
+   * Après l'enregistrement : ce que la personne a gardé ou corrigé devient une
+   * règle pour tout le club (commerçant, catégorie, libellé du total ; jamais
+   * la photo ni le texte). Un échec n'empêche rien.
+   */
+  private apprendre(montantCentimes: number, categorie: CategorieDepense): void {
+    const lecture = this.lectureTelephone;
+    this.lectureTelephone = null;
+    if (!lecture) return;
+    const lecon = leconDuTicket(lecture.texte, lecture.lue, { montantCentimes, categorie });
+    if (!lecon) return;
+    this.port().apprendreLecture(lecon).subscribe({ next: () => this.regles = undefined, error: () => undefined });
   }
 
   retirerPhoto(i: number): void {
@@ -634,6 +661,7 @@ export class SejourFraisComponent {
       }));
       this.depenseId = r.depenseId;
       this.maj.emit(r.frais);
+      this.apprendre(montant, d.categorie);
       while (this.aEnvoyer().length > 0) {
         this.maj.emit(await firstValueFrom(this.port().ajouterPhoto(r.depenseId, this.aEnvoyer()[0].fichier)));
         this.retirerPhoto(0);

@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 /**
  * Le séjour pour un participant qui n'est pas encadrant, à l'adresse
  * {@code /sejour/{code}} de l'appli : le carnet du séjour, ses informations
@@ -106,6 +108,22 @@ public class AccesSejourController {
         Acces a = acces.acces(code, jeton);
         return frais.lireNote(a.sortieId(), SejourController.octets(fichier), fichier.getContentType(),
                 frais.acteurParticipant(a.participantId()));
+    }
+
+    @GetMapping("/lecture-notes/regles")
+    public List<ReglesLectureService.RegleApprise> reglesLecture(@PathVariable String code,
+                                                                @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return frais.reglesLecture(a.sortieId(), frais.acteurParticipant(a.participantId()));
+    }
+
+    @PostMapping("/lecture-notes/apprentissage")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void apprendreLecture(@PathVariable String code,
+                                 @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                 @RequestBody ReglesLectureService.Lecon lecon) {
+        Acces a = acces.acces(code, jeton);
+        frais.apprendreLecture(a.sortieId(), lecon, frais.acteurParticipant(a.participantId()));
     }
 
     @PutMapping("/depenses/{depenseId}")
