@@ -59,6 +59,13 @@ export interface Trajet {
   lieuDepart?: string | null;
   /** Départ seulement : l'heure à laquelle l'avion ou le train arrive au retour. */
   heureArrivee?: string | null;
+  /**
+   * Le jour où part l'avion ou le train de l'aller, et celui où arrive celui
+   * du retour, pour un vol long. Vides : le jour du trajet (la veille pour un
+   * vol aller de nuit).
+   */
+  dateDepart?: string | null;
+  dateArrivee?: string | null;
 }
 
 /** Un trajet à modifier dans un formulaire : heures au format des champs (« 10:35 »), vide s'il n'y en a pas. */
@@ -67,14 +74,15 @@ export function copieTrajet(t: Trajet | null): Trajet {
     date: t?.date ?? null, heure: t?.heure?.slice(0, 5) ?? null, transport: t?.transport ?? null,
     numero: t?.numero ?? null, lieu: t?.lieu ?? null,
     heureDepart: t?.heureDepart?.slice(0, 5) ?? null, lieuDepart: t?.lieuDepart ?? null,
-    heureArrivee: t?.heureArrivee?.slice(0, 5) ?? null
+    heureArrivee: t?.heureArrivee?.slice(0, 5) ?? null,
+    dateDepart: t?.dateDepart ?? null, dateArrivee: t?.dateArrivee ?? null
   };
 }
 
 /** Le trajet saisi, ou null s'il est resté vide. */
 export function trajetSaisi(t: Trajet | null): Trajet | null {
   return !t || (!t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim()
-    && !t.heureDepart && !t.lieuDepart?.trim() && !t.heureArrivee) ? null : t;
+    && !t.heureDepart && !t.lieuDepart?.trim() && !t.heureArrivee && !t.dateDepart && !t.dateArrivee) ? null : t;
 }
 
 export interface ParticipantVue {
@@ -600,9 +608,17 @@ export function texteTrajet(t: Trajet | null): string {
     t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : (t.heure ? 'à ' + heure(t.heure) : null),
     [moyen, t.numero].filter(Boolean).join(' ') || null,
     t.lieu,
-    t.heureDepart || t.lieuDepart
-      ? 'départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
+    t.heureDepart || t.lieuDepart || autreJour(t, t.dateDepart)
+      ? 'départ' + autreJour(t, t.dateDepart) + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '')
+        + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
       : null,
-    t.heureArrivee ? 'arrivée à ' + heure(t.heureArrivee) : null
+    t.heureArrivee || autreJour(t, t.dateArrivee)
+      ? 'arrivée' + autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')
+      : null
   ].filter(Boolean).join(', ') || 'à préciser';
+}
+
+/** « le samedi 05/06/2027 » : le jour où part (aller) ou arrive (retour) l'avion, s'il n'est pas celui du trajet. */
+export function autreJour(t: Trajet, jour: string | null | undefined): string {
+  return jour && jour !== t.date ? ' le ' + jourLong(jour).toLowerCase() : '';
 }

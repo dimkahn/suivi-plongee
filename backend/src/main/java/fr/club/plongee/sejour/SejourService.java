@@ -71,13 +71,28 @@ public class SejourService {
      * train arrive au retour (V85) ; {@code heureDepart} et
      * {@code lieuDepart} restent vides. À l'aller, {@code heureArrivee} reste
      * vide ({@code heure} est déjà celle de l'arrivée).
+     * <p>
+     * {@code dateDepart} (aller) et {@code dateArrivee} (retour) sont leurs
+     * jours (V87), pour un vol long qui part ou arrive un autre jour. Vides :
+     * le jour de {@code date}, la veille pour un vol aller de nuit.
      */
     public record Trajet(LocalDate date, LocalTime heure, MoyenTransport transport,
                          @Size(max = 30) String numero, @Size(max = 120) String lieu,
-                         LocalTime heureDepart, @Size(max = 120) String lieuDepart, LocalTime heureArrivee) {
+                         LocalTime heureDepart, @Size(max = 120) String lieuDepart, LocalTime heureArrivee,
+                         LocalDate dateDepart, LocalDate dateArrivee) {
         boolean vide() {
             return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu)
-                    && heureDepart == null && blanc(lieuDepart) && heureArrivee == null;
+                    && heureDepart == null && blanc(lieuDepart) && heureArrivee == null
+                    && dateDepart == null && dateArrivee == null;
+        }
+
+        /** Refus si l'avion ou le train arrive un jour avant celui où il part. */
+        static void verifierJours(Trajet t) {
+            if (t == null || t.date() == null) return;
+            if ((t.dateDepart() != null && t.dateDepart().isAfter(t.date()))
+                    || (t.dateArrivee() != null && t.dateArrivee().isBefore(t.date()))) {
+                throw new RegleMetierException("L'avion ou le train arrive avant de partir : vérifiez les jours.");
+            }
         }
     }
 
@@ -500,7 +515,9 @@ public class SejourService {
                 rs.getString(sens + "_numero"), rs.getString(sens + "_lieu"),
                 aller ? rs.getObject("arrivee_heure_depart", LocalTime.class) : null,
                 aller ? rs.getString("arrivee_lieu_depart") : null,
-                aller ? null : rs.getObject("depart_heure_arrivee", LocalTime.class));
+                aller ? null : rs.getObject("depart_heure_arrivee", LocalTime.class),
+                aller ? rs.getObject("arrivee_date_depart", LocalDate.class) : null,
+                aller ? null : rs.getObject("depart_date_arrivee", LocalDate.class));
         return t.vide() ? null : t;
     }
 
@@ -612,6 +629,7 @@ public class SejourService {
                        depart_date = :departDate, depart_heure = :departHeure,
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
+                       arrivee_date_depart = :arriveeDateDepart, depart_date_arrivee = :departDateArrivee,
                        remarques = :remarques
                  WHERE id = :pid""", p);
         reporterSurLePlongeur(d);
@@ -658,6 +676,8 @@ public class SejourService {
     @Transactional
     public void modifierMesInformations(Long participantId, DemandeMesInformations d) {
         ParticipantVue actuel = participant(participantId);
+        Trajet.verifierJours(d.arrivee());
+        Trajet.verifierJours(d.depart());
         LocalDateTime arrivee = moment(d.arrivee());
         LocalDateTime depart = moment(d.depart());
         if (arrivee != null && depart != null && depart.isBefore(arrivee)) {
@@ -678,6 +698,7 @@ public class SejourService {
                        depart_date = :departDate, depart_heure = :departHeure,
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
+                       arrivee_date_depart = :arriveeDateDepart, depart_date_arrivee = :departDateArrivee,
                        remarques = :remarques
                  WHERE id = :pid""", p);
     }
@@ -699,6 +720,7 @@ public class SejourService {
         if (ids.isEmpty()) throw new RegleMetierException("Cochez au moins un participant.");
         verifierParticipants(sortieId, ids);
         Trajet t = d.trajet() == null || d.trajet().vide() ? null : d.trajet();
+        Trajet.verifierJours(t);
         for (Long id : ids) {
             ParticipantVue p = participant(id);
             LocalDateTime arrivee = moment(d.sens() == SensTrajet.ARRIVEE ? t : p.arrivee());
@@ -712,8 +734,9 @@ public class SejourService {
         var p = new MapSqlParameterSource("ids", ids).addValue("sortie", sortieId);
         trajet(p, "t", t);
         String autreHoraire = d.sens() == SensTrajet.ARRIVEE
-                ? ", arrivee_heure_depart = :tHeureDepart, arrivee_lieu_depart = :tLieuDepart"
-                : ", depart_heure_arrivee = :tHeureArrivee";
+                ? ", arrivee_heure_depart = :tHeureDepart, arrivee_lieu_depart = :tLieuDepart,"
+                  + " arrivee_date_depart = :tDateDepart"
+                : ", depart_heure_arrivee = :tHeureArrivee, depart_date_arrivee = :tDateArrivee";
         jdbc.update("""
                 UPDATE sejour_participant SET %1$s_date = :tDate, %1$s_heure = :tHeure, %1$s_transport = :tTransport,
                        %1$s_numero = :tNumero, %1$s_lieu = :tLieu%2$s
@@ -795,6 +818,8 @@ public class SejourService {
                 && compter("SELECT COUNT(*) FROM utilisateur WHERE id = :x", d.utilisateurId()) == 0) {
             throw new RessourceIntrouvableException("Compte introuvable");
         }
+        Trajet.verifierJours(d.arrivee());
+        Trajet.verifierJours(d.depart());
         LocalDateTime arrivee = moment(d.arrivee());
         LocalDateTime depart = moment(d.depart());
         if (arrivee != null && depart != null && depart.isBefore(arrivee)) {
@@ -890,15 +915,15 @@ public class SejourService {
                 INSERT INTO sejour_participant (sortie_id, eleve_id, utilisateur_id, nom, prenom, plongeur,
                        membre_groupe_id, telephone, email, regimes, regime_precision, urgence_nom, urgence_telephone,
                        arrivee_date, arrivee_heure, arrivee_transport, arrivee_numero, arrivee_lieu,
-                       arrivee_heure_depart, arrivee_lieu_depart,
+                       arrivee_heure_depart, arrivee_lieu_depart, arrivee_date_depart,
                        depart_date, depart_heure, depart_transport, depart_numero, depart_lieu,
-                       depart_heure_arrivee, remarques)
+                       depart_heure_arrivee, depart_date_arrivee, remarques)
                 VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :membreGroupe, :telephone, :email, :regimes,
                        :regimePrecision, :urgenceNom, :urgenceTelephone,
                        :arriveeDate, :arriveeHeure, :arriveeTransport, :arriveeNumero, :arriveeLieu,
-                       :arriveeHeureDepart, :arriveeLieuDepart,
+                       :arriveeHeureDepart, :arriveeLieuDepart, :arriveeDateDepart,
                        :departDate, :departHeure, :departTransport, :departNumero, :departLieu,
-                       :departHeureArrivee, :remarques)""",
+                       :departHeureArrivee, :departDateArrivee, :remarques)""",
                 parametres(sortieId, d));
     }
 
@@ -929,7 +954,9 @@ public class SejourService {
                 .addValue(sens + "Lieu", t == null ? null : nettoyer(t.lieu()))
                 .addValue(sens + "HeureDepart", t == null ? null : t.heureDepart())
                 .addValue(sens + "LieuDepart", t == null ? null : nettoyer(t.lieuDepart()))
-                .addValue(sens + "HeureArrivee", t == null ? null : t.heureArrivee());
+                .addValue(sens + "HeureArrivee", t == null ? null : t.heureArrivee())
+                .addValue(sens + "DateDepart", t == null ? null : t.dateDepart())
+                .addValue(sens + "DateArrivee", t == null ? null : t.dateArrivee());
     }
 
     private static LocalDateTime moment(Trajet t) {

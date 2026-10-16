@@ -40,12 +40,16 @@ type Brouillon = DemandeMesInformations & { arrivee: Trajet; depart: Trajet };
             <div><label [for]="'mi-' + sens.code + '-lieu'">{{ sens.lieu }}</label>
               <input [id]="'mi-' + sens.code + '-lieu'" [name]="sens.code + '-lieu'" maxlength="120" [(ngModel)]="b[sens.code].lieu"></div>
             @if (sens.code === 'arrivee') {
+              <div><label for="mi-arrivee-date-depart">Jour de départ de l'avion ou du train</label>
+                <input id="mi-arrivee-date-depart" name="arrivee-date-depart" type="date" [(ngModel)]="b.arrivee.dateDepart"></div>
               <div><label for="mi-arrivee-heure-depart">Heure de départ de l'avion ou du train</label>
                 <input id="mi-arrivee-heure-depart" name="arrivee-heure-depart" type="time" [(ngModel)]="b.arrivee.heureDepart"></div>
               <div><label for="mi-arrivee-lieu-depart">Aéroport ou gare de départ</label>
                 <input id="mi-arrivee-lieu-depart" name="arrivee-lieu-depart" maxlength="120" placeholder="Paris-Orly"
                        [(ngModel)]="b.arrivee.lieuDepart"></div>
             } @else {
+              <div><label for="mi-depart-date-arrivee">Jour d'arrivée de l'avion ou du train</label>
+                <input id="mi-depart-date-arrivee" name="depart-date-arrivee" type="date" [(ngModel)]="b.depart.dateArrivee"></div>
               <div><label for="mi-depart-heure-arrivee">Heure d'arrivée de l'avion ou du train</label>
                 <input id="mi-depart-heure-arrivee" name="depart-heure-arrivee" type="time" [(ngModel)]="b.depart.heureArrivee"></div>
             }
