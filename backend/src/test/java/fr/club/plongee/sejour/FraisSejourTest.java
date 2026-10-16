@@ -1,6 +1,6 @@
-package fr.club.plongee.sejour.domaine;
+package fr.club.plongee.sejour;
 
-import fr.club.plongee.sejour.domaine.FraisSejour.*;
+import fr.club.plongee.sejour.FraisSejour.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
