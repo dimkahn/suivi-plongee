@@ -1,12 +1,12 @@
 // A6 — Créer le dossier d'un élève.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 13e série, inscription au club OK / KO (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A6',
   titre: 'Créer le dossier d\'un élève',
   public: 'Administrateur',
-  resume: 'Le dossier d\'un élève : identité, CACI, contact d\'urgence, autorisation de pratiquer et droit à l\'image.',
+  resume: 'Le dossier d\'un élève : identité, CACI, contact d\'urgence, autorisation de pratiquer, droit à l\'image, et l\'inscription au club de la saison.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -31,6 +31,14 @@ export default {
     await legende('Sa formation sera choisie à l\'inscription (vidéo suivante).', 0);
     await choisir('#saisonCreation', 'Aucune', { exact: false });
     await toucher(page.getByRole('button', { name: 'Ajouter l\'élève' }), { apres: 2000 });
+    await legende('Sur chaque carte, l\'inscription au club de la saison : OK en vert, KO en rouge.', 3500);
+    await legende('Anis a réglé son inscription : un appui sur sa pastille la passe à OK.', 0);
+    await toucher(page.locator('li.carte').filter({ hasText: 'Anis Dulac' })
+      .getByRole('button', { name: /Inscription .* KO/ }), { apres: 3000 });
+    await legende('Le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.', 0);
+    await choisir('#filtre-inscription', 'KO : pas à jour');
+    await pause(3000);
+    await choisir('#filtre-inscription', 'Tous');
     await legende('Un élève qui quitte le club s\'archive : son historique reste.', 3500);
     await legende(null, 0);
     await pause(500);

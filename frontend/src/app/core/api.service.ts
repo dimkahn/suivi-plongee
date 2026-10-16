@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import {
-  AdhesionVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
+  AdhesionVue, InscriptionClubVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   DemandePropositionPalanquees, PropositionPalanqueesVue,
   EleveVue, EvaluationVue, FicheSecuriteVue,GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   CompteSurfaceVue, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
@@ -738,6 +738,16 @@ export class ApiService {
 
   retirerAdhesion(id: number): Observable<unknown> {
     return this.http.delete(`/api/adhesions/${id}`);
+  }
+
+  inscriptionsClub(saisonId: number): Observable<InscriptionClubVue[]> {
+    return this.http.get<InscriptionClubVue[]>('/api/inscriptions-club', { params: { saisonId } });
+  }
+
+  /** ADMIN : l'inscription au club de l'élève est à jour pour cette saison (OK), ou ne l'est plus (KO). */
+  changerInscriptionClub(saisonId: number, eleveId: number, aJour: boolean): Observable<unknown> {
+    const url = `/api/inscriptions-club/saisons/${saisonId}/eleves/${eleveId}`;
+    return aJour ? this.http.put(url, null) : this.http.delete(url);
   }
 
   // ----------------------------------------------------------------
