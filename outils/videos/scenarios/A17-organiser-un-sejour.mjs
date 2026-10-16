@@ -1,5 +1,5 @@
-// A17 — Organiser un séjour : les six onglets (programme, participants et repas, transports, hébergement, frais, pratique).
-// Tournage du 2026-10-15, 17e série, bandeau d'organisation et version imprimable (changer cette date dans tous les scénarios les fait tous retourner).
+// A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
+// Tournage du 2026-10-16, 18e série, matériel emprunté déclaré depuis le séjour (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les six onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -24,7 +24,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Les participants, eux, le lisent par le lien et le code reçus par e-mail.', 4000);
     await legende('Tout en haut, l\'encart « Frais du séjour » : le total dépensé, et « Gérer les frais » pour les ouvrir.', 4500);
-    await legende('Puis six onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
+    await legende('Puis sept onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
 
     await legende('« Participants » : une ligne par personne, avec ce qu\'elle n\'a pas encore donné.', 0);
     await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 2500 });
@@ -63,6 +63,16 @@ export default {
     await toucher(chambre3.getByLabel('Mateo Vasquez'), { apres: 800 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
     await vignette();
+
+    await legende('« Matériel » : le matériel du club emprunté pour le séjour. Chacun déclare le sien, comme ses frais.', 0);
+    await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 2500 });
+    await legende('L\'organisatrice déclare aussi pour un autre : « Déclarer un emprunt », qui, le jour, puis le matériel.', 0);
+    await toucher(page.getByRole('button', { name: 'Déclarer un emprunt' }), { apres: 1500 });
+    await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });
+    await legende('Seul le matériel disponible est proposé : ni déjà prêté, ni hors échéance jusqu\'à la fin du séjour.', 0);
+    await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 2500 });
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
+    await legende('C\'est un vrai prêt : le directeur technique le retrouve dans ses prêts, et note le retour.', 4500);
 
     await legende('« Pratique » : les affaires à prévoir, et les infos pratiques. « Partir de la liste type » remplit la liste d\'un coup.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });

@@ -257,6 +257,62 @@ export interface PortFrais {
   supprimerVersement(versementId: number): Observable<FraisVue>;
 }
 
+export type TypeEquipement = 'BLOC' | 'DETENDEUR' | 'GILET' | 'COMBINAISON';
+
+/** Un équipement du club : « Gilet G-12 — Aqualung, taille M ». */
+export interface EquipementSejourVue {
+  id: number;
+  type: TypeEquipement;
+  typeLibelle: string;
+  reference: string;
+  description: string;
+}
+
+/** Un prêt du matériel rattaché à la sortie ; {@code annulable} : celui qui regarde peut l'annuler. */
+export interface PretSejourVue {
+  id: number;
+  participantId: number | null;
+  emprunteur: string;
+  datePret: string;
+  dateRetourPrevue: string | null;
+  dateRetour: string | null;
+  enRetard: boolean;
+  annulable: boolean;
+  equipements: EquipementSejourVue[];
+}
+
+export interface DroitsPrets {
+  /** Sa ligne parmi les participants ; null pour un encadrant qui n'en est pas. */
+  moiId: number | null;
+  peutDeclarer: boolean;
+  /** Déclarer pour un autre participant : l'organisateur et les moniteurs du séjour. */
+  pourLesAutres: boolean;
+}
+
+/** Le matériel emprunté pendant le séjour, vu par celui qui regarde (le serveur filtre). */
+export interface PretsSejourVue {
+  prets: PretSejourVue[];
+  /** Le matériel qui peut encore être emprunté jusqu'à la fin du séjour. */
+  disponibles: EquipementSejourVue[];
+  /** Ceux pour qui l'on peut déclarer. */
+  participants: { id: number; prenom: string; nom: string }[];
+  droits: DroitsPrets;
+}
+
+export interface DemandeDeclarationPret {
+  participantId: number;
+  datePret: string;
+  equipementIds: number[];
+  detendeursDesinfectes: boolean;
+}
+
+/** Le matériel emprunté, pour l'onglet du séjour comme pour la page du lien : chaque appel renvoie l'état à jour. */
+export interface PortPrets {
+  lire(): Observable<PretsSejourVue>;
+  declarer(d: DemandeDeclarationPret): Observable<PretsSejourVue>;
+  annuler(pretId: number): Observable<PretsSejourVue>;
+}
+
 export interface BilanEnvoiAcces {
   envoyes: string[];
   sansEmail: string[];
@@ -478,6 +534,16 @@ export class SejourApi {
         { responseType: 'blob' }),
       ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),
       supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`))
+    };
+  }
+
+  /** Le matériel emprunté pendant le séjour, pour un compte connecté. */
+  portPrets(id: number): PortPrets {
+    const base = `/api/sejours/${id}/prets`;
+    return {
+      lire: () => this.http.get<PretsSejourVue>(base),
+      declarer: d => this.http.post<PretsSejourVue>(base, d),
+      annuler: pretId => this.http.delete<PretsSejourVue>(`${base}/${pretId}`)
     };
   }
 
