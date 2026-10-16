@@ -1,5 +1,5 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo de la note.
-// Tournage du 2026-10-13, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -25,6 +25,7 @@ export default {
     await saisir('#d-montant', '18,00');
     await choisir('#d-payeur', 'Camille Berthier');
     await legende('« Prendre une photo » ouvre l\'appareil photo sur la note ; « Choisir dans mes photos », la galerie du téléphone.', 4500);
+    await legende('Si le club l\'a activé, le montant total et la date sont lus sur la photo et remplissent les cases vides : on vérifie.', 4500);
     await legende('Par défaut, partagée entre tout le monde. « Choisir qui partage » : seulement ceux qui en ont profité.', 0);
     await toucher(page.getByRole('button', { name: 'Choisir qui partage' }), { apres: 1200 });
     await toucher(page.getByRole('button', { name: 'Les plongeurs' }), { apres: 1500 });

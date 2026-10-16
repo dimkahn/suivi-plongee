@@ -6,8 +6,8 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { dateFr } from '../../core/date-fr';
 import { reduirePhoto } from '../../core/reduire-photo';
 import {
-  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, ParticipantFrais, PortFrais, enCentimes, euros,
-  nomComplet
+  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, ParticipantFrais, PortFrais, completerAvecNote,
+  enCentimes, euros, nomComplet
 } from './sejour-api';
 
 /** Brouillon d'une dépense : le montant tel que tapé, les parts par participant (0 = ne partage pas). */
@@ -234,7 +234,9 @@ interface PhotoAEnvoyer {
                (change)="choisirPhotos($event)">
         <input id="d-photo-choisir" class="cache" type="file" accept="image/*" multiple
                (change)="choisirPhotos($event)">
-        <p class="secondaire">Une photo lisible du ticket ou de la facture : chacun peut la voir.</p>
+        @if (lectureNote(); as l) { <p class="lecture-note" role="status">{{ l }}</p> }
+        <p class="secondaire">Une photo lisible du ticket ou de la facture : chacun peut la voir.
+          @if (d.lireNotes) { Le montant total et la date y sont lus pour remplir les cases vides : vérifiez-les. }</p>
       </fieldset>
 
       <fieldset>
@@ -364,6 +366,8 @@ interface PhotoAEnvoyer {
     .cache { position: absolute; width: 1px; height: 1px; opacity: 0; }
     .grande { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
+    .lecture-note { margin: var(--pas) 0 0; padding: var(--pas); border-radius: var(--r-s); background: #E0F2FE;
+                    font-weight: 700; }
   `]
 })
 export class SejourFraisComponent {
@@ -409,6 +413,10 @@ export class SejourFraisComponent {
   apercu = signal<Record<number, string>>({});
   aEnvoyer = signal<PhotoAEnvoyer[]>([]);
   photosExistantes = signal<number[]>([]);
+  /** Où en est la lecture du montant et de la date sur la photo choisie. */
+  lectureNote = signal<string | null>(null);
+  /** Une lecture qui revient après la fermeture de la fenêtre (ou une autre dépense ouverte) est ignorée. */
+  private ouverture = 0;
 
   versementOuvert = signal(false);
   versement = { deId: null as number | null, aId: null as number | null, montant: '', jour: null as string | null };
@@ -465,6 +473,8 @@ export class SejourFraisComponent {
 
   ouvrirDepense(d: DepenseVue | null): void {
     this.erreur.set(null);
+    this.ouverture++;
+    this.lectureNote.set(null);
     this.depenseId = d?.id ?? null;
     this.viderPhotosAEnvoyer();
     this.photosExistantes.set(d?.photos ?? []);
@@ -506,6 +516,7 @@ export class SejourFraisComponent {
   }
 
   fermerDepense(): void {
+    this.ouverture++;
     this.depenseOuverte.set(false);
     this.viderPhotosAEnvoyer();
   }
@@ -541,9 +552,32 @@ export class SejourFraisComponent {
       try {
         const reduit = await reduirePhoto(fichier);
         this.aEnvoyer.set([...this.aEnvoyer(), { fichier: reduit, apercu: URL.createObjectURL(reduit) }]);
+        await this.lireNote(reduit);
       } catch {
         this.erreur.set('Cette image n’a pas pu être lue : prenez une photo JPEG ou PNG.');
       }
+    }
+  }
+
+  /** Le montant total et la date lus sur la photo remplissent les cases encore vides, jamais ce qui est saisi. */
+  private async lireNote(photo: File): Promise<void> {
+    if (!this.frais().droits.lireNotes || (this.depense.montant.trim() && this.depense.jour)) return;
+    const ouverture = this.ouverture;
+    this.lectureNote.set('Lecture du montant et de la date sur la note…');
+    try {
+      const note = await firstValueFrom(this.port().lireNote(photo));
+      if (ouverture !== this.ouverture) return;
+      const c = completerAvecNote(this.depense, note);
+      this.depense.montant = c.montant;
+      this.depense.jour = c.jour;
+      this.calculerApercu();
+      this.lectureNote.set(c.remplis.length
+        ? `Lu sur la note : ${c.remplis.join(' et ')}. Vérifiez avant d’enregistrer.`
+        : 'Rien de plus n’a pu être lu sur la note : complétez à la main.');
+    } catch (e) {
+      if (ouverture !== this.ouverture) return;
+      this.lectureNote.set((e as HttpErrorResponse).error?.detail
+        ?? 'La note n’a pas pu être lue : saisissez le montant et la date.');
     }
   }
 

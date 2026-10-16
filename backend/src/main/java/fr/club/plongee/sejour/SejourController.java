@@ -233,6 +233,14 @@ public class SejourController {
         return new DepenseCreee(depenseId, service.lire(id, moi));
     }
 
+    /** Montant total et date lus sur la photo de la note, pour pré-remplir la dépense ; rien n'est gardé. */
+    @PostMapping(value = "/{id}/depenses/lecture-note", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public LecteurNote.NoteLue lireNote(@PathVariable Long id, @RequestParam("fichier") MultipartFile fichier,
+                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return frais.lireNote(id, octets(fichier), fichier.getContentType(), frais.acteur(id, moi));
+    }
+
     @PutMapping("/{id}/depenses/{depenseId}")
     @PreAuthorize("isAuthenticated()")
     public SejourVue modifierDepense(@PathVariable Long id, @PathVariable Long depenseId,

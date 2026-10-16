@@ -63,9 +63,13 @@ public class FraisService {
         }
     }
 
-    /** Ce que l'acteur peut faire, pour que l'écran ne propose que le possible (le serveur revérifie). */
+    /**
+     * Ce que l'acteur peut faire, pour que l'écran ne propose que le possible (le serveur revérifie).
+     * {@code lireNotes} : montant et date lus sur la photo de la note ({@link LecteurNote}).
+     */
     public record DroitsFrais(Long moiId, boolean peutAjouter, boolean pourLesAutres,
-                              List<Long> depensesModifiables, List<Long> versementsSupprimables) {}
+                              List<Long> depensesModifiables, List<Long> versementsSupprimables,
+                              boolean lireNotes) {}
 
     public record FraisVue(List<FraisSejour.Depense> depenses, List<FraisSejour.Versement> versements,
                            FraisSejour.Comptes comptes, DroitsFrais droits) {}
@@ -84,11 +88,14 @@ public class FraisService {
     private final NamedParameterJdbcTemplate jdbc;
     private final SortieService sorties;
     private final DroitsSejour droits;
+    private final LecteurNote lecteurNote;
 
-    public FraisService(NamedParameterJdbcTemplate jdbc, SortieService sorties, DroitsSejour droits) {
+    public FraisService(NamedParameterJdbcTemplate jdbc, SortieService sorties, DroitsSejour droits,
+                        LecteurNote lecteurNote) {
         this.jdbc = jdbc;
         this.sorties = sorties;
         this.droits = droits;
+        this.lecteurNote = lecteurNote;
     }
 
     // ------------------------------------------------------------------
@@ -161,7 +168,8 @@ public class FraisService {
                 depenses.stream().filter(d -> auteur(acteur, d.saisieParUtilisateurId(), d.saisieParParticipantId()))
                         .map(FraisSejour.Depense::id).toList(),
                 versements.stream().filter(v -> auteur(acteur, v.saisieParUtilisateurId(), v.saisieParParticipantId()))
-                        .map(FraisSejour.Versement::id).toList());
+                        .map(FraisSejour.Versement::id).toList(),
+                acteur.peutAjouter() && lecteurNote.actif());
         return new FraisVue(depenses, versements, FraisSejour.calculer(participants, depenses, versements), droits);
     }
 
@@ -181,11 +189,7 @@ public class FraisService {
     @Transactional
     public long creerDepense(Long sortieId, DemandeDepense d, ActeurFrais acteur) {
         sorties.sortie(sortieId);
-        if (!acteur.peutAjouter()) {
-            throw new RegleMetierException(acteur.eleve()
-                    ? "Les élèves passent par un moniteur du séjour pour saisir leurs frais."
-                    : "Seuls les participants du séjour saisissent des frais.");
-        }
+        verifierPeutAjouter(acteur);
         List<FraisSejour.Part> parts = verifier(sortieId, d, acteur);
         KeyHolder cle = new GeneratedKeyHolder();
         jdbc.update("""
@@ -197,6 +201,29 @@ public class FraisService {
         long id = cle.getKey().longValue();
         ecrireParts(id, parts);
         return id;
+    }
+
+    /**
+     * Le montant total et la date lus sur la photo d'une note, avant que la
+     * dépense existe : rien n'est enregistré, la photo n'est pas gardée.
+     */
+    public LecteurNote.NoteLue lireNote(Long sortieId, byte[] contenu, String type, ActeurFrais acteur) {
+        sorties.sortie(sortieId);
+        verifierPeutAjouter(acteur);
+        if (!lecteurNote.actif()) {
+            throw new RegleMetierException("La lecture automatique des notes n'est pas activée pour ce club : "
+                    + "saisissez le montant et la date.");
+        }
+        PhotoPretService.verifierImage(contenu, type);
+        return lecteurNote.lire(contenu, type);
+    }
+
+    private static void verifierPeutAjouter(ActeurFrais acteur) {
+        if (!acteur.peutAjouter()) {
+            throw new RegleMetierException(acteur.eleve()
+                    ? "Les élèves passent par un moniteur du séjour pour saisir leurs frais."
+                    : "Seuls les participants du séjour saisissent des frais.");
+        }
     }
 
     @Transactional

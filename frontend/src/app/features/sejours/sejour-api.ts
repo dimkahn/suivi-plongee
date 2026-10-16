@@ -223,6 +223,8 @@ export interface DroitsFrais {
   pourLesAutres: boolean;
   depensesModifiables: number[];
   versementsSupprimables: number[];
+  /** Montant et date lus sur la photo de la note (lecture réglée pour l'installation). */
+  lireNotes: boolean;
 }
 
 /** Solde positif : on lui doit de l'argent ; négatif : il en doit. */
@@ -264,6 +266,8 @@ export interface PortFrais {
   ajouterPhoto(depenseId: number, fichier: File): Observable<FraisVue>;
   supprimerPhoto(depenseId: number, photoId: number): Observable<FraisVue>;
   lirePhoto(depenseId: number, photoId: number): Observable<Blob>;
+  /** Montant total et date lus sur une photo pas encore enregistrée ; rien n'est gardé. */
+  lireNote(fichier: File): Observable<NoteLue>;
   ajouterVersement(d: DemandeVersement): Observable<FraisVue>;
   supprimerVersement(versementId: number): Observable<FraisVue>;
 }
@@ -334,6 +338,28 @@ export interface BilanEnvoiAcces {
 /** « 1 234,50 € ». */
 export function euros(centimes: number): string {
   return (centimes / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+}
+
+/** Montant total et date lus sur la photo d'une note (null : illisible). */
+export interface NoteLue {
+  montantCentimes: number | null;
+  jour: string | null;
+}
+
+/** Ce que la note lue remplit d'une dépense : seulement les champs encore vides. */
+export function completerAvecNote(saisie: { montant: string; jour: string | null }, note: NoteLue):
+  { montant: string; jour: string | null; remplis: string[] } {
+  const remplis: string[] = [];
+  let { montant, jour } = saisie;
+  if (!montant.trim() && note.montantCentimes) {
+    montant = (note.montantCentimes / 100).toFixed(2).replace('.', ',');
+    remplis.push('le montant');
+  }
+  if (!jour && note.jour) {
+    jour = note.jour;
+    remplis.push('la date');
+  }
+  return { montant, jour, remplis };
 }
 
 /** « 12,5 » ou « 12.50 » → 1250 ; null si ce n'est pas un montant. */
@@ -544,6 +570,7 @@ export class SejourApi {
         this.http.delete<SejourVue>(`${base}/depenses/${depenseId}/photos/${photoId}`)),
       lirePhoto: (depenseId, photoId) => this.http.get(`${base}/depenses/${depenseId}/photos/${photoId}`,
         { responseType: 'blob' }),
+      lireNote: fichier => this.http.post<NoteLue>(`${base}/depenses/lecture-note`, formulairePhoto(fichier)),
       ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),
       supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`))
     };
