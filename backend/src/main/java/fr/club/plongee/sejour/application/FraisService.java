@@ -3,7 +3,7 @@ package fr.club.plongee.sejour.application;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.service.SortieService;
-import fr.club.plongee.materiel.service.PhotoPretService;
+import fr.club.plongee.materiel.application.PhotoPretService;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import fr.club.plongee.sejour.domaine.FraisSejour;
 import fr.club.plongee.sejour.domaine.Participant;
