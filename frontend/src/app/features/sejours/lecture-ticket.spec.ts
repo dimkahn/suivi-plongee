@@ -77,6 +77,61 @@ describe('Lecture du texte d’un ticket', () => {
       .toBe('HEBERGEMENT');
   });
 
+  it('corrige les confusions de lettres et de chiffres de la reconnaissance', () => {
+    expect(analyserTicket('T0TAL TTC   3B,83 €\n').montantCentimes).toBe(3883);
+    expect(analyserTicket('TOTA1   4O,5O\n').montantCentimes).toBe(4050);
+    expect(analyserTicket('TOTAL A PAYER  1S,2O EUR\n').montantCentimes).toBe(1520);
+  });
+
+  it('lit un total dont la virgule a été perdue', () => {
+    expect(analyserTicket('Boulangerie Ange\nBaguette 1,20\nTOTAL     12 40 €\n').montantCentimes).toBe(1240);
+  });
+
+  it('connaît d’autres façons d’écrire le total', () => {
+    expect(analyserTicket('Fromages 12,10\nVins 18,00\nA REGLER : 30,10\n').montantCentimes).toBe(3010);
+    expect(analyserTicket('Café 2,20\nSomme due 2,20\nVISA SANS CONTACT 2,20\n').montantCentimes).toBe(220);
+    expect(analyserTicket('2 BIERES 9,00\nPAIEMENT CB      9,00\n').montantCentimes).toBe(900);
+  });
+
+  it('écarte le total hors taxes, la base, les titres-restaurant et le prix au kilo', () => {
+    const texte = `
+      TOMATES 1,234 KG X 3,99 EUR/KG   4,92
+      PRIX AU KG 12,90
+      TOTAL HT        50,00
+      BASE TVA        50,00
+      TOTAL TTC       55,00
+      TICKET RESTO    25,00
+      CB              30,00`;
+    expect(analyserTicket(texte).montantCentimes).toBe(5500);
+  });
+
+  it('préfère « Total TTC » ou « Net à payer » au montant payé par carte (paiement en deux fois)', () => {
+    expect(analyserTicket('TOTAL TTC 80,00\nCB 50,00\nESPECES 30,00\n').montantCentimes).toBe(8000);
+  });
+
+  it('ne devine pas quand deux totaux se contredisent', () => {
+    expect(analyserTicket('TOTAL TTC 38,83\nNET A PAYER 36,83\n').montantCentimes).toBeNull();
+  });
+
+  it('lit d’autres formats de date', () => {
+    expect(analyserTicket('Date : 2027-06-12 14:02\nTOTAL 5,00').jour).toBe('2027-06-12');
+    expect(analyserTicket('LE 12 JUIN 27 A 14H02\nTOTAL 5,00').jour).toBe('2027-06-12');
+    expect(analyserTicket('1er juillet 2027\nTOTAL 5,00').jour).toBe('2027-07-01');
+  });
+
+  it('ne prend pas la date d’expiration de la carte', () => {
+    expect(analyserTicket('CARTE ****1234 EXP 12/28\nLE 03/07/2027\nTOTAL 5,00').jour).toBe('2027-07-03');
+  });
+
+  it('reconnaît les enseignes courantes et le vocabulaire de la plongée', () => {
+    expect(analyserTicket('ibis budget Toulon\nNuit 1 personne\nTOTAL 59,00').categorie).toBe('HEBERGEMENT');
+    expect(analyserTicket('TLV - TVM\nAller-retour Hyères Port-Cros\n4 x 28,50\nTOTAL 114,00').categorie)
+      .toBe('TRANSPORT');
+    expect(analyserTicket('ESCOTA\nGare de péage de Cuers\nTOTAL 3,40').categorie).toBe('TRANSPORT');
+    expect(analyserTicket("McDonald's Hyères\n2 menus Best Of\nTOTAL 21,80").categorie).toBe('REPAS');
+    expect(analyserTicket('Port-Cros Plongée\nBaptême x2\nExploration x6\nTOTAL 330,00').categorie).toBe('PLONGEE');
+  });
+
   it('ne remplit rien quand le texte est illisible', () => {
     expect(analyserTicket('~~ ##@ ¤¤ ..')).toEqual({ montantCentimes: null, jour: null, categorie: null });
   });
