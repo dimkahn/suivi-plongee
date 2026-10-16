@@ -689,7 +689,7 @@ Compte : `e3@club.fr` · format téléphone · 35 s
 2. En haut, les compteurs : disponible, prêté, à régulariser, hors service.
 3. « À surveiller » : les échéances proches ou dépassées, calculées par l'appli.
 4. TIV tous les 12 mois, requalification des blocs, révisions fabricant.
-5. Filtrez par type, ou cherchez une référence.
+5. Filtrez par type, ou cherchez une référence ou un ancien numéro : un matériel renuméroté le garde partout à côté du nouveau.
 6. Chaque ligne ouvre la fiche de l'équipement : sa fiche de gestion.
 
 ### D2 — Ajouter un équipement
@@ -735,7 +735,7 @@ Un prêt en quelques touchers, avec la désinfection du détendeur confirmée à
 Compte : `e3@club.fr` · format téléphone · 34 s
 
 1. Les prêts en cours et rendus. « Nouveau prêt » :
-2. On choisit le matériel dans l'inventaire.
+2. On choisit le matériel dans l'inventaire, par type, référence ou ancien numéro.
 3. Un détendeur change d'utilisateur : sa désinfection est obligatoire (Code du sport).
 4. La désinfection est inscrite au journal du détendeur, à la date du prêt.
 5. Un matériel en retard de révision reste prêtable, avec un avertissement ; un bloc hors échéance, non.

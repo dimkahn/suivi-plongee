@@ -12,7 +12,7 @@ public interface PhotoPretRepository extends JpaRepository<PhotoPret, Long> {
 
     @Query("""
            select new fr.club.plongee.materiel.repository.PhotoPretResume(
-                    p.id, p.pret.id, p.moment, e.id, e.reference, p.legende, p.priseLe, u.prenom, u.nom)
+                    p.id, p.pret.id, p.moment, e.id, e.reference, e.ancienneReference, p.legende, p.priseLe, u.prenom, u.nom)
              from PhotoPret p
              left join p.equipement e
              left join p.prisePar u

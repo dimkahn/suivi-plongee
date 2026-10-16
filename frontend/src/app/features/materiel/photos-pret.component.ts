@@ -7,6 +7,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { MomentPhotoPret, PhotoPretVue, PretVue } from '../../core/modeles';
 import { reduirePhoto } from '../../core/reduire-photo';
+import { nomEquipement } from '../../core/nom-equipement';
 
 /**
  * Photos de l'état du matériel à la remise (avant) et au retour (après)
@@ -34,7 +35,7 @@ import { reduirePhoto } from '../../core/reduire-photo';
                   @if (urls()[p.id]; as url) { <img [src]="url" alt=""> } @else { <span class="attente">…</span> }
                 </button>
                 <span class="legende">
-                  {{ p.equipementReference ?? 'Tout le lot' }}@if (p.legende) { · {{ p.legende }}}
+                  {{ quoi(p) }}@if (p.legende) { · {{ p.legende }}}
                 </span>
                 @if (!pret().dateRetour) {
                   <button type="button" class="bouton-discret supprimer" (click)="supprimer(p)"
@@ -53,7 +54,7 @@ import { reduirePhoto } from '../../core/reduire-photo';
                 <select [id]="idChamp(m.valeur, 'equipement')" [(ngModel)]="equipementIds[m.valeur]">
                   <option [ngValue]="null">Tout le lot</option>
                   @for (e of pret().equipements; track e.id) {
-                    <option [ngValue]="e.id">{{ e.typeLibelle }} {{ e.reference }}</option>
+                    <option [ngValue]="e.id">{{ e.typeLibelle }} {{ nom(e) }}</option>
                   }
                 </select>
               </div>
@@ -78,7 +79,7 @@ import { reduirePhoto } from '../../core/reduire-photo';
     <dialog #fenetre class="dialogue-photo" (close)="agrandie.set(null)" (click)="fermerSiFond($event)">
       @if (agrandie(); as p) {
         <div class="entete-dialogue">
-          <strong>{{ p.moment === 'AVANT' ? 'Avant' : 'Après' }} · {{ p.equipementReference ?? 'Tout le lot' }}</strong>
+          <strong>{{ p.moment === 'AVANT' ? 'Avant' : 'Après' }} · {{ quoi(p) }}</strong>
           <button type="button" class="bouton-discret" (click)="dialogue().nativeElement.close()">Fermer</button>
         </div>
         @if (urls()[p.id]; as url) { <img [src]="url" [alt]="p.legende ?? 'Photo du matériel'"> }
@@ -124,6 +125,7 @@ export class PhotosPretComponent implements OnInit, OnDestroy {
   private api = inject(ApiService);
 
   readonly pret = input.required<PretVue>();
+  readonly nom = nomEquipement;
   /** Nombre de photos avant et après, à chaque changement : la carte du prêt l'affiche. */
   readonly nombres = output<{ avant: number; apres: number }>();
 
@@ -151,6 +153,12 @@ export class PhotosPretComponent implements OnInit, OnDestroy {
 
   parMoment(m: MomentPhotoPret): PhotoPretVue[] {
     return this.photos().filter(p => p.moment === m);
+  }
+
+  /** Ce que montre la photo : un équipement, ancien numéro compris, ou tout le lot. */
+  quoi(p: PhotoPretVue): string {
+    return p.equipementReference === null ? 'Tout le lot'
+      : nomEquipement({ reference: p.equipementReference, ancienneReference: p.equipementAncienneReference });
   }
 
   idChamp(m: MomentPhotoPret, champ: string): string {

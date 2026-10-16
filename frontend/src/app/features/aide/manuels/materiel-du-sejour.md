@@ -3,7 +3,7 @@ titre: Déclarer le matériel emprunté pendant un séjour
 rubrique: Découverte
 videos: E2, A17
 ecran: /sejours
-mots: matériel, emprunt, emprunter, emprunté, prêt, prêter, déclarer, déclaration, gilet, stab, détendeur, bloc, bouteille, combinaison, désinfection, désinfecté, retour, rendre, rendu, directeur technique, séjour, lien, code, annuler
+mots: matériel, emprunt, emprunter, emprunté, prêt, prêter, déclarer, déclaration, gilet, stab, détendeur, bloc, bouteille, combinaison, désinfection, désinfecté, retour, rendre, rendu, directeur technique, séjour, lien, code, annuler, ancien numéro
 questions:
 - J'ai emprunté du matériel du club pour le séjour : comment le déclarer ?
 - Comment déclarer un gilet ou un détendeur emprunté ?
@@ -19,7 +19,7 @@ Vous avez emprunté du matériel du club pour un séjour (bloc, détendeur, gile
 2. « **Déclarer un emprunt** ».
 3. « Qui a emprunté » : vous. L'organisateur et les moniteurs du séjour peuvent choisir un autre participant (un élève, par exemple).
 4. « Emprunté le » : le jour où vous l'avez pris (aujourd'hui par défaut).
-5. Choisissez le matériel : touchez un type (« Blocs », « Détendeurs », « Gilets », « Combinaisons ») ou tapez sa référence (celle de l'étiquette, « G-12 ») ou sa taille, puis cochez-le. Plusieurs pièces à la fois, c'est possible.
+5. Choisissez le matériel : touchez un type (« Blocs », « Détendeurs », « Gilets », « Combinaisons ») ou tapez sa référence (celle de l'étiquette, « G-12 »), son ancien numéro ou sa taille, puis cochez-le. Un matériel renuméroté s'affiche avec son ancien numéro : « G-12 (ancien n° 30) ». Plusieurs pièces à la fois, c'est possible.
 6. Un **détendeur** se déclare par l'organisateur ou un moniteur du séjour, qui coche « **Le détendeur a été désinfecté avant d'être remis à l'emprunteur** » : c'est obligatoire à chaque changement d'utilisateur (Code du sport) et inscrit à son journal. Les autres participants ne le voient pas dans la liste : demandez à un moniteur du séjour.
 7. « Enregistrer » : l'emprunt s'affiche, avec la date de retour prévue (le dernier jour du séjour).
 

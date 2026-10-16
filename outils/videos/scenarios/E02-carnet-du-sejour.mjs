@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-16, 17e série, jour de départ de l'aller et jour d'arrivée du retour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 18e série, ancien numéro du matériel (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -43,7 +43,7 @@ export default {
     await legende('Elle a emprunté un gilet du club : onglet « Matériel », « Déclarer un emprunt ».', 0);
     await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Déclarer un emprunt' }), { apres: 1500 });
-    await legende('Elle choisit « Gilets », coche le sien, et enregistre. Le directeur technique le retrouve dans ses prêts.', 0);
+    await legende('Elle choisit « Gilets », ou tape la référence ou l\'ancien numéro de l\'étiquette, coche le sien, et enregistre. Le directeur technique le retrouve dans ses prêts.', 0);
     await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });
     await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 3000 });

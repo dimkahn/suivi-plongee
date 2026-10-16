@@ -10,6 +10,7 @@ import {
 } from '../../core/modeles';
 import { dateDuJour } from '../../core/date-fr';
 import { descriptionEquipement } from './materiel';
+import { nomEquipement } from '../../core/nom-equipement';
 
 /** Une ligne de la fiche en cours de saisie. */
 interface Ligne {
@@ -34,7 +35,7 @@ interface Ligne {
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (modele(); as m) {
-      <h1>Inspection visuelle du bloc {{ m.bloc.reference }}</h1>
+      <h1>Inspection visuelle du bloc {{ nom(m.bloc) }}</h1>
       @if (description(m.bloc); as d) { <p class="secondaire">{{ d }}</p> }
 
       <form (ngSubmit)="enregistrer()">
@@ -226,6 +227,7 @@ export class SaisieInspectionTivComponent {
   readonly motifs = MOTIFS_INSPECTION_TIV;
   readonly decisions = DECISIONS_INSPECTION_TIV;
   readonly description = descriptionEquipement;
+  readonly nom = nomEquipement;
   readonly aujourdhui = dateDuJour();
   readonly equipementId = Number(this.route.snapshot.paramMap.get('id'));
 

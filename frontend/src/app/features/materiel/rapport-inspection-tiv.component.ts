@@ -6,6 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { NavigationService } from '../../core/navigation';
 import { InspectionTivVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
+import { nomEquipement } from '../../core/nom-equipement';
 
 /**
  * Le compte rendu d'une inspection TIV, à imprimer et à faire signer. Son
@@ -39,6 +40,9 @@ import { DateFrPipe } from '../../core/date-fr';
           <h2>Bouteille</h2>
           <dl class="champs">
             <div><dt>Référence du club</dt><dd>{{ f.bloc.reference }}</dd></div>
+            @if (f.bloc.ancienneReference) {
+              <div><dt>Ancienne référence</dt><dd>{{ f.bloc.ancienneReference }}</dd></div>
+            }
             <div><dt>Propriétaire</dt><dd>{{ f.proprietaire ?? 'Le club' }}</dd></div>
             <div><dt>Constructeur</dt><dd>{{ f.bloc.constructeur || '—' }}</dd></div>
             <div><dt>Marque</dt><dd>{{ f.bloc.marque || '—' }}</dd></div>
@@ -180,7 +184,7 @@ export class RapportInspectionTivComponent {
     // Le compte rendu ne connaît son bloc qu'une fois lu.
     this.navigation.preciserRetour(computed(() => {
       const bloc = this.fiche()?.bloc;
-      return bloc ? { libelle: `Fiche du bloc ${bloc.reference}`, lien: `/materiel/${bloc.id}` } : null;
+      return bloc ? { libelle: `Fiche du bloc ${nomEquipement(bloc)}`, lien: `/materiel/${bloc.id}` } : null;
     }));
     void this.charger(Number(this.route.snapshot.paramMap.get('inspectionId')));
   }

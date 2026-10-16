@@ -43,7 +43,7 @@ public class PretService {
     public record EmprunteurVue(TypeEmprunteur type, Long id, String nomComplet, String precision) {}
 
     public record EquipementPreteVue(Long id, TypeEquipement type, String typeLibelle, String reference,
-                                     String description) {}
+                                     String ancienneReference, String description) {}
 
     public record PretVue(Long id, TypeEmprunteur emprunteurType, Long emprunteurId, String emprunteur,
                           Long sortieId, String sortieNom, String sortieLieu, LocalDate sortieDebut,
@@ -328,7 +328,8 @@ public class PretService {
     }
 
     private static EquipementPreteVue vueEquipement(Equipement e) {
-        return new EquipementPreteVue(e.getId(), e.getType(), e.getType().libelle(), e.getReference(), description(e));
+        return new EquipementPreteVue(e.getId(), e.getType(), e.getType().libelle(), e.getReference(),
+                e.getAncienneReference(), description(e));
     }
 
     /** « Aqualung Legend », « Scubapro 5 mm, taille M », « 12 L acier ». */

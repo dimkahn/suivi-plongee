@@ -295,6 +295,41 @@ class MaterielTest {
     }
 
     @Test
+    @DisplayName("Un matériel renuméroté garde son ancien numéro partout : prêt, photo, refus")
+    void ancienNumeroPartout() throws Exception {
+        String dt = jeton("e3@club.fr");
+        long gilet = json.readTree(mvc.perform(post("/api/materiel/equipements").header("Authorization", dt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"type":"GILET","reference":"G-91","ancienneReference":"31","taille":"L"}"""))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+
+        JsonNode pret = json.readTree(mvc.perform(post("/api/materiel/prets").header("Authorization", dt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"eleveId":%d,"datePret":"%s","equipementIds":[%d]}"""
+                                .formatted(eleveBerthier(dt), AUJOURDHUI, gilet)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        assertThat(pret.get("equipements").get(0).get("ancienneReference").asText()).isEqualTo("31");
+
+        byte[] jpeg = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 16, 'J', 'F', 'I', 'F'};
+        JsonNode photo = json.readTree(mvc.perform(multipart("/api/materiel/prets/" + pret.get("id").asLong() + "/photos")
+                        .file(new MockMultipartFile("fichier", "a.jpg", "image/jpeg", jpeg))
+                        .param("moment", "AVANT").param("equipementId", String.valueOf(gilet))
+                        .header("Authorization", dt))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        assertThat(photo.get("equipementAncienneReference").asText()).isEqualTo("31");
+
+        mvc.perform(post("/api/materiel/prets").header("Authorization", dt).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                 {"eleveId":%d,"datePret":"%s","equipementIds":[%d]}"""
+                                .formatted(eleveBerthier(dt), AUJOURDHUI, gilet)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString(
+                        "Gilet stabilisateur G-91 (ancien n° 31) : déjà prêté")));
+    }
+
+    @Test
     @DisplayName("Un prêt rattaché à une sortie court par défaut jusqu'à son dernier jour")
     void pretPourUneSortie() throws Exception {
         String dt = jeton("e3@club.fr");

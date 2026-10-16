@@ -14,5 +14,7 @@ public interface EquipementRepository extends JpaRepository<Equipement, Long> {
 
     Optional<Equipement> findFirstByReferenceIgnoreCase(String reference);
 
+    List<Equipement> findByAncienneReferenceIgnoreCaseOrderByReference(String ancienneReference);
+
     boolean existsByReferenceIgnoreCaseAndIdNot(String reference, Long id);
 }

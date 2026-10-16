@@ -11,6 +11,7 @@ import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component
 import { DateFrPipe, dateDuJour, periode } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
 import { descriptionEquipement } from './materiel';
+import { nomEquipement } from '../../core/nom-equipement';
 import { PhotosPretComponent } from './photos-pret.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 
@@ -84,7 +85,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
                 <li>
                   <span>{{ e.typeLibelle }} {{ e.reference }}@if (e.ancienneReference) { (ancien n° {{ e.ancienneReference }})}</span>
                   <button type="button" class="bouton-discret" (click)="basculer(e.id)"
-                          [attr.aria-label]="'Retirer ' + e.reference">Retirer</button>
+                          [attr.aria-label]="'Retirer ' + nom(e)">Retirer</button>
                 </li>
               }
             </ul>
@@ -188,7 +189,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
               <ul class="materiel-prete">
                 @for (e of p.equipements; track e.id) {
                   <li>
-                    <a [routerLink]="['/materiel', e.id]">{{ e.typeLibelle }} {{ e.reference }}</a>
+                    <a [routerLink]="['/materiel', e.id]">{{ e.typeLibelle }} {{ nom(e) }}</a>
                     @if (e.description) { <span class="secondaire"> · {{ e.description }}</span> }
                   </li>
                 }
@@ -225,7 +226,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
                            [(ngModel)]="dateRetour">
                     @for (e of p.equipements; track e.id) {
                       <div class="retour-equipement">
-                        <label [for]="'incident-' + e.id">{{ e.typeLibelle }} {{ e.reference }} : incident éventuel</label>
+                        <label [for]="'incident-' + e.id">{{ e.typeLibelle }} {{ nom(e) }} : incident éventuel</label>
                         <input [id]="'incident-' + e.id" [(ngModel)]="lignesRetour[e.id].incident"
                                placeholder="Rien à signaler">
                         <label class="case">
@@ -298,6 +299,7 @@ export class PretsComponent {
 
   readonly types = TYPES_EQUIPEMENT;
   readonly description = descriptionEquipement;
+  readonly nom = nomEquipement;
   readonly aujourdhui = dateDuJour();
 
   onglet = signal<'EN_COURS' | 'RENDUS'>('EN_COURS');

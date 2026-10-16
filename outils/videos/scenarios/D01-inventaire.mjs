@@ -1,5 +1,5 @@
 // D1 — L'inventaire du matériel.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 13e série, ancien numéro du matériel (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -20,7 +20,7 @@ export default {
     await page.getByRole('heading', { name: 'À surveiller' }).scrollIntoViewIfNeeded();
     await pause(4000);
     await legende('TIV tous les 12 mois, requalification des blocs, révisions fabricant.', 3500);
-    await legende('Filtrez par type, ou cherchez une référence.', 0);
+    await legende('Filtrez par type, ou cherchez une référence ou un ancien numéro : un matériel renuméroté le garde partout à côté du nouveau.', 0);
     await toucher(page.getByRole('button', { name: 'Détendeurs' }), { apres: 1200 });
     await defiler(400, 1200);
     await enHaut();

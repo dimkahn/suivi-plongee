@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Étiquettes à QR code collées sur le matériel. Le QR code porte l'adresse
@@ -35,7 +36,7 @@ import java.util.regex.Pattern;
  * de l'application la retrouve aussi. L'adresse vise l'id, pas la
  * référence : la référence peut être corrigée sans réimprimer l'étiquette.
  * Une ancienne étiquette qui ne porterait que la référence (« B-12 ») est
- * reconnue elle aussi.
+ * reconnue elle aussi, comme l'ancien numéro d'un matériel renuméroté.
  */
 @Service
 public class QrCodeMaterielService {
@@ -97,9 +98,18 @@ public class QrCodeMaterielService {
             if (equipements.existsById(id)) return id;
             throw new RegleMetierException("Cet équipement n'existe plus dans l'inventaire (supprimé ?).");
         }
-        return equipements.findFirstByReferenceIgnoreCase(texte).map(Equipement::getId)
-                .orElseThrow(() -> new RegleMetierException(
-                        "Ce QR code ne correspond à aucun équipement du club : « " + abreger(texte) + " »."));
+        Optional<Equipement> parReference = equipements.findFirstByReferenceIgnoreCase(texte);
+        if (parReference.isPresent()) return parReference.get().getId();
+        // Une vieille étiquette, ou un numéro tapé de mémoire : l'ancien numéro, s'il ne désigne qu'un équipement.
+        List<Equipement> parAncienne = equipements.findByAncienneReferenceIgnoreCaseOrderByReference(texte);
+        if (parAncienne.size() == 1) return parAncienne.getFirst().getId();
+        if (parAncienne.size() > 1) {
+            throw new RegleMetierException("Plusieurs équipements ont eu l'ancien n° « " + abreger(texte) + " » : "
+                    + parAncienne.stream().map(Equipement::designation).collect(Collectors.joining(", "))
+                    + ". Tapez la référence actuelle.");
+        }
+        throw new RegleMetierException(
+                "Ce QR code ne correspond à aucun équipement du club : « " + abreger(texte) + " ».");
     }
 
     /** Pour les navigateurs qui ne savent pas lire un QR code eux-mêmes (iPhone) : une photo de l'étiquette. */

@@ -31,7 +31,7 @@ public class PhotoPretService {
     static final int PHOTOS_MAX_PAR_MOMENT = 12;
 
     public record PhotoVue(Long id, Moment moment, Long equipementId, String equipementReference,
-                           String legende, Instant priseLe, String prisePar) {}
+                           String equipementAncienneReference, String legende, Instant priseLe, String prisePar) {}
 
     public record ContenuPhoto(byte[] contenu, String type) {}
 
@@ -136,7 +136,8 @@ public class PhotoPretService {
     }
 
     private static PhotoVue vue(PhotoPretResume r) {
-        return new PhotoVue(r.id(), r.moment(), r.equipementId(), r.equipementReference(), r.legende(), r.priseLe(),
+        return new PhotoVue(r.id(), r.moment(), r.equipementId(), r.equipementReference(),
+                r.equipementAncienneReference(), r.legende(), r.priseLe(),
                 r.prisParPrenom() == null ? null : r.prisParPrenom() + " " + r.prisParNom());
     }
 }
