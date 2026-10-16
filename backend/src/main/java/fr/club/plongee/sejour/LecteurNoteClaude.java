@@ -15,6 +15,7 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,8 @@ public class LecteurNoteClaude implements LecteurNote {
     private static final String CONSIGNE = """
             Cette photo est une note de frais (ticket de caisse, facture, reçu) prise pendant un séjour.
             Donne le montant total réellement payé, TTC, en euros (la ligne « Total », « Net à payer »,
-            « Montant payé »… ; pas un sous-total, pas la TVA, pas le rendu de monnaie), et la date de l'achat.
+            « Montant payé »… ; pas un sous-total, pas la TVA, pas le rendu de monnaie), la date de l'achat,
+            et la catégorie de la dépense d'après le commerçant et ce qui a été acheté.
             Si la note n'est pas lisible ou si une valeur n'y figure pas, réponds null pour cette valeur :
             n'invente rien.""";
 
@@ -47,8 +49,14 @@ public class LecteurNoteClaude implements LecteurNote {
                     "montant_total", Map.of("type", List.of("number", "null"),
                             "description", "Total payé TTC en euros, point décimal (45.80)"),
                     "date_achat", Map.of("type", List.of("string", "null"),
-                            "description", "Date de l'achat au format AAAA-MM-JJ")),
-            "required", List.of("montant_total", "date_achat"));
+                            "description", "Date de l'achat au format AAAA-MM-JJ"),
+                    "categorie", Map.of("type", List.of("string", "null"),
+                            "enum", Arrays.asList("HEBERGEMENT", "TRANSPORT", "REPAS", "PLONGEE", "AUTRE", null),
+                            "description", "HEBERGEMENT : gîte, hôtel, location ; TRANSPORT : carburant, péage, "
+                                    + "billet, location de voiture, parking, bateau ; REPAS : restaurant, courses, "
+                                    + "boulangerie, café ; PLONGEE : centre de plongée, gonflage, location de "
+                                    + "matériel de plongée ; AUTRE : le reste")),
+            "required", List.of("montant_total", "date_achat", "categorie"));
 
     private final ObjectMapper json;
     private final RestClient http;
@@ -105,15 +113,25 @@ public class LecteurNoteClaude implements LecteurNote {
         for (JsonNode bloc : reponse.path("content")) {
             if (!"tool_use".equals(bloc.path("type").asText())) continue;
             JsonNode entree = bloc.path("input");
-            return new NoteLue(centimes(entree.path("montant_total")), jour(entree.path("date_achat")));
+            return new NoteLue(centimes(entree.path("montant_total")), jour(entree.path("date_achat")),
+                    categorie(entree.path("categorie")));
         }
-        return new NoteLue(null, null);
+        return new NoteLue(null, null, null);
     }
 
     private static Long centimes(JsonNode montant) {
         if (!montant.isNumber()) return null;
         long centimes = montant.decimalValue().movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact();
         return centimes > 0 && centimes <= FraisService.MONTANT_MAX_CENTIMES ? centimes : null;
+    }
+
+    private static FraisSejour.CategorieDepense categorie(JsonNode categorie) {
+        if (!categorie.isString()) return null;
+        try {
+            return FraisSejour.CategorieDepense.valueOf(categorie.asText());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private static LocalDate jour(JsonNode date) {
