@@ -13,6 +13,7 @@
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist",
+            "allowedCommonJsDependencies": ["tesseract.js", "regenerator-runtime/runtime"],
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -31,6 +32,21 @@
                 "glob": "manifest.webmanifest",
                 "input": "src",
                 "output": "/"
+              },
+              {
+                "glob": "worker.min.js",
+                "input": "node_modules/tesseract.js/dist",
+                "output": "ocr"
+              },
+              {
+                "glob": "tesseract-core*-lstm.wasm.js",
+                "input": "node_modules/tesseract.js-core",
+                "output": "ocr/coeur"
+              },
+              {
+                "glob": "fra.traineddata.gz",
+                "input": "node_modules/@tesseract.js-data/fra/4.0.0_best_int",
+                "output": "ocr/langue"
               }
             ],
             "serviceWorker": "ngsw-config.json",

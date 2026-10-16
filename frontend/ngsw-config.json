@@ -11,6 +11,15 @@
       }
     },
     {
+      "comment": "Lecture des notes de frais (Tesseract, ~4,6 Mo) : téléchargée à la première photo seulement, puis gardée.",
+      "name": "ocr",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "resources": {
+        "files": ["/ocr/**"]
+      }
+    },
+    {
       "name": "polices",
       "installMode": "lazy",
       "updateMode": "prefetch",

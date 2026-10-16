@@ -9,7 +9,7 @@ import java.time.LocalDate;
  * <p>
  * Facultatif, réglé par installation : sans clé d'accès au service de
  * lecture ({@code app.lecture-notes.cle-api}), {@link #actif()} est faux et
- * l'écran ne propose rien.
+ * la note est lue sur le téléphone, sans IA ({@code ocr-ticket.ts}).
  */
 public interface LecteurNote {
 

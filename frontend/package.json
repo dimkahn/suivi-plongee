@@ -16,7 +16,9 @@
     "@angular/platform-browser": "^22.1.6",
     "@angular/router": "^22.1.6",
     "@angular/service-worker": "^22.1.6",
+    "@tesseract.js-data/fra": "^1.0.0",
     "rxjs": "~7.8.0",
+    "tesseract.js": "^7.0.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"
   },

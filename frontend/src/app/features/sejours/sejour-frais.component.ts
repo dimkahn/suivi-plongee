@@ -6,7 +6,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { dateFr } from '../../core/date-fr';
 import { reduirePhoto } from '../../core/reduire-photo';
 import {
-  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, ParticipantFrais, PortFrais, completerAvecNote,
+  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, completerAvecNote,
   enCentimes, euros, nomComplet
 } from './sejour-api';
 
@@ -236,7 +236,7 @@ interface PhotoAEnvoyer {
                (change)="choisirPhotos($event)">
         @if (lectureNote(); as l) { <p class="lecture-note" role="status">{{ l }}</p> }
         <p class="secondaire">Une photo lisible du ticket ou de la facture : chacun peut la voir.
-          @if (d.lireNotes) { Le montant total, la date et la catégorie y sont lus pour remplir les cases vides : vérifiez-les. }</p>
+          Le montant total, la date et la catégorie y sont lus pour remplir les cases vides : vérifiez-les.</p>
       </fieldset>
 
       <fieldset>
@@ -561,15 +561,16 @@ export class SejourFraisComponent {
 
   /**
    * Le montant total, la date et la catégorie lus sur la photo remplissent les cases encore vides
-   * (catégorie encore « Autre »), jamais ce qui est saisi.
+   * (catégorie encore « Autre »), jamais ce qui est saisi. Lus sur le téléphone (OCR), ou par l'IA
+   * quand l'installation l'a réglée ; si l'IA ne répond pas, le téléphone prend le relais.
    */
   private async lireNote(photo: File): Promise<void> {
     const d = this.depense;
-    if (!this.frais().droits.lireNotes || (d.montant.trim() && d.jour && d.categorie !== 'AUTRE')) return;
+    if (d.montant.trim() && d.jour && d.categorie !== 'AUTRE') return;
     const ouverture = this.ouverture;
-    this.lectureNote.set('Lecture de la note…');
+    this.lectureNote.set('Lecture de la note… (la première fois, l’outil de lecture se télécharge)');
     try {
-      const note = await firstValueFrom(this.port().lireNote(photo));
+      const note = await this.lireParIaOuSurLeTelephone(photo);
       if (ouverture !== this.ouverture) return;
       const c = completerAvecNote(this.depense, note);
       this.depense.montant = c.montant;
@@ -582,11 +583,22 @@ export class SejourFraisComponent {
       this.lectureNote.set(lus
         ? `Lu sur la note : ${lus}. Vérifiez avant d’enregistrer.`
         : 'Rien de plus n’a pu être lu sur la note : complétez à la main.');
-    } catch (e) {
+    } catch {
       if (ouverture !== this.ouverture) return;
-      this.lectureNote.set((e as HttpErrorResponse).error?.detail
-        ?? 'La note n’a pas pu être lue : saisissez le montant et la date.');
+      this.lectureNote.set('La note n’a pas pu être lue : saisissez le montant et la date.');
     }
+  }
+
+  private async lireParIaOuSurLeTelephone(photo: File): Promise<NoteLue> {
+    if (this.frais().droits.lireNotes) {
+      try {
+        return await firstValueFrom(this.port().lireNote(photo));
+      } catch {
+        // L'IA ne répond pas : la lecture sur le téléphone prend le relais.
+      }
+    }
+    const { lireTicketSurLeTelephone } = await import('./ocr-ticket');
+    return lireTicketSurLeTelephone(photo);
   }
 
   retirerPhoto(i: number): void {
