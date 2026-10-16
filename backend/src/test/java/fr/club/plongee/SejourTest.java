@@ -131,6 +131,25 @@ class SejourTest {
                  "participantIds":[%d]}""".formatted(debut.plusDays(2), ines), 200);
         JsonNode retourInes = participantDe(s, ines).get("depart");
         assertThat(retourInes.path("heureArrivee").asText()).startsWith("19:35");
+        // Vol long : le jour de départ de l'avion aller et le jour d'arrivée de l'avion retour se saisissent.
+        s = envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"ARRIVEE","trajet":{"date":"%s","heure":"07:15","transport":"AVION","numero":"TX540",
+                 "heureDepart":"21:40","dateDepart":"%s"},
+                 "participantIds":[%d]}""".formatted(debut, debut.minusDays(2), leo), 200);
+        assertThat(participantDe(s, leo).get("arrivee").path("dateDepart").asText()).isEqualTo(debut.minusDays(2).toString());
+        s = envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"DEPART","trajet":{"date":"%s","heure":"22:30","transport":"AVION","numero":"TX541",
+                 "heureArrivee":"06:10","dateArrivee":"%s"},
+                 "participantIds":[%d]}""".formatted(debut.plusDays(2), debut.plusDays(4), leo), 200);
+        assertThat(participantDe(s, leo).get("depart").path("dateArrivee").asText()).isEqualTo(debut.plusDays(4).toString());
+        // Un avion n'arrive pas avant d'être parti.
+        JsonNode avant = envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"DEPART","trajet":{"date":"%s","heure":"22:30","dateArrivee":"%s"},
+                 "participantIds":[%d]}""".formatted(debut.plusDays(2), debut.plusDays(1), leo), 422);
+        assertThat(avant.get("detail").asText()).contains("arrive avant de partir");
+        envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"ARRIVEE","trajet":{"date":"%s","dateDepart":"%s"},
+                 "participantIds":[%d]}""".formatted(debut, debut.plusDays(1), leo), 422);
         envoyer("PUT", base + "/trajets", jeton("e1@club.fr"), """
                 {"sens":"DEPART","trajet":null,"participantIds":[%d]}""".formatted(ines), 403);
 

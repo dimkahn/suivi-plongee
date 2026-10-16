@@ -12,7 +12,7 @@ import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
-  TRANSPORTS, Trajet, VoitureVue, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
+  TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
@@ -29,7 +29,7 @@ interface GroupeTrajet {
   quand: string;
   comment: string;
   lieu: string | null;
-  /** Retour seulement : l’heure à laquelle arrive l’avion ou le train. */
+  /** Retour seulement : quand arrive l’avion ou le train, « à 21h35 » ou « le mercredi 16/06/2027 à 06h10 ». */
   arrivee: string | null;
   noms: string[];
   /** Le trajet commun et ceux qui le prennent, pour y ajouter d'autres participants. */
@@ -336,7 +336,7 @@ function participantVide(): BrouillonParticipant {
                       <span class="nom">{{ g.quand }}</span>
                       @if (g.comment) { <span> · {{ g.comment }}</span> }
                       @if (g.lieu) { <span class="secondaire"> · {{ g.lieu }}</span> }
-                      @if (g.arrivee) { <span class="secondaire"> · arrivée à {{ g.arrivee }}</span> }
+                      @if (g.arrivee) { <span class="secondaire"> · arrivée {{ g.arrivee }}</span> }
                       <p>{{ g.noms.join(', ') }}</p>
                       @if (s.gere) {
                         <button type="button" class="bouton-discret sans-impression"
@@ -579,12 +579,16 @@ function participantVide(): BrouillonParticipant {
             <div><label [for]="'p-' + sens.code + '-lieu'">{{ sens.lieu }}</label>
               <input [id]="'p-' + sens.code + '-lieu'" [(ngModel)]="participant[sens.code].lieu" maxlength="120"></div>
             @if (sens.code === 'arrivee') {
+              <div><label for="p-arrivee-date-depart">Jour de départ de l'avion ou du train</label>
+                <input id="p-arrivee-date-depart" type="date" [(ngModel)]="participant.arrivee.dateDepart"></div>
               <div><label for="p-arrivee-heure-depart">Heure de départ de l'avion ou du train</label>
                 <input id="p-arrivee-heure-depart" type="time" [(ngModel)]="participant.arrivee.heureDepart"></div>
               <div><label for="p-arrivee-lieu-depart">Aéroport ou gare de départ</label>
                 <input id="p-arrivee-lieu-depart" [(ngModel)]="participant.arrivee.lieuDepart" maxlength="120"
                        placeholder="Paris-Orly"></div>
             } @else {
+              <div><label for="p-depart-date-arrivee">Jour d'arrivée de l'avion ou du train</label>
+                <input id="p-depart-date-arrivee" type="date" [(ngModel)]="participant.depart.dateArrivee"></div>
               <div><label for="p-depart-heure-arrivee">Heure d'arrivée de l'avion ou du train</label>
                 <input id="p-depart-heure-arrivee" type="time" [(ngModel)]="participant.depart.heureArrivee"></div>
             }
@@ -799,11 +803,15 @@ function participantVide(): BrouillonParticipant {
         <div><label for="vc-lieu">{{ vol.sens === 'ARRIVEE' ? "Aéroport, gare ou lieu d'arrivée" : 'Aéroport, gare ou lieu de départ' }}</label>
           <input id="vc-lieu" [(ngModel)]="vol.trajet.lieu" maxlength="120"></div>
         @if (vol.sens === 'ARRIVEE') {
+          <div><label for="vc-date-depart">Jour de départ de l'avion ou du train</label>
+            <input id="vc-date-depart" type="date" [(ngModel)]="vol.trajet.dateDepart"></div>
           <div><label for="vc-heure-depart">Heure de départ de l'avion ou du train</label>
             <input id="vc-heure-depart" type="time" [(ngModel)]="vol.trajet.heureDepart"></div>
           <div><label for="vc-lieu-depart">Aéroport ou gare de départ</label>
             <input id="vc-lieu-depart" [(ngModel)]="vol.trajet.lieuDepart" maxlength="120" placeholder="Paris-Orly"></div>
         } @else {
+          <div><label for="vc-date-arrivee">Jour d'arrivée de l'avion ou du train</label>
+            <input id="vc-date-arrivee" type="date" [(ngModel)]="vol.trajet.dateArrivee"></div>
           <div><label for="vc-heure-arrivee">Heure d'arrivée de l'avion ou du train</label>
             <input id="vc-heure-arrivee" type="time" [(ngModel)]="vol.trajet.heureArrivee"></div>
         }
@@ -1179,13 +1187,16 @@ export class SejourComponent {
       const t = p[sens];
       if (!t || (!t.date && !t.heure)) continue;
       const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu, t.heureDepart?.slice(0, 5), t.lieuDepart,
-        t.heureArrivee?.slice(0, 5)]
+        t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee]
         .join('|');
       const g = groupes.get(cle) ?? {
         tri: `${t.date ?? ''} ${t.heure ?? ''}`,
         quand: t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : 'à ' + heure(t.heure),
         comment: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' '),
-        lieu: t.lieu, arrivee: t.heureArrivee ? heure(t.heureArrivee) : null, noms: [], trajet: t, ids: []
+        lieu: t.lieu,
+        // « à 21h35 », ou « le mercredi 16/06/2027 à 06h10 » pour un vol qui arrive un autre jour.
+        arrivee: (autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')).trim() || null,
+        noms: [], trajet: t, ids: []
       };
       g.noms.push(nomComplet(p));
       g.ids.push(p.id);
@@ -1255,7 +1266,8 @@ export class SejourComponent {
     const trajet = {
       ...t, numero: t.numero?.trim() || null, lieu: t.lieu?.trim() || null,
       heureDepart: aller ? t.heureDepart || null : null, lieuDepart: aller ? t.lieuDepart?.trim() || null : null,
-      heureArrivee: aller ? null : t.heureArrivee || null
+      heureArrivee: aller ? null : t.heureArrivee || null,
+      dateDepart: aller ? t.dateDepart || null : null, dateArrivee: aller ? null : t.dateArrivee || null
     };
     this.ecrire(this.api.appliquerTrajet(this.id, this.vol.sens, trajet, this.vol.ids), () => {
       this.volOuvert.set(false);

@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-16, 16e série, heure d'arrivée du voyage retour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 17e série, jour de départ de l'aller et jour d'arrivée du retour (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations et déclare le gilet du club qu\'elle a emprunté.',
+  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et déclare le gilet du club qu\'elle a emprunté.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette }) {
@@ -33,7 +33,7 @@ export default {
     await legende('Toucher une case ouvre le détail : ici sa chambre, dans l\'onglet Hébergement.', 0);
     await toucher(page.locator('app-mon-sejour .tuile').filter({ hasText: 'Chambre' }), { apres: 3500 });
     await enHaut();
-    await legende('« Modifier mes informations » : son vol aller et son heure de départ, l'heure d'arrivée du retour, ses repas, la personne à prévenir.', 0);
+    await legende("« Modifier mes informations » : son vol aller, le jour et l'heure de son départ, le jour et l'heure d'arrivée du retour, ses repas, la personne à prévenir.", 0);
     await toucher(page.getByRole('button', { name: 'Modifier mes informations' }), { apres: 3500 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Puis le programme, jour par jour.', 0);

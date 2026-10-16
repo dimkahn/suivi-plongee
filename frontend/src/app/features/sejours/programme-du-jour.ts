@@ -1,5 +1,5 @@
 import { SeanceSortieVue } from '../../core/modeles';
-import { EvenementVue, MoyenTransport, PalanqueeVue, ParticipantVue, TRANSPORTS, Trajet, heure, nomComplet } from './sejour-api';
+import { EvenementVue, MoyenTransport, PalanqueeVue, ParticipantVue, TRANSPORTS, Trajet, heure, jourLong, nomComplet } from './sejour-api';
 
 // ----------------------------------------------------------------
 //  L'encart « Aujourd'hui » du séjour : le séjour commence dès le voyage
@@ -62,7 +62,10 @@ export interface VoyageDuJour {
   heureDepart: string;
   /** D'où l'on part. */
   lieuDepart: string | null;
-  /** Pour l'aller : l'arrivée sur place, « 18h30, Aéroport de Toulon-Hyères » ; pour le retour : l'heure d'arrivée, « 21h35 ». */
+  /**
+   * Pour l'aller : l'arrivée sur place, « 18h30, Aéroport de Toulon-Hyères » ; pour le retour : l'heure d'arrivée,
+   * « 21h35 ». Précédée du jour s'il n'est pas celui du départ : « mercredi 16/06/2027 à 06h10 ».
+   */
   arrivee: string | null;
   /** « Soyez à l'aéroport vers 15h05 (2 h avant). » ; null s'il n'y a pas de conseil. */
   conseil: string | null;
@@ -81,9 +84,11 @@ export function decalerJour(iso: string, n: number): string {
 
 /**
  * Le jour où l'on part de chez soi (aller) ou du séjour (retour). Un avion
- * aller qui part plus tard qu'il n'arrive est un vol de nuit : départ la veille.
+ * aller qui part plus tard qu'il n'arrive est un vol de nuit : départ la veille,
+ * sauf si le jour de départ de l'avion est saisi (vol long).
  */
 export function jourDuDepart(t: Trajet | null, sens: 'aller' | 'retour'): string | null {
+  if (sens === 'aller' && t?.dateDepart) return t.dateDepart;
   if (!t?.date) return null;
   if (sens === 'aller' && t.heureDepart && t.heure && t.heureDepart.slice(0, 5) > t.heure.slice(0, 5)) {
     return decalerJour(t.date, -1);
@@ -113,14 +118,21 @@ export function voyagesDuJour(participants: ParticipantVue[], jour: string): Voy
       if (!t || jourDuDepart(t, sens) !== jour) continue;
       const depart = (sens === 'aller' ? t.heureDepart : t.heure)?.slice(0, 5) ?? null;
       const lieuDepart = (sens === 'aller' ? t.lieuDepart : t.lieu) ?? null;
-      const cle = [sens, t.transport, t.numero, depart, lieuDepart, sens === 'aller' ? t.heure : t.heureArrivee].join('|');
+      const cle = [sens, t.transport, t.numero, depart, lieuDepart,
+        sens === 'aller' ? `${t.date} ${t.heure}` : `${t.dateArrivee} ${t.heureArrivee}`].join('|');
+      // Arrivée un autre jour que le départ (vol de nuit, vol long) : on dit lequel.
+      const jourArrivee = sens === 'aller' ? t.date : t.dateArrivee;
+      const autreJour = jourArrivee && jourArrivee !== jour ? jourLong(jourArrivee).toLowerCase() : null;
+      const heureArrivee = heure((sens === 'aller' ? t.heure : t.heureArrivee) ?? null);
       const v: VoyageDuJour & { tri: string } = groupes.get(cle) ?? {
         sens,
         moyen: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' ') || 'Voyage',
         heureDepart: heure(depart),
         lieuDepart,
-        arrivee: sens === 'aller' ? [heure(t.heure), t.lieu].filter(Boolean).join(', ') || null
-          : t.heureArrivee ? heure(t.heureArrivee) : null,
+        arrivee: [
+          [autreJour, heureArrivee].filter(Boolean).join(' à ') || null,
+          sens === 'aller' ? t.lieu : null
+        ].filter(Boolean).join(', ') || null,
         conseil: conseilDepart(t.transport, depart),
         heureManquante: !depart && !!t.transport && !!AVANCES_TRANSPORT[t.transport],
         noms: [], ids: [],

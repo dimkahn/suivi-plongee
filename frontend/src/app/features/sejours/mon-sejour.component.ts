@@ -128,12 +128,15 @@ export class MonSejourComponent {
     const quand = t?.date ? jourLong(t.date).slice(0, -5) + (t.heure ? ' à ' + heure(t.heure) : '')
       : t?.heure ? 'À ' + heure(t.heure) : null;
     const moyen = [TRANSPORTS.find(x => x.code === t?.transport)?.libelle, t?.numero].filter(Boolean).join(' ');
+    // Le jour où part (aller) ou arrive (retour) l'avion, s'il n'est pas celui du trajet : « le samedi 05/06 ».
+    const autre = aller ? t?.dateDepart : t?.dateArrivee;
+    const leJour = autre && autre !== t?.date ? ' le ' + jourLong(autre).slice(0, -5).toLowerCase() : '';
     const details = [
       [moyen, t?.lieu].filter(Boolean).join(' · ') || null,
-      aller && (t?.heureDepart || t?.lieuDepart)
-        ? 'Départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
+      aller && (t?.heureDepart || t?.lieuDepart || leJour)
+        ? 'Départ' + leJour + (t?.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t?.lieuDepart ? ' de ' + t.lieuDepart : '')
         : null,
-      !aller && t?.heureArrivee ? 'Arrivée à ' + heure(t.heureArrivee) : null
+      !aller && (t?.heureArrivee || leJour) ? 'Arrivée' + leJour + (t?.heureArrivee ? ' à ' + heure(t.heureArrivee) : '') : null
     ].filter((x): x is string => !!x);
     return { cible: 'transports', etiquette, principal: saisi ? quand : null, details, aCompleter: !saisi, vide: 'À préciser' };
   }

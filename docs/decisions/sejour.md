@@ -70,6 +70,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Décision** : onglet « Matériel » du séjour et de la page du lien (`PretsSejourService`, `/api/sejours/{id}/prets`, `/api/public/sejour/{code}/prets`). Chaque déclaration est un vrai prêt (`PretService.declarer`), rattaché à la sortie, avec tous les contrôles du matériel (déjà prêté, échéances jusqu'à la fin du séjour, désinfection des détendeurs) ; `sejour_pret` (V84) garde le participant emprunteur et qui a déclaré. Tout participant déclare pour lui-même, élève compris (pas d'argent en jeu), sauf un détendeur : sa désinfection entre au journal légal (A322-81, A322-177) et s'atteste par un encadrant identifié ; un refus « déjà prêté » ne nomme pas l'emprunteur (mineurs) ; organisateurs et moniteurs inscrits pour les autres ; chacun annule ce qu'il a déclaré tant que ce n'est pas rendu. Un participant ne voit que ses emprunts, les encadrants tous. Le retour reste au directeur technique.
 - **Conséquences** : les prêts « Déclaré depuis le séjour par … » apparaissent dans « Matériel », « Prêts », sans « prêté par ».
 
+## Jour de départ de l'aller, jour d'arrivée du retour
+
+- **Date** : 2026-10.
+- **Contexte** : un vol long (escale, décalage horaire) part deux jours avant l'arrivée ou arrive deux jours après le départ ; l'écran ne savait que deviner la veille (heure de départ plus tard que l'heure d'arrivée).
+- **Décision** : `arrivee_date_depart` et `depart_date_arrivee` (V87), facultatifs : vides, on garde le jour du trajet et la déduction de la veille. Montrés seulement s'ils diffèrent du jour du trajet (fiche, « Un même vol pour plusieurs », « Mes informations », Mon séjour, carnet par e-mail, encart « Aujourd'hui »). L'encart s'ouvre dès le jour de départ saisi. Un avion qui arriverait un jour avant celui où il part est refusé (422, `Trajet.verifierJours`).
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
