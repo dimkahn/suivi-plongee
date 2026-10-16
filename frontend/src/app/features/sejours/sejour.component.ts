@@ -18,11 +18,10 @@ import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { SejourFraisComponent } from './sejour-frais.component';
-import { SejourMaterielComponent } from './sejour-materiel.component';
 import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 
-type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'pratique';
+type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'pratique';
 
 /** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
 interface GroupeTrajet {
@@ -51,9 +50,9 @@ function participantVide(): BrouillonParticipant {
 }
 
 /**
- * Le séjour d'une sortie, en sept onglets : programme ; participants et
+ * Le séjour d'une sortie, en six onglets : programme ; participants et
  * repas ; transports (arrivées et départs, voitures) ; hébergement ; frais ;
- * matériel emprunté au club ; pratique (affaires à prévoir, infos pratiques). Les points à vérifier
+ * pratique (affaires à prévoir, infos pratiques). Les points à vérifier
  * sont comptés sur l'onglet qui permet de les régler. Pendant le séjour,
  * l'encart « Aujourd'hui » (JourneeSejourComponent) passe avant tout.
  * Son créateur (qui a créé la sortie) et les organisateurs qu'il désigne le
@@ -63,8 +62,8 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
-            MesInformationsComponent, MonSejourComponent],
+  imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, MesInformationsComponent,
+            MonSejourComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -471,18 +470,6 @@ function participantVide(): BrouillonParticipant {
             <p class="secondaire sans-impression acces-frais">
               Les participants qui ne sont pas moniteurs voient et saisissent leurs frais par le lien reçu avec
               « Demander à chacun ses informations » (onglet Participants).
-            </p>
-          }
-        </section>
-      }
-
-      <!-- Matériel du club emprunté : chargé à l'ouverture de l'onglet -->
-      @if (voir('materiel')) {
-        <section id="materiel-sejour">
-          <app-sejour-materiel [port]="portPrets" />
-          @if (s.gere) {
-            <p class="secondaire sans-impression acces-frais">
-              Les participants qui ne sont pas moniteurs déclarent leurs emprunts par le même lien que les frais.
             </p>
           }
         </section>
@@ -1031,7 +1018,6 @@ export class SejourComponent {
       { code: 'participants', libelle: 'Participants', alertes: 0 },
       { code: 'transports', libelle: 'Transports', alertes: a.transports.length },
       { code: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
-      { code: 'materiel', libelle: 'Matériel', alertes: 0 },
       { code: 'pratique', libelle: 'Pratique', alertes: 0 }
     ];
     return s?.encadrant ? liste : liste.filter(o => o.code !== 'participants');
@@ -1281,9 +1267,6 @@ export class SejourComponent {
 
   /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
   readonly portFrais = this.api.portFrais(this.id, s => this.sejour.set(s));
-
-  /** Le matériel emprunté, pour l'onglet « Matériel ». */
-  readonly portPrets = this.api.portPrets(this.id);
 
   mesInfosOuvertes = signal(false);
 

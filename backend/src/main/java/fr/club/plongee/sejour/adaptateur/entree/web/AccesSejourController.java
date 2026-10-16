@@ -3,9 +3,6 @@ package fr.club.plongee.sejour.adaptateur.entree.web;
 import fr.club.plongee.sejour.application.AccesSejourService;
 import fr.club.plongee.sejour.application.AccesSejourService.*;
 import fr.club.plongee.sejour.application.FraisService;
-import fr.club.plongee.sejour.application.PretsSejourService;
-import fr.club.plongee.sejour.application.PretsSejourService.DemandeDeclarationPret;
-import fr.club.plongee.sejour.application.PretsSejourService.PretsSejourVue;
 import fr.club.plongee.sejour.application.SejourService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -38,12 +35,10 @@ public class AccesSejourController {
 
     private final AccesSejourService acces;
     private final FraisService frais;
-    private final PretsSejourService pretsSejour;
 
-    public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour) {
+    public AccesSejourController(AccesSejourService acces, FraisService frais) {
         this.acces = acces;
         this.frais = frais;
-        this.pretsSejour = pretsSejour;
     }
 
     @GetMapping("/moi")
@@ -154,31 +149,6 @@ public class AccesSejourController {
         Acces a = acces.acces(code, jeton);
         frais.creerVersement(a.sortieId(), d, frais.acteurParticipant(a.participantId()));
         return acces.vue(code, a);
-    }
-
-    /** Le matériel que ce participant a emprunté, et ce qu'il peut déclarer. */
-    @GetMapping("/prets")
-    public PretsSejourVue prets(@PathVariable String code,
-                                @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
-        Acces a = acces.acces(code, jeton);
-        return pretsSejour.lire(a.sortieId(), frais.acteurParticipant(a.participantId()), false);
-    }
-
-    @PostMapping("/prets")
-    public PretsSejourVue declarerPret(@PathVariable String code,
-                                       @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
-                                       @Valid @RequestBody DemandeDeclarationPret d) {
-        Acces a = acces.acces(code, jeton);
-        pretsSejour.declarer(a.sortieId(), d, frais.acteurParticipant(a.participantId()));
-        return pretsSejour.lire(a.sortieId(), frais.acteurParticipant(a.participantId()), false);
-    }
-
-    @DeleteMapping("/prets/{pretId}")
-    public PretsSejourVue annulerPret(@PathVariable String code, @PathVariable Long pretId,
-                                      @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
-        Acces a = acces.acces(code, jeton);
-        pretsSejour.annuler(a.sortieId(), pretId, frais.acteurParticipant(a.participantId()));
-        return pretsSejour.lire(a.sortieId(), frais.acteurParticipant(a.participantId()), false);
     }
 
     @DeleteMapping("/versements/{versementId}")

@@ -260,23 +260,6 @@ public class MaterielService {
                 dateReference, Calendrier.aujourdhui());
     }
 
-    /**
-     * Les équipements qu'aucune échéance ne bloque jusqu'au {@code jusquAu}
-     * (ni rebut, ni hors service, ni contrôle dépassé), par type puis
-     * référence, prêtés ou non : pour {@link PretService}.
-     */
-    public List<Equipement> utilisables(LocalDate jusquAu) {
-        List<Equipement> liste = equipements.findAllByOrderByTypeAscReferenceAsc();
-        Map<Long, List<InterventionEquipement>> journaux = liste.isEmpty() ? Map.of()
-                : interventions.parEquipements(liste.stream().map(Equipement::getId).toList()).stream()
-                        .collect(Collectors.groupingBy(i -> i.getEquipement().getId()));
-        LocalDate aujourdhui = Calendrier.aujourdhui();
-        return liste.stream()
-                .filter(e -> !EcheancesEquipement.calculer(e, journaux.getOrDefault(e.getId(), List.of()),
-                        jusquAu, aujourdhui).bloquant())
-                .toList();
-    }
-
     /** Pour {@link PretService} : désinfection à la remise, incident au retour. */
     public InterventionEquipement journaliser(Equipement e, TypeIntervention type, LocalDate date, Resultat resultat,
                                               String description, Pret pret, Utilisateur auteur) {

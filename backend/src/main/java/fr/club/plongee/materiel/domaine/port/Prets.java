@@ -16,9 +16,6 @@ public interface Prets {
 
     List<Pret> parEquipement(Long equipementId);
 
-    /** Les plus récents d'abord. */
-    List<Pret> parSortie(Long sortieId);
-
     boolean existsBySortieId(Long sortieId);
 
     boolean existsParEquipement(Long equipementId);
