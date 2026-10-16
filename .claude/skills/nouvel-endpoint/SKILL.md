@@ -34,8 +34,6 @@ partagée entre les tests.
 
 ## 3. Le code
 
-- Domaine encore en couches : exécuter d'abord le skill `refactoriser-hexagonal`.
-  Sinon : contrôleur dans `adaptateur/entree/web` qui n'appelle que l'`application`.
 - Corps de requête : un `record Demande…` validé (`@Valid`, `jakarta.validation`) ;
   réponse : un `record …Vue`. Jamais une entité JPA en sortie.
 - **Données personnelles filtrées par le serveur** : un élève ou un participant ne
