@@ -190,11 +190,13 @@ public class CarnetSejourService {
             morceaux.add(tr.numero().trim());
         }
         if (!SejourService.blanc(tr.lieu())) morceaux.add(tr.lieu().trim());
-        // Arrivée : d'où et à quelle heure part l'avion ou le train ; départ : l'heure est déjà celle du départ.
+        // Arrivée : d'où et à quelle heure part l'avion ou le train ; départ : l'heure est déjà celle du départ,
+        // on ajoute celle de l'arrivée du voyage retour.
         if (aller && (tr.heureDepart() != null || !SejourService.blanc(tr.lieuDepart()))) {
             morceaux.add("départ" + (tr.heureDepart() == null ? "" : " à " + tr.heureDepart().format(HEURE))
                     + (SejourService.blanc(tr.lieuDepart()) ? "" : " de " + tr.lieuDepart().trim()));
         }
+        if (!aller && tr.heureArrivee() != null) morceaux.add("arrivée à " + tr.heureArrivee().format(HEURE));
         String conseil = tr.transport() == null ? null : tr.transport().conseil(aller ? tr.heureDepart() : tr.heure(), HEURE);
         return String.join(", ", morceaux) + (conseil == null ? "" : " : " + conseil);
     }

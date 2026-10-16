@@ -26,6 +26,7 @@ paths:
 - **Un participant est un instantané éditable** (`sejour_participant`), comme un membre de groupe de plongeurs, pré-rempli du dossier élève ou du compte.
 - **Contenu** : arrivée et départ (moyen, numéro de vol ou de train, lieu) ; régimes alimentaires en cases `RegimeAlimentaire` + une précision pour la cuisine ; personne à prévenir.
 - **L'arrivée porte l'heure et le lieu de départ du voyage aller** (`arrivee_heure_depart`/`arrivee_lieu_depart`, V78). Plus tard que l'heure d'arrivée = départ la veille.
+- **Le départ porte l'heure d'arrivée du voyage retour** (`depart_heure_arrivee`, V85) : qui aller chercher au retour, et quand. Montrée dans les groupes de départs, le carnet (écran et e-mail) et l'encart « Aujourd'hui ».
 - **Un participant qui plonge peut être lié à un membre d'un groupe de plongeurs de la saison** (`sejour_participant.membre_groupe_id`, V79) : posé par « Inscrire un groupe » ou choisi dans sa fiche ; un par séjour.
 - **Deux fiches liées, mais nom, prénom et e-mail reportés de l'une à l'autre** : `SejourService.reporterSurLePlongeur`, `GroupePlongeursService.reporterSurLesParticipants`.
 - **À l'enregistrement d'un groupe, l'id des membres est gardé.** Sans id (appli restée à l'ancienne version, groupe repris d'une fiche), les membres sont retrouvés par dossier puis nom et prénom (`retrouver`).
@@ -100,13 +101,13 @@ paths:
 ## Repères
 - Paquet `fr.club.plongee.sejour`.
 - Écrans : `/sejours`, `/sejours/:id` (bouton « Gérer le séjour » de `/admin/sorties`), `/sejours/:id/imprimer`, page publique `/sejour/{code}`, `/frais/{code}`.
-- Tables : `sejour_participant` (dont `sejour_participant.membre_groupe_id`), `sejour_organisateur`, `sejour_evenement`, `sejour_voiture.location_html`, `sejour_depense`, `sejour_depense_part`, `sejour_versement`, `sejour_depense_photo` ; colonnes `sejour.createur_id`, `sejour.code_frais`, `arrivee_heure_depart`/`arrivee_lieu_depart`, `saisie_par_utilisateur_id` / `saisie_par_participant_id` ; `sortie_aud` (source de V80).
-- Migrations : V75 (séjour), V76 (frais), V77 (saisie par les participants, photos, accès sans compte), V78 (départ du voyage aller), V79 (participant lié), V80 (créateur et organisateurs), V82 (voiture de location).
+- Tables : `sejour_participant` (dont `sejour_participant.membre_groupe_id`), `sejour_organisateur`, `sejour_evenement`, `sejour_voiture.location_html`, `sejour_depense`, `sejour_depense_part`, `sejour_versement`, `sejour_depense_photo` ; colonnes `sejour.createur_id`, `sejour.code_frais`, `arrivee_heure_depart`/`arrivee_lieu_depart`, `depart_heure_arrivee`, `saisie_par_utilisateur_id` / `saisie_par_participant_id` ; `sortie_aud` (source de V80).
+- Migrations : V75 (séjour), V76 (frais), V77 (saisie par les participants, photos, accès sans compte), V78 (départ du voyage aller), V79 (participant lié), V80 (créateur et organisateurs), V82 (voiture de location), V85 (arrivée du voyage retour).
 - Serveur : `SejourService`, `DroitsSejour`, `SortieController.creer`, `CarnetSejourService`, `PalanqueesSejourService`, `FraisService`, `ActeurFrais`, `FraisSejour`, `AccesSejourService`, `AccesSejourController`, `NettoyageHtml`, `MoyenTransport`, `RegimeAlimentaire`, `CategorieAffaire`, `GroupePlongeursService`, `PhotoPretService.verifierImage`.
 - Vues : `SejourVue.palanquees`, `ProgrammeVue.palanquees`, `MesInformationsVue.programme`, `FraisVue.droits`.
 - Écran : `JourneeSejourComponent`, `programme-du-jour.ts`, `AVANCES_TRANSPORT`, `PalanqueesPlongeeComponent`, `MailLoueurComponent`, `CarnetImprimableComponent`, `SejourFraisComponent`, `PortFrais`, `EspaceParticipantComponent`, `CarnetSejourComponent`, `MonSejourComponent`, `MesInformationsComponent`.
 - Endpoints : `PUT …/organisateurs`, `POST …/voitures/verifier-location`, `POST /api/sejours/{id}/invitations`, `PUT /api/sejours/{id}/mes-informations`, `/api/public/sejour/**`, `GET …/carnet`.
 - Test : `MigrationParticipantLieTest` rejoue la mise en production de V79 sur une base remplie (Flyway jusqu'à V78 puis V79).
-- Démos : V117 (Port-Cros, juin 2027, Camille y participe), créé par `e3@club.fr` (V120), sans organisateur désigné ; V118 (frais) ; V121 (palanquées).
+- Démos : V117 (Port-Cros, juin 2027, Camille y participe), créé par `e3@club.fr` (V120), sans organisateur désigné ; V118 (frais) ; V121 (palanquées) ; V122 (heure d'arrivée des retours).
 
 Historique des choix : `docs/decisions/sejour.md`.

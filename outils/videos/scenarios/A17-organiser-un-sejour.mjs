@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-16, 18e série, matériel emprunté déclaré depuis le séjour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 19e série, heure d'arrivée du voyage retour (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -45,6 +45,11 @@ export default {
     await legende('Pour une arrivée, l\'heure de départ de l\'avion : le jour venu, chacun voit à quelle heure être à l\'aéroport.', 0);
     await page.locator('#vc-heure-depart').scrollIntoViewIfNeeded();
     await pause(4000);
+    await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
+    await legende('Pour un retour, l\'heure d\'arrivée de l\'avion ou du train : on sait quand aller chercher chacun.', 0);
+    await toucher(page.getByRole('button', { name: /Ajouter des personnes à ce (vol|train)/ }).last(), { apres: 2500 });
+    await page.locator('#vc-heure-arrivee').scrollIntoViewIfNeeded();
+    await pause(3500);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Dessous, les voitures : le conducteur, ses passagers et les places qui restent.', 0);
     await defiler(700, 3500);

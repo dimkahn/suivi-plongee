@@ -45,6 +45,9 @@ type Brouillon = DemandeMesInformations & { arrivee: Trajet; depart: Trajet };
               <div><label for="mi-arrivee-lieu-depart">Aéroport ou gare de départ</label>
                 <input id="mi-arrivee-lieu-depart" name="arrivee-lieu-depart" maxlength="120" placeholder="Paris-Orly"
                        [(ngModel)]="b.arrivee.lieuDepart"></div>
+            } @else {
+              <div><label for="mi-depart-heure-arrivee">Heure d'arrivée de l'avion ou du train</label>
+                <input id="mi-depart-heure-arrivee" name="depart-heure-arrivee" type="time" [(ngModel)]="b.depart.heureArrivee"></div>
             }
           </div>
           @if (sens.code === 'arrivee') {

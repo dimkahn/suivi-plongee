@@ -57,6 +57,8 @@ export interface Trajet {
    */
   heureDepart?: string | null;
   lieuDepart?: string | null;
+  /** Départ seulement : l'heure à laquelle l'avion ou le train arrive au retour. */
+  heureArrivee?: string | null;
 }
 
 /** Un trajet à modifier dans un formulaire : heures au format des champs (« 10:35 »), vide s'il n'y en a pas. */
@@ -64,14 +66,15 @@ export function copieTrajet(t: Trajet | null): Trajet {
   return {
     date: t?.date ?? null, heure: t?.heure?.slice(0, 5) ?? null, transport: t?.transport ?? null,
     numero: t?.numero ?? null, lieu: t?.lieu ?? null,
-    heureDepart: t?.heureDepart?.slice(0, 5) ?? null, lieuDepart: t?.lieuDepart ?? null
+    heureDepart: t?.heureDepart?.slice(0, 5) ?? null, lieuDepart: t?.lieuDepart ?? null,
+    heureArrivee: t?.heureArrivee?.slice(0, 5) ?? null
   };
 }
 
 /** Le trajet saisi, ou null s'il est resté vide. */
 export function trajetSaisi(t: Trajet | null): Trajet | null {
   return !t || (!t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim()
-    && !t.heureDepart && !t.lieuDepart?.trim()) ? null : t;
+    && !t.heureDepart && !t.lieuDepart?.trim() && !t.heureArrivee) ? null : t;
 }
 
 export interface ParticipantVue {
@@ -599,6 +602,7 @@ export function texteTrajet(t: Trajet | null): string {
     t.lieu,
     t.heureDepart || t.lieuDepart
       ? 'départ' + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
-      : null
+      : null,
+    t.heureArrivee ? 'arrivée à ' + heure(t.heureArrivee) : null
   ].filter(Boolean).join(', ') || 'à préciser';
 }
