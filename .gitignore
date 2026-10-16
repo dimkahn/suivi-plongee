@@ -21,6 +21,8 @@ frontend/frontend-dev.pid
 .claude/*
 !.claude/rules/
 !.claude/skills/
+!.claude/settings.json
+!.claude/hooks/
 .~lock.*#
 
 # Secrets : jamais versionnés
