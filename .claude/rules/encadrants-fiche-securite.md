@@ -11,57 +11,67 @@ paths:
 
 # Encadrants, fiche de sécurité, groupes de plongeurs
 
-**Encadrants : niveau d'encadrement et niveau de plongeur sont distincts.**
-`utilisateur.niveau_plongeur` (N1 à N5, V25, saisi par un ADMIN dans l'écran
-Moniteurs) n'est pas déduit de `niveau_encadrement` : un E1 peut n'être que
-N2. `utilisateur.niveau_encadrement_prepare` (V49, saisi par un ADMIN,
-toujours au-dessus du niveau détenu) : un moniteur en formation. Seul le
-stagiaire E3 en tire un droit (choix du club, 2026,
-`ProposeurPalanquees.NIVEAUX_STAGIAIRE_AUTORISES`) : il encadre comme un E3
-dans la proposition des palanquées, avec un avertissement sur la présence
-du tuteur ; la notation (`HabilitationService`) et le choix du DP n'en
-tiennent pas compte. Le **directeur de plongée d'une fiche de sécurité est E3 minimum, quel
-que soit le milieu** (choix du club, 2026 ; `FicheSecuriteService`,
-constante `NIVEAU_DP_MINIMUM` — règle de sécurité générale, pas du MFT,
-donc pas une colonne du référentiel). **Droits sur la fiche (choix du club,
-2026, V71)** : l'établir ou la modifier (et proposer les palanquées, lier
-les séances) est réservé aux E3/E4, aux ADMIN et aux moniteurs qui ont le
-rôle `FICHE_SECURITE` (donné dans l'écran Moniteurs ; ne fait pas d'eux
-des DP) — `HabilitationService.peutEtablirFicheSecurite`, refus 422 lisible ;
-pour les autres l'écran est en lecture seule. La compléter au retour
-(`PUT …/fiche-securite/realise`) est ouvert à tous les moniteurs et au rôle
-`SECURITE_SURFACE` : un compte qui n'est **pas** moniteur (sécurité surface
-d'une sortie), créé en bas de l'écran Moniteurs
-(`AdminSecuriteSurfaceController`), qui ne voit que la liste des fiches et
-l'écran de complément (`gardeFichesSecurite`). Démo : `e2@club.fr` a le
-droit, `surface@club.fr` (V116).
+## Règles
 
-**Sans rapport avec `GroupePlongeurs`** (V13), qui
-compose les palanquées d'un séjour (**modifié par son créateur et les
-organisateurs qu'il désigne, seulement**, choix du club 2026, V81 :
-`groupe_plongeurs.createur_id` posé à la création, ici ou depuis une fiche
-de sécurité, `groupe_plongeurs_organisateur`, `DroitsGroupePlongeurs` dans
-les `@PreAuthorize`, `PUT …/organisateurs` ; un ADMIN désigne seulement ;
-les groupes d'avant V81 n'ont pas de créateur, l'entité n'étant pas
-auditée ; les autres encadrants les lisent, les reprennent dans une fiche
-et envoient les paramètres ; le report nom/e-mail depuis un séjour lié
-reste ouvert aux organisateurs du séjour ; écran : une ligne par membre,
-ajout en tête depuis les plongeurs connus) (e-mail facultatif par membre, V44 —
-vide, celui du dossier ; en fin de séjour `EnvoiParametresSejourService`
-envoie à chacun les seules plongées de la sortie où il figure, lues sur les
-fiches de sécurité ; des séances du même jour peuvent être
-**liées**, V43 `LiaisonSeances`, depuis la fiche de sécurité : deux bateaux
-se partagent un groupe, chaque fiche ne propose que les plongeurs absents
-des palanquées des fiches liées ; `FicheSecuriteVue.seancesLiees`, simple
-avertissement si un plongeur est sur les deux). **Proposition automatique
-des palanquées** (2026, milieu naturel seulement, choix du club) : bouton
-de la fiche de sécurité, `POST /api/seances/{id}/fiche-securite/proposition`,
-calcul pur dans `ProposeurPalanquees` (aptitudes lues par `AptitudePlongeur`
-dans le texte libre, complétées par le compte lié), à partir des membres du
-groupe absents des fiches liées et de critères (profondeur, exploration /
-enseignement, plongeurs par palanquée ≤ 4, autonomes par 2 ou 3, niveaux
-séparés, encadrants retenus, paires ensemble / séparées). **N'écrit rien** :
-remplit le formulaire, que le DP relit et enregistre ; ne place jamais un
-plongeur au-delà de son aptitude, renvoie les non placés avec leur raison.
-Lecture des annexes III-16/17 du Code du sport à confirmer par le club
-(exploration au-delà de 40 m : E4, choix prudent). Réseau obligatoire.
+### Niveaux des encadrants
+- **Le niveau de plongeur ne se déduit pas du niveau d'encadrement** : `utilisateur.niveau_plongeur` (N1 à N5, V25) est distinct de `niveau_encadrement` ; un E1 peut n'être que N2. Saisi par un ADMIN dans l'écran Moniteurs.
+- **Le niveau d'encadrement préparé est toujours au-dessus du niveau détenu** : `utilisateur.niveau_encadrement_prepare` (V49, saisi par un ADMIN), pour un moniteur en formation.
+- **Seul le stagiaire E3 en tire un droit** : il encadre comme un E3 dans la proposition des palanquées, avec un avertissement sur la présence du tuteur (`ProposeurPalanquees.NIVEAUX_STAGIAIRE_AUTORISES`). *Pourquoi :* choix du club, 2026.
+- **La notation et le choix du DP ignorent le niveau préparé** : `HabilitationService` ne lit que le niveau détenu.
+
+### Directeur de plongée et droits sur la fiche
+- **Le DP d'une fiche de sécurité est E3 minimum, quel que soit le milieu** : `FicheSecuriteService`, constante `NIVEAU_DP_MINIMUM`. *Pourquoi :* choix du club, 2026 ; règle de sécurité générale, pas du MFT, donc pas une colonne du référentiel.
+- **Établir ou modifier une fiche est réservé aux E3/E4, aux ADMIN et aux moniteurs qui ont le rôle `FICHE_SECURITE`** (V71) : cela couvre aussi proposer les palanquées et lier les séances. Contrôle par `HabilitationService.peutEtablirFicheSecurite`, refus 422 lisible ; pour les autres, l'écran est en lecture seule. *Pourquoi :* choix du club, 2026.
+- **Le rôle `FICHE_SECURITE` ne fait pas d'un moniteur un DP** : il est donné dans l'écran Moniteurs.
+- **Compléter la fiche au retour est ouvert à tous les moniteurs et au rôle `SECURITE_SURFACE`** : `PUT …/fiche-securite/realise`.
+- **Un compte `SECURITE_SURFACE` n'est pas moniteur** (sécurité surface d'une sortie) : créé en bas de l'écran Moniteurs (`AdminSecuriteSurfaceController`), il ne voit que la liste des fiches et l'écran de complément (`gardeFichesSecurite`).
+
+### Proposition automatique des palanquées
+- **Milieu naturel seulement** : bouton de la fiche de sécurité, `POST /api/seances/{id}/fiche-securite/proposition`. *Pourquoi :* choix du club, 2026.
+- **Calcul pur dans `ProposeurPalanquees`** : aptitudes lues par `AptitudePlongeur` dans le texte libre, complétées par le compte lié ; à partir des membres du groupe absents des fiches liées.
+- **Critères** : profondeur, exploration / enseignement, plongeurs par palanquée ≤ 4, autonomes par 2 ou 3, niveaux séparés, encadrants retenus, paires ensemble / séparées.
+- **La proposition n'écrit rien** : elle remplit le formulaire, que le DP relit et enregistre.
+- **Ne jamais placer un plongeur au-delà de son aptitude** : les non placés sont renvoyés avec leur raison.
+- **Exploration au-delà de 40 m : E4** (choix prudent). La lecture des annexes III-16/17 du Code du sport reste à confirmer par le club.
+- **Réseau obligatoire.**
+
+### Groupes de plongeurs (palanquées d'un séjour)
+- **`GroupePlongeurs` (V13) n'a aucun rapport avec les groupes d'entraînement** : il compose les palanquées d'un séjour.
+- **Seuls son créateur et les organisateurs qu'il désigne le modifient** (V81) : `groupe_plongeurs.createur_id` posé à la création (ici ou depuis une fiche de sécurité), `groupe_plongeurs_organisateur`, `DroitsGroupePlongeurs` dans les `@PreAuthorize`, `PUT …/organisateurs`. *Pourquoi :* choix du club, 2026.
+- **Un ADMIN désigne seulement les organisateurs**, il ne modifie pas le groupe.
+- **Les groupes d'avant V81 n'ont pas de créateur** : l'entité n'étant pas auditée.
+- **Les autres encadrants lisent les groupes**, les reprennent dans une fiche et envoient les paramètres.
+- **Le report nom/e-mail depuis un séjour lié reste ouvert aux organisateurs du séjour.**
+- **E-mail facultatif par membre** (V44) : vide, c'est celui du dossier.
+- **En fin de séjour, `EnvoiParametresSejourService` envoie à chacun les seules plongées de la sortie où il figure**, lues sur les fiches de sécurité.
+- **Écran** : une ligne par membre, ajout en tête depuis les plongeurs connus.
+
+### Séances liées
+- **Des séances du même jour peuvent être liées depuis la fiche de sécurité** (V43, `LiaisonSeances`) : deux bateaux se partagent un groupe.
+- **Chaque fiche ne propose que les plongeurs absents des palanquées des fiches liées.**
+- **Un plongeur sur deux fiches liées n'est qu'un avertissement** : `FicheSecuriteVue.seancesLiees`.
+
+## À ne pas faire
+- Ne pas déduire `utilisateur.niveau_plongeur` de `niveau_encadrement`.
+- Ne pas accorder au stagiaire E3 un droit de notation ou de DP.
+- Ne pas mettre `NIVEAU_DP_MINIMUM` dans le référentiel, ni l'abaisser selon le milieu.
+- Ne pas laisser un moniteur sans droit établir une fiche ; le rôle `FICHE_SECURITE` ne qualifie pas comme DP.
+- Ne pas faire enregistrer quoi que ce soit par la proposition de palanquées, ni dépasser l'aptitude d'un plongeur.
+- Ne pas confondre `GroupePlongeurs` et groupes d'entraînement.
+- Ne pas laisser un ADMIN ou un encadrant non organisateur modifier un groupe de plongeurs.
+
+## Repères
+- `utilisateur.niveau_plongeur` (V25), `utilisateur.niveau_encadrement_prepare` (V49), `niveau_encadrement` : niveaux d'un encadrant.
+- `HabilitationService` : droits de notation ; `HabilitationService.peutEtablirFicheSecurite` : droit d'établir la fiche.
+- `FicheSecuriteService`, `NIVEAU_DP_MINIMUM` : DP E3 minimum.
+- Rôles : `FICHE_SECURITE` (V71, établir la fiche), `SECURITE_SURFACE` (compléter au retour, compte non moniteur).
+- `AdminSecuriteSurfaceController` : création des comptes sécurité surface ; `gardeFichesSecurite` : garde de leurs écrans.
+- `ProposeurPalanquees`, `ProposeurPalanquees.NIVEAUX_STAGIAIRE_AUTORISES`, `AptitudePlongeur` : proposition des palanquées.
+- `GroupePlongeurs` (V13), `groupe_plongeurs.createur_id`, `groupe_plongeurs_organisateur`, `DroitsGroupePlongeurs` (V81) : groupes et leurs droits.
+- `EnvoiParametresSejourService` : envoi des paramètres de fin de séjour.
+- `LiaisonSeances` (V43), `FicheSecuriteVue.seancesLiees` : séances liées.
+- Endpoints : `POST /api/seances/{id}/fiche-securite/proposition`, `PUT …/fiche-securite/realise`, `PUT …/organisateurs`.
+- Annotations : `@PreAuthorize`.
+- Démo : `e2@club.fr` a le rôle `FICHE_SECURITE`, `surface@club.fr` est un compte sécurité surface (V116).
+
+Historique des choix : `docs/decisions/encadrants-fiche-securite.md`.

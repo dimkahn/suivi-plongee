@@ -9,69 +9,39 @@ paths:
 
 # Référentiel MFT et règles fédérales
 
-**Le référentiel MFT est en base, pas en dur.** Un `Referentiel` = un niveau +
-une version datée du MFT ; un `Cursus` y est figé à l'inscription (la copie
-des valeurs utilisées par `EvaluationService`/`RegleDelivranceService` reste
-celle du moment de l'inscription, portée par le cursus lui-même). Le contenu
-initial de chaque révision fédérale a été importé via
-`outils/generer_referentiel.py` (un tuple par bloc dans la liste
-`REFERENTIELS`, un `INSERT` par version dans une migration Flyway dédiée) ;
-ce script reste la référence pour importer une **nouvelle** révision publiée
-par la fédération, avec une migration Flyway dédiée. **Choix révisé (2026) :**
-l'écran `/admin/referentiel` permet désormais d'éditer un référentiel, ses
-blocs et ses critères directement en base (`ReferentielController`,
-`hasRole('ADMIN')`), y compris ceux déjà utilisés par des cursus en cours —
-l'ancienne garantie « une révision fédérale ne s'applique jamais
-rétroactivement » n'est donc plus automatique pour ces corrections manuelles :
-c'est à l'admin de ne pas modifier un référentiel figé sur des cursus en
-cours si la rétroactivité n'est pas voulue. La suppression reste bloquée si
-la ligne est référencée par un cursus, un critère porte une évaluation, ou un
-bloc porte une validation. Ne jamais éditer le SQL déjà généré dans une
-migration passée à la main : cette liberté est réservée à l'écran d'admin,
-pas aux fichiers de migration. **Exception ponctuelle (2026) :** les trois
-premières versions du MFT (N1 2016-11-15, N2 2015-01-02, N3 2016-01-01),
-générées par une version antérieure du script et intégralement désactivées
-depuis par V7/V8, ont été retirées de `V2__referentiel_mft.sql` (fichier
-supprimé) et de `REFERENTIELS` — possible uniquement parce qu'aucune base
-n'avait encore exécuté ces migrations. Ne plus jamais éditer une migration
-déjà appliquée quelque part : passer par une nouvelle migration ou par
-l'écran d'admin.
-Historiquement les codes de bloc `C1` à `C9` étaient communs aux trois
-niveaux (intitulés et critères différents par niveau) — **ce n'est plus
-garanti** : la révision PE20 (décembre 2025) du N1 les a abandonnés au profit
-de dix compétences nommées, structurées en Technique (des critères, comme
-avant) / Comportement / Théorie / Modalités d'évaluation (texte libre, porté
-par des colonnes nullable sur `bloc_competence` ajoutées en V7 — vide sur les
-blocs des révisions antérieures). Ne pas supposer que `code` a un sens
-partagé entre niveaux ou révisions : c'est un simple identifiant unique par
-référentiel.
+## Règles
+- **Le référentiel MFT est en base, pas en dur** : un `Referentiel` = un niveau + une version datée du MFT.
+- **Un cursus est figé sur son référentiel à l'inscription** : un `Cursus` porte lui-même la copie des valeurs utilisées par `EvaluationService`/`RegleDelivranceService`, celles du moment de l'inscription.
+- **Importer une nouvelle révision fédérale avec `outils/generer_referentiel.py`** : un tuple par bloc dans la liste `REFERENTIELS`, un `INSERT` par version, dans une migration Flyway dédiée.
+- **Les corrections manuelles passent par l'écran `/admin/referentiel`** : il édite un référentiel, ses blocs et ses critères directement en base (`ReferentielController`, `hasRole('ADMIN')`), y compris ceux déjà utilisés par des cursus en cours. La non-rétroactivité n'est donc plus automatique : c'est à l'admin de ne pas modifier un référentiel figé sur des cursus en cours si la rétroactivité n'est pas voulue.
+- **La suppression reste bloquée** si la ligne est référencée par un cursus, si un critère porte une évaluation, ou si un bloc porte une validation.
+- **Ne jamais éditer une migration déjà appliquée quelque part** : passer par une nouvelle migration ou par l'écran d'admin. La liberté d'édition est réservée à l'écran, pas aux fichiers de migration ; ne jamais retoucher à la main le SQL déjà généré.
+- **`code` d'un bloc n'est qu'un identifiant unique par référentiel** : ne pas lui supposer un sens partagé entre niveaux ou révisions. Les codes `C1` à `C9` ne sont plus garantis (le N1 PE20 a dix compétences nommées).
+- **Un bloc peut porter Comportement / Théorie / Modalités d'évaluation en texte libre** : colonnes nullable de `bloc_competence` (V7), vides sur les blocs des révisions antérieures ; la partie Technique reste faite de critères.
+- **Un seul `Referentiel` par niveau, même scindé en qualifications** : N2 PA20|PE40 et N3 PA40|PE60 (V8) ont chacun deux qualifications (PA20 « plongeur autonome à 20 m » + PE40 « plongeur encadré à 40 m » ; PA40 + PE60, plus des « compétences complémentaires N3 »), chacune avec ses blocs, plus des blocs communs. *Pourquoi :* un « niveau » par qualification aurait touché `Cursus`, `HabilitationService`, `RegleDelivranceService` et les écrans d'admin.
+- **`regroupement` n'est qu'une étiquette d'affichage** : « Commun », « PA20 », « PE40 », « PA40 », « PE60 », « N3 » (V8). Aucun suivi séparé par qualification : tout se valide sous un même cursus N2 ou N3. Le brevet N2/N3 n'est délivré que quand les qualifications requises sont acquises.
+- **Les règles du MFT sont dans le serveur** : `EvaluationService` et `RegleDelivranceService` comparent des valeurs de la table `referentiel` (milieu naturel exclusif pour N2 et N3, âge minimum, brevet prérequis, RIFAP pour le N3, C6 du N2 validée en dernier).
+- **Nouvelle règle = nouvelle colonne du référentiel**, pas une constante dans le code.
+- **La profondeur maximale n'est pas opposée au moniteur qui note** : `referentiel.profondeur_max_formation` reste en base et éditable dans l'écran d'admin, à titre indicatif ; `EvaluationService.verifierSeance` ne la compare plus à `seance.profondeur_max`.
 
-**Le N2 et le N3 se scindent maintenant en plusieurs qualifications.** Les
-révisions PA20|PE40 (N2, mai 2026, V8) et PA40|PE60 (N3, décembre 2025, V8)
-remplacent chacune un bloc unique de compétences par deux qualifications
-(PA20 « plongeur autonome à 20 m » + PE40 « plongeur encadré à 40 m » pour le
-N2 ; PA40 + PE60, plus des « compétences complémentaires N3 », pour le N3),
-chacune avec ses propres blocs, plus des blocs communs. Le brevet N2/N3 n'est
-délivré que quand les qualifications requises sont acquises. **Choix de
-modélisation délibéré :** un seul `Referentiel` par niveau, comme avant —
-pas un « niveau » à part entière par qualification, ce qui aurait touché
-`Cursus`, `HabilitationService`, `RegleDelivranceService` et les écrans
-d'admin. Chaque bloc porte juste une étiquette d'affichage dans la colonne
-`regroupement` (« Commun », « PA20 », « PE40 », « PA40 », « PE60 », « N3 »,
-ajoutée en V8) : il n'y a **aucun suivi séparé** de la progression par
-qualification, tout se valide sous un même cursus N2 ou N3. Si le club a
-besoin un jour de distinguer formellement « a le PA20 mais pas le PE40 »,
-c'est un vrai chantier de modélisation, pas une simple mise à jour du
-référentiel. PA60 (plongeur autonome à 60 m, sans DP, obtenu après le N3)
-n'est pas importé : hors périmètre du brevet N3 lui-même.
+## À ne pas faire
+- Éditer à la main une migration passée (ni `V2__referentiel_mft.sql` ni aucune autre) : l'exception de 2026 ne se reproduit pas.
+- Supposer que `code` (`C1`…`C9`) a le même sens d'un niveau ou d'une révision à l'autre.
+- Créer un niveau ou un cursus par qualification, ou un suivi séparé « a le PA20 mais pas le PE40 » sans un vrai chantier de modélisation.
+- Coder une règle du MFT en constante.
+- Réintroduire le contrôle de profondeur dans `EvaluationService.verifierSeance`.
+- Importer PA60 : hors périmètre du brevet N3.
 
-**Les règles du MFT sont dans le serveur.** `EvaluationService` et
-`RegleDelivranceService` comparent des valeurs issues de la table
-`referentiel` : milieu naturel exclusif pour N2 et N3, âge minimum, brevet
-prérequis, RIFAP pour le N3, C6 du N2 validée en dernier. Ajouter une règle =
-ajouter une colonne au référentiel plutôt qu'une constante dans le code.
-**Choix révisé (2026) :** la vérification de la profondeur maximale
-d'évolution (`referentiel.profondeur_max_formation` vs `seance.profondeur_max`)
-a été retirée de `EvaluationService.verifierSeance` — la colonne reste en
-base et éditable dans l'écran d'admin du référentiel, à titre indicatif, mais
-n'est plus opposée au moniteur qui note un critère.
+## Repères
+- `Referentiel`, table `referentiel` : niveau + version du MFT, valeurs des règles.
+- `bloc_competence` : blocs, `code`, `regroupement`, colonnes texte libre (V7).
+- `Cursus` : formation d'un élève, figée sur un référentiel.
+- `EvaluationService`, `RegleDelivranceService`, `HabilitationService` : appliquent les règles.
+- `ReferentielController`, `/admin/referentiel` : édition par un ADMIN.
+- `outils/generer_referentiel.py`, liste `REFERENTIELS` : import d'une révision.
+- V7 : révision N1 PE20 (décembre 2025), colonnes texte libre ; désactive les anciennes versions.
+- V8 : N2 PA20|PE40 (mai 2026), N3 PA40|PE60 (décembre 2025), colonne `regroupement`.
+- `V2__referentiel_mft.sql` : supprimé (voir l'historique).
+- `referentiel.profondeur_max_formation`, `seance.profondeur_max` : indicatifs.
+
+Historique des choix : `docs/decisions/referentiel.md`.

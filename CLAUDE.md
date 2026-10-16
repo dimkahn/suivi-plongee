@@ -25,6 +25,24 @@ cd backend && mvn test                # tests d'intégration
 cd frontend && npm install && npm start
 ```
 
+Vérifier vite, du plus rapide au plus complet :
+
+```bash
+cd frontend && npm test -- --watch=false                 # Vitest, quelques secondes
+cd frontend && npx ng build --configuration development  # types et templates, ~15 s
+cd backend && mvn -q test -Dtest=SortieTest              # une classe (ou Classe#methode)
+cd backend && mvn -q test -Dtest=ArchitectureHexagonaleTest
+cd backend && mvn test                                   # tout, avant chaque commit
+```
+
+Outils pour l'IA (`.claude/`) : skills `refactoriser-hexagonal` (avant toute
+modification de logique), `nouvel-ecran`, `nouvel-endpoint`,
+`nouvelle-migration`, `lancer-appli` (vérifier dans le navigateur, comptes de
+démo) ; agent `relecteur-donnees-personnelles` (avant un commit qui touche
+des données de personnes) ; hooks : migrations publiées protégées, rappel
+manuel + vidéo quand un écran change. Historique des choix par domaine :
+`docs/decisions/`.
+
 Pour lancer les deux en une seule commande depuis la racine (un seul
 terminal ; le frontend est détaché en arrière-plan, son log est dans
 `frontend/frontend-dev.log`) :
@@ -125,8 +143,10 @@ hexagonal.
 
 **Toujours refactoriser : exécuter le skill `refactoriser-hexagonal`
 (`.claude/skills/refactoriser-hexagonal/SKILL.md`) avant toute
-modification du code, backend ou frontend, sans attendre qu'on le
-demande.** En bref : un domaine encore en couches est d'abord migré en
+modification de logique (fonctionnalité, correction de bug, règle métier),
+backend ou frontend, sans attendre qu'on le demande** ; une retouche de
+texte, de style ou de documentation n'en relève pas. En bref : un domaine
+touché encore en couches est d'abord migré en
 entier vers l'hexagonal, dans un commit de refactorisation à part (aucun
 changement de comportement, `mvn test` vert, domaine retiré de
 `DOMAINES_EN_COUCHES`), puis vient la fonctionnalité dans un second
@@ -147,11 +167,10 @@ Règles qui ne se discutent pas :
 - test et code partent dans le **même commit**, `mvn test` vert : jamais
   de commit rouge sur `master` ;
 - le résumé nomme les tests écrits et dit qu'ils ont été vus rouges.
-Le frontend n'a pas encore d'outil de test (`ng test` n'est pas
-configuré) : la règle s'y applique dès qu'il en aura un ; d'ici là, une
-logique d'écran non triviale se place dans une fonction pure de `core/`
-(comme `core/progression.ts`) et, si elle touche une règle métier, la règle
-va au serveur, où elle se teste.
+Frontend : Vitest (`ng test`, fichiers `*.spec.ts` à côté du code). Une
+logique d'écran non triviale se place dans une fonction pure (`core/` ou à
+côté du composant) et se teste ainsi ; une règle métier va au serveur, où
+elle se teste aussi.
 
 **La sécurité se joue à deux niveaux.** Le rôle via `hasRole('MONITEUR')`,
 puis l'habilitation métier via
