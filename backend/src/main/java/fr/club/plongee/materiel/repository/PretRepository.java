@@ -36,6 +36,15 @@ public interface PretRepository extends JpaRepository<Pret, Long> {
            """)
     List<Pret> parEquipement(@Param("equipementId") Long equipementId);
 
+    @Query("""
+           select distinct p from Pret p
+             left join fetch p.equipements
+             left join fetch p.sortie
+            where p.sortie.id = :sortieId
+            order by p.datePret desc, p.id desc
+           """)
+    List<Pret> parSortie(@Param("sortieId") Long sortieId);
+
     boolean existsBySortieId(Long sortieId);
 
     @Query("select count(p) > 0 from Pret p join p.equipements e where e.id = :equipementId")

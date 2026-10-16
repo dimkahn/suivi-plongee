@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-15, 14e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-16, 15e série, matériel emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations.',
+  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations et déclare le gilet du club qu\'elle a emprunté.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette }) {
@@ -40,6 +40,14 @@ export default {
     await defiler(600, 2000);
     await legende('« Pratique » : ce qu\'il faut emporter, et les infos pratiques.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
+    await legende('Elle a emprunté un gilet du club : onglet « Matériel », « Déclarer un emprunt ».', 0);
+    await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 1500 });
+    await toucher(page.getByRole('button', { name: 'Déclarer un emprunt' }), { apres: 1500 });
+    await legende('Elle choisit « Gilets », coche le sien, et enregistre. Le directeur technique le retrouve dans ses prêts.', 0);
+    await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });
+    await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 1500 });
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 3000 });
+    await legende('Un détendeur, lui, se déclare par un moniteur du séjour : il atteste sa désinfection.', 4000);
     await enHaut();
     await legende('Les frais sont en haut de la page : « Voir les frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
     await toucher(page.getByRole('button', { name: 'Voir les frais' }), { apres: 3500 });
