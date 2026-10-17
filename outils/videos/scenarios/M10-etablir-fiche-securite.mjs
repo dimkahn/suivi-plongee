@@ -1,12 +1,12 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-17, 4e série, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 5e série, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M10',
   titre: 'Établir une fiche de sécurité',
   public: 'Moniteur',
-  resume: 'Avant la mise à l\'eau : directeur de plongée, conditions, palanquées et plongeurs ; dupliquer et lier une seconde séance.',
+  resume: 'Avant la mise à l\'eau : directeur de plongée, conditions, palanquées et plongeurs ; reprendre une palanquée d\'une autre séance ; dupliquer et lier une seconde séance.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -50,6 +50,16 @@ export default {
     await legende('Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.', 0);
     await toucher(palanquee.getByRole('button', { name: /^Déplacer/ }).first(), { apres: 2500 });
     await toucher(page.locator('.barre-placement').getByRole('button', { name: 'Annuler' }), { apres: 800 });
+
+    await legende('Les mêmes palanquées qu\'à une autre plongée ? « Reprendre une palanquée d\'une autre séance ».', 0);
+    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });
+    await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: /Reprendre une palanquée/ }), { apres: 900 });
+    await legende('On cherche la séance par sa date ou son lieu, puis on coche les palanquées à recopier.', 0);
+    await toucher(page.locator('#reprise-seance'), { apres: 900 });
+    await toucher(page.locator('#reprise-seance-liste li[role="option"] button').first(), { apres: 1200 });
+    await toucher(page.locator('dialog[open] .choix-palanquees-dup input[type="checkbox"]').first(), { apres: 900 });
+    await legende('Plongeurs et profil prévu arrivent à la suite ; ce qui a été plongé ce jour-là, non.', 0);
+    await toucher(page.getByRole('button', { name: 'Ajouter à cette fiche' }), { apres: 1800 });
 
     await legende('En bas, toujours visible : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 2000);
     await legende('Tous les boutons de la fiche sont dans le bouton rond, en bas à gauche.', 0);

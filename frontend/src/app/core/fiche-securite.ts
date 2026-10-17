@@ -69,6 +69,29 @@ export function deplacerPlongeur(palanquees: PalanqueeVue[], source: number, mem
   return liste.map((p, i) => i === cible ? { ...p, membres: [...p.membres, plongeur] } : p);
 }
 
+/** Palanquée sans plongeur ni profil prévu : celle qu'ouvre une fiche neuve. */
+function palanqueeVierge(p: PalanqueeVue): boolean {
+  return p.membres.every(ligneVide) && p.profondeurPrevue == null && p.dureePrevue == null;
+}
+
+/**
+ * Copie, à la suite des palanquées de la fiche, des palanquées prises sur la
+ * fiche d'une autre séance : leurs plongeurs (avec aptitude, fonction, gaz…)
+ * et leur profil prévu, numérotés après les palanquées déjà là. Ce qui a été
+ * plongé ce jour-là (profil réalisé, observations) ne se reprend pas. Une
+ * palanquée restée vierge laisse sa place. Rien n'est enregistré ici.
+ */
+export function reprendrePalanquees(actuelles: PalanqueeVue[], reprises: PalanqueeVue[]): PalanqueeVue[] {
+  const gardees = actuelles.filter(p => !palanqueeVierge(p));
+  let numero = Math.max(0, ...gardees.map(p => p.numero));
+  const copies = reprises.map(p => ({
+    numero: ++numero, profondeurPrevue: p.profondeurPrevue, dureePrevue: p.dureePrevue,
+    profondeurRealisee: null, dureeRealisee: null, paliers: null, heureImmersion: null, heureSortie: null,
+    membres: p.membres.map(m => ({ ...m, observations: null }))
+  }));
+  return [...gardees, ...copies];
+}
+
 /** « 3 plongeurs · 20 m · 40 min » : de quoi relire une palanquée d'un coup d'œil. */
 export function resumePalanquee(p: PalanqueeVue): string {
   const nombre = p.membres.filter(m => rempli(m.nom) || rempli(m.prenom)).length;

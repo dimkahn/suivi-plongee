@@ -3,8 +3,10 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, paysage, format, orientation, en largeur, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant, déplacer un plongeur, changer de palanquée, permuter, téléphone, mobile, bouton rond, bouton flottant, menu, enregistrer, où est le bouton
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, paysage, format, orientation, en largeur, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant, déplacer un plongeur, changer de palanquée, permuter, téléphone, mobile, bouton rond, bouton flottant, menu, enregistrer, où est le bouton, reprendre, recopier, réutiliser, même palanquée, palanquée d'une autre séance, autre jour, séance précédente
 questions:
+- Comment dupliquer une palanquée d'une autre séance ?
+- Comment reprendre les palanquées d'une plongée précédente ?
 - Sur téléphone, où sont les boutons « Enregistrer » et « Imprimer » de la fiche de sécurité ?
 - Comment changer un plongeur de palanquée ?
 - Comment imprimer une fiche de sécurité tout de suite ?
@@ -46,11 +48,23 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 7. Enregistrez avec « Enregistrer la fiche », dans la barre toujours visible en bas de l'écran. Elle indique « Modifications non enregistrées » tant qu'il reste à enregistrer, puis « Enregistrée » ; les messages (fiche enregistrée, oubli à corriger) s'y affichent aussi. Quitter la fiche avec des modifications non enregistrées demande confirmation.
 8. « Imprimer (PDF) », dans la même barre, imprime la fiche enregistrée tout de suite (avec l'autre plongée de sa feuille).
 
-**Sur téléphone**, les boutons de la fiche sont rassemblés dans le **bouton rond en bas à gauche** (☰) : touchez-le pour ouvrir « Enregistrer la fiche », « + Palanquée », « Proposer les palanquées automatiquement » (milieu naturel, avec un groupe choisi), « Imprimer (PDF) » et « Compléter au retour de plongée ». Un point orange sur le bouton rappelle qu'il reste des modifications à enregistrer ; la barre du bas garde l'état (« Modifications non enregistrées », « Enregistrée ») et les messages. Toucher à côté du menu le referme.
+**Sur téléphone**, les boutons de la fiche sont rassemblés dans le **bouton rond en bas à gauche** (☰) : touchez-le pour ouvrir « Enregistrer la fiche », « + Palanquée », « Reprendre une palanquée d'une autre séance… », « Proposer les palanquées automatiquement » (milieu naturel, avec un groupe choisi), « Imprimer (PDF) » et « Compléter au retour de plongée ». Un point orange sur le bouton rappelle qu'il reste des modifications à enregistrer ; la barre du bas garde l'état (« Modifications non enregistrées », « Enregistrée ») et les messages. Toucher à côté du menu le referme.
 
 Retirer une palanquée qui a des plongeurs demande confirmation.
 
 **Changer un plongeur de palanquée** : touchez « ⇄ Déplacer » sur sa ligne, puis, dans la barre qui s'ouvre en bas de l'écran, la palanquée où il doit aller (ou « + Nouvelle palanquée »). Il y arrive en dernier avec tout ce qui a été saisi pour lui (aptitude, fonction, gaz…). La palanquée qu'il quitte reste, même vide. Sur ordinateur, on peut aussi le glisser d'une palanquée à l'autre. Pensez à enregistrer la fiche ensuite.
+
+## Reprendre une palanquée d'une autre séance
+
+Les mêmes palanquées qu'à une plongée précédente (le matin, la veille, la semaine dernière) ? Recopiez-les au lieu de les ressaisir.
+
+1. « Reprendre une palanquée d'une autre séance… », sous la dernière palanquée (sur téléphone, dans le bouton rond).
+2. Cherchez la **séance d'origine** par sa date ou son lieu : seules les séances dont la fiche est établie sont proposées, la plus récente en tête.
+3. Cochez la ou les **palanquées** à reprendre, reconnaissables aux prénoms de leurs plongeurs.
+4. « Ajouter à cette fiche » : elles s'ajoutent à la suite, numérotées après celles déjà là (la palanquée vide d'une fiche neuve laisse sa place). Chaque plongeur arrive avec son aptitude, sa fonction, son gaz, sa désaturation ; la palanquée garde sa profondeur et sa durée prévues. Ce qui a été réellement plongé (heures, profondeur et durée réalisées, paliers) et les observations des plongeurs ne sont pas repris.
+5. Relisez, ajustez (profondeur du jour, absents à retirer), puis « Enregistrer la fiche » : rien n'est enregistré avant, et la fiche d'origine ne change pas.
+
+Pour **déplacer** des palanquées vers une seconde séance du même jour, c'est « Dupliquer et lier… » (ci-dessous).
 
 ## Proposer les palanquées automatiquement (milieu naturel)
 

@@ -8,14 +8,15 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
-import { DateFrPipe, dateDuJour } from '../../core/date-fr';
+import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, resumePalanquee as resumeComposition
+  aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, reprendrePalanquees,
+  resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
 import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
@@ -589,7 +590,53 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </section>
       }
 
-      <button type="button" class="bouton-discret bouton-ajout-palanquee action-ordinateur" (click)="ajouterPalanquee()">+ Palanquée</button>
+      <div class="ajouts-palanquees action-ordinateur">
+        <button type="button" class="bouton-discret bouton-ajout-palanquee" (click)="ajouterPalanquee()">+ Palanquée</button>
+        <button type="button" class="bouton-discret bouton-reprendre-palanquee" (click)="ouvrirReprise()">
+          Reprendre une palanquée d'une autre séance…
+        </button>
+      </div>
+
+      <app-dialogue [ouvert]="repriseOuverte()" titre="Reprendre une palanquée d'une autre séance"
+                    [erreur]="erreurReprise()" (fermer)="repriseOuverte.set(false)">
+        <p class="secondaire">
+          Les palanquées choisies sont copiées à la suite de celles de cette fiche, avec leurs plongeurs
+          et leur profil prévu (pas ce qui a été réellement plongé). La fiche d'origine ne change pas ;
+          rien n'est enregistré avant « Enregistrer la fiche ».
+        </p>
+        <label for="reprise-seance">Séance d'origine</label>
+        <app-combobox idChamp="reprise-seance" [options]="seancesAReprendre()" [valeur]="seanceAReprendre()"
+                      (valeurChange)="choisirSeanceAReprendre($event)"
+                      aide="Rechercher une date, un lieu…" texteVide="Aucune autre séance n'a de fiche établie." />
+
+        @if (seanceAReprendre() !== null) {
+          <fieldset class="choix-palanquees-dup">
+            <legend>Palanquées à reprendre</legend>
+            @if (chargementReprise()) {
+              <p class="vide">Chargement de la fiche…</p>
+            } @else {
+              @for (p of palanqueesAReprendre(); track p.numero) {
+                <label class="case">
+                  <input type="checkbox" [checked]="palanqueesCochees().has(p.numero)"
+                         (change)="basculerPalanqueeReprise(p.numero)">
+                  Palanquée {{ p.numero }}
+                  <span class="secondaire">— {{ resumePalanquee(p) }}</span>
+                </label>
+              } @empty {
+                <p class="secondaire">La fiche de cette séance n'a aucune palanquée.</p>
+              }
+            }
+          </fieldset>
+        }
+
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" [disabled]="palanqueesCochees().size === 0"
+                  (click)="reprendre()">
+            Ajouter à cette fiche
+          </button>
+          <button type="button" class="bouton-discret" (click)="repriseOuverte.set(false)">Annuler</button>
+        </div>
+      </app-dialogue>
 
       @if (membreAPlacer(); as m) {
         <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
@@ -679,6 +726,10 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
               </button>
               <button type="button" role="menuitem" class="bouton-discret"
                       (click)="menuActionsOuvert.set(false); ajouterPalanquee()">+ Palanquée</button>
+              <button type="button" role="menuitem" class="bouton-discret"
+                      (click)="menuActionsOuvert.set(false); ouvrirReprise()">
+                Reprendre une palanquée d'une autre séance…
+              </button>
               @if (groupeSelectionne() && seance()?.milieu === 'NATUREL') {
                 <button type="button" role="menuitem" class="bouton-discret"
                         (click)="menuActionsOuvert.set(false); ouvrirProposition()">
@@ -746,7 +797,8 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .ligne-profil input { width: 100%; }
 
     .resume-palanquee { margin: 0; font-size: .875rem; color: var(--craie); }
-    .bouton-ajout-palanquee { min-height: 44px; }
+    .bouton-ajout-palanquee, .bouton-reprendre-palanquee { min-height: 44px; }
+    .ajouts-palanquees { display: flex; flex-wrap: wrap; gap: var(--pas); }
 
     .plongeur { border-top: 1px solid var(--trait); padding-top: var(--pas-2); margin-top: var(--pas-2); }
     .champ { margin: 0; font-weight: 400; font-size: .8125rem; color: var(--craie); }
@@ -1458,6 +1510,66 @@ export class FicheSecuriteComponent implements AvecModifications {
         this.erreurDuplication.set(e.error?.detail ?? 'Impossible de dupliquer la séance (réseau nécessaire).');
       }
     });
+  }
+
+  // --- Reprendre une palanquée d'une autre séance ------------------------------------------------
+
+  repriseOuverte = signal(false);
+  erreurReprise = signal<string | null>(null);
+  seanceAReprendre = signal<number | null>(null);
+  chargementReprise = signal(false);
+  palanqueesAReprendre = signal<PalanqueeVue[]>([]);
+  palanqueesCochees = signal<Set<number>>(new Set());
+
+  /** Les autres séances dont la fiche est établie, la plus récente en tête. */
+  seancesAReprendre = computed<OptionCombobox[]>(() => this.toutesSeances()
+    .filter(s => s.ficheSecurite && s.id !== this.seanceId)
+    .sort((a, b) => b.date.localeCompare(a.date) || a.ordre - b.ordre)
+    .map(s => ({ id: s.id, libelle: `${dateFr(s.date)} — ${this.libelleSeance(s)}`, detail: this.detailsSeance(s.id) })));
+
+  ouvrirReprise(): void {
+    this.erreurReprise.set(null);
+    this.seanceAReprendre.set(null);
+    this.palanqueesAReprendre.set([]);
+    this.palanqueesCochees.set(new Set());
+    this.repriseOuverte.set(true);
+  }
+
+  /** La fiche lue retombe sur le cache hors ligne : on reprend aussi sur site une fiche embarquée. */
+  async choisirSeanceAReprendre(id: number | null): Promise<void> {
+    this.seanceAReprendre.set(id);
+    this.palanqueesAReprendre.set([]);
+    this.palanqueesCochees.set(new Set());
+    this.erreurReprise.set(null);
+    if (id === null) return;
+    this.chargementReprise.set(true);
+    try {
+      const fiche = await this.api.ficheSecurite(id);
+      if (this.seanceAReprendre() === id) this.palanqueesAReprendre.set(fiche.palanquees);
+    } catch {
+      this.erreurReprise.set(navigator.onLine
+        ? 'Impossible de lire la fiche de cette séance.'
+        : "La fiche de cette séance n'est pas disponible hors ligne.");
+    } finally {
+      this.chargementReprise.set(false);
+    }
+  }
+
+  basculerPalanqueeReprise(numero: number): void {
+    const cochees = new Set(this.palanqueesCochees());
+    if (cochees.has(numero)) cochees.delete(numero); else cochees.add(numero);
+    this.palanqueesCochees.set(cochees);
+  }
+
+  reprendre(): void {
+    const reprises = this.palanqueesAReprendre().filter(p => this.palanqueesCochees().has(p.numero));
+    if (reprises.length === 0) return;
+    this.plongeurADeplacer.set(null);
+    this.palanquees.set(reprendrePalanquees(this.palanquees(), reprises));
+    this.repriseOuverte.set(false);
+    this.message.set(reprises.length > 1
+      ? `${reprises.length} palanquées reprises : relisez-les, ajustez le profil prévu si besoin, puis enregistrez la fiche.`
+      : 'Palanquée reprise : relisez-la, ajustez le profil prévu si besoin, puis enregistrez la fiche.');
   }
 
   /** Avertissement d'affichage : le même plongeur placé aussi sur une fiche liée. */

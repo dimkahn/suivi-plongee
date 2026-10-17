@@ -1,5 +1,7 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
-import { aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, resumePalanquee } from './fiche-securite';
+import {
+  aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, reprendrePalanquees, resumePalanquee
+} from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
   return {
@@ -115,5 +117,50 @@ describe('Résumé d\'une palanquée', () => {
 
   it('Une ligne sans nom ni prénom ne compte pas comme un plongeur', () => {
     expect(resumePalanquee(palanquee({ membres: [plongeur(), plongeur({ nom: '', prenom: '' })] }))).toBe('1 plongeur');
+  });
+});
+
+describe('Reprendre des palanquées d\'une autre séance', () => {
+  it('Les palanquées reprises s\'ajoutent à la suite, avec leurs plongeurs et leur profil prévu', () => {
+    const actuelles = [palanquee({ numero: 1, membres: [plongeur({ nom: 'DURAND' })] })];
+    const reprise = palanquee({
+      numero: 4, profondeurPrevue: 20, dureePrevue: 40,
+      membres: [
+        plongeur({ eleveId: 7, aptitude: 'PE40', gaz: 'Nitrox 32' }),
+        plongeur({ prenom: 'Paul', fonction: 'GUIDE_PALANQUEE' })
+      ]
+    });
+    const resultat = reprendrePalanquees(actuelles, [reprise]);
+    expect(resultat.map(p => p.numero)).toEqual([1, 2]);
+    expect(resultat[1]).toMatchObject({ profondeurPrevue: 20, dureePrevue: 40 });
+    expect(resultat[1].membres.map(m => m.prenom)).toEqual(['Léa', 'Paul']);
+    expect(resultat[1].membres[0]).toMatchObject({ eleveId: 7, aptitude: 'PE40', gaz: 'Nitrox 32' });
+    expect(resultat[1].membres[1].fonction).toBe('GUIDE_PALANQUEE');
+  });
+
+  it('Ce qui a été plongé ce jour-là ne se reprend pas : profil réalisé et observations restent vides', () => {
+    const reprise = palanquee({
+      profondeurRealisee: 18, dureeRealisee: 38, paliers: '3 min à 3 m', heureImmersion: '10:05', heureSortie: '10:43',
+      membres: [plongeur({ observations: 'Remontée rapide' })]
+    });
+    const [copie] = reprendrePalanquees([], [reprise]);
+    expect(copie).toMatchObject({
+      profondeurRealisee: null, dureeRealisee: null, paliers: null, heureImmersion: null, heureSortie: null
+    });
+    expect(copie.membres[0].observations).toBeNull();
+  });
+
+  it('La palanquée vide d\'une fiche neuve laisse sa place aux palanquées reprises', () => {
+    const resultat = reprendrePalanquees([palanquee({ numero: 1 })], [palanquee({ numero: 3, membres: [plongeur()] })]);
+    expect(resultat).toHaveLength(1);
+    expect(resultat[0].numero).toBe(1);
+    expect(resultat[0].membres).toHaveLength(1);
+  });
+
+  it('Modifier la copie ne touche pas la fiche d\'origine', () => {
+    const reprise = palanquee({ membres: [plongeur()] });
+    const [copie] = reprendrePalanquees([], [reprise]);
+    copie.membres[0].nom = 'AUTRE';
+    expect(reprise.membres[0].nom).toBe('MARTIN');
   });
 });
