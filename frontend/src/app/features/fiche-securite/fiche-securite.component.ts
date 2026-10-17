@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
@@ -14,7 +15,7 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  DemandePropositionPalanquees, FicheSecuriteVue, GroupePlongeursVue, PropositionPalanqueesVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
+  DemandeDuplicationSeance, DemandePropositionPalanquees, FicheSecuriteVue, GroupePlongeursVue, PropositionPalanqueesVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
   PlongeurVue, SeanceLieeVue, SeanceVue
 } from '../../core/modeles';
 
@@ -103,6 +104,9 @@ interface FormulaireEntete {
   planSecours: string | null;
   observations: string | null;
 }
+
+/** Formulaire de « Dupliquer et lier » : le DP n'est pas encore choisi à l'ouverture. */
+type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: number | null };
 
 @Component({
   selector: 'app-fiche-securite',
@@ -222,11 +226,12 @@ interface FormulaireEntete {
           <a routerLink="/groupes" class="bouton-discret">Gérer les groupes →</a>
         </div>
 
-        @if (seancesLiees().length > 0 || seancesLiables().length > 0) {
+        @if (seancesLiees().length > 0 || seancesLiables().length > 0 || auth.etablitFichesSecurite()) {
           <div class="liaison">
             <p class="secondaire">
               Le même jour, un autre bateau ou un autre site ? Liez les deux séances : sur chaque fiche,
               le groupe ne propose plus que les plongeurs qui ne sont pas déjà dans une palanquée de l'autre.
+              « Dupliquer et lier » crée la seconde séance et y déplace les palanquées de votre choix.
             </p>
             @for (l of seancesLiees(); track l.seanceId) {
               <p class="seance-liee">
@@ -235,6 +240,7 @@ interface FormulaireEntete {
                   — {{ detailsSeance(l.seanceId) }}{{ detailsSeance(l.seanceId) ? ' · ' : '' }}{{
                     l.ficheEtablie ? (l.plongeursPlaces.length | pluriel:'plongeur déjà placé':'plongeurs déjà placés') : 'fiche pas encore établie' }}
                 </span>
+                <a class="lien-fiche-liee" [routerLink]="['/fiches-securite', l.seanceId]">Ouvrir sa fiche →</a>
               </p>
             }
             <div class="ligne-groupe">
@@ -254,6 +260,11 @@ interface FormulaireEntete {
               @if (seancesLiees().length > 0) {
                 <button type="button" class="bouton-discret danger" [disabled]="envoiLiaison()" (click)="delier()">
                   Délier cette séance
+                </button>
+              }
+              @if (auth.etablitFichesSecurite()) {
+                <button type="button" class="bouton-discret bouton-dupliquer" (click)="ouvrirDuplication()">
+                  Dupliquer et lier…
                 </button>
               }
             </div>
@@ -281,6 +292,55 @@ interface FormulaireEntete {
             </button>
             <button type="button" class="bouton-discret" (click)="creationGroupeOuverte.set(false)">Annuler</button>
           </div>
+        </app-dialogue>
+
+        <app-dialogue [ouvert]="duplication() !== null" titre="Dupliquer et lier la séance"
+                      [erreur]="erreurDuplication()" (fermer)="duplication.set(null)">
+          @if (duplication(); as d) {
+            <p class="secondaire">
+              Une nouvelle séance le {{ seance()?.date | dateFr }}, au même endroit, liée à celle-ci :
+              un second bateau ou une seconde rotation. Elle reprend les conditions de cette fiche.
+            </p>
+
+            <label for="dup-dp">Directeur de plongée de la nouvelle séance</label>
+            <app-combobox idChamp="dup-dp" [options]="dpsPossibles()" [(valeur)]="d.dpId"
+                          aide="Rechercher un moniteur…" texteVide="Aucun moniteur ne correspond." />
+
+            <label for="dup-ordre">N° de plongée de la nouvelle séance</label>
+            <input id="dup-ordre" name="dupOrdre" type="number" min="1" [(ngModel)]="d.ordre">
+
+            <label for="dup-info-origine">Info complémentaire de cette séance (n° {{ seance()?.ordre }})</label>
+            <input id="dup-info-origine" name="dupInfoOrigine" type="text" [(ngModel)]="d.infoOrigine"
+                   placeholder="ex. Bateau 1">
+
+            <label for="dup-info">Info complémentaire de la nouvelle séance</label>
+            <input id="dup-info" name="dupInfo" type="text" [(ngModel)]="d.info" placeholder="ex. Bateau 2">
+
+            <fieldset class="choix-palanquees-dup">
+              <legend>Palanquées à passer sur la nouvelle séance</legend>
+              @for (p of palanqueesEnregistrees(); track p.numero) {
+                <label class="case">
+                  <input type="checkbox" [checked]="d.palanquees.includes(p.numero)"
+                         (change)="basculerPalanqueeDupliquee(p.numero)">
+                  Palanquée {{ p.numero }}
+                  <span class="secondaire">— {{ resumePalanquee(p) }}</span>
+                </label>
+              } @empty {
+                <p class="secondaire">Aucune palanquée enregistrée sur cette fiche : la nouvelle partira vide.</p>
+              }
+              <p class="secondaire">
+                Les palanquées cochées quittent cette fiche ; de chaque côté, elles sont renumérotées à partir de 1.
+                Seule la fiche enregistrée compte : enregistrez d'abord vos dernières modifications.
+              </p>
+            </fieldset>
+
+            <div class="actions-dialogue">
+              <button type="button" class="bouton-principal" [disabled]="envoiDuplication()" (click)="dupliquer()">
+                {{ envoiDuplication() ? 'Création…' : 'Créer la séance liée' }}
+              </button>
+              <button type="button" class="bouton-discret" (click)="duplication.set(null)">Annuler</button>
+            </div>
+          }
         </app-dialogue>
 
         @if (groupeSelectionne(); as g) {
@@ -569,6 +629,13 @@ interface FormulaireEntete {
     .ligne-groupe input[type="text"] { flex: 1 1 240px; }
     .liaison { border-top: 1px solid var(--trait); padding-top: var(--pas); margin-bottom: var(--pas-2); }
     .liaison .secondaire { margin: 0 0 var(--pas); }
+    .lien-fiche-liee { margin-left: var(--pas); white-space: nowrap; }
+    .choix-palanquees-dup { border: 0; padding: 0; margin: var(--pas-2) 0 0; min-width: 0; }
+    .choix-palanquees-dup legend { font-weight: 700; font-size: .9375rem; padding: 0; margin-bottom: var(--pas); }
+    .choix-palanquees-dup .case {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px; margin: 0; font-weight: 400;
+    }
+    .choix-palanquees-dup .case input { width: 22px; height: 22px; flex: none; }
     .seance-liee { margin: 0 0 var(--pas); }
     /* Les options portent le lieu, le milieu et l'info complémentaire : plus large que le choix du groupe. */
     .ligne-groupe select.choix-seance { flex: 1 1 320px; max-width: 100%; min-height: 44px; }
@@ -757,6 +824,17 @@ export class FicheSecuriteComponent {
     this.navigation.preciserRetour(computed(() => ({
       libelle: 'Fiches de sécurité', lien: '/fiches-securite', parametres: { date: this.seance()?.date ?? null }
     })));
+    // « Ouvrir sa fiche » d'une séance liée garde ce composant : on recharge pour la nouvelle séance.
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(p => {
+      const id = Number(p.get('id'));
+      if (id === this.seanceId) return;
+      this.seanceId = id;
+      this.chargement.set(true);
+      this.message.set(null);
+      this.bilanProposition.set(null);
+      this.membreAPlacer.set(null);
+      void this.charger();
+    });
     void this.charger();
   }
 
@@ -1001,6 +1079,83 @@ export class FicheSecuriteComponent {
       error: (e: HttpErrorResponse) => {
         this.envoiLiaison.set(false);
         this.message.set(e.error?.detail ?? 'Impossible de délier la séance (réseau nécessaire).');
+      }
+    });
+  }
+
+  /** Formulaire de « Dupliquer et lier », modifié en place ; null quand la fenêtre est fermée. */
+  duplication = signal<FormulaireDuplication | null>(null);
+  erreurDuplication = signal<string | null>(null);
+  envoiDuplication = signal(false);
+  /** Les palanquées de la fiche enregistrée sur le serveur : ce sont elles que la duplication déplace. */
+  palanqueesEnregistrees = signal<PalanqueeVue[]>([]);
+
+  /** N° de plongée proposé pour la copie : le suivant du dernier de la journée. */
+  numeroSuivant(): number {
+    const jour = this.seance()?.date;
+    const numeros = this.toutesSeances().filter(s => s.date === jour).map(s => s.ordre ?? 1);
+    return (numeros.length > 0 ? Math.max(...numeros) : 0) + 1;
+  }
+
+  async ouvrirDuplication(): Promise<void> {
+    if (this.enAttente()) {
+      this.message.set("Une version de cette fiche attend le réseau : dupliquez la séance une fois qu'elle est partie.");
+      return;
+    }
+    this.erreurDuplication.set(null);
+    this.palanqueesEnregistrees.set([]);
+    this.duplication.set({
+      dpId: null, ordre: this.numeroSuivant(),
+      info: null, infoOrigine: this.seance()?.commentaire ?? null, palanquees: []
+    });
+    try {
+      this.palanqueesEnregistrees.set((await this.api.ficheSecurite(this.seanceId)).palanquees);
+    } catch {
+      this.erreurDuplication.set('Impossible de lire la fiche enregistrée (réseau nécessaire).');
+    }
+  }
+
+  basculerPalanqueeDupliquee(numero: number): void {
+    const d = this.duplication();
+    if (!d) return;
+    d.palanquees = d.palanquees.includes(numero)
+      ? d.palanquees.filter(n => n !== numero)
+      : [...d.palanquees, numero].sort((a, b) => a - b);
+  }
+
+  /** « Anne A., Bruno B. · 20 m » : de quoi reconnaître une palanquée dans la liste à cocher. */
+  resumePalanquee(p: PalanqueeVue): string {
+    const noms = p.membres.map(m => `${m.prenom} ${this.initiale(m.nom)}`.trim()).filter(n => n).join(', ');
+    return [noms || 'sans plongeur', p.profondeurPrevue ? p.profondeurPrevue + ' m' : null]
+      .filter(v => v).join(' · ');
+  }
+
+  /** Réseau nécessaire : la séance, sa fiche et le lien sont créés ensemble par le serveur. */
+  dupliquer(): void {
+    const d = this.duplication();
+    if (!d) return;
+    if (!d.dpId) {
+      this.erreurDuplication.set('Choisissez le directeur de plongée de la nouvelle séance.');
+      return;
+    }
+    const demande: DemandeDuplicationSeance = {
+      dpId: d.dpId, ordre: d.ordre || null, palanquees: d.palanquees,
+      info: d.info?.trim() || null,
+      // Une chaîne vide efface l'info de cette séance ; null la laisserait inchangée.
+      infoOrigine: d.infoOrigine?.trim() ?? ''
+    };
+    this.envoiDuplication.set(true);
+    this.erreurDuplication.set(null);
+    this.api.dupliquerSeance(this.seanceId, demande).subscribe({
+      next: async r => {
+        this.envoiDuplication.set(false);
+        this.duplication.set(null);
+        await this.charger();
+        this.message.set(`Séance n° ${r.ordre} créée et liée : ouvrez sa fiche depuis « Liée à ».`);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiDuplication.set(false);
+        this.erreurDuplication.set(e.error?.detail ?? 'Impossible de dupliquer la séance (réseau nécessaire).');
       }
     });
   }

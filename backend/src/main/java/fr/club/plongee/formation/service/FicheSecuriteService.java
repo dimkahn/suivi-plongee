@@ -13,11 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Toute lecture ou écriture d'une {@link FicheSecurite} passe par ici, y
@@ -60,6 +63,12 @@ public class FicheSecuriteService {
     /** Le profil réellement plongé par une palanquée, saisi après le retour. */
     public record ProfilRealise(int numero, Integer profondeurRealisee, Integer dureeRealisee,
                                 String paliers, LocalTime heureImmersion, LocalTime heureSortie) {}
+
+    /** Voir {@link #dupliquer} ; {@code palanquees} : numéros des palanquées à déplacer vers la copie. */
+    public record Duplication(Long dpId, Integer ordre, String info, String infoOrigine, List<Integer> palanquees) {}
+
+    /** La séance créée par {@link #dupliquer}, et son n° de plongée. */
+    public record SeanceDupliqueeVue(Long seanceId, int ordre) {}
 
     public record PlongeurVue(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
                               String aptitudeDonneeParDp, String qualificationPreparee, String fonction,
@@ -214,16 +223,7 @@ public class FicheSecuriteService {
     public FicheSecuriteVue enregistrer(Long seanceId, Saisie saisie) {
         Seance seance = seances.findById(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Séance introuvable"));
-        Utilisateur dp = utilisateurs.findById(saisie.dpId())
-                .orElseThrow(() -> new RessourceIntrouvableException("Directeur de plongée introuvable"));
-        if (!dp.estMoniteur()) {
-            throw new RegleMetierException(
-                    "Le directeur de plongée doit être un moniteur actif avec un niveau d'encadrement.");
-        }
-        if (!dp.getNiveauEncadrement().auMoins(NIVEAU_DP_MINIMUM)) {
-            throw new RegleMetierException("Le directeur de plongée doit être au moins "
-                    + NIVEAU_DP_MINIMUM + " ; " + dp.nomComplet() + " est " + dp.getNiveauEncadrement() + ".");
-        }
+        Utilisateur dp = directeurDePlongee(saisie.dpId());
 
         FicheSecurite fiche = fiches.findBySeanceId(seanceId).orElseGet(() -> {
             FicheSecurite f = new FicheSecurite();
@@ -287,6 +287,136 @@ public class FicheSecuriteService {
         }
 
         return vue(fiches.save(fiche));
+    }
+
+    /** Le DP choisi, refusé s'il n'est pas un moniteur actif d'au moins {@link #NIVEAU_DP_MINIMUM}. */
+    private Utilisateur directeurDePlongee(Long dpId) {
+        Utilisateur dp = utilisateurs.findById(dpId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Directeur de plongée introuvable"));
+        if (!dp.estMoniteur()) {
+            throw new RegleMetierException(
+                    "Le directeur de plongée doit être un moniteur actif avec un niveau d'encadrement.");
+        }
+        if (!dp.getNiveauEncadrement().auMoins(NIVEAU_DP_MINIMUM)) {
+            throw new RegleMetierException("Le directeur de plongée doit être au moins "
+                    + NIVEAU_DP_MINIMUM + " ; " + dp.nomComplet() + " est " + dp.getNiveauEncadrement() + ".");
+        }
+        return dp;
+    }
+
+    /**
+     * Duplique la séance le même jour (un second bateau, une seconde
+     * rotation) et lie les deux : même lieu, site, milieu, profondeur et
+     * séjour ; n° de plongée suivant du jour sauf choix contraire. La copie
+     * reçoit sa fiche de sécurité, avec son propre DP, les conditions de
+     * l'originale et les palanquées choisies, retirées de l'originale ; de
+     * chaque côté les palanquées sont renumérotées à partir de 1, dans
+     * l'ordre. Tout ou rien.
+     */
+    @Transactional
+    public SeanceDupliqueeVue dupliquer(Long seanceId, Duplication demande) {
+        Seance origine = seances.findById(seanceId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Séance introuvable"));
+        Utilisateur dp = directeurDePlongee(demande.dpId());
+        FicheSecurite ficheOrigine = fiches.findBySeanceId(seanceId).orElse(null);
+
+        List<Palanquee> aDeplacer = new ArrayList<>();
+        for (Integer numero : new LinkedHashSet<>(demande.palanquees())) {
+            aDeplacer.add((ficheOrigine == null ? Stream.<Palanquee>empty() : ficheOrigine.getPalanquees().stream())
+                    .filter(p -> p.getNumero() == numero).findFirst()
+                    .orElseThrow(() -> new RegleMetierException(
+                            "La palanquée %d n'existe pas sur cette fiche.".formatted(numero))));
+        }
+        aDeplacer.sort(Comparator.comparingInt(Palanquee::getNumero));
+
+        Seance copie = new Seance();
+        copie.setSaison(origine.getSaison());
+        copie.setDateSeance(origine.getDateSeance());
+        copie.setOrdre(demande.ordre() != null ? demande.ordre() : numeroSuivant(origine.getDateSeance()));
+        copie.setMilieu(origine.getMilieu());
+        copie.setLieu(origine.getLieu());
+        copie.setSite(origine.getSite());
+        copie.setProfondeurMax(origine.getProfondeurMax());
+        copie.setCommentaire(texteOuNull(demande.info()));
+        seances.save(copie);
+        if (demande.infoOrigine() != null) {
+            origine.setCommentaire(texteOuNull(demande.infoOrigine()));
+        }
+        sorties.contenant(List.of(seanceId)).forEach(s -> s.getSeances().add(copie));
+
+        FicheSecurite fiche = new FicheSecurite();
+        fiche.setSeance(copie);
+        fiche.setDp(dp);
+        if (ficheOrigine != null) {
+            fiche.setMeteo(ficheOrigine.getMeteo());
+            fiche.setEtatMer(ficheOrigine.getEtatMer());
+            fiche.setVisibilite(ficheOrigine.getVisibilite());
+            fiche.setCourant(ficheOrigine.getCourant());
+            fiche.setMaree(ficheOrigine.getMaree());
+            fiche.setTemperatureEau(ficheOrigine.getTemperatureEau());
+            fiche.setSecuriteSurface(ficheOrigine.getSecuriteSurface());
+            fiche.setPlanSecours(ficheOrigine.getPlanSecours());
+            fiche.setObservations(ficheOrigine.getObservations());
+        }
+        int numero = 1;
+        for (Palanquee p : aDeplacer) {
+            fiche.getPalanquees().add(copier(p, fiche, numero++));
+        }
+        fiches.save(fiche);
+
+        if (ficheOrigine != null && !aDeplacer.isEmpty()) {
+            ficheOrigine.getPalanquees().removeAll(aDeplacer);
+            List<Palanquee> restantes = ficheOrigine.getPalanquees().stream()
+                    .sorted(Comparator.comparingInt(Palanquee::getNumero)).toList();
+            for (int i = 0; i < restantes.size(); i++) {
+                restantes.get(i).setNumero(i + 1);
+            }
+        }
+
+        lier(seanceId, copie.getId());
+        return new SeanceDupliqueeVue(copie.getId(), copie.getOrdre());
+    }
+
+    /** Le n° de plongée suivant le dernier de la journée. */
+    private int numeroSuivant(LocalDate jour) {
+        return seances.findByDateSeanceBetweenOrderByDateSeanceAscOrdreAsc(jour, jour).stream()
+                .mapToInt(s -> s.getOrdre() == null ? 1 : s.getOrdre())
+                .max().orElse(0) + 1;
+    }
+
+    private static String texteOuNull(String texte) {
+        return texte == null || texte.isBlank() ? null : texte.trim();
+    }
+
+    /** Une palanquée recopiée sur une autre fiche : profils prévu et réalisé, et ses plongeurs. */
+    private static Palanquee copier(Palanquee source, FicheSecurite fiche, int numero) {
+        Palanquee p = new Palanquee();
+        p.setFicheSecurite(fiche);
+        p.setNumero(numero);
+        p.setProfondeurPrevue(source.getProfondeurPrevue());
+        p.setDureePrevue(source.getDureePrevue());
+        p.setProfondeurRealisee(source.getProfondeurRealisee());
+        p.setDureeRealisee(source.getDureeRealisee());
+        p.setPaliers(source.getPaliers());
+        p.setHeureImmersion(source.getHeureImmersion());
+        p.setHeureSortie(source.getHeureSortie());
+        for (MembrePalanquee m : source.getMembres()) {
+            MembrePalanquee membre = new MembrePalanquee();
+            membre.setPalanquee(p);
+            membre.setEleve(m.getEleve());
+            membre.setUtilisateur(m.getUtilisateur());
+            membre.setNom(m.getNom());
+            membre.setPrenom(m.getPrenom());
+            membre.setAptitude(m.getAptitude());
+            membre.setAptitudeDonneeParDp(m.getAptitudeDonneeParDp());
+            membre.setQualificationPreparee(m.getQualificationPreparee());
+            membre.setFonction(m.getFonction());
+            membre.setGaz(m.getGaz());
+            membre.setMoyenDesaturation(m.getMoyenDesaturation());
+            membre.setObservations(m.getObservations());
+            p.getMembres().add(membre);
+        }
+        return p;
     }
 
     /**

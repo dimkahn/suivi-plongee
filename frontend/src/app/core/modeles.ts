@@ -887,6 +887,24 @@ export interface PlongeurPlaceVue {
   palanquee: number;
 }
 
+/**
+ * Dupliquer une séance depuis sa fiche de sécurité : `ordre` null = n° de
+ * plongée suivant du jour ; `infoOrigine` null = info de la séance inchangée ;
+ * `palanquees` : numéros des palanquées déplacées vers la nouvelle séance.
+ */
+export interface DemandeDuplicationSeance {
+  dpId: number;
+  ordre: number | null;
+  info: string | null;
+  infoOrigine: string | null;
+  palanquees: number[];
+}
+
+export interface SeanceDupliqueeVue {
+  seanceId: number;
+  ordre: number;
+}
+
 export interface SeanceLieeVue {
   seanceId: number;
   date: string;

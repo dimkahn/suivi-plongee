@@ -29,6 +29,11 @@ Ce fichier est l'historique. Les règles en vigueur sont dans `.claude/rules/enc
 - **Contexte :** deux bateaux le même jour se partagent un groupe.
 - **Décision :** `LiaisonSeances` depuis la fiche de sécurité ; un plongeur présent sur deux fiches liées n'est qu'un avertissement.
 
+## Dupliquer et lier une séance (2026)
+- **Contexte :** trop de plongeurs pour une fiche ; le DP veut ouvrir un second bateau ou une seconde rotation sans recréer la séance à la main.
+- **Décision :** choix du club, depuis la fiche de sécurité : nouvelle séance du même jour et du même endroit, n° de plongée suivant (modifiable), info complémentaire pour chacune, nouveau DP, palanquées choisies déplacées (et non copiées), liaison automatique.
+- **Conséquences :** pas de migration (séance, fiche et liaison existantes) ; la duplication part de la fiche enregistrée, pas du formulaire en cours ; réseau obligatoire.
+
 ## Proposition automatique des palanquées (2026)
 - **Décision :** choix du club, en milieu naturel seulement, calcul pur qui n'écrit rien.
 - **Point ouvert :** la lecture des annexes III-16/17 du Code du sport est à confirmer par le club ; l'exploration au-delà de 40 m exige un E4, par prudence.

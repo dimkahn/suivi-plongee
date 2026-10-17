@@ -214,9 +214,9 @@ Compte : `e2@club.fr` · format téléphone · 60 s
 
 ### M10 — Établir une fiche de sécurité
 
-Avant la mise à l'eau : directeur de plongée, conditions, palanquées et plongeurs.
+Avant la mise à l'eau : directeur de plongée, conditions, palanquées et plongeurs ; dupliquer et lier une seconde séance.
 
-Compte : `e2@club.fr` · format téléphone · 52 s
+Compte : `e2@club.fr` · format téléphone · 75 s
 
 1. « Plus », puis « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
 2. On retrouve la séance par sa date.
@@ -226,7 +226,12 @@ Compte : `e2@club.fr` · format téléphone · 52 s
 6. Puis les palanquées : une est prête, « + Palanquée » en ajoute d'autres.
 7. Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.
 8. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
-9. Au retour de plongée, on la complète : c'est la vidéo suivante.
+9. Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».
+10. Son directeur de plongée, son n° de plongée (déjà le suivant)…
+11. … et une info pour distinguer les deux séances.
+12. Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.
+13. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
+14. Au retour de plongée, on la complète : c'est la vidéo suivante.
 
 ### M11 — Compléter la fiche après la plongée
 

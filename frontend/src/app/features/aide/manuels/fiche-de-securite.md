@@ -3,7 +3,7 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer
 questions:
 - Comment composer les palanquées automatiquement ?
 - Comment remplir une fiche de sécurité ?
@@ -13,6 +13,8 @@ questions:
 - Qui peut compléter la fiche au retour de plongée ?
 - La sécurité surface peut-elle remplir la fiche sans être moniteur ?
 - Comment saisir les paramètres réalisés après la plongée ?
+- Comment dupliquer une séance pour un second bateau ou une seconde rotation ?
+- Comment déplacer des palanquées vers une autre séance du même jour ?
 - Comment exporter une fiche de sécurité ?
 - Comment imprimer toutes les fiches de sécurité d'un séjour ?
 - Comment imprimer toutes les fiches palanquées d'un jour ?
@@ -45,6 +47,21 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 
 Règles appliquées : jamais un plongeur au-delà de son aptitude ; en enseignement, l'encadrant a le niveau exigé par la profondeur (E2 jusqu'à 20 m, E3 jusqu'à 40 m, E4 au-delà) et par la formation (E2 pour un N2, E3 pour un N3) ; en exploration, un guide de palanquée (N4, ou E2 et plus) jusqu'à 40 m, un E4 au-delà. Un moniteur qui prépare le E3 (renseigné dans l'écran Moniteurs) encadre comme un E3 ; la proposition rappelle alors que son tuteur doit être présent. Le directeur de plongée reste seul juge. La proposition demande le réseau.
 
+## Dupliquer et lier : un second bateau ou une seconde rotation
+
+Trop de plongeurs pour une seule fiche ? Depuis la fiche, créez la seconde séance du jour et passez-y une partie des palanquées.
+
+1. Enregistrez d'abord la fiche : la duplication part de la fiche enregistrée.
+2. « Dupliquer et lier… » (sous le choix du groupe de plongeurs).
+3. Choisissez le **directeur de plongée** de la nouvelle séance (E3 ou E4).
+4. Le **n° de plongée** proposé est le suivant de la journée ; changez-le si besoin.
+5. Donnez une **info complémentaire** à chacune des deux séances pour les distinguer (« Bateau 1 », « Bateau 2 », « 2e rotation »…).
+6. Cochez les **palanquées** qui passent sur la nouvelle séance : elles quittent cette fiche. De chaque côté, les palanquées sont renumérotées à partir de 1.
+7. « Créer la séance liée ». La nouvelle séance a la même date, le même lieu, le même site, le même milieu et la même profondeur ; elle rejoint la même sortie, et sa fiche reprend les conditions du jour.
+8. Les deux séances sont liées : « Ouvrir sa fiche », à côté de « Liée à », passe de l'une à l'autre.
+
+Dupliquer demande le réseau. Les mêmes droits que pour établir la fiche.
+
 ## Pendant et après la plongée
 
 1. « Marquer l'immersion » puis « Marquer la sortie » notent l'heure sur le moment.
@@ -58,5 +75,5 @@ Règles appliquées : jamais un plongeur au-delà de son aptitude ; en enseignem
 - Le directeur de plongée est **E3 minimum**, quel que soit le milieu (choix du club).
 - La fiche s'enregistre même sans réseau ; le DP la retrouve.
 - Un séjour avec les mêmes plongeurs ? Saisissez-les une fois dans un groupe de plongeurs (voir « Groupes de plongeurs pour un séjour »).
-- Deux bateaux ou deux sites le même jour, avec un seul groupe ? Liez les deux séances depuis la fiche (« Lier à une autre séance du jour ») : la seconde fiche ne propose plus que les plongeurs qui ne sont pas déjà dans une palanquée de la première.
+- Deux bateaux ou deux sites le même jour, avec un seul groupe ? Liez les deux séances depuis la fiche (« Lier à une autre séance du jour ») : la seconde fiche ne propose plus que les plongeurs qui ne sont pas déjà dans une palanquée de la première. La seconde séance n'existe pas encore ? « Dupliquer et lier… » la crée (voir plus haut).
 - Un plongeur déjà placé n'est plus proposé dans le groupe, qu'il ait été posé depuis le groupe, choisi dans « Rechercher un nom… » ou tapé à la main : il est reconnu par son dossier, sinon par ses nom et prénom, sans tenir compte des accents ni des majuscules (« Hélène » = « HELENE »).

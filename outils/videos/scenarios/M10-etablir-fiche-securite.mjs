@@ -1,12 +1,12 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, dupliquer et lier une séance (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M10',
   titre: 'Établir une fiche de sécurité',
   public: 'Moniteur',
-  resume: 'Avant la mise à l\'eau : directeur de plongée, conditions, palanquées et plongeurs.',
+  resume: 'Avant la mise à l\'eau : directeur de plongée, conditions, palanquées et plongeurs ; dupliquer et lier une seconde séance.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -48,6 +48,22 @@ export default {
 
     await legende('Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.', 0);
     await toucher(page.getByRole('button', { name: 'Enregistrer la fiche' }), { apres: 2000 });
+
+    await legende('Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».', 0);
+    await toucher(page.getByRole('button', { name: 'Dupliquer et lier…' }), { apres: 1200 });
+    await legende('Son directeur de plongée, son n° de plongée (déjà le suivant)…', 0);
+    await rechercherEtChoisir('dup-dp', 'Gwen', 'Gwendoline');
+    await legende('… et une info pour distinguer les deux séances.', 0);
+    await saisir('#dup-info-origine', '1re rotation');
+    await saisir('#dup-info', '2e rotation');
+    await legende('Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.', 0);
+    await page.locator('dialog[open] .choix-palanquees-dup').scrollIntoViewIfNeeded();
+    await pause(1500);
+    await toucher(page.getByRole('button', { name: 'Créer la séance liée' }), { apres: 1500 });
+    await legende('Les deux séances sont liées : « Ouvrir sa fiche » passe de l\'une à l\'autre.', 0);
+    await page.locator('.seance-liee').first().scrollIntoViewIfNeeded();
+    await pause(2500);
+
     await legende('Au retour de plongée, on la complète : c\'est la vidéo suivante.', 3500);
     await legende(null, 0);
     await pause(500);

@@ -69,6 +69,15 @@ public class FicheSecuriteController {
 
     public record DemandeLiaison(@NotNull Long seanceId) {}
 
+    /**
+     * {@code ordre} : n° de plongée de la copie (null : le suivant du jour) ;
+     * {@code info}/{@code infoOrigine} : info complémentaire de la copie et de
+     * cette séance (null pour cette séance : inchangée) ; {@code palanquees} :
+     * numéros des palanquées à déplacer vers la copie.
+     */
+    public record DemandeDuplication(@NotNull Long dpId, Integer ordre, String info, String infoOrigine,
+                                     List<@NotNull Integer> palanquees) {}
+
     public record DemandePlongeurPropose(Long eleveId, Long utilisateurId, String nom, String prenom,
                                          String aptitude, String qualificationPreparee, Boolean encadrant) {}
 
@@ -168,6 +177,22 @@ public class FicheSecuriteController {
                                                       Authentication authentication) {
         habilitation.verifierEtablissementFicheSecurite(authentication);
         return service.lier(seanceId, demande.seanceId());
+    }
+
+    /**
+     * Duplique la séance (un second bateau, une seconde rotation le même
+     * jour) et la lie à celle-ci : voir {@link FicheSecuriteService#dupliquer}.
+     */
+    @PostMapping("/duplication")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public FicheSecuriteService.SeanceDupliqueeVue dupliquer(@PathVariable Long seanceId,
+                                                            @Valid @RequestBody DemandeDuplication demande,
+                                                            Authentication authentication) {
+        habilitation.verifierEtablissementFicheSecurite(authentication);
+        return service.dupliquer(seanceId, new FicheSecuriteService.Duplication(demande.dpId(), demande.ordre(),
+                demande.info(), demande.infoOrigine(),
+                demande.palanquees() == null ? List.of() : demande.palanquees()));
     }
 
     @DeleteMapping("/liaison")
