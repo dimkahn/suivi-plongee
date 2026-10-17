@@ -1,6 +1,6 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, nomPalanquee, palanqueesAEnregistrer,
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee, palanqueesAEnregistrer, palanqueesOuvertesAuChargement,
   profondeurPermise, refusAjout, reprendrePalanquees, resumePalanquee
 } from './fiche-securite';
 
@@ -199,6 +199,30 @@ describe('Refuser un plongeur dont l\'aptitude ne permet pas la profondeur prév
   it('Sans profondeur prévue, ou sans aptitude reconnue, rien n\'est refusé', () => {
     expect(refusAjout(palanquee({ profondeurPrevue: null }), plongeur({ aptitude: 'N1' }))).toBeNull();
     expect(refusAjout(palanquee({ profondeurPrevue: 40 }), plongeur({ aptitude: null }))).toBeNull();
+  });
+});
+
+describe('Palanquée fermée : ce qui est renseigné, en une ligne par plongeur', () => {
+  it('Nom, aptitude et fonction quand elle n\'est pas « Plongeur »', () => {
+    expect(libelleMembre(plongeur({ prenom: 'Flora', nom: 'VASSEUR', aptitude: 'E2', fonction: 'ENCADRANT' })))
+      .toBe('Flora VASSEUR · E2 · Encadrant');
+    expect(libelleMembre(plongeur({ fonction: 'GUIDE_PALANQUEE', aptitude: 'N4' })))
+      .toBe('Léa MARTIN · N4 · Guide de palanquée');
+    expect(libelleMembre(plongeur({ aptitude: 'N1' }))).toBe('Léa MARTIN · N1');
+  });
+
+  it('Un plongeur sans aptitude ni nom reste repérable', () => {
+    expect(libelleMembre(plongeur({ aptitude: null }))).toBe('Léa MARTIN');
+    expect(libelleMembre(plongeur({ prenom: '', nom: ' ', aptitude: null }))).toBe('Plongeur sans nom');
+  });
+
+  it('À l\'ouverture de la fiche, seules les palanquées sans plongeur restent ouvertes', () => {
+    const ouvertes = palanqueesOuvertesAuChargement([
+      palanquee({ numero: 1, membres: [plongeur()] }),
+      palanquee({ numero: 2, membres: [] }),
+      palanquee({ numero: 3, membres: [plongeur({ prenom: '', nom: '', aptitude: null })] })
+    ]);
+    expect([...ouvertes]).toEqual([2, 3]);
   });
 });
 

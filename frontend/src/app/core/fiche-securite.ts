@@ -169,6 +169,27 @@ export function nomPalanquee(p: PalanqueeVue): string {
   return `Palanquée ${p.numero}`;
 }
 
+const FONCTIONS_AFFICHEES: Partial<Record<PlongeurVue['fonction'], string>> = {
+  ENCADRANT: 'Encadrant', GUIDE_PALANQUEE: 'Guide de palanquée'
+};
+
+/** « Flora VASSEUR · E2 · Encadrant » : un plongeur d'une palanquée fermée, la fonction seulement si elle compte. */
+export function libelleMembre(m: PlongeurVue): string {
+  return [
+    `${m.prenom.trim()} ${m.nom.trim()}`.trim() || 'Plongeur sans nom',
+    rempli(m.aptitude) ? m.aptitude!.trim() : null,
+    FONCTIONS_AFFICHEES[m.fonction] ?? null
+  ].filter(v => v).join(' · ');
+}
+
+/**
+ * Numéros des palanquées ouvertes à l'arrivée sur la fiche : celles qu'il
+ * reste à remplir. Les autres se montrent fermées, en résumé.
+ */
+export function palanqueesOuvertesAuChargement(palanquees: PalanqueeVue[]): Set<number> {
+  return new Set(palanquees.filter(p => p.membres.every(ligneVide)).map(p => p.numero));
+}
+
 /** Une nouvelle palanquée se crée avec sa profondeur et sa durée prévues. */
 export function erreurProfilPrevu(profondeur: number | null, duree: number | null): string | null {
   if (!profondeur || profondeur <= 0) return 'Indiquez la profondeur prévue.';

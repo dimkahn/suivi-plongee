@@ -15,8 +15,8 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, nomPalanquee,
-  palanqueesAEnregistrer, profondeurPermise, refusAjout, reprendrePalanquees,
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee,
+  palanqueesAEnregistrer, palanqueesOuvertesAuChargement, profondeurPermise, refusAjout, reprendrePalanquees,
   resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
 import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
@@ -475,23 +475,33 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       }
 
       @for (p of palanquees(); track p; let iP = $index) {
-        <section class="carte panneau">
+        <section class="carte panneau palanquee" [class.palanquee-fermee]="!estOuverte(p)">
+          <!-- Ouverte : le panneau de saisie complet ; fermée : ce qui est renseigné, une ligne par plongeur. -->
           <div class="ligne-titre">
             <div>
-              <h3>{{ nomPalanquee(p) }}</h3>
+              <h3>
+                <button type="button" class="bascule-palanquee" [attr.aria-expanded]="estOuverte(p)"
+                        (click)="basculerPalanquee(p)">
+                  <span class="chevron" aria-hidden="true">{{ estOuverte(p) ? '▾' : '▸' }}</span>{{ nomPalanquee(p) }}
+                </button>
+              </h3>
               <p class="resume-palanquee">{{ resumeComposition(p) }}</p>
             </div>
-            <button type="button" class="bouton-discret danger" (click)="retirerPalanquee(iP)">
-              Retirer la palanquée
-            </button>
+            @if (estOuverte(p)) {
+              <button type="button" class="bouton-discret danger" (click)="retirerPalanquee(iP)">
+                Retirer la palanquée
+              </button>
+            }
           </div>
 
-          <div class="ligne-profil">
-            <label>Profondeur prévue (m) <input type="number" min="0" [(ngModel)]="p.profondeurPrevue"
-                   [name]="'pp-' + iP"></label>
-            <label>Durée prévue (min) <input type="number" min="0" [(ngModel)]="p.dureePrevue"
-                   [name]="'dp-' + iP"></label>
-          </div>
+          @if (estOuverte(p)) {
+            <div class="ligne-profil">
+              <label>Profondeur prévue (m) <input type="number" min="0" [(ngModel)]="p.profondeurPrevue"
+                     [name]="'pp-' + iP"></label>
+              <label>Durée prévue (min) <input type="number" min="0" [(ngModel)]="p.dureePrevue"
+                     [name]="'dp-' + iP"></label>
+            </div>
+          }
 
           <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListDisabled]="!auth.etablitFichesSecurite()" [cdkDropListData]="p.membres"
                class="zone-membres" [class.zone-membres-vide]="p.membres.length === 0"
@@ -500,6 +510,17 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
               <p class="vide">Glissez un plongeur ici, ou cliquez sur « + Plongeur ».</p>
             }
             @for (m of p.membres; track m; let iM = $index) {
+              @if (!estOuverte(p)) {
+                <div class="plongeur-resume" cdkDrag [cdkDragStartDelay]="delaiGlisser">
+                  <span [class.chef]="m.fonction !== 'PLONGEUR'">{{ libelleMembre(m) }}</span>
+                  @if (alerteProfondeur(p, m); as alerte) {
+                    <span class="alerte-profondeur">⚠ {{ alerte }}</span>
+                  }
+                  @if (aussiSurFicheLiee(m); as alerte) {
+                    <span class="alerte-profondeur">⚠ {{ alerte }}</span>
+                  }
+                </div>
+              } @else {
               <div class="plongeur" cdkDrag [cdkDragStartDelay]="delaiGlisser">
                 <div class="ligne-recherche">
                   <label class="champ">Plongeur du club (remplit nom, aptitude et qualification)
@@ -567,10 +588,15 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                   <p class="alerte-profondeur">⚠ {{ alerte }}</p>
                 }
               </div>
+              }
             }
           </div>
 
-          <button type="button" class="bouton-discret" (click)="ajouterMembre(iP)">+ Plongeur</button>
+          @if (estOuverte(p)) {
+            <button type="button" class="bouton-discret" (click)="ajouterMembre(iP)">+ Plongeur</button>
+          } @else {
+            <button type="button" class="bouton-discret ouvrir-palanquee" (click)="basculerPalanquee(p)">Ouvrir pour modifier</button>
+          }
         </section>
       }
 
@@ -816,6 +842,19 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .ligne-profil input { width: 100%; }
 
     .resume-palanquee { margin: 0; font-size: .875rem; color: var(--craie); }
+    .palanquee h3 { margin: 0; }
+    .bascule-palanquee {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px; padding: 0; margin: 0;
+      background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    }
+    .chevron { display: inline-block; width: 1em; color: var(--profond); }
+    .plongeur-resume {
+      display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--pas);
+      border-top: 1px solid var(--trait); padding: var(--pas) 0; min-height: 44px; box-sizing: border-box;
+    }
+    .plongeur-resume .chef { font-weight: 700; }
+    .plongeur-resume .alerte-profondeur { margin: 0; font-size: .8125rem; }
+    .ouvrir-palanquee { min-height: 44px; }
     .bouton-ajout-palanquee, .bouton-reprendre-palanquee { min-height: 44px; }
     .ajouts-palanquees { display: flex; flex-wrap: wrap; gap: var(--pas); }
 
@@ -980,6 +1019,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   /** « 3 plongeurs · 20 m · 40 min », sous le titre de chaque palanquée. */
   readonly resumeComposition = resumeComposition;
   readonly nomPalanquee = nomPalanquee;
+  readonly libelleMembre = libelleMembre;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
@@ -1129,6 +1169,7 @@ export class FicheSecuriteComponent implements AvecModifications {
         observations: fiche.observations
       });
       this.palanquees.set(fiche.palanquees.length > 0 ? fiche.palanquees : [palanqueeVide(1)]);
+      this.ouvertes.set(palanqueesOuvertesAuChargement(this.palanquees()));
       this.retenirEtatEnregistre();
 
       const saisonOuverte = saisons.find(s => s.ouverte);
@@ -1205,7 +1246,27 @@ export class FicheSecuriteComponent implements AvecModifications {
     }
     this.nouvellePalanquee.set(null);
     this.ajouterPalanquee(profil.profondeurPrevue, profil.dureePrevue);
+    this.ouvrir(future.numero);
     if (n.pour !== null) this.placer(n.pour, this.palanquees().length - 1);
+  }
+
+  // --- Palanquées ouvertes (saisie complète) ou fermées (résumé) ----------------------------------
+
+  /** Numéros des palanquées ouvertes ; le numéro ne change pas tant que la palanquée vit sur la fiche. */
+  ouvertes = signal<Set<number>>(new Set());
+
+  estOuverte(p: PalanqueeVue): boolean {
+    return this.ouvertes().has(p.numero);
+  }
+
+  basculerPalanquee(p: PalanqueeVue): void {
+    const ouvertes = new Set(this.ouvertes());
+    if (ouvertes.has(p.numero)) ouvertes.delete(p.numero); else ouvertes.add(p.numero);
+    this.ouvertes.set(ouvertes);
+  }
+
+  private ouvrir(numero: number): void {
+    this.ouvertes.set(new Set(this.ouvertes()).add(numero));
   }
 
   retirerPalanquee(index: number): void {
@@ -1838,6 +1899,7 @@ export class FicheSecuriteComponent implements AvecModifications {
           return;
         }
         this.palanquees.set(r.palanquees.length > 0 ? r.palanquees : [palanqueeVide(1)]);
+        this.ouvertes.set(palanqueesOuvertesAuChargement(this.palanquees()));
         this.bilanProposition.set(r);
         this.plongeurADeplacer.set(null);
         this.propositionOuverte.set(false);
