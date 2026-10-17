@@ -57,8 +57,9 @@ export interface Trajet {
    */
   heureDepart?: string | null;
   lieuDepart?: string | null;
-  /** Départ seulement : l'heure à laquelle l'avion ou le train arrive au retour. */
+  /** Départ seulement : l'heure à laquelle l'avion ou le train arrive au retour, et où. */
   heureArrivee?: string | null;
+  lieuArrivee?: string | null;
   /**
    * Le jour où part l'avion ou le train de l'aller, et celui où arrive celui
    * du retour, pour un vol long. Vides : le jour du trajet (la veille pour un
@@ -74,7 +75,7 @@ export function copieTrajet(t: Trajet | null): Trajet {
     date: t?.date ?? null, heure: t?.heure?.slice(0, 5) ?? null, transport: t?.transport ?? null,
     numero: t?.numero ?? null, lieu: t?.lieu ?? null,
     heureDepart: t?.heureDepart?.slice(0, 5) ?? null, lieuDepart: t?.lieuDepart ?? null,
-    heureArrivee: t?.heureArrivee?.slice(0, 5) ?? null,
+    heureArrivee: t?.heureArrivee?.slice(0, 5) ?? null, lieuArrivee: t?.lieuArrivee ?? null,
     dateDepart: t?.dateDepart ?? null, dateArrivee: t?.dateArrivee ?? null
   };
 }
@@ -82,7 +83,8 @@ export function copieTrajet(t: Trajet | null): Trajet {
 /** Le trajet saisi, ou null s'il est resté vide. */
 export function trajetSaisi(t: Trajet | null): Trajet | null {
   return !t || (!t.date && !t.heure && !t.transport && !t.numero?.trim() && !t.lieu?.trim()
-    && !t.heureDepart && !t.lieuDepart?.trim() && !t.heureArrivee && !t.dateDepart && !t.dateArrivee) ? null : t;
+    && !t.heureDepart && !t.lieuDepart?.trim() && !t.heureArrivee && !t.lieuArrivee?.trim()
+    && !t.dateDepart && !t.dateArrivee) ? null : t;
 }
 
 export interface ParticipantVue {
@@ -669,8 +671,9 @@ export function texteTrajet(t: Trajet | null): string {
       ? 'départ' + autreJour(t, t.dateDepart) + (t.heureDepart ? ' à ' + heure(t.heureDepart) : '')
         + (t.lieuDepart ? ' de ' + t.lieuDepart : '')
       : null,
-    t.heureArrivee || autreJour(t, t.dateArrivee)
+    t.heureArrivee || t.lieuArrivee || autreJour(t, t.dateArrivee)
       ? 'arrivée' + autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')
+        + (t.lieuArrivee ? ' à ' + t.lieuArrivee : '')
       : null
   ].filter(Boolean).join(', ') || 'à préciser';
 }

@@ -136,7 +136,9 @@ export class MonSejourComponent {
       aller && (t?.heureDepart || t?.lieuDepart || leJour)
         ? 'Départ' + leJour + (t?.heureDepart ? ' à ' + heure(t.heureDepart) : '') + (t?.lieuDepart ? ' de ' + t.lieuDepart : '')
         : null,
-      !aller && (t?.heureArrivee || leJour) ? 'Arrivée' + leJour + (t?.heureArrivee ? ' à ' + heure(t.heureArrivee) : '') : null
+      !aller && (t?.heureArrivee || t?.lieuArrivee || leJour)
+        ? 'Arrivée' + leJour + (t?.heureArrivee ? ' à ' + heure(t.heureArrivee) : '') + (t?.lieuArrivee ? ' à ' + t.lieuArrivee : '')
+        : null
     ].filter((x): x is string => !!x);
     return { cible: 'transports', etiquette, principal: saisi ? quand : null, details, aCompleter: !saisi, vide: 'À préciser' };
   }

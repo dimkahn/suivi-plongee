@@ -119,7 +119,8 @@ export function voyagesDuJour(participants: ParticipantVue[], jour: string): Voy
       const depart = (sens === 'aller' ? t.heureDepart : t.heure)?.slice(0, 5) ?? null;
       const lieuDepart = (sens === 'aller' ? t.lieuDepart : t.lieu) ?? null;
       const cle = [sens, t.transport, t.numero, depart, lieuDepart,
-        sens === 'aller' ? `${t.date} ${t.heure}` : `${t.dateArrivee} ${t.heureArrivee}`].join('|');
+        sens === 'aller' ? `${t.date} ${t.heure} ${t.lieu}` : `${t.dateArrivee} ${t.heureArrivee} ${t.lieuArrivee}`]
+        .join('|');
       // Arrivée un autre jour que le départ (vol de nuit, vol long) : on dit lequel.
       const jourArrivee = sens === 'aller' ? t.date : t.dateArrivee;
       const autreJour = jourArrivee && jourArrivee !== jour ? jourLong(jourArrivee).toLowerCase() : null;
@@ -131,7 +132,7 @@ export function voyagesDuJour(participants: ParticipantVue[], jour: string): Voy
         lieuDepart,
         arrivee: [
           [autreJour, heureArrivee].filter(Boolean).join(' à ') || null,
-          sens === 'aller' ? t.lieu : null
+          sens === 'aller' ? t.lieu : t.lieuArrivee
         ].filter(Boolean).join(', ') || null,
         conseil: conseilDepart(t.transport, depart),
         heureManquante: !depart && !!t.transport && !!AVANCES_TRANSPORT[t.transport],

@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-16, 20e série, jour de départ de l'aller et jour d'arrivée du retour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 21e série, lieu d'arrivée du retour (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols (jour et heure de départ de l\'aller, jour et heure d\'arrivée du retour) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -47,9 +47,9 @@ export default {
     await pause(4000);
     await legende('Un vol long qui part l\'avant-veille ? On saisit son jour de départ, l\'encart du jour le suit.', 4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
-    await legende('Pour un retour, le jour et l\'heure d\'arrivée de l\'avion ou du train : on sait quand aller chercher chacun.', 0);
+    await legende('Pour un retour, le jour, l\'heure et l\'aéroport ou la gare d\'arrivée : on sait quand et où aller chercher chacun.', 0);
     await toucher(page.getByRole('button', { name: /Ajouter des personnes à ce (vol|train)/ }).last(), { apres: 2500 });
-    await page.locator('#vc-date-arrivee').scrollIntoViewIfNeeded();
+    await page.locator('#vc-lieu-arrivee').scrollIntoViewIfNeeded();
     await pause(3500);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Dessous, les voitures : le conducteur, ses passagers et les places qui restent.', 0);

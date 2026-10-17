@@ -68,9 +68,11 @@ public class SejourService {
      * d'où part l'avion ou le train (pour conseiller l'heure à laquelle être à
      * l'aéroport). Pour le départ : {@code heure} et {@code lieu} sont déjà
      * ceux du départ, {@code heureArrivee} l'heure à laquelle l'avion ou le
-     * train arrive au retour (V85) ; {@code heureDepart} et
-     * {@code lieuDepart} restent vides. À l'aller, {@code heureArrivee} reste
-     * vide ({@code heure} est déjà celle de l'arrivée).
+     * train arrive au retour (V85), {@code lieuArrivee} l'aéroport ou la
+     * gare où il arrive (V89) ; {@code heureDepart} et
+     * {@code lieuDepart} restent vides. À l'aller, {@code heureArrivee} et
+     * {@code lieuArrivee} restent vides ({@code heure} et {@code lieu} sont
+     * déjà ceux de l'arrivée).
      * <p>
      * {@code dateDepart} (aller) et {@code dateArrivee} (retour) sont leurs
      * jours (V87), pour un vol long qui part ou arrive un autre jour. Vides :
@@ -79,11 +81,11 @@ public class SejourService {
     public record Trajet(LocalDate date, LocalTime heure, MoyenTransport transport,
                          @Size(max = 30) String numero, @Size(max = 120) String lieu,
                          LocalTime heureDepart, @Size(max = 120) String lieuDepart, LocalTime heureArrivee,
-                         LocalDate dateDepart, LocalDate dateArrivee) {
+                         LocalDate dateDepart, LocalDate dateArrivee, @Size(max = 120) String lieuArrivee) {
         boolean vide() {
             return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu)
                     && heureDepart == null && blanc(lieuDepart) && heureArrivee == null
-                    && dateDepart == null && dateArrivee == null;
+                    && dateDepart == null && dateArrivee == null && blanc(lieuArrivee);
         }
 
         /** Refus si l'avion ou le train arrive un jour avant celui où il part. */
@@ -517,7 +519,8 @@ public class SejourService {
                 aller ? rs.getString("arrivee_lieu_depart") : null,
                 aller ? null : rs.getObject("depart_heure_arrivee", LocalTime.class),
                 aller ? rs.getObject("arrivee_date_depart", LocalDate.class) : null,
-                aller ? null : rs.getObject("depart_date_arrivee", LocalDate.class));
+                aller ? null : rs.getObject("depart_date_arrivee", LocalDate.class),
+                aller ? null : rs.getString("depart_lieu_arrivee"));
         return t.vide() ? null : t;
     }
 
@@ -630,6 +633,7 @@ public class SejourService {
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
                        arrivee_date_depart = :arriveeDateDepart, depart_date_arrivee = :departDateArrivee,
+                       depart_lieu_arrivee = :departLieuArrivee,
                        remarques = :remarques
                  WHERE id = :pid""", p);
         reporterSurLePlongeur(d);
@@ -699,6 +703,7 @@ public class SejourService {
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
                        arrivee_date_depart = :arriveeDateDepart, depart_date_arrivee = :departDateArrivee,
+                       depart_lieu_arrivee = :departLieuArrivee,
                        remarques = :remarques
                  WHERE id = :pid""", p);
     }
@@ -736,7 +741,8 @@ public class SejourService {
         String autreHoraire = d.sens() == SensTrajet.ARRIVEE
                 ? ", arrivee_heure_depart = :tHeureDepart, arrivee_lieu_depart = :tLieuDepart,"
                   + " arrivee_date_depart = :tDateDepart"
-                : ", depart_heure_arrivee = :tHeureArrivee, depart_date_arrivee = :tDateArrivee";
+                : ", depart_heure_arrivee = :tHeureArrivee, depart_date_arrivee = :tDateArrivee,"
+                  + " depart_lieu_arrivee = :tLieuArrivee";
         jdbc.update("""
                 UPDATE sejour_participant SET %1$s_date = :tDate, %1$s_heure = :tHeure, %1$s_transport = :tTransport,
                        %1$s_numero = :tNumero, %1$s_lieu = :tLieu%2$s
@@ -917,13 +923,13 @@ public class SejourService {
                        arrivee_date, arrivee_heure, arrivee_transport, arrivee_numero, arrivee_lieu,
                        arrivee_heure_depart, arrivee_lieu_depart, arrivee_date_depart,
                        depart_date, depart_heure, depart_transport, depart_numero, depart_lieu,
-                       depart_heure_arrivee, depart_date_arrivee, remarques)
+                       depart_heure_arrivee, depart_date_arrivee, depart_lieu_arrivee, remarques)
                 VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :membreGroupe, :telephone, :email, :regimes,
                        :regimePrecision, :urgenceNom, :urgenceTelephone,
                        :arriveeDate, :arriveeHeure, :arriveeTransport, :arriveeNumero, :arriveeLieu,
                        :arriveeHeureDepart, :arriveeLieuDepart, :arriveeDateDepart,
                        :departDate, :departHeure, :departTransport, :departNumero, :departLieu,
-                       :departHeureArrivee, :departDateArrivee, :remarques)""",
+                       :departHeureArrivee, :departDateArrivee, :departLieuArrivee, :remarques)""",
                 parametres(sortieId, d));
     }
 
@@ -956,7 +962,8 @@ public class SejourService {
                 .addValue(sens + "LieuDepart", t == null ? null : nettoyer(t.lieuDepart()))
                 .addValue(sens + "HeureArrivee", t == null ? null : t.heureArrivee())
                 .addValue(sens + "DateDepart", t == null ? null : t.dateDepart())
-                .addValue(sens + "DateArrivee", t == null ? null : t.dateArrivee());
+                .addValue(sens + "DateArrivee", t == null ? null : t.dateArrivee())
+                .addValue(sens + "LieuArrivee", t == null ? null : nettoyer(t.lieuArrivee()));
     }
 
     private static LocalDateTime moment(Trajet t) {

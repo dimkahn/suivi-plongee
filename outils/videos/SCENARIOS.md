@@ -676,7 +676,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; l'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols (jour et heure de départ de l'aller, jour et heure d'arrivée du retour) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l'encart « Aujourd'hui ».
+Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; l'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols (jour et heure de départ de l'aller, jour, heure et lieu d'arrivée du retour) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l'encart « Aujourd'hui ».
 
 Compte : `e3@club.fr` (créatrice du séjour de démonstration) · format ordinateur
 
@@ -830,7 +830,7 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 
 ### E2 — Le carnet du séjour
 
-La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l'heure d'arrivée de son vol retour) et déclare le gilet du club qu'elle a emprunté.
+La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour, l'heure et l'aéroport d'arrivée de son vol retour) et déclare le gilet du club qu'elle a emprunté.
 
 Compte : `eleve@club.fr` · format téléphone
 

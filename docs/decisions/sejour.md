@@ -76,6 +76,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Contexte** : un vol long (escale, décalage horaire) part deux jours avant l'arrivée ou arrive deux jours après le départ ; l'écran ne savait que deviner la veille (heure de départ plus tard que l'heure d'arrivée).
 - **Décision** : `arrivee_date_depart` et `depart_date_arrivee` (V87), facultatifs : vides, on garde le jour du trajet et la déduction de la veille. Montrés seulement s'ils diffèrent du jour du trajet (fiche, « Un même vol pour plusieurs », « Mes informations », Mon séjour, carnet par e-mail, encart « Aujourd'hui »). L'encart s'ouvre dès le jour de départ saisi. Un avion qui arriverait un jour avant celui où il part est refusé (422, `Trajet.verifierJours`).
 
+## Lieu d'arrivée du retour
+
+- **Date** : 2026-10.
+- **Contexte** : l'aller porte le lieu d'où part l'avion (V78), le retour seulement l'heure et le jour où il arrive ; pour savoir où aller chercher chacun au retour, il fallait l'écrire dans les remarques.
+- **Décision** : `depart_lieu_arrivee` (V89), facultatif, saisi avec l'heure et le jour d'arrivée du retour (fiche, « Un même vol pour plusieurs », « Mes informations ») et montré partout où ils le sont (groupes de départs, Mon séjour, carnet écran et e-mail, encart « Aujourd'hui »). Un brouillon avait voulu le mettre dans V87 avec une reprise des jours devinés ; V87 publiée sans, il vient seul en V89, sans reprise.
+
 ## Montant, date et catégorie lus sur la photo de la note
 
 - **Date** : 2026-10, demande du club.

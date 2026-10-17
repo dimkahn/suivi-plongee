@@ -591,6 +591,9 @@ function participantVide(): BrouillonParticipant {
                 <input id="p-depart-date-arrivee" type="date" [(ngModel)]="participant.depart.dateArrivee"></div>
               <div><label for="p-depart-heure-arrivee">Heure d'arrivée de l'avion ou du train</label>
                 <input id="p-depart-heure-arrivee" type="time" [(ngModel)]="participant.depart.heureArrivee"></div>
+              <div><label for="p-depart-lieu-arrivee">Aéroport ou gare d'arrivée</label>
+                <input id="p-depart-lieu-arrivee" [(ngModel)]="participant.depart.lieuArrivee" maxlength="120"
+                       placeholder="Paris-Orly"></div>
             }
           </div>
         </fieldset>
@@ -814,6 +817,8 @@ function participantVide(): BrouillonParticipant {
             <input id="vc-date-arrivee" type="date" [(ngModel)]="vol.trajet.dateArrivee"></div>
           <div><label for="vc-heure-arrivee">Heure d'arrivée de l'avion ou du train</label>
             <input id="vc-heure-arrivee" type="time" [(ngModel)]="vol.trajet.heureArrivee"></div>
+          <div><label for="vc-lieu-arrivee">Aéroport ou gare d'arrivée</label>
+            <input id="vc-lieu-arrivee" [(ngModel)]="vol.trajet.lieuArrivee" maxlength="120" placeholder="Paris-Orly"></div>
         }
       </div>
       <fieldset>
@@ -1187,15 +1192,16 @@ export class SejourComponent {
       const t = p[sens];
       if (!t || (!t.date && !t.heure)) continue;
       const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu, t.heureDepart?.slice(0, 5), t.lieuDepart,
-        t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee]
+        t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee, t.lieuArrivee]
         .join('|');
       const g = groupes.get(cle) ?? {
         tri: `${t.date ?? ''} ${t.heure ?? ''}`,
         quand: t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : 'à ' + heure(t.heure),
         comment: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' '),
         lieu: t.lieu,
-        // « à 21h35 », ou « le mercredi 16/06/2027 à 06h10 » pour un vol qui arrive un autre jour.
-        arrivee: (autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')).trim() || null,
+        // « à 21h35 à Paris-Orly », ou « le mercredi 16/06/2027 à 06h10 » pour un vol qui arrive un autre jour.
+        arrivee: (autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')
+          + (t.lieuArrivee ? ' à ' + t.lieuArrivee : '')).trim() || null,
         noms: [], trajet: t, ids: []
       };
       g.noms.push(nomComplet(p));
@@ -1266,7 +1272,7 @@ export class SejourComponent {
     const trajet = {
       ...t, numero: t.numero?.trim() || null, lieu: t.lieu?.trim() || null,
       heureDepart: aller ? t.heureDepart || null : null, lieuDepart: aller ? t.lieuDepart?.trim() || null : null,
-      heureArrivee: aller ? null : t.heureArrivee || null,
+      heureArrivee: aller ? null : t.heureArrivee || null, lieuArrivee: aller ? null : t.lieuArrivee?.trim() || null,
       dateDepart: aller ? t.dateDepart || null : null, dateArrivee: aller ? null : t.dateArrivee || null
     };
     this.ecrire(this.api.appliquerTrajet(this.id, this.vol.sens, trajet, this.vol.ids), () => {

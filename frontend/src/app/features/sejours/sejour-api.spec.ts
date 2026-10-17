@@ -108,3 +108,32 @@ describe("Voyage retour dans l'encart « Aujourd'hui »", () => {
     expect(voyagesDuJour([p], '2027-06-07')[0].arrivee).toBe('21h35');
   });
 });
+
+describe("Lieu d'arrivée du voyage retour", () => {
+  const retour = {
+    date: '2027-06-07', heure: '20:10:00', transport: 'AVION' as const, numero: 'AF7527', lieu: 'Toulon',
+    heureArrivee: '21:35:00', lieuArrivee: 'Paris-Orly'
+  };
+
+  it("donne l'aéroport ou la gare d'arrivée", () => {
+    expect(texteTrajet(retour)).toContain('arrivée à 21h35 à Paris-Orly');
+  });
+
+  it('le garde dans la copie du formulaire', () => {
+    expect(copieTrajet(retour).lieuArrivee).toBe('Paris-Orly');
+  });
+
+  it("un trajet avec seulement le lieu d'arrivée n'est pas vide", () => {
+    expect(trajetSaisi({ date: null, heure: null, transport: null, numero: null, lieu: null, lieuArrivee: 'Orly' }))
+      .not.toBeNull();
+  });
+
+  it("l'encart « Aujourd'hui » le donne avec l'heure", () => {
+    const p: ParticipantVue = {
+      id: 1, eleveId: null, utilisateurId: null, nom: 'Roux', prenom: 'Inès', plongeur: true, telephone: null,
+      email: null, regimes: [], regimePrecision: null, urgenceNom: null, urgenceTelephone: null, arrivee: null,
+      depart: retour, remarques: null, moi: false, membreGroupeId: null, groupe: null
+    };
+    expect(voyagesDuJour([p], '2027-06-07')[0].arrivee).toBe('21h35, Paris-Orly');
+  });
+});
