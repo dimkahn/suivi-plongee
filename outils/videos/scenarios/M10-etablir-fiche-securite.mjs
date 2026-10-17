@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-17, 2e série, détails repliés, barre d'enregistrement et impression (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 3e série, déplacer un plongeur, détails repliés, barre d'enregistrement et impression (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -47,6 +47,9 @@ export default {
     await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
     await toucher(palanquee.locator('.details-plongeur summary').last(), { apres: 1800 });
     await vignette();
+    await legende('Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.', 0);
+    await toucher(palanquee.getByRole('button', { name: /^Déplacer/ }).first(), { apres: 2500 });
+    await toucher(page.locator('.barre-placement').getByRole('button', { name: 'Annuler' }), { apres: 800 });
 
     await legende('En bas, toujours visible : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 0);
     await page.locator('.actions-bas').scrollIntoViewIfNeeded();

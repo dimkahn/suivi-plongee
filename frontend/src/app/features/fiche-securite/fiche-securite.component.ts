@@ -15,7 +15,7 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, empreinteFiche, palanqueesAEnregistrer, resumePalanquee as resumeComposition
+  aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { AvecModifications } from '../../core/gardes';
@@ -520,6 +520,10 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                     <input type="text" class="selecteur-connu" placeholder="Rechercher un nom…" list="plongeurs-club"
                            (change)="choisirPlongeurConnu(iP, iM, $event)">
                   </label>
+                  <button type="button" class="bouton-discret deplacer-plongeur"
+                          [class.selectionne]="estADeplacer(iP, iM)" [attr.aria-pressed]="estADeplacer(iP, iM)"
+                          [attr.aria-label]="'Déplacer ' + ((m.prenom + ' ' + m.nom).trim() || 'ce plongeur') + ' dans une autre palanquée'"
+                          (click)="choisirADeplacer(iP, iM)">⇄ Déplacer</button>
                   <button type="button" class="bouton-discret danger retirer-plongeur"
                           [attr.aria-label]="'Retirer ' + ((m.prenom + ' ' + m.nom).trim() || 'ce plongeur') + ' de la palanquée'"
                           (click)="retirerMembre(iP, iM)">✕</button>
@@ -603,6 +607,26 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </div>
       }
 
+      @if (plongeurADeplacer(); as d) {
+        <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée de destination">
+          <p>
+            <strong>{{ nomADeplacer() }}</strong> (palanquée {{ palanquees()[d.palanquee]?.numero }})
+            → vers quelle palanquée ?
+          </p>
+          <div class="choix-palanquees">
+            @for (p of palanquees(); track p; let iP = $index) {
+              @if (iP !== d.palanquee) {
+                <button type="button" class="bouton-principal" (click)="deplacerVers(iP)">
+                  Palanquée {{ p.numero }} ({{ p.membres.length }})
+                </button>
+              }
+            }
+            <button type="button" class="bouton-discret" (click)="deplacerVers(null)">+ Nouvelle palanquée</button>
+            <button type="button" class="bouton-discret" (click)="plongeurADeplacer.set(null)">Annuler</button>
+          </div>
+        </div>
+      }
+
       </fieldset>
 
       <!-- Toujours à portée de doigt, au-dessus de la barre d'onglets du téléphone : la fiche est longue. -->
@@ -682,7 +706,9 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .champ input, .champ select { display: block; width: 100%; margin: 2px 0 0; color: var(--encre); }
     .ligne-recherche { display: flex; gap: var(--pas); align-items: flex-end; margin-bottom: var(--pas); }
     .ligne-recherche .champ { flex: 0 1 420px; }
-    .retirer-plongeur { margin-left: auto; min-width: 44px; min-height: 44px; }
+    .deplacer-plongeur { margin-left: auto; min-height: 44px; white-space: nowrap; }
+    .deplacer-plongeur.selectionne { background: var(--profond); border-color: var(--profond); color: #fff; }
+    .retirer-plongeur { min-width: 44px; min-height: 44px; }
     .ligne-plongeur {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--pas);
       margin-bottom: var(--pas);
@@ -919,6 +945,7 @@ export class FicheSecuriteComponent implements AvecModifications {
       this.message.set(null);
       this.bilanProposition.set(null);
       this.membreAPlacer.set(null);
+      this.plongeurADeplacer.set(null);
       void this.charger();
     });
     void this.charger();
@@ -975,6 +1002,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   }
 
   retirerPalanquee(index: number): void {
+    this.plongeurADeplacer.set(null);
     const p = this.palanquees()[index];
     if (p.membres.some(m => m.nom || m.prenom)
         && !confirm(`Retirer la palanquée ${p.numero} et ses plongeurs (${resumeComposition(p)}) ?`)) {
@@ -1044,6 +1072,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   }
 
   retirerMembre(indexPalanquee: number, indexMembre: number): void {
+    this.plongeurADeplacer.set(null);
     const liste = this.palanquees().map((p, i) =>
       i === indexPalanquee ? { ...p, membres: p.membres.filter((_, j) => j !== indexMembre) } : p);
     this.palanquees.set(liste);
@@ -1067,7 +1096,40 @@ export class FicheSecuriteComponent implements AvecModifications {
   }
 
   selectionnerPourPlacer(m: MembreGroupeVue): void {
+    this.plongeurADeplacer.set(null);
     this.membreAPlacer.set(this.membreAPlacer() === m ? null : m);
+  }
+
+  /**
+   * Plongeur déjà sur la fiche, touché pour changer de palanquée (sans
+   * glisser, plus sûr au doigt). Repéré par ses indices : toute autre
+   * modification des palanquées referme le choix.
+   */
+  plongeurADeplacer = signal<{ palanquee: number; membre: number } | null>(null);
+
+  estADeplacer(indexPalanquee: number, indexMembre: number): boolean {
+    const d = this.plongeurADeplacer();
+    return d !== null && d.palanquee === indexPalanquee && d.membre === indexMembre;
+  }
+
+  choisirADeplacer(indexPalanquee: number, indexMembre: number): void {
+    this.membreAPlacer.set(null);
+    this.plongeurADeplacer.set(this.estADeplacer(indexPalanquee, indexMembre)
+      ? null : { palanquee: indexPalanquee, membre: indexMembre });
+  }
+
+  nomADeplacer(): string {
+    const d = this.plongeurADeplacer();
+    const m = d ? this.palanquees()[d.palanquee]?.membres[d.membre] : undefined;
+    return m ? (`${m.prenom} ${m.nom}`.trim() || 'Ce plongeur') : '';
+  }
+
+  /** Vers la palanquée d'indice `cible`, ou une nouvelle si null. */
+  deplacerVers(cible: number | null): void {
+    const d = this.plongeurADeplacer();
+    this.plongeurADeplacer.set(null);
+    if (!d || !this.palanquees()[d.palanquee]?.membres[d.membre]) return;
+    this.palanquees.set(deplacerPlongeur(this.palanquees(), d.palanquee, d.membre, cible));
   }
 
   placer(m: MembreGroupeVue, indexPalanquee: number): void {
@@ -1098,6 +1160,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   }
 
   onDropPalanquee(event: CdkDragDrop<PlongeurVue[]>, indexPalanquee: number): void {
+    this.plongeurADeplacer.set(null);
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
       this.palanquees.set([...this.palanquees()]);
@@ -1456,6 +1519,7 @@ export class FicheSecuriteComponent implements AvecModifications {
         }
         this.palanquees.set(r.palanquees.length > 0 ? r.palanquees : [palanqueeVide(1)]);
         this.bilanProposition.set(r);
+        this.plongeurADeplacer.set(null);
         this.propositionOuverte.set(false);
       },
       error: (e: HttpErrorResponse) => {
