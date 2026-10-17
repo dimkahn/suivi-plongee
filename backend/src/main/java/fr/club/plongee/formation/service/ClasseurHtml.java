@@ -45,7 +45,7 @@ import java.util.Set;
 public final class ClasseurHtml {
 
     /** Surface utile d'une page A4 portrait aux marges de {@link #CSS}, en points. */
-    static final double LARGEUR_PAGE_PT = 555;
+    static final double LARGEUR_PAGE_PT = 549;
     static final double HAUTEUR_PAGE_PT = 790;
     private static final double EMU_PAR_POINT = 12700;
 
@@ -115,7 +115,7 @@ public final class ClasseurHtml {
                 if (couvertes.contains(l + ":" + c)) continue;
                 CellRangeAddress fusion = fusions.get(l + ":" + c);
                 XSSFCell cell = row == null ? null : (XSSFCell) row.getCell(c);
-                html.append(cellule(feuille, cell, fusion, l, c, echelle, hauteurs[l - l1] * echelle, formateur,
+                html.append(cellule(feuille, cell, fusion, l, c, c2, echelle, hauteurs[l - l1] * echelle, formateur,
                         images.getOrDefault(l + ":" + c, List.of())));
             }
             html.append("</tr>");
@@ -124,7 +124,7 @@ public final class ClasseurHtml {
     }
 
     private static String cellule(XSSFSheet feuille, XSSFCell cell, CellRangeAddress fusion, int l, int c,
-                                  double echelle, double hauteur, DataFormatter formateur, List<String> images) {
+                                  int derniereColonne, double echelle, double hauteur, DataFormatter formateur, List<String> images) {
         String etendue = fusion == null ? "" : "%s%s".formatted(
                 fusion.getLastColumn() > c ? " colspan=\"%d\"".formatted(fusion.getLastColumn() - c + 1) : "",
                 fusion.getLastRow() > l ? " rowspan=\"%d\"".formatted(fusion.getLastRow() - l + 1) : "");
@@ -146,11 +146,19 @@ public final class ClasseurHtml {
         if (style.getRotation() == 45) {
             // Comme un tableur : la case penche vers la droite, le texte suit la diagonale.
             // Hauteurs en points : le moteur PDF ne place pas un bloc absolu dans une case de hauteur implicite.
+            // Le texte tourne autour de son coin bas gauche et ses lettres montent vers la gauche de la
+            // diagonale : il part du milieu du bas de la case, décalé vers la droite d'environ la hauteur
+            // de sa ligne inclinée, pour rester au milieu de la bande sans en toucher les bords.
+            // La bande de la dernière colonne sort de la page : son texte part près du coin bas gauche.
+            boolean derniere = dc == derniereColonne;
+            double decalage = style.getFont().getFontHeightInPoints() * echelle * (derniere ? 1.5 : 0.85);
+            String depart = derniere ? "0" : "50%";
             return ("<td%s class=\"case-tournee\" style=\"height: %s; border-top: none; border-left: none; border-right: none;"
                     + " border-bottom: %s; vertical-align: bottom\">"
                     + "<div class=\"parallelogramme\" style=\"height: %s; border-left: %s; border-right: %s;%s\"></div>"
-                    + "<span class=\"tourne\" style=\"left: 35%%; bottom: 2pt; %s\">%s</span></td>")
-                    .formatted(etendue, pt(hauteur), bas, pt(hauteur), gauche, droite, fond, police, texte);
+                    + "<span class=\"tourne\" style=\"left: %s; margin-left: %s; bottom: 0; %s\">%s</span></td>")
+                    .formatted(etendue, pt(hauteur), bas, pt(hauteur), gauche, droite, fond, depart, pt(decalage),
+                            police, texte);
         }
         String alignement = switch (style.getAlignment()) {
             case CENTER, CENTER_SELECTION -> "center";
