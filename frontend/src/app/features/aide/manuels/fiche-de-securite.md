@@ -3,8 +3,12 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, portrait, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, portrait, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant
 questions:
+- Comment imprimer une fiche de sécurité tout de suite ?
+- Où saisir le gaz ou la désaturation d'un plongeur ?
+- Pourquoi la fiche dit « Modifications non enregistrées » ?
+- Pourquoi la fiche refuse un plongeur sans nom ?
 - Comment composer les palanquées automatiquement ?
 - Comment remplir une fiche de sécurité ?
 - Comment ajouter une palanquée ?
@@ -35,9 +39,12 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 2. Retrouvez la séance par sa date. Le lien « ← Fiches de sécurité » d'une fiche ramène à la liste de ce même jour.
 3. Choisissez le directeur de plongée : seuls les E3 et E4 sont proposés.
 4. Renseignez les conditions du jour.
-5. Une palanquée est prête ; « + Palanquée » en ajoute d'autres.
-6. Ajoutez les plongeurs : pour un plongeur du club, son aptitude et son niveau préparé se remplissent seuls.
-7. Enregistrez.
+5. Une palanquée est prête ; « + Palanquée » en ajoute d'autres. Sous le titre de chaque palanquée, un résumé : nombre de plongeurs, profondeur et durée prévues.
+6. Ajoutez les plongeurs : pour un plongeur du club, son aptitude et son niveau préparé se remplissent seuls. Chaque plongeur montre prénom, nom, aptitude et fonction ; l'aptitude donnée par le DP, la qualification préparée, le gaz, la désaturation et les observations sont rangés sous « Détails », ouverts d'un geste (et toujours ouverts quand l'un d'eux est rempli). Une ligne de plongeur laissée vide est ignorée à l'enregistrement ; un plongeur sans nom ou sans prénom est signalé avec sa palanquée.
+7. Enregistrez avec « Enregistrer la fiche », dans la barre toujours visible en bas de l'écran. Elle indique « Modifications non enregistrées » tant qu'il reste à enregistrer, puis « Enregistrée » ; les messages (fiche enregistrée, oubli à corriger) s'y affichent aussi. Quitter la fiche avec des modifications non enregistrées demande confirmation.
+8. « Imprimer (PDF) », dans la même barre, imprime la fiche enregistrée tout de suite (avec l'autre plongée de sa feuille).
+
+Retirer une palanquée qui a des plongeurs demande confirmation.
 
 ## Proposer les palanquées automatiquement (milieu naturel)
 
@@ -69,7 +76,7 @@ Dupliquer demande le réseau. Les mêmes droits que pour établir la fiche.
 
 1. « Marquer l'immersion » puis « Marquer la sortie » notent l'heure sur le moment.
 2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers. Le jour de la plongée, le bouton « Compléter au retour de plongée » de la page « Aujourd'hui » y mène directement.
-3. La fiche complète s'exporte en PDF ou en tableur (« Télécharger le PDF », « Télécharger l'Excel ») pour les archives du club. L'impression suit le modèle papier du club, sur **une page A4 en hauteur** :
+3. « Enregistrer les paramètres réalisés » reste en bas de l'écran pendant qu'on fait défiler les palanquées. La fiche complète s'exporte en PDF ou en tableur depuis l'encadré « Imprimer ou archiver » (« Télécharger le PDF », « Télécharger l'Excel ») pour les archives du club. Dans la liste « Fiches de sécurité », « Imprimer (PDF) » à côté de chaque fiche enregistrée l'imprime sans l'ouvrir. L'impression suit le modèle papier du club, sur **une page A4 en hauteur** :
    - **deux plongées sur la même feuille** : deux plongées du même jour au même lieu y sont réunies, en **1er tour** (ou matin) et **2e tour**. Le lieu de la séance est le « Site » ; le site de chaque plongée est son « Lieu 1 » et son « Lieu 2 ». Une troisième plongée le même jour part sur une deuxième feuille. Une feuille qui ne porte qu'une plongée n'a ni « Lieu 2 » ni lignes du 2e tour. Le PDF ou l'Excel d'une plongée imprime la feuille où elle se trouve, avec l'autre plongée. **Pour une feuille par plongée**, décochez « Regrouper les 2 plongées du jour sur une feuille » (au-dessus des boutons, dans la liste des fiches et dans l'écran des sorties) : chaque feuille n'a alors qu'un lieu et un seul tour ;
    - **une colonne par encadrant** (le guide de palanquée, sinon l'encadrant de la palanquée), son nom tourné en haut sur fond jaune et son niveau (E1, E3…) dessous ; le nombre d'encadrants est en rouge à gauche. Les palanquées sans encadrant vont dans les colonnes « **Autonomes** » ;
    - **la case d'un plongeur dit à quel tour** il plonge dans cette colonne : « 1 », « 2 », ou « 1-2 » s'il plonge avec le même encadrant aux deux tours ;

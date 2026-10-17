@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
 import { filter, map, take } from 'rxjs';
 import { AuthService } from './auth.service';
 
@@ -93,3 +93,17 @@ export const gardeInspectionBlocs: CanActivateFn = () => {
 
 /** Sorties : même public que le matériel (le DT y rattache ses prêts), admin compris. */
 export const gardeSorties: CanActivateFn = gardeMateriel;
+
+/** Un écran de saisie qui sait s'il lui reste des modifications non enregistrées. */
+export interface AvecModifications {
+  modificationsNonEnregistrees(): boolean;
+}
+
+/**
+ * Quitter un écran (lien, retour, menu) avec des modifications non
+ * enregistrées demande confirmation : une fiche composée au bord de l'eau ne
+ * se perd pas d'un appui malheureux.
+ */
+export const gardeModifications: CanDeactivateFn<AvecModifications> = ecran =>
+  !ecran.modificationsNonEnregistrees()
+  || confirm('Des modifications ne sont pas enregistrées. Quitter quand même et les perdre ?');

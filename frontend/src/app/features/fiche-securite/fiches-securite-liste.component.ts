@@ -9,6 +9,7 @@ import { SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { correspondLieuSiteInfo } from '../../core/seance-lieu';
+import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 
 type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
@@ -147,6 +148,13 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
                   <a [routerLink]="['/fiches-securite', s.id, 'realise']" class="bouton-discret">
                     Compléter au retour de plongée
                   </a>
+                }
+                @if (s.ficheSecurite) {
+                  <button type="button" class="bouton-discret" (click)="imprimerFiche(s)"
+                          [disabled]="impressionFiche() === s.id"
+                          [attr.aria-label]="'Imprimer la fiche du ' + (s.date | dateFr) + ' (PDF)'">
+                    {{ impressionFiche() === s.id ? 'Génération…' : 'Imprimer (PDF)' }}
+                  </button>
                 }
               </div>
             </div>
@@ -315,21 +323,34 @@ export class FichesSecuriteListeComponent {
     this.messageImpression.set(null);
     this.api.fichesSecuriteJourPdf(date, this.regrouper()).subscribe({
       next: blob => {
-        const url = URL.createObjectURL(blob);
-        const lien = document.createElement('a');
-        lien.href = url;
-        lien.download = `fiches-securite-${date}.pdf`;
-        lien.click();
-        URL.revokeObjectURL(url);
+        telechargerFichier(blob, `fiches-securite-${date}.pdf`);
         this.impressionEnCours.set(false);
       },
       error: async (e: HttpErrorResponse) => {
         this.impressionEnCours.set(false);
-        // Réponse en blob : le message du serveur est à relire comme du JSON.
-        let detail: string | null = null;
-        try { detail = JSON.parse(await (e.error as Blob).text()).detail ?? null; } catch { /* sans détail */ }
-        this.messageImpression.set(detail ?? (navigator.onLine
+        this.messageImpression.set(await detailErreurFichier(e) ?? (navigator.onLine
           ? "Le PDF des fiches du jour n'a pas pu être généré."
+          : 'Impression impossible hors ligne : reconnectez-vous pour générer le PDF.'));
+      }
+    });
+  }
+
+  /** Séance dont la fiche est en cours de génération, depuis son bouton « Imprimer ». */
+  impressionFiche = signal<number | null>(null);
+
+  /** Une fiche, avec l'autre plongée de sa feuille (case « Regrouper », cochée par défaut). */
+  imprimerFiche(s: SeanceVue): void {
+    this.impressionFiche.set(s.id);
+    this.messageImpression.set(null);
+    this.api.ficheSecuritePdf(s.id, this.regrouper()).subscribe({
+      next: blob => {
+        telechargerFichier(blob, `fiche-securite-${s.date}.pdf`);
+        this.impressionFiche.set(null);
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.impressionFiche.set(null);
+        this.messageImpression.set(await detailErreurFichier(e) ?? (navigator.onLine
+          ? "Le PDF de la fiche n'a pas pu être généré."
           : 'Impression impossible hors ligne : reconnectez-vous pour générer le PDF.'));
       }
     });

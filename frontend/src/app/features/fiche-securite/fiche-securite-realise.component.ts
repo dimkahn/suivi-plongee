@@ -7,6 +7,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { telechargerFichier } from '../../core/telecharger';
 
 /**
  * Étape 2, à part de l'établissement (voir FicheSecuriteComponent) : le
@@ -28,7 +29,8 @@ import { lieuEtSite } from '../../core/seance-lieu';
       </p>
     }
 
-    @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+    <!-- Une fois la fiche ouverte, les messages s'affichent dans la barre du bas, à côté du bouton. -->
+    @if ((chargement() || !ficheEtablie()) && message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -111,26 +113,40 @@ import { lieuEtSite } from '../../core/seance-lieu';
         </section>
       }
 
-      <div class="actions-bas">
-        <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
-          {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
-        </button>
+      <section class="carte panneau impression">
+        <h3>Imprimer ou archiver</h3>
         <label class="case">
           <input type="checkbox" id="regrouper-export" [checked]="regrouper()" (change)="regrouper.set(!regrouper())">
           Regrouper les 2 plongées du jour sur une feuille
         </label>
-        <button type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
-          {{ exportEnCours() ? 'Génération…' : 'Télécharger le PDF' }}
-        </button>
-        <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
-          {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
-        </button>
-        @if ((auth.estMoniteur() || auth.estAdmin()) && sortie(); as so) {
-          <button type="button" class="bouton-discret" (click)="telechargerPdfSortie(so.id)"
-                  [disabled]="exportSortieEnCours()">
-            {{ exportSortieEnCours() ? 'Génération…' : 'Toutes les fiches de « ' + so.nom + ' » (PDF)' }}
+        <div class="boutons-impression">
+          <button type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
+            {{ exportEnCours() ? 'Génération…' : 'Télécharger le PDF' }}
           </button>
+          <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
+            {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
+          </button>
+          @if ((auth.estMoniteur() || auth.estAdmin()) && sortie(); as so) {
+            <button type="button" class="bouton-discret" (click)="telechargerPdfSortie(so.id)"
+                    [disabled]="exportSortieEnCours()">
+              {{ exportSortieEnCours() ? 'Génération…' : 'Toutes les fiches de « ' + so.nom + ' » (PDF)' }}
+            </button>
+          }
+        </div>
+        <p class="secondaire">Le PDF et l'Excel reprennent ce qui est enregistré : enregistrez d'abord vos saisies.</p>
+      </section>
+
+      <!-- Toujours à portée de doigt, au-dessus de la barre d'onglets du téléphone. -->
+      <div class="actions-bas">
+        @if (message(); as m) {
+          <div class="alerte message-bas" role="status">
+            {{ m }}
+            <button type="button" class="bouton-discret" aria-label="Fermer le message" (click)="message.set(null)">✕</button>
+          </div>
         }
+        <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
+          {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
+        </button>
       </div>
     }
   `,
@@ -167,7 +183,20 @@ import { lieuEtSite } from '../../core/seance-lieu';
     .alerte-texte.attention { color: #8a5a00; }
     .alerte-texte.urgence { color: #B3261E; }
 
-    .actions-bas { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas-3) 0; }
+    .impression h3 { margin: 0 0 var(--pas); }
+    .impression .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
+    .impression .case input { width: 22px; height: 22px; }
+    .boutons-impression { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas) 0; }
+    .impression .secondaire { margin: 0; }
+
+    .actions-bas {
+      position: sticky; bottom: var(--hauteur-onglets); z-index: 6;
+      display: flex; gap: var(--pas-2); flex-wrap: wrap; align-items: center;
+      margin: var(--pas-3) 0; padding: var(--pas-2) 0; background: var(--fond); border-top: 1px solid var(--trait);
+    }
+    .actions-bas .bouton-principal { width: auto; margin: 0; }
+    .message-bas { flex: 1 1 100%; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--pas); }
+    .message-bas button { min-width: 44px; min-height: 44px; }
   `]
 })
 export class FicheSecuriteRealiseComponent {
@@ -317,12 +346,7 @@ export class FicheSecuriteRealiseComponent {
     this.exportEnCours.set(true);
     this.api.ficheSecuritePdf(this.seanceId, this.regrouper()).subscribe({
       next: blob => {
-        const url = URL.createObjectURL(blob);
-        const lien = document.createElement('a');
-        lien.href = url;
-        lien.download = `fiche-securite-${this.seance()?.date ?? this.seanceId}.pdf`;
-        lien.click();
-        URL.revokeObjectURL(url);
+        telechargerFichier(blob, `fiche-securite-${this.seance()?.date ?? this.seanceId}.pdf`);
         this.exportEnCours.set(false);
       },
       error: () => {
@@ -337,12 +361,7 @@ export class FicheSecuriteRealiseComponent {
     this.exportSortieEnCours.set(true);
     this.api.fichesSecuriteSortiePdf(sortieId, this.regrouper()).subscribe({
       next: blob => {
-        const url = URL.createObjectURL(blob);
-        const lien = document.createElement('a');
-        lien.href = url;
-        lien.download = `fiches-securite-sortie-${sortieId}.pdf`;
-        lien.click();
-        URL.revokeObjectURL(url);
+        telechargerFichier(blob, `fiches-securite-sortie-${sortieId}.pdf`);
         this.exportSortieEnCours.set(false);
       },
       error: () => {
@@ -356,12 +375,7 @@ export class FicheSecuriteRealiseComponent {
     this.exportExcelEnCours.set(true);
     this.api.ficheSecuriteExcel(this.seanceId, this.regrouper()).subscribe({
       next: blob => {
-        const url = URL.createObjectURL(blob);
-        const lien = document.createElement('a');
-        lien.href = url;
-        lien.download = `fiche-securite-${this.seance()?.date ?? this.seanceId}.xlsx`;
-        lien.click();
-        URL.revokeObjectURL(url);
+        telechargerFichier(blob, `fiche-securite-${this.seance()?.date ?? this.seanceId}.xlsx`);
         this.exportExcelEnCours.set(false);
       },
       error: () => {

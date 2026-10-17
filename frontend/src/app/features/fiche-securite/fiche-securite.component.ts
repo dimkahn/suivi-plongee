@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, HostListener, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -14,6 +14,11 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
+import {
+  aDesDetails, empreinteFiche, palanqueesAEnregistrer, resumePalanquee as resumeComposition
+} from '../../core/fiche-securite';
+import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
+import { AvecModifications } from '../../core/gardes';
 import {
   DemandeDuplicationSeance, DemandePropositionPalanquees, FicheSecuriteVue, GroupePlongeursVue, PropositionPalanqueesVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
   PlongeurVue, SeanceLieeVue, SeanceVue
@@ -126,7 +131,8 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       </p>
     }
 
-    @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+    <!-- Une fois la fiche ouverte, les messages s'affichent dans la barre du bas, à côté des boutons. -->
+    @if (!entete() && message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -485,8 +491,13 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       @for (p of palanquees(); track p; let iP = $index) {
         <section class="carte panneau">
           <div class="ligne-titre">
-            <h3>Palanquée {{ p.numero }}</h3>
-            <button type="button" class="bouton-discret danger" (click)="retirerPalanquee(iP)">Retirer</button>
+            <div>
+              <h3>Palanquée {{ p.numero }}</h3>
+              <p class="resume-palanquee">{{ resumeComposition(p) }}</p>
+            </div>
+            <button type="button" class="bouton-discret danger" (click)="retirerPalanquee(iP)">
+              Retirer la palanquée
+            </button>
           </div>
 
           <div class="ligne-profil">
@@ -504,32 +515,61 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             }
             @for (m of p.membres; track m; let iM = $index) {
               <div class="plongeur" cdkDrag [cdkDragStartDelay]="delaiGlisser">
-                <label class="discrete">Plongeur du club (optionnel, pré-remplit aptitude et qualification)</label>
-                <input type="text" class="selecteur-connu" placeholder="Rechercher un nom…" list="plongeurs-club"
-                       (change)="choisirPlongeurConnu(iP, iM, $event)">
-
-                <div class="ligne-plongeur">
-                  <input type="text" placeholder="Prénom" [(ngModel)]="m.prenom" [name]="'prenom-' + iP + '-' + iM">
-                  <input type="text" placeholder="Nom" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
-                  <input type="text" placeholder="Aptitude (ex. N2, E2…)" [(ngModel)]="m.aptitude"
-                         [name]="'aptitude-' + iP + '-' + iM">
-                  <input type="text" placeholder="Aptitude donnée par le DP" [(ngModel)]="m.aptitudeDonneeParDp"
-                         [name]="'aptitude-dp-' + iP + '-' + iM">
-                  <input type="text" placeholder="Qualification préparée (si en formation)"
-                         [(ngModel)]="m.qualificationPreparee" [name]="'qualif-' + iP + '-' + iM">
-                  <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
-                    <option value="PLONGEUR">Plongeur</option>
-                    <option value="GUIDE_PALANQUEE">Guide de palanquée</option>
-                    <option value="ENCADRANT">Encadrant</option>
-                  </select>
-                  <input type="text" placeholder="Gaz (ex. Air, Nitrox 32…)" [(ngModel)]="m.gaz"
-                         [name]="'gaz-' + iP + '-' + iM">
-                  <input type="text" placeholder="Désaturation" [(ngModel)]="m.moyenDesaturation"
-                         [name]="'desat-' + iP + '-' + iM">
-                  <input type="text" placeholder="Observations" [(ngModel)]="m.observations"
-                         [name]="'observations-' + iP + '-' + iM">
-                  <button type="button" class="bouton-discret danger" (click)="retirerMembre(iP, iM)">✕</button>
+                <div class="ligne-recherche">
+                  <label class="champ">Plongeur du club (remplit nom, aptitude et qualification)
+                    <input type="text" class="selecteur-connu" placeholder="Rechercher un nom…" list="plongeurs-club"
+                           (change)="choisirPlongeurConnu(iP, iM, $event)">
+                  </label>
+                  <button type="button" class="bouton-discret danger retirer-plongeur"
+                          [attr.aria-label]="'Retirer ' + ((m.prenom + ' ' + m.nom).trim() || 'ce plongeur') + ' de la palanquée'"
+                          (click)="retirerMembre(iP, iM)">✕</button>
                 </div>
+
+                <!-- Étiquettes visibles : sur une fiche remplie, un texte d'aide disparaît et on ne sait plus quel champ est lequel. -->
+                <div class="ligne-plongeur">
+                  <label class="champ">Prénom
+                    <input type="text" [(ngModel)]="m.prenom" [name]="'prenom-' + iP + '-' + iM">
+                  </label>
+                  <label class="champ">Nom
+                    <input type="text" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
+                  </label>
+                  <label class="champ">Aptitude
+                    <input type="text" placeholder="ex. N2, E2…" [(ngModel)]="m.aptitude"
+                           [name]="'aptitude-' + iP + '-' + iM">
+                  </label>
+                  <label class="champ">Fonction
+                    <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
+                      <option value="PLONGEUR">Plongeur</option>
+                      <option value="GUIDE_PALANQUEE">Guide de palanquée</option>
+                      <option value="ENCADRANT">Encadrant</option>
+                    </select>
+                  </label>
+                </div>
+
+                <!-- Rarement remplis : repliés, sauf si l'un d'eux l'est déjà (rien de saisi n'est caché). -->
+                <details class="details-plongeur" [open]="aDesDetails(m)">
+                  <summary>Détails : gaz, désaturation, qualification préparée, observations…</summary>
+                  <div class="ligne-plongeur">
+                    <label class="champ">Aptitude donnée par le DP
+                      <input type="text" [(ngModel)]="m.aptitudeDonneeParDp" [name]="'aptitude-dp-' + iP + '-' + iM">
+                    </label>
+                    <label class="champ">Qualification préparée
+                      <input type="text" placeholder="si en formation" [(ngModel)]="m.qualificationPreparee"
+                             [name]="'qualif-' + iP + '-' + iM">
+                    </label>
+                    <label class="champ">Gaz
+                      <input type="text" placeholder="ex. Air, Nitrox 32…" [(ngModel)]="m.gaz"
+                             [name]="'gaz-' + iP + '-' + iM">
+                    </label>
+                    <label class="champ">Désaturation
+                      <input type="text" placeholder="ex. Ordinateur, tables" [(ngModel)]="m.moyenDesaturation"
+                             [name]="'desat-' + iP + '-' + iM">
+                    </label>
+                    <label class="champ champ-large">Observations
+                      <input type="text" [(ngModel)]="m.observations" [name]="'observations-' + iP + '-' + iM">
+                    </label>
+                  </div>
+                </details>
                 @if (alerteProfondeur(p, m); as alerte) {
                   <p class="alerte-profondeur">⚠ {{ alerte }}</p>
                 }
@@ -544,7 +584,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </section>
       }
 
-      <button type="button" class="bouton-discret" (click)="ajouterPalanquee()">+ Palanquée</button>
+      <button type="button" class="bouton-discret bouton-ajout-palanquee" (click)="ajouterPalanquee()">+ Palanquée</button>
 
       @if (membreAPlacer(); as m) {
         <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
@@ -565,10 +605,31 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
 
       </fieldset>
 
-      <div class="actions-bas">
+      <!-- Toujours à portée de doigt, au-dessus de la barre d'onglets du téléphone : la fiche est longue. -->
+      <div class="actions-bas" [class.a-enregistrer]="modificationsNonEnregistrees()">
+        @if (message(); as m) {
+          <div class="alerte message-bas" role="status">
+            {{ m }}
+            <button type="button" class="bouton-discret" aria-label="Fermer le message" (click)="message.set(null)">✕</button>
+          </div>
+        }
         @if (auth.etablitFichesSecurite()) {
           <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
+          </button>
+          <span class="etat-enregistrement" role="status">
+            @if (modificationsNonEnregistrees()) {
+              ● Modifications non enregistrées
+            } @else if (enAttente()) {
+              Gardée sur l'appareil, en attente du réseau
+            } @else if (ficheId() !== null) {
+              ✓ Enregistrée
+            }
+          </span>
+        }
+        @if (ficheId() !== null) {
+          <button type="button" class="bouton-discret" (click)="imprimer()" [disabled]="impressionEnCours()">
+            {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
           </button>
         }
         @if (dejaEnregistree()) {
@@ -613,16 +674,38 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .ligne-profil label { margin: 0; font-weight: 400; }
     .ligne-profil input { width: 100%; }
 
+    .resume-palanquee { margin: 0; font-size: .875rem; color: var(--craie); }
+    .bouton-ajout-palanquee { min-height: 44px; }
+
     .plongeur { border-top: 1px solid var(--trait); padding-top: var(--pas-2); margin-top: var(--pas-2); }
-    .discrete { font-weight: 400; font-size: .8125rem; color: var(--craie); margin: 0 0 4px; }
-    .selecteur-connu { max-width: 320px; margin-bottom: var(--pas); }
-    .ligne-plongeur { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin-bottom: var(--pas); }
-    .ligne-plongeur input[type="text"] { flex: 1 1 140px; }
+    .champ { margin: 0; font-weight: 400; font-size: .8125rem; color: var(--craie); }
+    .champ input, .champ select { display: block; width: 100%; margin: 2px 0 0; color: var(--encre); }
+    .ligne-recherche { display: flex; gap: var(--pas); align-items: flex-end; margin-bottom: var(--pas); }
+    .ligne-recherche .champ { flex: 0 1 420px; }
+    .retirer-plongeur { margin-left: auto; min-width: 44px; min-height: 44px; }
+    .ligne-plongeur {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--pas);
+      margin-bottom: var(--pas);
+    }
+    .champ-large { grid-column: 1 / -1; }
+    .details-plongeur { margin-bottom: var(--pas); }
+    .details-plongeur summary {
+      cursor: pointer; font-size: .875rem; color: var(--profond); min-height: 44px;
+      display: flex; align-items: center;
+    }
 
     .danger { color: #B3261E; border-color: #B3261E; }
     .alerte-profondeur { margin: -4px 0 var(--pas); font-size: .8125rem; color: #8a5a00; }
-    .actions-bas { display: flex; gap: var(--pas-2); flex-wrap: wrap; margin: var(--pas-3) 0; }
-    #rechercheRealise { max-width: 320px; }
+    .actions-bas {
+      position: sticky; bottom: var(--hauteur-onglets); z-index: 6;
+      display: flex; gap: var(--pas-2); flex-wrap: wrap; align-items: center;
+      margin: var(--pas-3) 0; padding: var(--pas-2) 0; background: var(--fond); border-top: 1px solid var(--trait);
+    }
+    .actions-bas .bouton-principal { width: auto; margin: 0; }
+    .message-bas { flex: 1 1 100%; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: var(--pas); }
+    .message-bas button { min-width: 44px; min-height: 44px; }
+    .etat-enregistrement { font-size: .875rem; color: var(--craie); }
+    .a-enregistrer .etat-enregistrement { color: #8a5a00; font-weight: 700; }
 
     .ligne-groupe { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin-bottom: var(--pas-2); }
     .ligne-groupe select { max-width: 280px; }
@@ -714,8 +797,11 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .cdk-drop-list-dragging .plongeur:not(.cdk-drag-placeholder) { transition: transform 200ms ease; }
   `]
 })
-export class FicheSecuriteComponent {
+export class FicheSecuriteComponent implements AvecModifications {
   readonly lieuEtSite = lieuEtSite;
+  readonly aDesDetails = aDesDetails;
+  /** « 3 plongeurs · 20 m · 40 min », sous le titre de chaque palanquée. */
+  readonly resumeComposition = resumeComposition;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
@@ -864,6 +950,7 @@ export class FicheSecuriteComponent {
         observations: fiche.observations
       });
       this.palanquees.set(fiche.palanquees.length > 0 ? fiche.palanquees : [palanqueeVide(1)]);
+      this.retenirEtatEnregistre();
 
       const saisonOuverte = saisons.find(s => s.ouverte);
       if (saisonOuverte) {
@@ -888,7 +975,66 @@ export class FicheSecuriteComponent {
   }
 
   retirerPalanquee(index: number): void {
+    const p = this.palanquees()[index];
+    if (p.membres.some(m => m.nom || m.prenom)
+        && !confirm(`Retirer la palanquée ${p.numero} et ses plongeurs (${resumeComposition(p)}) ?`)) {
+      return;
+    }
     this.palanquees.set(this.palanquees().filter((_, i) => i !== index));
+  }
+
+  // --- Modifications non enregistrées ------------------------------------------------------------
+
+  /** Empreinte du formulaire tel qu'enregistré (ou chargé) ; le comparer dit s'il reste à enregistrer. */
+  private empreinteEnregistree: string | null = null;
+
+  private retenirEtatEnregistre(): void {
+    this.empreinteEnregistree = empreinteFiche(this.entete() ?? {}, this.palanquees());
+  }
+
+  /**
+   * Méthode et non computed : le formulaire modifie l'en-tête et les
+   * plongeurs en place, sans passer par les signaux. Sans le droit d'établir
+   * la fiche, rien n'est à enregistrer.
+   */
+  modificationsNonEnregistrees(): boolean {
+    if (!this.auth.etablitFichesSecurite() || this.empreinteEnregistree === null) return false;
+    return empreinteFiche(this.entete() ?? {}, this.palanquees()) !== this.empreinteEnregistree;
+  }
+
+  /** Fermer l'onglet ou recharger la page : le navigateur demande confirmation. */
+  @HostListener('window:beforeunload', ['$event'])
+  avantFermeture(evenement: BeforeUnloadEvent): void {
+    if (this.modificationsNonEnregistrees()) evenement.preventDefault();
+  }
+
+  // --- Impression --------------------------------------------------------------------------------
+
+  impressionEnCours = signal(false);
+
+  /**
+   * La fiche enregistrée sur le serveur, avec l'autre plongée de sa feuille
+   * (même modèle que « Télécharger le PDF » au retour de plongée). Des
+   * modifications pas encore enregistrées n'y seraient pas : on le dit.
+   */
+  imprimer(): void {
+    if (this.modificationsNonEnregistrees() || this.enAttente()) {
+      this.message.set("Enregistrez d'abord la fiche (avec du réseau) : le PDF imprime la fiche enregistrée.");
+      return;
+    }
+    this.impressionEnCours.set(true);
+    this.api.ficheSecuritePdf(this.seanceId).subscribe({
+      next: blob => {
+        telechargerFichier(blob, `fiche-securite-${this.seance()?.date ?? this.seanceId}.pdf`);
+        this.impressionEnCours.set(false);
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.impressionEnCours.set(false);
+        this.message.set(await detailErreurFichier(e) ?? (navigator.onLine
+          ? "Le PDF de la fiche n'a pas pu être généré."
+          : 'Impression impossible hors ligne : reconnectez-vous pour générer le PDF.'));
+      }
+    });
   }
 
   ajouterMembre(indexPalanquee: number): void {
@@ -1100,6 +1246,10 @@ export class FicheSecuriteComponent {
   async ouvrirDuplication(): Promise<void> {
     if (this.enAttente()) {
       this.message.set("Une version de cette fiche attend le réseau : dupliquez la séance une fois qu'elle est partie.");
+      return;
+    }
+    if (this.modificationsNonEnregistrees()) {
+      this.message.set("Enregistrez d'abord la fiche : la duplication part de la fiche enregistrée.");
       return;
     }
     this.erreurDuplication.set(null);
@@ -1327,6 +1477,11 @@ export class FicheSecuriteComponent {
       this.message.set('Le directeur de plongée est obligatoire.');
       return;
     }
+    const { palanquees, erreur } = palanqueesAEnregistrer(this.palanquees());
+    if (erreur) {
+      this.message.set(erreur);
+      return;
+    }
     this.envoi.set(true);
     this.message.set(null);
     try {
@@ -1337,7 +1492,7 @@ export class FicheSecuriteComponent {
           courant: f.courant, maree: f.maree, temperatureEau: f.temperatureEau,
           securiteSurface: f.securiteSurface, planSecours: f.planSecours,
           observations: f.observations,
-          palanquees: this.palanquees().map(p => ({
+          palanquees: palanquees.map(p => ({
             numero: p.numero, profondeurPrevue: p.profondeurPrevue, dureePrevue: p.dureePrevue,
             membres: p.membres
           }))
@@ -1347,9 +1502,11 @@ export class FicheSecuriteComponent {
       if (issue.etat === 'envoyee') {
         this.ficheId.set(issue.reponse.id);
         this.palanquees.set(issue.reponse.palanquees);
+        this.retenirEtatEnregistre();
         this.enAttente.set(this.file.pourSeance(this.seanceId, 'realise').length > 0);
         this.message.set('Fiche enregistrée.');
       } else if (issue.etat === 'en-attente') {
+        this.retenirEtatEnregistre();
         this.enAttente.set(true);
         this.message.set("Hors ligne : fiche gardée sur l'appareil. Elle partira au retour du réseau.");
       } else {
