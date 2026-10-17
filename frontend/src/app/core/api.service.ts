@@ -417,22 +417,29 @@ export class ApiService {
     return this.http.delete(`/api/seances/${seanceId}/fiche-securite`);
   }
 
-  ficheSecuritePdf(seanceId: number): Observable<Blob> {
-    return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`, { responseType: 'blob' });
+  /**
+   * Fiches de sécurité imprimées sur le modèle du club. {@code regrouper} : deux
+   * plongées du même jour au même lieu sur une feuille (1er et 2e tour) ; sinon
+   * une feuille par plongée.
+   */
+  ficheSecuritePdf(seanceId: number, regrouper = true): Observable<Blob> {
+    return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`,
+      { params: { regrouper }, responseType: 'blob' });
   }
 
-  /** Toutes les fiches de sécurité d'une sortie dans un seul PDF, une par page. */
-  fichesSecuriteSortiePdf(sortieId: number): Observable<Blob> {
-    return this.http.get(`/api/sorties/${sortieId}/fiches-securite.pdf`, { responseType: 'blob' });
+  /** Toutes les fiches de sécurité d'une sortie dans un seul PDF. */
+  fichesSecuriteSortiePdf(sortieId: number, regrouper = true): Observable<Blob> {
+    return this.http.get(`/api/sorties/${sortieId}/fiches-securite.pdf`, { params: { regrouper }, responseType: 'blob' });
   }
 
-  /** Toutes les fiches de sécurité d'une journée dans un seul PDF, une par page. */
-  fichesSecuriteJourPdf(date: string): Observable<Blob> {
-    return this.http.get('/api/seances/fiches-securite.pdf', { params: { date }, responseType: 'blob' });
+  /** Toutes les fiches de sécurité d'une journée dans un seul PDF. */
+  fichesSecuriteJourPdf(date: string, regrouper = true): Observable<Blob> {
+    return this.http.get('/api/seances/fiches-securite.pdf', { params: { date, regrouper }, responseType: 'blob' });
   }
 
-  ficheSecuriteExcel(seanceId: number): Observable<Blob> {
-    return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.xlsx`, { responseType: 'blob' });
+  ficheSecuriteExcel(seanceId: number, regrouper = true): Observable<Blob> {
+    return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.xlsx`,
+      { params: { regrouper }, responseType: 'blob' });
   }
 
   /** Roster des élèves et encadrants du club, pour pré-remplir un membre de palanquée. */

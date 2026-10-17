@@ -212,8 +212,8 @@ public class FicheSecuriteController {
 
     @GetMapping(value = "/fiche.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     @PreAuthorize(LECTURE_ET_COMPLEMENT)
-    public ResponseEntity<byte[]> fichePdf(@PathVariable Long seanceId) {
-        FicheSecuritePdfService.FichePdf pdf = service.genererPdf(seanceId);
+    public ResponseEntity<byte[]> fichePdf(@PathVariable Long seanceId, @RequestParam(defaultValue = "true") boolean regrouper) {
+        FicheSecuritePdfService.FichePdf pdf = service.genererPdf(seanceId, regrouper);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.nomFichier() + "\"")
                 .body(pdf.contenu());
@@ -222,8 +222,8 @@ public class FicheSecuriteController {
     @GetMapping(value = "/fiche.xlsx",
             produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     @PreAuthorize(LECTURE_ET_COMPLEMENT)
-    public ResponseEntity<byte[]> ficheExcel(@PathVariable Long seanceId) {
-        FicheSecuriteExcelService.FicheExcel excel = service.genererExcel(seanceId);
+    public ResponseEntity<byte[]> ficheExcel(@PathVariable Long seanceId, @RequestParam(defaultValue = "true") boolean regrouper) {
+        FicheSecuriteExcelService.FicheExcel excel = service.genererExcel(seanceId, regrouper);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + excel.nomFichier() + "\"")
                 .body(excel.contenu());

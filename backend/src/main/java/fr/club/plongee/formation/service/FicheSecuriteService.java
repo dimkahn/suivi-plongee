@@ -458,19 +458,36 @@ public class FicheSecuriteService {
 
     /** Le rendu PDF doit rester dans la transaction : il parcourt dp, seance, palanquees et membres. */
     @Transactional(readOnly = true)
-    public FicheSecuritePdfService.FichePdf genererPdf(Long seanceId) {
+    public FicheSecuritePdfService.FichePdf genererPdf(Long seanceId, boolean regrouper) {
         FicheSecurite fiche = fiches.findBySeanceId(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Cette séance n'a pas encore de fiche de sécurité"));
-        return pdfService.generer(fiche);
+        return pdfService.generer(regrouper ? feuilleDe(fiche) : List.of(fiche));
+    }
+
+    /**
+     * La feuille imprimée qui porte cette fiche : avec l'autre plongée du
+     * même jour au même lieu, 1er et 2e tour (voir {@link FeuilleSecurite#regrouper}).
+     */
+    private List<FicheSecurite> feuilleDe(FicheSecurite fiche) {
+        return FeuilleSecurite.regrouper(fichesDuJour(fiche.getSeance().getDateSeance())).stream()
+                .filter(tours -> tours.contains(fiche)).findFirst().orElse(List.of(fiche));
+    }
+
+    private List<FicheSecurite> fichesDuJour(LocalDate jour) {
+        return seances.findByDateSeanceBetweenOrderByDateSeanceAscOrdreAsc(jour, jour).stream()
+                .sorted(Comparator.comparing((Seance s) -> s.getOrdre() == null ? 0 : s.getOrdre())
+                        .thenComparing(Seance::getId))
+                .flatMap(s -> fiches.findBySeanceId(s.getId()).stream())
+                .toList();
     }
 
     /**
      * Les fiches de toutes les plongées d'une sortie, dans un seul PDF, dans
-     * l'ordre des plongées. Les plongées sans fiche sont sautées ; aucune
+     * l'ordre des plongées, deux plongées du même jour et du même lieu par page. Les plongées sans fiche sont sautées ; aucune
      * fiche du tout = refus explicite plutôt qu'un PDF vide.
      */
     @Transactional(readOnly = true)
-    public FicheSecuritePdfService.FichePdf genererPdfSortie(Long sortieId) {
+    public FicheSecuritePdfService.FichePdf genererPdfSortie(Long sortieId, boolean regrouper) {
         Sortie sortie = sorties.findById(sortieId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Sortie introuvable"));
         List<FicheSecurite> liste = sortie.getSeances().stream()
@@ -484,34 +501,31 @@ public class FicheSecuriteService {
                     "Aucune fiche de sécurité n'est encore établie pour les plongées de cette sortie.");
         }
         return pdfService.genererPlusieurs(liste,
-                "fiches-securite-%s.pdf".formatted(sortie.getDateDebut()));
+                "fiches-securite-%s.pdf".formatted(sortie.getDateDebut()), regrouper);
     }
 
     /**
      * Les fiches de toutes les séances d'une journée (plusieurs plongées,
-     * plusieurs bateaux…), dans un seul PDF, dans l'ordre des plongées. Même
+     * plusieurs bateaux…), dans un seul PDF, dans l'ordre des plongées, deux
+     * par page quand elles ont le même lieu. Même
      * contrat que {@link #genererPdfSortie} : séances sans fiche sautées,
      * aucune fiche du tout = refus explicite.
      */
     @Transactional(readOnly = true)
-    public FicheSecuritePdfService.FichePdf genererPdfJour(LocalDate jour) {
-        List<FicheSecurite> liste = seances.findByDateSeanceBetweenOrderByDateSeanceAscOrdreAsc(jour, jour).stream()
-                .sorted(Comparator.comparing((Seance s) -> s.getOrdre() == null ? 0 : s.getOrdre())
-                        .thenComparing(Seance::getId))
-                .flatMap(s -> fiches.findBySeanceId(s.getId()).stream())
-                .toList();
+    public FicheSecuritePdfService.FichePdf genererPdfJour(LocalDate jour, boolean regrouper) {
+        List<FicheSecurite> liste = fichesDuJour(jour);
         if (liste.isEmpty()) {
             throw new RegleMetierException("Aucune fiche de sécurité n'est encore établie pour les séances de ce jour.");
         }
-        return pdfService.genererPlusieurs(liste, "fiches-securite-%s.pdf".formatted(jour));
+        return pdfService.genererPlusieurs(liste, "fiches-securite-%s.pdf".formatted(jour), regrouper);
     }
 
     /** Même contrat que {@link #genererPdf} : le rendu doit rester dans la transaction. */
     @Transactional(readOnly = true)
-    public FicheSecuriteExcelService.FicheExcel genererExcel(Long seanceId) {
+    public FicheSecuriteExcelService.FicheExcel genererExcel(Long seanceId, boolean regrouper) {
         FicheSecurite fiche = fiches.findBySeanceId(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Cette séance n'a pas encore de fiche de sécurité"));
-        return excelService.generer(fiche);
+        return excelService.generer(regrouper ? feuilleDe(fiche) : List.of(fiche));
     }
 
     private FicheSecuriteVue vue(FicheSecurite f) {

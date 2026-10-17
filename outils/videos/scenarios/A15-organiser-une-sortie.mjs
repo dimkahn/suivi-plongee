@@ -1,5 +1,5 @@
 // A15 — Organiser une sortie.
-// Tournage du 2026-10-15, 13e série, créateur du séjour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 14e série, fiches imprimées regroupées ou non (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -31,6 +31,9 @@ export default {
     await legende('Elles sont créées et rattachées à la sortie, en un geste.', 3500);
     await vignette();
     await legende('Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s\'y rattache.', 4500);
+    await legende('« Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée en décochant la case.', 0);
+    await page.locator('#regrouper-sorties').scrollIntoViewIfNeeded();
+    await pause(4500);
     await legende('« Gérer le séjour » : vols, voitures, chambres, repas et programme. Voir la vidéo A17.', 4500);
     await legende('Qui crée la sortie est le créateur du séjour : lui seul le modifie, avec les organisateurs qu\'il choisit.', 4500);
     await legende(null, 0);

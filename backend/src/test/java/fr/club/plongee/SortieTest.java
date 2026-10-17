@@ -131,7 +131,7 @@ class SortieTest {
     }
 
     @Test
-    @DisplayName("Les fiches de sécurité d'une sortie s'impriment d'un coup, une par page")
+    @DisplayName("Les fiches de sécurité d'une sortie s'impriment d'un coup, deux plongées du même jour par page")
     void fichesSecuriteDeLaSortie() throws Exception {
         String dt = jeton("e3@club.fr");
         String admin = jeton("presidente@club.fr");
@@ -167,8 +167,9 @@ class SortieTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", "application/pdf"))
                 .andReturn().getResponse().getContentAsByteArray();
+        // Deux plongées par jour : les deux du samedi partagent une page (1er et 2e tour), celle du dimanche a la sienne.
         try (PDDocument document = Loader.loadPDF(pdf)) {
-            assertThat(document.getNumberOfPages()).isEqualTo(3);
+            assertThat(document.getNumberOfPages()).isEqualTo(2);
         }
     }
 

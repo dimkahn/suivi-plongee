@@ -65,8 +65,13 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
         <button type="button" class="bouton-principal" (click)="imprimerFichesDuJour()" [disabled]="impressionEnCours()">
           {{ impressionEnCours() ? 'Génération…' : 'Imprimer les fiches du ' + (filtreDate() | dateFr) + ' (PDF)' }}
         </button>
+        <label class="case">
+          <input type="checkbox" id="regrouper-jour" [checked]="regrouper()" (change)="regrouper.set(!regrouper())">
+          Regrouper les 2 plongées du jour sur une feuille
+        </label>
         <span class="secondaire">
-          {{ fichesDuJour() }} fiche{{ fichesDuJour() > 1 ? 's' : '' }}, une par page, dans l'ordre des plongées.
+          {{ fichesDuJour() }} fiche{{ fichesDuJour() > 1 ? 's' : '' }},
+          {{ regrouper() ? 'deux plongées du même lieu par page' : 'une par page' }}, dans l'ordre des plongées.
         </span>
       </div>
     }
@@ -290,6 +295,8 @@ export class FichesSecuriteListeComponent {
   }
 
   impressionEnCours = signal(false);
+  /** Deux plongées du même jour au même lieu sur une feuille (1er et 2e tour), sinon une feuille par plongée. */
+  regrouper = signal(true);
   messageImpression = signal<string | null>(null);
 
   /**
@@ -301,12 +308,12 @@ export class FichesSecuriteListeComponent {
     return this.toutes().filter(s => s.date === date && s.ficheSecurite).length;
   });
 
-  /** Les fiches de toutes les séances du jour, une par page, dans un seul PDF à imprimer d'un coup. */
+  /** Les fiches de toutes les séances du jour dans un seul PDF, à imprimer d'un coup. */
   imprimerFichesDuJour(): void {
     const date = this.filtreDate();
     this.impressionEnCours.set(true);
     this.messageImpression.set(null);
-    this.api.fichesSecuriteJourPdf(date).subscribe({
+    this.api.fichesSecuriteJourPdf(date, this.regrouper()).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const lien = document.createElement('a');

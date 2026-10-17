@@ -85,11 +85,14 @@ public class SortieController {
         return service.seancesPossibles(id);
     }
 
-    /** Toutes les fiches de sécurité de la sortie dans un seul PDF, une par page, pour les imprimer d'un coup. */
+    /**
+     * Toutes les fiches de sécurité de la sortie dans un seul PDF, pour les
+     * imprimer d'un coup ; {@code regrouper} : deux plongées du même jour par page.
+     */
     @GetMapping(value = "/{id}/fiches-securite.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
-    public ResponseEntity<byte[]> fichesSecuritePdf(@PathVariable Long id) {
-        FicheSecuritePdfService.FichePdf pdf = fichesSecurite.genererPdfSortie(id);
+    public ResponseEntity<byte[]> fichesSecuritePdf(@PathVariable Long id, @RequestParam(defaultValue = "true") boolean regrouper) {
+        FicheSecuritePdfService.FichePdf pdf = fichesSecurite.genererPdfSortie(id, regrouper);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.nomFichier() + "\"")
                 .body(pdf.contenu());

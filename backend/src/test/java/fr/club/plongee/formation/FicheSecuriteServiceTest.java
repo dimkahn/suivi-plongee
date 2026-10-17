@@ -426,7 +426,7 @@ class FicheSecuriteServiceTest {
     void genererPdf_erreurSiAbsente() {
         when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.genererPdf(1L))
+        assertThatThrownBy(() -> service.genererPdf(1L, true))
                 .isInstanceOf(RessourceIntrouvableException.class);
         verifyNoInteractions(pdfService);
     }
@@ -439,9 +439,9 @@ class FicheSecuriteServiceTest {
         fiche.setDp(moniteur(10L, "Flora", "Vasseur"));
         when(fiches.findBySeanceId(1L)).thenReturn(Optional.of(fiche));
         FicheSecuritePdfService.FichePdf attendu = new FicheSecuritePdfService.FichePdf(new byte[]{1}, "fiche.pdf");
-        when(pdfService.generer(fiche)).thenReturn(attendu);
+        when(pdfService.generer(java.util.List.of(fiche))).thenReturn(attendu);
 
-        FicheSecuritePdfService.FichePdf pdf = service.genererPdf(1L);
+        FicheSecuritePdfService.FichePdf pdf = service.genererPdf(1L, true);
 
         assertThat(pdf).isEqualTo(attendu);
     }

@@ -3,7 +3,7 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, portrait, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel
 questions:
 - Comment composer les palanquées automatiquement ?
 - Comment remplir une fiche de sécurité ?
@@ -18,6 +18,9 @@ questions:
 - Comment exporter une fiche de sécurité ?
 - Comment imprimer toutes les fiches de sécurité d'un séjour ?
 - Comment imprimer toutes les fiches palanquées d'un jour ?
+- Comment imprimer les deux plongées d'une journée sur une seule feuille ?
+- Que veut dire « 1-2 » dans la case d'un plongeur ?
+- Comment imprimer une feuille par plongée, sans regrouper les deux plongées du jour ?
 ---
 Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plongée, les conditions, puis composez les palanquées. Au retour, on complète les heures, profondeurs et paliers réalisés.
 
@@ -66,9 +69,14 @@ Dupliquer demande le réseau. Les mêmes droits que pour établir la fiche.
 
 1. « Marquer l'immersion » puis « Marquer la sortie » notent l'heure sur le moment.
 2. Après coup, saisissez ce qui a été réalisé, palanquée par palanquée : heures, profondeur, durée, paliers. Le jour de la plongée, le bouton « Compléter au retour de plongée » de la page « Aujourd'hui » y mène directement.
-3. La fiche complète s'exporte en PDF ou en tableur pour les archives du club.
-4. Si la plongée fait partie d'une sortie (un séjour), « Toutes les fiches de … (PDF) » réunit les fiches de toutes ses plongées dans un seul PDF, une par page : tout s'imprime d'un coup. Les plongées sans fiche sont sautées.
-5. Pour imprimer toutes les fiches d'une journée (plusieurs plongées, plusieurs bateaux), choisissez la date dans la liste « Fiches de sécurité » puis « Imprimer les fiches du … (PDF) » : une fiche par page, dans l'ordre des plongées. Les séances sans fiche sont sautées ; une fiche saisie hors ligne n'y figure qu'une fois envoyée.
+3. La fiche complète s'exporte en PDF ou en tableur (« Télécharger le PDF », « Télécharger l'Excel ») pour les archives du club. L'impression suit le modèle papier du club, sur **une page A4 en hauteur** :
+   - **deux plongées sur la même feuille** : deux plongées du même jour au même lieu y sont réunies, en **1er tour** (ou matin) et **2e tour**. Le lieu de la séance est le « Site » ; le site de chaque plongée est son « Lieu 1 » et son « Lieu 2 ». Une troisième plongée le même jour part sur une deuxième feuille. Une feuille qui ne porte qu'une plongée n'a ni « Lieu 2 » ni lignes du 2e tour. Le PDF ou l'Excel d'une plongée imprime la feuille où elle se trouve, avec l'autre plongée. **Pour une feuille par plongée**, décochez « Regrouper les 2 plongées du jour sur une feuille » (au-dessus des boutons, dans la liste des fiches et dans l'écran des sorties) : chaque feuille n'a alors qu'un lieu et un seul tour ;
+   - **une colonne par encadrant** (le guide de palanquée, sinon l'encadrant de la palanquée), son nom tourné en haut sur fond jaune et son niveau (E1, E3…) dessous ; le nombre d'encadrants est en rouge à gauche. Les palanquées sans encadrant vont dans les colonnes « **Autonomes** » ;
+   - **la case d'un plongeur dit à quel tour** il plonge dans cette colonne : « 1 », « 2 », ou « 1-2 » s'il plonge avec le même encadrant aux deux tours ;
+   - **« Observations »** : le niveau préparé (« PN3 » pour un plongeur qui prépare le N3), sinon « explo », puis les observations saisies ;
+   - en bas, pour chaque tour, colonne par colonne : profondeur et durée prévues, heures de départ et de sortie, profondeur et durée réalisées. Les heures prévues et la signature du directeur de plongée restent à remplir à la main.
+4. Si la plongée fait partie d'une sortie (un séjour), « Toutes les fiches de … (PDF) » réunit les fiches de toutes ses plongées dans un seul PDF, deux plongées du même jour par page (ou une par page, case décochée) : tout s'imprime d'un coup. Les plongées sans fiche sont sautées.
+5. Pour imprimer toutes les fiches d'une journée (plusieurs plongées, plusieurs bateaux), choisissez la date dans la liste « Fiches de sécurité » puis « Imprimer les fiches du … (PDF) » : deux plongées du même lieu par page (ou une par page, case décochée), dans l'ordre des plongées. Les séances sans fiche sont sautées ; une fiche saisie hors ligne n'y figure qu'une fois envoyée.
 
 ## Bon à savoir
 
