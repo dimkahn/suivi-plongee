@@ -37,12 +37,13 @@ Menu, « Séjours », puis « Groupes de plongeurs » en haut de la page : saisi
 
 ## Un groupe réparti sur deux séances du même jour
 
-Deux bateaux, ou deux sites à la même heure : créez une séance pour chacun, puis, dans la fiche de sécurité de l'une, « Lier à une autre séance du jour » et « Lier ».
+Deux bateaux, ou deux sites à la même heure : créez une séance pour chacun, puis, dans la fiche de sécurité de l'une, « Lier à une autre séance du jour » et « Lier ». Plus court : « Dupliquer et lier… » crée la seconde séance déjà liée, avec son DP et les palanquées de votre choix (voir « Établir et compléter une fiche de sécurité »).
 
 1. Composez les palanquées de la première fiche et enregistrez.
 2. Ouvrez la fiche de la seconde séance et choisissez le même groupe : seuls les plongeurs qui ne sont encore dans aucune palanquée de la première sont proposés.
 3. Un plongeur placé sur les deux fiches est signalé par un avertissement.
-4. « Délier cette séance » défait le lien.
+4. « Ouvrir sa fiche », à côté de « Liée à », passe d'une fiche à l'autre.
+5. « Délier cette séance » défait le lien.
 
 Lier ou délier demande le réseau.
 

@@ -4,7 +4,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 import {
   AdhesionVue, InscriptionClubVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   DemandePropositionPalanquees, PropositionPalanqueesVue,
-  EleveVue, EvaluationVue, FicheSecuriteVue,GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
+  DemandeDuplicationSeance, EleveVue, EvaluationVue, FicheSecuriteVue, SeanceDupliqueeVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
   CompteSurfaceVue, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue, ResultatModeleCentreMer,
@@ -397,6 +397,11 @@ export class ApiService {
   lierSeance(seanceId: number, autreSeanceId: number): Observable<FicheSecuriteVue> {
     return this.http.put<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/liaison`,
       { seanceId: autreSeanceId });
+  }
+
+  /** Crée une séance le même jour, avec les palanquées choisies et son DP, liée à celle-ci. Réseau nécessaire. */
+  dupliquerSeance(seanceId: number, demande: DemandeDuplicationSeance): Observable<SeanceDupliqueeVue> {
+    return this.http.post<SeanceDupliqueeVue>(`/api/seances/${seanceId}/fiche-securite/duplication`, demande);
   }
 
   delierSeance(seanceId: number): Observable<FicheSecuriteVue> {
