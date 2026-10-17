@@ -28,8 +28,9 @@ public class GroupePlongeursController {
 
     /** {@code id} : celui du plongeur déjà dans le groupe, vide pour un nouveau. */
     public record DemandeMembre(Long id, Long eleveId, Long utilisateurId, @NotBlank String nom,
-                                @NotBlank String prenom, String aptitude, String qualificationPreparee,
-                                @Email @Size(max = 255) String email) {}
+                                @NotBlank String prenom, @Size(max = 120) String aptitude,
+                                @Size(max = 120) String niveauEncadrement,
+                                @Size(max = 120) String qualificationPreparee, @Email @Size(max = 255) String email) {}
 
     public record DemandeGroupePlongeurs(@NotBlank String nom, @NotNull Long saisonId,
                                          @NotNull List<@Valid DemandeMembre> membres) {}
@@ -109,7 +110,8 @@ public class GroupePlongeursController {
         return new GroupePlongeursService.Saisie(demande.nom(), demande.saisonId(),
                 demande.membres().stream()
                         .map(m -> new GroupePlongeursService.Membre(m.id(), m.eleveId(), m.utilisateurId(),
-                                m.nom(), m.prenom(), m.aptitude(), m.qualificationPreparee(), m.email()))
+                                m.nom(), m.prenom(), m.aptitude(), m.niveauEncadrement(),
+                                m.qualificationPreparee(), m.email()))
                         .toList());
     }
 }

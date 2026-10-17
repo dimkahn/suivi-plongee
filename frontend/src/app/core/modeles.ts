@@ -923,7 +923,11 @@ export interface MembreGroupeVue {
   utilisateurId: number | null;
   nom: string;
   prenom: string;
+  /** Niveau de plongeur (N2, PE40…). */
   aptitude: string | null;
+  /** Niveau d'encadrement (E1, MF1…), distinct du niveau de plongeur (V90). */
+  niveauEncadrement?: string | null;
+  /** Niveau préparé. */
   qualificationPreparee: string | null;
   /** Pour l'envoi des paramètres en fin de séjour ; vide, `emailDossier` sert à la place. */
   email?: string | null;
