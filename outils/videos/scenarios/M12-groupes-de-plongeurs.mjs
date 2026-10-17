@@ -1,5 +1,5 @@
 // M12 — Groupes de plongeurs pour un séjour.
-// Tournage du 2026-10-15, 14e série, ajout en haut et droits du créateur (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 15e série, trois niveaux par plongeur (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -21,7 +21,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Nouveau groupe' }), { apres: 800 });
     await saisir('#nom-groupe', 'Séjour mer — mai 2027');
 
-    await legende('Un plongeur du club se cherche en haut : son niveau et son e-mail viennent de son dossier.', 0);
+    await legende('Un plongeur du club se cherche en haut : ses niveaux et son e-mail viennent de son dossier.', 0);
     for (const prenom of ['Camille', 'Mateo', 'Flora']) {
       await rechercherEtChoisir('ajout-connu', prenom);
     }
@@ -32,7 +32,10 @@ export default {
     const detail = page.locator('.detail-membre').first();
     await saisir(detail.getByLabel('Prénom'), 'Anis');
     await saisir(detail.getByLabel('Nom', { exact: true }), 'Ferry');
-    await saisir(detail.getByLabel('Aptitude'), 'N2');
+    await legende('Trois niveaux à part : niveau de plongeur, niveau d\'encadrement, niveau préparé.', 0);
+    await saisir(detail.getByLabel('Niveau de plongeur'), 'N4');
+    await saisir(detail.getByLabel('Niveau d\'encadrement'), 'E1');
+    await saisir(detail.getByLabel('Niveau préparé'), 'E2');
     await saisir(detail.getByLabel('E-mail'), 'anis.ferry@exemple.fr');
     await toucher(page.getByRole('button', { name: /^Fermer le détail de Anis/ }), { apres: 800 });
     await vignette();

@@ -3,8 +3,9 @@ titre: Groupes de plongeurs pour un séjour
 rubrique: Moniteur
 videos: M12
 ecran: /groupes
-mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, participant, lien, lié, synchroniser, même personne, créateur, organisateur, organisateurs, droits, qui modifie, lecture seule, choisir les organisateurs, ajouter un plongeur, chercher, rechercher, modifier un plongeur
+mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, participant, lien, lié, synchroniser, même personne, créateur, organisateur, organisateurs, droits, qui modifie, lecture seule, choisir les organisateurs, ajouter un plongeur, chercher, rechercher, modifier un plongeur, niveau, niveau de plongeur, niveau d'encadrement, encadrant, niveau préparé, en formation, E1, E2, MF1, aptitude
 questions:
+- Comment indiquer le niveau d'encadrement d'un plongeur du groupe ?
 - Qui peut modifier un groupe de plongeurs ?
 - Pourquoi je ne peux pas modifier ce groupe ?
 - Comment ajouter un plongeur au groupe ?
@@ -22,11 +23,21 @@ Menu, « Séjours », puis « Groupes de plongeurs » en haut de la page : saisi
 
 1. Menu, « Séjours », puis « Groupes de plongeurs ».
 2. « Nouveau groupe » : donnez-lui un nom (par exemple « Séjour Égypte mai 2026 »).
-3. En haut de la fenêtre, **« Ajouter un plongeur »** : tapez quelques lettres et touchez un plongeur du club. Il s'ajoute en tête de la liste, avec son niveau, le niveau qu'il prépare et l'e-mail de son dossier ; le champ se vide pour le suivant. Un plongeur déjà dans la liste n'est plus proposé.
-4. Un plongeur d'un autre club : **« + Plongeur extérieur au club »**. Sa ligne s'ouvre en tête : prénom, nom, aptitude, qualification préparée, e-mail. « OK » la referme.
-5. Chaque plongeur tient sur **une ligne** (nom, niveau, e-mail). « Modifier » ouvre son détail, « ✕ » le retire. Au-delà de six plongeurs, un champ « Chercher dans la liste… » retrouve quelqu'un sans faire défiler.
+3. En haut de la fenêtre, **« Ajouter un plongeur »** : tapez quelques lettres et touchez un plongeur du club. Il s'ajoute en tête de la liste, avec son niveau de plongeur, son niveau d'encadrement s'il encadre, le niveau qu'il prépare et l'e-mail de son dossier ; le champ se vide pour le suivant. Un plongeur déjà dans la liste n'est plus proposé.
+4. Un plongeur d'un autre club : **« + Plongeur extérieur au club »**. Sa ligne s'ouvre en tête : prénom, nom, niveau de plongeur, niveau d'encadrement, niveau préparé, e-mail. « OK » la referme.
+5. Chaque plongeur tient sur **une ligne** (nom, niveaux, e-mail). « Modifier » ouvre son détail, « ✕ » le retire. Au-delà de six plongeurs, un champ « Chercher dans la liste… » retrouve quelqu'un sans faire défiler.
 6. « Créer le groupe » (ou « Enregistrer »), puis dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
 7. Répartissez ensuite les plongeurs dans les palanquées.
+
+## Les trois niveaux d'un plongeur
+
+Chaque plongeur du groupe a trois niveaux, à remplir séparément (« Modifier » sur sa ligne) :
+
+- **Niveau de plongeur** : son brevet (N2, N4, PE40…).
+- **Niveau d'encadrement** : s'il encadre (E1, E2, MF1…). Un encadrant n'a pas forcément un haut niveau de plongeur : un E1 peut n'être que N2.
+- **Niveau préparé** : ce qu'il prépare pendant le séjour (N3, E2…).
+
+Pour un plongeur du club, les trois viennent de son dossier ; vous pouvez les corriger. Repris dans une fiche de sécurité, le niveau d'encadrement et le niveau de plongeur s'affichent ensemble dans la case « aptitude » (par exemple « E1 · N4 ») ; le niveau préparé va dans « qualification préparée ». Un groupe créé depuis une fiche range de nouveau les codes d'encadrement (E1 à E4, MF1, MF2) à part.
 
 ## Qui modifie un groupe
 
@@ -57,7 +68,7 @@ Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, sit
 
 ## Le groupe et le séjour
 
-Inscrit à un séjour (onglet « Participants », « Inscrire un groupe de plongeurs… »), chaque plongeur du groupe devient un participant **lié** à sa ligne du groupe. Ce sont deux fiches : le groupe garde l'aptitude et la qualification préparée, le séjour le voyage, les repas et la personne à prévenir. Mais le **nom**, le **prénom** et l'**e-mail** suivent : corrigés dans le groupe (« Modifier »), ils le sont dans le séjour, et inversement. Un e-mail laissé vide d'un côté ne vide pas l'autre.
+Inscrit à un séjour (onglet « Participants », « Inscrire un groupe de plongeurs… »), chaque plongeur du groupe devient un participant **lié** à sa ligne du groupe. Ce sont deux fiches : le groupe garde les niveaux (plongeur, encadrement, préparé), le séjour le voyage, les repas et la personne à prévenir. Mais le **nom**, le **prénom** et l'**e-mail** suivent : corrigés dans le groupe (« Modifier »), ils le sont dans le séjour, et inversement. Un e-mail laissé vide d'un côté ne vide pas l'autre.
 
 - Quelqu'un déjà inscrit au séjour sous un autre nom ou avec un autre e-mail n'est pas lié tout seul : liez-le depuis sa fiche dans le séjour (« Plongeur du groupe »), après avoir choisi la bonne valeur.
 - Pour un plongeur du club, l'e-mail de son dossier n'est pas recopié dans le groupe : le groupe suit le dossier.

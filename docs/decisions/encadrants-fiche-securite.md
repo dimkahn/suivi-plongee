@@ -49,3 +49,7 @@ Ce fichier est l'historique. Les règles en vigueur sont dans `.claude/rules/enc
 ## Droits sur les groupes de plongeurs (2026, V81)
 - **Décision :** choix du club, seuls le créateur (`groupe_plongeurs.createur_id`) et les organisateurs qu'il désigne les modifient ; un ADMIN désigne seulement.
 - **Conséquences :** les groupes d'avant V81 n'ont pas de créateur, l'entité n'étant pas auditée. Les autres encadrants gardent la lecture, la reprise dans une fiche et l'envoi des paramètres ; le report nom/e-mail depuis un séjour lié reste ouvert aux organisateurs du séjour.
+
+## Trois niveaux par plongeur d'un groupe (2026, V90)
+- **Décision :** demande du club, un plongeur d'un groupe de séjour a un niveau de plongeur (`aptitude`), un niveau d'encadrement (`membre_groupe_plongeurs.niveau_encadrement`, V90) et un niveau préparé (`qualification_preparee`), en texte libre, pré-remplis depuis les plongeurs connus (un encadrant n'a plus son « E2 » dans le niveau de plongeur).
+- **Conséquences :** la fiche de sécurité n'a qu'une case aptitude, `core/niveaux-plongeur.ts` y réunit encadrement et niveau à la reprise d'un groupe (« E1 · N4 », l'encadrement d'abord, pour la reconnaissance des encadrants et la proposition des palanquées) et les sépare quand un groupe est créé depuis la fiche (E1 à E4, MF1, MF2 rangés à part). Les groupes déjà saisis gardent leur aptitude telle quelle, sans niveau d'encadrement.

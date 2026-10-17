@@ -21,7 +21,8 @@ function ligne(m: MembreGroupeVue): LigneMembre {
 }
 
 function membreVide(): LigneMembre {
-  return ligne({ id: null, eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, qualificationPreparee: null });
+  return ligne({ id: null, eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, niveauEncadrement: null,
+    qualificationPreparee: null });
 }
 
 /** Au-delà, un champ de recherche filtre la liste des plongeurs. */
@@ -177,13 +178,18 @@ const SEUIL_RECHERCHE = 6;
                       <input [id]="'nom-' + m.cle" type="text" [(ngModel)]="m.nom" [name]="'nom-' + m.cle">
                     </div>
                     <div>
-                      <label [for]="'aptitude-' + m.cle">Aptitude</label>
-                      <input [id]="'aptitude-' + m.cle" type="text" placeholder="ex. N2, PE40, E2" [(ngModel)]="m.aptitude"
+                      <label [for]="'aptitude-' + m.cle">Niveau de plongeur</label>
+                      <input [id]="'aptitude-' + m.cle" type="text" placeholder="ex. N2, PE40, N4" [(ngModel)]="m.aptitude"
                              [name]="'aptitude-' + m.cle">
                     </div>
                     <div>
-                      <label [for]="'qualif-' + m.cle">Qualification préparée</label>
-                      <input [id]="'qualif-' + m.cle" type="text" placeholder="ex. N3" [(ngModel)]="m.qualificationPreparee"
+                      <label [for]="'encadrement-' + m.cle">Niveau d'encadrement</label>
+                      <input [id]="'encadrement-' + m.cle" type="text" placeholder="ex. E1, E2, MF1"
+                             [(ngModel)]="m.niveauEncadrement" [name]="'encadrement-' + m.cle">
+                    </div>
+                    <div>
+                      <label [for]="'qualif-' + m.cle">Niveau préparé</label>
+                      <input [id]="'qualif-' + m.cle" type="text" placeholder="ex. N3, E3" [(ngModel)]="m.qualificationPreparee"
                              [name]="'qualif-' + m.cle">
                     </div>
                     <div class="large">
@@ -369,7 +375,7 @@ export class GroupesComponent {
     const r = normaliser(this.recherche().trim());
     if (!r || this.membres().length <= SEUIL_RECHERCHE) return this.membres();
     return this.membres().filter(m => m.cle === this.enEdition()
-      || normaliser(`${m.prenom} ${m.nom} ${m.aptitude ?? ''}`).includes(r));
+      || normaliser(`${m.prenom} ${m.nom} ${m.aptitude ?? ''} ${m.niveauEncadrement ?? ''}`).includes(r));
   });
 
   // ---- Organisateurs ----
@@ -397,10 +403,11 @@ export class GroupesComponent {
     return noms.length <= 4 ? noms.join(', ') : `${noms.slice(0, 3).join(', ')} et ${noms.length - 3} autres`;
   }
 
-  /** « N2 · prépare N3 · anis@exemple.fr » ; l'e-mail du dossier entre parenthèses. */
+  /** « N4 · encadrant E1 · prépare E2 · anis@exemple.fr » ; l'e-mail du dossier entre parenthèses. */
   details(m: MembreGroupeVue): string {
     const email = m.email ? m.email : m.emailDossier ? `${m.emailDossier} (dossier)` : 'sans e-mail';
-    return [m.aptitude, m.qualificationPreparee ? `prépare ${m.qualificationPreparee}` : null, email]
+    return [m.aptitude, m.niveauEncadrement ? `encadrant ${m.niveauEncadrement}` : null,
+      m.qualificationPreparee ? `prépare ${m.qualificationPreparee}` : null, email]
       .filter(Boolean).join(' · ');
   }
 
@@ -505,14 +512,19 @@ export class GroupesComponent {
     return (m.eleveId !== null && c.eleveId === m.eleveId) || (m.utilisateurId !== null && c.utilisateurId === m.utilisateurId);
   }
 
-  /** Un plongeur du club choisi : ajouté en tête, pré-rempli depuis son dossier ; le champ se vide pour le suivant. */
+  /**
+   * Un plongeur du club choisi : ajouté en tête, pré-rempli depuis son dossier
+   * (niveau de plongeur, niveau d'encadrement et niveau préparé, chacun à sa
+   * place) ; le champ se vide pour le suivant.
+   */
   ajouterConnu(choix: number | null): void {
     this.choixAjout.set(choix);
     const c = choix === null ? null : this.plongeursConnus()[choix];
     if (!c) return;
     const nouveau = ligne({
       id: null, eleveId: c.eleveId, utilisateurId: c.utilisateurId, nom: c.nom, prenom: c.prenom,
-      aptitude: c.aptitude, qualificationPreparee: c.qualificationPreparee, emailDossier: null
+      aptitude: c.niveau, niveauEncadrement: c.niveauEncadrement, qualificationPreparee: c.qualificationPreparee,
+      emailDossier: null
     });
     this.membres.set([nouveau, ...this.membres()]);
     this.signalerAjout(nouveau.cle);

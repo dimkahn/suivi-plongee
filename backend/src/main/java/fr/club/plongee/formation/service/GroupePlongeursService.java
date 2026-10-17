@@ -30,9 +30,12 @@ public class GroupePlongeursService {
     /**
      * {@code email} : celui saisi dans le groupe ; {@code emailDossier} : celui
      * du dossier de l'élève ou de l'encadrant, utilisé quand le premier est vide.
+     * Trois niveaux distincts (V90) : {@code aptitude} (niveau de plongeur),
+     * {@code niveauEncadrement} et {@code qualificationPreparee} (niveau préparé).
      */
     public record MembreVue(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
-                            String aptitude, String qualificationPreparee, String email, String emailDossier) {}
+                            String aptitude, String niveauEncadrement, String qualificationPreparee,
+                            String email, String emailDossier) {}
 
     /** Le créateur de la liste et les organisateurs qu'il a désignés (V81). */
     public record OrganisateurVue(Long id, String nomComplet, boolean createur) {}
@@ -47,7 +50,7 @@ public class GroupePlongeursService {
 
     /** {@code id} : le plongeur déjà dans le groupe (gardé, avec son lien aux séjours), null pour un nouveau. */
     public record Membre(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
-                         String aptitude, String qualificationPreparee, String email) {}
+                         String aptitude, String niveauEncadrement, String qualificationPreparee, String email) {}
 
     public record Saisie(String nom, Long saisonId, List<Membre> membres) {}
 
@@ -178,6 +181,8 @@ public class GroupePlongeursService {
             membre.setNom(m.nom());
             membre.setPrenom(m.prenom());
             membre.setAptitude(m.aptitude());
+            membre.setNiveauEncadrement(m.niveauEncadrement() == null || m.niveauEncadrement().isBlank()
+                    ? null : m.niveauEncadrement().trim());
             membre.setQualificationPreparee(m.qualificationPreparee());
             membre.setEmail(m.email() == null || m.email().isBlank() ? null : m.email().trim());
             gardes.add(membre);
@@ -263,7 +268,7 @@ public class GroupePlongeursService {
                 .map(m -> new MembreVue(m.getId(),
                         m.getEleve() == null ? null : m.getEleve().getId(),
                         m.getUtilisateur() == null ? null : m.getUtilisateur().getId(),
-                        m.getNom(), m.getPrenom(), m.getAptitude(), m.getQualificationPreparee(), m.getEmail(),
+                        m.getNom(), m.getPrenom(), m.getAptitude(), m.getNiveauEncadrement(), m.getQualificationPreparee(), m.getEmail(),
                         m.getEleve() != null ? m.getEleve().getEmail()
                                 : m.getUtilisateur() != null ? m.getUtilisateur().getEmail() : null))
                 .toList();

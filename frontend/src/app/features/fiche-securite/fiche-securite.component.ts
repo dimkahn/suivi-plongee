@@ -17,6 +17,7 @@ import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component
 import {
   aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
+import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { AvecModifications } from '../../core/gardes';
 import {
@@ -356,11 +357,11 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
               <button type="button" class="jeton-plongeur" cdkDrag [cdkDragData]="m"
                       [cdkDragStartDelay]="delaiGlisser"
                       [class.selectionne]="membreAPlacer() === m" [attr.aria-pressed]="membreAPlacer() === m"
-                      [attr.aria-label]="m.prenom + ' ' + m.nom + (m.aptitude ? ', ' + m.aptitude : '')"
+                      [attr.aria-label]="m.prenom + ' ' + m.nom + (aptitudeSurFiche(m) ? ', ' + aptitudeSurFiche(m) : '')"
                       (click)="selectionnerPourPlacer(m)">
                 <span class="nom-long">{{ m.prenom }} {{ m.nom }}</span>
                 <span class="nom-court">{{ m.prenom }} {{ initiale(m.nom) }}</span>
-                @if (m.aptitude) { <span class="niveau-jeton">{{ m.aptitude }}</span> }
+                @if (aptitudeSurFiche(m); as a) { <span class="niveau-jeton">{{ a }}</span> }
               </button>
             }
             @if (poolDisponible().length === 0) {
@@ -1233,7 +1234,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   private ajouterDepuisGroupe(source: MembreGroupeVue, indexPalanquee: number, position: number): void {
     const nouveau: PlongeurVue = {
       eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
-      aptitude: source.aptitude, aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
+      aptitude: aptitudeSurFiche(source), aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
       fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
     };
     const liste = this.palanquees().map((p, i) => {
@@ -1283,7 +1284,7 @@ export class FicheSecuriteComponent implements AvecModifications {
         if (membres.some(x => memePlongeur(x, m))) continue;
         membres.push({
           eleveId: m.eleveId, utilisateurId: m.utilisateurId, nom: m.nom, prenom: m.prenom,
-          aptitude: m.aptitude, qualificationPreparee: m.qualificationPreparee
+          ...separerAptitude(m.aptitude), qualificationPreparee: m.qualificationPreparee
         });
       }
     }
@@ -1529,7 +1530,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   /** Indices des membres qui peuvent encadrer : compte moniteur ou aptitude d'encadrant. */
   encadrantsPossibles = computed(() => this.proposables()
     .map((m, i) => ({ m, i }))
-    .filter(({ m }) => m.utilisateurId !== null || APTITUDE_ENCADRANT.test(m.aptitude ?? ''))
+    .filter(({ m }) => m.utilisateurId !== null || APTITUDE_ENCADRANT.test(aptitudeSurFiche(m) ?? ''))
     .map(({ i }) => i));
 
   /**
@@ -1555,8 +1556,11 @@ export class FicheSecuriteComponent implements AvecModifications {
   libelleProposable(i: number): string {
     const m = this.proposables()[i];
     if (!m) return '';
-    return `${m.prenom} ${m.nom}${m.aptitude ? ' (' + m.aptitude + ')' : ''}`;
+    const aptitude = aptitudeSurFiche(m);
+    return `${m.prenom} ${m.nom}${aptitude ? ' (' + aptitude + ')' : ''}`;
   }
+
+  aptitudeSurFiche = aptitudeSurFiche;
 
   basculerEncadrant(i: number): void {
     const coches = new Set(this.encadrantsCoches());
@@ -1588,7 +1592,7 @@ export class FicheSecuriteComponent implements AvecModifications {
       ...c,
       plongeurs: this.proposables().map((m, i) => ({
         eleveId: m.eleveId, utilisateurId: m.utilisateurId, nom: m.nom, prenom: m.prenom,
-        aptitude: m.aptitude, qualificationPreparee: m.qualificationPreparee,
+        aptitude: aptitudeSurFiche(m), qualificationPreparee: m.qualificationPreparee,
         encadrant: this.encadrantsCoches().has(i)
       })),
       ensemble: this.paires().filter(p => p.ensemble).map(p => [p.a, p.b] as [number, number]),

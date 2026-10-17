@@ -37,7 +37,11 @@ public class MembreGroupePlongeurs {
     @Column(nullable = false)
     private String prenom;
 
+    /** Niveau de plongeur (N2, PE40…). */
     private String aptitude;
+    /** Niveau d'encadrement (E1, MF1…), distinct du niveau de plongeur (V90). */
+    private String niveauEncadrement;
+    /** Niveau préparé (N3, E3…). */
     private String qualificationPreparee;
 
     /** Pour l'envoi des paramètres en fin de séjour ; vide, l'e-mail du dossier sert à la place. */
@@ -97,6 +101,14 @@ public class MembreGroupePlongeurs {
 
     public void setAptitude(String aptitude) {
         this.aptitude = aptitude;
+    }
+
+    public String getNiveauEncadrement() {
+        return niveauEncadrement;
+    }
+
+    public void setNiveauEncadrement(String niveauEncadrement) {
+        this.niveauEncadrement = niveauEncadrement;
     }
 
     public String getQualificationPreparee() {
