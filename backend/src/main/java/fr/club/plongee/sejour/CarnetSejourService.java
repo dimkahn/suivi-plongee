@@ -191,15 +191,16 @@ public class CarnetSejourService {
         }
         if (!SejourService.blanc(tr.lieu())) morceaux.add(tr.lieu().trim());
         // Arrivée : d'où et à quelle heure part l'avion ou le train ; départ : l'heure est déjà celle du départ,
-        // on ajoute celle de l'arrivée du voyage retour. Leur jour n'est dit que s'il n'est pas celui du trajet.
+        // on ajoute l'heure et le lieu d'arrivée du voyage retour. Leur jour n'est dit que s'il n'est pas celui du trajet.
         LocalDate autreJour = aller ? tr.dateDepart() : tr.dateArrivee();
         String leJour = autreJour == null || autreJour.equals(tr.date()) ? "" : " le " + jour(autreJour).toLowerCase(Locale.FRENCH);
         if (aller && (tr.heureDepart() != null || !SejourService.blanc(tr.lieuDepart()) || !leJour.isEmpty())) {
             morceaux.add("départ" + leJour + (tr.heureDepart() == null ? "" : " à " + tr.heureDepart().format(HEURE))
                     + (SejourService.blanc(tr.lieuDepart()) ? "" : " de " + tr.lieuDepart().trim()));
         }
-        if (!aller && (tr.heureArrivee() != null || !leJour.isEmpty())) {
-            morceaux.add("arrivée" + leJour + (tr.heureArrivee() == null ? "" : " à " + tr.heureArrivee().format(HEURE)));
+        if (!aller && (tr.heureArrivee() != null || !SejourService.blanc(tr.lieuArrivee()) || !leJour.isEmpty())) {
+            morceaux.add("arrivée" + leJour + (tr.heureArrivee() == null ? "" : " à " + tr.heureArrivee().format(HEURE))
+                    + (SejourService.blanc(tr.lieuArrivee()) ? "" : " à " + tr.lieuArrivee().trim()));
         }
         String conseil = tr.transport() == null ? null : tr.transport().conseil(aller ? tr.heureDepart() : tr.heure(), HEURE);
         return String.join(", ", morceaux) + (conseil == null ? "" : " : " + conseil);

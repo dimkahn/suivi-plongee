@@ -139,9 +139,11 @@ class SejourTest {
         assertThat(participantDe(s, leo).get("arrivee").path("dateDepart").asText()).isEqualTo(debut.minusDays(2).toString());
         s = envoyer("PUT", base + "/trajets", dt, """
                 {"sens":"DEPART","trajet":{"date":"%s","heure":"22:30","transport":"AVION","numero":"TX541",
-                 "heureArrivee":"06:10","dateArrivee":"%s"},
+                 "heureArrivee":"06:10","dateArrivee":"%s","lieuArrivee":"Paris-CDG"},
                  "participantIds":[%d]}""".formatted(debut.plusDays(2), debut.plusDays(4), leo), 200);
         assertThat(participantDe(s, leo).get("depart").path("dateArrivee").asText()).isEqualTo(debut.plusDays(4).toString());
+        // Le retour porte aussi l'aéroport ou la gare où il arrive : qui va chercher qui, et où.
+        assertThat(participantDe(s, leo).get("depart").path("lieuArrivee").asText()).isEqualTo("Paris-CDG");
         // Un avion n'arrive pas avant d'être parti.
         JsonNode avant = envoyer("PUT", base + "/trajets", dt, """
                 {"sens":"DEPART","trajet":{"date":"%s","heure":"22:30","dateArrivee":"%s"},

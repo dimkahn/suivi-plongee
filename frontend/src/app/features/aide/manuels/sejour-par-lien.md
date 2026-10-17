@@ -3,7 +3,7 @@ titre: Mon séjour, par le lien reçu par e-mail
 rubrique: Découverte
 videos: A17
 ecran: /aide
-mots: séjour, lien, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, vol long, lendemain
+mots: séjour, lien, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, vol long, lendemain
 questions:
 - À quelle heure dois-je être à l'aéroport pour le séjour ?
 - J'ai reçu un e-mail pour le séjour : comment entrer ?
