@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-17, 3e série, déplacer un plongeur, détails repliés, barre d'enregistrement et impression (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 4e série, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -51,12 +51,14 @@ export default {
     await toucher(palanquee.getByRole('button', { name: /^Déplacer/ }).first(), { apres: 2500 });
     await toucher(page.locator('.barre-placement').getByRole('button', { name: 'Annuler' }), { apres: 800 });
 
-    await legende('En bas, toujours visible : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 0);
-    await page.locator('.actions-bas').scrollIntoViewIfNeeded();
-    await pause(2000);
+    await legende('En bas, toujours visible : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 2000);
+    await legende('Tous les boutons de la fiche sont dans le bouton rond, en bas à gauche.', 0);
+    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 1800 });
     await legende('Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.', 0);
-    await toucher(page.getByRole('button', { name: 'Enregistrer la fiche' }), { apres: 2000 });
-    await legende('« Imprimer (PDF) » l\'imprime aussitôt, sur le modèle du club.', 3000);
+    await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: 'Enregistrer la fiche' }), { apres: 2000 });
+    await legende('Le même bouton propose « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.', 0);
+    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 2500 });
+    await toucher(page.getByRole('button', { name: 'Fermer les actions de la fiche' }), { apres: 600 });
 
     await legende('Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».', 0);
     await toucher(page.getByRole('button', { name: 'Dupliquer et lier…' }), { apres: 1200 });

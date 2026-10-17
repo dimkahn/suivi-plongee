@@ -378,7 +378,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             </p>
           }
           @if (seance()?.milieu === 'NATUREL') {
-            <button type="button" class="bouton-principal bouton-proposer" (click)="ouvrirProposition()">
+            <button type="button" class="bouton-principal bouton-proposer action-ordinateur" (click)="ouvrirProposition()">
               Proposer les palanquées automatiquement
             </button>
           }
@@ -588,7 +588,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </section>
       }
 
-      <button type="button" class="bouton-discret bouton-ajout-palanquee" (click)="ajouterPalanquee()">+ Palanquée</button>
+      <button type="button" class="bouton-discret bouton-ajout-palanquee action-ordinateur" (click)="ajouterPalanquee()">+ Palanquée</button>
 
       @if (membreAPlacer(); as m) {
         <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
@@ -638,7 +638,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           </div>
         }
         @if (auth.etablitFichesSecurite()) {
-          <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+          <button type="button" class="bouton-principal action-ordinateur" (click)="enregistrer()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
           </button>
           <span class="etat-enregistrement" role="status">
@@ -652,16 +652,62 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           </span>
         }
         @if (ficheId() !== null) {
-          <button type="button" class="bouton-discret" (click)="imprimer()" [disabled]="impressionEnCours()">
+          <button type="button" class="bouton-discret action-ordinateur" (click)="imprimer()" [disabled]="impressionEnCours()">
             {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
           </button>
         }
         @if (dejaEnregistree()) {
-          <a class="bouton-discret" [routerLink]="['/fiches-securite', seanceId, 'realise']">
+          <a class="bouton-discret action-ordinateur" [routerLink]="['/fiches-securite', seanceId, 'realise']">
             Compléter au retour de plongée →
           </a>
         }
       </div>
+
+      <!--
+        Téléphone : un seul bouton rond, en bas à gauche, qui ouvre toutes les
+        actions de la fiche ; elles ne prennent plus de place dans la page.
+      -->
+      @if (auth.etablitFichesSecurite() || ficheId() !== null || dejaEnregistree()) {
+        @if (menuActionsOuvert()) {
+          <div class="fond-menu-actions" (click)="menuActionsOuvert.set(false)"></div>
+          <div class="menu-actions" id="menu-actions" role="menu" aria-label="Actions de la fiche">
+            @if (auth.etablitFichesSecurite()) {
+              <button type="button" role="menuitem" class="bouton-principal" [disabled]="envoi()"
+                      (click)="menuActionsOuvert.set(false); enregistrer()">
+                {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
+              </button>
+              <button type="button" role="menuitem" class="bouton-discret"
+                      (click)="menuActionsOuvert.set(false); ajouterPalanquee()">+ Palanquée</button>
+              @if (groupeSelectionne() && seance()?.milieu === 'NATUREL') {
+                <button type="button" role="menuitem" class="bouton-discret"
+                        (click)="menuActionsOuvert.set(false); ouvrirProposition()">
+                  Proposer les palanquées automatiquement
+                </button>
+              }
+            }
+            @if (ficheId() !== null) {
+              <button type="button" role="menuitem" class="bouton-discret" [disabled]="impressionEnCours()"
+                      (click)="menuActionsOuvert.set(false); imprimer()">
+                {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
+              </button>
+            }
+            @if (dejaEnregistree()) {
+              <a role="menuitem" class="bouton-discret" [routerLink]="['/fiches-securite', seanceId, 'realise']">
+                Compléter au retour de plongée →
+              </a>
+            }
+          </div>
+        }
+        <button type="button" class="bouton-flottant" aria-controls="menu-actions"
+                [attr.aria-expanded]="menuActionsOuvert()"
+                [attr.aria-label]="menuActionsOuvert() ? 'Fermer les actions de la fiche' : 'Actions de la fiche'"
+                (click)="menuActionsOuvert.set(!menuActionsOuvert())">
+          <span aria-hidden="true">{{ menuActionsOuvert() ? '✕' : '☰' }}</span>
+          @if (modificationsNonEnregistrees() && !menuActionsOuvert()) {
+            <span class="pastille-a-enregistrer" aria-hidden="true"></span>
+          }
+        </button>
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -732,6 +778,37 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .message-bas button { min-width: 44px; min-height: 44px; }
     .etat-enregistrement { font-size: .875rem; color: var(--craie); }
     .a-enregistrer .etat-enregistrement { color: #8a5a00; font-weight: 700; }
+
+    /* Bouton rond et ses actions : téléphone seulement (sous 860 px, comme la barre d'onglets). */
+    .bouton-flottant, .menu-actions, .fond-menu-actions { display: none; }
+    @media (max-width: 860px) {
+      .action-ordinateur { display: none; }
+      /* La barre du bas ne garde que l'état et les messages, à droite du bouton rond. */
+      .actions-bas { min-height: 72px; padding-left: 76px; }
+      .bouton-flottant {
+        display: flex; align-items: center; justify-content: center;
+        position: fixed; left: var(--pas-2); z-index: 35;
+        bottom: calc(var(--hauteur-onglets) + var(--pas));
+        width: 56px; height: 56px; border-radius: 50%; padding: 0;
+        background: var(--profond); color: #fff; border: 0; font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,.3);
+      }
+      .pastille-a-enregistrer {
+        position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%;
+        background: var(--accent); border: 2px solid #fff;
+      }
+      .fond-menu-actions { display: block; position: fixed; inset: 0; z-index: 34; background: rgba(0,0,0,.25); }
+      .menu-actions {
+        display: flex; flex-direction: column; gap: var(--pas);
+        position: fixed; left: var(--pas-2); z-index: 36;
+        bottom: calc(var(--hauteur-onglets) + var(--pas) + 64px);
+        width: min(320px, calc(100vw - 2 * var(--pas-2)));
+        padding: var(--pas-2); background: var(--carte); border-radius: var(--r-s);
+        box-shadow: 0 6px 20px rgba(0,0,0,.3);
+      }
+      .menu-actions > * { width: 100%; margin: 0; min-height: 44px; text-align: left; }
+      .menu-actions a { display: flex; align-items: center; }
+    }
 
     .ligne-groupe { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; margin-bottom: var(--pas-2); }
     .ligne-groupe select { max-width: 280px; }
@@ -1028,6 +1105,15 @@ export class FicheSecuriteComponent implements AvecModifications {
   modificationsNonEnregistrees(): boolean {
     if (!this.auth.etablitFichesSecurite() || this.empreinteEnregistree === null) return false;
     return empreinteFiche(this.entete() ?? {}, this.palanquees()) !== this.empreinteEnregistree;
+  }
+
+  // --- Bouton rond du téléphone ------------------------------------------------------------------
+
+  menuActionsOuvert = signal(false);
+
+  @HostListener('document:keydown.escape')
+  fermerMenuActions(): void {
+    this.menuActionsOuvert.set(false);
   }
 
   /** Fermer l'onglet ou recharger la page : le navigateur demande confirmation. */
