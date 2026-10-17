@@ -226,15 +226,16 @@ Compte : `e2@club.fr` · format téléphone · 75 s
 6. Puis les palanquées : une est prête, « + Palanquée » en ajoute d'autres.
 7. Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.
 8. Gaz, désaturation, observations : rangés sous « Détails », ouverts d'un geste.
-9. En bas, toujours visible : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
-10. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
-11. « Imprimer (PDF) » l'imprime aussitôt, sur le modèle du club.
-12. Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».
-13. Son directeur de plongée, son n° de plongée (déjà le suivant)…
-14. … et une info pour distinguer les deux séances.
-15. Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.
-16. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
-17. Au retour de plongée, on la complète : c'est la vidéo suivante.
+9. Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.
+10. En bas, toujours visible : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
+11. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
+12. « Imprimer (PDF) » l'imprime aussitôt, sur le modèle du club.
+13. Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».
+14. Son directeur de plongée, son n° de plongée (déjà le suivant)…
+15. … et une info pour distinguer les deux séances.
+16. Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.
+17. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
+18. Au retour de plongée, on la complète : c'est la vidéo suivante.
 
 ### M11 — Compléter la fiche après la plongée
 

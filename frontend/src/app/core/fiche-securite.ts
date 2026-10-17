@@ -48,6 +48,27 @@ export function palanqueesAEnregistrer(palanquees: PalanqueeVue[]): { palanquees
   return { palanquees: nettoyees, erreur: null };
 }
 
+/**
+ * Déplace un plongeur, avec tout ce qui est saisi pour lui, en dernier dans
+ * la palanquée `cible` (indice), ou dans une nouvelle palanquée au numéro
+ * suivant si `cible` est null. La palanquée quittée reste, même vide : le DP
+ * la retire s'il le veut.
+ */
+export function deplacerPlongeur(palanquees: PalanqueeVue[], source: number, membre: number,
+                                 cible: number | null): PalanqueeVue[] {
+  const plongeur = palanquees[source].membres[membre];
+  const liste = palanquees.map((p, i) =>
+    i === source ? { ...p, membres: p.membres.filter((_, j) => j !== membre) } : p);
+  if (cible === null) {
+    const numero = Math.max(0, ...palanquees.map(p => p.numero)) + 1;
+    return [...liste, {
+      numero, profondeurPrevue: null, dureePrevue: null, profondeurRealisee: null, dureeRealisee: null,
+      paliers: null, heureImmersion: null, heureSortie: null, membres: [plongeur]
+    }];
+  }
+  return liste.map((p, i) => i === cible ? { ...p, membres: [...p.membres, plongeur] } : p);
+}
+
 /** « 3 plongeurs · 20 m · 40 min » : de quoi relire une palanquée d'un coup d'œil. */
 export function resumePalanquee(p: PalanqueeVue): string {
   const nombre = p.membres.filter(m => rempli(m.nom) || rempli(m.prenom)).length;

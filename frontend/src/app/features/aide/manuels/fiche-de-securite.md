@@ -3,8 +3,9 @@ titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
 videos: M10, M11
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, portrait, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant
+mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, portrait, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant, déplacer un plongeur, changer de palanquée, permuter
 questions:
+- Comment changer un plongeur de palanquée ?
 - Comment imprimer une fiche de sécurité tout de suite ?
 - Où saisir le gaz ou la désaturation d'un plongeur ?
 - Pourquoi la fiche dit « Modifications non enregistrées » ?
@@ -45,6 +46,8 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 8. « Imprimer (PDF) », dans la même barre, imprime la fiche enregistrée tout de suite (avec l'autre plongée de sa feuille).
 
 Retirer une palanquée qui a des plongeurs demande confirmation.
+
+**Changer un plongeur de palanquée** : touchez « ⇄ Déplacer » sur sa ligne, puis, dans la barre qui s'ouvre en bas de l'écran, la palanquée où il doit aller (ou « + Nouvelle palanquée »). Il y arrive en dernier avec tout ce qui a été saisi pour lui (aptitude, fonction, gaz…). La palanquée qu'il quitte reste, même vide. Sur ordinateur, on peut aussi le glisser d'une palanquée à l'autre. Pensez à enregistrer la fiche ensuite.
 
 ## Proposer les palanquées automatiquement (milieu naturel)
 
