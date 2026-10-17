@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-17, dupliquer et lier une séance (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 2e série, détails repliés, barre d'enregistrement et impression (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -44,10 +44,16 @@ export default {
     await suggestion(palanquee.locator('.selecteur-connu').last(), 'Flora');
     await palanquee.locator('select').last().selectOption('ENCADRANT');
     await pause(1200);
+    await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
+    await toucher(palanquee.locator('.details-plongeur summary').last(), { apres: 1800 });
     await vignette();
 
+    await legende('En bas, toujours visible : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 0);
+    await page.locator('.actions-bas').scrollIntoViewIfNeeded();
+    await pause(2000);
     await legende('Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.', 0);
     await toucher(page.getByRole('button', { name: 'Enregistrer la fiche' }), { apres: 2000 });
+    await legende('« Imprimer (PDF) » l\'imprime aussitôt, sur le modèle du club.', 3000);
 
     await legende('Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».', 0);
     await toucher(page.getByRole('button', { name: 'Dupliquer et lier…' }), { apres: 1200 });

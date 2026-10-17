@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import {
-  gardeAdmin, gardeConnecte, gardeEncadrant, gardeFichesSecurite, gardeInspectionBlocs, gardeMateriel, gardeSorties
+  gardeAdmin, gardeConnecte, gardeEncadrant, gardeFichesSecurite, gardeInspectionBlocs, gardeMateriel, gardeModifications,
+  gardeSorties
 } from './core/gardes';
 
 export const routes: Routes = [
@@ -101,6 +102,7 @@ export const routes: Routes = [
   {
     path: 'fiches-securite/:id',
     canActivate: [gardeConnecte, gardeEncadrant],
+    canDeactivate: [gardeModifications],
     loadComponent: () => import('./features/fiche-securite/fiche-securite.component')
       .then(m => m.FicheSecuriteComponent)
   },
