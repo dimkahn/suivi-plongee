@@ -1,6 +1,7 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, reprendrePalanquees, resumePalanquee
+  aDesDetails, deplacerPlongeur, empreinteFiche, estEncadrantPossible, palanqueesAEnregistrer, reprendrePalanquees,
+  resumePalanquee
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
@@ -162,5 +163,23 @@ describe('Reprendre des palanquées d\'une autre séance', () => {
     const [copie] = reprendrePalanquees([], [reprise]);
     copie.membres[0].nom = 'AUTRE';
     expect(reprise.membres[0].nom).toBe('MARTIN');
+  });
+});
+
+describe('Demander la fonction d\'un encadrant ajouté à une palanquée', () => {
+  it('Un moniteur du club (compte encadrant) est un encadrant possible', () => {
+    expect(estEncadrantPossible({ utilisateurId: 12, aptitude: 'N2' })).toBe(true);
+  });
+
+  it('Une aptitude d\'encadrant (E1 à E4, MF1/MF2, GP, N4, N5) le désigne aussi', () => {
+    for (const aptitude of ['E2', 'N3 E1', 'MF1', 'GP', 'N4', 'N5']) {
+      expect(estEncadrantPossible({ utilisateurId: null, aptitude })).toBe(true);
+    }
+  });
+
+  it('Un plongeur sans compte encadrant ni aptitude d\'encadrant n\'est pas concerné', () => {
+    for (const aptitude of ['N1', 'N2', 'PE40', 'PA40', 'N3', null]) {
+      expect(estEncadrantPossible({ utilisateurId: null, aptitude })).toBe(false);
+    }
   });
 });

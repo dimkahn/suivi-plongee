@@ -15,7 +15,7 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, palanqueesAEnregistrer, reprendrePalanquees,
+  aDesDetails, deplacerPlongeur, empreinteFiche, estEncadrantPossible, palanqueesAEnregistrer, reprendrePalanquees,
   resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
 import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
@@ -64,9 +64,6 @@ function profondeurMaxPourAptitude(aptitude: string | null): number | null {
   const profondeurs = codes.map(c => PROFONDEUR_MAX_PAR_APTITUDE[c]).filter((p): p is number => p !== undefined);
   return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
 }
-
-/** Aptitude d'un encadrant possible : E1 à E4 (mais pas « PE40 »), MF1/MF2, GP, N4, N5. */
-const APTITUDE_ENCADRANT = /(^|[^P])E[1-4]|MF[12]|GP|N[45]/i;
 
 /** Critères de la proposition automatique, modifiés en place par le formulaire. */
 interface CriteresProposition {
@@ -638,6 +635,20 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </div>
       </app-dialogue>
 
+      <app-dialogue [ouvert]="fonctionADemander() !== null"
+                    [titre]="'Fonction de ' + ((fonctionADemander()?.prenom + ' ' + fonctionADemander()?.nom).trim() || 'cet encadrant')"
+                    (fermer)="fonctionADemander.set(null)">
+        <p class="secondaire">
+          {{ fonctionADemander()?.aptitude ? 'Aptitude ' + fonctionADemander()?.aptitude + '. ' : '' }}Quel est son rôle
+          dans cette palanquée ? Il se modifie ensuite dans la case « Fonction ».
+        </p>
+        <div class="choix-fonction">
+          <button type="button" class="bouton-principal" (click)="choisirFonction('ENCADRANT')">Encadrant</button>
+          <button type="button" class="bouton-discret" (click)="choisirFonction('GUIDE_PALANQUEE')">Guide de palanquée</button>
+          <button type="button" class="bouton-discret" (click)="choisirFonction('PLONGEUR')">Plongeur</button>
+        </div>
+      </app-dialogue>
+
       @if (membreAPlacer(); as m) {
         <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
           <p><strong>{{ m.prenom }} {{ m.nom }}</strong> → quelle palanquée ?</p>
@@ -869,6 +880,8 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .liaison { border-top: 1px solid var(--trait); padding-top: var(--pas); margin-bottom: var(--pas-2); }
     .liaison .secondaire { margin: 0 0 var(--pas); }
     .lien-fiche-liee { margin-left: var(--pas); white-space: nowrap; }
+    .choix-fonction { display: flex; flex-direction: column; gap: var(--pas-2); margin-top: var(--pas-3); }
+    .choix-fonction > button { min-height: 44px; width: 100%; margin: 0; }
     .choix-palanquees-dup { border: 0; padding: 0; margin: var(--pas-2) 0 0; min-width: 0; }
     .choix-palanquees-dup legend { font-weight: 700; font-size: .9375rem; padding: 0; margin-bottom: var(--pas); }
     .choix-palanquees-dup .case {
@@ -1296,6 +1309,27 @@ export class FicheSecuriteComponent implements AvecModifications {
       return { ...p, membres };
     });
     this.palanquees.set(liste);
+    this.demanderFonctionSiEncadrant(nouveau);
+  }
+
+  // --- Fonction d'un encadrant ajouté --------------------------------------------------------------
+
+  /** Le membre (tel que placé dans sa palanquée) dont on demande la fonction ; null : fenêtre fermée. */
+  fonctionADemander = signal<PlongeurVue | null>(null);
+
+  /** Un encadrant ajouté encore « Plongeur » : on demande sa fonction plutôt que de la laisser par défaut. */
+  private demanderFonctionSiEncadrant(m: PlongeurVue): void {
+    if (m.fonction === 'PLONGEUR' && estEncadrantPossible(m)) this.fonctionADemander.set(m);
+  }
+
+  /** Par l'objet lui-même : entre-temps, il a pu être glissé ailleurs ou changer de rang. */
+  choisirFonction(fonction: PlongeurVue['fonction']): void {
+    const cible = this.fonctionADemander();
+    this.fonctionADemander.set(null);
+    if (!cible) return;
+    this.palanquees.set(this.palanquees().map(p => p.membres.includes(cible)
+      ? { ...p, membres: p.membres.map(m => m === cible ? { ...m, fonction } : m) }
+      : p));
   }
 
   onDropPalanquee(event: CdkDragDrop<PlongeurVue[]>, indexPalanquee: number): void {
@@ -1615,14 +1649,17 @@ export class FicheSecuriteComponent implements AvecModifications {
     champ.value = '';
     if (!candidat) return;
 
+    const choisi: PlongeurVue = {
+      ...this.palanquees()[indexPalanquee].membres[indexMembre],
+      eleveId: candidat.eleveId, utilisateurId: candidat.utilisateurId,
+      nom: candidat.nom, prenom: candidat.prenom,
+      aptitude: candidat.aptitude, qualificationPreparee: candidat.qualificationPreparee
+    };
     const liste = this.palanquees().map((p, i) => i !== indexPalanquee ? p : {
-      ...p, membres: p.membres.map((m, j) => j !== indexMembre ? m : {
-        ...m, eleveId: candidat.eleveId, utilisateurId: candidat.utilisateurId,
-        nom: candidat.nom, prenom: candidat.prenom,
-        aptitude: candidat.aptitude, qualificationPreparee: candidat.qualificationPreparee
-      })
+      ...p, membres: p.membres.map((m, j) => j !== indexMembre ? m : choisi)
     });
     this.palanquees.set(liste);
+    this.demanderFonctionSiEncadrant(choisi);
   }
 
   // --- Proposition automatique des palanquées (milieu naturel) -----------------------------------
@@ -1642,7 +1679,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   /** Indices des membres qui peuvent encadrer : compte moniteur ou aptitude d'encadrant. */
   encadrantsPossibles = computed(() => this.proposables()
     .map((m, i) => ({ m, i }))
-    .filter(({ m }) => m.utilisateurId !== null || APTITUDE_ENCADRANT.test(aptitudeSurFiche(m) ?? ''))
+    .filter(({ m }) => estEncadrantPossible({ utilisateurId: m.utilisateurId, aptitude: aptitudeSurFiche(m) }))
     .map(({ i }) => i));
 
   /**

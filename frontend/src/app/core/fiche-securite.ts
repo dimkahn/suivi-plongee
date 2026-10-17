@@ -92,6 +92,18 @@ export function reprendrePalanquees(actuelles: PalanqueeVue[], reprises: Palanqu
   return [...gardees, ...copies];
 }
 
+/** Aptitude d'un encadrant possible : E1 à E4 (mais pas « PE40 »), MF1/MF2, GP, N4, N5. */
+export const APTITUDE_ENCADRANT = /(^|[^P])E[1-4]|MF[12]|GP|N[45]/i;
+
+/**
+ * Peut-il encadrer ou guider une palanquée : compte moniteur du club, ou
+ * aptitude d'encadrant sur la fiche. Quand on en ajoute un, l'écran demande
+ * sa fonction plutôt que de le laisser « Plongeur » par défaut.
+ */
+export function estEncadrantPossible(m: { utilisateurId: number | null; aptitude: string | null }): boolean {
+  return m.utilisateurId !== null || APTITUDE_ENCADRANT.test(m.aptitude ?? '');
+}
+
 /** « 3 plongeurs · 20 m · 40 min » : de quoi relire une palanquée d'un coup d'œil. */
 export function resumePalanquee(p: PalanqueeVue): string {
   const nombre = p.membres.filter(m => rempli(m.nom) || rempli(m.prenom)).length;

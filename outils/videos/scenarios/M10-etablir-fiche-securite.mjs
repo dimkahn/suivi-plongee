@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-17, 5e série, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 6e série, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -42,8 +42,10 @@ export default {
     await suggestion(palanquee.locator('.selecteur-connu').last(), 'Léa');
     await toucher(palanquee.getByRole('button', { name: '+ Plongeur' }), { apres: 600 });
     await suggestion(palanquee.locator('.selecteur-connu').last(), 'Flora');
-    await palanquee.locator('select').last().selectOption('ENCADRANT');
+    await legende('Flora encadre : l\'appli demande sa fonction dans la palanquée.', 0);
     await pause(1200);
+    await toucher(page.locator('dialog[open] .choix-fonction').getByRole('button', { name: 'Encadrant', exact: true }),
+      { apres: 1200 });
     await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
     await toucher(palanquee.locator('.details-plongeur summary').last(), { apres: 1800 });
     await vignette();
