@@ -1,7 +1,7 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, estEncadrantPossible, palanqueesAEnregistrer, reprendrePalanquees,
-  resumePalanquee
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, nomPalanquee, palanqueesAEnregistrer,
+  profondeurPermise, refusAjout, reprendrePalanquees, resumePalanquee
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
@@ -163,6 +163,83 @@ describe('Reprendre des palanquées d\'une autre séance', () => {
     const [copie] = reprendrePalanquees([], [reprise]);
     copie.membres[0].nom = 'AUTRE';
     expect(reprise.membres[0].nom).toBe('MARTIN');
+  });
+});
+
+describe('Profondeur permise par l\'aptitude d\'un plongeur', () => {
+  it('Reprend les prérogatives FFESSM : la plus étendue, encadrée ou autonome', () => {
+    expect(profondeurPermise({ aptitude: 'N1', qualificationPreparee: null })).toBe(20);
+    expect(profondeurPermise({ aptitude: 'N2', qualificationPreparee: null })).toBe(40);
+    expect(profondeurPermise({ aptitude: 'PE40 PA20', qualificationPreparee: null })).toBe(40);
+    expect(profondeurPermise({ aptitude: 'PE12', qualificationPreparee: null })).toBe(12);
+    expect(profondeurPermise({ aptitude: 'N3', qualificationPreparee: null })).toBe(60);
+    expect(profondeurPermise({ aptitude: 'E1 · N4', qualificationPreparee: null })).toBe(60);
+  });
+
+  it('Un élève en formation descend à la profondeur du niveau qu\'il prépare', () => {
+    expect(profondeurPermise({ aptitude: 'N1', qualificationPreparee: 'N2' })).toBe(40);
+  });
+
+  it('Une aptitude non reconnue ne permet rien de deviner', () => {
+    expect(profondeurPermise({ aptitude: 'Baptême', qualificationPreparee: null })).toBeNull();
+    expect(profondeurPermise({ aptitude: null, qualificationPreparee: null })).toBeNull();
+  });
+});
+
+describe('Refuser un plongeur dont l\'aptitude ne permet pas la profondeur prévue', () => {
+  it('Un N1 ne s\'ajoute pas à une palanquée prévue à 30 m', () => {
+    expect(refusAjout(palanquee({ numero: 2, profondeurPrevue: 30 }), plongeur({ aptitude: 'N1' })))
+      .toBe('Ajout refusé : Léa MARTIN (N1) a une aptitude limitée à 20 m, la palanquée 2 est prévue à 30 m.');
+  });
+
+  it('Il s\'ajoute à une palanquée prévue dans ses prérogatives', () => {
+    expect(refusAjout(palanquee({ profondeurPrevue: 20 }), plongeur({ aptitude: 'N1' }))).toBeNull();
+  });
+
+  it('Sans profondeur prévue, ou sans aptitude reconnue, rien n\'est refusé', () => {
+    expect(refusAjout(palanquee({ profondeurPrevue: null }), plongeur({ aptitude: 'N1' }))).toBeNull();
+    expect(refusAjout(palanquee({ profondeurPrevue: 40 }), plongeur({ aptitude: null }))).toBeNull();
+  });
+});
+
+describe('Nom d\'une palanquée sur la fiche', () => {
+  it('Une palanquée porte le nom de son encadrant', () => {
+    const p = palanquee({ numero: 3, membres: [
+      plongeur(), plongeur({ prenom: 'Flora', nom: 'DUPONT', fonction: 'ENCADRANT' })
+    ] });
+    expect(nomPalanquee(p)).toBe('Palanquée de Flora DUPONT');
+  });
+
+  it('À défaut d\'encadrant, celui de son guide de palanquée', () => {
+    const p = palanquee({ membres: [plongeur({ prenom: 'Hugo', nom: 'BLANC', fonction: 'GUIDE_PALANQUEE' })] });
+    expect(nomPalanquee(p)).toBe('Palanquée de Hugo BLANC');
+  });
+
+  it('Sans encadrant ni guide (autonomes, palanquée neuve), elle garde son numéro', () => {
+    expect(nomPalanquee(palanquee({ numero: 2, membres: [plongeur()] }))).toBe('Palanquée 2');
+    expect(nomPalanquee(palanquee({ numero: 4, membres: [plongeur({ prenom: ' ', nom: '', fonction: 'ENCADRANT' })] })))
+      .toBe('Palanquée 4');
+  });
+
+  it('Le refus d\'un plongeur nomme la palanquée par son encadrant', () => {
+    const p = palanquee({ profondeurPrevue: 30, membres: [plongeur({ prenom: 'Flora', nom: 'DUPONT', fonction: 'ENCADRANT' })] });
+    expect(refusAjout(p, plongeur({ aptitude: 'N1' })))
+      .toBe('Ajout refusé : Léa MARTIN (N1) a une aptitude limitée à 20 m, la palanquée de Flora DUPONT est prévue à 30 m.');
+  });
+});
+
+describe('Nouvelle palanquée : profondeur et durée prévues demandées', () => {
+  it('Les deux sont obligatoires et positives', () => {
+    expect(erreurProfilPrevu(null, 40)).toBe('Indiquez la profondeur prévue.');
+    expect(erreurProfilPrevu(20, null)).toBe('Indiquez la durée prévue.');
+    expect(erreurProfilPrevu(0, 40)).toBe('Indiquez la profondeur prévue.');
+    expect(erreurProfilPrevu(20, 40)).toBeNull();
+  });
+
+  it('Un plongeur déplacé vers une nouvelle palanquée y arrive avec le profil prévu saisi', () => {
+    const liste = [palanquee({ numero: 1, membres: [plongeur()] })];
+    const resultat = deplacerPlongeur(liste, 0, 0, null, { profondeurPrevue: 12, dureePrevue: 35 });
+    expect(resultat[1]).toMatchObject({ numero: 2, profondeurPrevue: 12, dureePrevue: 35 });
   });
 });
 

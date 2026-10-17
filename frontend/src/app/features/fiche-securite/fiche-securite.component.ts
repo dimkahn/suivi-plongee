@@ -15,7 +15,8 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, estEncadrantPossible, palanqueesAEnregistrer, reprendrePalanquees,
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, nomPalanquee,
+  palanqueesAEnregistrer, profondeurPermise, refusAjout, reprendrePalanquees,
   resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
 import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
@@ -33,6 +34,15 @@ function plongeurVide(): PlongeurVue {
   };
 }
 
+/** Le membre d'un groupe tel qu'il arrive sur la fiche, « Plongeur » tant qu'on ne dit pas sa fonction. */
+function versPlongeur(source: MembreGroupeVue): PlongeurVue {
+  return {
+    eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
+    aptitude: aptitudeSurFiche(source), aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
+    fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
+  };
+}
+
 function palanqueeVide(numero: number): PalanqueeVue {
   return {
     numero, profondeurPrevue: null, dureePrevue: null,
@@ -41,29 +51,6 @@ function palanqueeVide(numero: number): PalanqueeVue {
   };
 }
 
-/**
- * Profondeur max (en m) des prérogatives FFESSM courantes, pour repérer une
- * palanquée dont la profondeur prévue dépasse l'aptitude d'un de ses
- * membres. Simple avertissement d'affichage, pas une règle bloquante (voir
- * la note du projet sur le retrait de la vérification stricte côté serveur) :
- * le DP reste seul juge, l'aptitude est un texte libre pas toujours normalisé.
- */
-const PROFONDEUR_MAX_PAR_APTITUDE: Record<string, number> = {
-  E1: 20, N1: 20, PA20: 20,
-  E2: 40, N2: 40, PE40: 40, PA40: 40,
-  N3: 60, PE60: 60
-  // E3, E4 : pas de limite (formateurs).
-};
-
-/** Cherche les codes connus dans le texte libre de l'aptitude et retient le plus profond. */
-function profondeurMaxPourAptitude(aptitude: string | null): number | null {
-  if (!aptitude) return null;
-  const codes = aptitude.toUpperCase().match(/E[1-4]|PA20|PE40|PA40|PE60|N[1-3]/g);
-  if (!codes) return null;
-  if (codes.includes('E3') || codes.includes('E4')) return null;
-  const profondeurs = codes.map(c => PROFONDEUR_MAX_PAR_APTITUDE[c]).filter((p): p is number => p !== undefined);
-  return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
-}
 
 /** Critères de la proposition automatique, modifiés en place par le formulaire. */
 interface CriteresProposition {
@@ -327,7 +314,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                 <label class="case">
                   <input type="checkbox" [checked]="d.palanquees.includes(p.numero)"
                          (change)="basculerPalanqueeDupliquee(p.numero)">
-                  Palanquée {{ p.numero }}
+                  {{ nomPalanquee(p) }}
                   <span class="secondaire">— {{ resumePalanquee(p) }}</span>
                 </label>
               } @empty {
@@ -491,7 +478,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         <section class="carte panneau">
           <div class="ligne-titre">
             <div>
-              <h3>Palanquée {{ p.numero }}</h3>
+              <h3>{{ nomPalanquee(p) }}</h3>
               <p class="resume-palanquee">{{ resumeComposition(p) }}</p>
             </div>
             <button type="button" class="bouton-discret danger" (click)="retirerPalanquee(iP)">
@@ -588,7 +575,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       }
 
       <div class="ajouts-palanquees action-ordinateur">
-        <button type="button" class="bouton-discret bouton-ajout-palanquee" (click)="ajouterPalanquee()">+ Palanquée</button>
+        <button type="button" class="bouton-discret bouton-ajout-palanquee" (click)="ouvrirNouvellePalanquee(null)">+ Palanquée</button>
         <button type="button" class="bouton-discret bouton-reprendre-palanquee" (click)="ouvrirReprise()">
           Reprendre une palanquée d'une autre séance…
         </button>
@@ -616,7 +603,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                 <label class="case">
                   <input type="checkbox" [checked]="palanqueesCochees().has(p.numero)"
                          (change)="basculerPalanqueeReprise(p.numero)">
-                  Palanquée {{ p.numero }}
+                  {{ nomPalanquee(p) }}
                   <span class="secondaire">— {{ resumePalanquee(p) }}</span>
                 </label>
               } @empty {
@@ -649,16 +636,36 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </div>
       </app-dialogue>
 
+      <app-dialogue [ouvert]="nouvellePalanquee() !== null" titre="Nouvelle palanquée"
+                    [erreur]="erreurNouvellePalanquee()" (fermer)="nouvellePalanquee.set(null)">
+        @if (nouvellePalanquee(); as n) {
+          <p class="secondaire">
+            Le profil prévu de la palanquée : un plongeur dont l'aptitude ne permet pas cette profondeur
+            n'y sera pas accepté.
+          </p>
+          <label for="nouvelle-profondeur">Profondeur prévue (m)</label>
+          <input id="nouvelle-profondeur" name="nouvelleProfondeur" type="number" min="1" inputmode="numeric"
+                 [(ngModel)]="n.profondeur">
+          <label for="nouvelle-duree">Durée prévue (min)</label>
+          <input id="nouvelle-duree" name="nouvelleDuree" type="number" min="1" inputmode="numeric"
+                 [(ngModel)]="n.duree">
+          <div class="actions-dialogue">
+            <button type="button" class="bouton-principal" (click)="creerNouvellePalanquee()">Créer la palanquée</button>
+            <button type="button" class="bouton-discret" (click)="nouvellePalanquee.set(null)">Annuler</button>
+          </div>
+        }
+      </app-dialogue>
+
       @if (membreAPlacer(); as m) {
         <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
           <p><strong>{{ m.prenom }} {{ m.nom }}</strong> → quelle palanquée ?</p>
           <div class="choix-palanquees">
             @for (p of palanquees(); track p; let iP = $index) {
               <button type="button" class="bouton-principal" (click)="placer(m, iP)">
-                Palanquée {{ p.numero }} ({{ p.membres.length }})
+                {{ nomPalanquee(p) }} ({{ p.membres.length }})
               </button>
             }
-            <button type="button" class="bouton-discret" (click)="placerDansNouvellePalanquee(m)">
+            <button type="button" class="bouton-discret" (click)="ouvrirNouvellePalanquee(m)">
               + Nouvelle palanquée
             </button>
             <button type="button" class="bouton-discret" (click)="membreAPlacer.set(null)">Annuler</button>
@@ -669,18 +676,19 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       @if (plongeurADeplacer(); as d) {
         <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée de destination">
           <p>
-            <strong>{{ nomADeplacer() }}</strong> (palanquée {{ palanquees()[d.palanquee]?.numero }})
+            <strong>{{ nomADeplacer() }}</strong>
+            ({{ palanquees()[d.palanquee] ? nomPalanquee(palanquees()[d.palanquee]).replace('Palanquée', 'palanquée') : '' }})
             → vers quelle palanquée ?
           </p>
           <div class="choix-palanquees">
             @for (p of palanquees(); track p; let iP = $index) {
               @if (iP !== d.palanquee) {
                 <button type="button" class="bouton-principal" (click)="deplacerVers(iP)">
-                  Palanquée {{ p.numero }} ({{ p.membres.length }})
+                  {{ nomPalanquee(p) }} ({{ p.membres.length }})
                 </button>
               }
             }
-            <button type="button" class="bouton-discret" (click)="deplacerVers(null)">+ Nouvelle palanquée</button>
+            <button type="button" class="bouton-discret" (click)="ouvrirNouvellePalanquee('deplacement')">+ Nouvelle palanquée</button>
             <button type="button" class="bouton-discret" (click)="plongeurADeplacer.set(null)">Annuler</button>
           </div>
         </div>
@@ -736,7 +744,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                 {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
               </button>
               <button type="button" role="menuitem" class="bouton-discret"
-                      (click)="menuActionsOuvert.set(false); ajouterPalanquee()">+ Palanquée</button>
+                      (click)="menuActionsOuvert.set(false); ouvrirNouvellePalanquee(null)">+ Palanquée</button>
               <button type="button" role="menuitem" class="bouton-discret"
                       (click)="menuActionsOuvert.set(false); ouvrirReprise()">
                 Reprendre une palanquée d'une autre séance…
@@ -971,6 +979,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   readonly aDesDetails = aDesDetails;
   /** « 3 plongeurs · 20 m · 40 min », sous le titre de chaque palanquée. */
   readonly resumeComposition = resumeComposition;
+  readonly nomPalanquee = nomPalanquee;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
@@ -1137,18 +1146,73 @@ export class FicheSecuriteComponent implements AvecModifications {
     }
   }
 
-  ajouterPalanquee(): void {
-    const numero = this.palanquees().length > 0
-      ? Math.max(...this.palanquees().map(p => p.numero)) + 1
-      : 1;
-    this.palanquees.set([...this.palanquees(), palanqueeVide(numero)]);
+  private numeroSuivantPalanquee(): number {
+    return this.palanquees().length > 0 ? Math.max(...this.palanquees().map(p => p.numero)) + 1 : 1;
+  }
+
+  private ajouterPalanquee(profondeurPrevue: number, dureePrevue: number): void {
+    this.palanquees.set([...this.palanquees(),
+      { ...palanqueeVide(this.numeroSuivantPalanquee()), profondeurPrevue, dureePrevue }]);
+  }
+
+  // --- Nouvelle palanquée : profil prévu demandé d'abord ------------------------------------------
+
+  /**
+   * Fenêtre « Nouvelle palanquée », modifiée en place ; `pour` : le membre du
+   * groupe à y placer, « deplacement » pour le plongeur en cours de
+   * déplacement, null pour une palanquée vide. Null : fenêtre fermée.
+   */
+  nouvellePalanquee = signal<{ profondeur: number | null; duree: number | null;
+    pour: MembreGroupeVue | 'deplacement' | null } | null>(null);
+  erreurNouvellePalanquee = signal<string | null>(null);
+
+  ouvrirNouvellePalanquee(pour: MembreGroupeVue | 'deplacement' | null): void {
+    this.erreurNouvellePalanquee.set(null);
+    this.nouvellePalanquee.set({ profondeur: null, duree: null, pour });
+  }
+
+  creerNouvellePalanquee(): void {
+    const n = this.nouvellePalanquee();
+    if (!n) return;
+    const erreur = erreurProfilPrevu(n.profondeur, n.duree);
+    if (erreur) {
+      this.erreurNouvellePalanquee.set(erreur);
+      return;
+    }
+    const profil = { profondeurPrevue: n.profondeur!, dureePrevue: n.duree! };
+    const future = { ...palanqueeVide(this.numeroSuivantPalanquee()), ...profil };
+
+    if (n.pour === 'deplacement') {
+      const d = this.plongeurADeplacer();
+      const m = d ? this.palanquees()[d.palanquee]?.membres[d.membre] : undefined;
+      const refus = m ? refusAjout(future, m) : null;
+      if (refus) {
+        this.erreurNouvellePalanquee.set(refus);
+        return;
+      }
+      this.nouvellePalanquee.set(null);
+      this.plongeurADeplacer.set(null);
+      if (d && m) this.palanquees.set(deplacerPlongeur(this.palanquees(), d.palanquee, d.membre, null, profil));
+      return;
+    }
+
+    if (n.pour !== null) {
+      const refus = refusAjout(future, versPlongeur(n.pour));
+      if (refus) {
+        this.erreurNouvellePalanquee.set(refus);
+        return;
+      }
+    }
+    this.nouvellePalanquee.set(null);
+    this.ajouterPalanquee(profil.profondeurPrevue, profil.dureePrevue);
+    if (n.pour !== null) this.placer(n.pour, this.palanquees().length - 1);
   }
 
   retirerPalanquee(index: number): void {
     this.plongeurADeplacer.set(null);
     const p = this.palanquees()[index];
     if (p.membres.some(m => m.nom || m.prenom)
-        && !confirm(`Retirer la palanquée ${p.numero} et ses plongeurs (${resumeComposition(p)}) ?`)) {
+        && !confirm(`Retirer ${nomPalanquee(p).replace(/^Palanquée/, 'la palanquée')} et ses plongeurs (${resumeComposition(p)}) ?`)) {
       return;
     }
     this.palanquees.set(this.palanquees().filter((_, i) => i !== index));
@@ -1280,7 +1344,13 @@ export class FicheSecuriteComponent implements AvecModifications {
   deplacerVers(cible: number | null): void {
     const d = this.plongeurADeplacer();
     this.plongeurADeplacer.set(null);
-    if (!d || !this.palanquees()[d.palanquee]?.membres[d.membre]) return;
+    const plongeur = d ? this.palanquees()[d.palanquee]?.membres[d.membre] : undefined;
+    if (!d || !plongeur) return;
+    const refus = cible !== null ? refusAjout(this.palanquees()[cible], plongeur) : null;
+    if (refus) {
+      this.message.set(refus);
+      return;
+    }
     this.palanquees.set(deplacerPlongeur(this.palanquees(), d.palanquee, d.membre, cible));
   }
 
@@ -1290,18 +1360,18 @@ export class FicheSecuriteComponent implements AvecModifications {
     this.membreAPlacer.set(null);
   }
 
-  placerDansNouvellePalanquee(m: MembreGroupeVue): void {
-    this.ajouterPalanquee();
-    this.placer(m, this.palanquees().length - 1);
-  }
-
-  /** Copie un membre du groupe dans une palanquée : le groupe reste intact, réutilisable sur d'autres fiches. */
+  /**
+   * Copie un membre du groupe dans une palanquée : le groupe reste intact,
+   * réutilisable sur d'autres fiches. Refusé (message) si son aptitude ne
+   * permet pas la profondeur prévue.
+   */
   private ajouterDepuisGroupe(source: MembreGroupeVue, indexPalanquee: number, position: number): void {
-    const nouveau: PlongeurVue = {
-      eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
-      aptitude: aptitudeSurFiche(source), aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
-      fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
-    };
+    const nouveau = versPlongeur(source);
+    const refus = refusAjout(this.palanquees()[indexPalanquee], nouveau);
+    if (refus) {
+      this.message.set(refus);
+      return;
+    }
     const liste = this.palanquees().map((p, i) => {
       if (i !== indexPalanquee) return p;
       const membres = [...p.membres];
@@ -1346,6 +1416,12 @@ export class FicheSecuriteComponent implements AvecModifications {
       return;
     }
 
+    const refus = refusAjout(this.palanquees()[indexPalanquee],
+      (event.previousContainer.data as PlongeurVue[])[event.previousIndex]);
+    if (refus) {
+      this.message.set(refus);
+      return;
+    }
     transferArrayItem(event.previousContainer.data as PlongeurVue[], event.container.data as PlongeurVue[],
       event.previousIndex, event.currentIndex);
     this.palanquees.set([...this.palanquees()]);
@@ -1614,13 +1690,13 @@ export class FicheSecuriteComponent implements AvecModifications {
   }
 
   /**
-   * Avertissement d'affichage seulement (voir la note au-dessus de
-   * PROFONDEUR_MAX_PAR_APTITUDE) : signale qu'un plongeur n'a pas
-   * l'aptitude requise pour la profondeur prévue de sa palanquée.
+   * L'ajout d'un plongeur au-delà de son aptitude est refusé (refusAjout) ;
+   * reste à signaler celui dont l'aptitude ou la profondeur prévue a changé
+   * après coup : le DP corrige, rien n'est bloqué à l'enregistrement.
    */
   alerteProfondeur(p: PalanqueeVue, m: PlongeurVue): string | null {
     if (!p.profondeurPrevue) return null;
-    const max = profondeurMaxPourAptitude(m.aptitude);
+    const max = profondeurPermise(m);
     if (max === null || p.profondeurPrevue <= max) return null;
     return `${m.aptitude} limite ${max} m, palanquée prévue à ${p.profondeurPrevue} m.`;
   }
@@ -1655,6 +1731,11 @@ export class FicheSecuriteComponent implements AvecModifications {
       nom: candidat.nom, prenom: candidat.prenom,
       aptitude: candidat.aptitude, qualificationPreparee: candidat.qualificationPreparee
     };
+    const refus = refusAjout(this.palanquees()[indexPalanquee], choisi);
+    if (refus) {
+      this.message.set(refus);
+      return;
+    }
     const liste = this.palanquees().map((p, i) => i !== indexPalanquee ? p : {
       ...p, membres: p.membres.map((m, j) => j !== indexMembre ? m : choisi)
     });

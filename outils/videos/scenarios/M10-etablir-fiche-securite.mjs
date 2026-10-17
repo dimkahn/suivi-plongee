@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-17, 6e série, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 7e série, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -31,8 +31,9 @@ export default {
     await saisir('#securiteSurface', 'Maître-nageur au bord, trousse de secours au poste.');
     await saisir('#planSecours', 'SAMU (15), DAE à l\'accueil de la piscine.');
 
+    // La première palanquée, par son rang : son titre devient le nom de son encadrant.
     const palanquee = page.locator('section.carte')
-      .filter({ has: page.getByRole('heading', { name: 'Palanquée 1', exact: true }) });
+      .filter({ has: page.getByRole('heading', { name: /^Palanquée/ }) }).first();
     await palanquee.scrollIntoViewIfNeeded();
     await legende('Puis les palanquées : une est prête, « + Palanquée » en ajoute d\'autres.', 0);
     await saisir(palanquee.getByLabel('Profondeur prévue (m)'), '6');
@@ -45,13 +46,25 @@ export default {
     await legende('Flora encadre : l\'appli demande sa fonction dans la palanquée.', 0);
     await pause(1200);
     await toucher(page.locator('dialog[open] .choix-fonction').getByRole('button', { name: 'Encadrant', exact: true }),
-      { apres: 1200 });
+      { apres: 600 });
+    await legende('La palanquée porte maintenant le nom de Flora, qui l\'encadre.', 0);
+    await palanquee.getByRole('heading', { name: /^Palanquée de Flora/ }).scrollIntoViewIfNeeded();
+    await pause(2200);
     await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
     await toucher(palanquee.locator('.details-plongeur summary').last(), { apres: 1800 });
     await vignette();
     await legende('Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.', 0);
     await toucher(palanquee.getByRole('button', { name: /^Déplacer/ }).first(), { apres: 2500 });
     await toucher(page.locator('.barre-placement').getByRole('button', { name: 'Annuler' }), { apres: 800 });
+
+    await legende('Une autre palanquée : « + Palanquée », dans le bouton rond.', 0);
+    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });
+    await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: '+ Palanquée' }), { apres: 900 });
+    await legende('On donne d\'abord sa profondeur et sa durée prévues.', 0);
+    await saisir('#nouvelle-profondeur', '20');
+    await saisir('#nouvelle-duree', '40');
+    await legende('Un plongeur dont l\'aptitude ne permet pas cette profondeur y sera refusé.', 0);
+    await toucher(page.getByRole('button', { name: 'Créer la palanquée' }), { apres: 1500 });
 
     await legende('Les mêmes palanquées qu\'à une autre plongée ? « Reprendre une palanquée d\'une autre séance ».', 0);
     await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });

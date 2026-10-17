@@ -226,21 +226,25 @@ Compte : `e2@club.fr` · format téléphone · 85 s
 6. Puis les palanquées : une est prête, « + Palanquée » en ajoute d'autres.
 7. Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.
 8. Flora encadre : l'appli demande sa fonction dans la palanquée.
-9. Gaz, désaturation, observations : rangés sous « Détails », ouverts d'un geste.
-10. Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.
-11. Les mêmes palanquées qu'à une autre plongée ? « Reprendre une palanquée d'une autre séance ».
-12. On cherche la séance par sa date ou son lieu, puis on coche les palanquées à recopier.
-13. Plongeurs et profil prévu arrivent à la suite ; ce qui a été plongé ce jour-là, non.
-14. En bas, toujours visible : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
-15. Tous les boutons de la fiche sont dans le bouton rond, en bas à gauche.
-16. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
-17. Le même bouton propose « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.
-18. Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».
-19. Son directeur de plongée, son n° de plongée (déjà le suivant)…
-20. … et une info pour distinguer les deux séances.
-21. Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.
-22. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
-23. Au retour de plongée, on la complète : c'est la vidéo suivante.
+9. La palanquée porte maintenant le nom de Flora, qui l'encadre.
+10. Gaz, désaturation, observations : rangés sous « Détails », ouverts d'un geste.
+11. Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.
+12. Une autre palanquée : « + Palanquée », dans le bouton rond.
+13. On donne d'abord sa profondeur et sa durée prévues.
+14. Un plongeur dont l'aptitude ne permet pas cette profondeur y sera refusé.
+15. Les mêmes palanquées qu'à une autre plongée ? « Reprendre une palanquée d'une autre séance ».
+16. On cherche la séance par sa date ou son lieu, puis on coche les palanquées à recopier.
+17. Plongeurs et profil prévu arrivent à la suite ; ce qui a été plongé ce jour-là, non.
+18. En bas, toujours visible : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
+19. Tous les boutons de la fiche sont dans le bouton rond, en bas à gauche.
+20. Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.
+21. Le même bouton propose « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.
+22. Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».
+23. Son directeur de plongée, son n° de plongée (déjà le suivant)…
+24. … et une info pour distinguer les deux séances.
+25. Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.
+26. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
+27. Au retour de plongée, on la complète : c'est la vidéo suivante.
 
 ### M11 — Compléter la fiche après la plongée
 

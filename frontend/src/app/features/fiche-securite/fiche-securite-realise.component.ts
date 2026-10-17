@@ -7,6 +7,7 @@ import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { nomPalanquee } from '../../core/fiche-securite';
 import { telechargerFichier } from '../../core/telecharger';
 
 /**
@@ -70,7 +71,7 @@ import { telechargerFichier } from '../../core/telecharger';
         <section class="carte panneau"
                  [class.palanquee-attention]="statutPalanquee(p) === 'attention'"
                  [class.palanquee-urgence]="statutPalanquee(p) === 'urgence'">
-          <h3>Palanquée {{ p.numero }}</h3>
+          <h3>{{ nomPalanquee(p) }}</h3>
           <p class="membres">
             @for (m of p.membres; track m; let last = $last) {
               <span [class.correspondance]="estCorrespondance(m)">{{ m.prenom }} {{ m.nom }}</span>{{ last ? '' : ', ' }}
@@ -201,6 +202,7 @@ import { telechargerFichier } from '../../core/telecharger';
 })
 export class FicheSecuriteRealiseComponent {
   readonly lieuEtSite = lieuEtSite;
+  readonly nomPalanquee = nomPalanquee;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);

@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-17, 14e série, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 15e série, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -22,8 +22,9 @@ export default {
 
     await legende('Pendant la plongée, « Marquer l\'immersion » puis « Marquer la sortie » notent l\'heure.', 4500);
     await legende('Après coup, on saisit ce qui a été réalisé.', 0);
+    // Une palanquée porte le nom de son encadrant (« Palanquée de … ») : on la prend par son rang.
     const palanquee = n => page.locator('section.carte')
-      .filter({ has: page.getByRole('heading', { name: `Palanquée ${n}`, exact: true }) });
+      .filter({ has: page.getByRole('heading', { name: /^Palanquée/ }) }).nth(n - 1);
     const p1 = palanquee(1);
     await saisir(p1.getByLabel('Profondeur réalisée (m)'), '28');
     await saisir(p1.getByLabel('Durée réalisée (min)'), '29');

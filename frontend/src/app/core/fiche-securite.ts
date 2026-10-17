@@ -55,14 +55,16 @@ export function palanqueesAEnregistrer(palanquees: PalanqueeVue[]): { palanquees
  * la retire s'il le veut.
  */
 export function deplacerPlongeur(palanquees: PalanqueeVue[], source: number, membre: number,
-                                 cible: number | null): PalanqueeVue[] {
+                                 cible: number | null,
+                                 profil?: { profondeurPrevue: number | null; dureePrevue: number | null }): PalanqueeVue[] {
   const plongeur = palanquees[source].membres[membre];
   const liste = palanquees.map((p, i) =>
     i === source ? { ...p, membres: p.membres.filter((_, j) => j !== membre) } : p);
   if (cible === null) {
     const numero = Math.max(0, ...palanquees.map(p => p.numero)) + 1;
     return [...liste, {
-      numero, profondeurPrevue: null, dureePrevue: null, profondeurRealisee: null, dureeRealisee: null,
+      numero, profondeurPrevue: profil?.profondeurPrevue ?? null, dureePrevue: profil?.dureePrevue ?? null,
+      profondeurRealisee: null, dureeRealisee: null,
       paliers: null, heureImmersion: null, heureSortie: null, membres: [plongeur]
     }];
   }
@@ -102,6 +104,76 @@ export const APTITUDE_ENCADRANT = /(^|[^P])E[1-4]|MF[12]|GP|N[45]/i;
  */
 export function estEncadrantPossible(m: { utilisateurId: number | null; aptitude: string | null }): boolean {
   return m.utilisateurId !== null || APTITUDE_ENCADRANT.test(m.aptitude ?? '');
+}
+
+/**
+ * Profondeur encadrée et en autonomie de chaque code d'aptitude, comme
+ * AptitudePlongeur côté serveur (proposition des palanquées) : N1 = PE20,
+ * N2 = PE40 + PA20, N3 = PE60 + PA60, N4/N5/GP 60 m, E1 au moins N2.
+ */
+const PREROGATIVES: Record<string, [encadree: number | null, autonome: number | null]> = {
+  PE12: [12, null], PE20: [20, null], N1: [20, null], PE40: [40, null], PE60: [60, null],
+  PA20: [null, 20], PA40: [null, 40], PA60: [null, 60],
+  N2: [40, 20], E1: [40, 20], N3: [60, 60], N4: [60, 60], N5: [60, 60], GP: [60, 60],
+  E2: [60, 60], E3: [60, 60], E4: [60, 60], MF1: [60, 60], MF2: [60, 60]
+};
+
+const CODES_APTITUDE = /PA20|PA40|PA60|PE12|PE20|PE40|PE60|MF1|MF2|GP|E[1-4]|N[1-5]|NIVEAU ?[1-5]/g;
+
+/** La plus grande des profondeurs du texte libre (encadrée seulement si `autonomie` est faux) ; null si aucun code. */
+function profondeurDuTexte(texte: string | null, autonomie: boolean): number | null {
+  const codes = (texte ?? '').toUpperCase().match(CODES_APTITUDE) ?? [];
+  const profondeurs = codes
+    .flatMap(c => {
+      const [encadree, autonome] = PREROGATIVES[c.replace(/NIVEAU ?/, 'N')] ?? [null, null];
+      return autonomie ? [encadree, autonome] : [encadree];
+    })
+    .filter((p): p is number => p !== null);
+  return profondeurs.length > 0 ? Math.max(...profondeurs) : null;
+}
+
+/**
+ * Jusqu'où le plongeur peut descendre : la plus étendue de ses prérogatives,
+ * encadré ou autonome, et pour un élève en formation la profondeur encadrée
+ * du niveau qu'il prépare. Null si rien n'est reconnu : on ne devine jamais.
+ */
+export function profondeurPermise(m: { aptitude: string | null; qualificationPreparee: string | null }): number | null {
+  const permises = [profondeurDuTexte(m.aptitude, true), profondeurDuTexte(m.qualificationPreparee, false)]
+    .filter((p): p is number => p !== null);
+  return permises.length > 0 ? Math.max(...permises) : null;
+}
+
+/**
+ * Raison de refuser l'ajout du plongeur à la palanquée : son aptitude ne
+ * permet pas la profondeur prévue. Null si l'ajout est permis, ou si on ne
+ * peut pas en juger (pas de profondeur prévue, aptitude non reconnue).
+ */
+export function refusAjout(p: PalanqueeVue, m: PlongeurVue): string | null {
+  const max = profondeurPermise(m);
+  if (!p.profondeurPrevue || max === null || p.profondeurPrevue <= max) return null;
+  const nom = `${m.prenom} ${m.nom}`.trim() || 'Ce plongeur';
+  return `Ajout refusé : ${nom}${m.aptitude ? ' (' + m.aptitude + ')' : ''} a une aptitude limitée à ${max} m, `
+    + `${nomPalanquee(p).replace(/^Palanquée/, 'la palanquée')} est prévue à ${p.profondeurPrevue} m.`;
+}
+
+/**
+ * « Palanquée de Flora DUPONT » : une palanquée se reconnaît à son encadrant
+ * (à défaut, son guide de palanquée). Sans l'un ni l'autre (autonomes,
+ * palanquée neuve), elle garde son numéro.
+ */
+export function nomPalanquee(p: PalanqueeVue): string {
+  for (const fonction of ['ENCADRANT', 'GUIDE_PALANQUEE']) {
+    const chef = p.membres.find(m => m.fonction === fonction && (rempli(m.prenom) || rempli(m.nom)));
+    if (chef) return `Palanquée de ${`${chef.prenom.trim()} ${chef.nom.trim()}`.trim()}`;
+  }
+  return `Palanquée ${p.numero}`;
+}
+
+/** Une nouvelle palanquée se crée avec sa profondeur et sa durée prévues. */
+export function erreurProfilPrevu(profondeur: number | null, duree: number | null): string | null {
+  if (!profondeur || profondeur <= 0) return 'Indiquez la profondeur prévue.';
+  if (!duree || duree <= 0) return 'Indiquez la durée prévue.';
+  return null;
 }
 
 /** « 3 plongeurs · 20 m · 40 min » : de quoi relire une palanquée d'un coup d'œil. */
