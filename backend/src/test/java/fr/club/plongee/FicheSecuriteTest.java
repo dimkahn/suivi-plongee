@@ -323,7 +323,100 @@ class FicheSecuriteTest {
     }
 
     @Test
-    @DisplayName("Les fiches de sécurité d'une journée s'impriment d'un coup, une par page")
+    @DisplayName("Deux plongées du jour au même lieu s'impriment sur une feuille : une colonne par encadrant, la case dit le tour")
+    void deuxToursSurUneFeuille() throws Exception {
+        String moniteur = jeton("e2@club.fr");
+        String jour = "2026-06-24";
+        long[] seances = deuxPlongeesDuJour(jour);
+
+        // L'Excel de la 2e plongée porte aussi la 1re, sur la même feuille.
+        byte[] excel = mvc.perform(get("/api/seances/" + seances[1] + "/fiche-securite/fiche.xlsx")
+                        .header("Authorization", moniteur))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (var classeur = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(excel))) {
+            var feuille = classeur.getSheetAt(0);
+            var texte = new org.apache.poi.ss.usermodel.DataFormatter();
+            int colonneHubert = -1;
+            int ligneSeixas = -1;
+            StringBuilder tout = new StringBuilder();
+            for (var row : feuille) {
+                for (var cell : row) {
+                    String v = texte.formatCellValue(cell);
+                    tout.append(v).append('|');
+                    if (v.equals("Hubert Gérard")) colonneHubert = cell.getColumnIndex();
+                    if (v.equals("Seixas")) ligneSeixas = row.getRowNum();
+                }
+            }
+            assertThat(colonneHubert).isPositive();
+            assertThat(texte.formatCellValue(feuille.getRow(ligneSeixas).getCell(colonneHubert))).isEqualTo("1-2");
+            assertThat(tout).contains("Rocher du Diamant", "Anse Noire", "Sainte-Luce");
+            assertThat(feuille.getPrintSetup().getLandscape()).isFalse();
+        }
+
+        // Le PDF du jour : une page pour les deux plongées.
+        byte[] pdf = mvc.perform(get("/api/seances/fiches-securite.pdf?date=" + jour).header("Authorization", moniteur))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            assertThat(document.getNumberOfPages()).isEqualTo(1);
+            // Le PDF redessine l'Excel : mêmes textes (profondeurs en nombres, sans unité). Les noms
+            // d'encadrants sont tournés à 45° : l'extraction de texte ne les lit pas d'un bloc.
+            assertThat(new org.apache.pdfbox.text.PDFTextStripper().getText(document))
+                    .contains("Rocher du Diamant", "Anse Noire", "Seixas", "1-2", "explo", "Prof prévue 2e T");
+        }
+    }
+
+    @Test
+    @DisplayName("Sans regrouper, chaque plongée du jour a sa feuille, sans Lieu 2 ni 2e tour")
+    void uneFeuilleParPlongeeSansRegrouper() throws Exception {
+        String moniteur = jeton("e2@club.fr");
+        String jour = "2026-06-25";
+        long[] seances = deuxPlongeesDuJour(jour);
+
+        byte[] excel = mvc.perform(get("/api/seances/" + seances[1] + "/fiche-securite/fiche.xlsx?regrouper=false")
+                        .header("Authorization", moniteur))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (var classeur = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(excel))) {
+            StringBuilder tout = new StringBuilder();
+            var texte = new org.apache.poi.ss.usermodel.DataFormatter();
+            for (var row : classeur.getSheetAt(0)) for (var cell : row) tout.append(texte.formatCellValue(cell)).append('|');
+            assertThat(tout).contains("Lieu : Anse Noire").doesNotContain("Rocher du Diamant").doesNotContain("1-2");
+            // Une seule plongée : ni Lieu 2 ni lignes du 2e tour.
+            assertThat(tout).doesNotContain("Lieu 2", "Lieu 1", "2e T", "2e tour");
+        }
+
+        byte[] pdf = mvc.perform(get("/api/seances/fiches-securite.pdf?regrouper=false&date=" + jour)
+                        .header("Authorization", moniteur))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            assertThat(document.getNumberOfPages()).isEqualTo(2);
+        }
+    }
+
+    /** Deux plongées le même jour à Sainte-Luce, chacune avec sa fiche : Hubert guide Seixas aux deux. */
+    private long[] deuxPlongeesDuJour(String jour) throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long dpId = moniteurId(admin, "e3@club.fr");
+        long[] seances = new long[2];
+        String[] sites = {"Rocher du Diamant", "Anse Noire"};
+        for (int t = 0; t < 2; t++) {
+            seances[t] = json.readTree(mvc.perform(post("/api/seances").header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("""
+                                    {"dateSeance":"%s","ordre":%d,"milieu":"NATUREL","lieu":"Sainte-Luce","site":"%s","profondeurMax":20}
+                                    """.formatted(jour, t + 1, sites[t])))
+                    .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString()).get("id").asLong();
+            mvc.perform(put("/api/seances/" + seances[t] + "/fiche-securite").header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("""
+                                    {"dpId":%d,"palanquees":[{"numero":1,"profondeurPrevue":%d,"dureePrevue":40,"membres":[
+                                      {"nom":"Hubert","prenom":"Gérard","aptitude":"E3","fonction":"GUIDE_PALANQUEE"},
+                                      {"nom":"Seixas","prenom":"Justo","aptitude":"N1"}]}]}"""
+                                    .formatted(dpId, 20 - 2 * t)))
+                    .andExpect(status().isOk());
+        }
+        return seances;
+    }
+
+    @Test
+    @DisplayName("Les fiches de sécurité d'une journée s'impriment d'un coup, deux plongées du même lieu par page")
     void fichesDuJourDansUnSeulPdf() throws Exception {
         String admin = jeton("presidente@club.fr");
         String moniteur = jeton("e1@club.fr");
@@ -336,8 +429,8 @@ class FicheSecuriteTest {
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("Aucune fiche de sécurité")));
 
-        // Trois plongées ce jour-là, deux avec leur fiche : la troisième est sautée.
-        for (int ordre = 1; ordre <= 3; ordre++) {
+        // Quatre plongées ce jour-là, trois avec leur fiche : la quatrième est sautée.
+        for (int ordre = 1; ordre <= 4; ordre++) {
             String reponse = mvc.perform(post("/api/seances").header("Authorization", admin)
                             .contentType(MediaType.APPLICATION_JSON).content("""
                                     {"dateSeance":"%s","ordre":%d,"milieu":"NATUREL","lieu":"Lac","profondeurMax":20}
@@ -345,7 +438,7 @@ class FicheSecuriteTest {
                     .andExpect(status().isCreated())
                     .andReturn().getResponse().getContentAsString();
             long seance = json.readTree(reponse).get("id").asLong();
-            if (ordre < 3) {
+            if (ordre < 4) {
                 mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
                                 .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
                         .andExpect(status().isOk());
@@ -358,6 +451,7 @@ class FicheSecuriteTest {
                 .andExpect(header().string("Content-Disposition",
                         org.hamcrest.Matchers.containsString("fiches-securite-" + jour + ".pdf")))
                 .andReturn().getResponse().getContentAsByteArray();
+        // Les 1re et 2e plongées au même lieu partagent une page, la 3e a la sienne.
         try (PDDocument document = Loader.loadPDF(pdf)) {
             assertThat(document.getNumberOfPages()).isEqualTo(2);
         }

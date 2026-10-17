@@ -119,11 +119,14 @@ public class SeanceController {
                 .toList();
     }
 
-    /** Toutes les fiches de sécurité d'une journée dans un seul PDF, une par page, pour les imprimer d'un coup. */
+    /**
+     * Toutes les fiches de sécurité d'une journée dans un seul PDF, pour les
+     * imprimer d'un coup ; {@code regrouper} : deux plongées du même lieu par page.
+     */
     @GetMapping(value = "/fiches-securite.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
-    public ResponseEntity<byte[]> fichesSecuriteDuJourPdf(@RequestParam LocalDate date) {
-        FicheSecuritePdfService.FichePdf pdf = ficheSecuriteService.genererPdfJour(date);
+    public ResponseEntity<byte[]> fichesSecuriteDuJourPdf(@RequestParam LocalDate date, @RequestParam(defaultValue = "true") boolean regrouper) {
+        FicheSecuritePdfService.FichePdf pdf = ficheSecuriteService.genererPdfJour(date, regrouper);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.nomFichier() + "\"")
                 .body(pdf.contenu());

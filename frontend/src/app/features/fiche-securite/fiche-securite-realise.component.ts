@@ -115,6 +115,10 @@ import { lieuEtSite } from '../../core/seance-lieu';
         <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
           {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
         </button>
+        <label class="case">
+          <input type="checkbox" id="regrouper-export" [checked]="regrouper()" (change)="regrouper.set(!regrouper())">
+          Regrouper les 2 plongées du jour sur une feuille
+        </label>
         <button type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
           {{ exportEnCours() ? 'Génération…' : 'Télécharger le PDF' }}
         </button>
@@ -187,6 +191,8 @@ export class FicheSecuriteRealiseComponent {
   envoiRealise = signal(false);
   exportEnCours = signal(false);
   exportExcelEnCours = signal(false);
+  /** Deux plongées du même jour au même lieu sur une feuille (1er et 2e tour), sinon une feuille par plongée. */
+  regrouper = signal(true);
   exportSortieEnCours = signal(false);
 
   ficheEtablie = signal(false);
@@ -309,7 +315,7 @@ export class FicheSecuriteRealiseComponent {
 
   telechargerPdf(): void {
     this.exportEnCours.set(true);
-    this.api.ficheSecuritePdf(this.seanceId).subscribe({
+    this.api.ficheSecuritePdf(this.seanceId, this.regrouper()).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const lien = document.createElement('a');
@@ -326,10 +332,10 @@ export class FicheSecuriteRealiseComponent {
     });
   }
 
-  /** Les fiches de toutes les plongées du séjour, une par page, pour les imprimer d'un coup. */
+  /** Les fiches de toutes les plongées du séjour, pour les imprimer d'un coup. */
   telechargerPdfSortie(sortieId: number): void {
     this.exportSortieEnCours.set(true);
-    this.api.fichesSecuriteSortiePdf(sortieId).subscribe({
+    this.api.fichesSecuriteSortiePdf(sortieId, this.regrouper()).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const lien = document.createElement('a');
@@ -348,7 +354,7 @@ export class FicheSecuriteRealiseComponent {
 
   telechargerExcel(): void {
     this.exportExcelEnCours.set(true);
-    this.api.ficheSecuriteExcel(this.seanceId).subscribe({
+    this.api.ficheSecuriteExcel(this.seanceId, this.regrouper()).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const lien = document.createElement('a');

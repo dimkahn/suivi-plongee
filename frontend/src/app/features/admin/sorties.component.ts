@@ -82,6 +82,12 @@ function sortieVide(): DemandeSortie {
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>{{ recentes() ? 'Aucune sortie à venir.' : 'Aucune sortie enregistrée.' }}</p></div>
     } @else {
+      @if (aDesPlongees()) {
+        <label class="case">
+          <input type="checkbox" id="regrouper-sorties" [checked]="regrouper()" (change)="regrouper.set(!regrouper())">
+          Imprimer les fiches de sécurité en regroupant les 2 plongées du jour sur une feuille
+        </label>
+      }
       <ul class="sorties">
         @for (s of liste(); track s.id) {
           <li class="carte">
@@ -280,6 +286,9 @@ export class SortiesComponent {
   plongees = { parJour: 2, site: '', profondeurMax: null as number | null };
   /** Sortie dont le PDF des fiches de sécurité est en cours de génération. */
   impression = signal<number | null>(null);
+  /** Fiches imprimées : deux plongées du même jour au même lieu sur une feuille (1er et 2e tour), sinon une par plongée. */
+  regrouper = signal(true);
+  aDesPlongees = computed(() => this.liste().some(s => s.nombrePlongees > 0));
 
   constructor() {
     void this.charger();
@@ -436,11 +445,11 @@ export class SortiesComponent {
     });
   }
 
-  /** Les fiches de sécurité de toutes les plongées de la sortie, une par page, dans un seul PDF. */
+  /** Les fiches de sécurité de toutes les plongées de la sortie dans un seul PDF, regroupées ou non par deux. */
   imprimerFiches(s: SortieVue): void {
     this.impression.set(s.id);
     this.message.set(null);
-    this.api.fichesSecuriteSortiePdf(s.id).subscribe({
+    this.api.fichesSecuriteSortiePdf(s.id, this.regrouper()).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
         const lien = document.createElement('a');

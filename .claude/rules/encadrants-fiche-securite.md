@@ -46,6 +46,12 @@ paths:
 - **En fin de séjour, `EnvoiParametresSejourService` envoie à chacun les seules plongées de la sortie où il figure**, lues sur les fiches de sécurité.
 - **Écran** : une ligne par membre, ajout en tête depuis les plongeurs connus.
 
+### Fiche imprimée (PDF et Excel)
+- **Le modèle papier du club : deux plongées du même jour au même lieu sur une page A4 portrait** (1er et 2e tour, sans exiger de liaison), une colonne par encadrant puis « Autonomes », la case du plongeur dit le tour (« 1-2 »). Calcul pur `FeuilleSecurite`, partagé par `FicheSecuritePdfService` et `FicheSecuriteExcelService`. *Pourquoi :* modèle du club, 2026.
+- **La fiche d'une plongée s'imprime avec l'autre plongée de sa feuille** (`FicheSecuriteService.feuilleDe`) ; journée et sortie : deux plongées par page.
+- **Le PDF est la feuille Excel redessinée** (`ClasseurHtml`) : toute retouche de mise en page se fait dans `FicheSecuriteExcelService`, jamais dans le PDF.
+- **Le regroupement se choisit à l'impression** : case cochée par défaut, paramètre `regrouper` des exports ; décochée, une feuille par plongée. *Pourquoi :* demande du club, 2026.
+
 ### Séances liées
 - **Des séances du même jour peuvent être liées depuis la fiche de sécurité** (V43, `LiaisonSeances`) : deux bateaux se partagent un groupe.
 - **Chaque fiche ne propose que les plongeurs absents des palanquées des fiches liées.**
@@ -58,6 +64,8 @@ paths:
 - Ne pas laisser un moniteur sans droit établir une fiche ; le rôle `FICHE_SECURITE` ne qualifie pas comme DP.
 - Ne pas faire enregistrer quoi que ce soit par la proposition de palanquées, ni dépasser l'aptitude d'un plongeur.
 - Ne pas confondre `GroupePlongeurs` et groupes d'entraînement.
+- Ne pas revenir à une page par plongée ni aux palanquées numérotées sur la fiche imprimée.
+- Ne pas redonner au PDF de la fiche une mise en page propre : il redessine l'Excel.
 - Ne pas laisser un ADMIN ou un encadrant non organisateur modifier un groupe de plongeurs.
 
 ## Repères
@@ -70,6 +78,7 @@ paths:
 - `GroupePlongeurs` (V13), `groupe_plongeurs.createur_id`, `groupe_plongeurs_organisateur`, `DroitsGroupePlongeurs` (V81) : groupes et leurs droits.
 - `EnvoiParametresSejourService` : envoi des paramètres de fin de séjour.
 - `LiaisonSeances` (V43), `FicheSecuriteVue.seancesLiees` : séances liées.
+- `FeuilleSecurite`, `FicheSecuriteExcelService`, `ClasseurHtml`, `FicheSecuritePdfService` : fiche imprimée (test `FeuilleSecuriteTest`, `FicheSecuriteTest.deuxToursSurUneFeuille`).
 - Endpoints : `POST /api/seances/{id}/fiche-securite/proposition`, `PUT …/fiche-securite/realise`, `PUT …/organisateurs`.
 - Annotations : `@PreAuthorize`.
 - Démo : `e2@club.fr` a le rôle `FICHE_SECURITE`, `surface@club.fr` est un compte sécurité surface (V116).

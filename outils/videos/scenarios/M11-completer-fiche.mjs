@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-17, 13e série, fiche imprimée sur le modèle du club (deux tours) (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -37,7 +37,7 @@ export default {
     await saisir(p2.getByLabel('Paliers'), '3 min à 3 m');
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer les paramètres réalisés' }), { apres: 2000 });
-    await legende('La fiche est complète. Elle s\'exporte en PDF ou en tableur pour les archives du club.', 4500);
+    await legende('La fiche est complète. Elle s\'exporte en PDF ou en tableur, sur le modèle du club : les deux plongées du jour sur une page, une colonne par encadrant.', 5500);
     await legende('Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n\'est pas moniteur.', 4500);
     await legende(null, 0);
     await pause(500);

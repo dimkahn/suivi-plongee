@@ -242,7 +242,7 @@ Compte : `e2@club.fr` · format téléphone · 36 s
 1. Dimanche, à la gravière : la fiche a été établie avant la plongée.
 2. Pendant la plongée, « Marquer l'immersion » puis « Marquer la sortie » notent l'heure.
 3. Après coup, on saisit ce qui a été réalisé.
-4. La fiche est complète. Elle s'exporte en PDF ou en tableur pour les archives du club.
+4. La fiche est complète. Elle s'exporte en PDF ou en tableur, sur le modèle du club : les deux plongées du jour sur une page, une colonne par encadrant.
 5. Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n'est pas moniteur.
 
 ### M12 — Groupes de plongeurs pour un séjour
@@ -664,7 +664,8 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 1. Ses plongées : deux par jour, sur le site prévu.
 2. Elles sont créées et rattachées à la sortie, en un geste.
 3. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
-4. « Gérer le séjour » : vols, voitures, chambres, repas et programme. Celui qui crée la sortie en est le créateur : lui seul le modifie, avec les organisateurs qu'il désigne. Voir la vidéo A17.
+4. « Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée en décochant la case.
+5. « Gérer le séjour » : vols, voitures, chambres, repas et programme. Celui qui crée la sortie en est le créateur : lui seul le modifie, avec les organisateurs qu'il désigne. Voir la vidéo A17.
 
 ### A16 — La base d'exercices
 

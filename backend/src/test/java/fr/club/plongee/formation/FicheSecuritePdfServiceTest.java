@@ -19,15 +19,15 @@ import java.time.LocalTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * La fiche de sécurité doit tenir sur une seule page A4 paysage, comme le
- * modèle papier : 15 lignes de plongeurs et 7 palanquées au minimum, même
- * quand chaque plongeur porte un niveau et une qualification préparée
- * (deux lignes dans la colonne Niveau) et que les conditions sont remplies.
+ * La fiche de sécurité doit tenir sur une seule page A4 portrait, comme le
+ * modèle papier du club : deux tours, 15 plongeurs et 8 encadrants, même
+ * quand chaque plongeur porte une qualification préparée et des
+ * observations.
  */
 class FicheSecuritePdfServiceTest {
 
     /** Identité d'origine, sans base : nom par défaut et logo embarqué. */
-    private final FicheSecuritePdfService service = new FicheSecuritePdfService(
+    private final FicheSecuritePdfService service = new FicheSecuritePdfService(new fr.club.plongee.formation.service.FicheSecuriteExcelService(
             new IdentiteStructureService(null, "Club de plongée") {
                 @Override
                 public String nom() {
@@ -38,13 +38,11 @@ class FicheSecuritePdfServiceTest {
                 public byte[] logoPng() {
                     return logoOrigine();
                 }
-            });
+            }));
 
     @Test
-    void une_fiche_pleine_tient_sur_une_page() throws IOException {
-        FicheSecurite fiche = fiche(15, 7);
-
-        byte[] pdf = service.generer(fiche).contenu();
+    void une_feuille_pleine_tient_sur_une_page() throws IOException {
+        byte[] pdf = service.generer(java.util.List.of(fiche(23, 8), fiche(23, 8))).contenu();
 
         try (PDDocument document = Loader.loadPDF(pdf)) {
             assertThat(document.getNumberOfPages()).isEqualTo(1);
@@ -53,7 +51,7 @@ class FicheSecuritePdfServiceTest {
 
     @Test
     void une_fiche_presque_vide_tient_sur_une_page() throws IOException {
-        byte[] pdf = service.generer(fiche(1, 1)).contenu();
+        byte[] pdf = service.generer(java.util.List.of(fiche(1, 1))).contenu();
 
         try (PDDocument document = Loader.loadPDF(pdf)) {
             assertThat(document.getNumberOfPages()).isEqualTo(1);
@@ -94,8 +92,9 @@ class FicheSecuritePdfServiceTest {
             MembrePalanquee m = new MembrePalanquee();
             m.setNom("Plongeur" + i);
             m.setPrenom("Prénom" + i);
-            m.setAptitude(i % 5 == 0 ? "E3" : "N1");
-            m.setQualificationPreparee(i % 5 == 0 ? null : "PA20");
+            m.setAptitude(i < nbPalanquees ? "E3" : "N1");
+            if (i < nbPalanquees) m.setFonction(fr.club.plongee.formation.domain.FonctionPalanquee.GUIDE_PALANQUEE);
+            m.setQualificationPreparee(i < nbPalanquees ? null : "N2");
             m.setAptitudeDonneeParDp("PE20");
             m.setObservations(i % 3 == 0 ? "Première plongée en milieu naturel après délivrance du N1." : null);
             Palanquee p = fiche.getPalanquees().get(i % nbPalanquees);
