@@ -350,7 +350,7 @@ class FicheSecuriteTest {
             assertThat(colonneHubert).isPositive();
             assertThat(texte.formatCellValue(feuille.getRow(ligneSeixas).getCell(colonneHubert))).isEqualTo("1-2");
             assertThat(tout).contains("Rocher du Diamant", "Anse Noire", "Sainte-Luce");
-            assertThat(feuille.getPrintSetup().getLandscape()).isFalse();
+            assertThat(feuille.getPrintSetup().getLandscape()).isTrue();
         }
 
         // Le PDF du jour : une page pour les deux plongées.

@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 /**
  * Export Excel de la fiche de sécurité, même feuille que {@link
- * FicheSecuritePdfService} (modèle papier du club « Martinique 2026 », A4
- * portrait, deux plongées du jour, une colonne par encadrant) mais en
+ * FicheSecuritePdfService} (modèle papier du club « Martinique 2026 », passé
+ * en A4 paysage, deux plongées du jour, une colonne par encadrant) mais en
  * tableur : pour la compléter à la main au bord de l'eau ou reprendre les
  * paramètres d'un séjour sans ressaisie. Profondeurs et durées sont des
  * nombres (m, min).
@@ -84,19 +84,20 @@ public class FicheSecuriteExcelService {
             // Une seule plongée : une seule ligne de lieu, et pas de 2e tour plus bas.
             boolean deuxTours = f.tours().size() == FeuilleSecurite.NB_TOURS;
             int derniereLigneLieux = deuxTours ? 2 : 1;
-            Row r0 = ligne(feuille, 0, 52);
+            // Hauteurs et largeurs pour une page en paysage : des lignes basses, des colonnes larges.
+            Row r0 = ligne(feuille, 0, 40);
             cellule(r0, 0, "DATE :\n" + premiere.getDateSeance().format(DATE), st.etiquette);
             fusion(feuille, 0, 0, 1, 4, "Site : " + texte(premiere.getLieu()), st.etiquette);
             fusion(feuille, 0, 0, NB_COLONNES_FIXES, obs, "FICHE DE SÉCURITÉ\n" + identite.nom(), st.titre);
             if (deuxTours) {
-                ligne(feuille, 1, 40);
-                ligne(feuille, 2, 40);
+                ligne(feuille, 1, 28);
+                ligne(feuille, 2, 28);
                 fusion(feuille, 1, 1, 1, 2, "Lieu 1 : " + lieu(f, 0), st.etiquette);
                 fusion(feuille, 1, 1, 3, 4, "heure prévue :", st.etiquette);
                 fusion(feuille, 2, 2, 1, 2, "Lieu 2 : " + lieu(f, 1), st.etiquette);
                 fusion(feuille, 2, 2, 3, 4, "heure prévue :", st.etiquette);
             } else {
-                ligne(feuille, 1, 80);
+                ligne(feuille, 1, 56);
                 fusion(feuille, 1, 1, 1, 2, "Lieu : " + lieu(f, 0), st.etiquette);
                 fusion(feuille, 1, 1, 3, 4, "heure prévue :", st.etiquette);
             }
@@ -105,7 +106,7 @@ public class FicheSecuriteExcelService {
                     "Directeur de Plongée : " + f.directeursDePlongee() + "\n\nsignature", st.etiquetteCentree);
 
             // Libellés des colonnes, tournés à 45° ; les encadrants sur fond jaune.
-            Row entetes = ligne(feuille, derniereLigneLieux + 1, 120);
+            Row entetes = ligne(feuille, derniereLigneLieux + 1, 95);
             cellule(entetes, 0, "", st.cadre);
             cellule(entetes, 1, "Nom", st.nomColonne);
             cellule(entetes, 2, "Prénom", st.prenomColonne);
@@ -131,7 +132,7 @@ public class FicheSecuriteExcelService {
             int ligne = derniereLigneLieux + 3;
             for (int i = 0; i < f.nbLignesAffichees(); i++) {
                 FeuilleSecurite.Ligne l = i < f.lignes().size() ? f.lignes().get(i) : null;
-                Row row = ligne(feuille, ligne++, 30);
+                Row row = ligne(feuille, ligne++, 20);
                 Cell numero = row.createCell(0);
                 numero.setCellValue(i + 1);
                 numero.setCellStyle(st.numero);
@@ -153,19 +154,19 @@ public class FicheSecuriteExcelService {
             cellule(pied, 0, "Fiche à conserver un an par l'établissement (article A322-72 du Code du sport).", null);
 
             feuille.setColumnWidth(0, 12 * 256);
-            feuille.setColumnWidth(1, 20 * 256);
-            feuille.setColumnWidth(2, 15 * 256);
+            feuille.setColumnWidth(1, 24 * 256);
+            feuille.setColumnWidth(2, 18 * 256);
             feuille.setColumnWidth(3, 7 * 256);
             feuille.setColumnWidth(4, 9 * 256);
             for (int c = 0; c < colonnes.size(); c++) {
                 feuille.setColumnWidth(NB_COLONNES_FIXES + c, 8 * 256);
             }
-            feuille.setColumnWidth(obs, 14 * 256);
+            feuille.setColumnWidth(obs, 34 * 256);
             placerLogo(classeur, feuille);
 
-            // Le modèle : A4 portrait, toute la feuille sur une page.
+            // A4 paysage (demande du club, 2026), toute la feuille sur une page.
             feuille.getPrintSetup().setPaperSize(PrintSetup.A4_PAPERSIZE);
-            feuille.getPrintSetup().setLandscape(false);
+            feuille.getPrintSetup().setLandscape(true);
             feuille.setFitToPage(true);
             feuille.getPrintSetup().setFitWidth((short) 1);
             feuille.getPrintSetup().setFitHeight((short) 1);
@@ -187,7 +188,7 @@ public class FicheSecuriteExcelService {
                 new LigneTour("Durée", true, Palanquee::getDureeRealisee));
         int ligne = debut;
         for (LigneTour l : lignes) {
-            Row row = ligne(feuille, ligne, 24);
+            Row row = ligne(feuille, ligne, 16);
             CellStyle fond = !l.gris() ? st.caseBlanche : t == 0 ? st.caseGrise : st.caseGriseFoncee;
             CellStyle fondPair = !l.gris() ? st.caseBleue : t == 0 ? st.caseBleueGrise : st.caseBleueGriseFoncee;
             fusion(feuille, ligne, ligne, 1, 4, l.libelle() + " " + n + " T",
@@ -216,7 +217,7 @@ public class FicheSecuriteExcelService {
     }
 
     /** Côté du logo carré, en pixels : à peu près la hauteur des deux lignes de lieux. */
-    private static final int TAILLE_LOGO_PX = 100;
+    private static final int TAILLE_LOGO_PX = 72;
     private static final int EMU_PAR_PIXEL = 9525;
 
     /** Logo dans la case fusionnée sous la date (colonne A, lignes des lieux), comme le modèle. */

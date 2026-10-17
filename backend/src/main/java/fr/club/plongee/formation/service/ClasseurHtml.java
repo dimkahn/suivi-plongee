@@ -35,7 +35,7 @@ import java.util.Set;
  * largeurs et hauteurs, fusions, polices, couleurs, fonds, bordures,
  * alignements, retours à la ligne, images (le logo). Comme l'impression
  * d'Excel « ajustée à une page », la zone d'impression est réduite d'un même
- * facteur pour tenir sur une page A4 portrait.
+ * facteur pour tenir sur une page A4 paysage.
  * <p>
  * Les cases tournées à 45° sont dessinées comme dans un tableur : un
  * parallélogramme penché (fond et bordures de la case) et le texte en
@@ -44,14 +44,17 @@ import java.util.Set;
  */
 public final class ClasseurHtml {
 
-    /** Surface utile d'une page A4 portrait aux marges de {@link #CSS}, en points. */
-    static final double LARGEUR_PAGE_PT = 549;
-    static final double HAUTEUR_PAGE_PT = 790;
+    /**
+     * Surface utile d'une page A4 paysage aux marges de {@link #CSS}, en points ; la hauteur garde
+     * une réserve pour les bordures, que le moteur PDF ajoute aux hauteurs des lignes.
+     */
+    static final double LARGEUR_PAGE_PT = 795;
+    static final double HAUTEUR_PAGE_PT = 535;
     private static final double EMU_PAR_POINT = 12700;
 
     /** Styles communs aux pages produites par {@link #page}, à mettre dans le {@code <style>} du document. */
     public static final String CSS = """
-            @page { size: A4 portrait; margin: 0.7cm 0.8cm; }
+            @page { size: A4 landscape; margin: 0.7cm 0.8cm; }
             body { margin: 0; }
             table.classeur { border-collapse: collapse; table-layout: fixed; }
             table.classeur td { padding: 0 1.5pt; overflow: visible; }
@@ -115,7 +118,7 @@ public final class ClasseurHtml {
                 if (couvertes.contains(l + ":" + c)) continue;
                 CellRangeAddress fusion = fusions.get(l + ":" + c);
                 XSSFCell cell = row == null ? null : (XSSFCell) row.getCell(c);
-                html.append(cellule(feuille, cell, fusion, l, c, c2, echelle, hauteurs[l - l1] * echelle, formateur,
+                html.append(cellule(feuille, cell, fusion, l, c, echelle, hauteurs[l - l1] * echelle, formateur,
                         images.getOrDefault(l + ":" + c, List.of())));
             }
             html.append("</tr>");
@@ -124,7 +127,7 @@ public final class ClasseurHtml {
     }
 
     private static String cellule(XSSFSheet feuille, XSSFCell cell, CellRangeAddress fusion, int l, int c,
-                                  int derniereColonne, double echelle, double hauteur, DataFormatter formateur, List<String> images) {
+                                  double echelle, double hauteur, DataFormatter formateur, List<String> images) {
         String etendue = fusion == null ? "" : "%s%s".formatted(
                 fusion.getLastColumn() > c ? " colspan=\"%d\"".formatted(fusion.getLastColumn() - c + 1) : "",
                 fusion.getLastRow() > l ? " rowspan=\"%d\"".formatted(fusion.getLastRow() - l + 1) : "");
@@ -149,16 +152,12 @@ public final class ClasseurHtml {
             // Le texte tourne autour de son coin bas gauche et ses lettres montent vers la gauche de la
             // diagonale : il part du milieu du bas de la case, décalé vers la droite d'environ la hauteur
             // de sa ligne inclinée, pour rester au milieu de la bande sans en toucher les bords.
-            // La bande de la dernière colonne sort de la page : son texte part près du coin bas gauche.
-            boolean derniere = dc == derniereColonne;
-            double decalage = style.getFont().getFontHeightInPoints() * echelle * (derniere ? 1.5 : 0.85);
-            String depart = derniere ? "0" : "50%";
+            double decalage = style.getFont().getFontHeightInPoints() * echelle * 0.85;
             return ("<td%s class=\"case-tournee\" style=\"height: %s; border-top: none; border-left: none; border-right: none;"
                     + " border-bottom: %s; vertical-align: bottom\">"
                     + "<div class=\"parallelogramme\" style=\"height: %s; border-left: %s; border-right: %s;%s\"></div>"
-                    + "<span class=\"tourne\" style=\"left: %s; margin-left: %s; bottom: 0; %s\">%s</span></td>")
-                    .formatted(etendue, pt(hauteur), bas, pt(hauteur), gauche, droite, fond, depart, pt(decalage),
-                            police, texte);
+                    + "<span class=\"tourne\" style=\"left: 50%%; margin-left: %s; bottom: 0; %s\">%s</span></td>")
+                    .formatted(etendue, pt(hauteur), bas, pt(hauteur), gauche, droite, fond, pt(decalage), police, texte);
         }
         String alignement = switch (style.getAlignment()) {
             case CENTER, CENTER_SELECTION -> "center";

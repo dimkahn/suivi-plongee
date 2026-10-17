@@ -50,6 +50,18 @@ class FicheSecuritePdfServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.DisplayName("La fiche de sécurité s'imprime sur une page A4 paysage")
+    void laFicheEstEnPaysage() throws IOException {
+        byte[] pdf = service.generer(java.util.List.of(fiche(23, 8), fiche(23, 8))).contenu();
+
+        try (PDDocument document = Loader.loadPDF(pdf)) {
+            var page = document.getPage(0).getMediaBox();
+            assertThat(page.getWidth()).isCloseTo(842f, org.assertj.core.data.Offset.offset(2f));
+            assertThat(page.getHeight()).isCloseTo(595f, org.assertj.core.data.Offset.offset(2f));
+        }
+    }
+
+    @Test
     void une_fiche_presque_vide_tient_sur_une_page() throws IOException {
         byte[] pdf = service.generer(java.util.List.of(fiche(1, 1))).contenu();
 
