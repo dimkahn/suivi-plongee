@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-18, 10e série, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 11e série, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -51,7 +51,11 @@ export default {
     await toucher(fenetre.locator('.choix-fonction').getByRole('button', { name: 'Encadrant', exact: true }),
       { apres: 600 });
     await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
-    await toucher(fenetre.locator('.details-plongeur summary'), { apres: 1800 });
+    await toucher(fenetre.locator('.details-plongeur summary'), { apres: 1200 });
+    await legende('Un nitrox : la fiche calcule sa profondeur maximale d\'utilisation (MOD), à la ppO2 choisie.', 0);
+    await saisir(fenetre.getByLabel('Gaz'), 'Nitrox 32');
+    await pause(1500);
+    await toucher(fenetre.locator('.choix-ppo2').getByRole('button', { name: '1,6' }), { apres: 1800 });
     await toucher(fenetre.getByRole('button', { name: 'OK', exact: true }), { apres: 600 });
     await legende('La palanquée porte maintenant le nom de Flora ; un plongeur par ligne.', 0);
     await palanquee.getByRole('heading', { name: /^Palanquée de Flora/ }).scrollIntoViewIfNeeded();

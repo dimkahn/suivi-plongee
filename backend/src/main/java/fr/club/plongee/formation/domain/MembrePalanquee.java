@@ -3,6 +3,8 @@ package fr.club.plongee.formation.domain;
 import fr.club.plongee.securite.domain.Utilisateur;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 /**
  * Un plongeur au sein d'une {@link Palanquee}. Peut référencer un
  * {@link Eleve} ou un {@link Utilisateur} (encadrant) du club, pour
@@ -59,6 +61,15 @@ public class MembrePalanquee {
     private FonctionPalanquee fonction = FonctionPalanquee.PLONGEUR;
 
     private String gaz;
+
+    /**
+     * Pression partielle d'oxygène maximale retenue pour ce plongeur, de 1,4
+     * à 1,6 bar, avec un mélange autre que l'air : elle donne sa profondeur
+     * maximale d'utilisation (MOD). Null : non précisée.
+     */
+    @Column(name = "ppo2_max", precision = 2, scale = 1)
+    private BigDecimal ppo2Max;
+
     private String moyenDesaturation;
 
     @Column(columnDefinition = "text")
@@ -150,6 +161,14 @@ public class MembrePalanquee {
 
     public void setGaz(String gaz) {
         this.gaz = gaz;
+    }
+
+    public BigDecimal getPpo2Max() {
+        return ppo2Max;
+    }
+
+    public void setPpo2Max(BigDecimal ppo2Max) {
+        this.ppo2Max = ppo2Max;
     }
 
     public String getMoyenDesaturation() {

@@ -15,7 +15,7 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
+  aDesDetails, alerteMod, libelleGaz, PPO2_PAR_DEFAUT, PPO2_POSSIBLES, profondeurMaximaleUtilisation, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
   palanqueesAEnregistrer, profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees,
   resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
@@ -30,7 +30,7 @@ import {
 function plongeurVide(): PlongeurVue {
   return {
     eleveId: null, utilisateurId: null, nom: '', prenom: '', aptitude: null, aptitudeDonneeParDp: null,
-    qualificationPreparee: null, fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
+    qualificationPreparee: null, fonction: 'PLONGEUR', gaz: null, ppo2Max: null, moyenDesaturation: null, observations: null
   };
 }
 
@@ -39,7 +39,7 @@ function versPlongeur(source: MembreGroupeVue): PlongeurVue {
   return {
     eleveId: source.eleveId, utilisateurId: source.utilisateurId, nom: source.nom, prenom: source.prenom,
     aptitude: aptitudeSurFiche(source), aptitudeDonneeParDp: null, qualificationPreparee: source.qualificationPreparee,
-    fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null
+    fonction: 'PLONGEUR', gaz: null, ppo2Max: null, moyenDesaturation: null, observations: null
   };
 }
 
@@ -503,7 +503,11 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                         [attr.aria-label]="'Modifier ' + libelleMembre(m)" (click)="modifierPlongeur(iP, iM)">
                   <span class="texte-plongeur">
                     <span [class.chef]="m.fonction !== 'PLONGEUR'">{{ libelleMembre(m) }}</span>
+                    @if (libelleGaz(m); as gaz) { <span class="gaz-plongeur">{{ gaz }}</span> }
                     @if (alerteProfondeur(p, m); as alerte) {
+                      <span class="alerte-profondeur">⚠ {{ alerte }}</span>
+                    }
+                    @if (alerteMod(p, m); as alerte) {
                       <span class="alerte-profondeur">⚠ {{ alerte }}</span>
                     }
                     @if (aussiSurFicheLiee(m); as alerte) {
@@ -672,6 +676,21 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                 <label class="champ">Gaz
                   <input type="text" placeholder="ex. Air, Nitrox 32…" [(ngModel)]="m.gaz" name="edition-gaz">
                 </label>
+                <!-- Un mélange autre que l'air : sa ppO2 maximale, et la profondeur maximale d'utilisation qui en découle. -->
+                @if (profondeurMaximaleUtilisation(m.gaz, m.ppo2Max); as mod) {
+                  <div class="champ champ-large melange">
+                    <span id="edition-ppo2">ppO2 max (bar)</span>
+                    <div class="choix-ppo2" role="group" aria-labelledby="edition-ppo2">
+                      @for (v of ppo2Possibles; track v) {
+                        <button type="button" class="bouton-discret" [class.selectionne]="(m.ppo2Max ?? ppo2ParDefaut) === v"
+                                [attr.aria-pressed]="(m.ppo2Max ?? ppo2ParDefaut) === v" (click)="m.ppo2Max = v">
+                          {{ v.toFixed(1).replace('.', ',') }}
+                        </button>
+                      }
+                    </div>
+                    <p class="mod" role="status">MOD : <strong>{{ mod }} m</strong></p>
+                  </div>
+                }
                 <label class="champ">Désaturation
                   <input type="text" placeholder="ex. Ordinateur, tables" [(ngModel)]="m.moyenDesaturation"
                          name="edition-desat">
@@ -682,6 +701,9 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
               </div>
             </details>
             @if (alerteProfondeur(palanquees()[e.palanquee], m); as alerte) {
+              <p class="alerte-profondeur">⚠ {{ alerte }}</p>
+            }
+            @if (alerteMod(palanquees()[e.palanquee], m); as alerte) {
               <p class="alerte-profondeur">⚠ {{ alerte }}</p>
             }
             @if (aussiSurFicheLiee(m); as alerte) {
@@ -884,6 +906,12 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .champ { margin: 0; font-weight: 400; font-size: .8125rem; color: var(--craie); }
     .champ input, .champ select { display: block; width: 100%; margin: 2px 0 0; color: var(--encre); }
     .selecteur-connu { width: 100%; }
+    .gaz-plongeur { font-size: .8125rem; color: var(--craie); }
+    .melange { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
+    .choix-ppo2 { display: flex; gap: var(--pas); }
+    .choix-ppo2 > button { min-width: 56px; min-height: 44px; margin: 0; }
+    .choix-ppo2 > button.selectionne { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .mod { margin: 0; font-size: .9375rem; color: var(--encre); }
     .choix-fonction-ligne { flex-direction: row; flex-wrap: wrap; }
     .choix-fonction-ligne > button { width: auto; flex: 1 1 140px; }
     .ligne-plongeur {
@@ -1045,6 +1073,11 @@ export class FicheSecuriteComponent implements AvecModifications {
   readonly nomPalanquee = nomPalanquee;
   readonly libelleMembre = libelleMembre;
   readonly ligneVide = ligneVide;
+  readonly libelleGaz = libelleGaz;
+  readonly alerteMod = alerteMod;
+  readonly profondeurMaximaleUtilisation = profondeurMaximaleUtilisation;
+  readonly ppo2Possibles = PPO2_POSSIBLES;
+  readonly ppo2ParDefaut = PPO2_PAR_DEFAUT;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);

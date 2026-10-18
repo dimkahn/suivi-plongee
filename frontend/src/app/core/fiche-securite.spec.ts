@@ -1,13 +1,14 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee, palanqueesAEnregistrer,
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
+  alerteMod, fractionOxygene, libelleGaz, profondeurMaximaleUtilisation, palanqueesAEnregistrer,
   profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
   return {
     eleveId: null, utilisateurId: null, nom: 'MARTIN', prenom: 'Léa', aptitude: 'N1', aptitudeDonneeParDp: null,
-    qualificationPreparee: null, fonction: 'PLONGEUR', gaz: null, moyenDesaturation: null, observations: null,
+    qualificationPreparee: null, fonction: 'PLONGEUR', gaz: null, ppo2Max: null, moyenDesaturation: null, observations: null,
     ...champs
   };
 }
@@ -74,6 +75,57 @@ describe('Palanquées à enregistrer', () => {
   it('Un plongeur sans prénom ni nom mais avec une aptitude est signalé', () => {
     const resultat = palanqueesAEnregistrer([palanquee({ membres: [plongeur({ nom: '', prenom: '', aptitude: 'N2' })] })]);
     expect(resultat.erreur).toBe('Palanquée 1 : un plongeur n\'a ni nom ni prénom. Touchez sa ligne pour le compléter ou le retirer.');
+  });
+});
+
+describe('Profondeur maximale d\'utilisation (MOD) d\'un mélange', () => {
+  it('La fraction d\'oxygène se lit dans le gaz saisi : nitrox, EAN, trimix, oxygène pur', () => {
+    expect(fractionOxygene('Nitrox 32')).toBe(0.32);
+    expect(fractionOxygene('EAN36')).toBe(0.36);
+    expect(fractionOxygene('NX 40 %')).toBe(0.4);
+    expect(fractionOxygene('Trimix 18/45')).toBe(0.18);
+    expect(fractionOxygene('Oxygène')).toBe(1);
+    expect(fractionOxygene('O2 pur')).toBe(1);
+  });
+
+  it('L\'air, un gaz vide ou illisible n\'a pas de MOD à calculer', () => {
+    expect(fractionOxygene('Air')).toBeNull();
+    expect(fractionOxygene('air')).toBeNull();
+    expect(fractionOxygene(null)).toBeNull();
+    expect(fractionOxygene('  ')).toBeNull();
+    expect(fractionOxygene('Mélange du club')).toBeNull();
+    expect(fractionOxygene('Nitrox 150')).toBeNull();
+  });
+
+  it('MOD = (ppO2 max ÷ fraction d\'oxygène − 1) × 10, arrondie au mètre inférieur', () => {
+    expect(profondeurMaximaleUtilisation('Nitrox 32', 1.4)).toBe(33);
+    expect(profondeurMaximaleUtilisation('Nitrox 32', 1.6)).toBe(40);
+    expect(profondeurMaximaleUtilisation('Nitrox 35', 1.4)).toBe(30);
+    expect(profondeurMaximaleUtilisation('Nitrox 40', 1.5)).toBe(27);
+    expect(profondeurMaximaleUtilisation('Oxygène', 1.6)).toBe(6);
+  });
+
+  it('Sans ppO2 choisie, la MOD se calcule à 1,4 bar', () => {
+    expect(profondeurMaximaleUtilisation('Nitrox 32', null)).toBe(33);
+  });
+
+  it('À l\'air, pas de MOD', () => {
+    expect(profondeurMaximaleUtilisation('Air', 1.6)).toBeNull();
+  });
+
+  it('Le gaz se résume avec sa MOD et sa ppO2', () => {
+    expect(libelleGaz(plongeur({ gaz: 'Nitrox 32', ppo2Max: 1.6 }))).toBe('Nitrox 32 · MOD 40 m (ppO2 1,6)');
+    expect(libelleGaz(plongeur({ gaz: 'Nitrox 32' }))).toBe('Nitrox 32 · MOD 33 m (ppO2 1,4)');
+    expect(libelleGaz(plongeur({ gaz: 'Air' }))).toBeNull();
+  });
+
+  it('Une palanquée prévue plus profond que la MOD d\'un plongeur est signalée', () => {
+    const p = palanquee({ profondeurPrevue: 40 });
+    expect(alerteMod(p, plongeur({ gaz: 'Nitrox 32', ppo2Max: 1.4 })))
+      .toBe('Nitrox 32 : MOD 33 m à ppO2 1,4, palanquée prévue à 40 m.');
+    expect(alerteMod(p, plongeur({ gaz: 'Nitrox 32', ppo2Max: 1.6 }))).toBeNull();
+    expect(alerteMod(palanquee(), plongeur({ gaz: 'Nitrox 40' }))).toBeNull();
+    expect(alerteMod(p, plongeur({ gaz: 'Air' }))).toBeNull();
   });
 });
 

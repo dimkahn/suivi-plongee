@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -51,7 +52,7 @@ public class FicheSecuriteController {
     public record DemandePlongeur(Long eleveId, Long utilisateurId, @NotBlank String nom,
                                   @NotBlank String prenom, String aptitude, String aptitudeDonneeParDp,
                                   String qualificationPreparee,
-                                  FonctionPalanquee fonction, String gaz, String moyenDesaturation,
+                                  FonctionPalanquee fonction, String gaz, BigDecimal ppo2Max, String moyenDesaturation,
                                   String observations) {}
 
     public record DemandePalanquee(@NotNull Integer numero, Integer profondeurPrevue, Integer dureePrevue,
@@ -232,6 +233,6 @@ public class FicheSecuriteController {
     private FicheSecuriteService.Plongeur plongeur(DemandePlongeur d) {
         return new FicheSecuriteService.Plongeur(d.eleveId(), d.utilisateurId(), d.nom(), d.prenom(),
                 d.aptitude(), d.aptitudeDonneeParDp(), d.qualificationPreparee(), d.fonction(),
-                d.gaz(), d.moyenDesaturation(), d.observations());
+                d.gaz(), d.ppo2Max(), d.moyenDesaturation(), d.observations());
     }
 }

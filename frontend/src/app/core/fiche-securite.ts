@@ -197,6 +197,56 @@ export function questionsAjout(nouvellePalanquee: boolean, plongeur: PlongeurVue
   };
 }
 
+/** ppO2 maximale d'un plongeur au mélange, en bar : 1,4 tant qu'on n'en choisit pas une autre. */
+export const PPO2_PAR_DEFAUT = 1.4;
+export const PPO2_POSSIBLES = [1.4, 1.5, 1.6];
+
+/**
+ * Fraction d'oxygène du gaz saisi en texte libre : le premier pourcentage
+ * (« Nitrox 32 », « EAN36 », « Trimix 18/45 »), ou 1 pour l'oxygène pur.
+ * Null pour l'air, un gaz vide ou illisible : pas de MOD à calculer.
+ */
+export function fractionOxygene(gaz: string | null): number | null {
+  const texte = (gaz ?? '').trim();
+  // Le « 2 » de « O2 » n'est pas un pourcentage.
+  const pourcentage = texte.replace(/\bO2\b/gi, '').match(/\d+/);
+  if (pourcentage) {
+    const valeur = Number(pourcentage[0]);
+    return valeur > 0 && valeur <= 100 ? valeur / 100 : null;
+  }
+  return /oxyg|\bO2\b/i.test(texte) ? 1 : null;
+}
+
+/**
+ * Profondeur maximale d'utilisation (MOD) du mélange, en mètres :
+ * (ppO2 max ÷ fraction d'oxygène − 1) × 10, arrondie au mètre inférieur
+ * (le millième près évite qu'un calcul flottant ne retire un mètre).
+ */
+export function profondeurMaximaleUtilisation(gaz: string | null, ppo2: number | null): number | null {
+  const fraction = fractionOxygene(gaz);
+  if (fraction === null) return null;
+  const mod = ((ppo2 ?? PPO2_PAR_DEFAUT) / fraction - 1) * 10;
+  return Math.floor(Math.round(mod * 1000) / 1000);
+}
+
+/** « 1,4 » : la ppO2 à la française. */
+function ppo2Affichee(m: PlongeurVue): string {
+  return (m.ppo2Max ?? PPO2_PAR_DEFAUT).toFixed(1).replace('.', ',');
+}
+
+/** « Nitrox 32 · MOD 33 m (ppO2 1,4) » sur la ligne du plongeur ; null à l'air. */
+export function libelleGaz(m: PlongeurVue): string | null {
+  const mod = profondeurMaximaleUtilisation(m.gaz, m.ppo2Max);
+  return mod === null ? null : `${m.gaz!.trim()} · MOD ${mod} m (ppO2 ${ppo2Affichee(m)})`;
+}
+
+/** Avertissement : la palanquée est prévue plus profond que la MOD du mélange du plongeur. */
+export function alerteMod(p: PalanqueeVue, m: PlongeurVue): string | null {
+  const mod = profondeurMaximaleUtilisation(m.gaz, m.ppo2Max);
+  if (mod === null || !p.profondeurPrevue || p.profondeurPrevue <= mod) return null;
+  return `${m.gaz!.trim()} : MOD ${mod} m à ppO2 ${ppo2Affichee(m)}, palanquée prévue à ${p.profondeurPrevue} m.`;
+}
+
 /** Une nouvelle palanquée se crée avec sa profondeur et sa durée prévues. */
 export function erreurProfilPrevu(profondeur: number | null, duree: number | null): string | null {
   if (!profondeur || profondeur <= 0) return 'Indiquez la profondeur prévue.';

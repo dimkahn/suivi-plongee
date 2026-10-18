@@ -157,6 +157,59 @@ class FicheSecuriteTest {
         assertThat(membres.get(1).get("gaz").asText()).isEqualTo("Nitrox 32");
     }
 
+    /** Une palanquée prévue à 30 m, un seul plongeur au nitrox avec la ppO2 maximale donnée. */
+    private String demandeNitrox(long dpId, String ppo2Max) {
+        return """
+                {"dpId": %d, "palanquees": [{"numero": 1, "profondeurPrevue": 30, "dureePrevue": 40,
+                  "membres": [{"nom": "Perrot", "prenom": "Sonia", "aptitude": "N3", "fonction": "PLONGEUR",
+                               "gaz": "Nitrox 32", "ppo2Max": %s}]}]}
+                """.formatted(dpId, ppo2Max);
+    }
+
+    @Test
+    @DisplayName("La ppO2 maximale choisie pour un plongeur au nitrox est gardée sur la fiche")
+    void ppo2MaxGardee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeance(admin);
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeNitrox(dpId, "1.6")))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin))
+                .andExpect(jsonPath("$.palanquees[0].membres[0].ppo2Max").value(1.6));
+    }
+
+    @Test
+    @DisplayName("Une ppO2 maximale hors de 1,4 à 1,6 bar est refusée avec un message lisible")
+    // Le message nomme les trois valeurs permises, comme le choix à l'écran.
+    void ppo2MaxHorsBornesRefusee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeance(admin);
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeNitrox(dpId, "1.8")))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(
+                        "Sonia Perrot : la ppO2 maximale doit être de 1,4, 1,5 ou 1,6 bar."));
+    }
+
+    @Test
+    @DisplayName("Une ppO2 maximale au centième (1,45) est refusée : 1,4, 1,5 ou 1,6 seulement")
+    void ppo2MaxAuCentiemeRefusee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeance(admin);
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeNitrox(dpId, "1.45")))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value(
+                        "Sonia Perrot : la ppO2 maximale doit être de 1,4, 1,5 ou 1,6 bar."));
+    }
+
     @Test
     @DisplayName("Un DP E2 est refusé avec un message pour l'utilisateur")
     void dpE2Refuse() throws Exception {

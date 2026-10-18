@@ -784,6 +784,8 @@ export interface PlongeurVue {
   qualificationPreparee: string | null;
   fonction: FonctionPalanquee;
   gaz: string | null;
+  /** ppO2 maximale retenue avec un mélange autre que l'air, de 1,4 à 1,6 bar ; null : 1,4. */
+  ppo2Max: number | null;
   moyenDesaturation: string | null;
   observations: string | null;
 }

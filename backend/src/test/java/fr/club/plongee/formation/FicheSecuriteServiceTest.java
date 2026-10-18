@@ -85,7 +85,7 @@ class FicheSecuriteServiceTest {
 
     private FicheSecuriteService.Plongeur plongeur(String prenom, String nom) {
         return new FicheSecuriteService.Plongeur(null, null, nom, prenom, "N2", null, null,
-                FonctionPalanquee.PLONGEUR, "Air", "Table MN90", null);
+                FonctionPalanquee.PLONGEUR, "Air", null, "Table MN90", null);
     }
 
     private Eleve eleve(long id, String prenom, String nom) {
@@ -165,7 +165,7 @@ class FicheSecuriteServiceTest {
         when(fiches.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         FicheSecuriteService.Plongeur sansFonction = new FicheSecuriteService.Plongeur(
-                null, null, "Dulac", "Anis", null, null, null, null, null, null, null);
+                null, null, "Dulac", "Anis", null, null, null, null, null, null, null, null);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
                 null, null, null, null, null, null,
                 List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(sansFonction))));
@@ -185,7 +185,7 @@ class FicheSecuriteServiceTest {
         when(eleves.findById(7L)).thenReturn(Optional.of(eleve(7L, "Anis", "Dulac")));
 
         FicheSecuriteService.Plongeur lie = new FicheSecuriteService.Plongeur(7L, null,
-                "Dulac", "Anis", "N1", null, "N2", FonctionPalanquee.PLONGEUR, "Air", null, null);
+                "Dulac", "Anis", "N1", null, "N2", FonctionPalanquee.PLONGEUR, "Air", null, null, null);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
                 null, null, null, null, null, null,
                 List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(lie))));
@@ -208,7 +208,7 @@ class FicheSecuriteServiceTest {
         when(eleves.findById(99L)).thenReturn(Optional.empty());
 
         FicheSecuriteService.Plongeur lie = new FicheSecuriteService.Plongeur(99L, null,
-                "Inconnu", "Un", null, null, null, null, null, null, null);
+                "Inconnu", "Un", null, null, null, null, null, null, null, null);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
                 null, null, null, null, null, null,
                 List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(lie))));
@@ -225,7 +225,7 @@ class FicheSecuriteServiceTest {
         when(fiches.findBySeanceId(1L)).thenReturn(Optional.empty());
 
         FicheSecuriteService.Plongeur ambigu = new FicheSecuriteService.Plongeur(7L, 10L,
-                "Dulac", "Anis", null, null, null, null, null, null, null);
+                "Dulac", "Anis", null, null, null, null, null, null, null, null);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(10L, null, null, null,
                 null, null, null, null, null, null,
                 List.of(new FicheSecuriteService.GroupePlongeurs(1, null, null, List.of(ambigu))));

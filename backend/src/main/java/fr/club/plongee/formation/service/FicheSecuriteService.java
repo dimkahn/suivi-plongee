@@ -11,6 +11,7 @@ import fr.club.plongee.securite.repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -50,7 +51,11 @@ public class FicheSecuriteService {
      */
     public record Plongeur(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
                            String aptitudeDonneeParDp, String qualificationPreparee, FonctionPalanquee fonction,
-                           String gaz, String moyenDesaturation, String observations) {}
+                           String gaz, BigDecimal ppo2Max, String moyenDesaturation, String observations) {}
+
+    /** ppO2 maximales permises à un plongeur au mélange, en bar (colonne à un chiffre après la virgule). */
+    public static final List<BigDecimal> PPO2_PERMISES =
+            List.of(new BigDecimal("1.4"), new BigDecimal("1.5"), new BigDecimal("1.6"));
 
     /** Une palanquée à l'établissement : numéro, profil prévu et sa liste de plongeurs. */
     public record GroupePlongeurs(int numero, Integer profondeurPrevue, Integer dureePrevue,
@@ -72,7 +77,7 @@ public class FicheSecuriteService {
 
     public record PlongeurVue(Long eleveId, Long utilisateurId, String nom, String prenom, String aptitude,
                               String aptitudeDonneeParDp, String qualificationPreparee, String fonction,
-                              String gaz, String moyenDesaturation, String observations) {}
+                              String gaz, BigDecimal ppo2Max, String moyenDesaturation, String observations) {}
 
     public record PalanqueeVue(int numero, Integer profondeurPrevue, Integer dureePrevue,
                                Integer profondeurRealisee, Integer dureeRealisee, String paliers,
@@ -280,6 +285,11 @@ public class FicheSecuriteService {
                 membre.setQualificationPreparee(p.qualificationPreparee());
                 membre.setFonction(p.fonction() == null ? FonctionPalanquee.PLONGEUR : p.fonction());
                 membre.setGaz(p.gaz());
+                if (p.ppo2Max() != null && PPO2_PERMISES.stream().noneMatch(v -> v.compareTo(p.ppo2Max()) == 0)) {
+                    throw new RegleMetierException(p.prenom() + " " + p.nom()
+                            + " : la ppO2 maximale doit être de 1,4, 1,5 ou 1,6 bar.");
+                }
+                membre.setPpo2Max(p.ppo2Max());
                 membre.setMoyenDesaturation(p.moyenDesaturation());
                 membre.setObservations(p.observations());
                 palanquee.getMembres().add(membre);
@@ -412,6 +422,7 @@ public class FicheSecuriteService {
             membre.setQualificationPreparee(m.getQualificationPreparee());
             membre.setFonction(m.getFonction());
             membre.setGaz(m.getGaz());
+            membre.setPpo2Max(m.getPpo2Max());
             membre.setMoyenDesaturation(m.getMoyenDesaturation());
             membre.setObservations(m.getObservations());
             p.getMembres().add(membre);
@@ -551,6 +562,6 @@ public class FicheSecuriteService {
                 m.getEleve() == null ? null : m.getEleve().getId(),
                 m.getUtilisateur() == null ? null : m.getUtilisateur().getId(),
                 m.getNom(), m.getPrenom(), m.getAptitude(), m.getAptitudeDonneeParDp(), m.getQualificationPreparee(),
-                m.getFonction().name(), m.getGaz(), m.getMoyenDesaturation(), m.getObservations());
+                m.getFonction().name(), m.getGaz(), m.getPpo2Max(), m.getMoyenDesaturation(), m.getObservations());
     }
 }

@@ -85,7 +85,7 @@ public class PropositionPalanqueesService {
                                 m.candidat().eleveId(), m.candidat().utilisateurId(), m.candidat().nom(),
                                 m.candidat().prenom(), m.candidat().aptitudeTexte(), null,
                                 m.candidat().qualificationPreparee(), m.fonction().name(),
-                                null, null, p.autonome() ? "Palanquée autonome" : null)).toList()))
+                                null, null, null, p.autonome() ? "Palanquée autonome" : null)).toList()))
                         .toList(),
                 proposition.nonPlaces().stream().map(n -> new NonPlaceVue(n.candidat().nom(),
                         n.candidat().prenom(), n.raison())).toList(),
