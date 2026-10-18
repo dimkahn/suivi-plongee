@@ -44,8 +44,9 @@ argument-hint: "[écran, ex. /sejours/:id/frais]"
 - **Vidéo** : le scénario de `outils/videos/scenarios/*.mjs` qui montre l'écran
   (chercher par sélecteur CSS, libellé de bouton, adresse) : gestes, phrases de
   voix off, et la date « Tournage du … » mise à jour pour qu'il soit retourné.
-  Nouveau scénario : le citer dans le manuel. `SCENARIOS.md` est généré
-  (`node outils/videos/enregistrer.mjs --catalogue`), ne pas l'éditer à la main.
+  Nouveau scénario : le citer dans le manuel. Mettre à jour son entrée de
+  `SCENARIOS.md` à la main (sans les tournages en local, `enregistrer.mjs
+  --catalogue` en efface les textes).
 
 ## 4. Vérifier
 

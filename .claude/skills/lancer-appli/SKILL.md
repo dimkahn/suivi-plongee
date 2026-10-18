@@ -2,6 +2,7 @@
 name: lancer-appli
 description: Démarre suivi-plongee en local (backend Spring profil dev + H2 + données de démo, frontend Angular) pour vérifier un écran ou une API dans le vrai navigateur avant de dire « c'est fait ». À utiliser après toute modification visible, ou quand on demande de lancer, tester à la main ou faire une capture de l'appli.
 argument-hint: "[écran à ouvrir, ex. /planning]"
+model: sonnet
 ---
 
 # Lancer l'appli pour vérifier

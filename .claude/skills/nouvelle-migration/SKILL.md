@@ -34,10 +34,9 @@ ce que fait la migration et pourquoi (même style que les voisines).
   dans la même instruction ; reprendre les lignes existantes par un `UPDATE` si
   la règle métier l'exige.
 - **Entité auditée par Envers** (`@Audited`) : la table `<table>_aud` reçoit les
-  mêmes colonnes, dans la même migration (voir CLAUDE.md : générer le DDL une fois
-  avec `ddl-auto=create` sur une base jetable, puis le reprendre à la main).
+  mêmes colonnes, dans la même migration (méthode dans `.claude/rules/audit.md`).
 - **Données personnelles** : jamais de donnée réelle, ni en démo ni en
-  production ; aucun champ de santé (voir « Données personnelles » de CLAUDE.md).
+  production ; aucun champ de santé (« Données personnelles » de CLAUDE.md).
 - **Démo** : si la fonctionnalité a un écran, ajouter des données de démo
   (`db/demo`) qui le rendent visible ; les vidéos et la démo en dépendent.
 

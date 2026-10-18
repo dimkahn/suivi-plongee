@@ -13,8 +13,9 @@ Ne lis jamais `.env`, `application-local.yml`, le classeur « Fichier Suivi… �
 
 ## Ce que tu vérifies
 
-Lis d'abord la section « Données personnelles » et « La sécurité se joue à deux
-niveaux » de `CLAUDE.md`, puis les règles du domaine touché dans `.claude/rules/`.
+Lis d'abord « Données personnelles » et « Sécurité à deux niveaux » dans
+`CLAUDE.md`, `.claude/rules/donnees-personnelles.md` et `.claude/rules/comptes.md`,
+puis les règles du domaine touché dans `.claude/rules/`.
 Pour chaque fichier modifié, cherche :
 
 1. **Santé** : tout champ, colonne, pièce jointe ou commentaire libre sur l'état de
