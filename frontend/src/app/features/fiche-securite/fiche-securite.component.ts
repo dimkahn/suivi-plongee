@@ -594,9 +594,9 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                 <legend>
                   Fonction de {{ (e.prenom + ' ' + e.nom).trim() || 'cet encadrant' }}{{ e.aptitude ? ' (' + e.aptitude + ')' : '' }}
                 </legend>
-                <div class="choix-fonction choix-fonction-bascule">
-                  @for (f of fonctionsEncadrant; track f.valeur) {
-                    <button type="button" class="bouton-discret" [class.selectionne]="d.fonction === f.valeur"
+                <div class="segments">
+                  @for (f of fonctions; track f.valeur) {
+                    <button type="button" [class.selectionne]="d.fonction === f.valeur"
                             [attr.aria-pressed]="d.fonction === f.valeur" (click)="d.fonction = f.valeur">
                       {{ f.libelle }}
                     </button>
@@ -647,19 +647,20 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
               </label>
             </div>
 
-            <fieldset class="choix-fonction-groupe">
-              <legend>Fonction dans la palanquée</legend>
-              @if (fonctionADonner(m)) {
-                <p class="secondaire">{{ m.aptitude ? 'Aptitude ' + m.aptitude + ' : ' : '' }}peut encadrer, précisez sa fonction.</p>
-              }
-              <div class="choix-fonction choix-fonction-bascule choix-fonction-ligne">
-                @for (f of fonctionsEncadrant; track f.valeur) {
-                  <button type="button" class="bouton-discret" [class.selectionne]="m.fonction === f.valeur"
+            <!-- Sélecteur compact sur une ligne, comme un champ : le cas courant (« Plongeur ») en premier. -->
+            <fieldset class="champ fonction-plongeur">
+              <legend>Fonction</legend>
+              <div class="segments">
+                @for (f of fonctions; track f.valeur) {
+                  <button type="button" [class.selectionne]="m.fonction === f.valeur"
                           [attr.aria-pressed]="m.fonction === f.valeur" (click)="m.fonction = f.valeur">
                     {{ f.libelle }}
                   </button>
                 }
               </div>
+              @if (fonctionADonner(m)) {
+                <p class="indice-fonction">{{ m.aptitude ? 'Aptitude ' + m.aptitude + ' : ' : '' }}peut encadrer, précisez sa fonction.</p>
+              }
             </fieldset>
 
             <!-- Rarement remplis : repliés, sauf si l'un d'eux l'est déjà (rien de saisi n'est caché). -->
@@ -912,8 +913,21 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .choix-ppo2 > button { min-width: 56px; min-height: 44px; margin: 0; }
     .choix-ppo2 > button.selectionne { background: var(--profond); color: #fff; border-color: var(--profond); }
     .mod { margin: 0; font-size: .9375rem; color: var(--encre); }
-    .choix-fonction-ligne { flex-direction: row; flex-wrap: wrap; }
-    .choix-fonction-ligne > button { width: auto; flex: 1 1 140px; }
+    /* Sélecteur segmenté : trois choix accolés sur une ligne, 44 px de haut pour le doigt, pas plus. */
+    .fonction-plongeur { border: 0; padding: 0; margin: 0 0 var(--pas); min-width: 0; }
+    .fonction-plongeur legend { padding: 0; margin-bottom: 2px; }
+    .segments {
+      display: flex; width: 100%; max-width: 440px; margin-top: 2px;
+      border: 1px solid var(--trait); border-radius: var(--r-s); overflow: hidden; background: var(--carte);
+    }
+    .segments > button {
+      flex: 1 1 0; min-width: 0; min-height: 44px; margin: 0; padding: 2px var(--pas);
+      border: 0; border-left: 1px solid var(--trait); border-radius: 0; background: none;
+      font: inherit; font-size: .875rem; line-height: 1.15; color: var(--encre); cursor: pointer;
+    }
+    .segments > button:first-child { border-left: 0; }
+    .segments > button.selectionne { background: var(--profond); color: #fff; font-weight: 600; }
+    .indice-fonction { margin: 4px 0 0; font-size: .8125rem; color: #8a5a00; }
     .ligne-plongeur {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--pas);
       margin-bottom: var(--pas);
@@ -978,9 +992,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .choix-fonction { display: flex; flex-direction: column; gap: var(--pas-2); margin-top: var(--pas-3); }
     .choix-fonction > button { min-height: 44px; width: 100%; margin: 0; }
     .choix-fonction-groupe { border: 0; padding: 0; margin: var(--pas-3) 0 0; min-width: 0; }
-    .choix-fonction-groupe legend { padding: 0; font-weight: 600; }
-    .choix-fonction-bascule { margin-top: var(--pas); }
-    .choix-fonction-bascule > button.selectionne { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .choix-fonction-groupe legend { padding: 0; margin-bottom: var(--pas); font-weight: 600; }
     .choix-palanquees-dup { border: 0; padding: 0; margin: var(--pas-2) 0 0; min-width: 0; }
     .choix-palanquees-dup legend { font-weight: 700; font-size: .9375rem; padding: 0; margin-bottom: var(--pas); }
     .choix-palanquees-dup .case {
@@ -1260,6 +1272,9 @@ export class FicheSecuriteComponent implements AvecModifications {
     { valeur: 'GUIDE_PALANQUEE', libelle: 'Guide de palanquée' },
     { valeur: 'PLONGEUR', libelle: 'Plongeur' }
   ];
+
+  /** Les mêmes, dans l'ordre du sélecteur compact : le cas courant d'abord. */
+  readonly fonctions = [...this.fonctionsEncadrant].reverse();
 
   /**
    * Fenêtre d'ajout, modifiée en place ; null : fermée. Elle ne pose que les
