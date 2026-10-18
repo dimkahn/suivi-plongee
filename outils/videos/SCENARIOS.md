@@ -224,13 +224,13 @@ Compte : `e2@club.fr` · format téléphone · 90 s
 4. Le directeur de plongée : seuls les E3 et E4 sont proposés.
 5. Les conditions du jour…
 6. Puis les palanquées : une est prête, « + Palanquée » en ajoute d'autres.
-7. Elles s'affichent fermées : touchez son nom pour l'ouvrir et la remplir.
-8. Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.
-9. Flora encadre : l'appli demande sa fonction dans la palanquée.
-10. La palanquée porte maintenant le nom de Flora, qui l'encadre.
-11. Gaz, désaturation, observations : rangés sous « Détails », ouverts d'un geste.
-12. Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.
-13. Touchez son nom pour fermer la palanquée : il ne reste que l'essentiel, un plongeur par ligne.
+7. Chaque palanquée est compacte : son profil prévu se modifie sur place.
+8. « + Plongeur » ouvre sa fenêtre : pour un plongeur du club, aptitude et niveau préparé se remplissent seuls.
+9. Flora peut encadrer : sa fenêtre invite à choisir sa fonction, d'un geste.
+10. Gaz, désaturation, observations : rangés sous « Détails », ouverts d'un geste.
+11. La palanquée porte maintenant le nom de Flora ; un plongeur par ligne.
+12. Pour modifier un plongeur, on touche sa ligne : sa fenêtre s'ouvre.
+13. Changer de palanquée : on touche le bouton, puis sa nouvelle palanquée.
 14. Une autre palanquée : « + Palanquée », dans le bouton rond.
 15. On donne d'abord sa profondeur et sa durée prévues.
 16. Un plongeur dont l'aptitude ne permet pas cette profondeur y sera refusé.

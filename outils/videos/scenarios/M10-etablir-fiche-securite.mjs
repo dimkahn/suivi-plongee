@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-18, 9e série, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 10e série, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -36,30 +36,32 @@ export default {
       .filter({ has: page.getByRole('heading', { name: /^Palanquée/ }) }).first();
     await palanquee.scrollIntoViewIfNeeded();
     await legende('Puis les palanquées : une est prête, « + Palanquée » en ajoute d\'autres.', 0);
-    await legende('Elles s\'affichent fermées : touchez son nom pour l\'ouvrir et la remplir.', 0);
-    await toucher(palanquee.locator('.bascule-palanquee'), { apres: 1200 });
+    await legende('Chaque palanquée est compacte : son profil prévu se modifie sur place.', 0);
     await saisir(palanquee.getByLabel('Profondeur prévue (m)'), '6');
     await saisir(palanquee.getByLabel('Durée prévue (min)'), '20');
-    await legende('Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.', 0);
+    await legende('« + Plongeur » ouvre sa fenêtre : pour un plongeur du club, aptitude et niveau préparé se remplissent seuls.', 0);
+    const fenetre = page.locator('dialog[open]');
     await toucher(palanquee.getByRole('button', { name: '+ Plongeur' }), { apres: 600 });
-    await suggestion(palanquee.locator('.selecteur-connu').last(), 'Léa');
+    await suggestion(fenetre.locator('.selecteur-connu'), 'Léa');
+    await toucher(fenetre.getByRole('button', { name: 'OK', exact: true }), { apres: 600 });
     await toucher(palanquee.getByRole('button', { name: '+ Plongeur' }), { apres: 600 });
-    await suggestion(palanquee.locator('.selecteur-connu').last(), 'Flora');
-    await legende('Flora encadre : l\'appli demande sa fonction dans la palanquée.', 0);
+    await suggestion(fenetre.locator('.selecteur-connu'), 'Flora');
+    await legende('Flora peut encadrer : sa fenêtre invite à choisir sa fonction, d\'un geste.', 0);
     await pause(1200);
-    await toucher(page.locator('dialog[open] .choix-fonction').getByRole('button', { name: 'Encadrant', exact: true }),
+    await toucher(fenetre.locator('.choix-fonction').getByRole('button', { name: 'Encadrant', exact: true }),
       { apres: 600 });
-    await legende('La palanquée porte maintenant le nom de Flora, qui l\'encadre.', 0);
+    await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
+    await toucher(fenetre.locator('.details-plongeur summary'), { apres: 1800 });
+    await toucher(fenetre.getByRole('button', { name: 'OK', exact: true }), { apres: 600 });
+    await legende('La palanquée porte maintenant le nom de Flora ; un plongeur par ligne.', 0);
     await palanquee.getByRole('heading', { name: /^Palanquée de Flora/ }).scrollIntoViewIfNeeded();
     await pause(2200);
-    await legende('Gaz, désaturation, observations : rangés sous « Détails », ouverts d\'un geste.', 0);
-    await toucher(palanquee.locator('.details-plongeur summary').last(), { apres: 1800 });
     await vignette();
-    await legende('Changer un plongeur de palanquée : « Déplacer », puis on touche sa nouvelle palanquée.', 0);
-    await toucher(palanquee.getByRole('button', { name: /^Déplacer/ }).first(), { apres: 2500 });
+    await legende('Pour modifier un plongeur, on touche sa ligne : sa fenêtre s\'ouvre.', 0);
+    await toucher(palanquee.locator('.modifier-plongeur').first(), { apres: 1500 });
+    await legende('Changer de palanquée : on touche le bouton, puis sa nouvelle palanquée.', 0);
+    await toucher(fenetre.getByRole('button', { name: /Changer de palanquée/ }), { apres: 2500 });
     await toucher(page.locator('.barre-placement').getByRole('button', { name: 'Annuler' }), { apres: 800 });
-    await legende('Touchez son nom pour fermer la palanquée : il ne reste que l\'essentiel, un plongeur par ligne.', 0);
-    await toucher(palanquee.locator('.bascule-palanquee'), { apres: 2500 });
 
     await legende('Une autre palanquée : « + Palanquée », dans le bouton rond.', 0);
     await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });

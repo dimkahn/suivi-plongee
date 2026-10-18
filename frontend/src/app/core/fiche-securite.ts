@@ -24,8 +24,11 @@ export function empreinteFiche(entete: object, palanquees: PalanqueeVue[]): stri
     typeof valeur === 'string' && !rempli(valeur) ? null : valeur);
 }
 
-/** Ligne « + Plongeur » restée telle quelle : rien de saisi, aucun dossier choisi. */
-function ligneVide(m: PlongeurVue): boolean {
+/**
+ * Plongeur ajouté par « + Plongeur » resté tel quel : rien de saisi, aucun
+ * dossier choisi. Il disparaît quand on ferme sa fenêtre, et n'est pas envoyé.
+ */
+export function ligneVide(m: PlongeurVue): boolean {
   return m.eleveId === null && m.utilisateurId === null && !rempli(m.nom) && !rempli(m.prenom)
     && !rempli(m.aptitude) && !aDesDetails(m);
 }
@@ -43,7 +46,7 @@ export function palanqueesAEnregistrer(palanquees: PalanqueeVue[]): { palanquees
     const manque = !rempli(incomplet.nom) && !rempli(incomplet.prenom) ? "un plongeur n'a ni nom ni prénom"
       : !rempli(incomplet.nom) ? `${incomplet.prenom.trim()} n'a pas de nom`
       : `${incomplet.nom.trim()} n'a pas de prénom`;
-    return { palanquees: nettoyees, erreur: `Palanquée ${p.numero} : ${manque}. Complétez-le ou retirez la ligne (✕).` };
+    return { palanquees: nettoyees, erreur: `Palanquée ${p.numero} : ${manque}. Touchez sa ligne pour le compléter ou le retirer.` };
   }
   return { palanquees: nettoyees, erreur: null };
 }
@@ -173,7 +176,7 @@ const FONCTIONS_AFFICHEES: Partial<Record<PlongeurVue['fonction'], string>> = {
   ENCADRANT: 'Encadrant', GUIDE_PALANQUEE: 'Guide de palanquée'
 };
 
-/** « Flora VASSEUR · E2 · Encadrant » : un plongeur d'une palanquée fermée, la fonction seulement si elle compte. */
+/** « Flora VASSEUR · E2 · Encadrant » : la ligne d'un plongeur dans sa palanquée, la fonction seulement si elle compte. */
 export function libelleMembre(m: PlongeurVue): string {
   return [
     `${m.prenom.trim()} ${m.nom.trim()}`.trim() || 'Plongeur sans nom',

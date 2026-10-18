@@ -15,7 +15,7 @@ import { NavigationService } from '../../core/navigation';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee,
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
   palanqueesAEnregistrer, profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees,
   resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
@@ -475,130 +475,48 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       }
 
       @for (p of palanquees(); track p; let iP = $index) {
-        <section class="carte panneau palanquee" [class.palanquee-fermee]="!estOuverte(p)">
-          <!-- Ouverte : le panneau de saisie complet ; fermée : ce qui est renseigné, une ligne par plongeur. -->
+        <!-- Toujours compacte : profil prévu modifiable sur place, une ligne par plongeur, touchée pour le modifier. -->
+        <section class="carte panneau palanquee">
           <div class="ligne-titre">
-            <div>
-              <h3>
-                <button type="button" class="bascule-palanquee" [attr.aria-expanded]="estOuverte(p)"
-                        (click)="basculerPalanquee(p)">
-                  <span class="chevron" aria-hidden="true">{{ estOuverte(p) ? '▾' : '▸' }}</span>{{ nomPalanquee(p) }}
-                </button>
-              </h3>
-              <p class="resume-palanquee">{{ resumeComposition(p) }}</p>
-            </div>
-            @if (estOuverte(p)) {
-              <button type="button" class="bouton-discret danger" (click)="retirerPalanquee(iP)">
-                Retirer la palanquée
-              </button>
-            }
+            <h3>{{ nomPalanquee(p) }}</h3>
+            <button type="button" class="bouton-discret danger retirer-palanquee"
+                    [attr.aria-label]="'Retirer ' + nomPalanquee(p).replace('Palanquée', 'la palanquée')"
+                    (click)="retirerPalanquee(iP)">Retirer</button>
           </div>
 
-          @if (estOuverte(p)) {
-            <div class="ligne-profil">
-              <label>Profondeur prévue (m) <input type="number" min="0" [(ngModel)]="p.profondeurPrevue"
-                     [name]="'pp-' + iP"></label>
-              <label>Durée prévue (min) <input type="number" min="0" [(ngModel)]="p.dureePrevue"
-                     [name]="'dp-' + iP"></label>
-            </div>
-          }
+          <div class="ligne-profil">
+            <label>Profondeur prévue (m) <input type="number" min="0" inputmode="numeric"
+                   [(ngModel)]="p.profondeurPrevue" [name]="'pp-' + iP"></label>
+            <label>Durée prévue (min) <input type="number" min="0" inputmode="numeric"
+                   [(ngModel)]="p.dureePrevue" [name]="'dp-' + iP"></label>
+          </div>
 
           <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListDisabled]="!auth.etablitFichesSecurite()" [cdkDropListData]="p.membres"
                class="zone-membres" [class.zone-membres-vide]="p.membres.length === 0"
                [cdkDropListConnectedTo]="tousLesIds()" (cdkDropListDropped)="onDropPalanquee($event, iP)">
             @if (p.membres.length === 0) {
-              <p class="vide">
-                Glissez un plongeur ici, ou {{ estOuverte(p) ? 'cliquez sur « + Plongeur »' : 'ouvrez la palanquée pour en ajouter' }}.
-              </p>
+              <p class="vide">Glissez un plongeur ici, ou touchez « + Plongeur ».</p>
             }
             @for (m of p.membres; track m; let iM = $index) {
-              @if (!estOuverte(p)) {
-                <div class="plongeur-resume" cdkDrag [cdkDragStartDelay]="delaiGlisser">
-                  <span [class.chef]="m.fonction !== 'PLONGEUR'">{{ libelleMembre(m) }}</span>
-                  @if (alerteProfondeur(p, m); as alerte) {
-                    <span class="alerte-profondeur">⚠ {{ alerte }}</span>
-                  }
-                  @if (aussiSurFicheLiee(m); as alerte) {
-                    <span class="alerte-profondeur">⚠ {{ alerte }}</span>
-                  }
-                </div>
-              } @else {
-              <div class="plongeur" cdkDrag [cdkDragStartDelay]="delaiGlisser">
-                <div class="ligne-recherche">
-                  <label class="champ">Plongeur du club (remplit nom, aptitude et qualification)
-                    <input type="text" class="selecteur-connu" placeholder="Rechercher un nom…" list="plongeurs-club"
-                           (change)="choisirPlongeurConnu(iP, iM, $event)">
-                  </label>
-                  <button type="button" class="bouton-discret deplacer-plongeur"
-                          [class.selectionne]="estADeplacer(iP, iM)" [attr.aria-pressed]="estADeplacer(iP, iM)"
-                          [attr.aria-label]="'Déplacer ' + ((m.prenom + ' ' + m.nom).trim() || 'ce plongeur') + ' dans une autre palanquée'"
-                          (click)="choisirADeplacer(iP, iM)">⇄ Déplacer</button>
-                  <button type="button" class="bouton-discret danger retirer-plongeur"
-                          [attr.aria-label]="'Retirer ' + ((m.prenom + ' ' + m.nom).trim() || 'ce plongeur') + ' de la palanquée'"
-                          (click)="retirerMembre(iP, iM)">✕</button>
-                </div>
-
-                <!-- Étiquettes visibles : sur une fiche remplie, un texte d'aide disparaît et on ne sait plus quel champ est lequel. -->
-                <div class="ligne-plongeur">
-                  <label class="champ">Prénom
-                    <input type="text" [(ngModel)]="m.prenom" [name]="'prenom-' + iP + '-' + iM">
-                  </label>
-                  <label class="champ">Nom
-                    <input type="text" [(ngModel)]="m.nom" [name]="'nom-' + iP + '-' + iM">
-                  </label>
-                  <label class="champ">Aptitude
-                    <input type="text" placeholder="ex. N2, E2…" [(ngModel)]="m.aptitude"
-                           [name]="'aptitude-' + iP + '-' + iM">
-                  </label>
-                  <label class="champ">Fonction
-                    <select [(ngModel)]="m.fonction" [name]="'fonction-' + iP + '-' + iM">
-                      <option value="PLONGEUR">Plongeur</option>
-                      <option value="GUIDE_PALANQUEE">Guide de palanquée</option>
-                      <option value="ENCADRANT">Encadrant</option>
-                    </select>
-                  </label>
-                </div>
-
-                <!-- Rarement remplis : repliés, sauf si l'un d'eux l'est déjà (rien de saisi n'est caché). -->
-                <details class="details-plongeur" [open]="aDesDetails(m)">
-                  <summary>Détails : gaz, désaturation, qualification préparée, observations…</summary>
-                  <div class="ligne-plongeur">
-                    <label class="champ">Aptitude donnée par le DP
-                      <input type="text" [(ngModel)]="m.aptitudeDonneeParDp" [name]="'aptitude-dp-' + iP + '-' + iM">
-                    </label>
-                    <label class="champ">Qualification préparée
-                      <input type="text" placeholder="si en formation" [(ngModel)]="m.qualificationPreparee"
-                             [name]="'qualif-' + iP + '-' + iM">
-                    </label>
-                    <label class="champ">Gaz
-                      <input type="text" placeholder="ex. Air, Nitrox 32…" [(ngModel)]="m.gaz"
-                             [name]="'gaz-' + iP + '-' + iM">
-                    </label>
-                    <label class="champ">Désaturation
-                      <input type="text" placeholder="ex. Ordinateur, tables" [(ngModel)]="m.moyenDesaturation"
-                             [name]="'desat-' + iP + '-' + iM">
-                    </label>
-                    <label class="champ champ-large">Observations
-                      <input type="text" [(ngModel)]="m.observations" [name]="'observations-' + iP + '-' + iM">
-                    </label>
-                  </div>
-                </details>
-                @if (alerteProfondeur(p, m); as alerte) {
-                  <p class="alerte-profondeur">⚠ {{ alerte }}</p>
-                }
-                @if (aussiSurFicheLiee(m); as alerte) {
-                  <p class="alerte-profondeur">⚠ {{ alerte }}</p>
-                }
+              <div class="plongeur-resume" cdkDrag [cdkDragStartDelay]="delaiGlisser">
+                <button type="button" class="modifier-plongeur"
+                        [attr.aria-label]="'Modifier ' + libelleMembre(m)" (click)="modifierPlongeur(iP, iM)">
+                  <span class="texte-plongeur">
+                    <span [class.chef]="m.fonction !== 'PLONGEUR'">{{ libelleMembre(m) }}</span>
+                    @if (alerteProfondeur(p, m); as alerte) {
+                      <span class="alerte-profondeur">⚠ {{ alerte }}</span>
+                    }
+                    @if (aussiSurFicheLiee(m); as alerte) {
+                      <span class="alerte-profondeur">⚠ {{ alerte }}</span>
+                    }
+                  </span>
+                  <span class="crayon" aria-hidden="true">✎</span>
+                </button>
               </div>
-              }
             }
           </div>
 
-          @if (estOuverte(p)) {
-            <button type="button" class="bouton-discret" (click)="ajouterMembre(iP)">+ Plongeur</button>
-          } @else {
-            <button type="button" class="bouton-discret ouvrir-palanquee" (click)="basculerPalanquee(p)">Ouvrir pour modifier</button>
-          }
+          <button type="button" class="bouton-discret ajouter-plongeur" (click)="ajouterMembre(iP)">+ Plongeur</button>
         </section>
       }
 
@@ -698,6 +616,88 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             <div class="actions-dialogue">
               <button type="button" class="bouton-principal" (click)="creerNouvellePalanquee()">Créer la palanquée</button>
               <button type="button" class="bouton-discret" (click)="fermerDemandeAjout()">Annuler</button>
+            </div>
+          }
+        }
+      </app-dialogue>
+
+      <!-- Un plongeur de la fiche, touché sur sa ligne (ou ajouté par « + Plongeur ») : tout ce qui le concerne. -->
+      <app-dialogue [ouvert]="plongeurEnEdition() !== null" [titre]="titreEdition()"
+                    [erreur]="erreurEdition()" (fermer)="fermerEdition()">
+        @if (plongeurEnEdition(); as e) {
+          @if (palanquees()[e.palanquee]?.membres[e.membre]; as m) {
+            <label for="edition-connu">Plongeur du club (remplit nom, aptitude et qualification)</label>
+            <input id="edition-connu" type="text" class="selecteur-connu" placeholder="Rechercher un nom…"
+                   list="plongeurs-club" (change)="choisirPlongeurConnu(e.palanquee, e.membre, $event)">
+
+            <!-- Étiquettes visibles : sur une fiche remplie, un texte d'aide disparaît et on ne sait plus quel champ est lequel. -->
+            <div class="ligne-plongeur">
+              <label class="champ">Prénom
+                <input type="text" [(ngModel)]="m.prenom" name="edition-prenom">
+              </label>
+              <label class="champ">Nom
+                <input type="text" [(ngModel)]="m.nom" name="edition-nom">
+              </label>
+              <label class="champ">Aptitude
+                <input type="text" placeholder="ex. N2, E2…" [(ngModel)]="m.aptitude" name="edition-aptitude">
+              </label>
+            </div>
+
+            <fieldset class="choix-fonction-groupe">
+              <legend>Fonction dans la palanquée</legend>
+              @if (fonctionADonner(m)) {
+                <p class="secondaire">{{ m.aptitude ? 'Aptitude ' + m.aptitude + ' : ' : '' }}peut encadrer, précisez sa fonction.</p>
+              }
+              <div class="choix-fonction choix-fonction-bascule choix-fonction-ligne">
+                @for (f of fonctionsEncadrant; track f.valeur) {
+                  <button type="button" class="bouton-discret" [class.selectionne]="m.fonction === f.valeur"
+                          [attr.aria-pressed]="m.fonction === f.valeur" (click)="m.fonction = f.valeur">
+                    {{ f.libelle }}
+                  </button>
+                }
+              </div>
+            </fieldset>
+
+            <!-- Rarement remplis : repliés, sauf si l'un d'eux l'est déjà (rien de saisi n'est caché). -->
+            <details class="details-plongeur" [open]="aDesDetails(m)">
+              <summary>Détails : gaz, désaturation, qualification préparée, observations…</summary>
+              <div class="ligne-plongeur">
+                <label class="champ">Aptitude donnée par le DP
+                  <input type="text" [(ngModel)]="m.aptitudeDonneeParDp" name="edition-aptitude-dp">
+                </label>
+                <label class="champ">Qualification préparée
+                  <input type="text" placeholder="si en formation" [(ngModel)]="m.qualificationPreparee"
+                         name="edition-qualif">
+                </label>
+                <label class="champ">Gaz
+                  <input type="text" placeholder="ex. Air, Nitrox 32…" [(ngModel)]="m.gaz" name="edition-gaz">
+                </label>
+                <label class="champ">Désaturation
+                  <input type="text" placeholder="ex. Ordinateur, tables" [(ngModel)]="m.moyenDesaturation"
+                         name="edition-desat">
+                </label>
+                <label class="champ champ-large">Observations
+                  <input type="text" [(ngModel)]="m.observations" name="edition-observations">
+                </label>
+              </div>
+            </details>
+            @if (alerteProfondeur(palanquees()[e.palanquee], m); as alerte) {
+              <p class="alerte-profondeur">⚠ {{ alerte }}</p>
+            }
+            @if (aussiSurFicheLiee(m); as alerte) {
+              <p class="alerte-profondeur">⚠ {{ alerte }}</p>
+            }
+
+            <div class="actions-dialogue">
+              <button type="button" class="bouton-principal" (click)="fermerEdition()">OK</button>
+              @if (!ligneVide(m)) {
+                <button type="button" class="bouton-discret deplacer-plongeur" (click)="deplacerDepuisEdition()">
+                  ⇄ Changer de palanquée
+                </button>
+              }
+              <button type="button" class="bouton-discret danger retirer-plongeur" (click)="retirerDepuisEdition()">
+                Retirer de la palanquée
+              </button>
             </div>
           }
         }
@@ -862,31 +862,30 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .ligne-profil label { margin: 0; font-weight: 400; }
     .ligne-profil input { width: 100%; }
 
-    .resume-palanquee { margin: 0; font-size: .875rem; color: var(--craie); }
     .palanquee h3 { margin: 0; }
-    .bascule-palanquee {
-      display: flex; align-items: center; gap: var(--pas); min-height: 44px; padding: 0; margin: 0;
-      background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;
+    .retirer-palanquee, .ajouter-plongeur { min-height: 44px; }
+    .ajouter-plongeur { margin-top: var(--pas); }
+    .plongeur-resume { border-top: 1px solid var(--trait); }
+    /* Toute la ligne se touche pour modifier le plongeur. */
+    .modifier-plongeur {
+      display: flex; align-items: center; gap: var(--pas); width: 100%; min-height: 48px; box-sizing: border-box;
+      padding: var(--pas) 0; margin: 0; background: none; border: 0; border-radius: 0;
+      font: inherit; color: inherit; text-align: left; cursor: pointer;
     }
-    .chevron { display: inline-block; width: 1em; color: var(--profond); }
-    .plongeur-resume {
-      display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--pas);
-      border-top: 1px solid var(--trait); padding: var(--pas) 0; min-height: 44px; box-sizing: border-box;
-    }
-    .plongeur-resume .chef { font-weight: 700; }
-    .plongeur-resume .alerte-profondeur { margin: 0; font-size: .8125rem; }
-    .ouvrir-palanquee { min-height: 44px; }
+    .modifier-plongeur:hover:not(:disabled) { background: var(--brume, #eef4f5); }
+    .texte-plongeur { flex: 1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--pas); }
+    .texte-plongeur .chef { font-weight: 700; }
+    .texte-plongeur .alerte-profondeur { margin: 0; font-size: .8125rem; }
+    .crayon { color: var(--profond); padding: 0 var(--pas); }
+    .modifier-plongeur:disabled .crayon { display: none; }
     .bouton-ajout-palanquee, .bouton-reprendre-palanquee { min-height: 44px; }
     .ajouts-palanquees { display: flex; flex-wrap: wrap; gap: var(--pas); }
 
-    .plongeur { border-top: 1px solid var(--trait); padding-top: var(--pas-2); margin-top: var(--pas-2); }
     .champ { margin: 0; font-weight: 400; font-size: .8125rem; color: var(--craie); }
     .champ input, .champ select { display: block; width: 100%; margin: 2px 0 0; color: var(--encre); }
-    .ligne-recherche { display: flex; gap: var(--pas); align-items: flex-end; margin-bottom: var(--pas); }
-    .ligne-recherche .champ { flex: 0 1 420px; }
-    .deplacer-plongeur { margin-left: auto; min-height: 44px; white-space: nowrap; }
-    .deplacer-plongeur.selectionne { background: var(--profond); border-color: var(--profond); color: #fff; }
-    .retirer-plongeur { min-width: 44px; min-height: 44px; }
+    .selecteur-connu { width: 100%; }
+    .choix-fonction-ligne { flex-direction: row; flex-wrap: wrap; }
+    .choix-fonction-ligne > button { width: auto; flex: 1 1 140px; }
     .ligne-plongeur {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--pas);
       margin-bottom: var(--pas);
@@ -1045,6 +1044,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   readonly resumeComposition = resumeComposition;
   readonly nomPalanquee = nomPalanquee;
   readonly libelleMembre = libelleMembre;
+  readonly ligneVide = ligneVide;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
@@ -1194,7 +1194,6 @@ export class FicheSecuriteComponent implements AvecModifications {
         observations: fiche.observations
       });
       this.palanquees.set(fiche.palanquees.length > 0 ? fiche.palanquees : [palanqueeVide(1)]);
-      this.ouvertes.set(new Set());
       this.retenirEtatEnregistre();
 
       const saisonOuverte = saisons.find(s => s.ouverte);
@@ -1313,19 +1312,53 @@ export class FicheSecuriteComponent implements AvecModifications {
     if (n.pour !== null) this.placer(n.pour, this.palanquees().length - 1, fonction);
   }
 
-  // --- Palanquées ouvertes (saisie complète) ou fermées (résumé) ----------------------------------
+  // --- Fenêtre d'un plongeur, ouverte en touchant sa ligne ----------------------------------------
 
-  /** Numéros des palanquées ouvertes ; le numéro ne change pas tant que la palanquée vit sur la fiche. */
-  ouvertes = signal<Set<number>>(new Set());
+  /**
+   * Plongeur dont la fenêtre est ouverte, repéré par ses indices : la
+   * fenêtre est modale, rien d'autre ne bouge les palanquées pendant ce temps.
+   */
+  plongeurEnEdition = signal<{ palanquee: number; membre: number } | null>(null);
+  erreurEdition = signal<string | null>(null);
 
-  estOuverte(p: PalanqueeVue): boolean {
-    return this.ouvertes().has(p.numero);
+  titreEdition(): string {
+    const e = this.plongeurEnEdition();
+    const m = e ? this.palanquees()[e.palanquee]?.membres[e.membre] : undefined;
+    return m && !ligneVide(m) ? (`${m.prenom} ${m.nom}`.trim() || 'Plongeur') : 'Nouveau plongeur';
   }
 
-  basculerPalanquee(p: PalanqueeVue): void {
-    const ouvertes = new Set(this.ouvertes());
-    if (ouvertes.has(p.numero)) ouvertes.delete(p.numero); else ouvertes.add(p.numero);
-    this.ouvertes.set(ouvertes);
+  /** Un encadrant possible encore « Plongeur » : la fenêtre l'invite à choisir sa fonction. */
+  fonctionADonner(m: PlongeurVue): boolean {
+    return questionsAjout(false, m).fonction;
+  }
+
+  modifierPlongeur(indexPalanquee: number, indexMembre: number): void {
+    this.membreAPlacer.set(null);
+    this.plongeurADeplacer.set(null);
+    this.erreurEdition.set(null);
+    this.plongeurEnEdition.set({ palanquee: indexPalanquee, membre: indexMembre });
+  }
+
+  /** Un plongeur ajouté puis laissé sans rien saisir ne reste pas sur la fiche. */
+  fermerEdition(): void {
+    const e = this.plongeurEnEdition();
+    if (!e) return;
+    this.plongeurEnEdition.set(null);
+    const m = this.palanquees()[e.palanquee]?.membres[e.membre];
+    if (m && ligneVide(m)) this.retirerMembre(e.palanquee, e.membre);
+    else this.palanquees.set([...this.palanquees()]);
+  }
+
+  deplacerDepuisEdition(): void {
+    const e = this.plongeurEnEdition();
+    this.plongeurEnEdition.set(null);
+    if (e) this.choisirADeplacer(e.palanquee, e.membre);
+  }
+
+  retirerDepuisEdition(): void {
+    const e = this.plongeurEnEdition();
+    this.plongeurEnEdition.set(null);
+    if (e) this.retirerMembre(e.palanquee, e.membre);
   }
 
   retirerPalanquee(index: number): void {
@@ -1401,10 +1434,12 @@ export class FicheSecuriteComponent implements AvecModifications {
     });
   }
 
+  /** Le nouveau plongeur s'ouvre aussitôt dans sa fenêtre, recherche dans le club en tête. */
   ajouterMembre(indexPalanquee: number): void {
     const liste = this.palanquees().map((p, i) =>
       i === indexPalanquee ? { ...p, membres: [...p.membres, plongeurVide()] } : p);
     this.palanquees.set(liste);
+    this.modifierPlongeur(indexPalanquee, liste[indexPalanquee].membres.length - 1);
   }
 
   retirerMembre(indexPalanquee: number, indexMembre: number): void {
@@ -1834,7 +1869,11 @@ export class FicheSecuriteComponent implements AvecModifications {
     return `${c.prenom} ${c.nom}${c.aptitude ? ' — ' + c.aptitude : ''} (${type})`;
   }
 
-  /** Pré-remplit nom/prénom/aptitude/qualification depuis le dossier du plongeur choisi, éditable ensuite. */
+  /**
+   * Pré-remplit nom/prénom/aptitude/qualification depuis le dossier du
+   * plongeur choisi dans sa fenêtre, éditable ensuite. Un encadrant n'ouvre
+   * pas une seconde fenêtre : la sienne l'invite à choisir sa fonction.
+   */
   choisirPlongeurConnu(indexPalanquee: number, indexMembre: number, event: Event): void {
     const champ = event.target as HTMLInputElement;
     const correspondance = champ.value.match(/\((ELEVE|ENCADRANT):(\d+)\)\s*$/);
@@ -1853,15 +1892,12 @@ export class FicheSecuriteComponent implements AvecModifications {
       aptitude: candidat.aptitude, qualificationPreparee: candidat.qualificationPreparee
     };
     const refus = refusAjout(this.palanquees()[indexPalanquee], choisi);
-    if (refus) {
-      this.message.set(refus);
-      return;
-    }
+    this.erreurEdition.set(refus);
+    if (refus) return;
     const liste = this.palanquees().map((p, i) => i !== indexPalanquee ? p : {
       ...p, membres: p.membres.map((m, j) => j !== indexMembre ? m : choisi)
     });
     this.palanquees.set(liste);
-    this.demanderFonctionSiEncadrant(choisi);
   }
 
   // --- Proposition automatique des palanquées (milieu naturel) -----------------------------------
@@ -1959,7 +1995,6 @@ export class FicheSecuriteComponent implements AvecModifications {
           return;
         }
         this.palanquees.set(r.palanquees.length > 0 ? r.palanquees : [palanqueeVide(1)]);
-        this.ouvertes.set(new Set());
         this.bilanProposition.set(r);
         this.plongeurADeplacer.set(null);
         this.propositionOuverte.set(false);

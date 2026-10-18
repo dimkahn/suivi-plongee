@@ -1,6 +1,6 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee, palanqueesAEnregistrer,
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee, palanqueesAEnregistrer,
   profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee
 } from './fiche-securite';
 
@@ -68,12 +68,24 @@ describe('Palanquées à enregistrer', () => {
       palanquee({ membres: [plongeur()] }),
       palanquee({ numero: 2, membres: [plongeur({ nom: '', aptitude: 'N2' })] })
     ]);
-    expect(resultat.erreur).toBe('Palanquée 2 : Léa n\'a pas de nom. Complétez-le ou retirez la ligne (✕).');
+    expect(resultat.erreur).toBe('Palanquée 2 : Léa n\'a pas de nom. Touchez sa ligne pour le compléter ou le retirer.');
   });
 
   it('Un plongeur sans prénom ni nom mais avec une aptitude est signalé', () => {
     const resultat = palanqueesAEnregistrer([palanquee({ membres: [plongeur({ nom: '', prenom: '', aptitude: 'N2' })] })]);
-    expect(resultat.erreur).toBe('Palanquée 1 : un plongeur n\'a ni nom ni prénom. Complétez-le ou retirez la ligne (✕).');
+    expect(resultat.erreur).toBe('Palanquée 1 : un plongeur n\'a ni nom ni prénom. Touchez sa ligne pour le compléter ou le retirer.');
+  });
+});
+
+describe('Plongeur ajouté puis laissé sans rien saisir', () => {
+  it('Fermer sa fenêtre sans rien saisir le retire : c\'est une ligne vide', () => {
+    expect(ligneVide(plongeur({ nom: '', prenom: ' ', aptitude: null }))).toBe(true);
+  });
+
+  it('Un plongeur dont un champ est rempli, ou dont le dossier est choisi, reste', () => {
+    expect(ligneVide(plongeur({ nom: '', prenom: '', aptitude: 'N2' }))).toBe(false);
+    expect(ligneVide(plongeur({ nom: '', prenom: '', aptitude: null, gaz: 'Air' }))).toBe(false);
+    expect(ligneVide(plongeur({ nom: '', prenom: '', aptitude: null, eleveId: 4 }))).toBe(false);
   });
 });
 
@@ -202,7 +214,7 @@ describe('Refuser un plongeur dont l\'aptitude ne permet pas la profondeur prév
   });
 });
 
-describe('Palanquée fermée : ce qui est renseigné, en une ligne par plongeur', () => {
+describe('Palanquée : ce qui est renseigné, en une ligne par plongeur', () => {
   it('Nom, aptitude et fonction quand elle n\'est pas « Plongeur »', () => {
     expect(libelleMembre(plongeur({ prenom: 'Flora', nom: 'VASSEUR', aptitude: 'E2', fonction: 'ENCADRANT' })))
       .toBe('Flora VASSEUR · E2 · Encadrant');
