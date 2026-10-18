@@ -5,8 +5,8 @@ import { Observable } from 'rxjs';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { dateDuJour, dateFr } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
-import { contientUnDetendeur, filtrerDisponibles } from './materiel-sejour';
-import { PortPrets, PretSejourVue, PretsSejourVue, TypeEquipement, nomComplet } from './sejour-api';
+import { PretsDuSejour, contientUnDetendeur, filtrerDisponibles } from './materiel-sejour';
+import { PretSejourVue, PretsSejourVue, TypeEquipement, nomComplet } from './sejour-api';
 
 const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
   { code: null, libelle: 'Tout' },
@@ -22,8 +22,9 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
  * matériel (déjà prêté, contrôles dépassés, désinfection des détendeurs :
  * le serveur refuse) ; le directeur technique en note le retour. Sert à
  * l'onglet « Matériel » du séjour (compte connecté) et à la page du lien
- * (/sejour/…) : les appels passent par le {@link PortPrets} reçu, le
- * serveur filtre ce que chacun voit et dit ce qu'il peut faire.
+ * (/sejour/…) : les appels passent par le {@link PretsDuSejour} reçu, que
+ * partage la carte « Mon séjour » ; le serveur filtre ce que chacun voit et
+ * dit ce qu'il peut faire.
  */
 @Component({
   selector: 'app-sejour-materiel',
@@ -41,7 +42,7 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
 
     @if (vue(); as v) {
       @if (v.prets.length === 0) {
-        <p class="vide">Aucun emprunt déclaré pour l'instant.</p>
+        <p class="vide">@if (v.rienEmprunte) { Vous avez indiqué n'avoir rien emprunté. } @else { Aucun emprunt déclaré pour l'instant. }</p>
       } @else {
         <ul class="lignes-cartes">
           @for (p of v.prets; track p.id) {
@@ -165,13 +166,13 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
   `]
 })
 export class SejourMaterielComponent implements OnInit {
-  port = input.required<PortPrets>();
+  prets = input.required<PretsDuSejour>();
 
   readonly types = TYPES;
   readonly nomComplet = nomComplet;
   readonly nom = nomEquipement;
 
-  vue = signal<PretsSejourVue | null>(null);
+  readonly vue = computed(() => this.prets().vue());
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
   envoi = signal(false);
@@ -188,8 +189,7 @@ export class SejourMaterielComponent implements OnInit {
   readonly avecDetendeur = computed(() => contientUnDetendeur(this.choisis(), this.vue()?.disponibles ?? []));
 
   ngOnInit(): void {
-    this.port().lire().subscribe({
-      next: v => this.vue.set(v),
+    this.prets().lire().subscribe({
       error: (e: HttpErrorResponse) => this.message.set(e.error?.detail ?? 'Le matériel n’a pas pu être lu (réseau nécessaire).')
     });
   }
@@ -225,7 +225,7 @@ export class SejourMaterielComponent implements OnInit {
       this.erreur.set('Indiquez qui a emprunté, le jour, et cochez le matériel.');
       return;
     }
-    this.ecrire(this.port().declarer({
+    this.ecrire(this.prets().declarer({
       participantId: this.participantId, datePret: this.datePret, equipementIds: this.choisis(),
       detendeursDesinfectes: this.desinfecte
     }), () => this.ouvert.set(false));
@@ -234,7 +234,7 @@ export class SejourMaterielComponent implements OnInit {
   annuler(p: PretSejourVue): void {
     const quoi = p.equipements.map(nomEquipement).join(', ');
     if (!confirm(`Annuler la déclaration de ${quoi} (${p.emprunteur}) ? Seulement si elle a été faite par erreur.`)) return;
-    this.ecrire(this.port().annuler(p.id));
+    this.ecrire(this.prets().annuler(p.id));
   }
 
   private ecrire(appel: Observable<PretsSejourVue>, ensuite?: () => void): void {
@@ -242,9 +242,8 @@ export class SejourMaterielComponent implements OnInit {
     this.erreur.set(null);
     this.message.set(null);
     appel.subscribe({
-      next: v => {
+      next: () => {
         this.envoi.set(false);
-        this.vue.set(v);
         ensuite?.();
       },
       error: (e: HttpErrorResponse) => {

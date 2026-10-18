@@ -74,6 +74,7 @@ class PretsSejourTest {
     private JsonNode envoyer(String methode, String url, String jeton, String corps, int attendu) throws Exception {
         var requete = switch (methode) {
             case "POST" -> post(url);
+            case "PUT" -> put(url);
             case "DELETE" -> delete(url);
             default -> get(url);
         };
@@ -246,6 +247,47 @@ class PretsSejourTest {
         assertThat(envoyer("DELETE", base + "/prets/" + pretDetendeur, dt, null, 200).get("prets")).isEmpty();
 
         envoyer("GET", pub + "/prets", null, null, 403);
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
+
+    @Test
+    @DisplayName("Un participant dit n'avoir rien emprunté ; déclarer un emprunt efface cette réponse")
+    void rienEmprunte() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate aujourdhui = LocalDate.now(ZoneId.of("Europe/Paris"));
+        LocalDate debut = aujourdhui.plusDays(5);
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour rien emprunté","dateDebut":"%s","dateFin":"%s"}""".formatted(debut, debut.plusDays(1)), 201)
+                .get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+        long pLea = ajouter(base, dt, """
+                {"nom":"Invitée","prenom":"Léa","plongeur":true,"email":"lea.rien@exemple.fr"}""");
+        long gilet = creerEquipement(dt, "GILET", "G-RIEN-" + UUID.randomUUID().toString().substring(0, 6));
+
+        envoyer("POST", base + "/invitations", dt, null, 200);
+        String pub = "/api/public/sejour/" + extraire(dernierPour("lea.rien@exemple.fr"), "/sejour/([A-Za-z0-9_-]+)");
+        String jetonLea = entrerParLeLien(pub, "lea.rien@exemple.fr");
+
+        assertThat(envoyer("GET", pub + "/prets", jetonLea, null, 200).get("rienEmprunte").asBoolean()).isFalse();
+        JsonNode vue = envoyer("PUT", pub + "/prets/rien-emprunte", jetonLea, "{\"rienEmprunte\":true}", 200);
+        assertThat(vue.get("rienEmprunte").asBoolean()).isTrue();
+        assertThat(envoyer("GET", pub + "/prets", jetonLea, null, 200).get("rienEmprunte").asBoolean()).isTrue();
+
+        // Elle se souvient finalement d'un gilet : le déclarer retire « rien emprunté ».
+        vue = envoyer("POST", pub + "/prets", jetonLea, declaration(pLea, aujourdhui, null, gilet), 200);
+        assertThat(vue.get("rienEmprunte").asBoolean()).isFalse();
+
+        // Tant qu'un emprunt est déclaré, elle ne peut pas dire n'avoir rien emprunté.
+        JsonNode refus = envoyer("PUT", pub + "/prets/rien-emprunte", jetonLea, "{\"rienEmprunte\":true}", 422);
+        assertThat(refus.get("detail").asText()).isEqualTo("Vous avez déclaré du matériel pour ce séjour : "
+                + "annulez d'abord la déclaration faite par erreur.");
+
+        // Un encadrant qui n'est pas du séjour n'a pas à répondre.
+        refus = envoyer("PUT", base + "/prets/rien-emprunte", dt, "{\"rienEmprunte\":true}", 422);
+        assertThat(refus.get("detail").asText()).isEqualTo("Seuls les participants du séjour disent s'ils ont "
+                + "emprunté du matériel.");
+
+        envoyer("DELETE", pub + "/prets/" + vue.get("prets").get(0).get("id").asLong(), jetonLea, null, 200);
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
     }
 }

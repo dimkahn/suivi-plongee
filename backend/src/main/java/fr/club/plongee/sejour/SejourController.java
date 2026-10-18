@@ -3,6 +3,7 @@ package fr.club.plongee.sejour;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.sejour.CarnetSejourService.BilanEnvoiCarnet;
 import fr.club.plongee.sejour.PretsSejourService.DemandeDeclarationPret;
+import fr.club.plongee.sejour.PretsSejourService.DemandeRienEmprunte;
 import fr.club.plongee.sejour.PretsSejourService.PretsSejourVue;
 import fr.club.plongee.sejour.SejourService.*;
 import fr.club.plongee.securite.UtilisateurPrincipal;
@@ -342,6 +343,15 @@ public class SejourController {
     public PretsSejourVue declarerPret(@PathVariable Long id, @Valid @RequestBody DemandeDeclarationPret d,
                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
         pretsSejour.declarer(id, d, frais.acteur(id, moi));
+        return prets(id, moi);
+    }
+
+    /** « Je n'ai rien emprunté » : le participant connecté répond pour lui-même. */
+    @PutMapping("/{id}/prets/rien-emprunte")
+    @PreAuthorize("isAuthenticated()")
+    public PretsSejourVue rienEmprunte(@PathVariable Long id, @Valid @RequestBody DemandeRienEmprunte d,
+                                       @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        pretsSejour.rienEmprunte(id, d.rienEmprunte(), frais.acteur(id, moi));
         return prets(id, moi);
     }
 

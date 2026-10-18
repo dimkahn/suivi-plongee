@@ -6,6 +6,7 @@ import {
 import { programmeParJour } from './programme-du-jour';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
+import { PretsDuSejour } from './materiel-sejour';
 
 type Rubrique = 'programme' | 'transports' | 'logements' | 'affaires' | 'pratique';
 
@@ -34,7 +35,7 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
   template: `
     @let s = sejour();
     @if (moi(); as m) {
-      <app-mon-sejour [sejour]="s" [moi]="m" (ouvrir)="ouvrirDepuisMonSejour($event)" />
+      <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets()" (ouvrir)="ouvrirDepuisMonSejour($event)" />
     }
 
     @if (sommaire().length > 1) {
@@ -194,8 +195,10 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
 })
 export class CarnetSejourComponent {
   sejour = input.required<SejourVue>();
-  /** « Modifier mes informations » ou « Mes comptes » : l'onglet de la page qui s'en occupe. */
-  ouvrirOnglet = output<'infos' | 'frais'>();
+  /** Le matériel emprunté, partagé avec l'onglet « Matériel » de la page. */
+  prets = input<PretsDuSejour | null>(null);
+  /** « Modifier mes informations », « Mes comptes », le matériel : l'onglet de la page qui s'en occupe. */
+  ouvrirOnglet = output<'infos' | 'frais' | 'materiel' | 'declarer'>();
 
   readonly jourLong = jourLong;
   readonly categories = CATEGORIES;
@@ -242,7 +245,7 @@ export class CarnetSejourComponent {
 
   /** Une tuile de « Mon séjour » : la rubrique du carnet qui en donne le détail, ou l'onglet qui s'en occupe. */
   ouvrirDepuisMonSejour(cible: CibleMonSejour): void {
-    if (cible === 'infos' || cible === 'frais') {
+    if (cible === 'infos' || cible === 'frais' || cible === 'materiel' || cible === 'declarer') {
       this.ouvrirOnglet.emit(cible);
     } else if (cible === 'hebergement' && this.sejour().logements.length > 0) {
       this.allerA('logements');

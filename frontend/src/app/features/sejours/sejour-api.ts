@@ -322,6 +322,8 @@ export interface PretsSejourVue {
   /** Ceux pour qui l'on peut déclarer. */
   participants: { id: number; prenom: string; nom: string }[];
   droits: DroitsPrets;
+  /** Celui qui regarde a dit n'avoir rien emprunté. */
+  rienEmprunte: boolean;
 }
 
 export interface DemandeDeclarationPret {
@@ -336,6 +338,8 @@ export interface PortPrets {
   lire(): Observable<PretsSejourVue>;
   declarer(d: DemandeDeclarationPret): Observable<PretsSejourVue>;
   annuler(pretId: number): Observable<PretsSejourVue>;
+  /** « Je n'ai rien emprunté » (true), ou retour sur cette réponse (false). */
+  rienEmprunte(rien: boolean): Observable<PretsSejourVue>;
 }
 
 export interface BilanEnvoiAcces {
@@ -613,7 +617,8 @@ export class SejourApi {
     return {
       lire: () => this.http.get<PretsSejourVue>(base),
       declarer: d => this.http.post<PretsSejourVue>(base, d),
-      annuler: pretId => this.http.delete<PretsSejourVue>(`${base}/${pretId}`)
+      annuler: pretId => this.http.delete<PretsSejourVue>(`${base}/${pretId}`),
+      rienEmprunte: rien => this.http.put<PretsSejourVue>(`${base}/rien-emprunte`, { rienEmprunte: rien })
     };
   }
 

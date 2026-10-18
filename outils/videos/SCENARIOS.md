@@ -848,7 +848,7 @@ Compte : `eleve@club.fr` · format téléphone · 25 s
 
 ### E2 — Le carnet du séjour
 
-La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour, l'heure et l'aéroport d'arrivée de son vol retour) et déclare le gilet du club qu'elle a emprunté.
+La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour, l'heure et l'aéroport d'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare le gilet qu'elle a emprunté.
 
 Compte : `eleve@club.fr` · format téléphone
 

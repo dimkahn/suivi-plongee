@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-17, 19e série, lieu d'arrivée du retour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 20e série, « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et déclare le gilet du club qu\'elle a emprunté.',
+  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare le gilet qu\'elle a emprunté.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette }) {
@@ -30,6 +30,15 @@ export default {
     await legende('Le jour du retour, il rappelle de même l\'heure du vol, et la veille ses comptes à régler.', 4000);
 
     await legende('« Mon séjour » : une case par sujet. Ses vols aller et retour, sa voiture, sa chambre, ses comptes, ses informations.', 5000);
+    await legende('En orange, une question : « Avez-vous emprunté du matériel du club ? ». Elle a pris un gilet : « Oui, je déclare mon matériel ».', 0);
+    await toucher(page.getByRole('button', { name: 'Oui, je déclare mon matériel' }), { apres: 1500 });
+    await legende('Elle choisit « Gilets », ou tape la référence ou l\'ancien numéro de l\'étiquette, coche le sien, et enregistre. Le directeur technique le retrouve dans ses prêts.', 0);
+    await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });
+    await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 1500 });
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 3000 });
+    await legende('Un détendeur, lui, se déclare par un moniteur du séjour : il atteste sa désinfection.', 3500);
+    await enHaut();
+    await legende('La question a disparu : son gilet est dans la case « Matériel emprunté », avec le jour où le rendre. Rien emprunté ? « Non, je n\'ai rien emprunté », et la question ne revient plus.', 5500);
     await legende('Toucher une case ouvre le détail : ici sa chambre, dans l\'onglet Hébergement.', 0);
     await toucher(page.locator('app-mon-sejour .tuile').filter({ hasText: 'Chambre' }), { apres: 3500 });
     await enHaut();
@@ -40,14 +49,6 @@ export default {
     await defiler(600, 2000);
     await legende('« Pratique » : ce qu\'il faut emporter, et les infos pratiques.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
-    await legende('Elle a emprunté un gilet du club : onglet « Matériel », « Déclarer un emprunt ».', 0);
-    await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 1500 });
-    await toucher(page.getByRole('button', { name: 'Déclarer un emprunt' }), { apres: 1500 });
-    await legende('Elle choisit « Gilets », ou tape la référence ou l\'ancien numéro de l\'étiquette, coche le sien, et enregistre. Le directeur technique le retrouve dans ses prêts.', 0);
-    await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });
-    await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 1500 });
-    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 3000 });
-    await legende('Un détendeur, lui, se déclare par un moniteur du séjour : il atteste sa désinfection.', 4000);
     await enHaut();
     await legende('Les frais sont en haut de la page : « Voir les frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
     await toucher(page.getByRole('button', { name: 'Voir les frais' }), { apres: 3500 });

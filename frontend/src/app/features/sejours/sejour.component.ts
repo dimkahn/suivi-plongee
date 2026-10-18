@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -19,6 +19,7 @@ import { JourneeSejourComponent } from './journee-sejour.component';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { SejourMaterielComponent } from './sejour-materiel.component';
+import { PretsDuSejour } from './materiel-sejour';
 import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 
@@ -151,7 +152,7 @@ function participantVide(): BrouillonParticipant {
       </section>
 
       @if (moi(); as m) {
-        <app-mon-sejour [sejour]="s" [moi]="m" (ouvrir)="ouvrirDepuisMonSejour($event)" />
+        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
                       (fermer)="mesInfosOuvertes.set(false)">
           @if (mesInfosOuvertes()) {
@@ -482,7 +483,7 @@ function participantVide(): BrouillonParticipant {
       <!-- Matériel du club emprunté : chargé à l'ouverture de l'onglet -->
       @if (voir('materiel')) {
         <section id="materiel-sejour">
-          <app-sejour-materiel [port]="portPrets" />
+          <app-sejour-materiel [prets]="prets" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
               Les participants qui ne sont pas moniteurs déclarent leurs emprunts par le même lien que les frais.
@@ -1302,6 +1303,10 @@ export class SejourComponent {
       this.mesInfosOuvertes.set(true);
     } else if (cible === 'frais') {
       this.ouvrirFrais();
+    } else if (cible === 'declarer') {
+      // « Oui, je déclare mon matériel » : l'onglet « Matériel », fenêtre de déclaration ouverte.
+      this.onglet.set('materiel');
+      setTimeout(() => this.materiel()?.ouvrir());
     } else {
       this.onglet.set(cible);
       setTimeout(() => document.getElementById('onglets-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -1311,8 +1316,9 @@ export class SejourComponent {
   /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
   readonly portFrais = this.api.portFrais(this.id, s => this.sejour.set(s));
 
-  /** Le matériel emprunté, pour l'onglet « Matériel ». */
-  readonly portPrets = this.api.portPrets(this.id);
+  /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour ». */
+  readonly prets = new PretsDuSejour(this.api.portPrets(this.id));
+  private readonly materiel = viewChild(SejourMaterielComponent);
 
   mesInfosOuvertes = signal(false);
 

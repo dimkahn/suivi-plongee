@@ -2,6 +2,7 @@ package fr.club.plongee.sejour;
 
 import fr.club.plongee.sejour.AccesSejourService.*;
 import fr.club.plongee.sejour.PretsSejourService.DemandeDeclarationPret;
+import fr.club.plongee.sejour.PretsSejourService.DemandeRienEmprunte;
 import fr.club.plongee.sejour.PretsSejourService.PretsSejourVue;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -193,6 +194,15 @@ public class AccesSejourController {
                                        @Valid @RequestBody DemandeDeclarationPret d) {
         Acces a = acces.acces(code, jeton);
         pretsSejour.declarer(a.sortieId(), d, frais.acteurParticipant(a.participantId()));
+        return pretsSejour.lire(a.sortieId(), frais.acteurParticipant(a.participantId()), false);
+    }
+
+    @PutMapping("/prets/rien-emprunte")
+    public PretsSejourVue rienEmprunte(@PathVariable String code,
+                                       @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                       @Valid @RequestBody DemandeRienEmprunte d) {
+        Acces a = acces.acces(code, jeton);
+        pretsSejour.rienEmprunte(a.sortieId(), d.rienEmprunte(), frais.acteurParticipant(a.participantId()));
         return pretsSejour.lire(a.sortieId(), frais.acteurParticipant(a.participantId()), false);
     }
 

@@ -51,6 +51,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 - Programme : `sejour_evenement`, plus les plongées de la sortie à l'affichage.
 - Palanquées (`PalanqueesSejourService`, `SejourVue.palanquees`, `ProgrammeVue.palanquees`) lues sur les fiches de sécurité des plongées de la sortie, sous chaque plongée (`PalanqueesPlongeeComponent`) avec fonction, aptitude, niveau préparé. *Demande du club, 2026.*
 - Encadrant : toutes les palanquées ; participant : la sienne seulement, **filtré par le serveur**, retrouvé par dossier, compte, sinon nom et prénom.
+- Matériel emprunté (onglet « Matériel », `PretsSejourService`) : dans « Mon séjour », question « Avez-vous emprunté du matériel du club ? » tant que ni emprunt ni réponse « rien emprunté » (`rien_emprunte`, V91, pour soi seulement, effacée par une déclaration) ; puis case « Matériel emprunté ». Carte et onglet partagent `PretsDuSejour`.
 - Encart « Aujourd'hui » (`JourneeSejourComponent`, calcul pur `programme-du-jour.ts`, date de l'appareil), dans le séjour et la page du lien (`MesInformationsVue.programme`) : du premier aller au dernier retour, programme du jour et voyages du jour avec l'heure d'être sur place ; la veille, un rappel.
 - Avance par transport : `MoyenTransport` (serveur, e-mail), `AVANCES_TRANSPORT` (écran). Avion 2 h, train 30 min, bateau 45 min, car 15 min.
 

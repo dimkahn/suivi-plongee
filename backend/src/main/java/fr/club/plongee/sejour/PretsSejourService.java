@@ -43,7 +43,10 @@ import java.util.stream.Collectors;
  *   <li>chacun annule ce qu'il a déclaré, tant que le matériel n'est pas
  *   rendu ; l'organisateur annule tout ;</li>
  *   <li>un participant ne voit que ses propres emprunts ; les encadrants
- *   voient tous ceux du séjour.</li>
+ *   voient tous ceux du séjour ;</li>
+ *   <li>un participant qui n'a rien emprunté le dit lui-même
+ *   ({@code rien_emprunte}, V91) : la carte « Mon séjour » cesse de lui
+ *   demander ; déclarer un emprunt retire cette réponse.</li>
  * </ul>
  */
 @Service
@@ -61,13 +64,17 @@ public class PretsSejourService {
     /**
      * {@code disponibles} : le matériel qui peut être déclaré (vide pour qui
      * ne déclare pas) ; {@code participants} : ceux pour qui l'acteur peut
-     * déclarer.
+     * déclarer ; {@code rienEmprunte} : celui qui regarde a dit n'avoir rien
+     * emprunté.
      */
     public record PretsSejourVue(List<PretSejourVue> prets, List<EquipementPreteVue> disponibles,
-                                 List<EmprunteurPossibleVue> participants, DroitsPrets droits) {}
+                                 List<EmprunteurPossibleVue> participants, DroitsPrets droits,
+                                 boolean rienEmprunte) {}
 
     public record DemandeDeclarationPret(@NotNull Long participantId, @NotNull LocalDate datePret,
                                          @NotEmpty List<Long> equipementIds, Boolean detendeursDesinfectes) {}
+
+    public record DemandeRienEmprunte(@NotNull Boolean rienEmprunte) {}
 
     /** Une ligne de {@code sejour_pret} : quel participant a emprunté, et qui l'a déclaré. */
     record PretDeclare(Long pretId, Long participantId, Long parUtilisateurId, Long parParticipantId) {}
@@ -113,7 +120,7 @@ public class PretsSejourService {
                 .filter(p -> droits.pourLesAutres() || (droits.peutDeclarer() && p.id().equals(acteur.participantId())))
                 .map(p -> new EmprunteurPossibleVue(p.id(), p.prenom(), p.nom()))
                 .toList();
-        return new PretsSejourVue(liste, disponibles, pourQui, droits);
+        return new PretsSejourVue(liste, disponibles, pourQui, droits, rienEmprunte(acteur.participantId()));
     }
 
     @Transactional
@@ -137,6 +144,22 @@ public class PretsSejourService {
                 emprunteur.nomComplet(), sortieId, d.datePret(), d.equipementIds(), d.detendeursDesinfectes(),
                 nomDe(sortieId, acteur), acteur.utilisateurId()));
         noter(new PretDeclare(pret.id(), emprunteur.id(), acteur.utilisateurId(), acteur.participantId()));
+        repondre(emprunteur.id(), false);
+    }
+
+    /** Le participant qui agit dit lui-même n'avoir rien emprunté (ou revient sur sa réponse). */
+    @Transactional
+    public void rienEmprunte(Long sortieId, boolean rien, ActeurFrais acteur) {
+        if (acteur.participantId() == null) {
+            throw new RegleMetierException("Seuls les participants du séjour disent s'ils ont emprunté du matériel.");
+        }
+        boolean aDesEmprunts = declaresDuSejour(sortieId).stream()
+                .anyMatch(d -> acteur.participantId().equals(d.participantId()));
+        if (rien && aDesEmprunts) {
+            throw new RegleMetierException("Vous avez déclaré du matériel pour ce séjour : "
+                    + "annulez d'abord la déclaration faite par erreur.");
+        }
+        repondre(acteur.participantId(), rien);
     }
 
     @Transactional
@@ -183,6 +206,17 @@ public class PretsSejourService {
         return jdbc.query("SELECT prenom || ' ' || nom FROM utilisateur WHERE id = :id",
                         new MapSqlParameterSource("id", a.utilisateurId()), (rs, i) -> rs.getString(1))
                 .stream().findFirst().orElse("un organisateur");
+    }
+
+    private boolean rienEmprunte(Long participantId) {
+        return participantId != null && Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT rien_emprunte FROM sejour_participant WHERE id = :id",
+                new MapSqlParameterSource("id", participantId), Boolean.class));
+    }
+
+    private void repondre(Long participantId, boolean rien) {
+        jdbc.update("UPDATE sejour_participant SET rien_emprunte = :rien WHERE id = :id",
+                new MapSqlParameterSource("rien", rien).addValue("id", participantId));
     }
 
     private List<Inscrit> inscrits(Long sortieId) {

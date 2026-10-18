@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
@@ -18,6 +18,7 @@ import {
   PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
+import { PretsDuSejour } from './materiel-sejour';
 
 type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel';
 
@@ -94,7 +95,7 @@ interface JetonGarde {
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
-            <app-carnet-sejour [sejour]="c" (ouvrirOnglet)="changerOnglet($event)" />
+            <app-carnet-sejour [sejour]="c" [prets]="prets" (ouvrirOnglet)="ouvrirDepuisCarnet($event)" />
             <p class="version-imprimable">
               <button type="button" class="bouton-discret" (click)="ouvrirImprimable()">Version imprimable</button>
             </p>
@@ -112,7 +113,7 @@ interface JetonGarde {
             <p class="vide">Chargement…</p>
           }
         } @else if (onglet() === 'materiel') {
-          <app-sejour-materiel [port]="portPrets" />
+          <app-sejour-materiel [prets]="prets" />
         } @else {
           <app-sejour-frais [frais]="v.frais" [participants]="v.participants" [port]="port"
                             (maj)="majFrais($event)" />
@@ -246,8 +247,14 @@ export class EspaceParticipantComponent {
   readonly portPrets: PortPrets = {
     lire: () => this.http.get<PretsSejourVue>(`${this.base}/prets`, this.options()),
     declarer: d => this.http.post<PretsSejourVue>(`${this.base}/prets`, d, this.options()),
-    annuler: pretId => this.http.delete<PretsSejourVue>(`${this.base}/prets/${pretId}`, this.options())
+    annuler: pretId => this.http.delete<PretsSejourVue>(`${this.base}/prets/${pretId}`, this.options()),
+    rienEmprunte: rien => this.http.put<PretsSejourVue>(`${this.base}/prets/rien-emprunte`, { rienEmprunte: rien },
+      this.options())
   };
+
+  /** Le matériel emprunté, partagé par la carte « Mon séjour » du carnet et l'onglet « Matériel ». */
+  readonly prets = new PretsDuSejour(this.portPrets);
+  private readonly materiel = viewChild(SejourMaterielComponent);
 
   constructor() {
     void this.demarrer();
@@ -263,6 +270,12 @@ export class EspaceParticipantComponent {
     // « Mes comptes » du carnet suit les frais.
     const c = this.carnet();
     if (c) this.carnet.set({ ...c, frais: f });
+  }
+
+  /** Depuis le carnet ; « declarer » : l'onglet « Matériel », fenêtre de déclaration ouverte. */
+  ouvrirDepuisCarnet(o: Onglet | 'declarer'): void {
+    this.changerOnglet(o === 'declarer' ? 'materiel' : o);
+    if (o === 'declarer') setTimeout(() => this.materiel()?.ouvrir());
   }
 
   /** Un onglet, en haut de son contenu ; le message d'un autre onglet ne le suit pas. */

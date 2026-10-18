@@ -1,8 +1,15 @@
-import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, input, output, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { dateFr } from '../../core/date-fr';
+import { nomEquipement } from '../../core/nom-equipement';
+import { MonMateriel, PretsDuSejour, monMateriel } from './materiel-sejour';
 import { ParticipantVue, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
 
-/** Où mène chaque tuile : un onglet du séjour, ou la fenêtre « Mes informations ». */
-export type CibleMonSejour = 'transports' | 'hebergement' | 'frais' | 'infos';
+/**
+ * Où mène chaque tuile : un onglet du séjour, ou la fenêtre « Mes informations » ;
+ * « declarer » : l'onglet « Matériel », fenêtre de déclaration ouverte.
+ */
+export type CibleMonSejour = 'transports' | 'hebergement' | 'frais' | 'materiel' | 'declarer' | 'infos';
 
 interface Tuile {
   cible: CibleMonSejour;
@@ -19,9 +26,12 @@ interface Tuile {
  * La carte « Mon séjour » du participant connecté (demande du club, 2026 :
  * l'ancienne ligne repliée était trop pauvre et peu lisible). Toujours
  * dépliée, une tuile par sujet : voyage aller, voyage retour, voiture,
- * chambre, comptes, et ses informations (téléphone, repas, personne à
- * prévenir). Ce qui manque est dit en tête, avec le bouton pour le donner ;
- * toucher une tuile ouvre l'onglet qui en donne le détail.
+ * chambre, comptes, matériel emprunté, et ses informations (téléphone,
+ * repas, personne à prévenir). Ce qui manque est dit en tête, avec le
+ * bouton pour le donner ; toucher une tuile ouvre l'onglet qui en donne le
+ * détail. Tant qu'il n'a ni déclaré d'emprunt ni dit n'avoir rien emprunté,
+ * un encart lui demande s'il a pris du matériel du club (demande du club,
+ * 2026).
  */
 @Component({
   selector: 'app-mon-sejour',
@@ -36,6 +46,21 @@ interface Tuile {
       </div>
       @if (manque().length > 0) {
         <p class="a-completer sans-impression">À compléter : {{ manque().join(', ') }}.</p>
+      }
+      @if (materiel()?.etat === 'question') {
+        <div class="question-materiel sans-impression" role="group" aria-labelledby="question-materiel">
+          <p id="question-materiel" class="question">Avez-vous emprunté du matériel du club ?</p>
+          <p class="precision">Bloc, détendeur, gilet, combinaison : déclarez-le, le directeur technique saura où il est.</p>
+          <div class="reponses">
+            <button type="button" class="bouton-principal" (click)="ouvrir.emit('declarer')">
+              Oui, je déclare mon matériel
+            </button>
+            <button type="button" class="bouton-discret" (click)="rienEmprunte()" [disabled]="envoi()">
+              @if (envoi()) { Envoi… } @else { Non, je n'ai rien emprunté }
+            </button>
+          </div>
+          @if (erreur(); as e) { <p class="erreur" role="alert">{{ e }}</p> }
+        </div>
       }
       <ul class="tuiles">
         @for (t of tuiles(); track t.etiquette) {
@@ -64,6 +89,12 @@ interface Tuile {
                 background: #E0F2FE; color: var(--profond-fonce); }
     .a-completer { margin: var(--pas) 0 0; padding: var(--pas) var(--pas-2); border-radius: var(--r-s);
                    background: var(--en-cours-clair); color: var(--en-cours); font-weight: 700; }
+    .question-materiel { margin: var(--pas-2) 0 0; padding: var(--pas-2); border-radius: var(--r-s);
+                         border: 2px solid var(--en-cours); background: var(--en-cours-clair); }
+    .question { margin: 0; font-size: 1.125rem; font-weight: 700; color: var(--en-cours); }
+    .precision { margin: 4px 0 0; font-size: .9375rem; }
+    .reponses { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); }
+    .erreur { margin: var(--pas) 0 0; color: #B91C1C; font-weight: 700; }
     .tuiles { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas);
               grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
     .tuile { width: 100%; height: 100%; min-height: 44px; margin: 0; padding: var(--pas) var(--pas-2);
@@ -79,6 +110,7 @@ interface Tuile {
     @media (max-width: 640px) {
       .tuiles { grid-template-columns: 1fr 1fr; }
       .tete .bouton-principal { margin-left: 0; width: 100%; }
+      .reponses button { width: 100%; }
     }
     @media (max-width: 380px) { .tuiles { grid-template-columns: 1fr; } }
     @media print {
@@ -87,10 +119,36 @@ interface Tuile {
     }
   `]
 })
-export class MonSejourComponent {
+export class MonSejourComponent implements OnInit {
   sejour = input.required<SejourVue>();
   moi = input.required<ParticipantVue>();
+  /** Le matériel emprunté, partagé avec l'onglet « Matériel » ; sans lui, ni question ni tuile. */
+  prets = input<PretsDuSejour | null>(null);
   ouvrir = output<CibleMonSejour>();
+
+  envoi = signal(false);
+  erreur = signal<string | null>(null);
+
+  readonly materiel = computed<MonMateriel | null>(() => monMateriel(this.prets()?.vue() ?? null, this.moi().id));
+
+  ngOnInit(): void {
+    // Sans réseau, ni question ni tuile : l'onglet « Matériel » dit l'erreur.
+    this.prets()?.lire().subscribe({ error: () => undefined });
+  }
+
+  rienEmprunte(): void {
+    const prets = this.prets();
+    if (!prets) return;
+    this.envoi.set(true);
+    this.erreur.set(null);
+    prets.rienEmprunte(true).subscribe({
+      next: () => this.envoi.set(false),
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.erreur.set(e.error?.detail ?? "La réponse n'a pas pu être enregistrée (réseau nécessaire).");
+      }
+    });
+  }
 
   /** Ce que le participant peut encore donner lui-même par « Modifier mes informations ». */
   readonly manque = computed(() => {
@@ -113,6 +171,7 @@ export class MonSejourComponent {
       ...this.tuilesVoiture(s, m),
       this.tuileChambre(s, m),
       this.tuileComptes(s, m),
+      ...this.tuileMateriel(),
       this.tuileInfos(m)
     ];
   });
@@ -199,6 +258,27 @@ export class MonSejourComponent {
       details: [`Payé ${euros(solde.payeCentimes)} · votre part ${euros(solde.duCentimes)}`, ...lignes],
       aCompleter: false, vide: ''
     };
+  }
+
+  /** Ses emprunts (« Gilet G-12, Bloc B-07 »), ou « Rien emprunté » ; pendant la question, pas de tuile. */
+  private tuileMateriel(): Tuile[] {
+    const mm = this.materiel();
+    if (mm?.etat === 'rien') {
+      return [{ cible: 'materiel', etiquette: 'Matériel emprunté', principal: 'Aucun',
+                details: ['Vous avez dit n\'avoir rien emprunté'], aCompleter: false, vide: '' }];
+    }
+    if (mm?.etat !== 'emprunts') return [];
+    const enCours = mm.prets.filter(p => !p.dateRetour);
+    const retour = enCours.map(p => p.dateRetourPrevue).filter((d): d is string => !!d).sort()[0];
+    return [{
+      cible: 'materiel', etiquette: 'Matériel emprunté',
+      principal: mm.prets.flatMap(p => p.equipements).map(e => `${e.typeLibelle} ${nomEquipement(e)}`).join(', '),
+      details: [
+        enCours.length === 0 ? 'Tout est rendu' : retour ? 'À rendre le ' + dateFr(retour) : null,
+        enCours.some(p => p.enRetard) ? 'En retard' : null
+      ].filter((x): x is string => !!x),
+      aCompleter: enCours.some(p => p.enRetard), vide: ''
+    }];
   }
 
   private tuileInfos(m: ParticipantVue): Tuile {
