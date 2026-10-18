@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-18, 12e série, fonction en sélecteur compact, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 13e série, fiche neuve sans palanquée, fonction en sélecteur compact, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -31,14 +31,21 @@ export default {
     await saisir('#securiteSurface', 'Maître-nageur au bord, trousse de secours au poste.');
     await saisir('#planSecours', 'SAMU (15), DAE à l\'accueil de la piscine.');
 
+    // Une fiche neuve n'a aucune palanquée : la première se crée avec son profil prévu.
+    const premiere = page.locator('.bouton-premiere-palanquee');
+    await premiere.scrollIntoViewIfNeeded();
+    await legende('Puis les palanquées : la fiche part de zéro, « + Palanquée » crée la première.', 0);
+    await toucher(premiere, { apres: 900 });
+    await legende('Sa profondeur et sa durée prévues sont demandées d\'emblée.', 0);
+    await saisir('#nouvelle-profondeur', '6');
+    await saisir('#nouvelle-duree', '20');
+    await toucher(page.getByRole('button', { name: 'Créer la palanquée' }), { apres: 1200 });
+
     // La première palanquée, par son rang : son titre devient le nom de son encadrant.
     const palanquee = page.locator('section.carte')
       .filter({ has: page.getByRole('heading', { name: /^Palanquée/ }) }).first();
     await palanquee.scrollIntoViewIfNeeded();
-    await legende('Puis les palanquées : une est prête, « + Palanquée » en ajoute d\'autres.', 0);
-    await legende('Chaque palanquée est compacte : son profil prévu se modifie sur place.', 0);
-    await saisir(palanquee.getByLabel('Profondeur prévue (m)'), '6');
-    await saisir(palanquee.getByLabel('Durée prévue (min)'), '20');
+    await legende('Chaque palanquée est compacte : son profil prévu reste modifiable sur place.', 0);
     await legende('« + Plongeur » ouvre sa fenêtre : pour un plongeur du club, aptitude et niveau préparé se remplissent seuls.', 0);
     const fenetre = page.locator('dialog[open]');
     await toucher(palanquee.getByRole('button', { name: '+ Plongeur' }), { apres: 600 });

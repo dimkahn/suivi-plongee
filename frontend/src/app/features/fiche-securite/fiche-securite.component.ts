@@ -524,6 +524,20 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </section>
       }
 
+      <!-- Fiche neuve : aucune palanquée d'office, la première se crée avec sa profondeur et sa durée prévues. -->
+      @if (palanquees().length === 0) {
+        <section class="carte panneau sans-palanquee">
+          <p>Aucune palanquée pour l'instant.</p>
+          <p class="secondaire">
+            « + Palanquée » crée la première : sa profondeur et sa durée prévues sont demandées.
+            Vous pouvez aussi placer un plongeur d'un groupe dans une nouvelle palanquée, ou reprendre
+            celles d'une autre séance.
+          </p>
+          <button type="button" class="bouton-principal bouton-premiere-palanquee"
+                  (click)="ouvrirNouvellePalanquee(null)">+ Palanquée</button>
+        </section>
+      }
+
       <div class="ajouts-palanquees action-ordinateur">
         <button type="button" class="bouton-discret bouton-ajout-palanquee" (click)="ouvrirNouvellePalanquee(null)">+ Palanquée</button>
         <button type="button" class="bouton-discret bouton-reprendre-palanquee" (click)="ouvrirReprise()">
@@ -902,6 +916,8 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .crayon { color: var(--profond); padding: 0 var(--pas); }
     .modifier-plongeur:disabled .crayon { display: none; }
     .bouton-ajout-palanquee, .bouton-reprendre-palanquee { min-height: 44px; }
+    .sans-palanquee p { margin: 0 0 var(--pas); }
+    .bouton-premiere-palanquee { width: auto; min-height: 44px; margin: var(--pas) 0 0; }
     .ajouts-palanquees { display: flex; flex-wrap: wrap; gap: var(--pas); }
 
     .champ { margin: 0; font-weight: 400; font-size: .8125rem; color: var(--craie); }
@@ -1238,7 +1254,8 @@ export class FicheSecuriteComponent implements AvecModifications {
         securiteSurface: fiche.securiteSurface, planSecours: fiche.planSecours,
         observations: fiche.observations
       });
-      this.palanquees.set(fiche.palanquees.length > 0 ? fiche.palanquees : [palanqueeVide(1)]);
+      // Une fiche neuve part sans palanquée : la première se crée par « + Palanquée », profil prévu compris.
+      this.palanquees.set(fiche.palanquees);
       this.retenirEtatEnregistre();
 
       const saisonOuverte = saisons.find(s => s.ouverte);
@@ -2042,7 +2059,7 @@ export class FicheSecuriteComponent implements AvecModifications {
         if (dejaSaisies && !confirm('Remplacer les palanquées déjà saisies sur cette fiche par la proposition ?')) {
           return;
         }
-        this.palanquees.set(r.palanquees.length > 0 ? r.palanquees : [palanqueeVide(1)]);
+        this.palanquees.set(r.palanquees);
         this.bilanProposition.set(r);
         this.plongeurADeplacer.set(null);
         this.propositionOuverte.set(false);
