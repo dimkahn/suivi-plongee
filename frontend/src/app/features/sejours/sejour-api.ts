@@ -324,6 +324,9 @@ export interface PretsSejourVue {
   droits: DroitsPrets;
   /** Celui qui regarde a dit n'avoir rien emprunté. */
   rienEmprunte: boolean;
+  /** Pour qui voit tous les emprunts (vides sinon) : les participants sans emprunt qui l'ont dit, ou pas encore. */
+  rienEmpruntePar: { id: number; prenom: string; nom: string }[];
+  sansReponse: { id: number; prenom: string; nom: string }[];
 }
 
 export interface DemandeDeclarationPret {

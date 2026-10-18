@@ -37,7 +37,7 @@ function pret(id: number, participantId: number | null): PretSejourVue {
 }
 
 function vue(prets: PretSejourVue[], rienEmprunte = false, peutDeclarer = true): PretsSejourVue {
-  return { prets, disponibles: [], participants: [], rienEmprunte,
+  return { prets, disponibles: [], participants: [], rienEmprunte, rienEmpruntePar: [], sansReponse: [],
            droits: { moiId: 7, peutDeclarer, pourLesAutres: false } };
 }
 

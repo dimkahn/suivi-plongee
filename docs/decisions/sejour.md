@@ -75,7 +75,7 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Date** : 2026-10.
 - **Contexte** : le club veut voir dans la carte « Mon séjour » le matériel emprunté, et y demander bien en vue à chacun s'il en a pris.
 - **Décision** : tant que le participant n'a ni emprunt déclaré ni répondu, un encart orange pose la question : « Oui, je déclare mon matériel » (onglet « Matériel », fenêtre ouverte) ou « Non, je n'ai rien emprunté » (`sejour_participant.rien_emprunte`, V91, `PUT …/prets/rien-emprunte`, pour soi seulement). Ensuite une case « Matériel emprunté » : ses emprunts et le jour du retour, ou « Aucun ». Déclarer un emprunt retire « rien emprunté » ; l'inverse est refusé tant qu'un emprunt est déclaré. La carte et l'onglet partagent la même vue (`PretsDuSejour`).
-- **Conséquences** : l'organisateur ne voit pas encore qui a répondu « rien emprunté » (suite possible : une relance).
+- **Conséquences** : l'organisateur et les encadrants voient, sous les emprunts, qui a répondu « rien emprunté » et qui n'a pas encore répondu (`rienEmpruntePar`, `sansReponse`, vides pour un participant). Suite possible : relancer par e-mail.
 
 ## Jour de départ de l'aller, jour d'arrivée du retour
 

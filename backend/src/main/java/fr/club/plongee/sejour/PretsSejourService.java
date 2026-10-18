@@ -46,7 +46,9 @@ import java.util.stream.Collectors;
  *   voient tous ceux du séjour ;</li>
  *   <li>un participant qui n'a rien emprunté le dit lui-même
  *   ({@code rien_emprunte}, V91) : la carte « Mon séjour » cesse de lui
- *   demander ; déclarer un emprunt retire cette réponse.</li>
+ *   demander ; déclarer un emprunt retire cette réponse. Ceux qui voient
+ *   tous les emprunts voient aussi qui n'a rien emprunté et qui n'a pas
+ *   encore répondu, pour relancer.</li>
  * </ul>
  */
 @Service
@@ -65,11 +67,14 @@ public class PretsSejourService {
      * {@code disponibles} : le matériel qui peut être déclaré (vide pour qui
      * ne déclare pas) ; {@code participants} : ceux pour qui l'acteur peut
      * déclarer ; {@code rienEmprunte} : celui qui regarde a dit n'avoir rien
-     * emprunté.
+     * emprunté ; {@code rienEmpruntePar}, {@code sansReponse} : les
+     * participants sans emprunt qui l'ont dit, ou pas encore (vides pour qui
+     * ne voit que ses emprunts).
      */
     public record PretsSejourVue(List<PretSejourVue> prets, List<EquipementPreteVue> disponibles,
                                  List<EmprunteurPossibleVue> participants, DroitsPrets droits,
-                                 boolean rienEmprunte) {}
+                                 boolean rienEmprunte, List<EmprunteurPossibleVue> rienEmpruntePar,
+                                 List<EmprunteurPossibleVue> sansReponse) {}
 
     public record DemandeDeclarationPret(@NotNull Long participantId, @NotNull LocalDate datePret,
                                          @NotEmpty List<Long> equipementIds, Boolean detendeursDesinfectes) {}
@@ -80,7 +85,7 @@ public class PretsSejourService {
     record PretDeclare(Long pretId, Long participantId, Long parUtilisateurId, Long parParticipantId) {}
 
     /** Ce qu'il faut d'un participant pour lui rattacher un prêt. */
-    record Inscrit(Long id, Long eleveId, Long utilisateurId, String nom, String prenom) {
+    record Inscrit(Long id, Long eleveId, Long utilisateurId, String nom, String prenom, boolean rienEmprunte) {
         String nomComplet() {
             return prenom + " " + nom;
         }
@@ -108,19 +113,27 @@ public class PretsSejourService {
         Map<Long, PretDeclare> parPret = declaresDuSejour(sortieId).stream()
                 .collect(Collectors.toMap(PretDeclare::pretId, Function.identity()));
 
-        List<PretSejourVue> liste = prets.parSortie(sortieId).stream()
+        List<PretSejourVue> tous = prets.parSortie(sortieId).stream()
                 .map(p -> vue(p, parPret.get(p.id()), inscrits, acteur))
+                .toList();
+        List<PretSejourVue> liste = tous.stream()
                 .filter(p -> tout || (p.participantId() != null && p.participantId().equals(acteur.participantId())))
                 .toList();
+        Set<Long> ontEmprunte = tous.stream().map(PretSejourVue::participantId).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<Inscrit> sansEmprunt = !tout ? List.of()
+                : inscrits.stream().filter(p -> !ontEmprunte.contains(p.id())).toList();
         List<EquipementPreteVue> disponibles = !droits.peutDeclarer() ? List.of()
                 : prets.disponibles(sorties.sortie(sortieId).getDateFin()).stream()
                         .filter(e -> droits.pourLesAutres() || e.type() != TypeEquipement.DETENDEUR)
                         .toList();
         List<EmprunteurPossibleVue> pourQui = inscrits.stream()
                 .filter(p -> droits.pourLesAutres() || (droits.peutDeclarer() && p.id().equals(acteur.participantId())))
-                .map(p -> new EmprunteurPossibleVue(p.id(), p.prenom(), p.nom()))
+                .map(PretsSejourService::possible)
                 .toList();
-        return new PretsSejourVue(liste, disponibles, pourQui, droits, rienEmprunte(acteur.participantId()));
+        return new PretsSejourVue(liste, disponibles, pourQui, droits, rienEmprunte(acteur.participantId()),
+                sansEmprunt.stream().filter(Inscrit::rienEmprunte).map(PretsSejourService::possible).toList(),
+                sansEmprunt.stream().filter(p -> !p.rienEmprunte()).map(PretsSejourService::possible).toList());
     }
 
     @Transactional
@@ -180,6 +193,10 @@ public class PretsSejourService {
         return new DroitsPrets(a.participantId(), a.gestionnaire() || a.participantId() != null, a.pourLesAutres());
     }
 
+    private static EmprunteurPossibleVue possible(Inscrit p) {
+        return new EmprunteurPossibleVue(p.id(), p.prenom(), p.nom());
+    }
+
     /** Déclaré depuis le séjour, encore en cours, par celui qui agit (ou l'organisateur). */
     private static boolean annulable(PretVue p, PretDeclare d, ActeurFrais a) {
         if (d == null || p.dateRetour() != null) return false;
@@ -221,14 +238,15 @@ public class PretsSejourService {
 
     private List<Inscrit> inscrits(Long sortieId) {
         return jdbc.query("""
-                SELECT id, eleve_id, utilisateur_id, nom, prenom FROM sejour_participant
+                SELECT id, eleve_id, utilisateur_id, nom, prenom, rien_emprunte FROM sejour_participant
                  WHERE sortie_id = :sortie""", new MapSqlParameterSource("sortie", sortieId),
                 (rs, i) -> inscrit(rs));
     }
 
     private static Inscrit inscrit(ResultSet rs) throws SQLException {
         return new Inscrit(rs.getLong("id"), rs.getObject("eleve_id", Long.class),
-                rs.getObject("utilisateur_id", Long.class), rs.getString("nom"), rs.getString("prenom"));
+                rs.getObject("utilisateur_id", Long.class), rs.getString("nom"), rs.getString("prenom"),
+                rs.getBoolean("rien_emprunte"));
     }
 
     /** Ceux des prêts de la sortie qui ont été déclarés depuis son séjour. */

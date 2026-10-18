@@ -262,6 +262,8 @@ class PretsSejourTest {
         String base = "/api/sejours/" + sortie;
         long pLea = ajouter(base, dt, """
                 {"nom":"Invitée","prenom":"Léa","plongeur":true,"email":"lea.rien@exemple.fr"}""");
+        long pTom = ajouter(base, dt, """
+                {"nom":"Invité","prenom":"Tom","plongeur":true}""");
         long gilet = creerEquipement(dt, "GILET", "G-RIEN-" + UUID.randomUUID().toString().substring(0, 6));
 
         envoyer("POST", base + "/invitations", dt, null, 200);
@@ -273,9 +275,19 @@ class PretsSejourTest {
         assertThat(vue.get("rienEmprunte").asBoolean()).isTrue();
         assertThat(envoyer("GET", pub + "/prets", jetonLea, null, 200).get("rienEmprunte").asBoolean()).isTrue();
 
+        // L'organisateur voit qui n'a rien emprunté, et qui n'a pas encore répondu ; elle, rien des autres.
+        JsonNode vueOrga = envoyer("GET", base + "/prets", dt, null, 200);
+        assertThat(vueOrga.get("rienEmpruntePar")).extracting(n -> n.get("id").asLong()).containsExactly(pLea);
+        assertThat(vueOrga.get("sansReponse")).extracting(n -> n.get("id").asLong()).containsExactly(pTom);
+        assertThat(vue.get("rienEmpruntePar")).isEmpty();
+        assertThat(vue.get("sansReponse")).isEmpty();
+
         // Elle se souvient finalement d'un gilet : le déclarer retire « rien emprunté ».
         vue = envoyer("POST", pub + "/prets", jetonLea, declaration(pLea, aujourdhui, null, gilet), 200);
         assertThat(vue.get("rienEmprunte").asBoolean()).isFalse();
+        vueOrga = envoyer("GET", base + "/prets", dt, null, 200);
+        assertThat(vueOrga.get("rienEmpruntePar")).isEmpty();
+        assertThat(vueOrga.get("sansReponse")).extracting(n -> n.get("id").asLong()).containsExactly(pTom);
 
         // Tant qu'un emprunt est déclaré, elle ne peut pas dire n'avoir rien emprunté.
         JsonNode refus = envoyer("PUT", pub + "/prets/rien-emprunte", jetonLea, "{\"rienEmprunte\":true}", 422);

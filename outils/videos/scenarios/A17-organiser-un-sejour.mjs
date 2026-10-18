@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-17, 21e série, lieu d'arrivée du retour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 22e série, qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -72,6 +72,9 @@ export default {
 
     await legende('« Matériel » : le matériel du club emprunté pour le séjour. Chacun déclare le sien, comme ses frais.', 0);
     await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 2500 });
+    await legende('Sous les emprunts : qui a répondu n\'avoir rien emprunté, et qui n\'a pas encore répondu, à relancer.', 0);
+    await page.locator('app-sejour-materiel .reponses').scrollIntoView();
+    await pause(4000);
     await legende('L\'organisatrice déclare aussi pour un autre : « Déclarer un emprunt », qui, le jour, puis le matériel.', 0);
     await toucher(page.getByRole('button', { name: 'Déclarer un emprunt' }), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });

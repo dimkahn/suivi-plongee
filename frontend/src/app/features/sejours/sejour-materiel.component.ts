@@ -64,6 +64,18 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
           }
         </ul>
       }
+      @if (v.rienEmpruntePar.length > 0 || v.sansReponse.length > 0) {
+        <div class="carte reponses">
+          <h3>Les autres participants</h3>
+          @if (v.rienEmpruntePar.length > 0) {
+            <p><strong>Rien emprunté</strong> ({{ v.rienEmpruntePar.length }}) : {{ noms(v.rienEmpruntePar) }}</p>
+          }
+          @if (v.sansReponse.length > 0) {
+            <p class="sans-reponse"><strong>Pas encore répondu</strong> ({{ v.sansReponse.length }}) :
+              {{ noms(v.sansReponse) }}</p>
+          }
+        </div>
+      }
     } @else if (!message()) {
       <p class="secondaire">Chargement…</p>
     }
@@ -163,6 +175,10 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
     .case input { width: auto; flex: none; }
     .desinfection { font-weight: 700; }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
+    .reponses { margin-top: var(--pas-2); padding: var(--pas) var(--pas-2); }
+    .reponses h3 { margin: 0 0 var(--pas); font-size: 1rem; }
+    .reponses p { margin: var(--pas) 0 0; }
+    .sans-reponse strong { color: var(--en-cours); }
   `]
 })
 export class SejourMaterielComponent implements OnInit {
@@ -192,6 +208,11 @@ export class SejourMaterielComponent implements OnInit {
     this.prets().lire().subscribe({
       error: (e: HttpErrorResponse) => this.message.set(e.error?.detail ?? 'Le matériel n’a pas pu être lu (réseau nécessaire).')
     });
+  }
+
+  /** « Léa Invitée, Tom Invité ». */
+  noms(liste: { prenom: string; nom: string }[]): string {
+    return liste.map(nomComplet).join(', ');
   }
 
   /** « Depuis le 12/06, retour prévu le 15/06 » ou « Du 12/06 au 14/06 (rendu) ». */
