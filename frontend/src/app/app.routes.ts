@@ -109,6 +109,7 @@ export const routes: Routes = [
   {
     path: 'fiches-securite/:id/realise',
     canActivate: [gardeConnecte, gardeFichesSecurite],
+    canDeactivate: [gardeModifications],
     loadComponent: () => import('./features/fiche-securite/fiche-securite-realise.component')
       .then(m => m.FicheSecuriteRealiseComponent)
   },

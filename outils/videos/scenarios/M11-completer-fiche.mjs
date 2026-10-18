@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-18, 15e série, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 16e série, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -20,22 +20,31 @@ export default {
     const ligne = page.locator('li').filter({ hasText: '27/09/2026' }).first();
     await toucher(ligne.getByRole('link', { name: 'Compléter au retour de plongée' }), { apres: 1800 });
 
-    await legende('Pendant la plongée, « Marquer l\'immersion » puis « Marquer la sortie » notent l\'heure.', 4500);
-    await legende('Après coup, on saisit ce qui a été réalisé.', 0);
+    await legende('En haut, toujours visible : combien de palanquées à immerger, à l\'eau, sorties.', 3500);
     // Une palanquée porte le nom de son encadrant (« Palanquée de … ») : on la prend par son rang.
     const palanquee = n => page.locator('section.carte')
       .filter({ has: page.getByRole('heading', { name: /^Palanquée/ }) }).nth(n - 1);
-    const p1 = palanquee(1);
-    await saisir(p1.getByLabel('Profondeur réalisée (m)'), '28');
-    await saisir(p1.getByLabel('Durée réalisée (min)'), '29');
-    await saisir(p1.getByLabel('Paliers'), '3 min à 3 m');
-    await p1.getByLabel('Immersion (correction manuelle)').fill('10:05');
-    await p1.getByLabel('Sortie (correction manuelle)').fill('10:34');
-    await pause(1000);
     const p2 = palanquee(2);
+    await legende('Un seul bouton à la fois : « Immersion maintenant », puis « Sortie maintenant ».', 0);
+    await toucher(p2.getByRole('button', { name: /Immersion maintenant/ }), { apres: 1500 });
+    await legende('Touché par erreur ? « Annuler », quelques secondes.', 0);
+    await toucher(p2.getByRole('button', { name: /Annuler/ }), { apres: 1500 });
+    await legende('Une palanquée qui dépasse sa durée prévue passe en tête, en rouge.', 3500);
+
+    await legende('Heures notées sur papier ? « Corriger les heures », et la durée se calcule.', 0);
+    const p1 = palanquee(1);
+    await toucher(p1.locator('.corriger-heures summary'), { apres: 800 });
+    await p1.getByLabel('Immersion', { exact: true }).fill('10:05');
+    await p1.getByLabel('Sortie', { exact: true }).fill('10:34');
+    await toucher(p1.getByRole('button', { name: /Durée réalisée d'après ces heures/ }), { apres: 1200 });
+    await legende('Puis la profondeur et les paliers.', 0);
+    await saisir(p1.getByLabel('Profondeur réalisée (m)'), '28');
+    await saisir(p1.getByLabel('Paliers'), '3 min à 3 m');
+    await pause(1000);
     await saisir(p2.getByLabel('Profondeur réalisée (m)'), '18');
     await saisir(p2.getByLabel('Durée réalisée (min)'), '33');
     await saisir(p2.getByLabel('Paliers'), '3 min à 3 m');
+    await legende('En bas : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 2500);
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer les paramètres réalisés' }), { apres: 2000 });
     await page.locator('section.impression').scrollIntoViewIfNeeded();

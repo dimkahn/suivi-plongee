@@ -257,10 +257,15 @@ Au retour de plongée : heures, profondeurs, durées et paliers réalisés, pala
 Compte : `e2@club.fr` · format téléphone · 36 s
 
 1. Dimanche, à la gravière : la fiche a été établie avant la plongée.
-2. Pendant la plongée, « Marquer l'immersion » puis « Marquer la sortie » notent l'heure.
-3. Après coup, on saisit ce qui a été réalisé.
-4. La fiche est complète. « Imprimer ou archiver » : PDF ou tableur, sur le modèle du club, les deux plongées du jour sur une page, une colonne par encadrant.
-5. Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n'est pas moniteur.
+2. En haut, toujours visible : combien de palanquées à immerger, à l'eau, sorties.
+3. Un seul bouton à la fois : « Immersion maintenant », puis « Sortie maintenant ».
+4. Touché par erreur ? « Annuler », quelques secondes.
+5. Une palanquée qui dépasse sa durée prévue passe en tête, en rouge.
+6. Heures notées sur papier ? « Corriger les heures », et la durée se calcule.
+7. Puis la profondeur et les paliers.
+8. En bas : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
+9. La fiche est complète. « Imprimer ou archiver » : PDF ou tableur, sur le modèle du club, les deux plongées du jour sur une page, une colonne par encadrant.
+10. Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n'est pas moniteur.
 
 ### M12 — Groupes de plongeurs pour un séjour
 
