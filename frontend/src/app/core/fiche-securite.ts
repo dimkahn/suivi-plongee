@@ -183,11 +183,15 @@ export function libelleMembre(m: PlongeurVue): string {
 }
 
 /**
- * Numéros des palanquées ouvertes à l'arrivée sur la fiche : celles qu'il
- * reste à remplir. Les autres se montrent fermées, en résumé.
+ * Ce que demande la fenêtre d'ajout, rien de plus : le profil prévu pour une
+ * nouvelle palanquée, la fonction d'un plongeur qui peut encadrer et n'en a
+ * pas encore (« Plongeur »).
  */
-export function palanqueesOuvertesAuChargement(palanquees: PalanqueeVue[]): Set<number> {
-  return new Set(palanquees.filter(p => p.membres.every(ligneVide)).map(p => p.numero));
+export function questionsAjout(nouvellePalanquee: boolean, plongeur: PlongeurVue | null): { profil: boolean; fonction: boolean } {
+  return {
+    profil: nouvellePalanquee,
+    fonction: plongeur !== null && plongeur.fonction === 'PLONGEUR' && estEncadrantPossible(plongeur)
+  };
 }
 
 /** Une nouvelle palanquée se crée avec sa profondeur et sa durée prévues. */

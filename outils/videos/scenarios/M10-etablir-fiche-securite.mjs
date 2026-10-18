@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-18, 8e série, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-18, 9e série, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -36,6 +36,8 @@ export default {
       .filter({ has: page.getByRole('heading', { name: /^Palanquée/ }) }).first();
     await palanquee.scrollIntoViewIfNeeded();
     await legende('Puis les palanquées : une est prête, « + Palanquée » en ajoute d\'autres.', 0);
+    await legende('Elles s\'affichent fermées : touchez son nom pour l\'ouvrir et la remplir.', 0);
+    await toucher(palanquee.locator('.bascule-palanquee'), { apres: 1200 });
     await saisir(palanquee.getByLabel('Profondeur prévue (m)'), '6');
     await saisir(palanquee.getByLabel('Durée prévue (min)'), '20');
     await legende('Un plongeur du club : son aptitude et son niveau préparé se remplissent seuls.', 0);
@@ -66,6 +68,7 @@ export default {
     await saisir('#nouvelle-profondeur', '20');
     await saisir('#nouvelle-duree', '40');
     await legende('Un plongeur dont l\'aptitude ne permet pas cette profondeur y sera refusé.', 0);
+    await legende('En y plaçant un encadrant, la même fenêtre demande aussi sa fonction : rien d\'autre.', 0);
     await toucher(page.getByRole('button', { name: 'Créer la palanquée' }), { apres: 1500 });
 
     await legende('Les mêmes palanquées qu\'à une autre plongée ? « Reprendre une palanquée d\'une autre séance ».', 0);

@@ -16,7 +16,7 @@ import { lieuEtSite } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import {
   aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee,
-  palanqueesAEnregistrer, palanqueesOuvertesAuChargement, profondeurPermise, refusAjout, reprendrePalanquees,
+  palanqueesAEnregistrer, profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees,
   resumePalanquee as resumeComposition
 } from '../../core/fiche-securite';
 import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
@@ -507,7 +507,9 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                class="zone-membres" [class.zone-membres-vide]="p.membres.length === 0"
                [cdkDropListConnectedTo]="tousLesIds()" (cdkDropListDropped)="onDropPalanquee($event, iP)">
             @if (p.membres.length === 0) {
-              <p class="vide">Glissez un plongeur ici, ou cliquez sur « + Plongeur ».</p>
+              <p class="vide">
+                Glissez un plongeur ici, ou {{ estOuverte(p) ? 'cliquez sur « + Plongeur »' : 'ouvrez la palanquée pour en ajouter' }}.
+              </p>
             }
             @for (m of p.membres; track m; let iM = $index) {
               @if (!estOuverte(p)) {
@@ -648,37 +650,56 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </div>
       </app-dialogue>
 
-      <app-dialogue [ouvert]="fonctionADemander() !== null"
-                    [titre]="'Fonction de ' + ((fonctionADemander()?.prenom + ' ' + fonctionADemander()?.nom).trim() || 'cet encadrant')"
-                    (fermer)="fonctionADemander.set(null)">
-        <p class="secondaire">
-          {{ fonctionADemander()?.aptitude ? 'Aptitude ' + fonctionADemander()?.aptitude + '. ' : '' }}Quel est son rôle
-          dans cette palanquée ? Il se modifie ensuite dans la case « Fonction ».
-        </p>
-        <div class="choix-fonction">
-          <button type="button" class="bouton-principal" (click)="choisirFonction('ENCADRANT')">Encadrant</button>
-          <button type="button" class="bouton-discret" (click)="choisirFonction('GUIDE_PALANQUEE')">Guide de palanquée</button>
-          <button type="button" class="bouton-discret" (click)="choisirFonction('PLONGEUR')">Plongeur</button>
-        </div>
-      </app-dialogue>
-
-      <app-dialogue [ouvert]="nouvellePalanquee() !== null" titre="Nouvelle palanquée"
-                    [erreur]="erreurNouvellePalanquee()" (fermer)="nouvellePalanquee.set(null)">
-        @if (nouvellePalanquee(); as n) {
-          <p class="secondaire">
-            Le profil prévu de la palanquée : un plongeur dont l'aptitude ne permet pas cette profondeur
-            n'y sera pas accepté.
-          </p>
-          <label for="nouvelle-profondeur">Profondeur prévue (m)</label>
-          <input id="nouvelle-profondeur" name="nouvelleProfondeur" type="number" min="1" inputmode="numeric"
-                 [(ngModel)]="n.profondeur">
-          <label for="nouvelle-duree">Durée prévue (min)</label>
-          <input id="nouvelle-duree" name="nouvelleDuree" type="number" min="1" inputmode="numeric"
-                 [(ngModel)]="n.duree">
-          <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="creerNouvellePalanquee()">Créer la palanquée</button>
-            <button type="button" class="bouton-discret" (click)="nouvellePalanquee.set(null)">Annuler</button>
-          </div>
+      <!-- Une seule fenêtre : le profil prévu d'une nouvelle palanquée, la fonction d'un encadrant ajouté, ou les deux. -->
+      <app-dialogue [ouvert]="demandeAjout() !== null" [titre]="titreDemandeAjout()"
+                    [erreur]="erreurDemandeAjout()" (fermer)="fermerDemandeAjout()">
+        @if (demandeAjout(); as d) {
+          @if (d.profil; as profil) {
+            <p class="secondaire">
+              Le profil prévu de la palanquée : un plongeur dont l'aptitude ne permet pas cette profondeur
+              n'y sera pas accepté.
+            </p>
+            <label for="nouvelle-profondeur">Profondeur prévue (m)</label>
+            <input id="nouvelle-profondeur" name="nouvelleProfondeur" type="number" min="1" inputmode="numeric"
+                   [(ngModel)]="profil.profondeur">
+            <label for="nouvelle-duree">Durée prévue (min)</label>
+            <input id="nouvelle-duree" name="nouvelleDuree" type="number" min="1" inputmode="numeric"
+                   [(ngModel)]="profil.duree">
+          }
+          @if (d.encadrant; as e) {
+            @if (d.profil) {
+              <fieldset class="choix-fonction-groupe">
+                <legend>
+                  Fonction de {{ (e.prenom + ' ' + e.nom).trim() || 'cet encadrant' }}{{ e.aptitude ? ' (' + e.aptitude + ')' : '' }}
+                </legend>
+                <div class="choix-fonction choix-fonction-bascule">
+                  @for (f of fonctionsEncadrant; track f.valeur) {
+                    <button type="button" class="bouton-discret" [class.selectionne]="d.fonction === f.valeur"
+                            [attr.aria-pressed]="d.fonction === f.valeur" (click)="d.fonction = f.valeur">
+                      {{ f.libelle }}
+                    </button>
+                  }
+                </div>
+              </fieldset>
+            } @else {
+              <p class="secondaire">
+                {{ e.aptitude ? 'Aptitude ' + e.aptitude + '. ' : '' }}Quel est son rôle
+                dans cette palanquée ? Il se modifie ensuite dans la case « Fonction ».
+              </p>
+              <div class="choix-fonction">
+                @for (f of fonctionsEncadrant; track f.valeur; let premier = $first) {
+                  <button type="button" [class]="premier ? 'bouton-principal' : 'bouton-discret'"
+                          (click)="choisirFonction(f.valeur)">{{ f.libelle }}</button>
+                }
+              </div>
+            }
+          }
+          @if (d.profil) {
+            <div class="actions-dialogue">
+              <button type="button" class="bouton-principal" (click)="creerNouvellePalanquee()">Créer la palanquée</button>
+              <button type="button" class="bouton-discret" (click)="fermerDemandeAjout()">Annuler</button>
+            </div>
+          }
         }
       </app-dialogue>
 
@@ -929,6 +950,10 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     .lien-fiche-liee { margin-left: var(--pas); white-space: nowrap; }
     .choix-fonction { display: flex; flex-direction: column; gap: var(--pas-2); margin-top: var(--pas-3); }
     .choix-fonction > button { min-height: 44px; width: 100%; margin: 0; }
+    .choix-fonction-groupe { border: 0; padding: 0; margin: var(--pas-3) 0 0; min-width: 0; }
+    .choix-fonction-groupe legend { padding: 0; font-weight: 600; }
+    .choix-fonction-bascule { margin-top: var(--pas); }
+    .choix-fonction-bascule > button.selectionne { background: var(--profond); color: #fff; border-color: var(--profond); }
     .choix-palanquees-dup { border: 0; padding: 0; margin: var(--pas-2) 0 0; min-width: 0; }
     .choix-palanquees-dup legend { font-weight: 700; font-size: .9375rem; padding: 0; margin-bottom: var(--pas); }
     .choix-palanquees-dup .case {
@@ -1169,7 +1194,7 @@ export class FicheSecuriteComponent implements AvecModifications {
         observations: fiche.observations
       });
       this.palanquees.set(fiche.palanquees.length > 0 ? fiche.palanquees : [palanqueeVide(1)]);
-      this.ouvertes.set(palanqueesOuvertesAuChargement(this.palanquees()));
+      this.ouvertes.set(new Set());
       this.retenirEtatEnregistre();
 
       const saisonOuverte = saisons.find(s => s.ouverte);
@@ -1196,58 +1221,96 @@ export class FicheSecuriteComponent implements AvecModifications {
       { ...palanqueeVide(this.numeroSuivantPalanquee()), profondeurPrevue, dureePrevue }]);
   }
 
-  // --- Nouvelle palanquée : profil prévu demandé d'abord ------------------------------------------
+  // --- Fenêtre d'ajout : profil prévu d'une nouvelle palanquée, fonction d'un encadrant ----------
+
+  readonly fonctionsEncadrant: { valeur: PlongeurVue['fonction']; libelle: string }[] = [
+    { valeur: 'ENCADRANT', libelle: 'Encadrant' },
+    { valeur: 'GUIDE_PALANQUEE', libelle: 'Guide de palanquée' },
+    { valeur: 'PLONGEUR', libelle: 'Plongeur' }
+  ];
 
   /**
-   * Fenêtre « Nouvelle palanquée », modifiée en place ; `pour` : le membre du
-   * groupe à y placer, « deplacement » pour le plongeur en cours de
-   * déplacement, null pour une palanquée vide. Null : fenêtre fermée.
+   * Fenêtre d'ajout, modifiée en place ; null : fermée. Elle ne pose que les
+   * questions du cas rencontré (`questionsAjout`) :
+   * - `profil` : profondeur et durée d'une nouvelle palanquée, null pour une palanquée existante ;
+   * - `pour` : le membre du groupe à placer dans la nouvelle palanquée, « deplacement » pour le
+   *   plongeur en cours de déplacement, null pour une palanquée vide ;
+   * - `encadrant` : le plongeur dont on demande la fonction (déjà placé quand il n'y a pas de
+   *   profil), null quand elle n'est pas demandée.
    */
-  nouvellePalanquee = signal<{ profondeur: number | null; duree: number | null;
-    pour: MembreGroupeVue | 'deplacement' | null } | null>(null);
-  erreurNouvellePalanquee = signal<string | null>(null);
+  demandeAjout = signal<{
+    profil: { profondeur: number | null; duree: number | null } | null;
+    pour: MembreGroupeVue | 'deplacement' | null;
+    encadrant: PlongeurVue | null;
+    fonction: PlongeurVue['fonction'];
+  } | null>(null);
+  erreurDemandeAjout = signal<string | null>(null);
+
+  titreDemandeAjout = computed(() => {
+    const d = this.demandeAjout();
+    if (!d || d.profil || !d.encadrant) return 'Nouvelle palanquée';
+    return 'Fonction de ' + (`${d.encadrant.prenom} ${d.encadrant.nom}`.trim() || 'cet encadrant');
+  });
+
+  fermerDemandeAjout(): void {
+    this.demandeAjout.set(null);
+  }
 
   ouvrirNouvellePalanquee(pour: MembreGroupeVue | 'deplacement' | null): void {
-    this.erreurNouvellePalanquee.set(null);
-    this.nouvellePalanquee.set({ profondeur: null, duree: null, pour });
+    const plongeur = pour === 'deplacement' ? this.plongeurEnDeplacement() : pour ? versPlongeur(pour) : null;
+    const questions = questionsAjout(true, plongeur);
+    this.erreurDemandeAjout.set(null);
+    this.demandeAjout.set({
+      profil: { profondeur: null, duree: null }, pour,
+      encadrant: questions.fonction ? plongeur : null, fonction: 'ENCADRANT'
+    });
+  }
+
+  private plongeurEnDeplacement(): PlongeurVue | null {
+    const d = this.plongeurADeplacer();
+    return (d && this.palanquees()[d.palanquee]?.membres[d.membre]) || null;
   }
 
   creerNouvellePalanquee(): void {
-    const n = this.nouvellePalanquee();
-    if (!n) return;
-    const erreur = erreurProfilPrevu(n.profondeur, n.duree);
+    const n = this.demandeAjout();
+    if (!n?.profil) return;
+    const erreur = erreurProfilPrevu(n.profil.profondeur, n.profil.duree);
     if (erreur) {
-      this.erreurNouvellePalanquee.set(erreur);
+      this.erreurDemandeAjout.set(erreur);
       return;
     }
-    const profil = { profondeurPrevue: n.profondeur!, dureePrevue: n.duree! };
+    const profil = { profondeurPrevue: n.profil.profondeur!, dureePrevue: n.profil.duree! };
     const future = { ...palanqueeVide(this.numeroSuivantPalanquee()), ...profil };
+    /** La fonction choisie dans la fenêtre, quand elle y était demandée. */
+    const fonction = n.encadrant ? n.fonction : null;
 
     if (n.pour === 'deplacement') {
       const d = this.plongeurADeplacer();
-      const m = d ? this.palanquees()[d.palanquee]?.membres[d.membre] : undefined;
+      const m = this.plongeurEnDeplacement();
       const refus = m ? refusAjout(future, m) : null;
       if (refus) {
-        this.erreurNouvellePalanquee.set(refus);
+        this.erreurDemandeAjout.set(refus);
         return;
       }
-      this.nouvellePalanquee.set(null);
+      this.demandeAjout.set(null);
       this.plongeurADeplacer.set(null);
-      if (d && m) this.palanquees.set(deplacerPlongeur(this.palanquees(), d.palanquee, d.membre, null, profil));
+      if (!d || !m) return;
+      const palanquees = fonction === null ? this.palanquees() : this.palanquees().map((p, i) => i !== d.palanquee ? p
+        : { ...p, membres: p.membres.map((x, j) => j === d.membre ? { ...x, fonction } : x) });
+      this.palanquees.set(deplacerPlongeur(palanquees, d.palanquee, d.membre, null, profil));
       return;
     }
 
     if (n.pour !== null) {
       const refus = refusAjout(future, versPlongeur(n.pour));
       if (refus) {
-        this.erreurNouvellePalanquee.set(refus);
+        this.erreurDemandeAjout.set(refus);
         return;
       }
     }
-    this.nouvellePalanquee.set(null);
+    this.demandeAjout.set(null);
     this.ajouterPalanquee(profil.profondeurPrevue, profil.dureePrevue);
-    this.ouvrir(future.numero);
-    if (n.pour !== null) this.placer(n.pour, this.palanquees().length - 1);
+    if (n.pour !== null) this.placer(n.pour, this.palanquees().length - 1, fonction);
   }
 
   // --- Palanquées ouvertes (saisie complète) ou fermées (résumé) ----------------------------------
@@ -1263,10 +1326,6 @@ export class FicheSecuriteComponent implements AvecModifications {
     const ouvertes = new Set(this.ouvertes());
     if (ouvertes.has(p.numero)) ouvertes.delete(p.numero); else ouvertes.add(p.numero);
     this.ouvertes.set(ouvertes);
-  }
-
-  private ouvrir(numero: number): void {
-    this.ouvertes.set(new Set(this.ouvertes()).add(numero));
   }
 
   retirerPalanquee(index: number): void {
@@ -1415,9 +1474,10 @@ export class FicheSecuriteComponent implements AvecModifications {
     this.palanquees.set(deplacerPlongeur(this.palanquees(), d.palanquee, d.membre, cible));
   }
 
-  placer(m: MembreGroupeVue, indexPalanquee: number): void {
+  /** `fonction` : déjà choisie dans la fenêtre de la nouvelle palanquée, elle ne se redemande pas. */
+  placer(m: MembreGroupeVue, indexPalanquee: number, fonction: PlongeurVue['fonction'] | null = null): void {
     const palanquee = this.palanquees()[indexPalanquee];
-    this.ajouterDepuisGroupe(m, indexPalanquee, palanquee.membres.length);
+    this.ajouterDepuisGroupe(m, indexPalanquee, palanquee.membres.length, fonction);
     this.membreAPlacer.set(null);
   }
 
@@ -1426,8 +1486,9 @@ export class FicheSecuriteComponent implements AvecModifications {
    * réutilisable sur d'autres fiches. Refusé (message) si son aptitude ne
    * permet pas la profondeur prévue.
    */
-  private ajouterDepuisGroupe(source: MembreGroupeVue, indexPalanquee: number, position: number): void {
-    const nouveau = versPlongeur(source);
+  private ajouterDepuisGroupe(source: MembreGroupeVue, indexPalanquee: number, position: number,
+                              fonction: PlongeurVue['fonction'] | null = null): void {
+    const nouveau = fonction === null ? versPlongeur(source) : { ...versPlongeur(source), fonction };
     const refus = refusAjout(this.palanquees()[indexPalanquee], nouveau);
     if (refus) {
       this.message.set(refus);
@@ -1443,20 +1504,19 @@ export class FicheSecuriteComponent implements AvecModifications {
     this.demanderFonctionSiEncadrant(nouveau);
   }
 
-  // --- Fonction d'un encadrant ajouté --------------------------------------------------------------
-
-  /** Le membre (tel que placé dans sa palanquée) dont on demande la fonction ; null : fenêtre fermée. */
-  fonctionADemander = signal<PlongeurVue | null>(null);
+  // --- Fonction d'un encadrant ajouté à une palanquée existante --------------------------------
 
   /** Un encadrant ajouté encore « Plongeur » : on demande sa fonction plutôt que de la laisser par défaut. */
   private demanderFonctionSiEncadrant(m: PlongeurVue): void {
-    if (m.fonction === 'PLONGEUR' && estEncadrantPossible(m)) this.fonctionADemander.set(m);
+    if (!questionsAjout(false, m).fonction) return;
+    this.erreurDemandeAjout.set(null);
+    this.demandeAjout.set({ profil: null, pour: null, encadrant: m, fonction: 'PLONGEUR' });
   }
 
   /** Par l'objet lui-même : entre-temps, il a pu être glissé ailleurs ou changer de rang. */
   choisirFonction(fonction: PlongeurVue['fonction']): void {
-    const cible = this.fonctionADemander();
-    this.fonctionADemander.set(null);
+    const cible = this.demandeAjout()?.encadrant;
+    this.demandeAjout.set(null);
     if (!cible) return;
     this.palanquees.set(this.palanquees().map(p => p.membres.includes(cible)
       ? { ...p, membres: p.membres.map(m => m === cible ? { ...m, fonction } : m) }
@@ -1899,7 +1959,7 @@ export class FicheSecuriteComponent implements AvecModifications {
           return;
         }
         this.palanquees.set(r.palanquees.length > 0 ? r.palanquees : [palanqueeVide(1)]);
-        this.ouvertes.set(palanqueesOuvertesAuChargement(this.palanquees()));
+        this.ouvertes.set(new Set());
         this.bilanProposition.set(r);
         this.plongeurADeplacer.set(null);
         this.propositionOuverte.set(false);

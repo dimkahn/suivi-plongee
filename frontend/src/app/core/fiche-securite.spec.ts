@@ -1,7 +1,7 @@
 import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
-  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee, palanqueesAEnregistrer, palanqueesOuvertesAuChargement,
-  profondeurPermise, refusAjout, reprendrePalanquees, resumePalanquee
+  aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, nomPalanquee, palanqueesAEnregistrer,
+  profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
@@ -215,15 +215,6 @@ describe('Palanquée fermée : ce qui est renseigné, en une ligne par plongeur'
     expect(libelleMembre(plongeur({ aptitude: null }))).toBe('Léa MARTIN');
     expect(libelleMembre(plongeur({ prenom: '', nom: ' ', aptitude: null }))).toBe('Plongeur sans nom');
   });
-
-  it('À l\'ouverture de la fiche, seules les palanquées sans plongeur restent ouvertes', () => {
-    const ouvertes = palanqueesOuvertesAuChargement([
-      palanquee({ numero: 1, membres: [plongeur()] }),
-      palanquee({ numero: 2, membres: [] }),
-      palanquee({ numero: 3, membres: [plongeur({ prenom: '', nom: '', aptitude: null })] })
-    ]);
-    expect([...ouvertes]).toEqual([2, 3]);
-  });
 });
 
 describe('Nom d\'une palanquée sur la fiche', () => {
@@ -282,5 +273,28 @@ describe('Demander la fonction d\'un encadrant ajouté à une palanquée', () =>
     for (const aptitude of ['N1', 'N2', 'PE40', 'PA40', 'N3', null]) {
       expect(estEncadrantPossible({ utilisateurId: null, aptitude })).toBe(false);
     }
+  });
+});
+
+describe('Une seule fenêtre pour une nouvelle palanquée et la fonction d\'un encadrant', () => {
+  const encadrant = plongeur({ prenom: 'Flora', nom: 'VASSEUR', aptitude: 'E2', utilisateurId: 4 });
+
+  it('Une palanquée vide ne demande que son profil prévu', () => {
+    expect(questionsAjout(true, null)).toEqual({ profil: true, fonction: false });
+  });
+
+  it('Un plongeur placé dans une nouvelle palanquée : le profil, et sa fonction s\'il peut encadrer', () => {
+    expect(questionsAjout(true, plongeur())).toEqual({ profil: true, fonction: false });
+    expect(questionsAjout(true, encadrant)).toEqual({ profil: true, fonction: true });
+  });
+
+  it('Un encadrant ajouté à une palanquée existante : seulement sa fonction', () => {
+    expect(questionsAjout(false, encadrant)).toEqual({ profil: false, fonction: true });
+    expect(questionsAjout(false, plongeur())).toEqual({ profil: false, fonction: false });
+  });
+
+  it('Une fonction déjà choisie ne se redemande pas', () => {
+    expect(questionsAjout(false, { ...encadrant, fonction: 'GUIDE_PALANQUEE' })).toEqual({ profil: false, fonction: false });
+    expect(questionsAjout(true, { ...encadrant, fonction: 'ENCADRANT' })).toEqual({ profil: true, fonction: false });
   });
 });
