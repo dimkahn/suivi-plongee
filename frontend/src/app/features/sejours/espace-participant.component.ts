@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
@@ -255,6 +255,16 @@ export class EspaceParticipantComponent {
   /** Le matériel emprunté, partagé par la carte « Mon séjour » du carnet et l'onglet « Matériel ». */
   readonly prets = new PretsDuSejour(this.portPrets);
   private readonly materiel = viewChild(SejourMaterielComponent);
+  private readonly injector = inject(Injector);
+
+  /**
+   * La fenêtre de déclaration de l'onglet « Matériel », une fois l'onglet
+   * affiché : avant son rendu, le composant n'existe pas encore (un
+   * setTimeout passait parfois avant, et rien ne s'ouvrait).
+   */
+  private ouvrirDeclarationApresRendu(): void {
+    afterNextRender(() => this.materiel()?.ouvrir(), { injector: this.injector });
+  }
 
   constructor() {
     void this.demarrer();
@@ -275,7 +285,7 @@ export class EspaceParticipantComponent {
   /** Depuis le carnet ; « declarer » : l'onglet « Matériel », fenêtre de déclaration ouverte. */
   ouvrirDepuisCarnet(o: Onglet | 'declarer'): void {
     this.changerOnglet(o === 'declarer' ? 'materiel' : o);
-    if (o === 'declarer') setTimeout(() => this.materiel()?.ouvrir());
+    if (o === 'declarer') this.ouvrirDeclarationApresRendu();
   }
 
   /** Un onglet, en haut de son contenu ; le message d'un autre onglet ne le suit pas. */

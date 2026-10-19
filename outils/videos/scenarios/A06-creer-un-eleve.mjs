@@ -1,5 +1,5 @@
 // A6 — Créer le dossier d'un élève.
-// Tournage du 2026-10-16, 13e série, inscription au club OK / KO (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 14e série, carte « Élèves » de l'administration, inscription au club OK / KO (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

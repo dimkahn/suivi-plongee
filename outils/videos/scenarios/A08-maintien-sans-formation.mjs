@@ -1,5 +1,5 @@
 // A8 — Garder un élève breveté sans formation.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 13e série, retourné après l'échec du 12 octobre (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

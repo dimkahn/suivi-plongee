@@ -110,7 +110,10 @@ for (const fichier of fichiers) {
     echecs++;
     await page?.screenshot({ path: join(SORTIES, `${nom}-ECHEC.png`) }).catch(() => {});
     await contexte?.close().catch(() => {});
-    console.log(`ÉCHEC\n  ${e.message.split('\n')[0]}\n  (capture : sorties/${nom}-ECHEC.png)`);
+    // La ligne du scénario (ou de grille.mjs, commun.mjs) où le geste a échoué.
+    const ou = (e.stack ?? '').split('\n').filter(l => /videos\/(scenarios\/)?[\w.-]+\.mjs:\d+/.test(l))
+      .slice(0, 3).map(l => l.trim().replace(/^.*videos\//, '').replace(/\)$/, '')).join(' ← ');
+    console.log(`ÉCHEC\n  ${e.message.split('\n')[0]}${ou ? `\n  à ${ou}` : ''}\n  (capture : sorties/${nom}-ECHEC.png)`);
   } finally {
     await navigateur?.close();
     await rm(brouillon, { recursive: true, force: true });

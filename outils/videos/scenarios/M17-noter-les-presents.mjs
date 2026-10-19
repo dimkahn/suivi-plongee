@@ -1,5 +1,5 @@
 // M17 — Noter les présents en une fois, depuis la feuille de présence.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 13e série, retourné après l'échec du 12 octobre (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : les présences y sont déjà
 // (données de démo), l'appel du 28 reste à M3.
 import { critere } from '../grille.mjs';

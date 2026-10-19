@@ -107,6 +107,36 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 1 min 10
 26. Une fois l'élève noté, « ← Feuille de présence », en haut à gauche, ramène sur la même séance et le même groupe.
 27. Sans réseau, les choix restent sur l'appareil et partent au retour du réseau.
 
+Au format ordinateur :
+
+1. Dans le menu en haut : « Présences ».
+2. Un doute ? « Comment faire ? », en haut à droite, rappelle les règles de l'appel.
+3. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine.
+4. Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.
+5. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
+6. Un élève prévient de sa venue ? Les présences s'annoncent jusqu'à une semaine avant la séance.
+7. « Au programme » : ce que la progression du club prévoit ce mois-ci.
+8. Dessous, « Exercices de la séance », replié pour laisser la place à l'appel. Touchez le titre pour voir ce que chaque groupe a préparé.
+9. Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.
+10. Touchez de nouveau le titre pour replier la partie.
+11. Filtrez sur votre groupe d'entraînement.
+12. Sous chaque élève, touchez ce qu'il a fait : nage ou bloc.
+13. De la théorie en plus ? « Théorie », puis « Bloc » ou « Nage ».
+14. Une séance de théorie seule : « Théorie » seulement.
+15. Chaque choix est enregistré tout de suite. Pas de bouton « Enregistrer ».
+16. Un élève sans choix est absent.
+17. L'appel d'abord : seul un élève noté présent peut être évalué sur la séance.
+18. Erreur ? Touchez de nouveau le choix actif pour l'effacer.
+19. Le compteur en haut de la liste fait le bilan du groupe filtré ; il reste en haut de l'écran quand la liste défile.
+20. Séance passée : il compte aussi les présents qui n'ont encore reçu aucune note.
+21. « Synthèse des notes » réunit tout ce qui a été noté pour un niveau : voir la vidéo M21.
+22. « Voir les présents sans évaluation » n'affiche plus qu'eux.
+23. « Pas encore évalué » ouvre la grille de l'élève, pour le noter avant de partir.
+24. Un présent déjà noté a un bouton « Noter » : sa grille s'ouvre sur cette séance.
+25. En haut de sa fiche, le nom de l'élève suivant passe directement au présent suivant du groupe, sans repasser par la feuille.
+26. Une fois l'élève noté, « ← Feuille de présence », en haut à gauche, ramène sur la même séance et le même groupe.
+27. Sans réseau, les choix restent sur l'appareil et partent au retour du réseau.
+
 ### M4 — Noter un élève pendant la séance
 
 Choisir la séance, noter les critères au programme, laisser un commentaire pour le prochain encadrant.
@@ -258,6 +288,40 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 90 s
 31. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
 32. Au retour de plongée, on la complète : c'est la vidéo suivante.
 
+Au format ordinateur :
+
+1. « Plus », puis « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
+2. On retrouve la séance par sa date.
+3. Établir la fiche : les E3, E4, ou un moniteur qui en a reçu le droit, comme Flora ici.
+4. Le directeur de plongée : seuls les E3 et E4 sont proposés.
+5. Les conditions du jour…
+6. Puis les palanquées : la fiche part de zéro, « + Palanquée » crée la première.
+7. Sa profondeur et sa durée prévues sont demandées d'emblée.
+8. Chaque palanquée est compacte : son profil prévu reste modifiable sur place.
+9. « + Plongeur » ouvre sa fenêtre : pour un plongeur du club, aptitude et niveau préparé se remplissent seuls.
+10. Flora peut encadrer : sa fenêtre invite à choisir sa fonction, d'un geste.
+11. Gaz, désaturation, observations : rangés sous « Détails », ouverts d'un geste.
+12. Un nitrox : la fiche calcule sa profondeur maximale d'utilisation (MOD), à la ppO2 choisie.
+13. La palanquée porte maintenant le nom de Flora ; un plongeur par ligne.
+14. Pour modifier un plongeur, on touche sa ligne : sa fenêtre s'ouvre.
+15. Changer de palanquée : on touche le bouton, puis sa nouvelle palanquée.
+16. Une autre palanquée : « + Palanquée », sous les palanquées.
+17. On donne d'abord sa profondeur et sa durée prévues.
+18. Un plongeur dont l'aptitude ne permet pas cette profondeur y sera refusé.
+19. En y plaçant un encadrant, la même fenêtre demande aussi sa fonction : rien d'autre.
+20. Les mêmes palanquées qu'à une autre plongée ? « Reprendre une palanquée d'une autre séance ».
+21. On cherche la séance par sa date ou son lieu, puis on coche les palanquées à recopier.
+22. Plongeurs et profil prévu arrivent à la suite ; ce qui a été plongé ce jour-là, non.
+23. En bas, toujours visible : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
+24. « Enregistrer la fiche », en bas : la fiche est gardée, même sans réseau, et le DP la retrouve.
+25. À côté, « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.
+26. Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».
+27. Son directeur de plongée, son n° de plongée (déjà le suivant)…
+28. … et une info pour distinguer les deux séances.
+29. Cochez les palanquées qui passent sur la nouvelle séance : elles quittent celle-ci.
+30. Les deux séances sont liées : « Ouvrir sa fiche » passe de l'une à l'autre.
+31. Au retour de plongée, on la complète : c'est la vidéo suivante.
+
 ### M11 — Compléter la fiche après la plongée
 
 Au retour de plongée : heures, profondeurs, durées et paliers réalisés, palanquée par palanquée.
@@ -300,6 +364,21 @@ Où est mon groupe ce soir ? Ligne d'eau, fosse, DP fosse et DP piscine, encadra
 Compte : `e2@club.fr` · formats téléphone et ordinateur · 56 s
 
 1. Le planning remplace le tableur du lundi soir : « Planning », en bas de l'écran.
+2. En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.
+3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau, « 5+6 » pour un groupe sur deux lignes.
+4. Sous chaque groupe, ses encadrants attitrés, le référent en premier.
+5. En gras, ceux qui ont répondu présent ; rayés, ceux qui seront absents.
+6. Ce soir, les débutants vont en fosse limitée à 6 m : « F6 ».
+7. « À savoir » signale ce qui cloche : ici, un groupe dont l'encadrant sera absent.
+8. Les flèches passent d'une soirée à l'autre.
+9. Plus bas : vos prochaines soirées, avec l'espace de votre groupe.
+10. Toute la saison, d'un coup.
+11. La légende en bas de page rappelle les abréviations.
+12. Préparé hors ligne, le planning se consulte même sans réseau au bassin.
+
+Au format ordinateur :
+
+1. Le planning remplace le tableur du lundi soir : « Planning », dans le menu en haut.
 2. En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.
 3. Puis chaque groupe et son espace : le chiffre est la ligne d'eau, « 5+6 » pour un groupe sur deux lignes.
 4. Sous chaque groupe, ses encadrants attitrés, le référent en premier.
@@ -811,7 +890,7 @@ Compte : `e3@club.fr` · formats téléphone et ordinateur · 48 s
 
 1. Le directeur technique gère aussi les sorties : « Sorties ».
 2. On choisit la sortie : le retour prévu se cale sur son dernier jour.
-3. Le bloc B-02 : son inspection TIV tombe avant le 25 octobre…
+3. Le bloc B-02 : son inspection TIV tombe avant la fin de la sortie…
 4. … l'appli refuse, et dit pourquoi : l'échéance doit couvrir tout le prêt.
 5. On le remplace par un bloc à jour.
 6. Prêt enregistré, rattaché à la sortie.
@@ -863,7 +942,7 @@ Compte : `eleve@club.fr` · formats téléphone et ordinateur · 25 s
 
 ### E2 — Le carnet du séjour
 
-La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour, l'heure et l'aéroport d'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare le gilet qu'elle a emprunté.
+La veille du départ, le rappel de son vol et de l'heure à laquelle être à l'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour, l'heure et l'aéroport d'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu'elle a empruntée.
 
 Compte : `eleve@club.fr` · formats téléphone et ordinateur
 

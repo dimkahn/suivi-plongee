@@ -1,5 +1,5 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-19, 13e série, exercice hors liste (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 14e série, exercice hors liste, retourné au format ordinateur (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter, choisirExercice } from '../grille.mjs';
 
 export default {

@@ -1,6 +1,14 @@
 // D8 — Prêter pour une sortie.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 13e série, sortie datée d'après le jour du tournage (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
+
+// L'inspection TIV du bloc B-02 de démonstration tombe 15 jours après le
+// démarrage du backend : la sortie, 20 jours après le tournage, la dépasse.
+const jour = decalage => {
+  const d = new Date();
+  d.setDate(d.getDate() + decalage);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default {
   id: 'D8',
@@ -17,8 +25,8 @@ export default {
     await toucher(page.getByRole('button', { name: 'Nouvelle sortie' }), { apres: 800 });
     await saisir('#nom', 'Week-end de la Toussaint');
     await saisir('#lieu', 'Gravière du Fort');
-    await dater('#debut', '2026-10-24');
-    await dater('#fin', '2026-10-25');
+    await dater('#debut', jour(20));
+    await dater('#fin', jour(21));
     await toucher(page.getByRole('button', { name: 'Créer puis choisir les plongées' }), { apres: 1500 });
     await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Annuler' }), { apres: 800 });
 
@@ -29,7 +37,7 @@ export default {
     await legende('On choisit la sortie : le retour prévu se cale sur son dernier jour.', 0);
     await choisir('#sortie', 'Week-end de la Toussaint', { exact: false });
     await pause(1200);
-    await legende('Le bloc B-02 : son inspection TIV tombe avant le 25 octobre…', 0);
+    await legende('Le bloc B-02 : son inspection TIV tombe avant la fin de la sortie…', 0);
     await toucher(page.locator('form, main').getByRole('button', { name: 'Blocs' }).first(), { apres: 800 });
     await cocher(page.locator('label.case').filter({ hasText: 'B-02' }).locator('input'));
     await toucher(page.getByRole('button', { name: 'Enregistrer le prêt' }), { apres: 1200 });

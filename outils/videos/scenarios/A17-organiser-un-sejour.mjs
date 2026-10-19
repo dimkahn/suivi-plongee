@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-18, 22e série, qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 23e série, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -62,7 +62,7 @@ export default {
 
     await legende('« Hébergement » : le gîte, ses chambres et leurs occupants. En haut, Mateo n\'a pas encore de chambre.', 0);
     await toucher(page.getByRole('tab', { name: 'Hébergement' }), { apres: 3000 });
-    await toucher(page.getByRole('button', { name: 'Modifier' }).first(), { apres: 1000 });
+    await toucher(page.getByRole('button', { name: 'Modifier', exact: true }).first(), { apres: 1000 });
     await legende('Mateo prend la chambre 3.', 0);
     const chambre3 = page.locator('fieldset').filter({ hasText: 'Chambre 3' });
     await chambre3.scrollIntoViewIfNeeded();
@@ -73,11 +73,11 @@ export default {
     await legende('« Matériel » : le matériel du club emprunté pour le séjour. Chacun déclare le sien, comme ses frais.', 0);
     await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 2500 });
     await legende('Sous les emprunts : qui a répondu n\'avoir rien emprunté, et qui n\'a pas encore répondu, à relancer.', 0);
-    await page.locator('app-sejour-materiel .reponses').scrollIntoView();
+    await page.locator('app-sejour-materiel .reponses').scrollIntoViewIfNeeded();
     await pause(4000);
     await legende('L\'organisatrice déclare aussi pour un autre : « Déclarer un emprunt », qui, le jour, puis le matériel.', 0);
     await toucher(page.getByRole('button', { name: 'Déclarer un emprunt' }), { apres: 1500 });
-    await toucher(page.getByRole('button', { name: 'Gilets' }), { apres: 1500 });
+    await toucher(page.getByRole('button', { name: 'Combinaisons' }), { apres: 1500 });
     await legende('Seul le matériel disponible est proposé : ni déjà prêté, ni hors échéance jusqu\'à la fin du séjour.', 0);
     await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 2500 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
@@ -113,7 +113,7 @@ export default {
     await legende('« Envoyer le carnet… » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 0);
     await toucher(page.getByRole('button', { name: 'Envoyer le carnet…' }), { apres: 2500 });
     await legende('On choisit à qui l\'envoyer : quelqu\'un ne l\'a pas reçu ? « Personne », puis on coche lui seul.', 0);
-    await toucher(page.getByRole('button', { name: 'Personne' }), { apres: 1200 });
+    await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Personne', exact: true }), { apres: 1200 });
     await toucher(page.locator('.liste-vol input[type=checkbox]:not([disabled])').first(), { apres: 2500 });
     await legende('Même choix pour « Demander les informations… ». Ici, on n\'envoie rien.', 0);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 1500 });

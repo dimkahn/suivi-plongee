@@ -1,5 +1,5 @@
 // M13 — Consulter le planning du bassin.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 13e série, légende du planning (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M13',
   titre: 'Consulter le planning du bassin',
@@ -7,10 +7,13 @@ export default {
   resume: 'Où est mon groupe ce soir ? Ligne d\'eau, fosse, DP fosse et DP piscine, encadrants présents et absents par groupe, avertissements.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {
+  async jouer({ page, pause, legende, toucher, defiler, enHaut, menu, selon }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
-    await legende('Le planning remplace le tableur du lundi soir : « Planning », en bas de l\'écran.', 0);
+    await legende(selon({
+      telephone: 'Le planning remplace le tableur du lundi soir : « Planning », en bas de l\'écran.',
+      ordinateur: 'Le planning remplace le tableur du lundi soir : « Planning », dans le menu en haut.'
+    }), 0);
     await menu('Planning');
 
     await legende('En haut, la prochaine soirée : son DP fosse, son DP piscine et une note éventuelle.', 4000);
@@ -36,7 +39,7 @@ export default {
     await legende('Toute la saison, d\'un coup.', 0);
     await defiler(900, 2000);
     await legende('La légende en bas de page rappelle les abréviations.', 0);
-    await page.locator('footer.version').scrollIntoViewIfNeeded();
+    await page.locator('p.legende').scrollIntoViewIfNeeded();
     await pause(3000);
     await legende('Préparé hors ligne, le planning se consulte même sans réseau au bassin.', 4000);
     await legende(null, 0);

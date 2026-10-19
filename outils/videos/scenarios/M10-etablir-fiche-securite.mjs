@@ -1,5 +1,5 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-18, 13e série, fiche neuve sans palanquée, fonction en sélecteur compact, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 14e série, actions en boutons à l'ordinateur, fiche neuve sans palanquée, fonction en sélecteur compact, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -10,7 +10,17 @@ export default {
   compte: 'e2@club.fr',
 
   async jouer(g) {
-    const { page, pause, legende, toucher, saisir, menu, rechercherEtChoisir, suggestion, vignette, defiler } = g;
+    const { page, pause, legende, toucher, saisir, menu, rechercherEtChoisir, suggestion, vignette, defiler, format, selon } = g;
+    // Au téléphone, les actions de la fiche sont dans le bouton rond ; à
+    // l'ordinateur, ce sont des boutons sous les palanquées et en bas de page.
+    const action = async (nom, { apres = 900 } = {}) => {
+      if (format === 'telephone') {
+        await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });
+        await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: nom }), { apres });
+      } else {
+        await toucher(page.locator('button.action-ordinateur, .action-ordinateur button').filter({ hasText: nom }).first(), { apres });
+      }
+    };
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await legende(g.selon({
@@ -77,9 +87,11 @@ export default {
     await toucher(fenetre.getByRole('button', { name: /Changer de palanquée/ }), { apres: 2500 });
     await toucher(page.locator('.barre-placement').getByRole('button', { name: 'Annuler' }), { apres: 800 });
 
-    await legende('Une autre palanquée : « + Palanquée », dans le bouton rond.', 0);
-    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });
-    await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: '+ Palanquée' }), { apres: 900 });
+    await legende(selon({
+      telephone: 'Une autre palanquée : « + Palanquée », dans le bouton rond.',
+      ordinateur: 'Une autre palanquée : « + Palanquée », sous les palanquées.'
+    }), 0);
+    await action('+ Palanquée');
     await legende('On donne d\'abord sa profondeur et sa durée prévues.', 0);
     await saisir('#nouvelle-profondeur', '20');
     await saisir('#nouvelle-duree', '40');
@@ -88,8 +100,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Créer la palanquée' }), { apres: 1500 });
 
     await legende('Les mêmes palanquées qu\'à une autre plongée ? « Reprendre une palanquée d\'une autre séance ».', 0);
-    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 900 });
-    await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: /Reprendre une palanquée/ }), { apres: 900 });
+    await action(/Reprendre une palanquée/);
     await legende('On cherche la séance par sa date ou son lieu, puis on coche les palanquées à recopier.', 0);
     await toucher(page.locator('#reprise-seance'), { apres: 900 });
     await toucher(page.locator('#reprise-seance-liste li[role="option"] button').first(), { apres: 1200 });
@@ -98,13 +109,21 @@ export default {
     await toucher(page.getByRole('button', { name: 'Ajouter à cette fiche' }), { apres: 1800 });
 
     await legende('En bas, toujours visible : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 2000);
-    await legende('Tous les boutons de la fiche sont dans le bouton rond, en bas à gauche.', 0);
-    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 1800 });
-    await legende('Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.', 0);
-    await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: 'Enregistrer la fiche' }), { apres: 2000 });
-    await legende('Le même bouton propose « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.', 0);
-    await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 2500 });
-    await toucher(page.getByRole('button', { name: 'Fermer les actions de la fiche' }), { apres: 600 });
+    if (format === 'telephone') {
+      await legende('Tous les boutons de la fiche sont dans le bouton rond, en bas à gauche.', 0);
+      await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 1800 });
+      await legende('Enregistrez : la fiche est gardée, même sans réseau, et le DP la retrouve.', 0);
+      await toucher(page.locator('.menu-actions').getByRole('menuitem', { name: 'Enregistrer la fiche' }), { apres: 2000 });
+      await legende('Le même bouton propose « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.', 0);
+      await toucher(page.getByRole('button', { name: 'Actions de la fiche' }), { apres: 2500 });
+      await toucher(page.getByRole('button', { name: 'Fermer les actions de la fiche' }), { apres: 600 });
+    } else {
+      await legende('« Enregistrer la fiche », en bas : la fiche est gardée, même sans réseau, et le DP la retrouve.', 0);
+      await action('Enregistrer la fiche', { apres: 2000 });
+      await legende('À côté, « Imprimer (PDF) » : la fiche, aussitôt, sur le modèle du club.', 0);
+      await page.locator('.actions-bas').getByRole('button', { name: 'Imprimer (PDF)' }).scrollIntoViewIfNeeded();
+      await pause(2500);
+    }
 
     await legende('Une seconde rotation, ou un second bateau, le même jour ? « Dupliquer et lier ».', 0);
     await toucher(page.getByRole('button', { name: 'Dupliquer et lier…' }), { apres: 1200 });

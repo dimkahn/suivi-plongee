@@ -305,7 +305,10 @@ export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo
   /** Menu « Administration », puis la carte `ecran` de la page d'accueil admin. */
   const administration = async ecran => {
     await menu('Administration');
-    await toucher(page.locator('main a').filter({ hasText: ecran }).first(), { apres: 1200 });
+    // Le nom exact de la carte : « Élèves » ne doit pas trouver le détail
+    // « … lignes d'eau et fosse, élèves » des groupes d'entraînement.
+    await toucher(page.locator('main a').filter({ has: page.locator('.nom').getByText(ecran, { exact: true }) }),
+      { apres: 1200 });
   };
 
   /** Choisit l'option `libelle` d'une liste déroulante (`exact: false` : début du libellé). */

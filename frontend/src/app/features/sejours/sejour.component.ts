@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -1306,7 +1306,7 @@ export class SejourComponent {
     } else if (cible === 'declarer') {
       // « Oui, je déclare mon matériel » : l'onglet « Matériel », fenêtre de déclaration ouverte.
       this.onglet.set('materiel');
-      setTimeout(() => this.materiel()?.ouvrir());
+      this.ouvrirDeclarationApresRendu();
     } else {
       this.onglet.set(cible);
       setTimeout(() => document.getElementById('onglets-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -1319,6 +1319,16 @@ export class SejourComponent {
   /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour ». */
   readonly prets = new PretsDuSejour(this.api.portPrets(this.id));
   private readonly materiel = viewChild(SejourMaterielComponent);
+  private readonly injector = inject(Injector);
+
+  /**
+   * La fenêtre de déclaration de l'onglet « Matériel », une fois l'onglet
+   * affiché : avant son rendu, le composant n'existe pas encore (un
+   * setTimeout passait parfois avant, et rien ne s'ouvrait).
+   */
+  private ouvrirDeclarationApresRendu(): void {
+    afterNextRender(() => this.materiel()?.ouvrir(), { injector: this.injector });
+  }
 
   mesInfosOuvertes = signal(false);
 
