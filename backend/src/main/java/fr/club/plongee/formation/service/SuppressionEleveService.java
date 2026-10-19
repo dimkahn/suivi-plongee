@@ -57,6 +57,7 @@ public class SuppressionEleveService {
 
         executer("DELETE FROM evaluation WHERE cursus_id IN " + cursusDeLEleve, eleveId);
         executer("DELETE FROM validation_competence WHERE cursus_id IN " + cursusDeLEleve, eleveId);
+        executer("DELETE FROM accord_validation WHERE cursus_id IN " + cursusDeLEleve, eleveId);
         executer("DELETE FROM delivrance WHERE cursus_id IN " + cursusDeLEleve, eleveId);
         executer("DELETE FROM participation WHERE cursus_id IN " + cursusDeLEleve, eleveId);
         executer("DELETE FROM validation_competence_aud WHERE cursus_id IN " + cursusDeLEleve, eleveId);

@@ -25,6 +25,7 @@ import { CalendrierSeancesComponent } from '../../core/calendrier-seances.compon
 import { lieuEtSite } from '../../core/seance-lieu';
 import { periodeDeLaPlongee, periodeDuMois, plagePeriode } from '../../core/progression';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { EtatAccords, modeValidation } from '../../core/validation-competence';
 
 /** Un suivi affiché (milieu naturel ou entraînement), augmenté de l'information « pas encore envoyé ». */
 interface SuiviAffiche {
@@ -525,6 +526,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 
             @if (bloc.valide) {
               <p class="valide">Validée le {{ bloc.dateValidation | dateFr }} par {{ bloc.valideePar }}</p>
+              @if ((bloc.accords?.length ?? 0) > 1) {
+                <p class="secondaire accords">Avec l'accord de {{ nomsAccords(bloc) }}.</p>
+              }
             } @else if (peutSaisir() && bloc.acquis === bloc.total) {
               @if (bloc.attentes > 0) {
                 <p class="secondaire">
@@ -532,20 +536,41 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 </p>
               } @else if (bloc.maitriseAttendue?.length) {
                 <p class="secondaire maitrise-attendue">
-                  Validation possible une fois un exercice de maîtrise acquis
-                  ({{ bloc.maitriseAttendue.join(', ') }}).
+                  @if ((bloc.maitrisesRequises ?? 1) > 1) {
+                    Validation possible une fois {{ bloc.maitrisesRequises }} exercices de maîtrise acquis
+                    ({{ bloc.maitrisesAcquises ?? 0 }} pour l'instant ; parmi {{ bloc.maitriseAttendue.join(', ') }}).
+                  } @else {
+                    Validation possible une fois un exercice de maîtrise acquis
+                    ({{ bloc.maitriseAttendue.join(', ') }}).
+                  }
                 </p>
               } @else if (!reseau.enLigne()) {
                 <p class="secondaire">Validation possible au retour du réseau.</p>
               } @else {
-                <button type="button" class="bouton-principal" (click)="validerBloc(bloc)"
-                        [disabled]="validationEnCours() !== null">
-                  @if (validationEnCours() === bloc.id) {
-                    <span class="chargeur" aria-hidden="true"></span>Validation…
-                  } @else {
-                    Valider la compétence
-                  }
-                </button>
+                @let vote = etatAccords(bloc);
+                @if (vote.accordsRequis > 0) {
+                  <p class="secondaire accords">
+                    Validation par les encadrants du groupe :
+                    {{ vote.accords }} accord{{ vote.accords > 1 ? 's' : '' }} sur {{ vote.accordsRequis }} nécessaire{{ vote.accordsRequis > 1 ? 's' : '' }}@if (vote.accords > 0) { ({{ nomsAccords(bloc) }})}.
+                    @if (vote.mode === 'SEUL') { Référent du groupe, vous pouvez la valider seul. }
+                    @if (vote.mode === 'ACCORD_DONNE') { Votre accord est donné : en attente des autres encadrants. }
+                    @if (vote.mode === 'HORS_GROUPE') { Seuls les encadrants de son groupe peuvent la proposer ou l'accepter. }
+                  </p>
+                }
+                @if (vote.mode === 'SEUL' || vote.mode === 'PROPOSER' || vote.mode === 'ACCEPTER') {
+                  <button type="button" class="bouton-principal" (click)="validerBloc(bloc)"
+                          [disabled]="validationEnCours() !== null">
+                    @if (validationEnCours() === bloc.id) {
+                      <span class="chargeur" aria-hidden="true"></span>Envoi…
+                    } @else if (vote.mode === 'PROPOSER') {
+                      Proposer la validation
+                    } @else if (vote.mode === 'ACCEPTER') {
+                      Accepter la validation
+                    } @else {
+                      Valider la compétence
+                    }
+                  </button>
+                }
               }
             }
           </header>
@@ -2196,11 +2221,22 @@ export class GrilleComponent implements OnDestroy {
     });
   }
 
+  /** Où en est la validation de la compétence parmi les encadrants du groupe de l'élève. */
+  etatAccords(bloc: BlocAffiche): EtatAccords {
+    return modeValidation(this.grille() ?? {}, bloc, this.auth.session()?.id);
+  }
+
+  nomsAccords(bloc: BlocAffiche): string {
+    return (bloc.accords ?? []).map(a => a.nom).join(', ');
+  }
+
   validerBloc(bloc: BlocAffiche): void {
     this.validationEnCours.set(bloc.id);
     this.api.validerCompetence(Number(this.id()), bloc.id).subscribe({
-      next: async () => {
-        this.message.set(null);
+      next: async etat => {
+        this.message.set(etat?.validee === false
+          ? `Votre accord est enregistré : ${etat.accords} sur ${etat.accordsRequis} nécessaires pour valider « ${bloc.intitule} ».`
+          : null);
         await this.charger();
         this.validationEnCours.set(null);
       },

@@ -14,7 +14,7 @@ import {
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
   DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue,
-  SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue
+  SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue, EtatValidationVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 
@@ -223,8 +223,9 @@ export class ApiService {
   //  La notation, elle, passe par FileAttenteService.
   // ----------------------------------------------------------------
 
-  validerCompetence(cursusId: number, blocId: number, commentaire?: string): Observable<unknown> {
-    return this.http.post(
+  /** Valide, ou donne l'accord de l'encadrant connecté quand la validation se décide dans le groupe. */
+  validerCompetence(cursusId: number, blocId: number, commentaire?: string): Observable<EtatValidationVue> {
+    return this.http.post<EtatValidationVue>(
       `/api/cursus/${cursusId}/competences/${blocId}/validation`,
       { commentaire: commentaire ?? null }
     );
@@ -269,6 +270,11 @@ export class ApiService {
 
   modifierExerciceBase(referentielId: number, exerciceId: number, demande: DemandeExerciceBase): Observable<ExerciceBaseVue> {
     return this.http.put<ExerciceBaseVue>(`/api/referentiels/${referentielId}/exercices/${exerciceId}`, demande);
+  }
+
+  /** Exercices de maîtrise différents à acquérir pour valider la compétence (ADMIN). */
+  fixerMaitrisesRequises(referentielId: number, blocId: number, nombre: number): Observable<void> {
+    return this.http.put<void>(`/api/referentiels/${referentielId}/blocs/${blocId}/maitrises-requises`, { nombre });
   }
 
   /** Refusé si l'exercice a déjà servi à noter un élève : le désactiver plutôt. */

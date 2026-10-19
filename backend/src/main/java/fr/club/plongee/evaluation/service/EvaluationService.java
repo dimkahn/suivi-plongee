@@ -322,9 +322,41 @@ public class EvaluationService {
     //  Validation d'un bloc de competences
     // ----------------------------------------------------------------
 
+    /** Compétence prête à être validée : toutes les règles du MFT et du club sont tenues. */
+    public record Validable(Cursus cursus, BlocCompetence bloc) {}
+
+    /**
+     * Exercices de maîtrise attendus pour valider une compétence (choix du
+     * club, 2026) : {@code requises} exercices différents à acquérir (0 si la
+     * compétence n'en a pas), {@code acquises} déjà acquis, {@code restants} :
+     * les exercices de la base pas encore acquis, vide une fois l'exigence tenue.
+     */
+    public record ExigenceMaitrise(int requises, int acquises, List<ExerciceCompetence> restants) {
+        public boolean satisfaite() {
+            return acquises >= requises;
+        }
+    }
+
     @Transactional
     public ValidationCompetence validerBloc(Long cursusId, Long blocId,
                                             String commentaire, UtilisateurPrincipal auteur) {
+        Validable validable = verifierValidable(cursusId, blocId, auteur);
+        ValidationCompetence v = new ValidationCompetence();
+        v.setCursus(validable.cursus());
+        v.setBloc(validable.bloc());
+        v.setMoniteur(utilisateurs.findById(auteur.id()).orElseThrow());
+        v.setDateValidation(LocalDate.now());
+        v.setCommentaire(commentaire);
+        return validations.save(v);
+    }
+
+    /**
+     * Règles de validation d'une compétence, sans rien enregistrer : aussi
+     * vérifiées avant chaque accord d'un encadrant du groupe
+     * ({@link ValidationParAccordService}).
+     */
+    @Transactional(readOnly = true)
+    public Validable verifierValidable(Long cursusId, Long blocId, UtilisateurPrincipal auteur) {
         Cursus cursus = cursus(cursusId);
         BlocCompetence bloc = cursus.getReferentiel().getBlocs().stream()
                 .filter(b -> b.getId().equals(blocId))
@@ -363,42 +395,48 @@ public class EvaluationService {
                         + " doit etre validee en fin de formation, apres les autres competences.");
             }
         }
-
-        ValidationCompetence v = new ValidationCompetence();
-        v.setCursus(cursus);
-        v.setBloc(bloc);
-        v.setMoniteur(utilisateurs.findById(auteur.id()).orElseThrow());
-        v.setDateValidation(LocalDate.now());
-        v.setCommentaire(commentaire);
-        return validations.save(v);
+        return new Validable(cursus, bloc);
     }
 
     /**
      * Choix du club (2026) : une compétence qui a des exercices de maîtrise
-     * dans la base ne se valide que si l'élève en a acquis au moins un (de la
-     * base ou exercice libre de maîtrise), hors entraînement. Une compétence
-     * sans exercice de maîtrise (bloc transverse, révision sans base
-     * d'exercices) se valide comme avant.
+     * dans la base ne se valide que si l'élève en a acquis le nombre fixé
+     * pour elle (un par défaut), de la base ou exercices libres de maîtrise,
+     * hors entraînement. Une compétence sans exercice de maîtrise (bloc
+     * transverse, révision sans base d'exercices) se valide comme avant.
      */
     private void verifierMaitriseAcquise(Long cursusId, BlocCompetence bloc) {
-        List<ExerciceCompetence> manquants = maitriseManquante(cursusId, bloc.getId());
-        if (manquants.isEmpty()) return;
-        String lesquels = manquants.stream().map(ExerciceCompetence::getNumero)
+        ExigenceMaitrise exigence = exigenceMaitrise(cursusId, bloc);
+        if (exigence.satisfaite()) return;
+        String lesquels = exigence.restants().stream().map(ExerciceCompetence::getNumero)
                 .collect(Collectors.joining(", "));
-        throw new RegleMetierException(bloc.getIntitule()
-                + " ne se valide qu'avec au moins un exercice de maîtrise acquis (" + lesquels
-                + ") : notez-le acquis dans la grille avant de valider.");
+        if (exigence.requises() == 1) {
+            throw new RegleMetierException(bloc.getIntitule()
+                    + " ne se valide qu'avec au moins un exercice de maîtrise acquis (" + lesquels
+                    + ") : notez-le acquis dans la grille avant de valider.");
+        }
+        throw new RegleMetierException(bloc.getIntitule() + " ne se valide qu'avec " + exigence.requises()
+                + " exercices de maîtrise acquis (" + exigence.acquises() + " pour l'instant ; parmi "
+                + lesquels + ") : notez-les acquis dans la grille avant de valider.");
     }
 
     /**
-     * Exercices de maîtrise de la compétence quand l'élève n'en a encore
-     * acquis aucun ; liste vide si la validation n'en attend pas (ou plus).
+     * Exercices de maîtrise différents acquis par l'élève dans la compétence,
+     * comparés au nombre fixé pour elle, plafonné au nombre d'exercices de
+     * maîtrise actifs (un exercice désactivé ne doit pas rendre la
+     * compétence impossible à valider).
      */
     @Transactional(readOnly = true)
-    public List<ExerciceCompetence> maitriseManquante(Long cursusId, Long blocId) {
-        List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuBloc(blocId);
-        if (deMaitrise.isEmpty() || evaluations.maitriseAcquiseDansLeBloc(cursusId, blocId)) return List.of();
-        return deMaitrise;
+    public ExigenceMaitrise exigenceMaitrise(Long cursusId, BlocCompetence bloc) {
+        List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuBloc(bloc.getId());
+        if (deMaitrise.isEmpty()) return new ExigenceMaitrise(0, 0, List.of());
+        List<Long> acquisDeLaBase = evaluations.exercicesDeMaitriseAcquis(cursusId, bloc.getId());
+        int acquises = acquisDeLaBase.size()
+                + (int) evaluations.compterExercicesLibresDeMaitriseAcquis(cursusId, bloc.getId());
+        int requises = Math.min(Math.max(1, bloc.getMaitrisesRequises()), deMaitrise.size());
+        List<ExerciceCompetence> restants = acquises >= requises ? List.of()
+                : deMaitrise.stream().filter(e -> !acquisDeLaBase.contains(e.getId())).toList();
+        return new ExigenceMaitrise(requises, acquises, restants);
     }
 
     // ----------------------------------------------------------------

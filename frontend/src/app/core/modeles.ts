@@ -261,10 +261,28 @@ export interface BlocVue {
   /** Base d'exercices de la compétence (actifs). Absent d'une grille mise en cache avant son arrivée. */
   exercices?: ExerciceBaseVue[];
   /**
-   * Critères tous acquis mais aucun exercice de maîtrise acquis : numéros des
-   * exercices attendus avant la validation (vide sinon, absent d'un ancien cache).
+   * Critères tous acquis mais pas assez d'exercices de maîtrise acquis : numéros
+   * des exercices pas encore acquis (vide sinon, absent d'un ancien cache).
    */
   maitriseAttendue?: string[];
+  /** Exercices de maîtrise différents à acquérir pour valider (0 : sans objet) et déjà acquis. */
+  maitrisesRequises?: number;
+  maitrisesAcquises?: number;
+  /** Accords déjà donnés par les encadrants du groupe pour valider la compétence. */
+  accords?: AccordValidationVue[];
+}
+
+export interface AccordValidationVue {
+  moniteurId: number;
+  nom: string;
+  le: string;
+}
+
+/** Réponse à « Valider » / « Donner mon accord » : validée, ou accords donnés sur ceux nécessaires. */
+export interface EtatValidationVue {
+  validee: boolean;
+  accords: number;
+  accordsRequis: number;
 }
 
 /** Une période de la progression suivie par le cursus. */
@@ -328,8 +346,15 @@ export interface GrilleVue {
    * exercices communs). Peut manquer dans une grille mise en cache avant.
    */
   programmes?: ProgrammeGrilleVue[];
-  /** Référents du groupe d'entraînement de l'élève : ils notent au nom d'un autre encadrant. */
+  /** Référents du groupe d'entraînement de l'élève : ils notent au nom d'un autre encadrant et valident seuls. */
   referentIds?: number[];
+  referentielId?: number;
+  /**
+   * Encadrants du groupe habilités au niveau : une compétence est validée quand
+   * {@link accordsRequis} d'entre eux (la moitié) l'ont acceptée. Vide sans groupe.
+   */
+  votantIds?: number[];
+  accordsRequis?: number;
 }
 
 export interface ExerciceGrilleVue {
@@ -694,6 +719,8 @@ export interface BlocReferentielVue {
   modalitesEvaluation: string | null;
   /** "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en plusieurs qualifications. */
   regroupement: string | null;
+  /** Exercices de maîtrise différents à acquérir pour valider la compétence (1 par défaut). */
+  maitrisesRequises: number;
   criteres: CritereReferentielVue[];
 }
 

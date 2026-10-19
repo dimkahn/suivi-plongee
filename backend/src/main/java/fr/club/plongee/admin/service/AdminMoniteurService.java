@@ -4,6 +4,7 @@ import fr.club.plongee.commun.Caci;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.delivrance.repository.DelivranceRepository;
+import fr.club.plongee.evaluation.repository.AccordValidationRepository;
 import fr.club.plongee.evaluation.repository.EvaluationRepository;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.formation.repository.FicheSecuriteRepository;
@@ -44,6 +45,7 @@ public class AdminMoniteurService {
     private final SeanceRepository seances;
     private final FicheSecuriteRepository fichesSecurite;
     private final PhotoMoniteurService photoService;
+    private final AccordValidationRepository accords;
 
     public AdminMoniteurService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                ReinitialisationMotDePasseService reinitialisations,
@@ -53,7 +55,9 @@ public class AdminMoniteurService {
                                DelivranceRepository delivrances,
                                SeanceRepository seances,
                                FicheSecuriteRepository fichesSecurite,
-                               PhotoMoniteurService photoService) {
+                               PhotoMoniteurService photoService,
+                               AccordValidationRepository accords) {
+        this.accords = accords;
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
@@ -210,6 +214,7 @@ public class AdminMoniteurService {
             throw new RegleMetierException("Vous ne pouvez pas supprimer votre propre compte.");
         }
         if (evaluations.existsByMoniteurId(id) || validations.existsByMoniteurId(id)
+                || accords.existsByMoniteurId(id)
                 || delivrances.existsByDelivreParId(id)
                 || seances.existsByDpId(id) || fichesSecurite.existsByDpId(id)) {
             throw new RegleMetierException(

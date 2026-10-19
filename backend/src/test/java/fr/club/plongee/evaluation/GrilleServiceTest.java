@@ -3,9 +3,11 @@ package fr.club.plongee.evaluation;
 import fr.club.plongee.evaluation.domain.Evaluation;
 import fr.club.plongee.evaluation.domain.StatutAcquisition;
 import fr.club.plongee.evaluation.domain.ValidationCompetence;
+import fr.club.plongee.evaluation.repository.AccordValidationRepository;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.evaluation.service.EvaluationService;
 import fr.club.plongee.evaluation.service.GrilleService;
+import fr.club.plongee.evaluation.service.ValidationParAccordService;
 import fr.club.plongee.formation.*;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
@@ -48,12 +50,15 @@ class GrilleServiceTest {
     @Mock GroupeEntrainementRepository groupes;
     @Mock ExerciceCompetenceRepository exercicesBase;
     @Mock SchemaExerciceService schemas;
+    @Mock AccordValidationRepository accords;
+    @Mock ValidationParAccordService validationParAccord;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
-        service = new GrilleService(cursusRepository, evaluationService, validations, participations, seances, photos,
+        service = new GrilleService(cursusRepository, evaluationService, validations, accords, validationParAccord,
+                participations, seances, photos,
                 progressions, exercices, groupes, exercicesBase, schemas);
     }
 
@@ -115,6 +120,8 @@ class GrilleServiceTest {
         when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(cursus));
         when(evaluationService.etatCourant(100L)).thenReturn(Map.of(11L, evalAcquis));
         when(validations.findByCursusId(100L)).thenReturn(List.of(validation));
+        when(evaluationService.exigenceMaitrise(100L, bloc))
+                .thenReturn(new EvaluationService.ExigenceMaitrise(0, 0, List.of()));
         when(participations.compterAtelier(100L, Participation.Atelier.NAGE)).thenReturn(3L);
         when(participations.compterAtelier(100L, Participation.Atelier.BLOC)).thenReturn(2L);
         when(participations.compterAtelier(100L, Participation.Atelier.PLONGEE)).thenReturn(1L);

@@ -444,8 +444,10 @@ class EvaluationServiceTest {
         when(validations.existsByCursusIdAndBlocId(100L, 1L)).thenReturn(false);
         when(criteres.compterParBloc(1L)).thenReturn(3L);
         when(evaluations.compterAcquisDuBloc(100L, 1L)).thenReturn(3L);
+        org.springframework.test.util.ReflectionTestUtils.setField(e17, "id", 17L);
+        org.springframework.test.util.ReflectionTestUtils.setField(e19, "id", 19L);
         when(exercicesCompetence.maitriseDuBloc(1L)).thenReturn(List.of(e17, e19));
-        when(evaluations.maitriseAcquiseDansLeBloc(100L, 1L)).thenReturn(false);
+        when(evaluations.exercicesDeMaitriseAcquis(100L, 1L)).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.validerBloc(100L, 1L, null, moniteurPrincipal))
                 .isInstanceOf(RegleMetierException.class)
@@ -453,7 +455,7 @@ class EvaluationServiceTest {
         verify(validations, never()).save(any());
 
         // Un exercice de maîtrise acquis suffit.
-        when(evaluations.maitriseAcquiseDansLeBloc(100L, 1L)).thenReturn(true);
+        when(evaluations.exercicesDeMaitriseAcquis(100L, 1L)).thenReturn(List.of(17L));
         when(utilisateurs.findById(10L)).thenReturn(Optional.of(moniteur));
         when(validations.save(any())).thenAnswer(inv -> inv.getArgument(0));
         assertThat(service.validerBloc(100L, 1L, null, moniteurPrincipal).getBloc()).isSameAs(b);

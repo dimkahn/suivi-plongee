@@ -153,18 +153,20 @@ Compte : `e2@club.fr` · format téléphone · 41 s
 
 ### M6 — Valider une compétence
 
-Valider une compétence quand tous ses critères sont acquis, dont au moins un exercice de maîtrise, et comprendre les refus.
+Valider une compétence quand tous ses critères et ses exercices de maîtrise sont acquis, avec l'accord des encadrants du groupe, et comprendre les refus.
 
-Compte : `e2@club.fr` · format téléphone · 61 s
+Compte : `e2@club.fr` · format téléphone · 70 s environ
 
 1. Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.
 2. Anis a choisi et réglé son matériel seul, sur l'exercice de maîtrise 1.9 : dernier critère acquis.
-3. Tous les critères sont acquis, et au moins un exercice de maîtrise : le bouton « Valider la compétence » apparaît.
-4. Sans exercice de maîtrise acquis, la grille vous le rappelle à la place du bouton.
-5. Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.
-6. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
-7. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
-8. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
+3. Tous les critères sont acquis, avec les exercices de maîtrise demandés : la validation est possible.
+4. Sinon, la grille rappelle combien d'exercices de maîtrise il manque, à la place du bouton.
+5. Dans un groupe, la validation se décide entre ses encadrants : il faut l'accord de la moitié d'entre eux.
+6. Le premier la propose, les autres l'acceptent. Référente du groupe, Flora la valide seule.
+7. Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.
+8. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
+9. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
+10. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
 
 ### M7 — Ce qu'on a le droit de noter
 
@@ -693,7 +695,7 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 
 ### A16 — La base d'exercices
 
-Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos.
+Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos, et combien de maîtrises valident la compétence.
 
 Compte : `presidente@club.fr` · format ordinateur
 

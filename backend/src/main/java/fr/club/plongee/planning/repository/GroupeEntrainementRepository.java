@@ -30,6 +30,14 @@ public interface GroupeEntrainementRepository extends JpaRepository<GroupeEntrai
            """)
     List<Long> referentsDeLEleve(@Param("saisonId") Long saisonId, @Param("eleveId") Long eleveId);
 
+    /** Encadrants attitrés (référents compris) du groupe d'un élève sur une saison. */
+    @Query("""
+           select distinct u from GroupeEntrainement g join g.eleves e join g.encadrants u
+            where g.saison.id = :saisonId and e.id = :eleveId
+           """)
+    List<fr.club.plongee.securite.domain.Utilisateur> encadrantsDeLEleve(@Param("saisonId") Long saisonId,
+                                                                          @Param("eleveId") Long eleveId);
+
     @Query("""
            select count(g) > 0 from GroupeEntrainement g join g.espacesAttitres e
             where e.id = :espaceId

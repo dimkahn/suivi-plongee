@@ -125,4 +125,27 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
                    or e.phaseExercice = fr.club.plongee.referentiel.domain.PhaseExercice.MAITRISE)
            """)
     boolean maitriseAcquiseDansLeBloc(@Param("cursusId") Long cursusId, @Param("blocId") Long blocId);
+
+    /** Exercices de maîtrise de la base, tous différents, notés acquis dans le bloc, hors entraînement. */
+    @Query("""
+           select distinct x.id from Evaluation e join e.exercice x
+            where e.cursus.id = :cursusId
+              and e.critere.bloc.id = :blocId
+              and e.entrainement = false
+              and e.statutExercice = fr.club.plongee.evaluation.domain.StatutAcquisition.ACQUIS
+              and x.phase = fr.club.plongee.referentiel.domain.PhaseExercice.MAITRISE
+           """)
+    List<Long> exercicesDeMaitriseAcquis(@Param("cursusId") Long cursusId, @Param("blocId") Long blocId);
+
+    /** Exercices libres de maîtrise (par intitulé) notés acquis dans le bloc, hors entraînement. */
+    @Query("""
+           select count(distinct e.exerciceLibre) from Evaluation e
+            where e.cursus.id = :cursusId
+              and e.critere.bloc.id = :blocId
+              and e.entrainement = false
+              and e.exercice is null
+              and e.statutExercice = fr.club.plongee.evaluation.domain.StatutAcquisition.ACQUIS
+              and e.phaseExercice = fr.club.plongee.referentiel.domain.PhaseExercice.MAITRISE
+           """)
+    long compterExercicesLibresDeMaitriseAcquis(@Param("cursusId") Long cursusId, @Param("blocId") Long blocId);
 }

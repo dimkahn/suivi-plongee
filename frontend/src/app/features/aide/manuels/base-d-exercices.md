@@ -3,7 +3,7 @@ titre: La base d'exercices
 rubrique: Administrateur
 videos: A16
 ecran: /admin/exercices
-mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, déroulement, critère de réussite, critères travaillés, conseils, vigilance, erreurs fréquentes, désactiver, N1, N2, N3, PA20, PE40, PA40, PE60, 40 m, 60 m, E4, milieu naturel, fosse, schéma, dessin, image, photo, photos, vidéo, vidéos, lien, droit à l'image, fiche, aucun, rafraîchir
+mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, valider, validation, nombre d'exercices de maîtrise, combien, déroulement, critère de réussite, critères travaillés, conseils, vigilance, erreurs fréquentes, désactiver, N1, N2, N3, PA20, PE40, PA40, PE60, 40 m, 60 m, E4, milieu naturel, fosse, schéma, dessin, image, photo, photos, vidéo, vidéos, lien, droit à l'image, fiche, aucun, rafraîchir
 questions:
 - Pourquoi « Critère(s) : aucun » s'affiche sous les exercices ?
 - Pourquoi ma modification disparaît quand je rafraîchis la page ?
@@ -14,6 +14,7 @@ questions:
 - Comment ajouter un exercice à une compétence ?
 - Pourquoi je ne peux pas supprimer un exercice ?
 - À quoi servent initiation, perfectionnement et maîtrise ?
+- Comment exiger plusieurs exercices de maîtrise pour valider une compétence ?
 - Un exercice de maîtrise réussi en fosse valide-t-il une compétence du N2 ou du N3 ?
 - Où se valident les exercices du N3 entre 40 et 60 m ?
 ---
@@ -28,6 +29,10 @@ Administration, « Base d'exercices » : pour chaque compétence, ses exercices 
 5. « Fiche » montre l'exercice tel que le voient les moniteurs.
 
 Sous chaque exercice, la liste signale « schéma », le nombre de photos et de vidéos, et « sans conseils » s'il en manque.
+
+## Combien d'exercices de maîtrise pour valider
+
+En bas de chaque compétence qui a des exercices de maîtrise, « Pour valider la compétence, l'élève doit avoir acquis » propose de 1 au nombre de ses exercices de maîtrise actifs. Choisissez : le réglage est enregistré tout de suite. Par défaut, un seul suffit. Avec 2, l'élève doit avoir acquis deux exercices de maîtrise **différents** de la compétence avant qu'un encadrant puisse la valider ; la grille lui rappelle combien il en manque. Si un exercice de maîtrise est désactivé ensuite, l'exigence ne dépasse jamais le nombre d'exercices de maîtrise encore actifs.
 
 ## Les schémas
 

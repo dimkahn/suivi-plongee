@@ -25,6 +25,7 @@ Administration, « Groupes d'entraînement » : chaque groupe de la saison a son
 ## Bon à savoir
 
 - Le **référent** est un encadrant attitré qui suit, en plus, les élèves du groupe ; il s'affiche en tête, ici comme dans le planning.
+- Les encadrants attitrés décident ensemble de la validation des compétences des élèves du groupe : il faut l'accord de la moitié d'entre eux, un référent la valide seul (voir « Valider une compétence »).
 - Un élève est dans un groupe au plus par saison.
 - Un adhérent sans formation (maintien) se range à la main.
 - Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.

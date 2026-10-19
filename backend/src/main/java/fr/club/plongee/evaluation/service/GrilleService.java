@@ -6,6 +6,7 @@ import fr.club.plongee.evaluation.domain.StatutAcquisition;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.domain.Evaluation;
+import fr.club.plongee.evaluation.repository.AccordValidationRepository;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.ExerciceSeance;
@@ -114,10 +115,16 @@ public class GrilleService {
                           /** Base d'exercices de la competence (actifs), proposes a la notation. */
                           List<ExerciceCompetenceController.ExerciceVue> exercices,
                           /**
-                           * Critères tous acquis mais aucun exercice de maîtrise acquis :
-                           * numéros des exercices attendus avant la validation (choix du club, 2026).
+                           * Critères tous acquis mais pas assez d'exercices de maîtrise acquis :
+                           * numéros des exercices pas encore acquis (choix du club, 2026).
                            */
-                          List<String> maitriseAttendue) {}
+                          List<String> maitriseAttendue,
+                          /** Exercices de maîtrise différents à acquérir pour valider (0 : sans objet), et déjà acquis. */
+                          int maitrisesRequises, int maitrisesAcquises,
+                          /** Accords des encadrants du groupe pour valider la compétence, dans l'ordre. */
+                          List<AccordVue> accords) {}
+
+    public record AccordVue(Long moniteurId, String nom, LocalDate le) {}
 
     /** Une periode de la progression suivie par le cursus : le front en tire les blocs « au programme ». */
     public record PeriodeGrilleVue(String intitule, Integer moisDebut, Integer moisFin,
@@ -151,8 +158,18 @@ public class GrilleService {
                             List<Long> seancesPresent,
                             /** Programme d'exercices des seances de la saison : sa formation et les exercices communs. */
                             List<ProgrammeGrilleVue> programmes,
-                            /** Referents du groupe d'entrainement de l'eleve : ils notent au nom d'un autre encadrant. */
-                            List<Long> referentIds) {}
+                            /**
+                             * Referents du groupe d'entrainement de l'eleve : ils notent au nom d'un autre
+                             * encadrant et valident une competence seuls.
+                             */
+                            List<Long> referentIds,
+                            Long referentielId,
+                            /**
+                             * Encadrants du groupe habilites au niveau : la validation d'une competence
+                             * attend l'accord de la moitie d'entre eux ({@code accordsRequis}) ; liste
+                             * vide et 0 sans groupe, la competence se valide alors par un seul encadrant.
+                             */
+                            List<Long> votantIds, int accordsRequis) {}
 
     /** Un exercice du programme d'une seance, vu depuis la fiche d'un eleve. */
     public record ExerciceGrilleVue(String intitule, String consignes, Integer dureeMinutes,
@@ -210,9 +227,13 @@ public class GrilleService {
     private final GroupeEntrainementRepository groupes;
     private final ExerciceCompetenceRepository exercicesBase;
     private final SchemaExerciceService schemas;
+    private final AccordValidationRepository accords;
+    private final ValidationParAccordService validationParAccord;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
+                         AccordValidationRepository accords,
+                         ValidationParAccordService validationParAccord,
                          ParticipationRepository participations,
                          SeanceRepository seances,
                          PhotoEleveRepository photos,
@@ -223,6 +244,8 @@ public class GrilleService {
                          SchemaExerciceService schemas) {
         this.exercicesBase = exercicesBase;
         this.schemas = schemas;
+        this.accords = accords;
+        this.validationParAccord = validationParAccord;
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
@@ -244,6 +267,10 @@ public class GrilleService {
         Map<Long, List<EtatExerciceVue>> etatsExercices = etatsExercices(cursusId);
         Map<Long, ValidationCompetence> valide = validations.findByCursusId(cursusId).stream()
                 .collect(Collectors.toMap(v -> v.getBloc().getId(), v -> v));
+        Map<Long, List<AccordVue>> accordsParBloc = accords.duCursus(cursusId).stream()
+                .collect(Collectors.groupingBy(a -> a.getBloc().getId(), Collectors.mapping(
+                        a -> new AccordVue(a.getMoniteur().getId(), a.getMoniteur().nomComplet(), a.getDateAccord()),
+                        Collectors.toList())));
 
         // Progression suivie par la saison pour ce referentiel : echeance de chaque bloc.
         // Le retard n'a de sens que pour une formation en cours.
@@ -286,6 +313,7 @@ public class GrilleService {
             total += criteres.size();
 
             ValidationCompetence v = valide.get(bloc.getId());
+            EvaluationService.ExigenceMaitrise exigence = evaluationService.exigenceMaitrise(cursusId, bloc);
             blocs.add(new BlocVue(bloc.getId(), bloc.getIntitule(),
                     bloc.isEvaluationTransverse(), bloc.isValiderEnDernier(),
                     acquis, criteres.size(), v != null,
@@ -306,12 +334,15 @@ public class GrilleService {
                     criteres,
                     exercicesParBloc.getOrDefault(bloc.getId(), List.of()),
                     v == null && acquis == criteres.size()
-                            ? evaluationService.maitriseManquante(cursusId, bloc.getId()).stream()
-                                    .map(ExerciceCompetence::getNumero).toList()
-                            : List.of()));
+                            ? exigence.restants().stream().map(ExerciceCompetence::getNumero).toList()
+                            : List.of(),
+                    exigence.requises(), exigence.acquises(),
+                    accordsParBloc.getOrDefault(bloc.getId(), List.of())));
         }
 
         Long eleveId = cursus.getEleve().getId();
+        List<Long> votantIds = validationParAccord.votants(cursus).stream()
+                .map(fr.club.plongee.securite.domain.Utilisateur::getId).toList();
         return new GrilleVue(cursus.getId(), eleveId, cursus.getEleve().nomComplet(),
                 cursus.getEleve().isAutorisationImage() && photos.existsById(eleveId),
                 cursus.getEleve().getEmail(), cursus.getEleve().getTelephone(),
@@ -335,7 +366,9 @@ public class GrilleService {
                 numerosPlongee, plongeesFaites,
                 participations.seancesOuPresent(cursusId),
                 programmes(cursus, avecSchema),
-                groupes.referentsDeLEleve(cursus.getSaison().getId(), eleveId));
+                groupes.referentsDeLEleve(cursus.getSaison().getId(), eleveId),
+                cursus.getReferentiel().getId(),
+                votantIds, ValidationParAccordService.accordsRequis(votantIds.size()));
     }
 
     /**

@@ -40,3 +40,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/evaluation
 - **Date :** 2026. Choix du club.
 - **Décision :** pas de nombre de critères ; chaque case ne montre que l'état A / ECA / NT (`EtatCompetence`).
 - **Conséquences :** l'état est calculé par `GrilleService` et porté par chaque bloc de la grille (`BlocVue.etat`).
+
+## Validation d'une compétence : nombre de maîtrises et accord des encadrants du groupe
+
+- **Date :** 2026-10-19. Choix du club.
+- **Contexte :** une seule maîtrise acquise suffisait, et un seul moniteur habilité validait. Le club veut fixer, par compétence, le nombre d'exercices de maîtrise acquis qui la valident, et que la validation se décide entre les encadrants du groupe d'entraînement de l'élève, « comme un vote ».
+- **Décision :**
+  - `bloc_competence.maitrises_requises` (V93, 1 par défaut) : exercices de maîtrise **différents** à acquérir (base par id, libres par intitulé, hors entraînement), plafonné au nombre de maîtrises actives ; réglé par un ADMIN sous chaque compétence de `/admin/exercices` (`PUT /api/referentiels/{id}/blocs/{blocId}/maitrises-requises`) ; `EvaluationService.exigenceMaitrise`.
+  - Votants = encadrants attitrés du groupe de l'élève, actifs, habilités au niveau (`ValidationParAccordService.votants`). La compétence est validée quand **la moitié arrondie au-dessus** a donné son accord (1/2, 2/3, 2/4) ; **un référent la valide seul**. Élève sans groupe, ou groupe sans votant : un seul encadrant habilité, comme avant. Un encadrant hors du groupe : 422.
+  - Même route `POST /api/cursus/{id}/competences/{blocId}/validation` : vérifie toutes les règles à chaque appel (`EvaluationService.verifierValidable`), enregistre un accord (`accord_validation`, ajout seul, unique par cursus/bloc/moniteur), valide si le compte est atteint, renvoie `EtatValidation`. Pas de refus ni de retrait d'accord (non demandé).
+- **Conséquences :** la grille porte `votantIds`, `accordsRequis`, `BlocVue.accords`, `maitrisesRequises`, `maitrisesAcquises` ; boutons « Valider la compétence », « Proposer la validation », « Accepter la validation » (`core/validation-competence.ts`). Un moniteur qui a donné un accord ne se supprime plus (on désactive son compte). Les fichiers `.claude/rules/exercices.md` (« Validation d'une compétence ») et `evaluation.md` sont à compléter de ce point (non modifiables par l'assistant).

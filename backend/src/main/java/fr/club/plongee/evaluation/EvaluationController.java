@@ -6,6 +6,7 @@ import fr.club.plongee.evaluation.domain.StatutAcquisition;
 import fr.club.plongee.evaluation.service.EvaluationService;
 import fr.club.plongee.evaluation.service.FichePdfService;
 import fr.club.plongee.evaluation.service.GrilleService;
+import fr.club.plongee.evaluation.service.ValidationParAccordService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import fr.club.plongee.securite.UtilisateurPrincipal;
@@ -52,9 +53,12 @@ public class EvaluationController {
     private final GrilleService grilles;
     private final RegleDelivranceService regles;
     private final FichePdfService fichePdfService;
+    private final ValidationParAccordService validationParAccord;
 
     public EvaluationController(EvaluationService evaluations, GrilleService grilles,
-                                RegleDelivranceService regles, FichePdfService fichePdfService) {
+                                RegleDelivranceService regles, FichePdfService fichePdfService,
+                                ValidationParAccordService validationParAccord) {
+        this.validationParAccord = validationParAccord;
         this.evaluations = evaluations;
         this.grilles = grilles;
         this.regles = regles;
@@ -107,13 +111,19 @@ public class EvaluationController {
         return grilles.matrice(cursusId);
     }
 
+    /**
+     * Propose ou accepte la validation d'une compétence : validée dès que la
+     * moitié des encadrants du groupe de l'élève l'ont acceptée, tout de suite
+     * par un référent du groupe ou pour un élève sans groupe.
+     */
     @PostMapping("/competences/{blocId}/validation")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('MONITEUR') and @habilitation.peutEvaluer(#cursusId, authentication)")
-    public void validerCompetence(@PathVariable Long cursusId, @PathVariable Long blocId,
-                                  @RequestBody(required = false) DemandeValidation demande,
-                                  @AuthenticationPrincipal UtilisateurPrincipal auteur) {
-        evaluations.validerBloc(cursusId, blocId,
+    public ValidationParAccordService.EtatValidation validerCompetence(
+            @PathVariable Long cursusId, @PathVariable Long blocId,
+            @RequestBody(required = false) DemandeValidation demande,
+            @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return validationParAccord.accepter(cursusId, blocId,
                 demande == null ? null : demande.commentaire(), auteur);
     }
 

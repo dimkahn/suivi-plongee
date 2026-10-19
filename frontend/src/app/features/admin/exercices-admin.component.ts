@@ -36,7 +36,8 @@ interface Formulaire extends DemandeExerciceBase {
       Chaque compétence a ses exercices d'initiation, de perfectionnement et de maîtrise, avec leurs
       conseils, leur schéma, leurs photos et leurs vidéos (« Fiche » montre ce que voient les moniteurs). Les moniteurs
       les ajoutent au programme d'une séance et notent l'exercice réalisé avec chaque critère :
-      seul un exercice de <strong>maîtrise</strong> fait passer un critère à « Acquis ». Un exercice
+      seul un exercice de <strong>maîtrise</strong> fait passer un critère à « Acquis ». Sous chaque compétence,
+      choisissez combien d'exercices de maîtrise différents l'élève doit avoir acquis pour qu'elle se valide. Un exercice
       déjà noté ne se supprime pas, désactivez-le : il n'est plus proposé mais reste lisible sur les notes passées.
     </p>
 
@@ -92,6 +93,18 @@ interface Formulaire extends DemandeExerciceBase {
                 }
               </ul>
             }
+          }
+          @let possibles = nombresDeMaitrise(bloc.id);
+          @if (possibles.length > 0) {
+            <div class="seuil">
+              <label [for]="'seuil-' + bloc.id">Pour valider la compétence, l'élève doit avoir acquis</label>
+              <select [id]="'seuil-' + bloc.id" [ngModel]="bloc.maitrisesRequises ?? 1"
+                      (ngModelChange)="fixerMaitrisesRequises(bloc, $event)" [disabled]="envoi()">
+                @for (n of possibles; track n) {
+                  <option [ngValue]="n">{{ n }} exercice{{ n > 1 ? 's' : '' }} de maîtrise sur {{ possibles.length }}</option>
+                }
+              </select>
+            </div>
           }
         </section>
       }
@@ -254,6 +267,8 @@ interface Formulaire extends DemandeExerciceBase {
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; }
     .case input { width: 22px; height: 22px; margin: 0; }
     .criteres-exercice { font-size: .8125rem; color: var(--profond); }
+    .seuil { margin-top: var(--pas-2); padding-top: var(--pas); border-top: 1px solid var(--trait); }
+    .seuil select { min-height: 44px; max-width: 360px; }
     fieldset.criteres { margin: var(--pas-2) 0 0; padding: var(--pas) var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s); }
     fieldset.criteres legend { font-weight: 700; font-size: .9375rem; padding: 0 4px; }
     fieldset.criteres .case { margin: 0; font-weight: 400; }
@@ -331,6 +346,30 @@ export class ExercicesAdminComponent {
 
   exercicesDeLaPhase(blocId: number, phase: PhaseExercice): ExerciceBaseVue[] {
     return this.exercicesDuBloc(blocId).filter(e => e.phase === phase);
+  }
+
+  /** 1 à n, n = exercices de maîtrise actifs de la compétence ; vide s'il n'y en a aucun. */
+  nombresDeMaitrise(blocId: number): number[] {
+    const n = this.exercicesDeLaPhase(blocId, 'MAITRISE').filter(e => e.actif).length;
+    return Array.from({ length: n }, (_, i) => i + 1);
+  }
+
+  async fixerMaitrisesRequises(bloc: BlocReferentielVue, nombre: number): Promise<void> {
+    const referentielId = this.referentielId();
+    if (referentielId === null) return;
+    this.envoi.set(true);
+    try {
+      await firstValueFrom(this.api.fixerMaitrisesRequises(referentielId, bloc.id, nombre));
+      this.detail.update(d => d && {
+        ...d, blocs: d.blocs.map(b => b.id === bloc.id ? { ...b, maitrisesRequises: nombre } : b)
+      });
+      this.message.set(`« ${bloc.intitule} » se valide maintenant avec ${nombre} exercice${nombre > 1 ? 's' : ''} `
+        + `de maîtrise acquis${nombre > 1 ? ' différents' : ''}.`);
+    } catch (e) {
+      this.message.set((e as HttpErrorResponse).error?.detail ?? 'Le réglage n\'a pas pu être enregistré.');
+    } finally {
+      this.envoi.set(false);
+    }
   }
 
   intituleBloc(blocId: number): string {

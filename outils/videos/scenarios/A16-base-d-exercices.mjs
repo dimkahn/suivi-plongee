@@ -1,12 +1,12 @@
 // A16 — La base d'exercices.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A16',
   titre: 'La base d\'exercices',
   public: 'Administrateur',
-  resume: 'Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos.',
+  resume: 'Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos, et combien de maîtrises valident la compétence.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -28,6 +28,12 @@ export default {
     await legende('Seul un exercice de maîtrise fait passer ses critères à « Acquis ».', 4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }).first(), { apres: 1000 });
     await legende('Un exercice déjà noté ne se supprime pas : on le désactive.', 3500);
+    await page.locator('.seuil select').first().scrollIntoViewIfNeeded();
+    await pause(1000);
+    await legende('Sous chaque compétence : combien d\'exercices de maîtrise différents l\'élève doit avoir acquis pour la valider.', 5000);
+    await legende('Un par défaut ; jusqu\'à tous les exercices de maîtrise de la compétence.', 3500);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await pause(800);
     await legende('« Fiche » montre l\'exercice tel que le voient les moniteurs.', 0);
     await toucher(page.getByRole('link', { name: 'Fiche', exact: true }).first(), { apres: 2500 });
     await defiler(500, 2000);

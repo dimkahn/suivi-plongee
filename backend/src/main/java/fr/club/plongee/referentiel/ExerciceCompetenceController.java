@@ -136,6 +136,35 @@ public class ExerciceCompetenceController {
         exercices.delete(e);
     }
 
+    /** {@code nombre} : exercices de maîtrise différents à acquérir pour valider la compétence. */
+    public record DemandeMaitrisesRequises(int nombre) {}
+
+    /**
+     * Nombre d'exercices de maîtrise que l'élève doit avoir acquis pour que la
+     * compétence se valide (choix du club, 2026) : de 1 au nombre d'exercices
+     * de maîtrise actifs de la compétence.
+     */
+    @PutMapping("/blocs/{blocId}/maitrises-requises")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public void fixerMaitrisesRequises(@PathVariable Long referentielId, @PathVariable Long blocId,
+                                       @RequestBody DemandeMaitrisesRequises demande) {
+        BlocCompetence bloc = blocs.findById(blocId)
+                .filter(b -> b.getReferentiel().getId().equals(referentielId))
+                .orElseThrow(() -> new RessourceIntrouvableException("Bloc introuvable"));
+        int disponibles = exercices.maitriseDuBloc(blocId).size();
+        if (disponibles == 0) {
+            throw new RegleMetierException("« " + bloc.getIntitule()
+                    + " » n'a aucun exercice de maîtrise actif : ajoutez-en avant de fixer combien il en faut.");
+        }
+        if (demande.nombre() < 1 || demande.nombre() > disponibles) {
+            throw new RegleMetierException("« " + bloc.getIntitule() + " » a " + disponibles
+                    + (disponibles > 1 ? " exercices de maîtrise actifs" : " exercice de maîtrise actif")
+                    + " : choisissez entre 1 et " + disponibles + ".");
+        }
+        bloc.setMaitrisesRequises(demande.nombre());
+    }
+
     private ExerciceCompetence exercice(Long referentielId, Long exerciceId) {
         return exercices.findById(exerciceId)
                 .filter(e -> e.getBloc().getReferentiel().getId().equals(referentielId))
