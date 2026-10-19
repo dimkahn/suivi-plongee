@@ -153,20 +153,22 @@ Compte : `e2@club.fr` · format téléphone · 41 s
 
 ### M6 — Valider une compétence
 
-Valider une compétence quand tous ses critères et ses exercices de maîtrise obligatoires sont acquis, avec l'accord des encadrants du groupe, et comprendre les refus.
+Valider un critère technique seul, ou une compétence quand tous ses critères et ses exercices de maîtrise obligatoires sont acquis, avec l'accord des encadrants du groupe, et comprendre les refus.
 
 Compte : `e2@club.fr` · format téléphone · 70 s environ
 
 1. Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.
 2. Anis a choisi et réglé son matériel seul, sur l'exercice de maîtrise 1.9 : dernier critère acquis.
-3. Tous les critères sont acquis, et ses exercices de maîtrise obligatoires, 1.7, 1.8 et 1.9 : la validation est possible.
-4. Sinon, la grille rappelle les exercices obligatoires qui manquent, à la place du bouton.
-5. Dans un groupe, la validation se décide entre ses encadrants : il faut l'accord de la moitié d'entre eux.
-6. Le premier la propose, les autres l'acceptent. Référente du groupe, Flora la valide seule.
-7. Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.
-8. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
-9. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
-10. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
+3. Chaque critère technique acquis se valide aussi seul, de la même manière : « Valider le critère ».
+4. « Critère validé », avec la date et votre nom. La compétence entière se valide à part.
+5. Tous les critères sont acquis, et ses exercices de maîtrise obligatoires, 1.7, 1.8 et 1.9 : la validation est possible.
+6. Sinon, la grille rappelle les exercices obligatoires qui manquent, à la place du bouton.
+7. Dans un groupe, la validation se décide entre ses encadrants : il faut l'accord de la moitié d'entre eux.
+8. Le premier la propose, les autres l'acceptent. Référente du groupe, Flora la valide seule.
+9. Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.
+10. Le serveur vérifie les règles du MFT : certaines validations seront refusées, avec la raison.
+11. Par exemple, au N2 et au N3, tout se valide en milieu naturel.
+12. Vous ne notez que les niveaux de votre encadrement : E1 le N1, E2 jusqu'au N2, E3 jusqu'au N3.
 
 ### M7 — Ce qu'on a le droit de noter
 

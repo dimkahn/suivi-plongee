@@ -6,7 +6,7 @@ export default {
   id: 'M6',
   titre: 'Valider une compétence',
   public: 'Moniteur',
-  resume: 'Valider une compétence quand tous ses critères et ses exercices de maîtrise obligatoires sont acquis, avec l\'accord des encadrants du groupe, et comprendre les refus.',
+  resume: 'Valider un critère technique seul, ou une compétence quand tous ses critères et ses exercices de maîtrise obligatoires sont acquis, avec l\'accord des encadrants du groupe, et comprendre les refus.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -23,6 +23,13 @@ export default {
     await noter(g, 'Choix de son matériel personnel', 'Acquis', 'Matériel personnel et lestage adapté');
 
     const b = bloc(page, 'S\'équiper et se déséquiper');
+    const critereSeul = b.getByRole('button', { name: 'Valider le critère' }).first();
+    if (await critereSeul.count() > 0) {
+      await critereSeul.scrollIntoViewIfNeeded();
+      await legende('Chaque critère technique acquis se valide aussi seul, de la même manière : « Valider le critère ».', 0);
+      await toucher(critereSeul, { apres: 2000 });
+      await legende('« Critère validé », avec la date et votre nom. La compétence entière se valide à part.', 4000);
+    }
     await b.scrollIntoViewIfNeeded();
     await legende('Tous les critères sont acquis, et ses exercices de maîtrise obligatoires, 1.7, 1.8 et 1.9 : la validation est possible.', 4500);
     await legende('Sinon, la grille rappelle les exercices obligatoires qui manquent, à la place du bouton.', 3500);

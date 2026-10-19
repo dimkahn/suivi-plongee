@@ -223,6 +223,11 @@ export class ApiService {
   //  La notation, elle, passe par FileAttenteService.
   // ----------------------------------------------------------------
 
+  /** Même vote pour un critère technique seul. */
+  validerCritere(cursusId: number, critereId: number): Observable<EtatValidationVue> {
+    return this.http.post<EtatValidationVue>(`/api/cursus/${cursusId}/criteres/${critereId}/validation`, {});
+  }
+
   /** Valide, ou donne l'accord de l'encadrant connecté quand la validation se décide dans le groupe. */
   validerCompetence(cursusId: number, blocId: number, commentaire?: string): Observable<EtatValidationVue> {
     return this.http.post<EtatValidationVue>(

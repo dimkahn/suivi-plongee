@@ -13,7 +13,7 @@ import { FileAttenteService } from '../../core/file-attente.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import {
-  BlocVue, CritereVue, CursusVue, EtatCompetence, EvaluationVue, ExerciceBaseVue, ExerciceGrilleVue, ExerciceNoteVue, GrilleVue,
+  AccordValidationVue, BlocVue, CritereVue, CursusVue, EtatCompetence, EvaluationVue, ExerciceBaseVue, ExerciceGrilleVue, ExerciceNoteVue, GrilleVue,
   GroupeEntrainementVue, MoniteurOptionVue, PhaseExercice, SeanceVue, Statut
 } from '../../core/modeles';
 import { FiltreGroupe, passeFiltreGroupe } from '../../core/filtre-groupe.component';
@@ -783,6 +783,47 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                   </div>
                 </div>
 
+                <!-- Validation d'un critère technique seul (choix du club, 2026), même vote que la compétence. -->
+                @if (lieu === 'b') {
+                  @if (critere.validation) {
+                    <p class="valide critere-valide">Critère validé le {{ critere.validation.le | dateFr }} par {{ critere.validation.par }}</p>
+                  } @else if (!bloc.valide && peutSaisir() && actif.statut === 'ACQUIS' && !actif.enAttente) {
+                    <div class="validation-critere">
+                      @if (critere.maitriseAttendue?.length) {
+                        <p class="secondaire">
+                          Validation du critère possible une fois acquis ses exercices de maîtrise obligatoires
+                          (il manque {{ critere.maitriseAttendue.join(', ') }}).
+                        </p>
+                      } @else if (!reseau.enLigne()) {
+                        <p class="secondaire">Validation du critère possible au retour du réseau.</p>
+                      } @else {
+                        @let voteCritere = etatAccords(critere);
+                        @if (voteCritere.accordsRequis > 0) {
+                          <p class="secondaire accords">
+                            {{ voteCritere.accords }} accord{{ voteCritere.accords > 1 ? 's' : '' }} sur {{ voteCritere.accordsRequis }}
+                            pour valider ce critère@if (voteCritere.accords > 0) { ({{ nomsAccords(critere) }})}.
+                            @if (voteCritere.mode === 'ACCORD_DONNE') { Votre accord est donné. }
+                          </p>
+                        }
+                        @if (voteCritere.mode === 'SEUL' || voteCritere.mode === 'PROPOSER' || voteCritere.mode === 'ACCEPTER') {
+                          <button type="button" class="bouton-discret" (click)="validerCritere(critere)"
+                                  [disabled]="validationCritereEnCours() !== null">
+                            @if (validationCritereEnCours() === critere.id) {
+                              <span class="chargeur" aria-hidden="true"></span>Envoi…
+                            } @else if (voteCritere.mode === 'PROPOSER') {
+                              Proposer de valider le critère
+                            } @else if (voteCritere.mode === 'ACCEPTER') {
+                              Accepter de valider le critère
+                            } @else {
+                              Valider le critère
+                            }
+                          </button>
+                        }
+                      }
+                    </div>
+                  }
+                }
+
                 <div class="liens-critere">
                   @if (peutSaisir() && (!bloc.valide || parExercice)) {
                     <button type="button" class="lien-historique"
@@ -1015,6 +1056,10 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     }
     .bloc header h3 { font-size: 1.0625rem; }
     .valide { margin: 0; color: var(--acquis); font-weight: 700; font-size: .9375rem; }
+    .critere-valide { margin-top: 4px; font-size: .875rem; }
+    .validation-critere { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); margin-top: 4px; }
+    .validation-critere p { margin: 0; }
+    .validation-critere button { min-height: 44px; }
 
     /* Progression suivie : période du mois de la séance choisie (ou du jour) et retard. */
     .programme { margin-top: var(--pas-3); padding: var(--pas-2) var(--pas-3); display: flex; flex-direction: column; gap: var(--pas); align-items: flex-start; }
@@ -2221,13 +2266,33 @@ export class GrilleComponent implements OnDestroy {
     });
   }
 
-  /** Où en est la validation de la compétence parmi les encadrants du groupe de l'élève. */
-  etatAccords(bloc: BlocAffiche): EtatAccords {
-    return modeValidation(this.grille() ?? {}, bloc, this.auth.session()?.id);
+  /** Où en est la validation d'une compétence, ou d'un critère seul, parmi les encadrants du groupe de l'élève. */
+  etatAccords(objet: { accords?: AccordValidationVue[] }): EtatAccords {
+    return modeValidation(this.grille() ?? {}, objet, this.auth.session()?.id);
   }
 
-  nomsAccords(bloc: BlocAffiche): string {
-    return (bloc.accords ?? []).map(a => a.nom).join(', ');
+  nomsAccords(objet: { accords?: AccordValidationVue[] }): string {
+    return (objet.accords ?? []).map(a => a.nom).join(', ');
+  }
+
+  validationCritereEnCours = signal<number | null>(null);
+
+  /** Propose, accepte ou valide un critère technique seul, comme une compétence. */
+  validerCritere(critere: CritereAffiche): void {
+    this.validationCritereEnCours.set(critere.id);
+    this.api.validerCritere(Number(this.id()), critere.id).subscribe({
+      next: async etat => {
+        this.message.set(etat?.validee === false
+          ? `Votre accord est enregistré : ${etat.accords} sur ${etat.accordsRequis} nécessaires pour valider « ${critere.savoirFaire} ».`
+          : null);
+        await this.charger();
+        this.validationCritereEnCours.set(null);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.validationCritereEnCours.set(null);
+        this.message.set(e.error?.detail ?? 'La validation du critère n’a pas pu être enregistrée.');
+      }
+    });
   }
 
   validerBloc(bloc: BlocAffiche): void {

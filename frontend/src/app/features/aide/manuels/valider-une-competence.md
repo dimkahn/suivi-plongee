@@ -3,7 +3,7 @@ titre: Valider une compétence
 rubrique: Moniteur
 videos: M6
 ecran: /eleves
-mots: valider, validation, compétence, bloc, refus, refusé, MFT, milieu naturel, règle, exercice de maîtrise, maîtrise, obligatoire, exercices obligatoires, accord, accepter, proposer, vote, moitié, 50 %, groupe, référent, encadrants du groupe
+mots: valider, validation, compétence, bloc, critère, critère technique, technique, valider le critère, refus, refusé, MFT, milieu naturel, règle, exercice de maîtrise, maîtrise, obligatoire, exercices obligatoires, accord, accepter, proposer, vote, moitié, 50 %, groupe, référent, encadrants du groupe
 questions:
 - Comment valider une compétence ?
 - Pourquoi le bouton « Valider la compétence » n'apparaît pas ?
@@ -12,6 +12,7 @@ questions:
 - Quels exercices de maîtrise sont obligatoires pour valider une compétence ?
 - Pourquoi je vois « Proposer la validation » ou « Accepter la validation » ?
 - Qui peut valider une compétence seul ?
+- Comment valider un seul critère technique d'une compétence ?
 - Combien d'accords faut-il pour valider une compétence ?
 ---
 Quand tous les critères d'une compétence sont acquis, **et que l'élève a acquis tous ses exercices de maîtrise obligatoires**, la validation devient possible sous son titre. Si l'élève est dans un groupe d'entraînement, elle se décide entre les encadrants du groupe, comme un vote : **il faut l'accord de la moitié d'entre eux**. Un **référent du groupe** la valide seul. Le serveur vérifie les règles du MFT avant d'accepter.
@@ -24,6 +25,16 @@ Quand tous les critères d'une compétence sont acquis, **et que l'élève a acq
    - **« Proposer la validation »** : aucun encadrant du groupe ne l'a encore proposée ; votre appui compte comme le premier accord ;
    - **« Accepter la validation »** : d'autres l'ont déjà proposée ; la ligne au-dessus dit combien d'accords sont donnés, par qui, et combien il en faut.
 3. Dès que la moitié des encadrants du groupe ont donné leur accord, la compétence est validée, avec la date et le nom de celui qui a donné le dernier accord ; « Avec l'accord de … » rappelle les autres.
+
+## Valider un critère technique seul
+
+Un critère de la compétence (par exemple « Gréage et dégréage ») se valide aussi **seul**, de la même manière, sans attendre les autres critères :
+
+1. Notez le critère « acquis », sur ses exercices de maîtrise obligatoires.
+2. Sous le critère apparaît « **Proposer de valider le critère** », puis, pour les autres encadrants du groupe, « **Accepter de valider le critère** » avec le nombre d'accords ; un référent voit « **Valider le critère** ».
+3. Dès que la moitié des encadrants du groupe ont donné leur accord, le critère affiche « Critère validé le … par … ».
+
+S'il manque un de ses exercices de maîtrise obligatoires, la grille l'indique à la place du bouton. Valider un critère ne valide pas la compétence : celle-ci se valide toujours à part, quand tous ses critères sont acquis. Une fois la compétence validée, ses critères n'ont plus besoin de l'être un par un.
 
 ## Combien d'accords ?
 

@@ -46,6 +46,8 @@ public class AdminMoniteurService {
     private final FicheSecuriteRepository fichesSecurite;
     private final PhotoMoniteurService photoService;
     private final AccordValidationRepository accords;
+    private final fr.club.plongee.evaluation.repository.AccordValidationCritereRepository accordsCritere;
+    private final fr.club.plongee.evaluation.repository.ValidationCritereRepository validationsCritere;
 
     public AdminMoniteurService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                ReinitialisationMotDePasseService reinitialisations,
@@ -56,8 +58,12 @@ public class AdminMoniteurService {
                                SeanceRepository seances,
                                FicheSecuriteRepository fichesSecurite,
                                PhotoMoniteurService photoService,
-                               AccordValidationRepository accords) {
+                               AccordValidationRepository accords,
+                               fr.club.plongee.evaluation.repository.AccordValidationCritereRepository accordsCritere,
+                               fr.club.plongee.evaluation.repository.ValidationCritereRepository validationsCritere) {
         this.accords = accords;
+        this.accordsCritere = accordsCritere;
+        this.validationsCritere = validationsCritere;
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
@@ -215,6 +221,7 @@ public class AdminMoniteurService {
         }
         if (evaluations.existsByMoniteurId(id) || validations.existsByMoniteurId(id)
                 || accords.existsByMoniteurId(id)
+                || accordsCritere.existsByMoniteurId(id) || validationsCritere.existsByMoniteurId(id)
                 || delivrances.existsByDelivreParId(id)
                 || seances.existsByDpId(id) || fichesSecurite.existsByDpId(id)) {
             throw new RegleMetierException(

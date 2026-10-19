@@ -127,6 +127,16 @@ public class EvaluationController {
                 demande == null ? null : demande.commentaire(), auteur);
     }
 
+    /** Même vote pour un critère technique seul (choix du club, 2026). */
+    @PostMapping("/criteres/{critereId}/validation")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('MONITEUR') and @habilitation.peutEvaluer(#cursusId, authentication)")
+    public ValidationParAccordService.EtatValidation validerCritere(
+            @PathVariable Long cursusId, @PathVariable Long critereId,
+            @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return validationParAccord.accepterCritere(cursusId, critereId, auteur);
+    }
+
     @GetMapping("/eligibilite")
     @PreAuthorize("@habilitation.peutConsulter(#cursusId, authentication)")
     public RegleDelivranceService.Eligibilite eligibilite(@PathVariable Long cursusId) {

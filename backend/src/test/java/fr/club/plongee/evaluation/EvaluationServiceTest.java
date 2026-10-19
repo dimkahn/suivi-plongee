@@ -57,6 +57,7 @@ class EvaluationServiceTest {
     @Mock ExerciceCompetenceRepository exercicesCompetence;
     @Mock fr.club.plongee.formation.repository.ExerciceSeanceRepository exercicesSeance;
     @Mock fr.club.plongee.planning.repository.GroupeEntrainementRepository groupes;
+    @Mock fr.club.plongee.evaluation.repository.ValidationCritereRepository validationsCritere;
 
     EvaluationService service;
 
@@ -66,7 +67,8 @@ class EvaluationServiceTest {
     @BeforeEach
     void avantChaqueTest() {
         service = new EvaluationService(evaluations, validations, cursusRepository, seances,
-                criteres, utilisateurs, habilitation, participations, exercicesCompetence, exercicesSeance, groupes);
+                criteres, utilisateurs, habilitation, participations, exercicesCompetence, exercicesSeance, groupes,
+                validationsCritere);
         moniteurPrincipal = new UtilisateurPrincipal(10L, "e2@club.fr", "x", true,
                 NiveauEncadrement.E2, List.of());
         moniteur = new Utilisateur();

@@ -2,6 +2,8 @@ package fr.club.plongee.evaluation.service;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.evaluation.domain.AccordValidation;
+import fr.club.plongee.evaluation.domain.AccordValidationCritere;
+import fr.club.plongee.evaluation.repository.AccordValidationCritereRepository;
 import fr.club.plongee.evaluation.repository.AccordValidationRepository;
 import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.planning.domain.GroupeEntrainement;
@@ -38,8 +40,12 @@ public class ValidationParAccordService {
     private final GroupeEntrainementRepository groupes;
     private final UtilisateurRepository utilisateurs;
 
+    private final AccordValidationCritereRepository accordsCritere;
+
     public ValidationParAccordService(EvaluationService evaluations, AccordValidationRepository accords,
+                                      AccordValidationCritereRepository accordsCritere,
                                       GroupeEntrainementRepository groupes, UtilisateurRepository utilisateurs) {
+        this.accordsCritere = accordsCritere;
         this.evaluations = evaluations;
         this.accords = accords;
         this.groupes = groupes;
@@ -65,17 +71,60 @@ public class ValidationParAccordService {
                 .toList();
     }
 
-    /** Propose ou accepte la validation ; la valide si l'accord fait la moitié, ou si l'auteur est référent. */
+    /** Propose ou accepte la validation d'une compétence ; la valide si l'accord fait la moitié, ou si l'auteur est référent. */
     @Transactional
     public EtatValidation accepter(Long cursusId, Long blocId, String commentaire, UtilisateurPrincipal auteur) {
         EvaluationService.Validable validable = evaluations.verifierValidable(cursusId, blocId, auteur);
-        Cursus cursus = validable.cursus();
+        return voter(validable.cursus(), auteur, "« " + validable.bloc().getIntitule() + " »",
+                accords.existsByCursusIdAndBlocIdAndMoniteurId(cursusId, blocId, auteur.id()),
+                moniteur -> {
+                    AccordValidation accord = new AccordValidation();
+                    accord.setCursus(validable.cursus());
+                    accord.setBloc(validable.bloc());
+                    accord.setMoniteur(moniteur);
+                    accord.setDateAccord(LocalDate.now());
+                    accords.save(accord);
+                },
+                ids -> (int) accords.duCursus(cursusId).stream()
+                        .filter(a -> a.getBloc().getId().equals(blocId) && ids.contains(a.getMoniteur().getId()))
+                        .count(),
+                () -> evaluations.validerBloc(cursusId, blocId, commentaire, auteur));
+    }
+
+    /** Même vote pour un critère technique seul (choix du club, 2026). */
+    @Transactional
+    public EtatValidation accepterCritere(Long cursusId, Long critereId, UtilisateurPrincipal auteur) {
+        EvaluationService.CritereValidable validable = evaluations.verifierCritereValidable(cursusId, critereId, auteur);
+        return voter(validable.cursus(), auteur, "le critère « " + validable.critere().getSavoirFaire() + " »",
+                accordsCritere.existsByCursusIdAndCritereIdAndMoniteurId(cursusId, critereId, auteur.id()),
+                moniteur -> {
+                    AccordValidationCritere accord = new AccordValidationCritere();
+                    accord.setCursus(validable.cursus());
+                    accord.setCritere(validable.critere());
+                    accord.setMoniteur(moniteur);
+                    accord.setDateAccord(LocalDate.now());
+                    accordsCritere.save(accord);
+                },
+                ids -> (int) accordsCritere.duCursus(cursusId).stream()
+                        .filter(a -> a.getCritere().getId().equals(critereId) && ids.contains(a.getMoniteur().getId()))
+                        .count(),
+                () -> evaluations.validerCritere(cursusId, critereId, auteur));
+    }
+
+    /**
+     * Le vote, commun à la compétence et au critère : validation directe par
+     * un référent ou sans votant ; sinon accord de l'auteur, qui doit être
+     * votant et ne vote qu'une fois, puis validation si la moitié est atteinte.
+     */
+    private EtatValidation voter(Cursus cursus, UtilisateurPrincipal auteur, String objet, boolean dejaDonne,
+                                 java.util.function.Consumer<Utilisateur> enregistrerAccord,
+                                 java.util.function.ToIntFunction<Set<Long>> compterAccords, Runnable valider) {
         Long saisonId = cursus.getSaison().getId();
         Long eleveId = cursus.getEleve().getId();
 
         List<Utilisateur> votants = votants(cursus);
         if (votants.isEmpty() || groupes.referentsDeLEleve(saisonId, eleveId).contains(auteur.id())) {
-            evaluations.validerBloc(cursusId, blocId, commentaire, auteur);
+            valider.run();
             return new EtatValidation(true, 0, 0);
         }
 
@@ -88,24 +137,15 @@ public class ValidationParAccordService {
                     + " se décide entre les encadrants de son groupe « " + groupe
                     + " » : demandez à l'un d'eux de la proposer.");
         }
-        if (accords.existsByCursusIdAndBlocIdAndMoniteurId(cursusId, blocId, auteur.id())) {
-            throw new RegleMetierException("Vous avez déjà donné votre accord pour valider « "
-                    + validable.bloc().getIntitule() + " » : il faut " + requis
-                    + " accords des encadrants du groupe.");
+        if (dejaDonne) {
+            throw new RegleMetierException("Vous avez déjà donné votre accord pour valider " + objet
+                    + " : il faut " + requis + " accords des encadrants du groupe.");
         }
 
-        AccordValidation accord = new AccordValidation();
-        accord.setCursus(cursus);
-        accord.setBloc(validable.bloc());
-        accord.setMoniteur(utilisateurs.findById(auteur.id()).orElseThrow());
-        accord.setDateAccord(LocalDate.now());
-        accords.save(accord);
-
-        int donnes = (int) accords.duCursus(cursusId).stream()
-                .filter(a -> a.getBloc().getId().equals(blocId) && ids.contains(a.getMoniteur().getId()))
-                .count();
+        enregistrerAccord.accept(utilisateurs.findById(auteur.id()).orElseThrow());
+        int donnes = compterAccords.applyAsInt(ids);
         if (donnes < requis) return new EtatValidation(false, donnes, requis);
-        evaluations.validerBloc(cursusId, blocId, commentaire, auteur);
+        valider.run();
         return new EtatValidation(true, donnes, requis);
     }
 }

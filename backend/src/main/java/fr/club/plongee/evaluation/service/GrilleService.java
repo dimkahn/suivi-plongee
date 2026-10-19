@@ -6,7 +6,10 @@ import fr.club.plongee.evaluation.domain.StatutAcquisition;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.domain.Evaluation;
+import fr.club.plongee.evaluation.domain.ValidationCritere;
+import fr.club.plongee.evaluation.repository.AccordValidationCritereRepository;
 import fr.club.plongee.evaluation.repository.AccordValidationRepository;
+import fr.club.plongee.evaluation.repository.ValidationCritereRepository;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
 import fr.club.plongee.formation.domain.Cursus;
 import fr.club.plongee.formation.domain.ExerciceSeance;
@@ -53,7 +56,15 @@ public class GrilleService {
                               * entrainement a part) : la notation sous un exercice de la seance
                               * montre l'etat de l'exercice, pas celui du critere.
                               */
-                             List<EtatExerciceVue> etatsExercices) {}
+                             List<EtatExerciceVue> etatsExercices,
+                             /** Critère validé seul (choix du club, 2026) ; null sinon. */
+                             ValidationCritereVue validation,
+                             /** Accords des encadrants du groupe pour valider ce critère seul. */
+                             List<AccordVue> accords,
+                             /** Exercices de maîtrise obligatoires de ce critère pas encore acquis. */
+                             List<String> maitriseAttendue) {}
+
+    public record ValidationCritereVue(LocalDate le, String par) {}
 
     /**
      * Derniere note d'un exercice pour un critere : {@code exerciceId} pour un exercice
@@ -228,11 +239,15 @@ public class GrilleService {
     private final SchemaExerciceService schemas;
     private final AccordValidationRepository accords;
     private final ValidationParAccordService validationParAccord;
+    private final ValidationCritereRepository validationsCritere;
+    private final AccordValidationCritereRepository accordsCritere;
 
     public GrilleService(CursusRepository cursusRepository, EvaluationService evaluationService,
                          ValidationCompetenceRepository validations,
                          AccordValidationRepository accords,
                          ValidationParAccordService validationParAccord,
+                         ValidationCritereRepository validationsCritere,
+                         AccordValidationCritereRepository accordsCritere,
                          ParticipationRepository participations,
                          SeanceRepository seances,
                          PhotoEleveRepository photos,
@@ -245,6 +260,8 @@ public class GrilleService {
         this.schemas = schemas;
         this.accords = accords;
         this.validationParAccord = validationParAccord;
+        this.validationsCritere = validationsCritere;
+        this.accordsCritere = accordsCritere;
         this.cursusRepository = cursusRepository;
         this.evaluationService = evaluationService;
         this.validations = validations;
@@ -268,6 +285,12 @@ public class GrilleService {
                 .collect(Collectors.toMap(v -> v.getBloc().getId(), v -> v));
         Map<Long, List<AccordVue>> accordsParBloc = accords.duCursus(cursusId).stream()
                 .collect(Collectors.groupingBy(a -> a.getBloc().getId(), Collectors.mapping(
+                        a -> new AccordVue(a.getMoniteur().getId(), a.getMoniteur().nomComplet(), a.getDateAccord()),
+                        Collectors.toList())));
+        Map<Long, ValidationCritere> validationsCritere = this.validationsCritere.duCursus(cursusId).stream()
+                .collect(Collectors.toMap(v -> v.getCritere().getId(), v -> v));
+        Map<Long, List<AccordVue>> accordsParCritere = accordsCritere.duCursus(cursusId).stream()
+                .collect(Collectors.groupingBy(a -> a.getCritere().getId(), Collectors.mapping(
                         a -> new AccordVue(a.getMoniteur().getId(), a.getMoniteur().nomComplet(), a.getDateAccord()),
                         Collectors.toList())));
 
@@ -302,9 +325,18 @@ public class GrilleService {
         List<BlocVue> blocs = new java.util.ArrayList<>();
 
         for (BlocCompetence bloc : blocsGroupesParRegroupement(cursus.getReferentiel().getBlocs())) {
+            boolean blocValide = valide.containsKey(bloc.getId());
             List<CritereVue> criteres = bloc.getCriteres().stream()
                     .map(c -> critereVue(c, etat.get(c.getId()), entrainement.get(c.getId()),
-                            etatsExercices.getOrDefault(c.getId(), List.of())))
+                            etatsExercices.getOrDefault(c.getId(), List.of()),
+                            validationsCritere.get(c.getId()),
+                            accordsParCritere.getOrDefault(c.getId(), List.of()),
+                            // Seulement là où la validation du critère se propose : acquis, ni lui ni le bloc validés.
+                            !blocValide && !validationsCritere.containsKey(c.getId()) && etat.get(c.getId()) != null
+                                    && etat.get(c.getId()).getStatut() == StatutAcquisition.ACQUIS
+                                    ? evaluationService.obligatoiresManquants(cursusId, c).stream()
+                                            .map(ExerciceCompetence::getNumero).toList()
+                                    : List.of()))
                     .toList();
             int acquis = (int) criteres.stream()
                     .filter(c -> StatutAcquisition.ACQUIS.name().equals(c.statut())).count();
@@ -444,7 +476,8 @@ public class GrilleService {
         return parCritere;
     }
 
-    private CritereVue critereVue(Critere c, Evaluation e, Evaluation entrainement, List<EtatExerciceVue> etatsExercices) {
+    private CritereVue critereVue(Critere c, Evaluation e, Evaluation entrainement, List<EtatExerciceVue> etatsExercices,
+                                  ValidationCritere validation, List<AccordVue> accords, List<String> maitriseAttendue) {
         return new CritereVue(c.getId(), c.getOrdre(), c.getSavoirFaire(), c.getCritereRealisation(),
                 e == null ? StatutAcquisition.NON_ABORDE.name() : e.getStatut().name(),
                 e == null ? null : e.getMoniteur().nomComplet(),
@@ -456,7 +489,10 @@ public class GrilleService {
                         nom(entrainement.getStatutExercice())),
                 e == null ? null : ExerciceNoteVue.de(e),
                 e == null ? null : nom(e.getStatutExercice()),
-                etatsExercices);
+                etatsExercices,
+                validation == null ? null
+                        : new ValidationCritereVue(validation.getDateValidation(), validation.getMoniteur().nomComplet()),
+                accords, maitriseAttendue);
     }
 
     private static String nom(StatutAcquisition statut) {

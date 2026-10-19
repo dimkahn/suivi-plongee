@@ -8,6 +8,8 @@ import fr.club.plongee.evaluation.domain.StatutAcquisition;
 import fr.club.plongee.evaluation.domain.ValidationCompetence;
 import fr.club.plongee.evaluation.repository.EvaluationRepository;
 import fr.club.plongee.evaluation.repository.ValidationCompetenceRepository;
+import fr.club.plongee.evaluation.repository.ValidationCritereRepository;
+import fr.club.plongee.evaluation.domain.ValidationCritere;
 import fr.club.plongee.formation.*;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
@@ -74,6 +76,7 @@ public class EvaluationService {
     private final ExerciceCompetenceRepository exercicesCompetence;
     private final ExerciceSeanceRepository exercicesSeance;
     private final GroupeEntrainementRepository groupes;
+    private final ValidationCritereRepository validationsCritere;
 
     public EvaluationService(EvaluationRepository evaluations,
                              ValidationCompetenceRepository validations,
@@ -85,7 +88,9 @@ public class EvaluationService {
                              ParticipationRepository participations,
                              ExerciceCompetenceRepository exercicesCompetence,
                              ExerciceSeanceRepository exercicesSeance,
-                             GroupeEntrainementRepository groupes) {
+                             GroupeEntrainementRepository groupes,
+                             ValidationCritereRepository validationsCritere) {
+        this.validationsCritere = validationsCritere;
         this.groupes = groupes;
         this.exercicesCompetence = exercicesCompetence;
         this.exercicesSeance = exercicesSeance;
@@ -397,6 +402,74 @@ public class EvaluationService {
             }
         }
         return new Validable(cursus, bloc);
+    }
+
+    /** Critère technique prêt à être validé seul (choix du club, 2026). */
+    public record CritereValidable(Cursus cursus, Critere critere) {}
+
+    /**
+     * Règles de validation d'un critère technique seul, sans rien
+     * enregistrer : niveau d'encadrement, critère acquis (hors entraînement),
+     * ses exercices de maîtrise obligatoires acquis, ni lui ni sa compétence
+     * déjà validés.
+     */
+    @Transactional(readOnly = true)
+    public CritereValidable verifierCritereValidable(Long cursusId, Long critereId, UtilisateurPrincipal auteur) {
+        Cursus cursus = cursus(cursusId);
+        Critere critere = cursus.getReferentiel().getBlocs().stream()
+                .flatMap(b -> b.getCriteres().stream())
+                .filter(c -> c.getId().equals(critereId))
+                .findFirst()
+                .orElseThrow(() -> new RessourceIntrouvableException(
+                        "Ce critère n'appartient pas au référentiel du cursus."));
+        BlocCompetence bloc = critere.getBloc();
+        if (!habilitation.peutValiderBloc(auteur, bloc)) {
+            throw new RegleMetierException("La validation des critères "
+                    + cursus.getReferentiel().getNiveau() + " est réservée aux encadrants "
+                    + cursus.getReferentiel().getNiveauEncadrantValidation() + " et au-delà.");
+        }
+        if (validations.existsByCursusIdAndBlocId(cursusId, bloc.getId())) {
+            throw new RegleMetierException("La compétence « " + bloc.getIntitule()
+                    + " » est déjà validée, avec tous ses critères.");
+        }
+        if (validationsCritere.existsByCursusIdAndCritereId(cursusId, critereId)) {
+            throw new RegleMetierException("Le critère « " + critere.getSavoirFaire() + " » est déjà validé.");
+        }
+        Evaluation actuel = etatCourant(cursusId).get(critereId);
+        if (actuel == null || actuel.getStatut() != StatutAcquisition.ACQUIS) {
+            throw new RegleMetierException("Le critère « " + critere.getSavoirFaire()
+                    + " » n'est pas encore acquis : notez-le acquis avant de proposer sa validation.");
+        }
+        List<ExerciceCompetence> manquants = obligatoiresManquants(cursusId, critere);
+        if (!manquants.isEmpty()) {
+            throw new RegleMetierException("Le critère « " + critere.getSavoirFaire()
+                    + " » ne se valide qu'avec ses exercices de maîtrise obligatoires acquis (il manque "
+                    + manquants.stream().map(ExerciceCompetence::getNumero).collect(Collectors.joining(", "))
+                    + ").");
+        }
+        return new CritereValidable(cursus, critere);
+    }
+
+    /** Exercices de maîtrise obligatoires (actifs) qui travaillent le critère, pas encore acquis. */
+    @Transactional(readOnly = true)
+    public List<ExerciceCompetence> obligatoiresManquants(Long cursusId, Critere critere) {
+        List<ExerciceCompetence> obligatoires = exercicesCompetence.maitriseDuBloc(critere.getBloc().getId()).stream()
+                .filter(e -> e.isObligatoire() && e.travaille(critere)).toList();
+        if (obligatoires.isEmpty()) return List.of();
+        List<Long> acquis = evaluations.exercicesDeMaitriseAcquis(cursusId, critere.getBloc().getId());
+        return obligatoires.stream().filter(e -> !acquis.contains(e.getId())).toList();
+    }
+
+    /** Enregistre la validation d'un critère, après {@link #verifierCritereValidable}. */
+    @Transactional
+    public ValidationCritere validerCritere(Long cursusId, Long critereId, UtilisateurPrincipal auteur) {
+        CritereValidable validable = verifierCritereValidable(cursusId, critereId, auteur);
+        ValidationCritere v = new ValidationCritere();
+        v.setCursus(validable.cursus());
+        v.setCritere(validable.critere());
+        v.setMoniteur(utilisateurs.findById(auteur.id()).orElseThrow());
+        v.setDateValidation(LocalDate.now());
+        return validationsCritere.save(v);
     }
 
     /**

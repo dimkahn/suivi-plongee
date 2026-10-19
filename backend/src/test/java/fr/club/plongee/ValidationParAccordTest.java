@@ -241,6 +241,78 @@ class ValidationParAccordTest {
         assertThat(refus.get("detail").asText()).contains("désactivez son compte");
     }
 
+    private void acquerirCritere(long cursus, JsonNode bloc, JsonNode critere, String numero) throws Exception {
+        envoyer("POST", "/api/cursus/" + cursus + "/evaluations", jeton("e3@club.fr"), """
+                {"critereId":%d,"seanceId":%d,"statut":"ACQUIS","exerciceId":%d}"""
+                .formatted(critere.get("id").asLong(), seanceId, exercice(bloc, numero)), 201);
+    }
+
+    private String validationCritere(long cursus, JsonNode critere) {
+        return "/api/cursus/" + cursus + "/criteres/" + critere.get("id").asLong() + "/validation";
+    }
+
+    private JsonNode critere(long cursus, int rang) throws Exception {
+        return blocImmersion(cursus).get("criteres").get(rang);
+    }
+
+    @Test
+    @DisplayName("Un critère technique se valide seul, par l'accord de la moitié des encadrants du groupe")
+    void critereValideParLaMoitieDesEncadrants() throws Exception {
+        long e1 = id("e1@club.fr"), e2 = id("e2@club.fr"), e3 = id("e3@club.fr");
+        long cursus = eleveDuGroupe(List.of(e1, e2, e3), List.of());
+        JsonNode bloc = blocImmersion(cursus);
+        JsonNode premier = bloc.get("criteres").get(0);
+        JsonNode second = bloc.get("criteres").get(1);
+
+        // Pas encore acquis : rien à valider.
+        JsonNode refus = envoyer("POST", validationCritere(cursus, second), jeton("e1@club.fr"), null, 422);
+        assertThat(refus.get("detail").asText()).contains("n'est pas encore acquis");
+
+        // Acquis sur 3.8, mais son exercice de maîtrise obligatoire est 3.7.
+        acquerirCritere(cursus, bloc, premier, "3.8");
+        refus = envoyer("POST", validationCritere(cursus, premier), jeton("e1@club.fr"), null, 422);
+        assertThat(refus.get("detail").asText()).contains("exercices de maîtrise obligatoires").contains("3.7");
+        acquerirCritere(cursus, bloc, premier, "3.7");
+
+        JsonNode etat = envoyer("POST", validationCritere(cursus, premier), jeton("e1@club.fr"), null, 201);
+        assertThat(etat.get("validee").asBoolean()).isFalse();
+        assertThat(etat.get("accords").asInt()).isEqualTo(1);
+        assertThat(etat.get("accordsRequis").asInt()).isEqualTo(2);
+        JsonNode c = critere(cursus, 0);
+        assertThat(c.get("validation").isNull()).isTrue();
+        assertThat(c.get("accords")).extracting(a -> a.get("moniteurId").asLong()).containsExactly(e1);
+
+        refus = envoyer("POST", validationCritere(cursus, premier), jeton("e1@club.fr"), null, 422);
+        assertThat(refus.get("detail").asText()).contains("déjà donné votre accord");
+
+        etat = envoyer("POST", validationCritere(cursus, premier), jeton("e2@club.fr"), null, 201);
+        assertThat(etat.get("validee").asBoolean()).isTrue();
+        c = critere(cursus, 0);
+        assertThat(c.get("validation").get("par").asText()).isEqualTo("Flora Vasseur");
+        assertThat(c.get("accords")).hasSize(2);
+        // Le critère est validé, pas la compétence entière, ni l'autre critère.
+        assertThat(blocImmersion(cursus).get("valide").asBoolean()).isFalse();
+        assertThat(critere(cursus, 1).get("validation").isNull()).isTrue();
+
+        refus = envoyer("POST", validationCritere(cursus, premier), jeton("e3@club.fr"), null, 422);
+        assertThat(refus.get("detail").asText()).contains("déjà validé");
+    }
+
+    @Test
+    @DisplayName("Un référent valide seul un critère technique ; un encadrant hors du groupe ne le peut pas")
+    void critereReferentSeulEtHorsGroupe() throws Exception {
+        long e1 = id("e1@club.fr"), e2 = id("e2@club.fr");
+        long cursus = eleveDuGroupe(List.of(e1, e2), List.of(e2));
+        JsonNode bloc = blocImmersion(cursus);
+        JsonNode premier = bloc.get("criteres").get(0);
+        acquerirCritere(cursus, bloc, premier, "3.7");
+
+        JsonNode refus = envoyer("POST", validationCritere(cursus, premier), jeton("e3@club.fr"), null, 422);
+        assertThat(refus.get("detail").asText()).contains("encadrants de son groupe");
+        assertThat(envoyer("POST", validationCritere(cursus, premier), jeton("e2@club.fr"), null, 201)
+                .get("validee").asBoolean()).isTrue();
+    }
+
     /** Coche ou décoche « obligatoire » sur un exercice de la base, le reste inchangé. */
     private int marquerObligatoire(String jeton, JsonNode bloc, String numero, boolean obligatoire) throws Exception {
         for (JsonNode e : bloc.get("exercices")) {

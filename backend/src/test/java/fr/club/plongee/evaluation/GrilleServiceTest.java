@@ -52,12 +52,15 @@ class GrilleServiceTest {
     @Mock SchemaExerciceService schemas;
     @Mock AccordValidationRepository accords;
     @Mock ValidationParAccordService validationParAccord;
+    @Mock fr.club.plongee.evaluation.repository.ValidationCritereRepository validationsCritere;
+    @Mock fr.club.plongee.evaluation.repository.AccordValidationCritereRepository accordsCritere;
 
     GrilleService service;
 
     @BeforeEach
     void avantChaqueTest() {
         service = new GrilleService(cursusRepository, evaluationService, validations, accords, validationParAccord,
+                validationsCritere, accordsCritere,
                 participations, seances, photos,
                 progressions, exercices, groupes, exercicesBase, schemas);
     }

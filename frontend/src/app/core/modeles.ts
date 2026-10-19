@@ -96,6 +96,12 @@ export interface CritereVue {
    * Absent d'une grille mise en cache avant son arrivée.
    */
   etatsExercices?: EtatExerciceVue[];
+  /** Critère validé seul, par les encadrants du groupe (choix du club, 2026) ; null sinon. */
+  validation?: { le: string; par: string } | null;
+  /** Accords donnés pour valider ce critère seul. */
+  accords?: AccordValidationVue[];
+  /** Exercices de maîtrise obligatoires de ce critère pas encore acquis. */
+  maitriseAttendue?: string[];
 }
 
 export interface EtatExerciceVue {
