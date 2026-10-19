@@ -153,14 +153,14 @@ Compte : `e2@club.fr` · format téléphone · 41 s
 
 ### M6 — Valider une compétence
 
-Valider une compétence quand tous ses critères et ses exercices de maîtrise sont acquis, avec l'accord des encadrants du groupe, et comprendre les refus.
+Valider une compétence quand tous ses critères et ses exercices de maîtrise obligatoires sont acquis, avec l'accord des encadrants du groupe, et comprendre les refus.
 
 Compte : `e2@club.fr` · format téléphone · 70 s environ
 
 1. Une compétence regroupe plusieurs critères. Ici, deux sur trois sont acquis.
 2. Anis a choisi et réglé son matériel seul, sur l'exercice de maîtrise 1.9 : dernier critère acquis.
-3. Tous les critères sont acquis, avec les exercices de maîtrise demandés : la validation est possible.
-4. Sinon, la grille rappelle combien d'exercices de maîtrise il manque, à la place du bouton.
+3. Tous les critères sont acquis, et ses exercices de maîtrise obligatoires, 1.7, 1.8 et 1.9 : la validation est possible.
+4. Sinon, la grille rappelle les exercices obligatoires qui manquent, à la place du bouton.
 5. Dans un groupe, la validation se décide entre ses encadrants : il faut l'accord de la moitié d'entre eux.
 6. Le premier la propose, les autres l'acceptent. Référente du groupe, Flora la valide seule.
 7. Validée, avec la date et votre nom. Les critères de cette compétence ne se modifient plus.
@@ -453,7 +453,7 @@ Compte : `e2@club.fr` · format téléphone · manuel : `aujourdhui.md`
 
 ### M24 — Le parcours de formation
 
-L'année de chaque niveau étape par étape, les exercices prévus de l'initiation à la maîtrise, et la fiche complète de chaque exercice.
+L'année de chaque niveau étape par étape, les exercices prévus de l'initiation à la maîtrise (dont les obligatoires pour valider), et la fiche complète de chaque exercice.
 
 Compte : `e2@club.fr` · format téléphone · manuel : `parcours-de-formation.md`
 
@@ -657,14 +657,15 @@ Compte : `presidente@club.fr` · format ordinateur
 1. La progression N1 du club : des périodes de mois, avec les blocs travaillés…
 2. … et les exercices prévus, de l'initiation à la maîtrise.
 3. C'est le parcours de formation que les moniteurs consultent, menu « Parcours ».
-4. En mois et pas en dates : elle resert d'une saison à l'autre.
-5. Elle fait apparaître « Au programme » dans les grilles, et calcule les blocs « En retard ».
-6. Pour essayer une variante sans toucher à celle en service : « Dupliquer ».
-7. Chaque période : ses mois, son milieu, ses conseils aux moniteurs, ses blocs cochés.
-8. « Exercices de la période » : cochez les exercices, ou toute une phase avec « + I », « + P », « + M ».
-9. On la choisit ensuite pour une saison, dans « Saisons ».
-10. Un centre qui forme en stage court, tout en mer, découpe ses progressions par plongées de l'élève.
-11. « Installer le modèle… » en pose trois, N1, N2 et N3, avec des exercices N1 écrits pour la mer.
+4. Les exercices de maîtrise obligatoires pour valider y sont tous : sinon, un encadré en tête les liste.
+5. En mois et pas en dates : elle resert d'une saison à l'autre.
+6. Elle fait apparaître « Au programme » dans les grilles, et calcule les blocs « En retard ».
+7. Pour essayer une variante sans toucher à celle en service : « Dupliquer ».
+8. Chaque période : ses mois, son milieu, ses conseils aux moniteurs, ses blocs cochés.
+9. « Exercices de la période » : cochez les exercices, ou toute une phase avec « + I », « + P », « + M ».
+10. On la choisit ensuite pour une saison, dans « Saisons ».
+11. Un centre qui forme en stage court, tout en mer, découpe ses progressions par plongées de l'élève.
+12. « Installer le modèle… » en pose trois, N1, N2 et N3, avec des exercices N1 écrits pour la mer.
 
 _À retourner (tournage du 2026-10-12)._
 
@@ -695,7 +696,7 @@ Compte : `presidente@club.fr` · format ordinateur · 40 s
 
 ### A16 — La base d'exercices
 
-Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos, et combien de maîtrises valident la compétence.
+Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos, et les maîtrises obligatoires pour valider la compétence.
 
 Compte : `presidente@club.fr` · format ordinateur
 

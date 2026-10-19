@@ -271,12 +271,6 @@ export class ApiService {
   modifierExerciceBase(referentielId: number, exerciceId: number, demande: DemandeExerciceBase): Observable<ExerciceBaseVue> {
     return this.http.put<ExerciceBaseVue>(`/api/referentiels/${referentielId}/exercices/${exerciceId}`, demande);
   }
-
-  /** Exercices de maîtrise différents à acquérir pour valider la compétence (ADMIN). */
-  fixerMaitrisesRequises(referentielId: number, blocId: number, nombre: number): Observable<void> {
-    return this.http.put<void>(`/api/referentiels/${referentielId}/blocs/${blocId}/maitrises-requises`, { nombre });
-  }
-
   /** Refusé si l'exercice a déjà servi à noter un élève : le désactiver plutôt. */
   supprimerExerciceBase(referentielId: number, exerciceId: number): Observable<unknown> {
     return this.http.delete(`/api/referentiels/${referentielId}/exercices/${exerciceId}`);

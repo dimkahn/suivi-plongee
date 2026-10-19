@@ -105,4 +105,24 @@ class ModeleCentreMerTest {
                 + " AND bloc_id IN (" + BLOCS_N1 + ")", Integer.class);
         assertThat(actifs).isEqualTo(44);
     }
+
+    @Test
+    @DisplayName("Avec la base en mer seule, chaque critère garde un exercice de maîtrise obligatoire, prévu dans le parcours")
+    void obligatoiresDeLaMer() {
+        modele.installer(true);
+
+        Integer nonCouverts = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM critere c
+                 WHERE c.bloc_id IN (%s)
+                   AND EXISTS (SELECT 1 FROM exercice_competence_critere ec
+                                 JOIN exercice_competence e ON e.id = ec.exercice_id
+                                WHERE ec.critere_id = c.id AND e.actif = TRUE AND e.phase = 'MAITRISE')
+                   AND NOT EXISTS (SELECT 1 FROM exercice_competence_critere ec
+                                     JOIN exercice_competence e ON e.id = ec.exercice_id
+                                    WHERE ec.critere_id = c.id AND e.actif = TRUE AND e.obligatoire = TRUE)
+                """.formatted(BLOCS_N1), Integer.class);
+        assertThat(nonCouverts).isZero();
+        progressions.lister().stream().filter(p -> "PLONGEES".equals(p.decoupage()))
+                .forEach(p -> assertThat(progressions.detail(p.id()).obligatoiresManquants()).as(p.nom()).isEmpty());
+    }
 }

@@ -3,7 +3,7 @@ titre: Adapter une progression type
 rubrique: Administrateur
 videos: A13, M24
 ecran: /admin/progressions
-mots: progression, période, mois, au programme, en retard, échéance, dupliquer, blocs, année, découpage, parcours, cursus, exercices de la période, étape, initiation, perfectionnement, maîtrise, plongées, stage, centre de plongée, mer, commercial, modèle, numéro de plongée
+mots: progression, période, mois, au programme, en retard, échéance, dupliquer, blocs, année, découpage, parcours, cursus, exercices de la période, étape, initiation, perfectionnement, maîtrise, obligatoire, exercices obligatoires, MFT, valider, plongées, stage, centre de plongée, mer, commercial, modèle, numéro de plongée
 questions:
 - Comment modifier la progression de l'année ?
 - Comment choisir les exercices de chaque période ?
@@ -12,6 +12,8 @@ questions:
 - Comment changer la progression suivie par une saison ?
 - Comment faire une progression pour un stage en mer, plongée par plongée ?
 - Comment installer les progressions d'un centre de plongée en mer ?
+- La progression fait-elle faire tous les exercices obligatoires pour valider les compétences ?
+- Pourquoi « Exercices de maîtrise obligatoires que cette progression ne fait pas faire » s'affiche ?
 ---
 Administration, « Progressions types » : la formation d'un niveau découpée en périodes de mois (club, formation sur l'année) ou en étapes par plongée de l'élève (stage court en mer), chacune avec ses blocs et ses exercices de la base, de l'initiation à la maîtrise. Elle forme le parcours de formation que consultent les moniteurs (menu « Parcours »), fait apparaître « Au programme » dans les grilles et calcule les blocs « En retard ».
 
@@ -30,6 +32,12 @@ Administration, « Progressions types » : la formation d'un niveau découpée e
 2. Chaque étape va « De la plongée » « À la plongée » : par exemple plongée 1, puis plongées 5 à 6. Ce sont les plongées **en milieu naturel** de l'élève, comptées dans l'ordre où il est noté présent.
 3. Dans la fiche de suivi, l'étape « Au programme » est celle de la plongée de l'élève à la séance choisie (sinon sa prochaine plongée), avec le nombre de plongées déjà faites.
 
+## Les exercices obligatoires sont-ils tous prévus ?
+
+Une compétence ne se valide qu'avec tous ses exercices de maîtrise obligatoires acquis (voir « La base d'exercices »). Une progression qui en oublie un ne mène donc pas à la validation voulue par le MFT. En tête de la progression, un encadré les liste avec la raison : « prévu dans aucune période » ou, au N2 et au N3, « prévu seulement hors milieu naturel ». Ajoutez-les à une période qui convient (« Modifier », exercices de la période) ; l'encadré disparaît. Les exercices obligatoires portent la mention « obligatoire » dans la liste des exercices prévus, et « Obligatoire pour valider » dans le parcours des moniteurs.
+
+Les progressions types installées pour le N1, le N2 et le N3 prévoient déjà tous leurs exercices obligatoires, ceux du N2 et du N3 en milieu naturel.
+
 ## Le modèle « centre de plongée en mer »
 
 En bas de l'écran, « Installer le modèle… » ajoute d'un coup :
@@ -37,7 +45,7 @@ En bas de l'écran, « Installer le modèle… » ajoute d'un coup :
 - 44 exercices du N1 écrits pour la mer (numéros « M1.1 » à « M10.6 »), avec leurs conseils ;
 - trois progressions par plongées : N1 en 6 plongées, N2 en 8, N3 en 10. Le N2 et le N3 reprennent la base d'exercices existante, déjà décrite en milieu naturel.
 
-La case « Désactiver les exercices N1 pensés pour la piscine » évite qu'ils soient proposés à la notation ; ils se réactivent depuis « Base d'exercices ». Le modèle ne s'installe qu'une fois. Un club qui forme sur l'année n'en a pas besoin : la carte disparaît une fois le modèle installé.
+La case « Désactiver les exercices N1 pensés pour la piscine » évite qu'ils soient proposés à la notation ; ils se réactivent depuis « Base d'exercices ». Chaque critère garde alors un exercice de maîtrise obligatoire, pris parmi ceux de la mer. Le modèle ne s'installe qu'une fois. Un club qui forme sur l'année n'en a pas besoin : la carte disparaît une fois le modèle installé.
 
 ## Bon à savoir
 

@@ -115,12 +115,11 @@ public class GrilleService {
                           /** Base d'exercices de la competence (actifs), proposes a la notation. */
                           List<ExerciceCompetenceController.ExerciceVue> exercices,
                           /**
-                           * Critères tous acquis mais pas assez d'exercices de maîtrise acquis :
-                           * numéros des exercices pas encore acquis (choix du club, 2026).
+                           * Critères tous acquis mais exercices de maîtrise manquants : numéros des
+                           * obligatoires pas encore acquis ({@code maitriseObligatoire}), ou, sans
+                           * exercice obligatoire, de ceux dont un seul suffit (choix du club, 2026).
                            */
-                          List<String> maitriseAttendue,
-                          /** Exercices de maîtrise différents à acquérir pour valider (0 : sans objet), et déjà acquis. */
-                          int maitrisesRequises, int maitrisesAcquises,
+                          List<String> maitriseAttendue, boolean maitriseObligatoire,
                           /** Accords des encadrants du groupe pour valider la compétence, dans l'ordre. */
                           List<AccordVue> accords) {}
 
@@ -336,7 +335,7 @@ public class GrilleService {
                     v == null && acquis == criteres.size()
                             ? exigence.restants().stream().map(ExerciceCompetence::getNumero).toList()
                             : List.of(),
-                    exigence.requises(), exigence.acquises(),
+                    exigence.parObligatoires(),
                     accordsParBloc.getOrDefault(bloc.getId(), List.of())));
         }
 

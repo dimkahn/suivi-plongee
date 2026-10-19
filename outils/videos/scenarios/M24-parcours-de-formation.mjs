@@ -1,5 +1,5 @@
 // M24 — Le parcours de formation et la fiche d'un exercice.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Parcours N1 de la saison de démo (progression type rattachée par V107) ;
 // le texte ne cite aucun exercice précis, chaque geste vérifie que son
 // élément existe.
@@ -7,7 +7,7 @@ export default {
   id: 'M24',
   titre: 'Le parcours de formation',
   public: 'Moniteur',
-  resume: 'L\'année de chaque niveau étape par étape, les exercices prévus de l\'initiation à la maîtrise, et la fiche complète de chaque exercice.',
+  resume: 'L\'année de chaque niveau étape par étape, les exercices prévus de l\'initiation à la maîtrise (dont les obligatoires pour valider), et la fiche complète de chaque exercice.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, vignette }) {
@@ -29,6 +29,11 @@ export default {
     }
     await legende('Puis ses exercices, par compétence : I initiation, P perfectionnement, M maîtrise.', 4000);
     await legende('À droite, ce que l\'exercice a déjà : schéma, photos, vidéo.', 3500);
+    const obligatoire = page.locator('a.exercice .obligatoire').first();
+    if (await obligatoire.count() > 0) {
+      await obligatoire.scrollIntoViewIfNeeded();
+      await legende('« Obligatoire pour valider » : l\'élève doit avoir acquis cet exercice de maîtrise pour valider sa compétence.', 4500);
+    }
 
     const exercice = (await enCours.count() > 0 ? enCours : page.locator('li.periode')).locator('a.exercice').first();
     if (await exercice.count() > 0) {

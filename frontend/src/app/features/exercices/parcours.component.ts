@@ -112,6 +112,7 @@ interface GroupeCompetence {
                       <a [routerLink]="['/exercices', e.id]" class="exercice">
                         <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
                         <span class="intitule">{{ e.intitule }}</span>
+                        @if (e.obligatoire) { <span class="obligatoire">Obligatoire pour valider</span> }
                         <span class="medias">{{ medias(e) }}</span>
                       </a>
                     </li>
@@ -183,6 +184,7 @@ interface GroupeCompetence {
     .exercice:hover { background: var(--fond); }
     .intitule { flex: 1; min-width: 0; }
     .medias { font-size: .8125rem; color: var(--craie); white-space: nowrap; }
+    .obligatoire { font-size: .75rem; font-weight: 700; color: var(--profond); white-space: nowrap; }
     .compte { margin: var(--pas) 0 0; font-size: .8125rem; }
     .hors summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
   `]

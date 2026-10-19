@@ -147,6 +147,8 @@ export interface ExerciceBaseVue {
   /** Photos et vidéos : elles se voient sur la fiche complète (`/exercices/:id`). */
   nombrePhotos?: number;
   nombreVideos?: number;
+  /** Exercice de maîtrise à acquérir pour valider la compétence. Absent d'une grille mise en cache avant. */
+  obligatoire?: boolean;
 }
 
 /** Fiche complète d'un exercice de la base (`GET /api/exercices/{id}`), réseau obligatoire. */
@@ -228,6 +230,8 @@ export interface DemandeExerciceBase {
   critereIds: number[];
   /** Chaîne vide : efface les conseils. */
   conseils: string;
+  /** Exercice de maîtrise exigé pour valider la compétence (jamais pour une autre phase). */
+  obligatoire: boolean;
 }
 
 export interface BlocVue {
@@ -261,13 +265,12 @@ export interface BlocVue {
   /** Base d'exercices de la compétence (actifs). Absent d'une grille mise en cache avant son arrivée. */
   exercices?: ExerciceBaseVue[];
   /**
-   * Critères tous acquis mais pas assez d'exercices de maîtrise acquis : numéros
-   * des exercices pas encore acquis (vide sinon, absent d'un ancien cache).
+   * Critères tous acquis mais exercices de maîtrise manquants : numéros des
+   * obligatoires pas encore acquis (`maitriseObligatoire`), ou, sans exercice
+   * obligatoire, de ceux dont un seul suffit (vide sinon, absent d'un ancien cache).
    */
   maitriseAttendue?: string[];
-  /** Exercices de maîtrise différents à acquérir pour valider (0 : sans objet) et déjà acquis. */
-  maitrisesRequises?: number;
-  maitrisesAcquises?: number;
+  maitriseObligatoire?: boolean;
   /** Accords déjà donnés par les encadrants du groupe pour valider la compétence. */
   accords?: AccordValidationVue[];
 }
@@ -719,8 +722,6 @@ export interface BlocReferentielVue {
   modalitesEvaluation: string | null;
   /** "Commun"/"PA20"/"PE40"... pour les niveaux qui se scindent en plusieurs qualifications. */
   regroupement: string | null;
-  /** Exercices de maîtrise différents à acquérir pour valider la compétence (1 par défaut). */
-  maitrisesRequises: number;
   criteres: CritereReferentielVue[];
 }
 
@@ -1083,6 +1084,14 @@ export interface ExerciceResume {
   intitule: string;
   phase: PhaseExercice;
   actif: boolean;
+  /** Exercice de maîtrise à acquérir pour valider la compétence. Absent d'une copie gardée avant. */
+  obligatoire?: boolean;
+}
+
+/** Exercice obligatoire que la progression ne prévoit pas, ou (N2/N3) seulement hors milieu naturel. */
+export interface ObligatoireManquantVue {
+  exercice: ExerciceResume;
+  raison: string;
 }
 
 export interface ProgressionResume {
@@ -1111,6 +1120,8 @@ export interface ProgressionVue {
   /** Absent d'une copie gardée avant son arrivée : MOIS. */
   decoupage?: DecoupageProgression;
   periodes: PeriodeProgressionVue[];
+  /** Exercices obligatoires pour valider une compétence que la progression ne mène pas à faire. */
+  obligatoiresManquants?: ObligatoireManquantVue[];
 }
 
 /** id null : nouvelle période. L'ordre de la liste donne le rang. Mois ou plongées selon le découpage. */

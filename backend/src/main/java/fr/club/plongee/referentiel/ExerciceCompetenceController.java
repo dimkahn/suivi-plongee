@@ -43,7 +43,9 @@ public class ExerciceCompetenceController {
                               List<Long> critereIds,
                               /** Points de vigilance, erreurs fréquentes et remédiation. */
                               String conseils,
-                              int nombrePhotos, int nombreVideos) {
+                              int nombrePhotos, int nombreVideos,
+                              /** Exercice de maîtrise à acquérir pour valider la compétence. */
+                              boolean obligatoire) {
 
         public static ExerciceVue de(ExerciceCompetence e, Set<Long> avecSchema) {
             return de(e, avecSchema, Map.of());
@@ -58,14 +60,23 @@ public class ExerciceCompetenceController {
                     e.getCriteres().stream()
                             .sorted(java.util.Comparator.comparingInt(Critere::getOrdre))
                             .map(Critere::getId).toList(),
-                    e.getConseils(), compte.photos(), compte.videos());
+                    e.getConseils(), compte.photos(), compte.videos(), e.isObligatoire());
         }
     }
 
-    /** {@code conseils} null : inchangés (écran d'une version précédente) ; vide : effacés. */
+    /**
+     * {@code conseils} null : inchangés (écran d'une version précédente) ; vide : effacés.
+     * {@code obligatoire} null : inchangé ; vrai pour un exercice de maîtrise seulement.
+     */
     public record DemandeExercice(String numero, int ordre, @NotNull PhaseExercice phase,
                                   String intitule, String deroulement, String critereReussite,
-                                  boolean actif, List<Long> critereIds, String conseils) {}
+                                  boolean actif, List<Long> critereIds, String conseils, Boolean obligatoire) {
+
+        public DemandeExercice(String numero, int ordre, PhaseExercice phase, String intitule, String deroulement,
+                               String critereReussite, boolean actif, List<Long> critereIds, String conseils) {
+            this(numero, ordre, phase, intitule, deroulement, critereReussite, actif, critereIds, conseils, null);
+        }
+    }
 
     private final ReferentielRepository referentiels;
     private final BlocCompetenceRepository blocs;
@@ -136,35 +147,6 @@ public class ExerciceCompetenceController {
         exercices.delete(e);
     }
 
-    /** {@code nombre} : exercices de maîtrise différents à acquérir pour valider la compétence. */
-    public record DemandeMaitrisesRequises(int nombre) {}
-
-    /**
-     * Nombre d'exercices de maîtrise que l'élève doit avoir acquis pour que la
-     * compétence se valide (choix du club, 2026) : de 1 au nombre d'exercices
-     * de maîtrise actifs de la compétence.
-     */
-    @PutMapping("/blocs/{blocId}/maitrises-requises")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Transactional
-    public void fixerMaitrisesRequises(@PathVariable Long referentielId, @PathVariable Long blocId,
-                                       @RequestBody DemandeMaitrisesRequises demande) {
-        BlocCompetence bloc = blocs.findById(blocId)
-                .filter(b -> b.getReferentiel().getId().equals(referentielId))
-                .orElseThrow(() -> new RessourceIntrouvableException("Bloc introuvable"));
-        int disponibles = exercices.maitriseDuBloc(blocId).size();
-        if (disponibles == 0) {
-            throw new RegleMetierException("« " + bloc.getIntitule()
-                    + " » n'a aucun exercice de maîtrise actif : ajoutez-en avant de fixer combien il en faut.");
-        }
-        if (demande.nombre() < 1 || demande.nombre() > disponibles) {
-            throw new RegleMetierException("« " + bloc.getIntitule() + " » a " + disponibles
-                    + (disponibles > 1 ? " exercices de maîtrise actifs" : " exercice de maîtrise actif")
-                    + " : choisissez entre 1 et " + disponibles + ".");
-        }
-        bloc.setMaitrisesRequises(demande.nombre());
-    }
-
     private ExerciceCompetence exercice(Long referentielId, Long exerciceId) {
         return exercices.findById(exerciceId)
                 .filter(e -> e.getBloc().getReferentiel().getId().equals(referentielId))
@@ -205,6 +187,11 @@ public class ExerciceCompetenceController {
         e.setCritereReussite(vide(d.critereReussite()));
         if (d.conseils() != null) e.setConseils(vide(d.conseils()));
         e.setActif(d.actif());
+        // Choix du club (2026) : seul un exercice de maîtrise peut être exigé pour valider la compétence.
+        if (d.obligatoire() != null) e.setObligatoire(d.obligatoire());
+        if (e.isObligatoire() && d.phase() != PhaseExercice.MAITRISE) {
+            throw new RegleMetierException("Seul un exercice de maîtrise peut être obligatoire pour valider la compétence.");
+        }
     }
 
     private static String vide(String texte) {

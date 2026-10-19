@@ -58,14 +58,6 @@ public class BlocCompetence {
     @Column(length = 40)
     private String regroupement;
 
-    /**
-     * Exercices de maîtrise différents que l'élève doit avoir acquis pour que
-     * la compétence se valide (choix du club, 2026, V93) ; plafonné au nombre
-     * d'exercices de maîtrise actifs. Sans effet sur un bloc qui n'en a pas.
-     */
-    @Column(nullable = false)
-    private int maitrisesRequises = 1;
-
     @OneToMany(mappedBy = "bloc", fetch = FetchType.LAZY)
     @OrderBy("ordre")
     private List<Critere> criteres = new ArrayList<>();
@@ -156,14 +148,6 @@ public class BlocCompetence {
 
     public void setRegroupement(String regroupement) {
         this.regroupement = regroupement;
-    }
-
-    public int getMaitrisesRequises() {
-        return maitrisesRequises;
-    }
-
-    public void setMaitrisesRequises(int maitrisesRequises) {
-        this.maitrisesRequises = maitrisesRequises;
     }
 
     public List<Critere> getCriteres() {

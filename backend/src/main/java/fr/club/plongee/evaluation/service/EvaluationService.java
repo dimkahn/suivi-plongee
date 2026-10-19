@@ -327,13 +327,14 @@ public class EvaluationService {
 
     /**
      * Exercices de maîtrise attendus pour valider une compétence (choix du
-     * club, 2026) : {@code requises} exercices différents à acquérir (0 si la
-     * compétence n'en a pas), {@code acquises} déjà acquis, {@code restants} :
-     * les exercices de la base pas encore acquis, vide une fois l'exigence tenue.
+     * club, 2026) : {@code parObligatoires} quand la compétence a des
+     * exercices de maîtrise obligatoires (tous à acquérir), sinon un seul
+     * exercice de maîtrise suffit ; {@code restants} : ceux qui manquent,
+     * vide une fois l'exigence tenue (ou sans exercice de maîtrise).
      */
-    public record ExigenceMaitrise(int requises, int acquises, List<ExerciceCompetence> restants) {
+    public record ExigenceMaitrise(boolean parObligatoires, List<ExerciceCompetence> restants) {
         public boolean satisfaite() {
-            return acquises >= requises;
+            return restants.isEmpty();
         }
     }
 
@@ -400,9 +401,9 @@ public class EvaluationService {
 
     /**
      * Choix du club (2026) : une compétence qui a des exercices de maîtrise
-     * dans la base ne se valide que si l'élève en a acquis le nombre fixé
-     * pour elle (un par défaut), de la base ou exercices libres de maîtrise,
-     * hors entraînement. Une compétence sans exercice de maîtrise (bloc
+     * obligatoires ne se valide qu'une fois tous acquis, hors entraînement ;
+     * sans exercice obligatoire, il en faut au moins un de maîtrise (de la
+     * base ou exercice libre). Une compétence sans exercice de maîtrise (bloc
      * transverse, révision sans base d'exercices) se valide comme avant.
      */
     private void verifierMaitriseAcquise(Long cursusId, BlocCompetence bloc) {
@@ -410,33 +411,33 @@ public class EvaluationService {
         if (exigence.satisfaite()) return;
         String lesquels = exigence.restants().stream().map(ExerciceCompetence::getNumero)
                 .collect(Collectors.joining(", "));
-        if (exigence.requises() == 1) {
+        if (exigence.parObligatoires()) {
             throw new RegleMetierException(bloc.getIntitule()
-                    + " ne se valide qu'avec au moins un exercice de maîtrise acquis (" + lesquels
-                    + ") : notez-le acquis dans la grille avant de valider.");
+                    + " ne se valide qu'avec tous ses exercices de maîtrise obligatoires acquis (il manque "
+                    + lesquels + ") : notez-les acquis dans la grille avant de valider.");
         }
-        throw new RegleMetierException(bloc.getIntitule() + " ne se valide qu'avec " + exigence.requises()
-                + " exercices de maîtrise acquis (" + exigence.acquises() + " pour l'instant ; parmi "
-                + lesquels + ") : notez-les acquis dans la grille avant de valider.");
+        throw new RegleMetierException(bloc.getIntitule()
+                + " ne se valide qu'avec au moins un exercice de maîtrise acquis (" + lesquels
+                + ") : notez-le acquis dans la grille avant de valider.");
     }
 
     /**
-     * Exercices de maîtrise différents acquis par l'élève dans la compétence,
-     * comparés au nombre fixé pour elle, plafonné au nombre d'exercices de
-     * maîtrise actifs (un exercice désactivé ne doit pas rendre la
-     * compétence impossible à valider).
+     * Exercices de maîtrise qui manquent à l'élève pour valider la
+     * compétence. Un exercice obligatoire désactivé depuis n'est plus exigé :
+     * il ne doit pas rendre la compétence impossible à valider.
      */
     @Transactional(readOnly = true)
     public ExigenceMaitrise exigenceMaitrise(Long cursusId, BlocCompetence bloc) {
         List<ExerciceCompetence> deMaitrise = exercicesCompetence.maitriseDuBloc(bloc.getId());
-        if (deMaitrise.isEmpty()) return new ExigenceMaitrise(0, 0, List.of());
-        List<Long> acquisDeLaBase = evaluations.exercicesDeMaitriseAcquis(cursusId, bloc.getId());
-        int acquises = acquisDeLaBase.size()
-                + (int) evaluations.compterExercicesLibresDeMaitriseAcquis(cursusId, bloc.getId());
-        int requises = Math.min(Math.max(1, bloc.getMaitrisesRequises()), deMaitrise.size());
-        List<ExerciceCompetence> restants = acquises >= requises ? List.of()
-                : deMaitrise.stream().filter(e -> !acquisDeLaBase.contains(e.getId())).toList();
-        return new ExigenceMaitrise(requises, acquises, restants);
+        if (deMaitrise.isEmpty()) return new ExigenceMaitrise(false, List.of());
+        List<Long> acquis = evaluations.exercicesDeMaitriseAcquis(cursusId, bloc.getId());
+        List<ExerciceCompetence> obligatoires = deMaitrise.stream().filter(ExerciceCompetence::isObligatoire).toList();
+        if (!obligatoires.isEmpty()) {
+            return new ExigenceMaitrise(true, obligatoires.stream().filter(e -> !acquis.contains(e.getId())).toList());
+        }
+        boolean uneAcquise = !acquis.isEmpty()
+                || evaluations.compterExercicesLibresDeMaitriseAcquis(cursusId, bloc.getId()) > 0;
+        return new ExigenceMaitrise(false, uneAcquise ? List.of() : deMaitrise);
     }
 
     // ----------------------------------------------------------------

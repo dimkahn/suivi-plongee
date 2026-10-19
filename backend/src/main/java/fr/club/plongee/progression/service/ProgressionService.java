@@ -37,7 +37,20 @@ public class ProgressionService {
 
     /** Exercice de la base prévu dans une période ; {@code blocId} : sa compétence. */
     public record ExerciceResume(Long id, Long blocId, String numero, String intitule, String phase,
-                                 boolean actif) {}
+                                 boolean actif, boolean obligatoire) {
+
+        static ExerciceResume de(ExerciceCompetence e) {
+            return new ExerciceResume(e.getId(), e.getBloc().getId(), e.getNumero(), e.getIntitule(),
+                    e.getPhase().name(), e.isActif(), e.isObligatoire());
+        }
+    }
+
+    /**
+     * Exercice de maîtrise obligatoire pour valider sa compétence que la
+     * progression ne prévoit nulle part, ou (N2/N3) seulement hors milieu
+     * naturel : la progression ne mène pas à la validation voulue par le MFT.
+     */
+    public record ObligatoireManquantVue(ExerciceResume exercice, String raison) {}
 
     /**
      * Mois (progression découpée par mois) ou numéros de plongée (découpée
@@ -52,7 +65,8 @@ public class ProgressionService {
                                     String versionMft, String decoupage, int nombrePeriodes) {}
 
     public record ProgressionVue(Long id, String nom, String description, Long referentielId,
-                                 String niveau, String versionMft, String decoupage, List<PeriodeVue> periodes) {}
+                                 String niveau, String versionMft, String decoupage, List<PeriodeVue> periodes,
+                                 List<ObligatoireManquantVue> obligatoiresManquants) {}
 
     /** Borne de saisie d'une étape : bien au-delà d'une formation, même N3. */
     public static final int MAX_PLONGEES = 99;
@@ -300,11 +314,41 @@ public class ProgressionService {
                                 .sorted(Comparator.comparingInt((ExerciceCompetence e) -> e.getBloc().getOrdre())
                                         .thenComparingInt(ExerciceCompetence::getOrdre)
                                         .thenComparing(ExerciceCompetence::getNumero))
-                                .map(e -> new ExerciceResume(e.getId(), e.getBloc().getId(), e.getNumero(),
-                                        e.getIntitule(), e.getPhase().name(), e.isActif()))
+                                .map(ExerciceResume::de)
                                 .toList()))
                 .toList();
         return new ProgressionVue(p.getId(), p.getNom(), p.getDescription(), r.getId(),
-                r.getNiveau().name(), r.getVersionMft(), p.getDecoupage().name(), periodes);
+                r.getNiveau().name(), r.getVersionMft(), p.getDecoupage().name(), periodes,
+                obligatoiresManquants(p));
+    }
+
+    /**
+     * Choix du club (2026) : chaque exercice de maîtrise obligatoire doit
+     * figurer dans une période ; au N2 et au N3 (milieu naturel exclusif),
+     * dans une période en milieu naturel, sauf progression par plongées
+     * (toutes en milieu naturel).
+     */
+    private List<ObligatoireManquantVue> obligatoiresManquants(ProgressionType p) {
+        Referentiel r = p.getReferentiel();
+        boolean naturelExige = r.isMilieuNaturelExclusif() && !p.parPlongees();
+        Set<Long> prevus = new HashSet<>();
+        Set<Long> prevusEnNaturel = new HashSet<>();
+        for (PeriodeProgression pp : p.getPeriodes()) {
+            for (ExerciceCompetence e : pp.getExercices()) {
+                prevus.add(e.getId());
+                if (pp.getMilieu() == Milieu.NATUREL) prevusEnNaturel.add(e.getId());
+            }
+        }
+        List<ObligatoireManquantVue> manquants = new ArrayList<>();
+        for (ExerciceCompetence e : exercices.parReferentiel(r.getId())) {
+            if (!e.isActif() || !e.isObligatoire()) continue;
+            if (!prevus.contains(e.getId())) {
+                manquants.add(new ObligatoireManquantVue(ExerciceResume.de(e), "prévu dans aucune période"));
+            } else if (naturelExige && !prevusEnNaturel.contains(e.getId())) {
+                manquants.add(new ObligatoireManquantVue(ExerciceResume.de(e),
+                        "prévu seulement hors milieu naturel"));
+            }
+        }
+        return manquants;
     }
 }

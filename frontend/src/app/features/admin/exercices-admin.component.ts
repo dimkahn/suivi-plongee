@@ -8,6 +8,7 @@ import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { PhotoExerciceComponent } from '../../core/photo-exercice.component';
 import { reduirePhoto } from '../../core/reduire-photo';
+import { criteresSansObligatoire } from '../../core/exercices-obligatoires';
 import { RouterLink } from '@angular/router';
 import {
   BlocReferentielVue, DemandeExerciceBase, ExerciceBaseVue, PhaseExercice, PhotoExerciceVue, ReferentielVue,
@@ -36,8 +37,9 @@ interface Formulaire extends DemandeExerciceBase {
       Chaque compétence a ses exercices d'initiation, de perfectionnement et de maîtrise, avec leurs
       conseils, leur schéma, leurs photos et leurs vidéos (« Fiche » montre ce que voient les moniteurs). Les moniteurs
       les ajoutent au programme d'une séance et notent l'exercice réalisé avec chaque critère :
-      seul un exercice de <strong>maîtrise</strong> fait passer un critère à « Acquis ». Sous chaque compétence,
-      choisissez combien d'exercices de maîtrise différents l'élève doit avoir acquis pour qu'elle se valide. Un exercice
+      seul un exercice de <strong>maîtrise</strong> fait passer un critère à « Acquis ». Un exercice de maîtrise
+      <strong>obligatoire</strong> doit être acquis pour que sa compétence se valide : le MFT veut chaque critère
+      validé, l'écran signale un critère qui n'en a aucun. Un exercice
       déjà noté ne se supprime pas, désactivez-le : il n'est plus proposé mais reste lisible sur les notes passées.
     </p>
 
@@ -75,6 +77,7 @@ interface Formulaire extends DemandeExerciceBase {
                       <span class="titre-exercice">
                         <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
                         <strong>{{ e.intitule }}</strong>
+                        @if (e.obligatoire) { <span class="pastille obligatoire">Obligatoire</span> }
                         @if (!e.actif) { <span class="secondaire">(désactivé)</span> }
                         @if (e.aSchema) { <span class="secondaire">· schéma</span> }
                         @if (e.nombrePhotos) { <span class="secondaire">· {{ e.nombrePhotos }} photo(s)</span> }
@@ -94,17 +97,12 @@ interface Formulaire extends DemandeExerciceBase {
               </ul>
             }
           }
-          @let possibles = nombresDeMaitrise(bloc.id);
-          @if (possibles.length > 0) {
-            <div class="seuil">
-              <label [for]="'seuil-' + bloc.id">Pour valider la compétence, l'élève doit avoir acquis</label>
-              <select [id]="'seuil-' + bloc.id" [ngModel]="bloc.maitrisesRequises ?? 1"
-                      (ngModelChange)="fixerMaitrisesRequises(bloc, $event)" [disabled]="envoi()">
-                @for (n of possibles; track n) {
-                  <option [ngValue]="n">{{ n }} exercice{{ n > 1 ? 's' : '' }} de maîtrise sur {{ possibles.length }}</option>
-                }
-              </select>
-            </div>
+          @let nonCouverts = criteresNonCouverts(bloc);
+          @if (nonCouverts.length > 0) {
+            <p class="alerte non-couverts" role="status">
+              Critère(s) sans exercice de maîtrise obligatoire : {{ nonCouverts.join(', ') }}.
+              Le MFT veut chaque critère validé : cochez « Obligatoire pour valider la compétence » sur un de leurs exercices de maîtrise.
+            </p>
           }
         </section>
       }
@@ -151,6 +149,11 @@ interface Formulaire extends DemandeExerciceBase {
         <label class="case">
           <input type="checkbox" [(ngModel)]="f.actif"> Proposé aux moniteurs (actif)
         </label>
+        @if (f.phase === 'MAITRISE') {
+          <label class="case">
+            <input type="checkbox" [(ngModel)]="f.obligatoire"> Obligatoire pour valider la compétence
+          </label>
+        }
         @if (f.id != null) {
           <p class="titre-schema">Schéma</p>
           @if (aSchema(f.id)) {
@@ -267,8 +270,8 @@ interface Formulaire extends DemandeExerciceBase {
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; }
     .case input { width: 22px; height: 22px; margin: 0; }
     .criteres-exercice { font-size: .8125rem; color: var(--profond); }
-    .seuil { margin-top: var(--pas-2); padding-top: var(--pas); border-top: 1px solid var(--trait); }
-    .seuil select { min-height: 44px; max-width: 360px; }
+    .non-couverts { margin: var(--pas-2) 0 0; }
+    .pastille.obligatoire { background: var(--profond); color: #fff; }
     fieldset.criteres { margin: var(--pas-2) 0 0; padding: var(--pas) var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s); }
     fieldset.criteres legend { font-weight: 700; font-size: .9375rem; padding: 0 4px; }
     fieldset.criteres .case { margin: 0; font-weight: 400; }
@@ -348,28 +351,9 @@ export class ExercicesAdminComponent {
     return this.exercicesDuBloc(blocId).filter(e => e.phase === phase);
   }
 
-  /** 1 à n, n = exercices de maîtrise actifs de la compétence ; vide s'il n'y en a aucun. */
-  nombresDeMaitrise(blocId: number): number[] {
-    const n = this.exercicesDeLaPhase(blocId, 'MAITRISE').filter(e => e.actif).length;
-    return Array.from({ length: n }, (_, i) => i + 1);
-  }
-
-  async fixerMaitrisesRequises(bloc: BlocReferentielVue, nombre: number): Promise<void> {
-    const referentielId = this.referentielId();
-    if (referentielId === null) return;
-    this.envoi.set(true);
-    try {
-      await firstValueFrom(this.api.fixerMaitrisesRequises(referentielId, bloc.id, nombre));
-      this.detail.update(d => d && {
-        ...d, blocs: d.blocs.map(b => b.id === bloc.id ? { ...b, maitrisesRequises: nombre } : b)
-      });
-      this.message.set(`« ${bloc.intitule} » se valide maintenant avec ${nombre} exercice${nombre > 1 ? 's' : ''} `
-        + `de maîtrise acquis${nombre > 1 ? ' différents' : ''}.`);
-    } catch (e) {
-      this.message.set((e as HttpErrorResponse).error?.detail ?? 'Le réglage n\'a pas pu être enregistré.');
-    } finally {
-      this.envoi.set(false);
-    }
+  /** Critères qui ont un exercice de maîtrise mais aucun obligatoire : le MFT veut chacun validé. */
+  criteresNonCouverts(bloc: BlocReferentielVue): string[] {
+    return criteresSansObligatoire(bloc.criteres, this.exercicesDuBloc(bloc.id)).map(c => c.savoirFaire);
   }
 
   intituleBloc(blocId: number): string {
@@ -383,7 +367,7 @@ export class ExercicesAdminComponent {
     this.erreur.set(null);
     this.formulaire.set({
       id: null, blocId: bloc.id, numero: `${bloc.ordre}.${ordre}`, ordre, phase: 'INITIATION' as PhaseExercice,
-      intitule: '', deroulement: null, critereReussite: null, actif: true, conseils: '',
+      intitule: '', deroulement: null, critereReussite: null, actif: true, conseils: '', obligatoire: false,
       // Une compétence à un seul critère : il est coché d'office.
       critereIds: bloc.criteres.length === 1 ? [bloc.criteres[0].id] : []
     });
@@ -394,7 +378,7 @@ export class ExercicesAdminComponent {
     this.formulaire.set({
       id: e.id, blocId: e.blocId, numero: e.numero, ordre: e.ordre, phase: e.phase, intitule: e.intitule,
       deroulement: e.deroulement, critereReussite: e.critereReussite, actif: e.actif,
-      critereIds: [...(e.critereIds ?? [])], conseils: e.conseils ?? ''
+      critereIds: [...(e.critereIds ?? [])], conseils: e.conseils ?? '', obligatoire: !!e.obligatoire
     });
     void this.chargerMedias(e.id);
   }
@@ -520,7 +504,9 @@ export class ExercicesAdminComponent {
   async enregistrer(f: Formulaire): Promise<void> {
     const referentielId = this.referentielId();
     if (referentielId == null) return;
-    const { id, blocId, ...demande } = f;
+    const { id, blocId, ...saisie } = f;
+    // Seul un exercice de maîtrise peut être obligatoire (le serveur refuse le reste).
+    const demande = { ...saisie, obligatoire: saisie.phase === 'MAITRISE' && saisie.obligatoire };
     this.envoi.set(true);
     this.erreur.set(null);
     try {

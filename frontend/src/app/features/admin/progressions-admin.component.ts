@@ -106,6 +106,20 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           @if (d.periodes.length === 0) {
             <p class="secondaire">Aucune période : utilisez « Modifier » pour en ajouter.</p>
           }
+          @if ((d.obligatoiresManquants ?? []).length > 0) {
+            <div class="alerte obligatoires-manquants" role="status">
+              <p>Exercices de maîtrise obligatoires que cette progression ne fait pas faire : sans eux, leur compétence
+                ne se valide pas. Ajoutez-les à une période{{ d.niveau === 'N1' ? '' : ' en milieu naturel' }} (« Modifier »).</p>
+              <ul>
+                @for (m of d.obligatoiresManquants; track m.exercice.id) {
+                  <li>
+                    <app-pastille-phase [phase]="m.exercice.phase" [numero]="m.exercice.numero" [intitule]="m.exercice.intitule" />
+                    {{ m.exercice.intitule }} : {{ m.raison }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
           <ol class="periodes">
             @for (p of d.periodes; track p.id) {
               <li class="periode">
@@ -132,6 +146,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
                         <li>
                           <app-pastille-phase [phase]="e.phase" [numero]="e.numero" [intitule]="e.intitule" />
                           <a [routerLink]="['/exercices', e.id]">{{ e.intitule }}</a>
+                          @if (e.obligatoire) { <span class="secondaire">· obligatoire</span> }
                         </li>
                       }
                     </ul>

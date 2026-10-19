@@ -121,7 +121,7 @@ class GrilleServiceTest {
         when(evaluationService.etatCourant(100L)).thenReturn(Map.of(11L, evalAcquis));
         when(validations.findByCursusId(100L)).thenReturn(List.of(validation));
         when(evaluationService.exigenceMaitrise(100L, bloc))
-                .thenReturn(new EvaluationService.ExigenceMaitrise(0, 0, List.of()));
+                .thenReturn(new EvaluationService.ExigenceMaitrise(false, List.of()));
         when(participations.compterAtelier(100L, Participation.Atelier.NAGE)).thenReturn(3L);
         when(participations.compterAtelier(100L, Participation.Atelier.BLOC)).thenReturn(2L);
         when(participations.compterAtelier(100L, Participation.Atelier.PLONGEE)).thenReturn(1L);

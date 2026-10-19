@@ -536,9 +536,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 </p>
               } @else if (bloc.maitriseAttendue?.length) {
                 <p class="secondaire maitrise-attendue">
-                  @if ((bloc.maitrisesRequises ?? 1) > 1) {
-                    Validation possible une fois {{ bloc.maitrisesRequises }} exercices de maîtrise acquis
-                    ({{ bloc.maitrisesAcquises ?? 0 }} pour l'instant ; parmi {{ bloc.maitriseAttendue.join(', ') }}).
+                  @if (bloc.maitriseObligatoire) {
+                    Validation possible une fois acquis les exercices de maîtrise obligatoires
+                    (il manque {{ bloc.maitriseAttendue.join(', ') }}).
                   } @else {
                     Validation possible une fois un exercice de maîtrise acquis
                     ({{ bloc.maitriseAttendue.join(', ') }}).

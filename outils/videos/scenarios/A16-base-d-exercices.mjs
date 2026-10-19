@@ -6,7 +6,7 @@ export default {
   id: 'A16',
   titre: 'La base d\'exercices',
   public: 'Administrateur',
-  resume: 'Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos, et combien de maîtrises valident la compétence.',
+  resume: 'Les exercices de chaque compétence du N1 au N3, par phase : critères, conseils, schéma, photos et vidéos, et les maîtrises obligatoires pour valider la compétence.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -28,10 +28,10 @@ export default {
     await legende('Seul un exercice de maîtrise fait passer ses critères à « Acquis ».', 4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }).first(), { apres: 1000 });
     await legende('Un exercice déjà noté ne se supprime pas : on le désactive.', 3500);
-    await page.locator('.seuil select').first().scrollIntoViewIfNeeded();
+    await page.locator('.pastille.obligatoire').first().scrollIntoViewIfNeeded();
     await pause(1000);
-    await legende('Sous chaque compétence : combien d\'exercices de maîtrise différents l\'élève doit avoir acquis pour la valider.', 5000);
-    await legende('Un par défaut ; jusqu\'à tous les exercices de maîtrise de la compétence.', 3500);
+    await legende('« Obligatoire » : un exercice de maîtrise que l\'élève doit avoir acquis pour valider la compétence.', 5000);
+    await legende('Le MFT veut chaque critère validé : chaque critère qui a une maîtrise en a une obligatoire, cochée dans « Modifier ».', 5000);
     await page.evaluate(() => window.scrollTo(0, 0));
     await pause(800);
     await legende('« Fiche » montre l\'exercice tel que le voient les moniteurs.', 0);

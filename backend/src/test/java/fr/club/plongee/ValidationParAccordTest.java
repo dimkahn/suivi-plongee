@@ -39,7 +39,8 @@ class ValidationParAccordTest {
     private Long eleveId;
     private Long seanceId;
     private Long groupeId;
-    private Long blocModifie;
+    /** Compétence dont un exercice a été rendu obligatoire, à remettre en état. */
+    private JsonNode blocModifie;
     private Long referentielModifie;
     private Long moniteurCree;
 
@@ -133,10 +134,8 @@ class ValidationParAccordTest {
     @AfterEach
     void nettoyer() throws Exception {
         if (admin == null) return;
-        if (blocModifie != null) {
-            envoyer("PUT", "/api/referentiels/" + referentielModifie + "/blocs/" + blocModifie + "/maitrises-requises",
-                    admin, "{\"nombre\":1}", 200);
-        }
+        // La base d'exercices est partagée par les tests : 3.8 redevient facultatif.
+        if (blocModifie != null) marquerObligatoire(admin, blocModifie, "3.8", false);
         if (groupeId != null) mvc.perform(delete("/api/groupes-entrainement/" + groupeId).header("Authorization", admin));
         if (eleveId != null) {
             mvc.perform(post("/api/eleves/" + eleveId + "/archivage").header("Authorization", admin));
@@ -242,38 +241,57 @@ class ValidationParAccordTest {
         assertThat(refus.get("detail").asText()).contains("désactivez son compte");
     }
 
+    /** Coche ou décoche « obligatoire » sur un exercice de la base, le reste inchangé. */
+    private int marquerObligatoire(String jeton, JsonNode bloc, String numero, boolean obligatoire) throws Exception {
+        for (JsonNode e : bloc.get("exercices")) {
+            if (!numero.equals(e.get("numero").asText())) continue;
+            String corps = """
+                    {"numero":"%s","ordre":%d,"phase":"%s","intitule":%s,"deroulement":%s,"critereReussite":%s,
+                     "actif":true,"critereIds":%s,"obligatoire":%b}"""
+                    .formatted(numero, e.get("ordre").asInt(), e.get("phase").asText(),
+                            json.writeValueAsString(e.get("intitule").asText()),
+                            e.get("deroulement").toString(), e.get("critereReussite").toString(),
+                            e.get("critereIds").toString(), obligatoire);
+            return mvc.perform(put("/api/referentiels/" + referentielModifie + "/exercices/" + e.get("id").asLong())
+                            .header("Authorization", jeton).contentType(MediaType.APPLICATION_JSON).content(corps))
+                    .andReturn().getResponse().getStatus();
+        }
+        throw new AssertionError("Exercice " + numero + " introuvable");
+    }
+
     @Test
-    @DisplayName("Une compétence qui demande deux exercices de maîtrise acquis ne se valide pas avec un seul")
-    void nombreDExercicesDeMaitriseRequis() throws Exception {
+    @DisplayName("Une compétence ne se valide qu'avec tous ses exercices de maîtrise obligatoires acquis")
+    void exercicesDeMaitriseObligatoires() throws Exception {
         long cursus = eleveDuGroupe(null, null);
         JsonNode bloc = blocImmersion(cursus);
-        JsonNode grille = envoyer("GET", "/api/cursus/" + cursus + "/grille", admin, null, 200);
-        referentielModifie = grille.get("referentielId").asLong();
-        blocModifie = bloc.get("id").asLong();
-        String url = "/api/referentiels/" + referentielModifie + "/blocs/" + blocModifie + "/maitrises-requises";
+        referentielModifie = envoyer("GET", "/api/cursus/" + cursus + "/grille", admin, null, 200)
+                .get("referentielId").asLong();
 
-        // Réglé par un administrateur seulement, entre 1 et le nombre d'exercices de maîtrise actifs.
-        envoyer("PUT", url, jeton("e3@club.fr"), "{\"nombre\":2}", 403);
-        JsonNode refus = envoyer("PUT", url, admin, "{\"nombre\":4}", 422);
-        assertThat(refus.get("detail").asText()).contains("3 exercices de maîtrise");
-        envoyer("PUT", url, admin, "{\"nombre\":0}", 422);
-        envoyer("PUT", url, admin, "{\"nombre\":2}", 200);
+        // Installé (V93) : 3.7 couvre les deux critères de « S'immerger », il est seul obligatoire.
+        List<String> obligatoires = new ArrayList<>();
+        bloc.get("exercices").forEach(e -> { if (e.get("obligatoire").asBoolean()) obligatoires.add(e.get("numero").asText()); });
+        assertThat(obligatoires).containsExactly("3.7");
 
-        acquerir(cursus, bloc, "3.7");
+        // Coché par un administrateur seulement, et seulement sur un exercice de maîtrise.
+        assertThat(marquerObligatoire(jeton("e3@club.fr"), bloc, "3.8", true)).isEqualTo(403);
+        assertThat(marquerObligatoire(admin, bloc, "3.1", true)).isEqualTo(422);
+        assertThat(marquerObligatoire(admin, bloc, "3.8", true)).isEqualTo(200);
+        blocModifie = bloc;
+
+        // Une maîtrise acquise qui n'est pas obligatoire ne suffit pas.
+        acquerir(cursus, bloc, "3.9");
         JsonNode b = blocImmersion(cursus);
-        assertThat(b.get("maitrisesRequises").asInt()).isEqualTo(2);
-        assertThat(b.get("maitrisesAcquises").asInt()).isEqualTo(1);
+        assertThat(b.get("maitriseObligatoire").asBoolean()).isTrue();
         List<String> attendus = new ArrayList<>();
         b.get("maitriseAttendue").forEach(n -> attendus.add(n.asText()));
-        assertThat(attendus).containsExactly("3.8", "3.9");
+        assertThat(attendus).containsExactly("3.7", "3.8");
 
-        refus = envoyer("POST", validation(cursus, bloc), jeton("e1@club.fr"), null, 422);
-        assertThat(refus.get("detail").asText()).contains("2 exercices de maîtrise acquis");
+        acquerir(cursus, bloc, "3.7");
+        JsonNode refus = envoyer("POST", validation(cursus, bloc), jeton("e1@club.fr"), null, 422);
+        assertThat(refus.get("detail").asText()).contains("exercices de maîtrise obligatoires acquis (il manque 3.8)");
 
         acquerir(cursus, bloc, "3.8");
-        b = blocImmersion(cursus);
-        assertThat(b.get("maitrisesAcquises").asInt()).isEqualTo(2);
-        assertThat(b.get("maitriseAttendue")).isEmpty();
+        assertThat(blocImmersion(cursus).get("maitriseAttendue")).isEmpty();
         envoyer("POST", validation(cursus, bloc), jeton("e1@club.fr"), null, 201);
     }
 }

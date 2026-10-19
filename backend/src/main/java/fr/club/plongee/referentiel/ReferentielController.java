@@ -37,8 +37,6 @@ public class ReferentielController {
                           boolean evaluationTransverse, boolean validerEnDernier,
                           String competenceAttendue, String comportement,
                           String theorie, String modalitesEvaluation, String regroupement,
-                          /** Exercices de maîtrise à acquérir pour valider (réglé dans /admin/exercices). */
-                          int maitrisesRequises,
                           List<CritereVue> criteres) {}
 
     public record ReferentielVue(Long id, String niveau, String versionMft, String source,
@@ -286,7 +284,6 @@ public class ReferentielController {
                 b.isEvaluationTransverse(), b.isValiderEnDernier(),
                 b.getCompetenceAttendue(), b.getComportement(),
                 b.getTheorie(), b.getModalitesEvaluation(), b.getRegroupement(),
-                b.getMaitrisesRequises(),
                 b.getCriteres().stream().map(this::versCritere).toList());
     }
 

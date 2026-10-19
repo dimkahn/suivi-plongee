@@ -83,6 +83,24 @@ public class ModeleCentreMerService {
                 ? jdbc.update("UPDATE exercice_competence SET actif = FALSE"
                         + " WHERE actif = TRUE AND numero NOT LIKE 'M%' AND bloc_id IN (" + BLOCS_N1 + ")")
                 : 0;
+        // Choix du club (2026) : comme V93, chaque critère qui a un exercice de maîtrise actif garde un
+        // exercice obligatoire pour valider sa compétence ; pris dans la base en mer si celle de la piscine
+        // n'en fournit plus.
+        jdbc.update("""
+                UPDATE exercice_competence SET obligatoire = TRUE
+                 WHERE id IN (
+                       SELECT (SELECT e.id FROM exercice_competence e
+                                 JOIN exercice_competence_critere ec ON ec.exercice_id = e.id
+                                WHERE ec.critere_id = c.id AND e.phase = 'MAITRISE' AND e.actif = TRUE
+                                ORDER BY (SELECT COUNT(*) FROM exercice_competence_critere n
+                                           WHERE n.exercice_id = e.id) DESC, e.ordre, e.id
+                                FETCH FIRST 1 ROWS ONLY)
+                         FROM critere c
+                        WHERE c.bloc_id IN (%s)
+                          AND NOT EXISTS (SELECT 1 FROM exercice_competence_critere ec
+                                            JOIN exercice_competence e ON e.id = ec.exercice_id
+                                           WHERE ec.critere_id = c.id AND e.actif = TRUE AND e.obligatoire = TRUE))
+                """.formatted(BLOCS_N1));
         return new ResultatInstallation(progressions, exercicesMer == null ? 0 : exercicesMer, desactives);
     }
 

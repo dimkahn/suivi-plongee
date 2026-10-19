@@ -1,5 +1,5 @@
 // A13 — Adapter une progression type.
-// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -21,6 +21,7 @@ export default {
       await legende('… et les exercices prévus, de l\'initiation à la maîtrise.', 0);
       await toucher(exercices, { apres: 2500 });
       await legende('C\'est le parcours de formation que les moniteurs consultent, menu « Parcours ».', 4000);
+      await legende('Les exercices de maîtrise obligatoires pour valider y sont tous : sinon, un encadré en tête les liste.', 4500);
     }
     await legende('En mois et pas en dates : elle resert d\'une saison à l\'autre.', 3500);
     await legende('Elle fait apparaître « Au programme » dans les grilles, et calcule les blocs « En retard ».', 4500);

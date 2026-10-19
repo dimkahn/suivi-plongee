@@ -3,7 +3,7 @@ titre: Le parcours de formation et la fiche d'un exercice
 rubrique: Moniteur
 videos: M24
 ecran: /parcours
-mots: parcours, cursus, progression, étape, période, mois, plongées, stage, mer, exercices, initiation, perfectionnement, maîtrise, fiche, fiche complète, schéma, photo, photos, vidéo, vidéos, conseils, erreurs fréquentes, vigilance, N1, N2, N3, en ce moment, hors du parcours
+mots: parcours, cursus, progression, étape, période, mois, plongées, stage, mer, exercices, initiation, perfectionnement, maîtrise, fiche, fiche complète, schéma, photo, photos, vidéo, vidéos, conseils, erreurs fréquentes, vigilance, N1, N2, N3, en ce moment, hors du parcours, obligatoire, obligatoire pour valider
 questions:
 - Quels exercices faire avec mes élèves ce mois-ci ?
 - Où voir le parcours d'un niveau, du début à la fin de la saison ?
@@ -18,7 +18,7 @@ Menu « Parcours » : l'année de chaque niveau, étape par étape (périodes de
 
 1. Menu (« Plus » sur téléphone), « Parcours ».
 2. Choisissez le niveau : N1, N2 ou N3. La progression suivie par la saison en cours s'ouvre d'office (s'il y en a plusieurs, une liste permet d'en choisir une autre).
-3. Chaque étape donne ses mois, son milieu (piscine / fosse ou milieu naturel), les conseils du club, puis ses exercices rangés par compétence, avec leur pastille **I**, **P** ou **M** et ce qu'ils ont : schéma, photos, vidéo. L'étape du mois en cours est encadrée, marquée « En ce moment ».
+3. Chaque étape donne ses mois, son milieu (piscine / fosse ou milieu naturel), les conseils du club, puis ses exercices rangés par compétence, avec leur pastille **I**, **P** ou **M** et ce qu'ils ont : schéma, photos, vidéo. « Obligatoire pour valider » marque les exercices de maîtrise que l'élève doit avoir acquis pour que la compétence se valide. L'étape du mois en cours est encadrée, marquée « En ce moment ».
 4. Touchez un exercice : sa fiche complète s'ouvre.
 
 ## La fiche d'un exercice

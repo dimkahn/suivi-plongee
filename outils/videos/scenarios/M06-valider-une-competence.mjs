@@ -6,7 +6,7 @@ export default {
   id: 'M6',
   titre: 'Valider une compétence',
   public: 'Moniteur',
-  resume: 'Valider une compétence quand tous ses critères et ses exercices de maîtrise sont acquis, avec l\'accord des encadrants du groupe, et comprendre les refus.',
+  resume: 'Valider une compétence quand tous ses critères et ses exercices de maîtrise obligatoires sont acquis, avec l\'accord des encadrants du groupe, et comprendre les refus.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -24,8 +24,8 @@ export default {
 
     const b = bloc(page, 'S\'équiper et se déséquiper');
     await b.scrollIntoViewIfNeeded();
-    await legende('Tous les critères sont acquis, avec les exercices de maîtrise demandés : la validation est possible.', 4000);
-    await legende('Sinon, la grille rappelle combien d\'exercices de maîtrise il manque, à la place du bouton.', 3500);
+    await legende('Tous les critères sont acquis, et ses exercices de maîtrise obligatoires, 1.7, 1.8 et 1.9 : la validation est possible.', 4500);
+    await legende('Sinon, la grille rappelle les exercices obligatoires qui manquent, à la place du bouton.', 3500);
     await legende('Dans un groupe, la validation se décide entre ses encadrants : il faut l\'accord de la moitié d\'entre eux.', 4500);
     await legende('Le premier la propose, les autres l\'acceptent. Référente du groupe, Flora la valide seule.', 0);
     await toucher(b.getByRole('button', { name: 'Valider la compétence' }), { apres: 2000 });

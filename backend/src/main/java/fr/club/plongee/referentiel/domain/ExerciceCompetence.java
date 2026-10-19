@@ -52,6 +52,14 @@ public class ExerciceCompetence {
     @Column(nullable = false)
     private boolean actif = true;
 
+    /**
+     * Exercice de maîtrise que l'élève doit avoir acquis pour que sa
+     * compétence se valide (choix du club, 2026, V93). Jamais pour une
+     * initiation ou un perfectionnement.
+     */
+    @Column(nullable = false)
+    private boolean obligatoire;
+
     /** Critères de sa compétence que l'exercice fait travailler (au moins un). */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "exercice_competence_critere",
@@ -141,6 +149,14 @@ public class ExerciceCompetence {
 
     public void setActif(boolean actif) {
         this.actif = actif;
+    }
+
+    public boolean isObligatoire() {
+        return obligatoire;
+    }
+
+    public void setObligatoire(boolean obligatoire) {
+        this.obligatoire = obligatoire;
     }
 
     /** « 1.7 Gréage avec anomalie cachée ». */

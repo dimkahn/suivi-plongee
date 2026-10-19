@@ -3,7 +3,7 @@ titre: La base d'exercices
 rubrique: Administrateur
 videos: A16
 ecran: /admin/exercices
-mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, valider, validation, nombre d'exercices de maîtrise, combien, déroulement, critère de réussite, critères travaillés, conseils, vigilance, erreurs fréquentes, désactiver, N1, N2, N3, PA20, PE40, PA40, PE60, 40 m, 60 m, E4, milieu naturel, fosse, schéma, dessin, image, photo, photos, vidéo, vidéos, lien, droit à l'image, fiche, aucun, rafraîchir
+mots: exercices, base, banque, initiation, perfectionnement, maîtrise, compétence, valider, validation, obligatoire, exercice obligatoire, critère non couvert, déroulement, critère de réussite, critères travaillés, conseils, vigilance, erreurs fréquentes, désactiver, N1, N2, N3, PA20, PE40, PA40, PE60, 40 m, 60 m, E4, milieu naturel, fosse, schéma, dessin, image, photo, photos, vidéo, vidéos, lien, droit à l'image, fiche, aucun, rafraîchir
 questions:
 - Pourquoi « Critère(s) : aucun » s'affiche sous les exercices ?
 - Pourquoi ma modification disparaît quand je rafraîchis la page ?
@@ -14,7 +14,8 @@ questions:
 - Comment ajouter un exercice à une compétence ?
 - Pourquoi je ne peux pas supprimer un exercice ?
 - À quoi servent initiation, perfectionnement et maîtrise ?
-- Comment exiger plusieurs exercices de maîtrise pour valider une compétence ?
+- Comment rendre un exercice de maîtrise obligatoire pour valider une compétence ?
+- Pourquoi « Critère(s) sans exercice de maîtrise obligatoire » s'affiche ?
 - Un exercice de maîtrise réussi en fosse valide-t-il une compétence du N2 ou du N3 ?
 - Où se valident les exercices du N3 entre 40 et 60 m ?
 ---
@@ -30,9 +31,13 @@ Administration, « Base d'exercices » : pour chaque compétence, ses exercices 
 
 Sous chaque exercice, la liste signale « schéma », le nombre de photos et de vidéos, et « sans conseils » s'il en manque.
 
-## Combien d'exercices de maîtrise pour valider
+## Exercices de maîtrise obligatoires
 
-En bas de chaque compétence qui a des exercices de maîtrise, « Pour valider la compétence, l'élève doit avoir acquis » propose de 1 au nombre de ses exercices de maîtrise actifs. Choisissez : le réglage est enregistré tout de suite. Par défaut, un seul suffit. Avec 2, l'élève doit avoir acquis deux exercices de maîtrise **différents** de la compétence avant qu'un encadrant puisse la valider ; la grille lui rappelle combien il en manque. Si un exercice de maîtrise est désactivé ensuite, l'exigence ne dépasse jamais le nombre d'exercices de maîtrise encore actifs.
+Dans « Modifier », un exercice de maîtrise a la case **« Obligatoire pour valider la compétence »** ; la liste le marque « Obligatoire ». L'élève doit avoir acquis tous les exercices obligatoires d'une compétence pour qu'un encadrant puisse la valider.
+
+Le MFT veut que **chaque critère** de la compétence soit validé. Au départ, pour chaque critère qui a un exercice de maîtrise, l'appli a coché celui qui couvre le plus de critères : par exemple 3.7 pour les deux critères de « S'immerger », mais 1.7, 1.8 et 1.9 pour « S'équiper », un par critère. Sous une compétence, « Critère(s) sans exercice de maîtrise obligatoire » signale un critère qui n'en a plus (après un décochage ou un nouvel exercice) : cochez un de ses exercices de maîtrise. Un exercice obligatoire désactivé n'est plus exigé.
+
+Chaque exercice obligatoire doit aussi être prévu dans la progression type : « Progressions types » signale ceux qui manquent (en milieu naturel au N2 et au N3).
 
 ## Les schémas
 
