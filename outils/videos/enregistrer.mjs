@@ -75,14 +75,18 @@ for (const fichier of fichiers) {
   process.stdout.write(`${scenario.id} (${FORMAT}) — ${scenario.titre}… `);
 
   await rm(join(SORTIES, `${nom}-ECHEC.png`), { force: true });
-  const { navigateur, contexte, page, debutVideo } = await ouvrirTournage({
-    compte: scenario.compte, connecte: scenario.connecte ?? true,
-    format: FORMAT, dossier: brouillon
-  });
-  const debut = Date.now();
+  // Dans le try : une connexion qui échoue (frontend un instant sans réponse)
+  // ne fait échouer que ce scénario, pas tous ceux qui le suivent.
+  let navigateur, contexte, page, debutVideo;
+  let debut;
   let vignettePrise = false;
   const texte = [];
   try {
+    ({ navigateur, contexte, page, debutVideo } = await ouvrirTournage({
+      compte: scenario.compte, connecte: scenario.connecte ?? true,
+      format: FORMAT, dossier: brouillon
+    }));
+    debut = Date.now();
     const g = gestes(page, { vignette: cheminVignette, voix, debutVideo, format: FORMAT });
     const vignette = g.vignette;
     g.vignette = async () => { vignettePrise = true; await vignette(); };
@@ -104,11 +108,11 @@ for (const fichier of fichiers) {
     console.log(`sorties/${nom}.webm (${duree} s)`);
   } catch (e) {
     echecs++;
-    await page.screenshot({ path: join(SORTIES, `${nom}-ECHEC.png`) }).catch(() => {});
-    await contexte.close().catch(() => {});
+    await page?.screenshot({ path: join(SORTIES, `${nom}-ECHEC.png`) }).catch(() => {});
+    await contexte?.close().catch(() => {});
     console.log(`ÉCHEC\n  ${e.message.split('\n')[0]}\n  (capture : sorties/${nom}-ECHEC.png)`);
   } finally {
-    await navigateur.close();
+    await navigateur?.close();
     await rm(brouillon, { recursive: true, force: true });
   }
 }

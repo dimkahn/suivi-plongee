@@ -94,24 +94,39 @@ const INCRUSTATIONS = `
 export async function ouvrirTournage({ compte, connecte = true, dossier, format = 'telephone' }) {
   const { contexte: appareil, video } = FORMATS[format];
   const navigateur = await chromium.launch();
-  let etat;
-  if (connecte) {
-    // Connexion dans un contexte sans caméra ; « Se souvenir de moi » pose le
-    // cookie de rafraîchissement, que le contexte filmé reprend.
-    const coulisses = await navigateur.newContext({ ...appareil, locale: 'fr-FR' });
-    const p = await coulisses.newPage();
-    await seConnecter(p, compte);
-    etat = await coulisses.storageState();
+  try {
+    let etat;
+    if (connecte) {
+      // Connexion dans un contexte sans caméra ; « Se souvenir de moi » pose le
+      // cookie de rafraîchissement, que le contexte filmé reprend. Retentée
+      // une fois : le frontend de dev reste parfois une demi-minute sans
+      // répondre (A10, tournage du 19 octobre 2026).
+      etat = await connecterEnCoulisses(navigateur, appareil, compte)
+        .catch(() => connecterEnCoulisses(navigateur, appareil, compte));
+    }
+    const contexte = await navigateur.newContext({
+      ...appareil, locale: 'fr-FR', timezoneId: 'Europe/Paris', storageState: etat,
+      recordVideo: { dir: dossier, size: video }
+    });
+    await contexte.addInitScript(INCRUSTATIONS);
+    const page = await contexte.newPage();
+    // La vidéo commence avec la page : repère des instants de la voix off.
+    return { navigateur, contexte, page, debutVideo: Date.now() };
+  } catch (e) {
+    await navigateur.close();
+    throw e;
+  }
+}
+
+/** Connecte `compte` dans un contexte sans caméra et renvoie son état (cookies). */
+async function connecterEnCoulisses(navigateur, appareil, compte) {
+  const coulisses = await navigateur.newContext({ ...appareil, locale: 'fr-FR' });
+  try {
+    await seConnecter(await coulisses.newPage(), compte);
+    return await coulisses.storageState();
+  } finally {
     await coulisses.close();
   }
-  const contexte = await navigateur.newContext({
-    ...appareil, locale: 'fr-FR', timezoneId: 'Europe/Paris', storageState: etat,
-    recordVideo: { dir: dossier, size: video }
-  });
-  await contexte.addInitScript(INCRUSTATIONS);
-  const page = await contexte.newPage();
-  // La vidéo commence avec la page : repère des instants de la voix off.
-  return { navigateur, contexte, page, debutVideo: Date.now() };
 }
 
 export async function seConnecter(page, email) {
