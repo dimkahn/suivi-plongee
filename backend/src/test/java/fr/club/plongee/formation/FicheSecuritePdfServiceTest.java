@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class FicheSecuritePdfServiceTest {
 
     /** Identité d'origine, sans base : nom par défaut et logo embarqué. */
-    private final FicheSecuritePdfService service = new FicheSecuritePdfService(new fr.club.plongee.formation.service.FicheSecuriteExcelService(
+    private final fr.club.plongee.formation.service.FicheSecuriteExcelService excel = new fr.club.plongee.formation.service.FicheSecuriteExcelService(
             new IdentiteStructureService(null, "Club de plongée") {
                 @Override
                 public String nom() {
@@ -38,7 +38,23 @@ class FicheSecuritePdfServiceTest {
                 public byte[] logoPng() {
                     return logoOrigine();
                 }
-            }));
+            });
+    private final FicheSecuritePdfService service = new FicheSecuritePdfService(excel);
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("L'en-tête « Observations » reste droit : penché, la colonne large déborde de la page")
+    void observationsNonPenche() throws IOException {
+        byte[] xlsx = excel.generer(java.util.List.of(fiche(12, 4), fiche(12, 4))).contenu();
+
+        try (var classeur = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(xlsx))) {
+            var cellule = java.util.stream.StreamSupport.stream(classeur.getSheetAt(0).spliterator(), false)
+                    .flatMap(r -> java.util.stream.StreamSupport.stream(r.spliterator(), false))
+                    .filter(c -> c.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                            && c.getStringCellValue().equals("Observations"))
+                    .findFirst().orElseThrow();
+            assertThat(cellule.getCellStyle().getRotation()).isZero();
+        }
+    }
 
     @Test
     void une_feuille_pleine_tient_sur_une_page() throws IOException {

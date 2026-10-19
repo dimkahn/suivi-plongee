@@ -116,7 +116,8 @@ public class FicheSecuriteExcelService {
                 cellule(entetes, NB_COLONNES_FIXES + c, colonnes.get(c).nom(),
                         colonnes.get(c).autonomes() ? st.roteeNoire : st.roteeEncadrant);
             }
-            cellule(entetes, obs, "Observations", st.rotee);
+            // Droit : penchée, la case large d'« Observations » déborderait de la page.
+            cellule(entetes, obs, "Observations", st.observationsColonne);
 
             Row compte = ligne(feuille, derniereLigneLieux + 2, 18);
             Cell nb = compte.createCell(0);
@@ -278,7 +279,7 @@ public class FicheSecuriteExcelService {
     /** Les styles du modèle : polices, couleurs et fonds repris du classeur du club. */
     private static final class Styles {
         final XSSFCellStyle cadre, centre, etiquette, etiquetteCentree, titre, nomColonne, prenomColonne,
-                rotee, roteeNoire, roteeEncadrant, compte, libelleCompte, niveauEncadrant, numero, nom, prenom,
+                observationsColonne, rotee, roteeNoire, roteeEncadrant, compte, libelleCompte, niveauEncadrant, numero, nom, prenom,
                 niveau, observation, caseBleue, caseBlanche, caseGrise, caseGriseFoncee, caseBleueGrise,
                 caseBleueGriseFoncee, libelleTour, libelleTourGris, libelleTourGrisFonce, nomTour, nomTourFonce;
         private final XSSFWorkbook classeur;
@@ -298,6 +299,8 @@ public class FicheSecuriteExcelService {
             nomColonne = centre(style(police(true, 18, BLEU, false), null));
             prenomColonne = style(police(true, 12, BLEU, false), null);
             prenomColonne.setVerticalAlignment(VerticalAlignment.CENTER);
+            observationsColonne = centre(style(police(true, 10, BLEU, true), null));
+            observationsColonne.setVerticalAlignment(VerticalAlignment.BOTTOM);
             rotee = tourne(style(police(true, 10, BLEU, true), null));
             roteeNoire = tourne(style(police(true, 11, null, false), null));
             roteeEncadrant = tourne(style(police(true, 11, null, false), JAUNE));
