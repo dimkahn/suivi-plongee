@@ -385,6 +385,59 @@ class BaseExercicesTest {
     }
 
     @Test
+    @DisplayName("Un exercice hors de la base et du programme, saisi avec sa phase, sert à noter le critère")
+    void notationSurExerciceHorsProgramme() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e1@club.fr");
+
+        long eleveId = envoyer("POST", "/api/eleves", admin, """
+                {"nom":"HorsProgramme","prenom":"Test","dateNaissance":"2000-01-01","autorisationLegale":true}""",
+                201).get("id").asLong();
+        long seanceId = envoyer("POST", "/api/seances", admin, """
+                {"dateSeance":"%s","ordre":7,"milieu":"ARTIFICIEL","lieu":"Piscine exercice imprévu"}"""
+                .formatted(Calendrier.aujourdhui()), 201).get("id").asLong();
+        try {
+            long cursus = envoyer("POST", "/api/cursus", admin, """
+                    {"eleveId":%d,"saisonId":%d,"niveau":"N1"}""".formatted(eleveId, saisonOuverte(admin)),
+                    201).get("id").asLong();
+            envoyer("PUT", "/api/seances/" + seanceId + "/presences", moniteur, """
+                    [{"cursusId":%d,"statut":"PRESENT","atelier":"BLOC"}]""".formatted(cursus), 200);
+            long critere = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200)
+                    .get("blocs").get(0).get("criteres").get(0).get("id").asLong();
+
+            String url = "/api/cursus/" + cursus + "/evaluations";
+            String note = """
+                    {"critereId":%d,"seanceId":%d,"statut":"%s","exerciceLibre":"%s","phaseLibre":%s}""";
+            // Aucun programme : l'exercice imaginé sur place, avec sa phase, est accepté.
+            JsonNode n = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "ACQUIS", "Gréage sous la pluie", "\"PERFECTIONNEMENT\""), 201);
+            assertThat(n.get("statutExercice").asText()).isEqualTo("ACQUIS");
+            assertThat(n.get("statut").asText()).isEqualTo("EN_COURS");
+            assertThat(n.get("exercice").get("intitule").asText()).isEqualTo("Gréage sous la pluie");
+            assertThat(n.get("exercice").get("phase").asText()).isEqualTo("PERFECTIONNEMENT");
+
+            // Sans phase, il faut qu'il soit au programme.
+            JsonNode refus = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "ACQUIS", "Autre gréage", "null"), 422);
+            assertThat(refus.get("detail").asText()).contains("n'est plus au programme");
+            refus = envoyer("POST", url, moniteur,
+                    note.formatted(critere, seanceId, "EN_COURS", "x".repeat(201), "\"INITIATION\""), 422);
+            assertThat(refus.get("detail").asText()).contains("200 caractères");
+
+            // Rappelé dans la grille avec sa phase, pour le noter de nouveau d'un appui.
+            JsonNode etats = envoyer("GET", "/api/cursus/" + cursus + "/grille", moniteur, null, 200)
+                    .get("blocs").get(0).get("criteres").get(0).get("etatsExercices");
+            assertThat(etats).hasSize(1);
+            assertThat(etats.get(0).get("exerciceLibre").asText()).isEqualTo("Gréage sous la pluie");
+            assertThat(etats.get(0).get("phase").asText()).isEqualTo("PERFECTIONNEMENT");
+        } finally {
+            mvc.perform(post("/api/eleves/" + eleveId + "/archivage").header("Authorization", admin));
+            mvc.perform(delete("/api/eleves/" + eleveId).header("Authorization", admin));
+            mvc.perform(delete("/api/seances/" + seanceId).header("Authorization", admin));
+        }
+    }
+
+    @Test
     @DisplayName("Le programme d'une séance se construit à partir des exercices de la base")
     void programmeDepuisLaBase() throws Exception {
         String admin = jeton("presidente@club.fr");

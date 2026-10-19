@@ -17,7 +17,10 @@ export interface SaisieEnAttente {
   dateEvaluation: string;
   /** Exercice de la base noté ; absent des saisies mises en file avant son arrivée. */
   exerciceId?: number | null;
-  /** À défaut, exercice libre du programme de la séance : son intitulé, et sa phase pour l'affichage local. */
+  /**
+   * À défaut, exercice libre : du programme de la séance, ou hors liste saisi
+   * sur place. Son intitulé et sa phase (celle du programme prime sur le serveur).
+   */
   exerciceLibre?: string | null;
   phaseLibre?: PhaseExercice | null;
   /** Référent du groupe qui note au nom d'un autre encadrant : son id, et son nom pour l'affichage. */
@@ -160,6 +163,8 @@ export class FileAttenteService {
             dateEvaluation: s.dateEvaluation,
             exerciceId: s.exerciceId ?? null,
             exerciceLibre: s.exerciceLibre ?? null,
+            // Le programme prime ; sans lui (exercice hors liste, ou retiré depuis), la phase saisie.
+            phaseLibre: s.exerciceLibre ? s.phaseLibre ?? null : null,
             pourMoniteurId: s.pourMoniteurId ?? null
           })))
       );

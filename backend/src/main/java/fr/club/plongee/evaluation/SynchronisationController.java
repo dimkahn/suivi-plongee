@@ -12,6 +12,7 @@ import fr.club.plongee.formation.*;
 import fr.club.plongee.formation.domain.*;
 import fr.club.plongee.formation.repository.*;
 import fr.club.plongee.referentiel.ReferentielController;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import fr.club.plongee.referentiel.domain.Referentiel;
 import fr.club.plongee.referentiel.repository.ReferentielRepository;
 import fr.club.plongee.securite.UtilisateurPrincipal;
@@ -53,7 +54,9 @@ public class SynchronisationController {
                                  /** À défaut, intitulé d'un exercice libre du programme de la séance. */
                                  String exerciceLibre,
                                  /** Référent du groupe : encadrant au nom duquel il note ; null sinon. */
-                                 Long pourMoniteurId) {}
+                                 Long pourMoniteurId,
+                                 /** Phase d'un exercice libre hors programme, saisi sur place ; null sinon. */
+                                 PhaseExercice phaseLibre) {}
 
     public record Resultat(String referenceClient, Etat etat, String raison, Long evaluationId) {}
 
@@ -117,7 +120,7 @@ public class SynchronisationController {
                 Evaluation e = evaluations.noter(s.cursusId(),
                         new EvaluationService.Notation(s.critereId(), s.seanceId(), s.statut(),
                                 s.commentaire(), s.dateEvaluation(), s.referenceClient(), s.exerciceId(),
-                                s.exerciceLibre(), s.pourMoniteurId()),
+                                s.exerciceLibre(), s.pourMoniteurId(), s.phaseLibre()),
                         auteur);
                 resultats.add(new Resultat(s.referenceClient(), Etat.ACCEPTEE, null, e.getId()));
             } catch (RegleMetierException | RessourceIntrouvableException erreur) {

@@ -57,6 +57,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/exercices.
 - **Décision :** un exercice libre qui a une phase et des critères sert aussi à noter ces critères.
 - **Conséquences :** le programme se remplaçant d'un bloc, la note copie intitulé et phase (`evaluation.exercice_libre`, `evaluation.phase_exercice`) au lieu d'un lien. Un exercice libre sans phase ne fait toujours qu'étiqueter le programme.
 
+## Exercice hors liste noté dans la grille
+
+- **Date :** 2026-10-19. Demande d'un moniteur : noter un exercice non prévu, ni dans la base de la formation ni au programme de la séance.
+- **Décision :** le choix de l'exercice propose « Autre exercice (hors liste) » : intitulé et phase saisis sur place, copiés dans la note comme un exercice libre (`exercice_libre`, `phase_exercice`, pas de migration).
+- **Conséquences :** même règle des phases ; ne remplace pas les exercices de maîtrise obligatoires. Un exercice libre retiré du programme après une note prise hors ligne n'est plus refusé : la note garde la phase saisie.
+
 ## Critère de réussite et schéma des exercices libres
 
 - **Date :** 2026, V58.

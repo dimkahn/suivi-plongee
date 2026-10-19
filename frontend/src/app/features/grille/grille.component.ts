@@ -18,6 +18,7 @@ import {
 } from '../../core/modeles';
 import { FiltreGroupe, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
+import { ExerciceHorsListe, LONGUEUR_MAX_EXERCICE, refusExerciceHorsListe } from '../../core/exercice-hors-liste';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
@@ -704,7 +705,15 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                       Plusieurs exercices se notent sur un même critère (choix du club, 2026),
                       même une compétence validée : chacun garde son état, rappelé ici.
                     -->
-                    @if (peutSaisir() && aDesExercices(bloc, critere) && exerciceImpose(bloc, critere, exo) === null) {
+                    @if (peutSaisir() && !afficherChoixExercice(bloc, critere) && !exo && !bloc.valide) {
+                      <!-- Critère sans exercice : on peut quand même noter un exercice fait sur place. -->
+                      <button type="button" class="lien-historique" aria-haspopup="dialog"
+                              [attr.aria-label]="'Noter un exercice hors liste pour ' + critere.savoirFaire"
+                              (click)="ouvrirChoixExercice(bloc, critere)">
+                        + Noter un exercice hors liste
+                      </button>
+                    }
+                    @if (peutSaisir() && afficherChoixExercice(bloc, critere) && exerciceImpose(bloc, critere, exo) === null) {
                       @let choisi = exerciceChoisi(bloc, critere);
                       @let note = exerciceNote(bloc, critere);
                       @let notes = exercicesNotes(bloc, critere);
@@ -953,8 +962,28 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
               }
             </ul>
           }
+          <!-- Exercice ni dans la base ni au programme : intitulé et phase saisis sur place (choix du club, 2026). -->
+          <h3 class="titre-phase">Autre exercice (hors liste)</h3>
+          <div class="hors-liste">
+            <label class="secondaire" for="intitule-hors-liste">Exercice réalisé, non prévu dans la liste</label>
+            <input id="intitule-hors-liste" type="text" [maxlength]="longueurMaxExercice"
+                   placeholder="Ex. : gréage sous la pluie"
+                   [ngModel]="intituleHorsListe()" (ngModelChange)="intituleHorsListe.set($event)" />
+            <div class="phases-hors-liste" role="group" aria-label="Phase de l'exercice hors liste">
+              @for (phase of phases; track phase.valeur) {
+                <button type="button" class="choix-phase" [class.actif]="phaseHorsListe() === phase.valeur"
+                        [attr.aria-pressed]="phaseHorsListe() === phase.valeur"
+                        (click)="phaseHorsListe.set(phase.valeur)">
+                  {{ phase.libelle }}
+                </button>
+              }
+            </div>
+            <button type="button" class="bouton-principal" (click)="choisirHorsListe(bloc, critere)">
+              Noter cet exercice
+            </button>
+          </div>
           <div class="actions-dialogue">
-            @if (suiviActif(critere).statut === 'ACQUIS') {
+            @if (suiviActif(critere).statut === 'ACQUIS' || !aDesExercices(bloc, critere)) {
               <button type="button" class="bouton-discret" (click)="choisirExercice(bloc, critere, null)">Noter sans exercice</button>
             } @else {
               <button type="button" class="bouton-discret" (click)="fermerChoixExercice()">Annuler</button>
@@ -1133,6 +1162,14 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     }
     .choix-exo.actif { border: 2px solid var(--profond); background: #EEF6F8; }
     .intitule-exo { font-weight: 700; }
+    .hors-liste { display: grid; gap: var(--pas); }
+    .hors-liste input { min-height: 44px; }
+    .phases-hors-liste { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .choix-phase {
+      min-height: 44px; padding: 0 var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s);
+      background: var(--carte); color: var(--encre); font: inherit; cursor: pointer;
+    }
+    .choix-phase.actif { border: 2px solid var(--profond); background: #EEF6F8; font-weight: 700; }
     .deroulement summary { padding: 12px var(--pas-2); line-height: 20px; color: var(--profond); font-size: .875rem; cursor: pointer; }
     .deroulement p { margin: 0; padding: 0 var(--pas-2) var(--pas); font-size: .875rem; }
 
@@ -1587,9 +1624,13 @@ export class GrilleComponent implements OnDestroy {
   /**
    * Choix explicites du moniteur pour la séance en cours : critereId →
    * exercice de la base (son id), exercice libre du programme (son
-   * intitulé), ou null : sans exercice.
+   * intitulé), exercice hors liste saisi sur place, ou null : sans exercice.
    */
-  exercicesChoisis = signal<Record<number, number | string | null>>({});
+  exercicesChoisis = signal<Record<number, number | string | ExerciceHorsListe | null>>({});
+  /** Saisie d'un exercice hors liste dans le dialogue de choix. */
+  readonly longueurMaxExercice = LONGUEUR_MAX_EXERCICE;
+  intituleHorsListe = signal('');
+  phaseHorsListe = signal<PhaseExercice | null>(null);
   /** Critère dont le dialogue de choix d'exercice est ouvert. */
   choixExercice = signal<{ bloc: BlocAffiche; critere: CritereAffiche } | null>(null);
   erreurChoixExercice = signal<string | null>(null);
@@ -1633,6 +1674,22 @@ export class GrilleComponent implements OnDestroy {
   }
 
   /**
+   * Le choix de l'exercice se montre pour un critère qui a des exercices, et
+   * pour un critère sans exercice dès qu'un exercice hors liste y est choisi
+   * ou noté. Sinon, un simple lien propose d'en noter un.
+   */
+  afficherChoixExercice(bloc: BlocAffiche, critere: CritereAffiche): boolean {
+    return this.aDesExercices(bloc, critere) || !!this.exerciceNote(bloc, critere)
+      || this.exercicesNotes(bloc, critere).length > 0;
+  }
+
+  /** Exercice hors liste choisi pour ce critère, ou null. */
+  private horsListeChoisi(critere: { id: number }): ExerciceHorsListe | null {
+    const choisi = this.exercicesChoisis()[critere.id];
+    return choisi != null && typeof choisi === 'object' ? choisi : null;
+  }
+
+  /**
    * Exercice libre appliqué aux notes d'un critère : le choix du moniteur,
    * sinon, faute d'exercice de la base prévu, l'exercice libre le plus
    * avancé que le programme prévoit pour ce critère.
@@ -1653,6 +1710,8 @@ export class GrilleComponent implements OnDestroy {
   exerciceNote(bloc: BlocVue | BlocAffiche, critere: { id: number }): ExerciceNoteVue | null {
     const base = this.exerciceChoisi(bloc, critere);
     if (base) return { id: base.id, numero: base.numero, intitule: base.intitule, phase: base.phase, blocId: base.blocId, critereIds: null };
+    const horsListe = this.horsListeChoisi(critere);
+    if (horsListe) return { id: null, numero: null, intitule: horsListe.intitule, phase: horsListe.phase, blocId: null, critereIds: null };
     const libre = this.libreChoisi(bloc, critere);
     return libre?.phase ? { id: null, numero: null, intitule: libre.intitule, phase: libre.phase, blocId: null, critereIds: null } : null;
   }
@@ -1679,7 +1738,19 @@ export class GrilleComponent implements OnDestroy {
 
   ouvrirChoixExercice(bloc: BlocAffiche, critere: CritereAffiche, erreur: string | null = null): void {
     this.erreurChoixExercice.set(erreur);
+    this.intituleHorsListe.set('');
+    this.phaseHorsListe.set(null);
     this.choixExercice.set({ bloc, critere });
+  }
+
+  /** Exercice que le moniteur a fait faire sans qu'il soit dans la base ni au programme. */
+  choisirHorsListe(bloc: BlocAffiche, critere: CritereAffiche): void {
+    const refus = refusExerciceHorsListe(this.intituleHorsListe(), this.phaseHorsListe());
+    if (refus) {
+      this.erreurChoixExercice.set(refus);
+      return;
+    }
+    this.choisirExercice(bloc, critere, { intitule: this.intituleHorsListe().trim(), phase: this.phaseHorsListe()! });
   }
 
   fermerChoixExercice(): void {
@@ -1688,8 +1759,8 @@ export class GrilleComponent implements OnDestroy {
     this.noteEnSuspens = null;
   }
 
-  /** `exercice` : id d'un exercice de la base, intitulé d'un exercice libre, ou null. */
-  choisirExercice(bloc: BlocAffiche, critere: CritereAffiche, exercice: number | string | null): void {
+  /** `exercice` : id d'un exercice de la base, intitulé d'un exercice libre du programme, exercice hors liste, ou null. */
+  choisirExercice(bloc: BlocAffiche, critere: CritereAffiche, exercice: number | string | ExerciceHorsListe | null): void {
     this.exercicesChoisis.set({ ...this.exercicesChoisis(), [critere.id]: exercice });
     const enSuspens = this.noteEnSuspens;
     this.fermerChoixExercice();
@@ -1830,11 +1901,13 @@ export class GrilleComponent implements OnDestroy {
         const selectionnable = this.exercicesDuCritere(bloc, critere).some(e => e.id === x.exerciceId);
         liste.push({ exercice: base, statut: x.statut, selectionnable });
       } else if (x.exerciceLibre) {
+        // Du programme (sa phase actuelle), ou hors liste : la phase copiée sur la note, re-notable aussi.
         const libre = this.exercicesLibresDuCritere(critere).find(e => e.intitule === x.exerciceLibre);
+        const phase = libre?.phase ?? x.phase ?? null;
         liste.push({
-          exercice: { id: null, numero: null, intitule: x.exerciceLibre, phase: libre?.phase ?? 'INITIATION',
+          exercice: { id: null, numero: null, intitule: x.exerciceLibre, phase: phase ?? 'INITIATION',
                       blocId: null, critereIds: null },
-          statut: x.statut, selectionnable: !!libre
+          statut: x.statut, selectionnable: !!phase
         });
       }
     }
@@ -1856,7 +1929,9 @@ export class GrilleComponent implements OnDestroy {
 
   /** Reprend un exercice déjà noté pour lui donner une nouvelle note. */
   reprendreExercice(bloc: BlocAffiche, critere: CritereAffiche, exercice: ExerciceNoteVue): void {
-    this.choisirExercice(bloc, critere, exercice.id ?? exercice.intitule);
+    const auProgramme = this.exercicesLibresDuCritere(critere).some(e => e.intitule === exercice.intitule);
+    this.choisirExercice(bloc, critere, exercice.id
+      ?? (auProgramme ? exercice.intitule : { intitule: exercice.intitule, phase: exercice.phase }));
   }
 
   /** État de l'exercice sur lequel portera la prochaine note du critère ; null sans exercice (on note le critère). */

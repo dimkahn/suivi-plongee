@@ -69,10 +69,11 @@ public class GrilleService {
     /**
      * Derniere note d'un exercice pour un critere : {@code exerciceId} pour un exercice
      * de la base, sinon {@code exerciceLibre} (intitule copie). {@code statut} : l'etat
-     * saisi pour l'exercice.
+     * saisi pour l'exercice ; {@code phase} : celle de l'exercice noté (copiée pour un libre).
      */
     public record EtatExerciceVue(Long exerciceId, String exerciceLibre, boolean entrainement,
-                                  String statut, String parQui, LocalDate le, String commentaire) {}
+                                  String statut, String parQui, LocalDate le, String commentaire,
+                                  String phase) {}
 
     /** Suivi d'entrainement d'un critere (N2/N3) : ne compte pas pour l'acquisition. */
     public record SuiviEntrainementVue(String statut, String parQui, LocalDate le, String commentaire,
@@ -471,7 +472,8 @@ public class GrilleService {
                         e.getExercice() == null ? e.getExerciceLibre() : null,
                         e.isEntrainement(),
                         (e.getStatutExercice() != null ? e.getStatutExercice() : e.getStatut()).name(),
-                        e.getMoniteur().nomComplet(), e.getDateEvaluation(), e.getCommentaire()))
+                        e.getMoniteur().nomComplet(), e.getDateEvaluation(), e.getCommentaire(),
+                        e.phaseDeLExercice() == null ? null : e.phaseDeLExercice().name()))
                 .toList()));
         return parCritere;
     }

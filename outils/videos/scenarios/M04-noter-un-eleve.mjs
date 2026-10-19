@@ -1,5 +1,5 @@
 // M4 — Noter un élève pendant la séance.
-// Tournage du 2026-10-12, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-19, 13e série, exercice hors liste (changer cette date dans tous les scénarios les fait tous retourner).
 import { ouvrirGrille, critere, noter, choisirExercice } from '../grille.mjs';
 
 export default {
@@ -54,6 +54,17 @@ export default {
     await choisirExercice(g, 'Parcours de surface en PMT');
     await noter(g, 'Palmage de sustentation', 'En cours');
     await legende('« Exercices déjà notés » garde chacun avec son état ; touchez-en un pour le noter de nouveau.', 4500);
+
+    await legende('Un exercice fait sur place, ni dans la liste ni au programme ? Il se note aussi.', 0);
+    await toucher(ligne.getByRole('button', { name: '+ Noter un autre exercice' }), { apres: 300 });
+    await legende('En bas de la liste, « Autre exercice (hors liste) » : son intitulé, puis sa phase.', 0);
+    const fenetre = page.locator('dialog[open]');
+    await fenetre.locator('#intitule-hors-liste').scrollIntoViewIfNeeded();
+    await saisir(fenetre.locator('#intitule-hors-liste'), 'Sustentation bras hors de l\'eau');
+    await toucher(fenetre.getByRole('button', { name: 'Initiation', exact: true }), { apres: 300 });
+    await toucher(fenetre.getByRole('button', { name: 'Noter cet exercice' }), { apres: 600 });
+    await noter(g, 'Palmage de sustentation', 'En cours');
+    await legende('Il rejoint les exercices déjà notés ; comme partout, seule une maîtrise acquise rend le critère acquis.', 4500);
 
     await legende('Une compétence marquée « En retard » a passé l\'échéance prévue par la progression.', 3500);
     await legende('Pas de réseau ? La note est gardée sur l\'appareil, « En attente d\'envoi ».', 4000);

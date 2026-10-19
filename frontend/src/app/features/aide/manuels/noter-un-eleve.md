@@ -3,8 +3,10 @@ titre: Noter un élève pendant la séance
 rubrique: Moniteur
 videos: M4, M19, M20
 ecran: /eleves
-mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme, noter l'exercice, en cours d'acquisition, état de la compétence, état du critère, non travaillée, acquise, NA, ECA, A, sigles, légende, plusieurs exercices, autre exercice, ajouter un exercice, exercices déjà notés, même critère, même compétence
+mots: noter, note, évaluer, évaluation, critère, grille, acquis, en cours, non abordé, commentaire, compétence, retard, entraînement, piscine, fosse, milieu naturel, N2, N3, exercice, initiation, perfectionnement, maîtrise, référent, au nom de, remplacer, rattraper, oubli, saisi par, élève suivant, élève précédent, plus d'actions, exercices de la séance, critères à évaluer, sous l'exercice, programme, noter l'exercice, en cours d'acquisition, état de la compétence, état du critère, non travaillée, acquise, NA, ECA, A, sigles, légende, plusieurs exercices, autre exercice, ajouter un exercice, exercices déjà notés, même critère, même compétence, hors liste, exercice non prévu, exercice imprévu, autre exercice, inventé, sur place, pas dans la liste
 questions:
+- Comment noter un exercice qui n'est pas dans la liste ?
+- Comment noter un exercice non prévu au programme de la séance ?
 - Comment noter pour un encadrant qui ne l'a pas fait ?
 - Je suis référent : comment noter au nom d'un autre moniteur ?
 - Comment noter un élève ?
@@ -35,7 +37,8 @@ Ouvrez la grille de l'élève depuis « Infos élèves », choisissez la séance
 4. Juste en dessous, « 2. Note de l'exercice » : touchez l'état de **l'exercice** : NA (non abordé), ECA (en cours d'acquisition) ou A (acquis). Les boutons montrent où en est l'élève dans cet exercice (sa dernière note sur cet exercice), pas l'état du critère.
 5. Votre nom et la date s'affichent sous le critère, puis « Critère : … », l'état du critère qui en découle. L'état de la compétence (non travaillée, en cours d'acquisition, acquise) est rappelé en pastille à côté de son titre.
 6. L'élève a fait plusieurs exercices sur le même critère ? Touchez « + Noter un autre exercice », choisissez-le et notez-le à son tour. Sous « 1. Exercice », « Exercices déjà notés » les garde tous, chacun avec son état (NA, ECA, A) : touchez-en un pour le noter de nouveau.
-7. Pour laisser un mot au prochain encadrant, écrivez un commentaire sur le critère : il reste affiché dessous.
+7. Un exercice fait sur place, ni dans la liste ni au programme de la séance ? En bas de la liste des exercices, « Autre exercice (hors liste) » : écrivez son intitulé, touchez sa phase (initiation, perfectionnement ou maîtrise), puis « Noter cet exercice », et notez-le.
+8. Pour laisser un mot au prochain encadrant, écrivez un commentaire sur le critère : il reste affiché dessous.
 
 ## Noter directement sous les exercices de la séance
 
@@ -53,6 +56,7 @@ Chaque critère du N1, du N2 et du N3 a ses exercices, rangés en trois temps ; 
 - **État du critère :** jamais noté, il est « non abordé » ; dès qu'une note porte sur un de ses exercices, il passe « en cours » ; il n'est **acquis qu'avec un exercice de maîtrise acquis**. Un exercice d'initiation ou de perfectionnement ne fait jamais reculer un critère déjà acquis. Un critère qui n'a aucun exercice de maîtrise (aujourd'hui « Départ plage » et « Ventilation sur tuba ») s'acquiert comme avant.
 - **Un critère qui a des exercices se note toujours sur l'un d'eux**, pour qu'on lise ensuite (vue globale, historique) s'il s'agissait d'une initiation, d'un perfectionnement ou d'une maîtrise. Sans exercice choisi, toucher une note ouvre la liste des exercices : choisissez celui réalisé, la note part aussitôt.
 - La liste propose aussi, sous « Exercices libres du programme », les exercices libres de la séance choisie qui travaillent ce critère et ont une phase (pastille sans numéro). Ils notent comme ceux de la base : seul un exercice de maîtrise acquis rend le critère acquis.
+- **Exercice hors liste** : un exercice inventé sur le moment se note aussi, sous « Autre exercice (hors liste) » en bas de la liste. Sa phase est obligatoire et suit la même règle : seul un exercice de maîtrise acquis rend le critère acquis. La note garde son intitulé et sa phase ; il rejoint « Exercices déjà notés » pour être noté de nouveau d'un toucher. Il ne remplace pas les exercices de maîtrise obligatoires pour valider une compétence. Sur un critère qui n'a aucun exercice, « + Noter un exercice hors liste » ouvre la même saisie.
 - **Plusieurs exercices sur un même critère** : chacun garde sa propre note. « + Noter un autre exercice » en ajoute un, « Exercices déjà notés » les liste et en reprend un d'un toucher. Même une compétence validée reste ouverte aux exercices : l'élève peut continuer à travailler d'autres exercices, la compétence reste validée.
 - Un critère déjà acquis se commente sans redonner l'exercice.
 - « Voir le schéma » montre l'organisation dans l'eau, sous l'exercice choisi comme dans la liste. Après « Préparer hors ligne », les schémas restent visibles sans réseau.

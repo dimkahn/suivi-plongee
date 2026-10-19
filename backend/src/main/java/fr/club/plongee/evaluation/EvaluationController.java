@@ -7,6 +7,7 @@ import fr.club.plongee.evaluation.service.EvaluationService;
 import fr.club.plongee.evaluation.service.FichePdfService;
 import fr.club.plongee.evaluation.service.GrilleService;
 import fr.club.plongee.evaluation.service.ValidationParAccordService;
+import fr.club.plongee.referentiel.domain.PhaseExercice;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import fr.club.plongee.securite.UtilisateurPrincipal;
@@ -34,7 +35,9 @@ public class EvaluationController {
                                   /** À défaut, intitulé d'un exercice libre du programme de la séance. */
                                   String exerciceLibre,
                                   /** Référent du groupe : encadrant au nom duquel il note ; null sinon. */
-                                  Long pourMoniteurId) {}
+                                  Long pourMoniteurId,
+                                  /** Phase d'un exercice libre hors programme, saisi sur place ; null sinon. */
+                                  PhaseExercice phaseLibre) {}
 
     public record DemandeValidation(String commentaire) {}
 
@@ -93,7 +96,7 @@ public class EvaluationController {
                 new EvaluationService.Notation(demande.critereId(), demande.seanceId(),
                         demande.statut(), demande.commentaire(), demande.dateEvaluation(),
                         demande.referenceClient(), demande.exerciceId(), demande.exerciceLibre(),
-                        demande.pourMoniteurId()),
+                        demande.pourMoniteurId(), demande.phaseLibre()),
                 auteur);
         return vue(e);
     }

@@ -114,6 +114,8 @@ export interface EtatExerciceVue {
   parQui: string;
   le: string;
   commentaire: string | null;
+  /** Phase de l'exercice noté (copiée sur la note pour un exercice libre). */
+  phase?: PhaseExercice | null;
 }
 
 export interface SuiviEntrainementVue {

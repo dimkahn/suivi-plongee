@@ -111,7 +111,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 1 min 10
 
 Choisir la séance, noter les critères au programme, laisser un commentaire pour le prochain encadrant.
 
-Compte : `e2@club.fr` · formats téléphone et ordinateur · 61 s
+Compte : `e2@club.fr` · formats téléphone et ordinateur · 75 s
 
 1. Dans « Infos élèves », touchez le nom de l'élève.
 2. Sa grille : niveau préparé, critères acquis, séances suivies.
@@ -133,8 +133,11 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 61 s
 18. Le commentaire reste affiché sous le critère.
 19. Il a aussi tenté le parcours de surface : plusieurs exercices se notent sur un même critère.
 20. « Exercices déjà notés » garde chacun avec son état ; touchez-en un pour le noter de nouveau.
-21. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
-22. Pas de réseau ? La note est gardée sur l'appareil, « En attente d'envoi ».
+21. Un exercice fait sur place, ni dans la liste ni au programme ? Il se note aussi.
+22. En bas de la liste, « Autre exercice (hors liste) » : son intitulé, puis sa phase.
+23. Il rejoint les exercices déjà notés ; comme partout, seule une maîtrise acquise rend le critère acquis.
+24. Une compétence marquée « En retard » a passé l'échéance prévue par la progression.
+25. Pas de réseau ? La note est gardée sur l'appareil, « En attente d'envoi ».
 
 ### M5 — Corriger une note et retrouver l'historique
 

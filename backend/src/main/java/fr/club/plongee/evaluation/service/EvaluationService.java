@@ -39,13 +39,22 @@ public class EvaluationService {
 
     /**
      * {@code exerciceId} : exercice de la base sur lequel le critère est noté, facultatif ;
-     * {@code exerciceLibre} : à défaut, intitulé d'un exercice libre du programme de la séance ;
-     * {@code pourMoniteurId} : encadrant au nom duquel un référent du groupe note, null sinon.
+     * {@code exerciceLibre} : à défaut, intitulé d'un exercice libre du programme de la séance,
+     * ou d'un exercice hors programme saisi sur place ;
+     * {@code pourMoniteurId} : encadrant au nom duquel un référent du groupe note, null sinon ;
+     * {@code phaseLibre} : phase de l'exercice hors programme, null pour un exercice du programme.
      */
     public record Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                            String commentaire, LocalDate dateEvaluation,
                            String referenceClient, Long exerciceId, String exerciceLibre,
-                           Long pourMoniteurId) {
+                           Long pourMoniteurId, PhaseExercice phaseLibre) {
+
+        public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
+                        String commentaire, LocalDate dateEvaluation, String referenceClient,
+                        Long exerciceId, String exerciceLibre, Long pourMoniteurId) {
+            this(critereId, seanceId, statut, commentaire, dateEvaluation, referenceClient,
+                    exerciceId, exerciceLibre, pourMoniteurId, null);
+        }
 
         public Notation(Long critereId, Long seanceId, StatutAcquisition statut,
                         String commentaire, LocalDate dateEvaluation, String referenceClient,
@@ -141,8 +150,9 @@ public class EvaluationService {
 
         boolean entrainement = estEntrainement(cursus.getReferentiel(), seance);
         ExerciceCompetence exercice = exercice(notation.exerciceId(), critere);
-        ExerciceSeance libre = exercice == null ? exerciceLibre(notation.exerciceLibre(), seance, critere) : null;
-        PhaseExercice phase = exercice != null ? exercice.getPhase() : libre != null ? libre.getPhase() : null;
+        ExerciceLibre libre = exercice == null
+                ? exerciceLibre(notation.exerciceLibre(), notation.phaseLibre(), seance, critere) : null;
+        PhaseExercice phase = exercice != null ? exercice.getPhase() : libre != null ? libre.phase() : null;
         StatutAcquisition actuel = evaluations
                 .findFirstByCursusIdAndCritereIdAndEntrainementOrderByIdDesc(cursus.getId(), critere.getId(), entrainement)
                 .map(Evaluation::getStatut)
@@ -166,8 +176,8 @@ public class EvaluationService {
         e.setStatut(statutDuCritere(notation.statut(), actuel, phase, !deMaitrise.isEmpty() || libre != null));
         e.setStatutExercice(phase == null ? null : notation.statut());
         if (libre != null) {
-            e.setExerciceLibre(libre.getIntitule());
-            e.setPhaseExercice(libre.getPhase());
+            e.setExerciceLibre(libre.intitule());
+            e.setPhaseExercice(libre.phase());
         }
         e.setCommentaire(notation.commentaire());
         e.setDateEvaluation(notation.dateEvaluation() != null
@@ -215,19 +225,38 @@ public class EvaluationService {
         return exercice;
     }
 
+    /** Exercice sans lien avec la base, copié dans la note : intitulé et phase. */
+    private record ExerciceLibre(String intitule, PhaseExercice phase) {}
+
+    static final int LONGUEUR_MAX_EXERCICE_LIBRE = 200;
+
     /**
-     * Exercice libre du programme de la séance (choix du club, 2026),
-     * retrouvé par son intitulé : le programme se remplace d'un bloc, et une
-     * note prise hors ligne doit survivre à ce remplacement. Il doit
-     * travailler le critère noté et avoir une phase.
+     * Exercice libre (choix du club, 2026) : d'abord celui du programme de la
+     * séance qui travaille le critère, retrouvé par son intitulé (le programme
+     * se remplace d'un bloc, et une note prise hors ligne doit survivre à ce
+     * remplacement) ; il doit avoir une phase. À défaut, avec {@code phaseLibre},
+     * un exercice hors base et hors programme que le moniteur a fait faire et
+     * qualifie lui-même.
      */
-    private ExerciceSeance exerciceLibre(String intitule, Seance seance, Critere critere) {
+    private ExerciceLibre exerciceLibre(String intitule, PhaseExercice phaseLibre, Seance seance, Critere critere) {
         if (intitule == null || intitule.isBlank()) return null;
+        String nom = intitule.trim();
+        if (nom.length() > LONGUEUR_MAX_EXERCICE_LIBRE) {
+            throw new RegleMetierException("L'intitulé d'un exercice ne dépasse pas "
+                    + LONGUEUR_MAX_EXERCICE_LIBRE + " caractères.");
+        }
+        if (phaseLibre != null) {
+            ExerciceSeance prevu = seance == null ? null : exercicesSeance.deLaSeance(seance.getId()).stream()
+                    .filter(x -> x.getExerciceCompetence() == null && x.getIntitule().equals(nom) && x.getPhase() != null)
+                    .filter(x -> x.getCriteres().stream().anyMatch(c -> c.getId().equals(critere.getId())))
+                    .findFirst().orElse(null);
+            return prevu != null ? new ExerciceLibre(nom, prevu.getPhase()) : new ExerciceLibre(nom, phaseLibre);
+        }
         if (seance == null) {
             throw new RegleMetierException("Un exercice libre se note sur la séance de son programme.");
         }
         List<ExerciceSeance> candidats = exercicesSeance.deLaSeance(seance.getId()).stream()
-                .filter(x -> x.getExerciceCompetence() == null && x.getIntitule().equals(intitule.trim()))
+                .filter(x -> x.getExerciceCompetence() == null && x.getIntitule().equals(nom))
                 .toList();
         if (candidats.isEmpty()) {
             throw new RegleMetierException("L'exercice « " + intitule.trim()
@@ -240,7 +269,7 @@ public class EvaluationService {
             throw new RegleMetierException("Donnez une phase (initiation, perfectionnement ou maîtrise) à l'exercice « "
                     + libre.getIntitule() + " » dans le programme de la séance avant de noter dessus.");
         }
-        return libre;
+        return new ExerciceLibre(libre.getIntitule(), libre.getPhase());
     }
 
     /**
