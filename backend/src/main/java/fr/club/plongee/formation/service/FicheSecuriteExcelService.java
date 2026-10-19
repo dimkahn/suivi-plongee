@@ -116,7 +116,7 @@ public class FicheSecuriteExcelService {
                 cellule(entetes, NB_COLONNES_FIXES + c, colonnes.get(c).nom(),
                         colonnes.get(c).autonomes() ? st.roteeNoire : st.roteeEncadrant);
             }
-            // Droit : penchée, la case large d'« Observations » déborderait de la page.
+            // Droite : penchée, la case large d'« Observations » déborderait de la page.
             cellule(entetes, obs, "Observations", st.observationsColonne);
 
             Row compte = ligne(feuille, derniereLigneLieux + 2, 18);
@@ -301,6 +301,8 @@ public class FicheSecuriteExcelService {
             prenomColonne.setVerticalAlignment(VerticalAlignment.CENTER);
             observationsColonne = centre(style(police(true, 10, BLEU, true), null));
             observationsColonne.setVerticalAlignment(VerticalAlignment.BOTTOM);
+            // Sans trait à gauche : il couperait la dernière barre penchée, qui déborde sur cette case.
+            observationsColonne.setBorderLeft(BorderStyle.NONE);
             rotee = tourne(style(police(true, 10, BLEU, true), null));
             roteeNoire = tourne(style(police(true, 11, null, false), null));
             roteeEncadrant = tourne(style(police(true, 11, null, false), JAUNE));

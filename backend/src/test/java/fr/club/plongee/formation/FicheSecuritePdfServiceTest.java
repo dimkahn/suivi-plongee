@@ -57,6 +57,21 @@ class FicheSecuritePdfServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.DisplayName("L'en-tête « Observations » n'a pas de trait à gauche, qui couperait la dernière barre penchée")
+    void observationsSansTraitAGauche() throws IOException {
+        byte[] xlsx = excel.generer(java.util.List.of(fiche(12, 4), fiche(12, 4))).contenu();
+
+        try (var classeur = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(xlsx))) {
+            var cellule = java.util.stream.StreamSupport.stream(classeur.getSheetAt(0).spliterator(), false)
+                    .flatMap(r -> java.util.stream.StreamSupport.stream(r.spliterator(), false))
+                    .filter(c -> c.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                            && c.getStringCellValue().equals("Observations"))
+                    .findFirst().orElseThrow();
+            assertThat(cellule.getCellStyle().getBorderLeft()).isEqualTo(org.apache.poi.ss.usermodel.BorderStyle.NONE);
+        }
+    }
+
+    @Test
     void une_feuille_pleine_tient_sur_une_page() throws IOException {
         byte[] pdf = service.generer(java.util.List.of(fiche(23, 8), fiche(23, 8))).contenu();
 
