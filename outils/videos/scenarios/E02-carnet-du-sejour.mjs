@@ -9,13 +9,16 @@ export default {
   resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour », une case par sujet (vols, voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare le gilet qu\'elle a emprunté.',
   compte: 'eleve@club.fr',
 
-  async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette }) {
+  async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
     // L'encart « Aujourd'hui » ne paraît qu'autour du séjour de démonstration (juin 2027) :
     // l'horloge de la page est avancée à la veille du départ, puis au premier jour de plongée.
     await page.clock.setFixedTime(new Date('2027-06-02T19:00:00'));
     await page.goto(`${APPLI}/cursus`);
     await pause(1500);
-    await legende('Camille part en séjour avec le club. « Plus », puis « Séjours ».', 0);
+    await legende(selon({
+      telephone: 'Camille part en séjour avec le club. « Plus », puis « Séjours ».',
+      ordinateur: 'Camille part en séjour avec le club. Dans le menu en haut, « Séjours ».'
+    }), 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('C\'est la veille du départ : en haut, le rappel de son vol, et l\'heure à laquelle être à l\'aéroport.', 4500);

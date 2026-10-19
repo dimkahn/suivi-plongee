@@ -18,7 +18,12 @@ questions:
 
 ## Pas à pas
 
-1. Menu, « Infos élèves » (sur téléphone : l'onglet « Élèves », en bas de l'écran).
+::: telephone
+1. L'onglet « Élèves », en bas de l'écran.
+:::
+::: ordinateur
+1. Dans le menu en haut, « Infos élèves ».
+:::
 2. Les boutons filtrent par groupe d'entraînement ; la recherche retrouve un nom ou un prénom. Dessous, « Synthèse des compétences du groupe » montre l'avancement de tous les élèves du groupe filtré, compétence par compétence ([la synthèse des compétences](/groupes-entrainement/synthese)).
 3. Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date (ce que l'élève a fait : « Bloc », « Nage + Théorie », « Théorie »…).
 4. Touchez un nom pour ouvrir la fiche de l'élève.

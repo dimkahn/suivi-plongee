@@ -13,10 +13,15 @@ export interface Segment {
   lien?: string;
 }
 
-export type Bloc =
+/** Un passage propre au téléphone ou à l'ordinateur (« ::: telephone » … « ::: ») ; sans format, pour les deux. */
+export type FormatBloc = 'telephone' | 'ordinateur';
+
+export type Bloc = (
   | { type: 'titre'; texte: string }
   | { type: 'paragraphe'; segments: Segment[] }
-  | { type: 'liste'; ordonnee: boolean; elements: Segment[][] };
+  /** `debut` : numéro de la première étape (une étape propre à un format coupe la liste sans la renuméroter). */
+  | { type: 'liste'; ordonnee: boolean; debut?: number; elements: Segment[][] }
+) & { format?: FormatBloc };
 
 export interface Manuel {
   /** Le nom du fichier sans « .md » : sert d'adresse (/aide?m=…). */
@@ -32,6 +37,8 @@ export interface Manuel {
   /** Le premier paragraphe : la réponse courte. */
   resume: Segment[];
   blocs: Bloc[];
+  /** Vrai si le manuel a des passages propres au téléphone ou à l'ordinateur. */
+  parFormat: boolean;
   /** Pour la recherche : les racines des mots, calculées une fois. */
   recherche: { fort: string[]; faible: string[] };
 }
@@ -74,6 +81,7 @@ export function lireManuel(id: string, source: string): Manuel {
     questions,
     resume,
     blocs: blocs.filter((_, i) => i !== premier),
+    parFormat: blocs.some(b => b.format),
     recherche: {
       fort: motsUtiles([titre, motsCles, ...questions].join(' ')),
       faible: motsUtiles(lignes.slice(fin + 1).join(' '))
@@ -85,14 +93,27 @@ function liste(valeur: string | undefined): string[] {
   return (valeur ?? '').split(',').map(v => v.trim()).filter(v => v.length > 0);
 }
 
+/** Les blocs à montrer pour un format : ceux des deux formats, et ceux du format voulu. */
+export function blocsDuFormat(m: Manuel, format: FormatBloc): Bloc[] {
+  return m.blocs.filter(b => !b.format || b.format === format);
+}
+
 function lireBlocs(lignes: string[]): Bloc[] {
   const blocs: Bloc[] = [];
   let paragraphe: string[] = [];
-  let enListe: { ordonnee: boolean; elements: string[] } | null = null;
+  let enListe: { ordonnee: boolean; debut?: number; elements: string[] } | null = null;
+  // « ::: telephone » ou « ::: ordinateur » ouvre un passage propre à ce format, « ::: » le referme.
+  let format: FormatBloc | undefined;
+  const avecFormat = (b: Bloc): Bloc => format ? { ...b, format } : b;
 
   const fermer = () => {
-    if (paragraphe.length) blocs.push({ type: 'paragraphe', segments: lireSegments(paragraphe.join(' ')) });
-    if (enListe) blocs.push({ type: 'liste', ordonnee: enListe.ordonnee, elements: enListe.elements.map(lireSegments) });
+    if (paragraphe.length) blocs.push(avecFormat({ type: 'paragraphe', segments: lireSegments(paragraphe.join(' ')) }));
+    if (enListe) {
+      blocs.push(avecFormat({
+        type: 'liste', ordonnee: enListe.ordonnee, elements: enListe.elements.map(lireSegments),
+        ...(enListe.debut !== undefined ? { debut: enListe.debut } : {})
+      }));
+    }
     paragraphe = [];
     enListe = null;
   };
@@ -101,16 +122,21 @@ function lireBlocs(lignes: string[]): Bloc[] {
     const ligne = brute.trim();
     const titre = /^#{1,4}\s+(.+)$/.exec(ligne);
     const puce = /^[-*]\s+(.+)$/.exec(ligne);
-    const numero = /^\d+[.)]\s+(.+)$/.exec(ligne);
-    if (ligne === '') {
+    const numero = /^(?:\d+)[.)]\s+(.+)$/.exec(ligne);
+    const rang = numero ? parseInt(ligne, 10) : undefined;
+    const passage = /^:::\s*(telephone|ordinateur)?\s*$/.exec(ligne);
+    if (passage) {
+      fermer();
+      format = passage[1] as FormatBloc | undefined;
+    } else if (ligne === '') {
       fermer();
     } else if (titre) {
       fermer();
-      blocs.push({ type: 'titre', texte: titre[1] });
+      blocs.push(avecFormat({ type: 'titre', texte: titre[1] }));
     } else if (puce || numero) {
       const ordonnee = !!numero;
       if (paragraphe.length || (enListe && enListe.ordonnee !== ordonnee)) fermer();
-      enListe ??= { ordonnee, elements: [] };
+      enListe ??= { ordonnee, elements: [], ...(rang !== undefined ? { debut: rang } : {}) };
       enListe.elements.push((puce ?? numero)![1]);
     } else if (enListe) {
       // Suite d'un élément de liste écrit sur plusieurs lignes.

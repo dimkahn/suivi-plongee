@@ -41,7 +41,7 @@ export default {
     await choix.setFiles(fichiers);
     await pause(3000);
     await vignette();
-    await legende('Le téléphone réduit les photos avant l\'envoi : pas besoin de bon réseau.', 4000);
+    await legende('L\'appli réduit les photos avant l\'envoi : pas besoin de bon réseau.', 4000);
     await legende('Tant que le prêt est en cours, on peut retirer une photo ratée. Ensuite, elles font foi.', 4500);
     await legende('Au retour, même geste dans la rubrique « au retour ».', 3500);
     await legende(null, 0);

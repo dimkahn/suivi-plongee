@@ -6,7 +6,9 @@
 #   2. démarre le frontend, sauf s'il tourne déjà sur le port 4200 ;
 #   3. installe Playwright et Chromium la première fois ;
 #   4. dépose les portraits dessinés (preparer-donnees.mjs) ;
-#   5. enregistre les vidéos (enregistrer.mjs) dans outils/videos/sorties/ ;
+#   5. enregistre les vidéos (enregistrer.mjs) dans outils/videos/sorties/,
+#      au format téléphone puis, sur un backend redémarré, au format
+#      ordinateur (FORMATS="ordinateur" pour un seul) ;
 #   6. monte la voix off (chaque sous-titre lu par Piper, installé la
 #      première fois dans .piper/) et convertit chaque vidéo en MP4, si
 #      ffmpeg est installé (ou désigné par la variable FFMPEG) : l'iPhone
@@ -20,6 +22,7 @@
 #   RYTHME_CLIC=2 outils/videos/tourner.sh  touchers deux fois plus lents, le reste inchangé
 #   VOIX=0 outils/videos/tourner.sh       sans voix off (sous-titres à la place)
 #   SOUS_TITRES=1 outils/videos/tourner.sh  voix off et sous-titres
+#   FORMATS=ordinateur outils/videos/tourner.sh M06   un seul format
 #
 # Un backend qui tourne déjà sur le port 8080 est refusé : ses données ont
 # pu être modifiées (notes, présences…) et les vidéos ne montreraient plus
@@ -67,12 +70,24 @@ command -v npm >/dev/null || echec "npm introuvable dans le PATH."
 command -v curl >/dev/null || echec "curl introuvable dans le PATH."
 mkdir -p "$SORTIES"
 
-etape "Backend neuf (profil dev, données de démonstration)"
 repond "$API/api-docs" && echec "un backend tourne déjà sur le port 8080. L'arrêter pour repartir de données neuves."
-setsid mvn -q -f "$RACINE/backend/pom.xml" spring-boot:run > "$SORTIES/backend.log" 2>&1 < /dev/null &
-PID_BACKEND=$!
-attendre "$API/api-docs" "$PID_BACKEND" 300 "outils/videos/sorties/backend.log"
-echo "Backend prêt."
+
+# Un backend neuf par format : les scénarios écrivent (notes, présences…) et
+# ne se rejouent pas sur les mêmes données.
+demarrer_backend() {
+  etape "Backend neuf (profil dev, données de démonstration)"
+  setsid mvn -q -f "$RACINE/backend/pom.xml" spring-boot:run > "$SORTIES/backend.log" 2>&1 < /dev/null &
+  PID_BACKEND=$!
+  attendre "$API/api-docs" "$PID_BACKEND" 300 "outils/videos/sorties/backend.log"
+  echo "Backend prêt."
+}
+arreter_backend() {
+  [ -n "$PID_BACKEND" ] && kill -- "-$PID_BACKEND" 2>/dev/null || true
+  local i
+  for ((i = 0; i < 60; i++)); do repond "$API/api-docs" || break; sleep 1; done
+  PID_BACKEND=""
+}
+demarrer_backend
 
 etape "Frontend"
 if repond "$APPLI"; then
@@ -106,12 +121,19 @@ else
   fi
 fi
 
-etape "Portraits du trombinoscope"
-node preparer-donnees.mjs
-
-etape "Enregistrement"
 resultat=0
-node enregistrer.mjs "$@" || resultat=$?
+premier=1
+for format in ${FORMATS:-telephone ordinateur}; do
+  if [ "$premier" -eq 0 ]; then
+    arreter_backend
+    demarrer_backend
+  fi
+  premier=0
+  etape "Portraits du trombinoscope"
+  node preparer-donnees.mjs
+  etape "Enregistrement, format $format"
+  FORMAT="$format" node enregistrer.mjs "$@" || resultat=$?
+done
 
 FFMPEG="${FFMPEG:-$(command -v ffmpeg || true)}"
 if [ -n "$FFMPEG" ]; then

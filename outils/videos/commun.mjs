@@ -1,5 +1,5 @@
-// Outils communs aux scénarios : navigateur au format téléphone (ou
-// ordinateur pour l'administration), connexion, sous-titres incrustés et
+// Outils communs aux scénarios : navigateur au format téléphone ou
+// ordinateur, connexion, sous-titres incrustés et
 // « toucher » visible (un rond à l'endroit touché), pour qu'on voie à la
 // vidéo ce que l'utilisateur fait avec son doigt ou sa souris.
 
@@ -17,10 +17,11 @@ export const MOT_DE_PASSE = 'plongee2026';
 
 // Pixel 7 : 412 × 839 points utiles. Playwright filme la page à sa taille
 // CSS et ne l'agrandit jamais : une vidéo plus grande que l'écran laisserait
-// la page dans un coin, entourée de gris. L'administration se fait plutôt à
-// un bureau : format ordinateur, 1280 × 800.
+// la page dans un coin, entourée de gris. Format ordinateur : 1280 × 800.
+// Chaque scénario est tourné dans les deux (choix du club, 2026) : la page
+// d'aide montre celui que l'utilisateur choisit.
 const TELEPHONE = devices['Pixel 7'];
-const FORMATS = {
+export const FORMATS = {
   telephone: {
     contexte: TELEPHONE,
     video: { ...TELEPHONE.viewport }
@@ -185,8 +186,15 @@ function aDire(texte) {
  * et `debutVideo` : pour dire chaque sous-titre et noter à quel instant de
  * la vidéo il commence (`pistes`, reprises au montage par monter.mjs).
  */
-export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo = Date.now() } = {}) {
+export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo = Date.now(), format = 'telephone' } = {}) {
   const pause = ms => page.waitForTimeout(ms * RYTHME);
+
+  /**
+   * Chaque scénario est tourné au format téléphone et au format ordinateur
+   * (FORMATS) : `selon({ telephone, ordinateur })` rend la phrase ou la
+   * valeur du format filmé (« « Plus », puis… » / « le menu en haut, … »).
+   */
+  const selon = valeurs => valeurs[format];
 
   // La voix off remplace les sous-titres ; sans voix, ils restent affichés.
   // SOUS_TITRES=1 ou 0 force l'un ou l'autre.
@@ -396,7 +404,7 @@ export function gestes(page, { vignette: cheminVignette, voix = null, debutVideo
   };
 
   return {
-    page, pause, legende, attendreVoix, pistes, toucher, saisir, defiler, enHaut, menu, administration,
+    page, format, selon, pause, legende, attendreVoix, pistes, toucher, saisir, defiler, enHaut, menu, administration,
     choisir, cocher, dater, reseau, vignette, choisirDerniereSeance, choisirSeanceDu, rechercherEtChoisir, suggestion
   };
 }

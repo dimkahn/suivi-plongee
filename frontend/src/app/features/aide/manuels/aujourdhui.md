@@ -15,7 +15,12 @@ En ouvrant l'appli, « Aujourd'hui » réunit la séance du jour (ou la prochain
 
 ## Pas à pas
 
-1. Ouvrez l'appli : vous arrivez sur « Aujourd'hui » (sur téléphone, c'est aussi le premier onglet en bas de l'écran).
+::: telephone
+1. Ouvrez l'appli : vous arrivez sur « Aujourd'hui », qui est aussi le premier onglet en bas de l'écran.
+:::
+::: ordinateur
+1. Ouvrez l'appli : vous arrivez sur « Aujourd'hui », qui est aussi la première entrée du menu en haut.
+:::
 2. En haut, la date et vos groupes d'entraînement. Sans séance aujourd'hui, la page montre la **prochaine séance**.
 3. « Au bassin » : où va chacun de vos groupes ce soir (ligne d'eau, fosse), le DP fosse et le DP piscine. « Vous serez là ? » : un toucher sur « Présent » ou « Absent » répond pour la soirée, comme dans « Planning ».
 4. Dessous, une carte par séance du jour (le lundi : la piscine et la fosse), détaillée ci-dessous.

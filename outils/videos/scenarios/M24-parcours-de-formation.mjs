@@ -10,10 +10,13 @@ export default {
   resume: 'L\'année de chaque niveau étape par étape, les exercices prévus de l\'initiation à la maîtrise (dont les obligatoires pour valider), et la fiche complète de chaque exercice.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, menu, defiler, vignette }) {
+  async jouer({ page, pause, legende, toucher, menu, defiler, vignette, selon }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/`);
     await pause(1200);
-    await legende('Quels exercices faire avec vos élèves ce mois-ci ? Menu « Plus », puis « Parcours ».', 0);
+    await legende(selon({
+      telephone: 'Quels exercices faire avec vos élèves ce mois-ci ? Menu « Plus », puis « Parcours ».',
+      ordinateur: 'Quels exercices faire avec vos élèves ce mois-ci ? Dans le menu en haut, « Parcours ».'
+    }), 0);
     await menu('Parcours');
     await pause(1500);
     await legende('Choisissez le niveau. La progression de la saison en cours s\'ouvre d\'office.', 3500);

@@ -14,10 +14,16 @@ export default {
     const { page, pause, legende, toucher, menu, reseau, vignette, choisirDerniereSeance, defiler } = g;
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('Pas de réseau à la piscine ? Avant de partir, avec du réseau : « Plus », puis « Préparer hors ligne ».', 0);
+    await legende(g.selon({
+      telephone: 'Pas de réseau à la piscine ? Avant de partir, avec du réseau : « Plus », puis « Préparer hors ligne ».',
+      ordinateur: 'Pas de réseau à la piscine ? Avant de partir, avec du réseau : dans le menu en haut, « Préparer hors ligne ».'
+    }), 0);
     await menu('Préparer hors ligne');
     await page.locator('app-bandeau-sync').getByText(/Disponibles hors ligne/).waitFor({ timeout: 30000 });
-    await legende('Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.', 4500);
+    await legende(g.selon({
+      telephone: 'Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.',
+      ordinateur: 'Grilles, feuilles de présence, fiches de sécurité et planning sont sur l\'appareil : au bassin, c\'est le téléphone.'
+    }), 4500);
 
     // Ouvre une fois les écrans en ligne : le code de chaque écran est ainsi
     // déjà chargé quand le réseau disparaît (comme après une première visite).
@@ -38,7 +44,10 @@ export default {
     await toucher(ligne.locator('.etats').getByRole('button', { name: 'Acquis', exact: true }), { apres: 300 });
     await choisirExercice(g, 'Parcours de surface en PMT');
     await pause(1200);
-    await legende('… la note attend sur le téléphone : « En attente d\'envoi ».', 3500);
+    await legende(g.selon({
+      telephone: '… la note attend sur le téléphone : « En attente d\'envoi ».',
+      ordinateur: '… la note attend sur l\'appareil : « En attente d\'envoi ».'
+    }), 3500);
     await vignette();
     await page.locator('app-bandeau-sync').scrollIntoViewIfNeeded().catch(() => {});
     await legende('Le bandeau en haut compte les saisies qui attendent.', 3500);

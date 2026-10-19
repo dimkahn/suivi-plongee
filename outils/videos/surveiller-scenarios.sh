@@ -13,7 +13,8 @@
 # utilisateurs.
 #
 # Un scénario est reconnu à l'empreinte (sha256) de son fichier : en modifier
-# un le fait retourner. Trois scénarios en suivent un autre (voir LISEZ-MOI.md,
+# un le fait retourner, comme lui manquer un de ses deux formats (téléphone,
+# ordinateur : tourner.sh tourne les deux, sur un backend neuf chacun). Trois scénarios en suivent un autre (voir LISEZ-MOI.md,
 # « Pour retourner une vidéo ») : leur prédécesseur est retourné avec eux.
 # Un scénario qui échoue est noté en échec et n'est retenté que quand son
 # fichier change. Si le tournage échoue sans qu'aucun scénario soit en cause
@@ -82,7 +83,7 @@ if [[ "${1:-}" == "--installer" ]]; then
       "$ICI/sorties/" "$DEPOT/outils/videos/sorties/"
     for f in "$ICI"/scenarios/*.mjs; do
       nom="$(basename "$f" .mjs)"
-      [[ -f "$ICI/sorties/$nom.webm" ]] || continue
+      compgen -G "$ICI/sorties/$nom.*webm" > /dev/null || continue
       echo "$nom $(sha256sum < "$f" | cut -d' ' -f1)" >> "$DOSSIER/empreintes"
     done
     echo "Vidéos déjà tournées reprises de $ICI/sorties."
@@ -148,8 +149,14 @@ else
   for f in "$VIDEOS"/scenarios/*.mjs; do
     nom="$(basename "$f" .mjs)"
     ligne="$nom $(empreinte "$nom")"
-    grep -qxF "$ligne" "$DOSSIER/empreintes" && continue
     grep -qxF "$ligne" "$DOSSIER/echecs" && continue
+    # Déjà tourné, et dans les deux formats (téléphone et ordinateur) : rien à faire.
+    # Une vidéo tournée avant les deux formats est ainsi retournée une fois. Un
+    # scénario qui choisit ses formats (« formats: ») n'est pas soumis à cette règle.
+    if grep -qxF "$ligne" "$DOSSIER/empreintes"; then
+      grep -q '^ *formats:' "$f" && continue
+      [[ -f "$SORTIES/$nom.telephone.webm" && -f "$SORTIES/$nom.ordinateur.webm" ]] && continue
+    fi
     A_TOURNER[$nom]=1
   done
 fi
@@ -191,23 +198,46 @@ touch "$repere"
 resultat=0
 "$VIDEOS/tourner.sh" "${NOMS[@]}" > "$DOSSIER/tournage.log" 2>&1 || resultat=$?
 
+# Chaque scénario est tourné au format téléphone et au format ordinateur
+# (<nom>.telephone.webm, <nom>.ordinateur.webm) : réussi si au moins un
+# format est neuf, chaque format neuf a son MP4 et aucun n'a échoué.
+tourne_sans_echec() {
+  local nom="$1" webm neufs=0 echec
+  for echec in "$SORTIES/$nom".*-ECHEC.png; do
+    [[ -f "$echec" && "$echec" -nt "$repere" ]] && return 1
+  done
+  for webm in "$SORTIES/$nom".*.webm; do
+    [[ -f "$webm" && "$webm" -nt "$repere" ]] || continue
+    [[ "${webm%.webm}.mp4" -nt "$webm" ]] || return 1
+    neufs=$((neufs + 1))
+  done
+  [[ $neufs -gt 0 ]]
+}
+echec_neuf() {
+  local echec
+  for echec in "$SORTIES/$1"*-ECHEC.png; do
+    [[ -f "$echec" && "$echec" -nt "$repere" ]] && return 0
+  done
+  return 1
+}
+
 reussis=() ; rates=()
 for nom in "${NOMS[@]}"; do
   ligne="$nom $(empreinte "$nom")"
-  if [[ "$SORTIES/$nom.webm" -nt "$repere" && "$SORTIES/$nom.mp4" -nt "$SORTIES/$nom.webm" ]]; then
+  if tourne_sans_echec "$nom"; then
     reussis+=("$nom")
     grep -v "^$nom " "$DOSSIER/empreintes" > "$DOSSIER/empreintes.tmp" || true
     echo "$ligne" >> "$DOSSIER/empreintes.tmp"
     mv "$DOSSIER/empreintes.tmp" "$DOSSIER/empreintes"
     grep -v "^$nom " "$DOSSIER/echecs" > "$DOSSIER/echecs.tmp" || true
     mv "$DOSSIER/echecs.tmp" "$DOSSIER/echecs"
-  elif [[ -f "$SORTIES/$nom-ECHEC.png" && "$SORTIES/$nom-ECHEC.png" -nt "$repere" ]]; then
+  elif echec_neuf "$nom"; then
     rates+=("$nom")
     grep -qxF "$ligne" "$DOSSIER/echecs" || echo "$ligne" >> "$DOSSIER/echecs"
   fi
 done
 
-[[ ${#rates[@]} -eq 0 ]] || journal "ÉCHEC de ${rates[*]%%-*} : écran au moment du problème dans $SORTIES/<nom>-ECHEC.png, détails dans $DOSSIER/tournage.log. Pas retentés tant que leur fichier ne change pas."
+[[ ${#rates[@]} -eq 0 ]] || journal "ÉCHEC de ${rates[*]%%-*} : écran au moment du problème dans $SORTIES/<nom>.<format>-ECHEC.png, détails dans $DOSSIER/tournage.log. Pas retentés tant que leur fichier ne change pas."
 
 if [[ ${#reussis[@]} -eq 0 ]]; then
   if [[ ${#rates[@]} -eq 0 ]]; then

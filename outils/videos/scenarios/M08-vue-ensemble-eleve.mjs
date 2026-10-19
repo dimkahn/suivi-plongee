@@ -36,7 +36,10 @@ export default {
       page.waitForEvent('download', { timeout: 20000 }).catch(() => null),
       toucher(bouton, { apres: 2500 })
     ]);
-    await legende('Le PDF arrive dans les téléchargements du téléphone. Il demande le réseau.', 4000);
+    await legende(g.selon({
+      telephone: 'Le PDF arrive dans les téléchargements du téléphone. Il demande le réseau.',
+      ordinateur: 'Le PDF arrive dans les téléchargements de l\'ordinateur. Il demande le réseau.'
+    }), 4000);
     await legende(null, 0);
     await pause(500);
   }

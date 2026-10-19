@@ -56,7 +56,7 @@ export default {
     await legende('« Exercices déjà notés » garde chacun avec son état ; touchez-en un pour le noter de nouveau.', 4500);
 
     await legende('Une compétence marquée « En retard » a passé l\'échéance prévue par la progression.', 3500);
-    await legende('Pas de réseau ? La note est gardée sur le téléphone, « En attente d\'envoi ».', 4000);
+    await legende('Pas de réseau ? La note est gardée sur l\'appareil, « En attente d\'envoi ».', 4000);
     await legende(null, 0);
     await pause(500);
   }

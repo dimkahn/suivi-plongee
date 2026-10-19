@@ -28,6 +28,16 @@ VOIX=0 outils/videos/tourner.sh       # sans voix off, sous-titres incrustés à
 SOUS_TITRES=1 outils/videos/tourner.sh  # voix off et sous-titres
 ```
 
+**Deux formats par vidéo** (choix du club, 2026) : chaque scénario est
+tourné au format téléphone (Pixel 7) puis au format ordinateur
+(1280 × 800), chacun sur un backend redémarré, puisque les scénarios ne se
+rejouent pas sur les mêmes données : deux fois plus long. Fichiers
+`<scénario>.telephone.webm` / `.mp4` / `.jpg` / `.json` et
+`<scénario>.ordinateur.…`. Les pages Aide et Vidéos montrent le format que
+l'utilisateur choisit (« Aide pour : Téléphone | Ordinateur »), celui de
+son appareil par défaut, et l'autre s'il n'est pas encore tourné.
+`FORMATS=ordinateur outils/videos/tourner.sh M06` pour un seul format.
+
 Il installe Playwright et Piper (voix off) la première fois, dépose les
 portraits, enregistre, puis monte la voix off et convertit en MP4 si
 `ffmpeg` est trouvé (l'iPhone lit mal le WebM). Sans `ffmpeg`, les vidéos
@@ -45,7 +55,9 @@ cd frontend && npm start                   # 2. frontend sur :4200
 cd outils/videos
 npm install && npx playwright install chromium   # la première fois
 node preparer-donnees.mjs                  # 3. portraits du trombinoscope
-node enregistrer.mjs                       #    toutes les vidéos → sorties/
+node enregistrer.mjs                       #    toutes les vidéos, format téléphone → sorties/
+# puis backend redémarré, preparer-donnees.mjs, et :
+FORMAT=ordinateur node enregistrer.mjs     #    le format ordinateur
 node monter.mjs && node enregistrer.mjs --catalogue   # voix off et MP4 (ffmpeg)
 ```
 
@@ -91,7 +103,7 @@ relit le catalogue à chaque visite. Voir `DEPLOIEMENT.md`, « Vidéos d'aide »
 
 Ou laisser faire la machine : `outils/videos/surveiller-scenarios.sh --installer`
 pose une tâche cron qui, toutes les 5 minutes, tourne et publie les
-scénarios nouveaux ou modifiés de la version en ligne (avec leur
+scénarios nouveaux, modifiés, ou à qui il manque un format, de la version en ligne (avec leur
 prédécesseur pour A7, D7 et D8). Un scénario en échec n'est retenté que
 quand son fichier change ; `~/suivi-plongee-videos/surveiller-scenarios.sh D10`
 le force. Journal : `~/suivi-plongee-videos/journal.log`.
@@ -129,8 +141,8 @@ muette sans le son.
 
 ## Après l'enregistrement
 
-Les vidéos sortent en WebM : 412 × 839 au format téléphone,
-1280 × 800 au format ordinateur (Playwright filme la page à sa taille, sans
+Les vidéos sortent en WebM : 412 × 839 au format téléphone (`<scénario>.telephone.webm`),
+1280 × 800 au format ordinateur (`<scénario>.ordinateur.webm`) (Playwright filme la page à sa taille, sans
 l'agrandir). Le montage (voix off et MP4) se relance seul :
 
 ```bash
@@ -144,10 +156,17 @@ avec `VOIX=0` et enregistrer la voix dans n'importe quel éditeur vidéo
 ## Ajouter une vidéo
 
 Un fichier `scenarios/Xnn-titre.mjs` qui exporte `{ id, titre, public,
-resume, compte, format?, jouer }` ; `public` est une des rubriques de la
+resume, compte, format?, formats?, jouer }` ; `public` est une des rubriques de la
 page (`Découverte`, `Moniteur`, `Administrateur`, `Directeur technique`,
-`Élève`), `format` vaut `telephone` (par défaut) ou `ordinateur`. `jouer`
-reçoit les gestes de `commun.mjs` : `legende` (phrase dite par la voix off, ou sous-titre sans voix, qui devient
+`Élève`). Le scénario est tourné aux deux formats : `formats: ['ordinateur']`
+pour s'en tenir à un seul (déconseillé : l'aide montre alors l'autre format) ;
+`format` (`telephone` par défaut, ou `ordinateur`) ne dit plus que le format
+de ses anciens fichiers, tournés avant les deux formats. `jouer` reçoit
+`format` (celui qu'on filme) et `selon({ telephone: '…', ordinateur: '…' })`
+pour une phrase ou un geste propre à chaque format (« « Plus », puis
+« Séjours » » au téléphone, « Dans le menu en haut, « Séjours » » à
+l'ordinateur ; `menu` sait déjà ouvrir l'un ou l'autre), et les gestes de
+`commun.mjs` : `legende` (phrase dite par la voix off, ou sous-titre sans voix, qui devient
 aussi le texte de la vidéo), `toucher`, `saisir`, `choisir`, `cocher`,
 `dater`, `menu`, `administration`, `reseau`, `vignette` (image d'aperçu)…
 et `grille.mjs` a des repères pour la grille de compétences. La vidéo

@@ -1,10 +1,12 @@
-import { Component, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { ChoixFormatAideComponent } from '../../core/choix-format-aide.component';
+import { FormatAideService, fichiersVideo } from '../../core/format-aide';
 import { Video, chargerCatalogue, dureeVideo, urlVideo } from '../videos/catalogue';
-import { Manuel } from './manuel';
+import { Manuel, blocsDuFormat } from './manuel';
 
 /**
  * Un manuel d'utilisation affiché en entier : réponse courte, vidéos d'aide,
@@ -14,7 +16,7 @@ import { Manuel } from './manuel';
  */
 @Component({
   selector: 'app-manuel',
-  imports: [RouterLink, NgTemplateOutlet],
+  imports: [RouterLink, NgTemplateOutlet, ChoixFormatAideComponent],
   template: `
     <ng-template #texte let-segments>@for (s of segments; track $index) {@if (s.lien) {<a [routerLink]="s.lien" (click)="lienSuivi.emit()">{{ s.texte }}</a>} @else if (s.gras) {<strong>{{ s.texte }}</strong>} @else {<ng-container>{{ s.texte }}</ng-container>}}</ng-template>
 
@@ -28,24 +30,35 @@ import { Manuel } from './manuel';
         <p><a class="bouton-principal ouvrir-ecran" [routerLink]="m.ecran" (click)="lienSuivi.emit()">Ouvrir l'écran</a></p>
       }
 
+      @if (m.videos.length || m.parFormat) {
+        <p class="format"><app-choix-format-aide /></p>
+      }
+
       @if (m.videos.length) {
         <section class="videos" aria-label="Vidéos d'aide">
           @for (id of m.videos; track id) {
             @if (video(id); as v) {
+              @let f = fichiers(v);
               <figure class="carte">
-                @if (v.webm || v.mp4) {
-                  <video controls playsinline preload="none" [muted]="!v.voix"
-                         [class.ordinateur]="v.format === 'ordinateur'"
-                         [attr.poster]="v.vignette ? url(v.vignette, v) : null">
-                    @if (v.mp4) { <source [src]="url(v.mp4, v)" type="video/mp4"> }
-                    @if (v.webm) { <source [src]="url(v.webm, v)" type="video/webm"> }
-                  </video>
+                @if (f) {
+                  <!-- @for sur une seule valeur : un autre format recrée le lecteur (les <source> ne se relisent pas). -->
+                  @for (lecteur of [f]; track lecteur.webm ?? lecteur.mp4) {
+                    <video controls playsinline preload="none" [muted]="!lecteur.voix"
+                           [class.ordinateur]="lecteur.format === 'ordinateur'"
+                           [attr.poster]="lecteur.vignette ? url(lecteur.vignette, lecteur) : null">
+                      @if (lecteur.mp4) { <source [src]="url(lecteur.mp4, lecteur)" type="video/mp4"> }
+                      @if (lecteur.webm) { <source [src]="url(lecteur.webm, lecteur)" type="video/webm"> }
+                    </video>
+                  }
+                  @if (f.format !== formatAide.format()) {
+                    <p class="autre-format">Pas encore de version {{ f.format === 'telephone' ? 'ordinateur' : 'téléphone' }} : voici celle {{ f.format === 'telephone' ? 'du téléphone' : 'de l\\'ordinateur' }}.</p>
+                  }
                 } @else {
                   <p class="a-venir">Vidéo à venir</p>
                 }
                 <figcaption>
                   <span class="code">{{ v.id }}</span> {{ v.titre }}
-                  @if (v.duree) { <span class="duree">· {{ duree(v.duree) }}</span> }
+                  @if (f?.duree; as d) { <span class="duree">· {{ duree(d) }}</span> }
                 </figcaption>
               </figure>
             } @else if (catalogueAbsent()) {
@@ -57,13 +70,13 @@ import { Manuel } from './manuel';
         </section>
       }
 
-      @for (b of m.blocs; track $index) {
+      @for (b of blocs(); track $index) {
         @switch (b.type) {
           @case ('titre') { <h2>{{ b.texte }}</h2> }
           @case ('paragraphe') { <p><ng-container *ngTemplateOutlet="texte; context: { $implicit: b.segments }" /></p> }
           @case ('liste') {
             @if (b.ordonnee) {
-              <ol>@for (e of b.elements; track $index) { <li><ng-container *ngTemplateOutlet="texte; context: { $implicit: e }" /></li> }</ol>
+              <ol [attr.start]="b.debut ?? null">@for (e of b.elements; track $index) { <li><ng-container *ngTemplateOutlet="texte; context: { $implicit: e }" /></li> }</ol>
             } @else {
               <ul>@for (e of b.elements; track $index) { <li><ng-container *ngTemplateOutlet="texte; context: { $implicit: e }" /></li> }</ul>
             }
@@ -103,6 +116,8 @@ import { Manuel } from './manuel';
     }
     .duree { color: var(--craie); font-weight: 400; }
     .a-venir { color: var(--craie); font-weight: 700; margin: 0; }
+    .format { margin: var(--pas-2) 0 0; }
+    .autre-format { margin: 0; max-width: 480px; color: var(--craie); font-size: .875rem; }
     .questions { margin-top: var(--pas-3); }
     .questions summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
     @media (max-width: 600px) {
@@ -113,6 +128,7 @@ import { Manuel } from './manuel';
 export class ManuelComponent {
   private http = inject(HttpClient);
   protected auth = inject(AuthService);
+  protected formatAide = inject(FormatAideService);
 
   manuel = input.required<Manuel>();
   /** Faux dans la fenêtre « Comment faire ? », qui porte déjà le titre. */
@@ -136,7 +152,15 @@ export class ManuelComponent {
     return this.videos().get(id) ?? null;
   }
 
-  url(fichier: string, v: Video): string {
+  /** Les passages du manuel pour le format choisi (« Plus » sur téléphone, le menu en haut sur ordinateur). */
+  blocs = computed(() => blocsDuFormat(this.manuel(), this.formatAide.format()));
+
+  /** La vidéo dans le format choisi, sinon dans l'autre. */
+  fichiers(v: Video) {
+    return fichiersVideo(v, this.formatAide.format());
+  }
+
+  url(fichier: string, v: { version?: string | null }): string {
     return urlVideo(fichier, v);
   }
 

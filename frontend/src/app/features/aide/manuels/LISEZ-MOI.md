@@ -53,6 +53,23 @@ Le premier paragraphe est la réponse courte, affichée sous la question.
   comptent triple dans la recherche, avec le titre et les mots.
 - Dans le texte : titres `##`, listes `-` ou `1.`, `**gras**`,
   `[texte](/adresse)` (liens vers l'appli seulement).
+- **Passage propre au téléphone ou à l'ordinateur** : entre une ligne
+  `::: telephone` (ou `::: ordinateur`) et une ligne `:::`. L'aide montre
+  celui du format choisi (« Aide pour : Téléphone | Ordinateur », celui de
+  l'appareil par défaut), comme la vidéo tournée dans ce format. Une étape
+  numérotée y garde son numéro :
+
+  ```markdown
+  ::: telephone
+  1. « Plus », en bas de l'écran, puis « Séjours ».
+  :::
+  ::: ordinateur
+  1. Dans le menu en haut, « Séjours ».
+  :::
+  2. Touchez le séjour.
+  ```
+
+  Le premier paragraphe (la réponse courte) reste commun aux deux.
 
 Rester court : une page de téléphone, des phrases simples, les noms des
 boutons entre « guillemets » tels qu'ils sont à l'écran. Pas de nom réel :

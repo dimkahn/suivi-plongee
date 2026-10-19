@@ -13,7 +13,10 @@ export default {
     const { page, pause, legende, toucher, saisir, menu, rechercherEtChoisir, vignette } = g;
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('Un séjour, c\'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Séjours ».', 0);
+    await legende(g.selon({
+      telephone: 'Un séjour, c\'est plusieurs plongées avec les mêmes plongeurs. « Plus », puis « Séjours ».',
+      ordinateur: 'Un séjour, c\'est plusieurs plongées avec les mêmes plongeurs. Dans le menu en haut, « Séjours ».'
+    }), 0);
     await menu('Séjours');
     await legende('En haut de la page : « Groupes de plongeurs ».', 0);
     await toucher(page.getByRole('link', { name: /Groupes de plongeurs/ }), { apres: 1200 });

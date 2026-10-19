@@ -30,6 +30,24 @@ export interface Video {
    * en cache.
    */
   version?: string | null;
+  /**
+   * Chaque vidéo est tournée au format téléphone et au format ordinateur :
+   * leurs fichiers, null pour un format pas encore tourné. Absent d'un
+   * catalogue d'avant les deux formats (seuls les champs ci-dessus, dans
+   * `format`). Lire avec `fichiersVideo` (core/format-aide.ts).
+   */
+  formats?: Partial<Record<'telephone' | 'ordinateur', FichiersVideo | null>>;
+}
+
+/** Les fichiers d'une vidéo dans un format. */
+export interface FichiersVideo {
+  webm: string | null;
+  mp4: string | null;
+  vignette: string | null;
+  duree: number | null;
+  texte?: string[];
+  voix?: boolean;
+  version?: string | null;
 }
 
 export interface Catalogue {
@@ -42,8 +60,8 @@ export function chargerCatalogue(http: HttpClient): Promise<Catalogue> {
   return firstValueFrom(http.get<Catalogue>(DOSSIER_VIDEOS + 'catalogue.json'));
 }
 
-/** Adresse d'un fichier (vidéo ou aperçu) de la vidéo `v`, avec sa version. */
-export function urlVideo(fichier: string, v: Video): string {
+/** Adresse d'un fichier (vidéo ou aperçu) de la vidéo `v` (ou de ses fichiers d'un format), avec sa version. */
+export function urlVideo(fichier: string, v: { version?: string | null }): string {
   return DOSSIER_VIDEOS + encodeURIComponent(fichier) + (v.version ? '?v=' + encodeURIComponent(v.version) : '');
 }
 

@@ -9,7 +9,7 @@ export default {
   resume: 'En ouvrant l\'appli : où va son groupe au bassin, sa réponse de présence, et de quoi faire l\'appel, préparer le programme et la fiche de sécurité.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, vignette }) {
+  async jouer({ page, pause, legende, toucher, vignette, format }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/`);
     await pause(1500);
     await legende('En ouvrant l\'appli, « Aujourd\'hui » : la séance du jour, ou la prochaine.', 3500);
@@ -38,8 +38,13 @@ export default {
     await legende('Le premier bouton ouvre la feuille de présence de la séance, filtrée sur votre groupe.', 0);
     await toucher(carte.locator('.actions a').first(), { apres: 2500 });
 
-    await legende('Sur téléphone, « Aujourd\'hui » est aussi le premier onglet, en bas de l\'écran.', 0);
-    await toucher(page.locator('nav.onglets').getByText('Aujourd’hui', { exact: true }), { apres: 2000 });
+    if (format === 'telephone') {
+      await legende('Sur téléphone, « Aujourd\'hui » est aussi le premier onglet, en bas de l\'écran.', 0);
+      await toucher(page.locator('nav.onglets').getByText('Aujourd’hui', { exact: true }), { apres: 2000 });
+    } else {
+      await legende('« Aujourd\'hui » est aussi la première entrée du menu, en haut.', 0);
+      await toucher(page.locator('#menu-principal').getByText('Aujourd’hui', { exact: true }), { apres: 2000 });
+    }
     await legende('Après « Préparer hors ligne », la page s\'ouvre même sans réseau.', 3500);
     await legende(null, 0);
     await pause(500);

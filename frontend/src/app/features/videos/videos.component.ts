@@ -2,6 +2,8 @@ import { Component, ElementRef, computed, inject, signal, viewChild, ChangeDetec
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { ChoixFormatAideComponent } from '../../core/choix-format-aide.component';
+import { FormatAideService, fichiersVideo } from '../../core/format-aide';
 import { manuelDeLaVideo } from '../aide/manuels';
 import { Catalogue, Video, chargerCatalogue, dureeVideo, urlVideo } from './catalogue';
 
@@ -21,7 +23,7 @@ const PRESENTATION: Record<string, string> = {
  */
 @Component({
   selector: 'app-videos',
-  imports: [RouterLink],
+  imports: [RouterLink, ChoixFormatAideComponent],
   template: `
     <h1>Vidéos d'aide</h1>
     <p class="secondaire intro">
@@ -29,6 +31,10 @@ const PRESENTATION: Record<string, string> = {
       les élèves et les encadrants qu'on y voit sont fictifs.
     </p>
     <p class="intro"><a routerLink="/aide">Une question ? Cherchez dans l'aide : le manuel de chaque écran, avec sa vidéo.</a></p>
+    <p class="intro">
+      Chaque vidéo existe au format téléphone et au format ordinateur :
+      <app-choix-format-aide />
+    </p>
 
     @if (etat() === 'chargement') {
       <p class="vide">Chargement…</p>
@@ -49,14 +55,15 @@ const PRESENTATION: Record<string, string> = {
           @if (presentation(r.nom); as p) { <p class="secondaire">{{ p }}</p> }
           <ul class="videos">
             @for (v of r.videos; track v.id) {
+              @let f = fichiers(v);
               <li class="carte">
-                <button type="button" class="lire" [disabled]="!v.webm && !v.mp4" (click)="ouvrir(v)"
+                <button type="button" class="lire" [disabled]="!f" (click)="ouvrir(v)"
                         [attr.aria-label]="'Voir la vidéo : ' + v.titre">
-                  <span class="apercu" [class.ordinateur]="v.format === 'ordinateur'">
-                    @if (v.vignette) {
-                      <img [src]="url(v.vignette, v)" alt="" loading="lazy">
+                  <span class="apercu" [class.ordinateur]="(f?.format ?? formatAide.format()) === 'ordinateur'">
+                    @if (f?.vignette; as vignette) {
+                      <img [src]="url(vignette, f!)" alt="" loading="lazy">
                     }
-                    @if (v.webm || v.mp4) {
+                    @if (f) {
                       <span class="icone-lecture" aria-hidden="true">▶</span>
                     } @else {
                       <span class="a-venir">À venir</span>
@@ -65,7 +72,10 @@ const PRESENTATION: Record<string, string> = {
                   <span class="texte">
                     <span class="titre"><span class="code">{{ v.id }}</span> {{ v.titre }}</span>
                     <span class="secondaire">{{ v.resume }}</span>
-                    @if (v.duree) { <span class="duree">{{ duree(v.duree) }}</span> }
+                    @if (f?.duree; as d) { <span class="duree">{{ duree(d) }}</span> }
+                    @if (f && f.format !== formatAide.format()) {
+                      <span class="duree">Version {{ f.format === 'telephone' ? 'téléphone' : 'ordinateur' }} seulement, pour l'instant</span>
+                    }
                   </span>
                 </button>
               </li>
@@ -81,22 +91,32 @@ const PRESENTATION: Record<string, string> = {
           <h2 id="titre-lecteur">{{ v.titre }}</h2>
           <button type="button" class="bouton-discret" (click)="lecteur.close()">Fermer</button>
         </div>
-        <video controls autoplay playsinline [muted]="!v.voix" [class.ordinateur]="v.format === 'ordinateur'"
-               [attr.poster]="v.vignette ? url(v.vignette, v) : null">
-          @if (v.mp4) { <source [src]="url(v.mp4, v)" type="video/mp4"> }
-          @if (v.webm) { <source [src]="url(v.webm, v)" type="video/webm"> }
-        </video>
-        <p class="secondaire">{{ v.resume }}</p>
-        @if (manuel(v); as m) {
-          <p><a class="lien-manuel" [routerLink]="['/aide']" [queryParams]="{ m: m.id }">Lire le manuel : {{ m.titre }}</a></p>
-        }
-        @if (v.texte?.length) {
-          <details class="transcription">
-            <summary>Le texte de la vidéo</summary>
-            <ol>
-              @for (t of v.texte; track $index) { <li>{{ t }}</li> }
-            </ol>
-          </details>
+        <app-choix-format-aide />
+        @if (fichiers(v); as f) {
+          <!-- @for sur une seule valeur : changer de format recrée le lecteur (les <source> ne se relisent pas). -->
+          @for (lecteurVideo of [f]; track lecteurVideo.webm ?? lecteurVideo.mp4) {
+            <video controls autoplay playsinline [muted]="!lecteurVideo.voix"
+                   [class.ordinateur]="lecteurVideo.format === 'ordinateur'"
+                   [attr.poster]="lecteurVideo.vignette ? url(lecteurVideo.vignette, lecteurVideo) : null">
+              @if (lecteurVideo.mp4) { <source [src]="url(lecteurVideo.mp4, lecteurVideo)" type="video/mp4"> }
+              @if (lecteurVideo.webm) { <source [src]="url(lecteurVideo.webm, lecteurVideo)" type="video/webm"> }
+            </video>
+          }
+          @if (f.format !== formatAide.format()) {
+            <p class="secondaire">Pas encore de version {{ formatAide.format() === 'telephone' ? 'téléphone' : 'ordinateur' }} : voici l'autre.</p>
+          }
+          <p class="secondaire">{{ v.resume }}</p>
+          @if (manuel(v); as m) {
+            <p><a class="lien-manuel" [routerLink]="['/aide']" [queryParams]="{ m: m.id }">Lire le manuel : {{ m.titre }}</a></p>
+          }
+          @if (f.texte?.length) {
+            <details class="transcription">
+              <summary>Le texte de la vidéo</summary>
+              <ol>
+                @for (t of f.texte; track $index) { <li>{{ t }}</li> }
+              </ol>
+            </details>
+          }
         }
       }
     </dialog>
@@ -171,6 +191,7 @@ export class VideosComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   protected auth = inject(AuthService);
+  protected formatAide = inject(FormatAideService);
 
   lecteur = viewChild.required<ElementRef<HTMLDialogElement>>('lecteur');
 
@@ -205,8 +226,13 @@ export class VideosComponent {
     }
   }
 
-  url(fichier: string, v: Video): string {
+  url(fichier: string, v: { version?: string | null }): string {
     return urlVideo(fichier, v);
+  }
+
+  /** La vidéo dans le format choisi, sinon dans l'autre ; null si elle n'est pas tournée. */
+  fichiers(v: Video) {
+    return fichiersVideo(v, this.formatAide.format());
   }
 
   manuel(v: Video) {
@@ -230,7 +256,7 @@ export class VideosComponent {
   }
 
   ouvrir(v: Video): void {
-    if (!v.webm && !v.mp4) return;
+    if (!this.fichiers(v)) return;
     this.enLecture.set(v);
     this.lecteur().nativeElement.showModal();
     void this.router.navigate([], { queryParams: { v: v.id }, replaceUrl: true });

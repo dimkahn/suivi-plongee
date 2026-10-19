@@ -13,8 +13,14 @@ Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer
 
 ## Pas à pas
 
-1. Avant de partir, avec du réseau : « Plus » en bas de l'écran (sur ordinateur : le menu en haut), puis « Préparer hors ligne ».
+::: telephone
+1. Avant de partir, avec du réseau : « Plus » en bas de l'écran, puis « Préparer hors ligne ».
 2. Grilles des élèves, feuilles de présence et fiches de sécurité des séances proches, moniteurs, groupes et planning sont copiés sur le téléphone.
+:::
+::: ordinateur
+1. Avant de partir, avec du réseau : dans le menu en haut, « Préparer hors ligne ». Au bord du bassin, c'est le plus souvent sur le téléphone qu'on le fait.
+2. Grilles des élèves, feuilles de présence et fiches de sécurité des séances proches, moniteurs, groupes et planning sont copiés sur l'appareil.
+:::
 3. Au bassin, sans réseau : l'appli s'ouvre quand même. « Grille consultée hors ligne » rappelle qu'on voit la version embarquée.
 4. Notez et faites l'appel comme d'habitude : chaque saisie attend, « En attente d'envoi ».
 5. Le bandeau en haut compte les saisies qui attendent.

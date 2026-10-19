@@ -7,10 +7,13 @@ export default {
   resume: 'Toute la saison sur un écran : progression, CACI, séances suivies, contacts d\'urgence.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut }) {
+  async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, selon }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1200);
-    await legende('« Infos élèves », l\'onglet « Élèves » sur téléphone : toute la saison sur un seul écran.', 3500);
+    await legende(selon({
+      telephone: '« Infos élèves », l\'onglet « Élèves » sur téléphone : toute la saison sur un seul écran.',
+      ordinateur: '« Infos élèves », dans le menu en haut : toute la saison sur un seul écran.'
+    }), 3500);
     await page.locator('table').scrollIntoViewIfNeeded();
     await legende('Sous chaque nom, la barre de progression de sa formation : la part des critères acquis.', 0);
     await page.locator('.avancement').first().scrollIntoViewIfNeeded();
@@ -18,7 +21,10 @@ export default {
     await legende('Pour chaque élève : son niveau préparé et son CACI.', 3500);
     await legende('CACI : vert, plus d\'un mois ; orange, moins d\'un mois ; rouge, moins de 15 jours ; ⚠ expiré.', 5000);
 
-    await legende('Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.', 0);
+    await legende(selon({
+      telephone: 'Faites glisser le tableau vers la gauche : séances bloc et nage, puis chaque date.',
+      ordinateur: 'Plus large que l\'écran, le tableau défile sur le côté : séances bloc et nage, puis chaque date.'
+    }), 0);
     const tableau = page.locator('table').locator('xpath=..');
     for (let i = 0; i < 6; i++) {
       await tableau.evaluate(el => el.scrollBy({ left: 90, behavior: 'smooth' }));

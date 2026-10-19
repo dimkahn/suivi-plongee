@@ -13,7 +13,10 @@ export default {
     const { page, pause, legende, toucher, saisir, menu, rechercherEtChoisir, suggestion, vignette, defiler } = g;
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('« Plus », puis « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.', 0);
+    await legende(g.selon({
+      telephone: '« Plus », puis « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.',
+      ordinateur: 'Dans le menu en haut, « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.'
+    }), 0);
     await menu('Fiches de sécurité');
     await legende('On retrouve la séance par sa date.', 0);
     await toucher(page.locator('#filtre-date'), { apres: 900 });

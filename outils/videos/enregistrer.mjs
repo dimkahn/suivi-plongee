@@ -5,22 +5,36 @@
 // la transcription de la page et le texte de voix off de SCENARIOS.md,
 // réécrit à chaque passage.
 //
-//   node enregistrer.mjs              tous les scénarios
+//   node enregistrer.mjs              tous les scénarios, format téléphone
+//   FORMAT=ordinateur node enregistrer.mjs   tous, format ordinateur
 //   node enregistrer.mjs M03 A        M03 et toute la série administrateur
 //   RYTHME=1.5 node enregistrer.mjs   pauses 50 % plus longues
 //   node enregistrer.mjs --catalogue  réécrit seulement catalogue.json
 //                                     (après une conversion en MP4)
 //
+// Chaque scénario se tourne au format téléphone et au format ordinateur
+// (choix du club, 2026 ; `formats` du scénario pour s'en tenir à un seul) :
+// <nom>.telephone.webm et <nom>.ordinateur.webm, avec leur .json et leur
+// .jpg. Un format par passage : tourner.sh redémarre le backend entre les deux.
+//
 // Prérequis : backend en profil dev redémarré, puis `node preparer-donnees.mjs`,
 // frontend sur http://localhost:4200 (ou tout faire avec tourner.sh). Les
 // scénarios sont écrits pour être tournés dans n'importe quel ordre sur les
-// mêmes données, mais pas deux fois : pour retourner une vidéo, repartir d'un
-// backend redémarré.
+// mêmes données, mais pas deux fois : pour retourner une vidéo, ou tourner
+// l'autre format, repartir d'un backend redémarré.
 
 import { readdir, readFile, rename, mkdir, rm, writeFile, stat } from 'node:fs/promises';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ouvrirTournage, ouvrirVoix, gestes } from './commun.mjs';
+import { FORMATS, ouvrirTournage, ouvrirVoix, gestes } from './commun.mjs';
+
+/** Les formats d'un scénario : les deux, sauf s'il en désigne lui-même. */
+const formatsDe = s => s.formats ?? Object.keys(FORMATS);
+const FORMAT = process.env.FORMAT ?? 'telephone';
+if (!FORMATS[FORMAT]) {
+  console.error(`FORMAT=${FORMAT} inconnu : ${Object.keys(FORMATS).join(' ou ')}.`);
+  process.exit(1);
+}
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const SORTIES = join(ICI, 'sorties');
@@ -53,21 +67,23 @@ const voix = await ouvrirVoix(join(SORTIES, 'voix'));
 
 for (const fichier of fichiers) {
   const scenario = (await import(`./scenarios/${fichier}`)).default;
-  const nom = fichier.replace(/\.mjs$/, '');
+  if (!formatsDe(scenario).includes(FORMAT)) continue;
+  // « M06-valider-une-competence.telephone » : un jeu de fichiers par format.
+  const nom = `${fichier.replace(/\.mjs$/, '')}.${FORMAT}`;
   const brouillon = join(SORTIES, `.${nom}`);
   const cheminVignette = join(SORTIES, `${nom}.jpg`);
-  process.stdout.write(`${scenario.id} — ${scenario.titre}… `);
+  process.stdout.write(`${scenario.id} (${FORMAT}) — ${scenario.titre}… `);
 
   await rm(join(SORTIES, `${nom}-ECHEC.png`), { force: true });
   const { navigateur, contexte, page, debutVideo } = await ouvrirTournage({
     compte: scenario.compte, connecte: scenario.connecte ?? true,
-    format: scenario.format ?? 'telephone', dossier: brouillon
+    format: FORMAT, dossier: brouillon
   });
   const debut = Date.now();
   let vignettePrise = false;
   const texte = [];
   try {
-    const g = gestes(page, { vignette: cheminVignette, voix, debutVideo });
+    const g = gestes(page, { vignette: cheminVignette, voix, debutVideo, format: FORMAT });
     const vignette = g.vignette;
     g.vignette = async () => { vignettePrise = true; await vignette(); };
     const legende = g.legende;
@@ -102,35 +118,37 @@ await ecrireCatalogue();
 process.exit(echecs ? 1 : 0);
 
 /**
- * catalogue.json : tous les scénarios, rangés par public, avec les fichiers
- * déjà tournés (vidéo WebM, MP4 s'il existe, image d'aperçu, durée). Un
- * scénario pas encore tourné y figure sans vidéo : la page l'annonce « à venir ».
+ * catalogue.json : tous les scénarios, rangés par public. `formats` donne,
+ * pour le téléphone et l'ordinateur, les fichiers déjà tournés (vidéo WebM,
+ * MP4 s'il existe, image d'aperçu, durée, texte) ; un format pas encore
+ * tourné vaut null, et la page l'annonce « à venir ». Les champs à plat
+ * (webm, mp4…) reprennent le premier format tourné : l'appli d'avant le
+ * choix du format, encore en ligne pendant une publication, les lit.
  */
 async function ecrireCatalogue() {
   const existe = async f => stat(join(SORTIES, f)).then(() => true, () => false);
   const videos = [];
   for (const fichier of tous) {
     const s = (await import(`./scenarios/${fichier}`)).default;
-    const nom = fichier.replace(/\.mjs$/, '');
-    const tournee = await existe(`${nom}.webm`);
-    let duree = null, texte = [], sonore = false;
-    if (tournee && await existe(`${nom}.json`)) {
-      ({ duree, texte = [], sonore = false } = JSON.parse(await readFile(join(SORTIES, `${nom}.json`), 'utf8')));
+    const base = fichier.replace(/\.mjs$/, '');
+    const formats = {};
+    for (const format of formatsDe(s)) {
+      formats[format] = await fichiersDuFormat(`${base}.${format}`, existe);
+      // Tournage d'avant les deux formats (« <nom>.webm », dans le format du scénario) :
+      // gardé jusqu'à ce que ce format soit retourné.
+      if (!formats[format] && (s.format ?? 'telephone') === format) {
+        formats[format] = await fichiersDuFormat(base, existe);
+      }
     }
-    // Version : date de la dernière écriture des fichiers de la vidéo. La page
-    // l'ajoute à leur adresse, pour qu'une vidéo retournée ne soit pas lue
-    // dans le cache du navigateur (Caddy laisse les vidéos en cache).
-    const dates = await Promise.all([`${nom}.webm`, `${nom}.mp4`, `${nom}.jpg`]
-      .map(f => stat(join(SORTIES, f)).then(i => i.mtimeMs, () => 0)));
-    const derniere = Math.max(...dates);
+    const [formatPrincipal, principal] = Object.entries(formats).find(([, f]) => f) ?? [formatsDe(s)[0], null];
     videos.push({
       id: s.id, titre: s.titre, public: s.public, resume: s.resume,
-      format: s.format ?? 'telephone',
-      webm: tournee ? `${nom}.webm` : null,
-      mp4: await existe(`${nom}.mp4`) ? `${nom}.mp4` : null,
-      vignette: await existe(`${nom}.jpg`) ? `${nom}.jpg` : null,
-      duree, texte, voix: sonore, compte: s.compte,
-      version: derniere ? Math.round(derniere).toString(36) : null
+      format: formatPrincipal,
+      webm: principal?.webm ?? null, mp4: principal?.mp4 ?? null, vignette: principal?.vignette ?? null,
+      duree: principal?.duree ?? null, texte: principal?.texte ?? [], voix: principal?.voix ?? false,
+      version: principal?.version ?? null,
+      formats: Object.fromEntries(Object.entries(formats).map(([f, v]) => [f, v && { ...v, format: undefined }])),
+      compte: s.compte
     });
   }
   const ordre = v => [PUBLICS.indexOf(v.public), v.id.replace(/\d+/, n => n.padStart(3, '0'))];
@@ -143,6 +161,30 @@ async function ecrireCatalogue() {
     videos: videos.map(({ compte, ...v }) => v)
   }, null, 2));
   await ecrireScenarios(videos);
+}
+
+/** Fichiers tournés sous le nom `nom` (sans extension), ou null s'il n'y a pas de vidéo. */
+async function fichiersDuFormat(nom, existe) {
+  if (!await existe(`${nom}.webm`)) return null;
+  let duree = null, texte = [], sonore = false;
+  if (await existe(`${nom}.json`)) {
+    ({ duree, texte = [], sonore = false } = JSON.parse(await readFile(join(SORTIES, `${nom}.json`), 'utf8')));
+  }
+  // Version : date de la dernière écriture des fichiers de la vidéo. La page
+  // l'ajoute à leur adresse, pour qu'une vidéo retournée ne soit pas lue
+  // dans le cache du navigateur (Caddy laisse les vidéos en cache).
+  const dates = await Promise.all([`${nom}.webm`, `${nom}.mp4`, `${nom}.jpg`]
+    .map(f => stat(join(SORTIES, f)).then(i => i.mtimeMs, () => 0)));
+  const derniere = Math.max(...dates);
+  const format = /\.(telephone|ordinateur)$/.exec(nom)?.[1];
+  return {
+    format,
+    webm: `${nom}.webm`,
+    mp4: await existe(`${nom}.mp4`) ? `${nom}.mp4` : null,
+    vignette: await existe(`${nom}.jpg`) ? `${nom}.jpg` : null,
+    duree, texte, voix: sonore,
+    version: derniere ? Math.round(derniere).toString(36) : null
+  };
 }
 
 /** SCENARIOS.md : le plan de chaque vidéo et son texte, pour tourner ou commenter soi-même. */
@@ -170,16 +212,24 @@ async function ecrireScenarios(videos) {
     if (liste.length === 0) continue;
     lignes.push(`## ${rubrique}`, '');
     for (const v of liste) {
-      const format = v.format === 'ordinateur' ? 'ordinateur' : 'téléphone';
+      const noms = { telephone: 'téléphone', ordinateur: 'ordinateur' };
+      const formats = Object.keys(v.formats).map(f => noms[f]).join(' et ');
       const manuel = manuels.get(v.id);
       lignes.push(`### ${v.id} — ${v.titre}`, '', v.resume, '',
-        `Compte : \`${v.compte}\` · format ${format}` + (v.duree ? ` · ${v.duree} s` : '')
-          + (manuel ? ` · manuel : \`${manuel}\`` : ''), '');
+        `Compte : \`${v.compte}\` · format${Object.keys(v.formats).length > 1 ? 's' : ''} ${formats}`
+          + (v.duree ? ` · ${v.duree} s` : '') + (manuel ? ` · manuel : \`${manuel}\`` : ''), '');
       if (v.texte.length === 0) {
         lignes.push('_Pas encore tournée : le texte viendra au premier enregistrement._', '');
       } else {
         v.texte.forEach((t, i) => lignes.push(`${i + 1}. ${t}`));
         lignes.push('');
+        // L'autre format, quand sa voix off diffère (« Plus » sur téléphone, le menu en haut sur ordinateur).
+        for (const [f, fichiers] of Object.entries(v.formats)) {
+          if (f === v.format || !fichiers?.texte?.length || fichiers.texte.join('\n') === v.texte.join('\n')) continue;
+          lignes.push(`Au format ${noms[f]} :`, '');
+          fichiers.texte.forEach((t, i) => lignes.push(`${i + 1}. ${t}`));
+          lignes.push('');
+        }
       }
     }
   }

@@ -12,7 +12,7 @@ export default {
   resume: 'Déposer sa photo, retrouver son niveau et son CACI, changer son e-mail ou son mot de passe.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, defiler, enHaut, menu }) {
+  async jouer({ page, pause, legende, toucher, defiler, enHaut, menu, format, selon }) {
     // Portrait dessiné de Flora, préparé avant le tournage.
     const [png] = await dessinerPortraits([[9, 'longue']]);
     const fichier = join(await mkdtemp(join(tmpdir(), 'portrait-')), 'ma-photo.png');
@@ -20,8 +20,13 @@ export default {
 
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1200);
-    await legende('Votre compte : « Plus », en bas de l\'écran, puis votre nom.', 0);
-    await toucher(page.locator('nav.onglets').getByRole('button', { name: 'Plus' }), { apres: 700 });
+    await legende(selon({
+      telephone: 'Votre compte : « Plus », en bas de l\'écran, puis votre nom.',
+      ordinateur: 'Votre compte : votre nom, dans le menu en haut.'
+    }), 0);
+    if (format === 'telephone') {
+      await toucher(page.locator('nav.onglets').getByRole('button', { name: 'Plus' }), { apres: 700 });
+    }
     await toucher(page.locator('#menu-principal a.qui'), { apres: 1500 });
 
     await legende('En haut : votre niveau d\'encadrement et la date de votre CACI.', 3500);
@@ -29,7 +34,10 @@ export default {
 
     await legende('Votre photo apparaît dans le trombinoscope des moniteurs.', 3000);
     await legende('La déposer vaut accord pour cet affichage ; vous pouvez la retirer à tout moment.', 3500);
-    await legende('« Prendre une photo » ouvre l\'appareil photo ; « Choisir dans mes photos », la galerie du téléphone.', 0);
+    await legende(selon({
+      telephone: '« Prendre une photo » ouvre l\'appareil photo ; « Choisir dans mes photos », la galerie du téléphone.',
+      ordinateur: '« Choisir dans mes photos » prend une photo de l\'ordinateur ; au téléphone, « Prendre une photo » ouvre l\'appareil photo.'
+    }), 0);
     const [choix] = await Promise.all([
       page.waitForEvent('filechooser'),
       toucher(page.getByText('Choisir dans mes photos'), { apres: 300 })

@@ -9,10 +9,13 @@ export default {
   resume: 'Blocs, détendeurs, gilets et combinaisons : leur état, et ce qui arrive à échéance.',
   compte: 'e3@club.fr',
 
-  async jouer({ page, pause, legende, toucher, saisir, menu, defiler, enHaut, vignette }) {
+  async jouer({ page, pause, legende, toucher, saisir, menu, defiler, enHaut, vignette, selon }) {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await legende('Le directeur technique a une entrée de plus sous « Plus » : « Matériel ».', 0);
+    await legende(selon({
+      telephone: 'Le directeur technique a une entrée de plus sous « Plus » : « Matériel ».',
+      ordinateur: 'Le directeur technique a une entrée de plus dans le menu en haut : « Matériel ».'
+    }), 0);
     await menu('Matériel');
     await legende('En haut, les compteurs : disponible, prêté, à régulariser, hors service.', 3500);
     await vignette();

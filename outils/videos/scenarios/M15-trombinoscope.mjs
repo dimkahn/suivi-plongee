@@ -7,10 +7,13 @@ export default {
   resume: 'Mettre un nom sur un visage : élèves par groupe et encadrants du club.',
   compte: 'e2@club.fr',
 
-  async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, menu }) {
+  async jouer({ page, pause, legende, toucher, saisir, defiler, enHaut, menu, selon }) {
     await page.goto(`${process.env.APPLI ?? 'http://localhost:4200'}/eleves`);
     await pause(1000);
-    await legende('Mettre un nom sur un visage : « Plus », puis « Trombinoscope ».', 0);
+    await legende(selon({
+      telephone: 'Mettre un nom sur un visage : « Plus », puis « Trombinoscope ».',
+      ordinateur: 'Mettre un nom sur un visage : dans le menu en haut, « Trombinoscope ».'
+    }), 0);
     await menu('Trombinoscope');
 
     await legende('Les élèves de la saison, rangés par groupe d\'entraînement.', 0);

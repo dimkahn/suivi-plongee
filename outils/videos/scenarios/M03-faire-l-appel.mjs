@@ -85,7 +85,7 @@ export default {
     } else {
       await pause(3500);
     }
-    await legende('Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.', 4000);
+    await legende('Sans réseau, les choix restent sur l\'appareil et partent au retour du réseau.', 4000);
     await legende(null, 0);
     await pause(500);
   }
