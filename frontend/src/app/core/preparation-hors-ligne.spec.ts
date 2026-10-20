@@ -1,4 +1,7 @@
-import { CONTENUS_HORS_LIGNE, choixDeLaFormule, formuleDuChoix, resumePreparation, seancesAEmbarquer } from './preparation-hors-ligne';
+import {
+  CONTENUS_HORS_LIGNE, choixDeLaFormule, formuleDuChoix, journeeAEmporter, resumePreparation, resumePreparationSurface,
+  seancesAEmbarquer
+} from './preparation-hors-ligne';
 
 describe('Préparer hors ligne', () => {
   beforeEach(() => vi.useFakeTimers({ now: new Date(2026, 9, 20, 18) }));
@@ -42,6 +45,20 @@ describe('Préparer hors ligne', () => {
       .toBe('Disponibles hors ligne : 12 grilles, 3 feuilles de présence, 3 fiches de sécurité, 20 photos.');
     expect(resumePreparation({ grilles: null, feuilles: null, fiches: 0, photos: null }))
       .toBe("Aucune fiche de sécurité à emporter : pas de séance sur la période choisie.");
+  });
+
+  it('Sécurité surface : la journée de plongée à emporter est aujourd\'hui, sinon la prochaine de ses séances', () => {
+    expect(journeeAEmporter(seances)).toBe('2026-10-20');
+    expect(journeeAEmporter([{ id: 3, date: '2026-11-15' }, { id: 2, date: '2026-10-21' }, { id: 4, date: '2026-09-25' }]))
+      .toBe('2026-10-21');
+    expect(journeeAEmporter([{ id: 4, date: '2026-09-25' }])).toBeNull();
+  });
+
+  it('Sécurité surface : le bilan nomme la journée emportée, ou dit qu\'il n\'y a rien à venir', () => {
+    expect(resumePreparationSurface('2026-10-21', 2)).toBe('Disponibles hors ligne : 2 fiches de sécurité du 21/10/2026.');
+    expect(resumePreparationSurface('2026-10-21', 0))
+      .toBe('Aucune fiche de sécurité établie pour le 21/10/2026 : réessayez quand le directeur de plongée l\'aura faite.');
+    expect(resumePreparationSurface(null, 0)).toBe('Aucune séance à venir ne vous est confiée.');
   });
 
   it('Période « aujourd\'hui » : les seules séances du jour ; « proches » : à moins de 30 jours', () => {

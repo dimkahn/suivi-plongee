@@ -18,7 +18,7 @@ import {
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 import {
-  BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, seancesAEmbarquer
+  BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, journeeAEmporter, resumePreparationSurface, seancesAEmbarquer
 } from './preparation-hors-ligne';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
@@ -216,6 +216,22 @@ export class ApiService {
       .flatMap(p => p.exercices.filter(e => e.schemaId != null).map(e => [e.schemaId!, p.seanceId] as const))));
     for (const [schemaId, seanceId] of schemasLibres) await this.tenter(() => this.schemaProgramme(seanceId, schemaId));
     return bilan;
+  }
+
+  /**
+   * « Préparer hors ligne » d'un compte de sécurité surface : juste la liste
+   * de ses séances (le serveur ne renvoie qu'elles) et les fiches établies de
+   * sa journée de plongée (`journeeAEmporter`), rien d'autre. Rend le bilan à afficher.
+   */
+  async prechargerSecuriteSurface(): Promise<string> {
+    const seances = await firstValueFrom(this.http.get<SeanceVue[]>('/api/seances'));
+    await this.deposer('seances', seances);
+    const journee = journeeAEmporter(seances);
+    let fiches = 0;
+    for (const s of seances.filter(s => s.date === journee && s.ficheSecurite)) {
+      if (await this.tenter(() => this.ficheSecurite(s.id))) fiches++;
+    }
+    return resumePreparationSurface(journee, fiches);
   }
 
   async dateDuCache(cle: string): Promise<number | null> {

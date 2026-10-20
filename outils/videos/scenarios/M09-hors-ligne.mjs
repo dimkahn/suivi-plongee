@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-20, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 13e série, la sécurité surface emporte sa journée (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -66,6 +66,7 @@ export default {
     await ligne.scrollIntoViewIfNeeded();
     await legende('… et tout part tout seul. Rien à faire.', 4000);
     await legende('Si le serveur refuse une note (règle du MFT), un bandeau le dit : rien ne se perd en silence.', 5000);
+    await legende('Un compte de sécurité surface, lui, n\'a rien à choisir : il emporte les fiches de sa journée de plongée.', 4500);
     await legende(null, 0);
     await pause(500);
   }

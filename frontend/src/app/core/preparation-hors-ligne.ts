@@ -91,6 +91,26 @@ export function resumePreparation(bilan: BilanPreparation): string {
     + morceaux.map(([n, s, p]) => pluriel(n, s, p)).join(', ') + '.';
 }
 
+/**
+ * Sécurité surface : pas de choix à faire, on emporte les fiches de ses
+ * séances d'une journée de plongée, aujourd'hui, sinon la prochaine (on
+ * prépare souvent la veille au soir) ; null s'il n'y en a plus.
+ */
+export function journeeAEmporter<S extends { date: string }>(seances: S[]): string | null {
+  const aVenir = seances.map(s => s.date).filter(d => ecartEnJours(d) >= 0).sort();
+  return aVenir[0] ?? null;
+}
+
+export function resumePreparationSurface(journee: string | null, fiches: number): string {
+  if (!journee) return 'Aucune séance à venir ne vous est confiée.';
+  const [a, m, j] = journee.split('-');
+  const jour = `${j}/${m}/${a}`;
+  if (fiches === 0) {
+    return `Aucune fiche de sécurité établie pour le ${jour} : réessayez quand le directeur de plongée l'aura faite.`;
+  }
+  return `${fiches > 1 ? 'Disponibles' : 'Disponible'} hors ligne : ${pluriel(fiches, 'fiche de sécurité', 'fiches de sécurité')} du ${jour}.`;
+}
+
 export function seancesAEmbarquer<S extends { date: string }>(seances: S[], periode: PeriodeHorsLigne): S[] {
   const limite = periode === 'jour' ? 0 : JOURS_SEANCES_PROCHES;
   return seances.filter(s => Math.abs(ecartEnJours(s.date)) <= limite);

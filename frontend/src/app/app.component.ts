@@ -101,6 +101,12 @@ const ICONES = {
               <button type="button" class="bouton-discret" (click)="preparation.ouvrir(); fermerMenu()">
                 Préparer hors ligne
               </button>
+            } @else if (auth.estSecuriteSurface() && !auth.estAdmin()) {
+              <!-- Sécurité surface : pas de choix, les fiches de sa journée de plongée. -->
+              <button type="button" class="bouton-discret" (click)="bandeau?.prechargerSecuriteSurface(); fermerMenu()"
+                      title="Copie sur l'appareil les fiches de sécurité de votre journée de plongée">
+                Préparer hors ligne
+              </button>
             }
             <a routerLink="/aide" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()"
                title="Questions fréquentes, manuels et vidéos d'aide">

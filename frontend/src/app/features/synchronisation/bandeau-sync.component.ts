@@ -120,4 +120,15 @@ export class BandeauSyncComponent {
     }
     setTimeout(() => this.message.set(null), 5000);
   }
+
+  /** Sécurité surface : pas de choix, les fiches de sa journée de plongée. */
+  async prechargerSecuriteSurface(): Promise<void> {
+    this.message.set('Préparation du mode hors ligne…');
+    try {
+      this.message.set(await this.api.prechargerSecuriteSurface());
+    } catch {
+      this.message.set('Le préchargement a échoué. Réessayez avec du réseau.');
+    }
+    setTimeout(() => this.message.set(null), 6000);
+  }
 }

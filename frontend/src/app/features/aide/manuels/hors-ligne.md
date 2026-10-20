@@ -2,7 +2,7 @@
 titre: Travailler sans réseau au bord du bassin
 rubrique: Découverte
 videos: M9
-mots: hors ligne, réseau, internet, wifi, 4G, connexion, synchronisation, attente d'envoi, préparer, piscine, déconnexion, se déconnecter, fiche de sécurité du jour, séance du jour, sur mesure, photos, choisir, emporter, rapide
+mots: hors ligne, réseau, internet, wifi, 4G, connexion, synchronisation, attente d'envoi, préparer, piscine, déconnexion, se déconnecter, fiche de sécurité du jour, séance du jour, sur mesure, photos, choisir, emporter, rapide, sécurité surface, bateau, veille
 questions:
 - Pas de réseau à la piscine, comment faire ?
 - Que veut dire « En attente d'envoi » ?
@@ -10,6 +10,7 @@ questions:
 - À quoi sert « Préparer hors ligne » ?
 - Je n'ai besoin que de la fiche de sécurité du jour, comment aller plus vite ?
 - Peut-on choisir ce qui est disponible hors ligne ?
+- Sécurité surface : comment compléter la fiche sans réseau sur le bateau ?
 ---
 Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer hors ligne », puis choisissez ce que vous emportez (tout, la séance du jour ou la seule fiche de sécurité du jour). Au bassin, l'appli s'ouvre et note sans réseau ; tout part seul au retour du réseau.
 
@@ -35,6 +36,7 @@ Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer
 ## Bon à savoir
 
 - Ce que vous n'avez pas emporté ne s'ouvre pas sans réseau : l'écran le dit et propose « Préparer hors ligne ». Ce qui a été copié lors d'une préparation précédente reste disponible.
+- **Sécurité surface** : « Plus », puis « Préparer hors ligne », sans fenêtre de choix. L'appli copie juste ce qu'il faut pour la journée : la liste de vos séances et les fiches de sécurité établies de votre journée de plongée (aujourd'hui, ou la prochaine si vous préparez la veille). Le bandeau dit combien de fiches sont copiées ; si le directeur de plongée n'a pas encore établi la fiche, recommencez plus tard.
 - Une photo dont le droit à l'image a été retiré est effacée du téléphone à chaque préparation, même si vous n'emportez pas les photos.
 
 - Si le serveur refuse une saisie (règle du MFT, par exemple), un bandeau le dit : **rien ne se perd en silence**.

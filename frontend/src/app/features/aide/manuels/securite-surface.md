@@ -3,7 +3,7 @@ titre: Comptes de sécurité surface
 rubrique: Administrateur
 videos: A18
 ecran: /admin/securite-surface
-mots: sécurité surface, pas moniteur, bateau, compte, créer, séance, sortie, séjour, fiche de sécurité, compléter, retour de plongée, date de fin, fin d'accès, désactiver, réactiver, expiration, lien, mot de passe
+mots: sécurité surface, pas moniteur, bateau, compte, créer, séance, sortie, séjour, fiche de sécurité, compléter, retour de plongée, date de fin, fin d'accès, désactiver, réactiver, expiration, lien, mot de passe, hors ligne, sans réseau
 questions:
 - Comment créer un compte pour la sécurité surface, qui n'est pas moniteur ?
 - Comment limiter un compte de sécurité surface à une sortie ou à quelques séances ?
@@ -26,4 +26,5 @@ Administration, « Sécurité surface » : un compte pour une personne qui n'est
 - Chaque compte affiche ses séances et sa date de fin d'accès ; « Accès terminé » une fois la date passée.
 - « Réactiver » : pour une autre sortie, choisissez les nouvelles séances et une nouvelle date de fin d'accès. Son mot de passe reste le même.
 - « Modifier » change le nom, l'e-mail, les séances ou la date d'un compte actif ; « Désactiver » met fin à l'accès avant la date prévue ; « Supprimer » efface le compte (ce qu'elle a saisi sur les fiches reste).
-- Réseau obligatoire pour cet écran.
+- Sans réseau sur le bateau : avant de partir (la veille au soir suffit), elle touche « Plus », puis « Préparer hors ligne ». L'appli copie les fiches établies de sa journée de plongée, rien d'autre ; ce qu'elle complète en mer part seul au retour du réseau (voir « Travailler sans réseau au bord du bassin »).
+- Réseau obligatoire pour cet écran d'administration.
