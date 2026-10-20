@@ -1,15 +1,18 @@
 package fr.club.plongee.sejour;
 
+import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.sejour.SejourService.SensTrajet;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -86,6 +89,29 @@ public class CartesEmbarquementService {
                 (rs, i) -> new ContenuCarte(rs.getBytes(1), rs.getString(2)));
         if (cartes.isEmpty()) throw new RessourceIntrouvableException("Pas de carte d'embarquement pour ce voyage");
         return cartes.getFirst();
+    }
+
+    /** Chaque nuit, à 3 h 30 (heure du club) : les cartes des séjours finis. */
+    @Scheduled(cron = "0 30 3 * * *", zone = "Europe/Paris")
+    public void effacerChaqueNuit() {
+        effacerApresLeSejour(Calendrier.aujourdhui());
+    }
+
+    /**
+     * Une carte ne sert plus après le voyage : effacée le lendemain de la fin
+     * du séjour, ou du retour du voyageur s'il rentre plus tard (demande du
+     * club, 2026 : elle porte son nom et son code d'embarquement).
+     * Renvoie le nombre de cartes effacées.
+     */
+    @Transactional
+    public int effacerApresLeSejour(LocalDate aujourdhui) {
+        return jdbc.update("""
+                DELETE FROM sejour_carte_embarquement WHERE participant_id IN (
+                    SELECT p.id FROM sejour_participant p JOIN sortie s ON s.id = p.sortie_id
+                     WHERE s.date_fin < :jour
+                       AND (p.depart_date IS NULL OR p.depart_date < :jour)
+                       AND (p.depart_date_arrivee IS NULL OR p.depart_date_arrivee < :jour))""",
+                new MapSqlParameterSource("jour", aujourdhui));
     }
 
     /**

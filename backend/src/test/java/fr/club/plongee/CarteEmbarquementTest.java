@@ -1,5 +1,6 @@
 package fr.club.plongee;
 
+import fr.club.plongee.sejour.CartesEmbarquementService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +46,7 @@ class CarteEmbarquementTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired CartesEmbarquementService cartes;
 
     private String jeton(String email) throws Exception {
         String reponse = mvc.perform(post("/api/auth/connexion").contentType(MediaType.APPLICATION_JSON)
@@ -224,6 +226,35 @@ class CarteEmbarquementTest {
                  "participantIds":[%d]}""".formatted(AUJOURDHUI.plusDays(350), leo), 200);
 
         assertThat(participant(s, "Léo").get("arrivee").get("carteEmbarquement").isNull()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Les cartes d'embarquement sont effacées le lendemain de la fin du séjour, ou du retour s'il est plus tard")
+    void effaceesApresLeSejour() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, 360);
+        LocalDate fin = AUJOURDHUI.plusDays(360 + 8);
+        JsonNode s = envoyer("GET", base, dt, null, 200);
+        long camille = participant(s, "Camille").get("id").asLong(), leo = participant(s, "Léo").get("id").asLong();
+        // Léo rentre deux jours après la fin du séjour.
+        envoyer("PUT", base + "/trajets", dt, """
+                {"sens":"DEPART","trajet":{"date":"%s","heure":"09:00","transport":"AVION","numero":"TX541"},
+                 "participantIds":[%d]}""".formatted(fin.plusDays(2), leo), 200);
+        deposer(base + "/participants/" + camille + "/cartes-embarquement/ARRIVEE", dt, "c.pdf", "application/pdf", PDF, 200);
+        deposer(base + "/participants/" + leo + "/cartes-embarquement/DEPART", dt, "l.pdf", "application/pdf", PDF, 200);
+
+        cartes.effacerApresLeSejour(fin);
+        s = envoyer("GET", base, dt, null, 200);
+        assertThat(participant(s, "Camille").get("arrivee").get("carteEmbarquement").asText()).isEqualTo("application/pdf");
+
+        cartes.effacerApresLeSejour(fin.plusDays(1));
+        s = envoyer("GET", base, dt, null, 200);
+        assertThat(participant(s, "Camille").get("arrivee").get("carteEmbarquement").isNull()).isTrue();
+        assertThat(participant(s, "Léo").get("depart").get("carteEmbarquement").asText()).isEqualTo("application/pdf");
+
+        cartes.effacerApresLeSejour(fin.plusDays(3));
+        s = envoyer("GET", base, dt, null, 200);
+        assertThat(participant(s, "Léo").get("depart").get("carteEmbarquement").isNull()).isTrue();
     }
 
     @Test

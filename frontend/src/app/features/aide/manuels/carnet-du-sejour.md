@@ -17,6 +17,7 @@ questions:
 - Où noter mon numéro de dossier et m'enregistrer pour mon vol ?
 - Quand ouvre l'enregistrement de mon vol, et à quel terminal ?
 - Où mettre ma carte d'embarquement pour la montrer à l'aéroport ?
+- Combien de temps ma carte d'embarquement est-elle gardée ?
 - J'ai emprunté un gilet du club pour le séjour : où le noter ?
 ---
 Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, votre voiture, votre chambre, le programme jour par jour, les affaires à prévoir et les frais partagés. **Élèves** : les comptes élèves ne sont pas encore ouverts au club ; passez par le lien de l'e-mail « Vos informations pour le séjour » (voir « Mon séjour, par le lien reçu par e-mail »).
@@ -41,7 +42,7 @@ Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, vo
 - L'encart « Aujourd'hui » suit la date de votre téléphone. Pas d'heure de départ pour votre avion aller ? Il vous invite à la donner : sans elle, il ne peut pas calculer l'heure d'arrivée à l'aéroport. Les délais sont des conseils : suivez ceux de votre billet s'ils diffèrent.
 - Pas de palanquée sous une plongée ? La fiche de sécurité n'est pas encore établie, ou vous n'y figurez pas : voyez le directeur de plongée. Vous ne voyez que votre palanquée.
 - Votre vol a changé ? « Modifier mes informations » : l'organisateur voit tout de suite la mise à jour. Votre nom ou votre e-mail, c'est lui qui les corrige.
-- Vous ne voyez ni le téléphone ni le régime des autres participants. Votre numéro de dossier et votre lien d'enregistrement ne sont vus que par vous et les organisateurs du séjour (ils permettent de modifier le billet) ; ils ne sont jamais imprimés. Il en va de même pour votre carte d'embarquement : PDF, JPEG ou PNG, 5 Mo au plus (une photo est recodée par le téléphone avant l'envoi, sans l'endroit où elle a été prise). Montrer la carte demande du réseau : à l'aéroport sans connexion, gardez aussi le PDF ou l'application de la compagnie.
+- Vous ne voyez ni le téléphone ni le régime des autres participants. Votre numéro de dossier et votre lien d'enregistrement ne sont vus que par vous et les organisateurs du séjour (ils permettent de modifier le billet) ; ils ne sont jamais imprimés. Il en va de même pour votre carte d'embarquement : PDF, JPEG ou PNG, 5 Mo au plus (une photo est recodée par le téléphone avant l'envoi, sans l'endroit où elle a été prise). Elle est **effacée automatiquement le lendemain de la fin du séjour** (ou de votre retour, si vous rentrez plus tard). Montrer la carte demande du réseau : à l'aéroport sans connexion, gardez aussi le PDF ou l'application de la compagnie.
 - L'appli ne lit rien chez la compagnie : terminal, heures et ouverture de l'enregistrement sont ceux que vous ou l'organisateur avez saisis. Un retard ou un changement de terminal se vérifie sur le site de la compagnie ou à l'aéroport.
 - Vous pouvez aussi passer par le lien de l'e-mail « Vos informations pour le séjour », avec un code reçu par e-mail.
 - Sans compte, le carnet arrive aussi par e-mail quand l'organisateur l'envoie.
