@@ -40,12 +40,18 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
       @if (t.dossier || lien()) {
         <div class="reservation">
           @if (t.dossier) {
-            <span>Dossier <strong class="dossier">{{ t.dossier }}</strong></span>
-            <button type="button" class="bouton-discret" (click)="copier(t.dossier)">{{ copie() ? 'Copié' : 'Copier' }}</button>
+            <p class="ligne-dossier">N° de dossier <strong class="dossier">{{ t.dossier }}</strong></p>
           }
-          @if (lien(); as l) {
-            <a class="bouton-principal" [href]="l.adresse" target="_blank" rel="noopener noreferrer">{{ l.libelle }} ↗</a>
-          }
+          <div class="boutons">
+            @if (t.dossier) {
+              <button type="button" class="bouton-discret" (click)="copier(t.dossier)" aria-live="polite">
+                {{ copie() ? '✓ Copié' : 'Copier le dossier' }}
+              </button>
+            }
+            @if (lien(); as l) {
+              <a class="bouton-principal" [href]="l.adresse" target="_blank" rel="noopener noreferrer">{{ l.libelle }} ↗</a>
+            }
+          </div>
         </div>
       }
     </article>
@@ -72,12 +78,15 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
                   padding: 0 6px; background: #F8FAFC; color: var(--profond); font-size: 1.125rem; }
     .moyen { margin: var(--pas) 0 0; font-weight: 700; }
     .conseil { margin: 2px 0 0; font-size: .875rem; color: var(--craie); }
-    .reservation { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas);
-                   padding-top: var(--pas); border-top: 1px dashed var(--trait); }
-    .dossier { font-family: ui-monospace, monospace; letter-spacing: .08em; }
-    .reservation button, .reservation a { min-height: 44px; }
-    .reservation a { margin-left: auto; display: inline-flex; align-items: center; text-decoration: none; }
-    @media (max-width: 380px) { .reservation a { margin-left: 0; width: 100%; justify-content: center; } }
+    .reservation { margin-top: var(--pas); padding-top: var(--pas); border-top: 1px dashed var(--trait); }
+    .ligne-dossier { margin: 0 0 var(--pas); }
+    .dossier { font-family: ui-monospace, monospace; font-size: 1.125rem; letter-spacing: .08em; }
+    /* Les deux gestes côte à côte, même largeur, sous le dossier ; l'un sous l'autre sur un petit écran. */
+    .boutons { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--pas); }
+    .boutons button, .boutons a { min-height: 44px; margin: 0; width: 100%; box-sizing: border-box;
+                                  display: inline-flex; align-items: center; justify-content: center;
+                                  text-align: center; text-decoration: none; }
+    @media (max-width: 340px) { .boutons { grid-auto-flow: row; } }
     @media print { .reservation { display: none; } }
   `]
 })

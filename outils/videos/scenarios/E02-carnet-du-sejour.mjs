@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-20, 22e série, ses vols en carte dans « Mon séjour » (terminal, enregistrement, dossier et lien), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 23e série, ses vols en carte dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -34,7 +34,7 @@ export default {
 
     await legende('« Mon séjour » : ses vols aller et retour, chacun dans une carte. L\'heure de départ et celle d\'arrivée, le terminal, le vol et sa compagnie.', 5000);
     await page.locator('app-carte-voyage').first().scrollIntoViewIfNeeded();
-    await legende('Quand ouvre l\'enregistrement en ligne, son numéro de dossier à copier, et le bouton pour s\'enregistrer. Le dossier n\'est vu que par elle et les organisateurs.', 5500);
+    await legende('Quand ouvre l\'enregistrement en ligne, son numéro de dossier, et dessous deux boutons : « Copier le dossier » et « S\'enregistrer ». Le dossier n\'est vu que par elle et les organisateurs.', 5500);
     await legende('Puis une case par sujet : sa voiture, sa chambre, ses comptes, ses informations.', 4000);
     await legende('En orange, une question : « Avez-vous emprunté du matériel du club ? ». Elle a pris une combinaison : « Oui, je déclare mon matériel ».', 0);
     await toucher(page.getByRole('button', { name: 'Oui, je déclare mon matériel' }), { apres: 1500 });
