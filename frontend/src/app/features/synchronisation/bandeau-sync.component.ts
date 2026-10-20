@@ -4,7 +4,8 @@ import { FileAttenteService, SaisieRefusee } from '../../core/file-attente.servi
 import { EcritureRefusee, FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
 import { DateFrPipe } from '../../core/date-fr';
-import { PlurielPipe, pluriel } from '../../core/pluriel';
+import { PlurielPipe } from '../../core/pluriel';
+import { ChoixHorsLigne, resumePreparation } from '../../core/preparation-hors-ligne';
 
 /**
  * Trois informations, par ordre d'urgence décroissante :
@@ -110,13 +111,10 @@ export class BandeauSyncComponent {
     void this.file.ecarterRefus(refus.referenceClient);
   }
 
-  async precharger(): Promise<void> {
+  async precharger(choix: ChoixHorsLigne): Promise<void> {
     this.message.set('Préparation du mode hors ligne…');
     try {
-      const { grilles, feuilles, fiches, photos } = await this.api.precharger();
-      this.message.set(`Disponibles hors ligne : ${pluriel(grilles, 'grille')}, `
-        + `${pluriel(feuilles, 'feuille')} de présence, ${pluriel(fiches, 'fiche')} de sécurité, `
-        + `${pluriel(photos, 'photo')}.`);
+      this.message.set(resumePreparation(await this.api.precharger(choix)));
     } catch {
       this.message.set('Le préchargement a échoué. Réessayez avec du réseau.');
     }

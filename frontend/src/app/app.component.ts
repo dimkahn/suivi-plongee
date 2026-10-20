@@ -7,6 +7,7 @@ import { MiseAJourService } from './core/mise-a-jour.service';
 import { IdentiteService } from './core/identite.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 import { BarrePageComponent } from './core/barre-page.component';
+import { PreparerHorsLigneComponent } from './features/synchronisation/preparer-hors-ligne.component';
 
 /**
  * Tag déployé, fixé à la compilation (`ng build --define`, voir le
@@ -35,7 +36,7 @@ const ICONES = {
 
 @Component({
   selector: 'app-racine',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, BarrePageComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, BarrePageComponent, PreparerHorsLigneComponent],
   host: { '(document:keydown.escape)': 'fermerMenu()' },
   template: `
     @if (pret()) {
@@ -97,7 +98,7 @@ const ICONES = {
             }
             <span class="separateur" aria-hidden="true"></span>
             @if (auth.estMoniteur()) {
-              <button type="button" class="bouton-discret" (click)="bandeau?.precharger(); fermerMenu()">
+              <button type="button" class="bouton-discret" (click)="preparation.ouvrir(); fermerMenu()">
                 Préparer hors ligne
               </button>
             }
@@ -141,6 +142,7 @@ const ICONES = {
       }
 
       <app-bandeau-sync />
+      <app-preparer-hors-ligne #preparation (preparer)="bandeau?.precharger($event)" />
 
       <main [class.avec-onglets]="auth.connecte()"><app-barre-page /><router-outlet /></main>
       <footer class="version" [class.avec-onglets]="auth.connecte()">Version {{ version }}</footer>

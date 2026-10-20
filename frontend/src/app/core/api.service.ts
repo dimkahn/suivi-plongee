@@ -17,18 +17,11 @@ import {
   SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue, EtatValidationVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
+import {
+  BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, seancesAEmbarquer
+} from './preparation-hors-ligne';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
-
-/** Feuilles de présence et fiches de sécurité embarquées hors ligne : séances à moins de tant de jours d'aujourd'hui. */
-const JOURS_FEUILLES_HORS_LIGNE = 30;
-
-function ecartEnJours(dateIso: string): number {
-  const [a, m, j] = dateIso.split('-').map(Number);
-  const aujourdhui = new Date();
-  const debut = Date.UTC(aujourdhui.getFullYear(), aujourdhui.getMonth(), aujourdhui.getDate());
-  return (Date.UTC(a, m - 1, j) - debut) / 86_400_000;
-}
 
 interface DemandeSeance {
   dateSeance: string;
@@ -151,66 +144,78 @@ export class ApiService {
   }
 
   /**
-   * Amorce du mode hors ligne : un seul appel ramène les cursus, les séances
-   * et toutes les grilles de la saison, puis alimente le cache local. À
-   * déclencher pendant qu'on a encore du réseau, avant de partir en bord de
-   * bassin ou sur le bateau.
+   * Amorce du mode hors ligne, selon ce que le moniteur a choisi d'emporter
+   * (voir `core/preparation-hors-ligne.ts`). Les grilles arrivent en un seul
+   * appel avec les cursus et les séances. À déclencher pendant qu'on a encore
+   * du réseau, avant de partir en bord de bassin ou sur le bateau.
    */
-  async precharger(): Promise<{ grilles: number; feuilles: number; fiches: number; photos: number }> {
-    const paquet = await firstValueFrom(
-      this.http.get<Paquet>('/api/synchronisation/paquet'));
+  async precharger(choix: ChoixHorsLigne): Promise<BilanPreparation> {
+    const veut = (c: ContenuHorsLigne) => choix.contenus.has(c);
+    const bilan: BilanPreparation = { grilles: null, feuilles: null, fiches: null, photos: null };
 
-    await this.deposer('cursus', paquet.cursus);
-    await this.deposer('seances', paquet.seances);
-    for (const g of paquet.grilles) {
-      await this.deposer(`grille:${g.cursusId}`, g);
+    // Séances et saisons servent à tous les écrans : toujours embarquées.
+    let seances: SeanceVue[];
+    let grilles: GrilleVue[] = [];
+    if (veut('grilles')) {
+      const paquet = await firstValueFrom(this.http.get<Paquet>('/api/synchronisation/paquet'));
+      await this.deposer('cursus', paquet.cursus);
+      await this.deposer('seances', paquet.seances);
+      for (const g of paquet.grilles) await this.deposer(`grille:${g.cursusId}`, g);
+      seances = paquet.seances;
+      grilles = paquet.grilles;
+      bilan.grilles = grilles.length;
+    } else {
+      seances = await firstValueFrom(this.http.get<SeanceVue[]>('/api/seances'));
+      await this.deposer('seances', seances);
+    }
+    const saisons = await this.tenter(() => this.saisonsHorsLigne());
+    await this.tenter(() => this.groupesEntrainementSaisonOuverte());
+
+    // Un échec ici n'empêche pas le reste.
+    if (veut('grilles') || veut('fiches')) await this.tenter(() => this.moniteursActifs());
+    if (veut('presences')) await this.tenter(() => this.progressionsDeLaSaison());
+    if (veut('planning')) await this.tenter(() => this.planningHorsLigne());
+    if (veut('eleves')) await this.tenter(() => this.roster());
+    // De quoi composer les palanquées sur site : plongeurs connus, groupes de la saison ouverte.
+    if (veut('fiches')) {
+      await this.tenter(() => this.plongeursConnus());
+      const ouverte = saisons?.find(s => s.ouverte);
+      if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
     }
 
-    // De quoi composer les palanquées sur site : DP possibles, plongeurs
-    // connus, groupes de la saison ouverte. Un échec ici n'empêche pas le reste.
-    await this.tenter(() => this.moniteursActifs());
-    await this.tenter(() => this.plongeursConnus());
-    await this.tenter(() => this.progressionsDeLaSaison());
-    await this.tenter(() => this.planningHorsLigne());
-    await this.tenter(() => this.roster());
-    await this.tenter(() => this.groupesEntrainementSaisonOuverte());
-    const saisons = await this.tenter(() => this.saisonsHorsLigne());
-    const ouverte = saisons?.find(s => s.ouverte);
-    if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
-
-    // Feuilles de présence et fiches de sécurité des séances proches : celle
-    // du jour, celles qu'on rattrape, et celles préparées d'avance.
-    let feuilles = 0;
-    let fiches = 0;
-    for (const s of paquet.seances) {
-      if (Math.abs(ecartEnJours(s.date)) > JOURS_FEUILLES_HORS_LIGNE) continue;
-      if (await this.tenter(() => this.feuillePresence(s.id))) feuilles++;
-      if (await this.tenter(() => this.ficheSecurite(s.id))) fiches++;
+    // Feuilles de présence et fiches de sécurité des séances du jour, ou
+    // proches : celles qu'on rattrape, et celles préparées d'avance.
+    if (veut('presences')) bilan.feuilles = 0;
+    if (veut('fiches')) bilan.fiches = 0;
+    for (const s of seancesAEmbarquer(seances, choix.periode)) {
+      if (veut('presences') && await this.tenter(() => this.feuillePresence(s.id))) bilan.feuilles!++;
+      if (veut('fiches') && await this.tenter(() => this.ficheSecurite(s.id))) bilan.fiches!++;
     }
 
     // Trombinoscopes et photos. Une photo dont le consentement a été retiré
-    // depuis le dernier préchargement est effacée du téléphone.
-    let photos = 0;
+    // depuis le dernier préchargement est effacée du téléphone, même si on
+    // n'emporte pas les photos cette fois.
     const eleves = await this.tenter(() => this.trombinoscope()) ?? [];
     const moniteurs = await this.tenter(() => this.trombinoscopeMoniteurs()) ?? [];
     const aCharger = [
       ...eleves.map(l => ({ cle: `photo-eleve:${l.eleveId}`, aPhoto: l.aPhoto, lire: () => this.photoEleve(l.eleveId) })),
       ...moniteurs.map(m => ({ cle: `photo-moniteur:${m.id}`, aPhoto: m.aPhoto, lire: () => this.photoMoniteur(m.id) }))
     ];
+    if (veut('photos')) bilan.photos = 0;
     for (const p of aCharger) {
       if (!p.aPhoto) await supprimer(MAGASIN_CACHE, p.cle);
-      else if (await this.tenter(p.lire)) photos++;
+      else if (veut('photos') && await this.tenter(p.lire)) bilan.photos!++;
     }
 
     // Schémas des exercices de la base, pour les montrer au bord du bassin.
-    const schemas = new Set(paquet.grilles.flatMap(g => g.blocs.flatMap(b => b.exercices ?? []))
+    const schemas = new Set(grilles.flatMap(g => g.blocs.flatMap(b => b.exercices ?? []))
       .filter(e => e.aSchema).map(e => e.id));
     for (const id of schemas) await this.tenter(() => this.schemaExercice(id));
     // Et ceux des exercices libres du programme des séances.
-    const schemasLibres = new Map(paquet.grilles.flatMap(g => (g.programmes ?? [])
+    const schemasLibres = new Map(grilles.flatMap(g => (g.programmes ?? [])
       .flatMap(p => p.exercices.filter(e => e.schemaId != null).map(e => [e.schemaId!, p.seanceId] as const))));
     for (const [schemaId, seanceId] of schemasLibres) await this.tenter(() => this.schemaProgramme(seanceId, schemaId));
-    return { grilles: paquet.grilles.length, feuilles, fiches, photos };
+    return bilan;
   }
 
   async dateDuCache(cle: string): Promise<number | null> {

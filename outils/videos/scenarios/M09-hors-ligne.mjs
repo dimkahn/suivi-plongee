@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'M9',
   titre: 'Travailler sans réseau au bord du bassin',
   public: 'Moniteur',
-  resume: 'Préparer le téléphone avant de partir, noter sans réseau, et laisser l\'appli tout envoyer au retour.',
+  resume: 'Préparer le téléphone avant de partir (tout, la séance ou la fiche de sécurité du jour), noter sans réseau, et laisser l\'appli tout envoyer au retour.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -19,6 +19,14 @@ export default {
       ordinateur: 'Pas de réseau à la piscine ? Avant de partir, avec du réseau : dans le menu en haut, « Préparer hors ligne ».'
     }), 0);
     await menu('Préparer hors ligne');
+    const fenetre = page.getByRole('dialog', { name: 'Préparer hors ligne' });
+    await fenetre.waitFor();
+    await legende('On choisit ce qu\'on emporte : tout, la séance du jour, ou seulement la fiche de sécurité du jour.', 4500);
+    await toucher(fenetre.getByRole('radio', { name: /^Sur mesure/ }), { apres: 800 });
+    await legende('« Sur mesure » : on coche ce dont on a besoin. Les photos sont le plus long à copier.', 4500);
+    await toucher(fenetre.getByRole('radio', { name: /^Tout/ }), { apres: 600 });
+    await legende('Ici, tout.', 0);
+    await toucher(fenetre.getByRole('button', { name: 'Préparer', exact: true }));
     await page.locator('app-bandeau-sync').getByText(/Disponibles hors ligne/).waitFor({ timeout: 30000 });
     await legende(g.selon({
       telephone: 'Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.',

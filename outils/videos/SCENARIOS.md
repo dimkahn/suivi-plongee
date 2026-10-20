@@ -233,21 +233,24 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 37 s
 
 ### M9 — Travailler sans réseau au bord du bassin
 
-Préparer le téléphone avant de partir, noter sans réseau, et laisser l'appli tout envoyer au retour.
+Préparer le téléphone avant de partir (tout, la séance ou la fiche de sécurité du jour), noter sans réseau, et laisser l'appli tout envoyer au retour.
 
-Compte : `e2@club.fr` · formats téléphone et ordinateur · 60 s
+Compte : `e2@club.fr` · formats téléphone et ordinateur · 75 s
 
 1. Pas de réseau à la piscine ? Avant de partir, avec du réseau : « Plus », puis « Préparer hors ligne ».
-2. Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.
-3. Au bord du bassin : plus de réseau.
-4. L'appli s'ouvre quand même : on retrouve la grille de Léa.
-5. « Grille consultée hors ligne » : la version embarquée avant de partir.
-6. On note comme d'habitude…
-7. … la note attend sur le téléphone : « En attente d'envoi ».
-8. Le bandeau en haut compte les saisies qui attendent.
-9. De retour au vestiaire, le réseau revient…
-10. … et tout part tout seul. Rien à faire.
-11. Si le serveur refuse une note (règle du MFT), un bandeau le dit : rien ne se perd en silence.
+2. On choisit ce qu'on emporte : tout, la séance du jour, ou seulement la fiche de sécurité du jour.
+3. « Sur mesure » : on coche ce dont on a besoin. Les photos sont le plus long à copier.
+4. Ici, tout.
+5. Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.
+6. Au bord du bassin : plus de réseau.
+7. L'appli s'ouvre quand même : on retrouve la grille de Léa.
+8. « Grille consultée hors ligne » : la version embarquée avant de partir.
+9. On note comme d'habitude…
+10. … la note attend sur le téléphone : « En attente d'envoi ».
+11. Le bandeau en haut compte les saisies qui attendent.
+12. De retour au vestiaire, le réseau revient…
+13. … et tout part tout seul. Rien à faire.
+14. Si le serveur refuse une note (règle du MFT), un bandeau le dit : rien ne se perd en silence.
 
 ### M10 — Établir une fiche de sécurité
 
