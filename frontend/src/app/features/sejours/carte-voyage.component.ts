@@ -9,7 +9,9 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
  * départ et d'arrivée face à face, « +1 jour », lieux, terminal, vol et
  * compagnie, ouverture de l'enregistrement en ligne, et sa réservation
  * (numéro de dossier à copier, lien vers l'enregistrement, sinon le site
- * de la compagnie reconnue au numéro de vol).
+ * de la compagnie reconnue au numéro de vol). Ce qui est placé dans la
+ * balise s'affiche sous le vol : les passagers, dans l'onglet
+ * « Transports » des organisateurs.
  */
 @Component({
   selector: 'app-carte-voyage',
@@ -37,6 +39,7 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
       </div>
       @if (moyen()) { <p class="moyen">{{ moyen() }}</p> }
       @if (conseil(); as cs) { <p class="conseil">{{ cs }}</p> }
+      <ng-content />
       <div class="espace"></div>
       @if (t.dossier || lien()) {
         <div class="reservation">

@@ -14,7 +14,8 @@ import {
   SejourApi, SejourVue,
   TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
-import { memeVoyageQue } from './voyage';
+import { enCarte, memeVoyageQue } from './voyage';
+import { CarteVoyageComponent } from './carte-voyage.component';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
@@ -73,7 +74,7 @@ function participantVide(): BrouillonParticipant {
 @Component({
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
-            MesInformationsComponent, MonSejourComponent],
+            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -339,6 +340,27 @@ function participantVide(): BrouillonParticipant {
                 @if (groupesTrajets(sens.code).length === 0) { <p class="vide">Rien de renseigné.</p> }
                 <ul class="cartes">
                   @for (g of groupesTrajets(sens.code); track $index) {
+                    @if (enCarte(g.trajet)) {
+                      <li class="vol">
+                        <app-carte-voyage [trajet]="g.trajet" [aller]="sens.code === 'arrivee'"
+                                          [etiquette]="g.ids.length + (g.ids.length > 1 ? ' personnes' : ' personne')">
+                          <div class="passagers">
+                            <p class="titre-passagers">Qui {{ g.trajet.transport === 'TRAIN' ? 'prend ce train' : 'est dans ce ' + (g.trajet.transport === 'AVION' ? 'vol' : 'voyage') }}</p>
+                            <ul>
+                              @for (p of passagers(g, sens.code); track p.id) {
+                                <li>{{ p.nom }}@if (p.dossier) { <span class="secondaire sans-impression"> · dossier {{ p.dossier }}</span> }</li>
+                              }
+                            </ul>
+                            @if (s.gere) {
+                              <button type="button" class="bouton-discret sans-impression"
+                                      (click)="ouvrirVolCommun(sens.code === 'arrivee' ? 'ARRIVEE' : 'DEPART', g)">
+                                Ajouter des personnes à ce {{ g.trajet.transport === 'TRAIN' ? 'train' : 'vol' }}
+                              </button>
+                            }
+                          </div>
+                        </app-carte-voyage>
+                      </li>
+                    } @else {
                     <li class="carte">
                       <span class="nom">{{ g.quand }}</span>
                       @if (g.comment) { <span> · {{ g.comment }}</span> }
@@ -352,6 +374,7 @@ function participantVide(): BrouillonParticipant {
                         </button>
                       }
                     </li>
+                    }
                   }
                 </ul>
                 @if (sansTrajet(sens.code).length > 0) {
@@ -995,6 +1018,12 @@ function participantVide(): BrouillonParticipant {
     .cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
               grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .cartes > li { padding: var(--pas-2); }
+    .cartes > li.vol { padding: 0; break-inside: avoid; }
+    .passagers { margin-top: var(--pas); padding-top: var(--pas); border-top: 1px solid var(--trait); }
+    .titre-passagers { margin: 0; font-size: .75rem; font-weight: 700; text-transform: uppercase;
+                       letter-spacing: .04em; color: var(--craie); }
+    .passagers ul { margin: 4px 0 var(--pas); padding-left: 1.25rem; }
+    .passagers li { padding: 2px 0; }
     .cartes p { margin: var(--pas) 0 0; }
     .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); }
     .nom { font-weight: 700; }
@@ -1223,6 +1252,18 @@ export class SejourComponent {
 
   readonly texteTrajet = texteTrajet;
 
+  readonly enCarte = enCarte;
+
+  /**
+   * Les passagers d'un vol, avec leur dossier : le serveur ne le renvoie
+   * qu'aux organisateurs (et à chacun le sien).
+   */
+  passagers(g: GroupeTrajet, sens: 'arrivee' | 'depart'): { id: number; nom: string; dossier: string | null }[] {
+    return (this.sejour()?.participants ?? [])
+      .filter(p => g.ids.includes(p.id))
+      .map(p => ({ id: p.id, nom: nomComplet(p), dossier: p[sens]?.dossier ?? null }));
+  }
+
   /** Les arrivées (ou départs) regroupées par jour, heure et vol : qui attendre ensemble. */
   groupesTrajets(sens: 'arrivee' | 'depart'): GroupeTrajet[] {
     const groupes = new Map<string, GroupeTrajet & { tri: string }>();
@@ -1230,7 +1271,8 @@ export class SejourComponent {
       const t = p[sens];
       if (!t || (!t.date && !t.heure)) continue;
       const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu, t.heureDepart?.slice(0, 5), t.lieuDepart,
-        t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee, t.lieuArrivee]
+        t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee, t.lieuArrivee, t.terminal,
+        t.ouvertureEnregistrement?.slice(0, 16)]
         .join('|');
       const g = groupes.get(cle) ?? {
         tri: `${t.date ?? ''} ${t.heure ?? ''}`,
@@ -1240,7 +1282,8 @@ export class SejourComponent {
         // « à 21h35 à Paris-Orly », ou « le mercredi 16/06/2027 à 06h10 » pour un vol qui arrive un autre jour.
         arrivee: (autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')
           + (t.lieuArrivee ? ' à ' + t.lieuArrivee : '')).trim() || null,
-        noms: [], trajet: t, ids: []
+        // Le vol du groupe, sans le dossier ni le lien de celui qui l'ouvre (propres à chacun).
+        noms: [], trajet: volSansReservation(t), ids: []
       };
       g.noms.push(nomComplet(p));
       g.ids.push(p.id);

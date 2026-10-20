@@ -11,6 +11,11 @@ import { Trajet, copieTrajet, heure, jourLong } from './sejour-api';
 
 export interface Compagnie { nom: string; site: string; }
 
+/** Un voyage par un transport public, avec au moins son jour ou son heure : montré en carte. */
+export function enCarte(t: Trajet | null): boolean {
+  return !!t && (!!t.date || !!t.heure) && ['AVION', 'TRAIN', 'BATEAU', 'CAR'].includes(t.transport ?? '');
+}
+
 /**
  * Les compagnies que le club prend le plus, par code IATA (les deux
  * premiers caractères du numéro de vol). Le site est la page d'accueil :

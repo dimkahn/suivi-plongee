@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-20, 24e série, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 25e série, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -40,6 +40,7 @@ export default {
 
     await legende('« Transports » : les arrivées et les départs, regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
     await toucher(page.getByRole('tab', { name: 'Transports' }), { apres: 2500 });
+    await legende('Chaque vol a sa carte : heures de départ et d\'arrivée, terminal, compagnie, ouverture de l\'enregistrement. Dessous, qui est dans l\'avion, avec son numéro de dossier.', 6000);
     await legende('Plusieurs personnes sur le même vol ? On le saisit une fois, et on coche qui le prend.', 0);
     await toucher(page.getByRole('button', { name: /Ajouter des personnes à ce vol/ }).first(), { apres: 3500 });
     await legende('Pour une arrivée, le jour et l\'heure de départ de l\'avion : le jour venu, chacun voit à quelle heure être à l\'aéroport.', 0);

@@ -4,6 +4,7 @@ import { dateFr } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
 import { MonMateriel, PretsDuSejour, monMateriel } from './materiel-sejour';
 import { CarteVoyageComponent } from './carte-voyage.component';
+import { enCarte } from './voyage';
 import { ParticipantVue, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
 
 /**
@@ -21,11 +22,6 @@ interface Tuile {
   /** Vide, ou à compléter par le participant lui-même : la tuile est soulignée. */
   aCompleter: boolean;
   vide: string;
-}
-
-/** Un voyage par un transport public, avec au moins son jour ou son heure : montré en carte. */
-function enCarte(t: Trajet | null): boolean {
-  return !!t && (!!t.date || !!t.heure) && ['AVION', 'TRAIN', 'BATEAU', 'CAR'].includes(t.transport ?? '');
 }
 
 /**
