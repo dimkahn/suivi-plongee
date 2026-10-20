@@ -112,9 +112,29 @@ class FeuilleSecuriteTest {
         assertThat(FeuilleSecurite.depuis(List.of(matin)).signatures(f -> true))
                 .isEqualTo("signée électroniquement le 12/04/2026 à 18:30");
         assertThat(FeuilleSecurite.depuis(List.of(matin, apresMidi)).signatures(f -> true))
-                .isEqualTo("1er tour : signée électroniquement le 12/04/2026 à 18:30\n2e tour : signature");
+                .isEqualTo("1er tour : signée électroniquement par Lacuès Sébastien le 12/04/2026 à 18:30"
+                        + "\n2e tour : signature");
         assertThat(FeuilleSecurite.depuis(List.of(matin)).signatures(f -> false))
                 .isEqualTo("⚠ modifiée après sa signature du 12/04/2026 à 18:30");
+    }
+
+    @Test
+    @DisplayName("Deux tours, deux DP : chacun signe sa plongée, la feuille dit qui a signé chaque tour")
+    void deuxDpDeuxSignatures() {
+        FicheSecurite matin = fiche(1, "Sainte-Luce", null);
+        FicheSecurite apresMidi = fiche(2, "Sainte-Luce", null);
+        Utilisateur autreDp = new Utilisateur();
+        autreDp.setNom("Hubert");
+        autreDp.setPrenom("Gérard");
+        apresMidi.setDp(autreDp);
+        matin.setSignataire(matin.getDp());
+        matin.setSigneeLe(java.time.Instant.parse("2026-04-12T16:30:00Z"));
+        apresMidi.setSignataire(autreDp);
+        apresMidi.setSigneeLe(java.time.Instant.parse("2026-04-12T17:05:00Z"));
+
+        assertThat(FeuilleSecurite.depuis(List.of(matin, apresMidi)).signatures(f -> f == matin))
+                .isEqualTo("1er tour : signée électroniquement par Lacuès Sébastien le 12/04/2026 à 18:30"
+                        + "\n2e tour : ⚠ modifiée après sa signature par Hubert Gérard du 12/04/2026 à 19:05");
     }
 
     private static FicheSecurite fiche(int ordre, String lieu, String site) {

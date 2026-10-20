@@ -8,6 +8,7 @@ questions:
 - Comment le directeur de plongée signe-t-il la fiche de sécurité ?
 - Pourquoi je ne vois pas le bouton « Signer la fiche » ?
 - Peut-on modifier une fiche de sécurité signée ?
+- Deux plongées dans la journée avec deux DP : qui signe la feuille ?
 - Que veut dire « modifiée après sa signature » ?
 - J'ai touché « Immersion » ou « Sortie » par erreur, comment annuler ?
 - Comment savoir quelles palanquées sont encore à l'eau ?
@@ -138,6 +139,8 @@ Une fois la plongée passée et la fiche complète, le directeur de plongée la 
 2. « ✍ Signer la fiche », dans la barre du bas (sur téléphone, dans le bouton rond ☰).
 3. Une fenêtre rappelle que la fiche ne pourra plus être modifiée : « Je signe la fiche ».
 4. En haut de la fiche, un encadré vert dit « Signée par … le … à … » ; tous les champs sont grisés, sur la fiche comme dans « Compléter au retour de plongée ».
+
+**Deux plongées dans la journée, deux DP** : la feuille imprimée réunit les deux tours, mais chaque plongée a sa propre fiche et son propre DP. Chacun signe **sa** fiche, et elle seule (le DP du matin ne peut pas signer pour celui de l'après-midi). Si un même DP dirige les deux plongées, il signe les deux fiches, l'une après l'autre. La case signature de la feuille dit, tour par tour, qui a signé et quand (« 1er tour : signée électroniquement par … le … »), ou « signature » pour un tour pas encore signé.
 
 Le bouton n'apparaît que pour **le directeur de plongée choisi sur la fiche**, connecté avec son propre compte, sur une fiche **enregistrée**, **le jour de la plongée ou après**, et pas déjà signée. Des modifications pas encore enregistrées ? Enregistrez d'abord : on signe la fiche telle qu'elle est enregistrée. La signature demande le réseau.
 

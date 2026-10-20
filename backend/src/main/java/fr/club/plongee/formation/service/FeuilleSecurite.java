@@ -169,14 +169,18 @@ public final class FeuilleSecurite {
      * La case « signature » du DP : « signature » à remplir à la main tant que
      * la fiche n'est pas signée dans l'application, sinon la date de sa
      * signature électronique, ou l'alerte si son contenu a changé depuis
-     * ({@code integre}, voir {@link EmpreinteFicheSecurite}). Un tour par ligne
-     * sur une feuille de deux tours.
+     * ({@code integre}, voir {@link EmpreinteFicheSecurite}). Sur une feuille
+     * de deux tours, un tour par ligne, avec son signataire : chaque plongée a
+     * sa fiche et son DP, qui la signe seul (un DP par tour, ou le même deux fois).
      */
     public String signatures(Predicate<FicheSecurite> integre) {
+        boolean deuxTours = tours.size() > 1;
         List<String> parTour = tours.stream().map(f -> {
             if (!f.estSignee()) return "signature";
             String quand = SIGNATURE.format(f.getSigneeLe().atZone(FUSEAU));
-            return integre.test(f) ? "signée électroniquement le " + quand : "⚠ modifiée après sa signature du " + quand;
+            String par = deuxTours ? " par " + f.getSignataire().getNom() + " " + f.getSignataire().getPrenom() : "";
+            return integre.test(f) ? "signée électroniquement" + par + " le " + quand
+                    : "⚠ modifiée après sa signature" + par + " du " + quand;
         }).toList();
         if (parTour.size() == 1 || parTour.stream().allMatch("signature"::equals)) return parTour.get(0);
         return "1er tour : " + parTour.get(0) + "\n2e tour : " + parTour.get(1);
