@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-20, 23e série, ses vols en carte dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 24e série, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

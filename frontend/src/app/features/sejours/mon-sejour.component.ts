@@ -109,7 +109,8 @@ function enCarte(t: Trajet | null): boolean {
     .precision { margin: 4px 0 0; font-size: .9375rem; }
     .reponses { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); }
     .erreur { margin: var(--pas) 0 0; color: #B91C1C; font-weight: 700; }
-    .voyages { display: grid; gap: var(--pas); margin-top: var(--pas-2);
+    /* grid-auto-rows : aller et retour de même hauteur, côte à côte comme l'un sous l'autre. */
+    .voyages { display: grid; gap: var(--pas); margin-top: var(--pas-2); grid-auto-rows: 1fr;
                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
     @media (max-width: 380px) { .voyages { grid-template-columns: 1fr; } }
     .tuiles { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas);

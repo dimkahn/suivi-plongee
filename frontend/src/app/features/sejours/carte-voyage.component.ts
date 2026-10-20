@@ -37,6 +37,7 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
       </div>
       @if (moyen()) { <p class="moyen">{{ moyen() }}</p> }
       @if (conseil(); as cs) { <p class="conseil">{{ cs }}</p> }
+      <div class="espace"></div>
       @if (t.dossier || lien()) {
         <div class="reservation">
           @if (t.dossier) {
@@ -58,8 +59,12 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .voyage { padding: var(--pas) var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s);
+    /* Les cartes aller et retour, côte à côte, prennent la hauteur de la plus haute ; le dossier et les boutons au bas. */
+    :host { display: block; height: 100%; }
+    .voyage { box-sizing: border-box; height: 100%; display: flex; flex-direction: column;
+              padding: var(--pas) var(--pas-2); border: 1px solid var(--trait); border-radius: var(--r-s);
               background: #F8FAFC; }
+    .espace { flex: 1; }
     .tete { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .etiquette { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--craie); }
     .jour { font-weight: 700; color: var(--profond-fonce); }
