@@ -387,7 +387,7 @@ function participantVide(): BrouillonParticipant {
       }
 
       @if (voir('transports')) {
-        <section>
+        <section class="section-voitures">
           <div class="titre-section">
             <h2>Voitures</h2>
             @if (s.gere) {
@@ -1019,6 +1019,8 @@ function participantVide(): BrouillonParticipant {
               grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .cartes > li { padding: var(--pas-2); }
     .cartes > li.vol { padding: 0; break-inside: avoid; }
+    /* Les voitures bien séparées des vols au-dessus. */
+    .section-voitures { margin-top: calc(var(--pas-2) * 2); padding-top: var(--pas-2); border-top: 2px solid var(--trait); }
     .passagers { margin-top: var(--pas); padding-top: var(--pas); border-top: 1px solid var(--trait); }
     .titre-passagers { margin: 0; font-size: .75rem; font-weight: 700; text-transform: uppercase;
                        letter-spacing: .04em; color: var(--craie); }

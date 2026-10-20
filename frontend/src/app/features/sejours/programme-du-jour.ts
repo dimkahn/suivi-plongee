@@ -10,12 +10,13 @@ import { EvenementVue, MoyenTransport, PalanqueeVue, ParticipantVue, TRANSPORTS,
 // ----------------------------------------------------------------
 
 /**
- * Combien de temps avant le départ être sur place (choix du club, 2026).
+ * Combien de temps avant le départ être sur place (choix du club, 2026 ;
+ * avion : 3 h avant l'embarquement depuis octobre 2026, 2 h avant).
  * Même règle que MoyenTransport côté serveur (carnet envoyé par e-mail).
  * Rien pour la voiture : on part quand on veut.
  */
 export const AVANCES_TRANSPORT: Partial<Record<MoyenTransport, { minutes: number; ou: string }>> = {
-  AVION: { minutes: 120, ou: "à l'aéroport" },
+  AVION: { minutes: 180, ou: "à l'aéroport" },
   TRAIN: { minutes: 30, ou: 'à la gare' },
   BATEAU: { minutes: 45, ou: "à l'embarquement" },
   CAR: { minutes: 15, ou: "à l'arrêt du car" }
@@ -67,7 +68,7 @@ export interface VoyageDuJour {
    * « 21h35 ». Précédée du jour s'il n'est pas celui du départ : « mercredi 16/06/2027 à 06h10 ».
    */
   arrivee: string | null;
-  /** « Soyez à l'aéroport vers 15h05 (2 h avant). » ; null s'il n'y a pas de conseil. */
+  /** « Soyez à l'aéroport vers 14h05 (3 h avant). » ; null s'il n'y a pas de conseil. */
   conseil: string | null;
   /** Aller en avion, train… sans l'heure de départ : le conseil ne peut pas être calculé. */
   heureManquante: boolean;
@@ -96,7 +97,7 @@ export function jourDuDepart(t: Trajet | null, sens: 'aller' | 'retour'): string
   return t.date;
 }
 
-/** « Soyez à l'aéroport vers 15h05 (2 h avant). » pour un avion à 17h05 ; null sans conseil. */
+/** « Soyez à l'aéroport vers 14h05 (3 h avant). » pour un avion à 17h05 ; null sans conseil. */
 export function conseilDepart(transport: MoyenTransport | null, depart: string | null): string | null {
   const avance = transport ? AVANCES_TRANSPORT[transport] : undefined;
   if (!avance || !depart) return null;

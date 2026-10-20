@@ -6,11 +6,12 @@ import java.time.format.DateTimeFormatter;
 /**
  * Comment un participant arrive au séjour ou en repart, et combien de temps
  * avant le départ il est conseillé d'être sur place (choix du club, 2026 :
- * avion 2 h, train 30 min, bateau 45 min, car 15 min ; rien pour la voiture).
+ * avion 3 h avant l'embarquement (2 h jusqu'en octobre 2026), train 30 min,
+ * bateau 45 min, car 15 min ; rien pour la voiture).
  * Même règle côté écran ({@code AVANCES_TRANSPORT} de {@code sejour-api.ts}).
  */
 public enum MoyenTransport {
-    AVION("avion", 120, "à l'aéroport"),
+    AVION("avion", 180, "à l'aéroport"),
     TRAIN("train", 30, "à la gare"),
     VOITURE("voiture", 0, null),
     CAR("car", 15, "à l'arrêt du car"),
@@ -32,7 +33,7 @@ public enum MoyenTransport {
     }
 
     /**
-     * « soyez à l'aéroport vers 05h10 (2 h avant) » pour un départ à 07h10 ;
+     * « soyez à l'aéroport vers 04h10 (3 h avant) » pour un départ à 07h10 ;
      * null si ce moyen de transport n'a pas de conseil (voiture, autre).
      */
     public String conseil(LocalTime depart, DateTimeFormatter format) {

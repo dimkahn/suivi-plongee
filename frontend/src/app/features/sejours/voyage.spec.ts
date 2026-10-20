@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { conseilDepart } from './programme-du-jour';
 import { Trajet, copieTrajet, trajetSaisi } from './sejour-api';
 import { carteVoyage, compagnieDuVol, enregistrement, memeVoyageQue } from './voyage';
 
@@ -61,6 +62,12 @@ describe("Ouverture de l'enregistrement", () => {
 
   it("sans date d'ouverture, ne dit rien", () => {
     expect(enregistrement(retour, false, new Date(2026, 9, 19))).toBeNull();
+  });
+});
+
+describe("Heure d'être sur place", () => {
+  it("en avion, 3 heures avant le départ", () => {
+    expect(conseilDepart('AVION', '12:20')).toBe("Soyez à l'aéroport vers 09h20 (3 h avant).");
   });
 });
 

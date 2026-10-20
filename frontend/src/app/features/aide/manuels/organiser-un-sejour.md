@@ -60,7 +60,7 @@ Menu « Séjours », puis la sortie. Tout en haut, l'encart **Frais du séjour**
 ## Pendant le séjour : l'encart « Aujourd'hui »
 
 - Du jour du premier voyage aller (l'avion pris la veille de la première plongée compte, ou plus tôt encore si son jour de départ est saisi) au jour du dernier retour, un encart **Aujourd'hui** s'ouvre en haut de la page : le programme du jour (rendez-vous et plongées) et les avions, trains, bateaux ou cars qui partent ce jour-là, avec qui les prend, et sous chaque plongée la composition des palanquées.
-- Pour chacun, **l'heure à laquelle être sur place** : 2 h avant un avion, 30 min avant un train, 45 min avant un bateau, 15 min avant un car (rien pour une voiture). Pour l'aller, elle se calcule sur l'heure de départ de l'avion ou du train : pensez à la saisir, ou demandez-la aux participants.
+- Pour chacun, **l'heure à laquelle être sur place** : 3 h avant l'embarquement d'un avion, 30 min avant un train, 45 min avant un bateau, 15 min avant un car (rien pour une voiture). Pour l'aller, elle se calcule sur l'heure de départ de l'avion ou du train : pensez à la saisir, ou demandez-la aux participants.
 - **La veille** de chaque voyage, un rappel : les départs du lendemain ; la veille de l'aller, les affaires marquées indispensables ; la veille du retour, pour un participant, ce qu'il doit encore.
 - Chaque participant y voit ses seuls voyages, dans l'appli ou sur la page du lien reçu par e-mail. L'encart suit la date du téléphone et ne s'imprime pas. Le carnet envoyé par e-mail donne aussi l'heure à laquelle être sur place.
 

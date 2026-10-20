@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-20, 24e série, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 25e série, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -22,7 +22,7 @@ export default {
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('C\'est la veille du départ : en haut, le rappel de son vol, et l\'heure à laquelle être à l\'aéroport.', 4500);
-    await legende('Deux heures avant pour un avion, trente minutes pour un train. Et les papiers à ne pas oublier.', 4500);
+    await legende('Trois heures avant l\'embarquement pour un avion, trente minutes pour un train. Et les papiers à ne pas oublier.', 4500);
     await vignette();
 
     await page.clock.setFixedTime(new Date('2027-06-04T07:30:00'));
