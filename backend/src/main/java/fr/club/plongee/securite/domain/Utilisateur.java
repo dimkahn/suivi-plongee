@@ -11,6 +11,7 @@ import org.hibernate.envers.NotAudited;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 /** Comptes moniteurs/admin gérés à la main : historisés via Envers (voir fr.club.plongee.audit). */
@@ -85,6 +86,23 @@ public class Utilisateur {
     @Column(nullable = false)
     private boolean autorisationImage;
 
+    /**
+     * Dernier jour (inclus) où le compte se connecte ; null : pas de limite.
+     * Posé sur les comptes de sécurité surface, créés pour une sortie ou
+     * quelques séances (choix du club, 2026).
+     */
+    private LocalDate accesJusquAu;
+
+    /**
+     * Séances dont un compte de sécurité surface voit et complète la fiche.
+     * Simple liste d'identifiants, hors du périmètre audité comme les rôles.
+     */
+    @NotAudited
+    @ElementCollection
+    @CollectionTable(name = "securite_surface_seance", joinColumns = @JoinColumn(name = "utilisateur_id"))
+    @Column(name = "seance_id")
+    private Set<Long> seancesSecuriteSurface = new HashSet<>();
+
     @Column(nullable = false)
     private Instant creeLe = Instant.now();
 
@@ -102,6 +120,11 @@ public class Utilisateur {
 
     public boolean estMoniteur() {
         return roles.contains(RoleNom.MONITEUR) && niveauEncadrement != null;
+    }
+
+    /** Actif, et la date de fin d'accès, s'il y en a une, n'est pas passée. */
+    public boolean estActifLe(LocalDate jour) {
+        return actif && (accesJusquAu == null || !accesJusquAu.isBefore(jour));
     }
 
     public Long getId() {
@@ -216,6 +239,22 @@ public class Utilisateur {
 
     public void setAutorisationImage(boolean autorisationImage) {
         this.autorisationImage = autorisationImage;
+    }
+
+    public LocalDate getAccesJusquAu() {
+        return accesJusquAu;
+    }
+
+    public void setAccesJusquAu(LocalDate accesJusquAu) {
+        this.accesJusquAu = accesJusquAu;
+    }
+
+    public Set<Long> getSeancesSecuriteSurface() {
+        return seancesSecuriteSurface;
+    }
+
+    public void setSeancesSecuriteSurface(Set<Long> seancesSecuriteSurface) {
+        this.seancesSecuriteSurface = seancesSecuriteSurface;
     }
 
     public Instant getCreeLe() {

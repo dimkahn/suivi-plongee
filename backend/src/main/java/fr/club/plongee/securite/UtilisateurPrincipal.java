@@ -1,6 +1,8 @@
 package fr.club.plongee.securite;
 
+import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
+import fr.club.plongee.securite.domain.RoleNom;
 import fr.club.plongee.securite.domain.Utilisateur;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -24,7 +26,16 @@ public record UtilisateurPrincipal(Long id, String email, String motDePasse,
                 .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r.name()))
                 .toList();
         return new UtilisateurPrincipal(u.getId(), u.getEmail(), u.getMotDePasse(),
-                u.isActif(), u.getNiveauEncadrement(), roles);
+                u.estActifLe(Calendrier.aujourdhui()), u.getNiveauEncadrement(), roles);
+    }
+
+    /** Compte de sécurité surface qui n'est ni moniteur ni administrateur : limité aux séances confiées. */
+    public boolean limiteAuxSeancesConfiees() {
+        return aLeRole(RoleNom.SECURITE_SURFACE) && !aLeRole(RoleNom.MONITEUR) && !aLeRole(RoleNom.ADMIN);
+    }
+
+    private boolean aLeRole(RoleNom role) {
+        return autorisations.stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + role.name()));
     }
 
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return autorisations; }

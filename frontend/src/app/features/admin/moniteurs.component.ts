@@ -10,7 +10,6 @@ import { MoniteurVue } from '../../core/modeles';
 import { CACI_LIMITES, EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
-import { ComptesSecuriteSurfaceComponent } from './comptes-securite-surface.component';
 
 type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
 
@@ -20,8 +19,7 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent,
-            ComptesSecuriteSurfaceComponent],
+  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
   template: `
     <div class="entete">
       <div>
@@ -29,7 +27,7 @@ function aVerifier(m: MoniteurVue): boolean {
         <p class="secondaire">
           Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
           administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
-          En bas de la page, les comptes « Sécurité surface », pour qui n'est pas moniteur du club.
+          Pour qui n'est pas moniteur du club, voir l'écran « Sécurité surface » de l'administration.
         </p>
       </div>
       <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouveau moniteur</button>
@@ -326,8 +324,6 @@ function aVerifier(m: MoniteurVue): boolean {
         </div>
       }
     </app-dialogue>
-
-    <app-comptes-securite-surface />
 
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.moniteur.prenom + ' ' + r.moniteur.nom"

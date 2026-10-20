@@ -532,13 +532,41 @@ export interface MoniteurVue {
   aPhoto: boolean;
 }
 
-/** Compte « sécurité surface » : pas moniteur du club, ne fait que compléter les fiches de sécurité au retour. */
+/** Une séance confiée à un compte de sécurité surface. */
+export interface SeanceConfieeVue {
+  id: number;
+  date: string;
+  ordre: number;
+  milieu: 'ARTIFICIEL' | 'NATUREL';
+  lieu: string | null;
+  site: string | null;
+  commentaire: string | null;
+}
+
+/**
+ * Compte « sécurité surface » : pas moniteur du club, ne fait que compléter
+ * au retour les fiches de sécurité des séances qui lui sont confiées, jusqu'à
+ * sa date de fin d'accès (incluse).
+ */
 export interface CompteSurfaceVue {
   id: number;
   email: string;
   nom: string;
   prenom: string;
+  /** Se connecte aujourd'hui. */
   actif: boolean;
+  /** Désactivé parce que la date de fin d'accès est passée, pas à la main. */
+  accesTermine: boolean;
+  accesJusquAu: string | null;
+  seances: SeanceConfieeVue[];
+}
+
+export interface DemandeCompteSurface {
+  email: string;
+  nom: string;
+  prenom: string;
+  seanceIds: number[];
+  accesJusquAu: string | null;
 }
 
 export interface SeanceEnTete {

@@ -37,10 +37,12 @@ const RUBRIQUES: { titre: string; aide: string; ecrans: Ecran[] }[] = [
   },
   {
     titre: 'Personnes',
-    aide: 'Les comptes des encadrants et les dossiers des élèves.',
+    aide: 'Les comptes des encadrants et de la sécurité surface, les dossiers des élèves.',
     ecrans: [
       { lien: '/admin/moniteurs', nom: 'Moniteurs',
         detail: 'Comptes des encadrants : ajout, modification, niveau, activation, mot de passe' },
+      { lien: '/admin/securite-surface', nom: 'Sécurité surface',
+        detail: 'Comptes de qui n\'est pas moniteur : séances confiées, fin d\'accès, réactivation' },
       { lien: '/admin/eleves', nom: 'Élèves', detail: 'Dossiers, autorisations, droit à l\'image' }
     ]
   },

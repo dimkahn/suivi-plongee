@@ -588,15 +588,16 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 61 s
 10. Sorties : Les week-ends et séjours en milieu naturel.
 11. Les personnes :
 12. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
-13. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
-14. Le matériel du club, que l'administrateur gère avec le directeur technique :
-15. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
-16. Prêts de matériel : Prêter, rendre, avec les photos avant et après.
-17. Puis le contenu pédagogique, qui se règle rarement :
-18. Référentiel MFT : Les compétences fédérales, niveau par niveau.
-19. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
-20. Enfin la structure, réglée une fois à l'installation :
-21. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
+13. Sécurité surface : Qui n'est pas moniteur : les fiches des séances confiées, jusqu'à une date de fin.
+14. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
+15. Le matériel du club, que l'administrateur gère avec le directeur technique :
+16. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
+17. Prêts de matériel : Prêter, rendre, avec les photos avant et après.
+18. Puis le contenu pédagogique, qui se règle rarement :
+19. Référentiel MFT : Les compétences fédérales, niveau par niveau.
+20. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
+21. Enfin la structure, réglée une fois à l'installation :
+22. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
 
 _À retourner (tournage du 2026-10-12)._
 
@@ -641,9 +642,9 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 38 s
 
 ### A5 — Ajouter un moniteur
 
-Créer le compte d'un encadrant : niveau d'encadrement, niveau de plongeur, rôles, CACI ; et les comptes « Sécurité surface ».
+Créer le compte d'un encadrant : niveau d'encadrement, niveau de plongeur, rôles, CACI.
 
-Compte : `presidente@club.fr` · formats téléphone et ordinateur · 42 s
+Compte : `presidente@club.fr` · formats téléphone et ordinateur · 38 s
 
 1. La liste des encadrants, avec l'état de leur CACI.
 2. Niveau d'encadrement et niveau de plongeur sont distincts : un E1 peut n'être que N2.
@@ -652,8 +653,7 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 42 s
 5. Julien est E2 : pour qu'il établisse les fiches de sécurité comme un E3, cochez ce droit.
 6. Julien reçoit un e-mail pour choisir son mot de passe.
 7. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
-8. En bas, les comptes « Sécurité surface » : une personne qui n'est pas moniteur du club.
-9. Elle ne voit que les fiches de sécurité, et ne fait que les compléter au retour de plongée.
+8. Pour qui n'est pas moniteur du club, l'écran « Sécurité surface » : voir la vidéo A18.
 
 ### A6 — Créer le dossier d'un élève
 
@@ -808,6 +808,14 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient ; l'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l'aller, jour, heure et lieu d'arrivée du retour, terminal, ouverture de l'enregistrement, numéro de dossier) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant, qui n'a rien emprunté, qui n'a pas répondu) et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l'encart « Aujourd'hui ».
 
 Compte : `e3@club.fr` (créatrice du séjour de démonstration) · formats téléphone et ordinateur
+
+_Pas encore tournée : le texte viendra au premier enregistrement._
+
+### A18 — Comptes de sécurité surface
+
+Un compte pour une personne qui n'est pas moniteur du club : les séances dont elle complétera la fiche (une sortie entière ou une à une), la date de fin d'accès après laquelle il se désactive seul, et la réactivation pour d'autres séances.
+
+Compte : `presidente@club.fr` · formats téléphone et ordinateur
 
 _Pas encore tournée : le texte viendra au premier enregistrement._
 

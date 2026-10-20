@@ -8,6 +8,9 @@ import fr.club.plongee.formation.service.*;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.evaluation.repository.EvaluationRepository;
+import fr.club.plongee.securite.UtilisateurPrincipal;
+import fr.club.plongee.securite.repository.UtilisateurRepository;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -94,13 +97,15 @@ public class SeanceController {
     private final PhotoEleveRepository photos;
     private final GenerationSaisonService generationSaison;
     private final FicheSecuriteService ficheSecuriteService;
+    private final UtilisateurRepository utilisateurs;
 
     public SeanceController(SeanceRepository seances, SaisonRepository saisons,
                             CursusRepository cursus, ParticipationRepository participations,
                             EvaluationRepository evaluations, FicheSecuriteRepository fichesSecurite,
                             PhotoEleveRepository photos, GenerationSaisonService generationSaison,
-                            FicheSecuriteService ficheSecuriteService) {
+                            FicheSecuriteService ficheSecuriteService, UtilisateurRepository utilisateurs) {
         this.ficheSecuriteService = ficheSecuriteService;
+        this.utilisateurs = utilisateurs;
         this.seances = seances;
         this.saisons = saisons;
         this.cursus = cursus;
@@ -111,8 +116,16 @@ public class SeanceController {
         this.generationSaison = generationSaison;
     }
 
+    /** Un compte de sécurité surface ne voit que les séances qui lui sont confiées, toutes saisons. */
     @GetMapping
-    public List<SeanceVue> lister(@RequestParam(required = false) Long saisonId) {
+    public List<SeanceVue> lister(@RequestParam(required = false) Long saisonId,
+                                  @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        if (moi != null && moi.limiteAuxSeancesConfiees()) {
+            return seances.findAllById(utilisateurs.seancesConfiees(moi.id())).stream()
+                    .sorted(java.util.Comparator.comparing(Seance::getDateSeance).thenComparing(Seance::getOrdre))
+                    .map(this::vue)
+                    .toList();
+        }
         Long saison = saisonId != null ? saisonId : saisonCourante().getId();
         return seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
                 .map(this::vue)

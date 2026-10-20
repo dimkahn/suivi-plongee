@@ -22,6 +22,11 @@ Ce fichier est l'historique. Les règles en vigueur sont dans `.claude/rules/enc
 - **Décision :** rôle `SECURITE_SURFACE` pour un compte non moniteur qui complète la fiche au retour d'une sortie, créé depuis l'écran Moniteurs.
 - **Conséquences :** démo `surface@club.fr` ; `e2@club.fr` reçoit le rôle `FICHE_SECURITE`.
 
+## Sécurité surface : séances confiées et date de fin d'accès (octobre 2026, V97)
+- **Contexte :** demande du club, un compte de sécurité surface est prêté pour une sortie, une séance ou quelques séances ; il ne doit ni voir les autres fiches, ni rester ouvert après.
+- **Décision :** écran à part, Administration › Personnes › Sécurité surface (`/admin/securite-surface`), sorti du bas de l'écran Moniteurs. Le compte porte ses séances (`securite_surface_seance`, choisies une à une ou toutes celles d'une sortie) et un dernier jour d'accès inclus (`utilisateur.acces_jusqu_au`, aussi dans `utilisateur_aud`), tous deux obligatoires à la création, à la modification et à la réactivation (422). Passé ce jour, `Utilisateur.estActifLe` est faux : connexion, rafraîchissement et jeton refusés, sans tâche planifiée. Un compte ni MONITEUR ni ADMIN ne reçoit de `GET /api/seances` que ses séances ; lire, compléter ou exporter la fiche d'une autre séance est refusé en 422 (`HabilitationService.verifierAccesSeance`). « Réactiver » demande de nouvelles séances et une nouvelle date ; le mot de passe est gardé.
+- **Conséquences :** les comptes créés avant V97 n'ont ni séance ni date : ils ne voient plus aucune fiche tant qu'un ADMIN ne les a pas modifiés. Date proposée à l'écran : une semaine après la dernière séance choisie (`core/acces-securite-surface.ts`). Démo V127 : `surface@club.fr` pour le séjour à Port-Cros, `surface-rentree@club.fr` à l'accès terminé.
+
 ## E-mail par membre d'un groupe de plongeurs (V44)
 - **Décision :** e-mail facultatif par membre ; vide, celui du dossier. Sert à l'envoi des paramètres de fin de séjour.
 

@@ -38,7 +38,8 @@ import java.util.List;
  * moniteurs qui ont le rôle FICHE_SECURITE
  * ({@link HabilitationService#peutEtablirFicheSecurite}) ; lire et compléter
  * au retour est ouvert à tous les moniteurs et à la sécurité surface
- * (rôle SECURITE_SURFACE, compte qui n'est pas moniteur).
+ * (rôle SECURITE_SURFACE, compte qui n'est pas moniteur), limitée aux
+ * séances qui lui sont confiées ({@link HabilitationService#verifierAccesSeance}).
  *
  * <p>Toute la lecture des entités (dp, seance, palanquees, membres — toutes
  * chargées à la demande) reste dans {@link FicheSecuriteService}, dont les
@@ -131,7 +132,8 @@ public class FicheSecuriteController {
 
     @GetMapping
     @PreAuthorize(LECTURE_ET_COMPLEMENT)
-    public FicheSecuriteService.FicheSecuriteVue consulter(@PathVariable Long seanceId) {
+    public FicheSecuriteService.FicheSecuriteVue consulter(@PathVariable Long seanceId, Authentication authentication) {
+        habilitation.verifierAccesSeance(seanceId, authentication);
         return service.consulter(seanceId);
     }
 
@@ -158,7 +160,9 @@ public class FicheSecuriteController {
     @PutMapping("/realise")
     @PreAuthorize(LECTURE_ET_COMPLEMENT)
     public FicheSecuriteService.FicheSecuriteVue enregistrerRealise(@PathVariable Long seanceId,
-                                                                    @Valid @RequestBody List<DemandeProfilRealise> demande) {
+                                                                    @Valid @RequestBody List<DemandeProfilRealise> demande,
+                                                                    Authentication authentication) {
+        habilitation.verifierAccesSeance(seanceId, authentication);
         List<FicheSecuriteService.ProfilRealise> profils = demande.stream()
                 .map(d -> new FicheSecuriteService.ProfilRealise(d.numero(), d.profondeurRealisee(),
                         d.dureeRealisee(), d.paliers(), d.heureImmersion(), d.heureSortie()))
@@ -224,7 +228,9 @@ public class FicheSecuriteController {
 
     @GetMapping(value = "/fiche.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     @PreAuthorize(LECTURE_ET_COMPLEMENT)
-    public ResponseEntity<byte[]> fichePdf(@PathVariable Long seanceId, @RequestParam(defaultValue = "true") boolean regrouper) {
+    public ResponseEntity<byte[]> fichePdf(@PathVariable Long seanceId, @RequestParam(defaultValue = "true") boolean regrouper,
+                                           Authentication authentication) {
+        habilitation.verifierAccesSeance(seanceId, authentication);
         FicheSecuritePdfService.FichePdf pdf = service.genererPdf(seanceId, regrouper);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.nomFichier() + "\"")
@@ -234,7 +240,9 @@ public class FicheSecuriteController {
     @GetMapping(value = "/fiche.xlsx",
             produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     @PreAuthorize(LECTURE_ET_COMPLEMENT)
-    public ResponseEntity<byte[]> ficheExcel(@PathVariable Long seanceId, @RequestParam(defaultValue = "true") boolean regrouper) {
+    public ResponseEntity<byte[]> ficheExcel(@PathVariable Long seanceId, @RequestParam(defaultValue = "true") boolean regrouper,
+                                             Authentication authentication) {
+        habilitation.verifierAccesSeance(seanceId, authentication);
         FicheSecuriteExcelService.FicheExcel excel = service.genererExcel(seanceId, regrouper);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + excel.nomFichier() + "\"")

@@ -5,7 +5,7 @@ import {
   AdhesionVue, InscriptionClubVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   DemandePropositionPalanquees, PropositionPalanqueesVue,
   DemandeDuplicationSeance, EleveVue, EvaluationVue, FicheSecuriteVue, SeanceDupliqueeVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
-  CompteSurfaceVue, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
+  CompteSurfaceVue, DemandeCompteSurface, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue, ResultatModeleCentreMer,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
@@ -550,16 +550,22 @@ export class ApiService {
     return this.http.get<CompteSurfaceVue[]>('/api/admin/securite-surface');
   }
 
-  creerCompteSurface(demande: { email: string; nom: string; prenom: string }): Observable<CompteSurfaceVue> {
+  creerCompteSurface(demande: DemandeCompteSurface): Observable<CompteSurfaceVue> {
     return this.http.post<CompteSurfaceVue>('/api/admin/securite-surface', demande);
   }
 
-  modifierCompteSurface(id: number, demande: { email: string; nom: string; prenom: string }): Observable<CompteSurfaceVue> {
+  modifierCompteSurface(id: number, demande: DemandeCompteSurface): Observable<CompteSurfaceVue> {
     return this.http.put<CompteSurfaceVue>(`/api/admin/securite-surface/${id}`, demande);
   }
 
-  changerActivationCompteSurface(id: number, actif: boolean): Observable<CompteSurfaceVue> {
-    return this.http.put<CompteSurfaceVue>(`/api/admin/securite-surface/${id}/activation`, { actif });
+  desactiverCompteSurface(id: number): Observable<CompteSurfaceVue> {
+    return this.http.put<CompteSurfaceVue>(`/api/admin/securite-surface/${id}/activation`, { actif: false });
+  }
+
+  /** Réactiver : pour de nouvelles séances, jusqu'à une nouvelle date de fin d'accès. */
+  reactiverCompteSurface(id: number, acces: { seanceIds: number[]; accesJusquAu: string | null }):
+      Observable<CompteSurfaceVue> {
+    return this.http.put<CompteSurfaceVue>(`/api/admin/securite-surface/${id}/activation`, { actif: true, ...acces });
   }
 
   envoyerLienReinitialisationCompteSurface(id: number): Observable<unknown> {

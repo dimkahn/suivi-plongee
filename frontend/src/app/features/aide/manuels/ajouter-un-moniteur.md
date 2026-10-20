@@ -3,10 +3,9 @@ titre: Ajouter un moniteur
 rubrique: Administrateur
 videos: A5
 ecran: /admin/moniteurs
-mots: moniteur, encadrant, compte, créer, niveau d'encadrement, E1, E2, E3, rôle, administrateur, directeur technique, TIV, désactiver, lien, CACI, certificat médical, cases cochées, médecin, niveau préparé, stagiaire, formation, tuteur, fiche de sécurité, droit, sécurité surface, photo, appareil photo, galerie, pas moniteur, bateau
+mots: moniteur, encadrant, compte, créer, niveau d'encadrement, E1, E2, E3, rôle, administrateur, directeur technique, TIV, désactiver, lien, CACI, certificat médical, cases cochées, médecin, niveau préparé, stagiaire, formation, tuteur, fiche de sécurité, droit, photo, appareil photo, galerie
 questions:
 - Comment permettre à un moniteur qui n'est pas E3 d'établir les fiches de sécurité ?
-- Comment créer un compte pour la sécurité surface, qui n'est pas moniteur ?
 - Comment indiquer qu'un moniteur prépare le E3 ?
 - Où saisir le CACI d'un moniteur ?
 - Comment créer le compte d'un moniteur ?
@@ -32,12 +31,4 @@ Administration, « Moniteurs » : créez le compte avec le niveau d'encadrement,
 - Dans la liste, touchez la date du CACI d'un moniteur pour voir son détail (médecin, cases cochées). « · limites » signale un CACI avec limites et préconisations : le détail est sur le certificat papier, pas dans l'appli.
 - Depuis la même liste : désactiver un compte, renvoyer le lien de mot de passe, recueillir le droit à l'image et mettre une photo (« Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » la galerie du téléphone).
 - Fiches de sécurité : les E3, E4 et administrateurs les établissent et les modifient d'office ; un autre moniteur seulement si vous lui donnez ce droit (case « Établir les fiches de sécurité sans être E3 ni E4 », badge « Fiches sécu » dans la liste). Ce droit ne fait pas de lui un directeur de plongée, qui reste E3 minimum. Tous les moniteurs complètent les fiches au retour de plongée.
-
-## Comptes « Sécurité surface »
-
-Pour une personne qui n'est pas moniteur du club (la sécurité surface d'une sortie en bateau, par exemple) et qui doit seulement remplir la fiche au retour de plongée.
-
-1. En bas de l'écran « Moniteurs », « Nouveau compte sécurité surface » : prénom, nom, e-mail.
-2. Elle reçoit un e-mail pour choisir son mot de passe.
-3. En se connectant, elle ne voit que « Fiches de sécurité » : la liste des plongées, et « Compléter au retour de plongée » pour chaque fiche établie. Elle ne peut ni établir ni modifier une fiche, et ne voit ni les élèves, ni les présences, ni le planning.
-4. Depuis la même section : modifier, désactiver, renvoyer le lien de mot de passe, supprimer.
+- Pour une personne qui n'est pas moniteur du club (la sécurité surface d'une sortie en bateau), voir l'écran [Sécurité surface](/admin/securite-surface) de l'administration.

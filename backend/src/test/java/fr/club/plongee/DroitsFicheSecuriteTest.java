@@ -1,5 +1,8 @@
 package fr.club.plongee;
 
+import fr.club.plongee.commun.Calendrier;
+import fr.club.plongee.securite.repository.UtilisateurRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +36,8 @@ class DroitsFicheSecuriteTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired UtilisateurRepository utilisateurs;
+    @Autowired PasswordEncoder encodeur;
 
     private String jeton(String email, String motDePasse) throws Exception {
         String reponse = mvc.perform(post("/api/auth/connexion").contentType(MediaType.APPLICATION_JSON)
@@ -70,6 +75,13 @@ class DroitsFicheSecuriteTest {
                 {"dpId":%d,"palanquees":[{"numero":1,"profondeurPrevue":20,"dureePrevue":40,
                   "membres":[{"nom":"Dulac","prenom":"Anis","aptitude":"N2","fonction":"PLONGEUR"}]}]}
                 """.formatted(dpId);
+    }
+
+    /** Un compte de sécurité surface pour cette séance, jusqu'à dans une semaine. */
+    private static String compteSurface(String email, long seance) {
+        return """
+                {"email":"%s","nom":"Bouee","prenom":"Lou","seanceIds":[%d],"accesJusquAu":"%s"}
+                """.formatted(email, seance, Calendrier.aujourdhui().plusDays(7));
     }
 
     private static final String REALISE = "[{\"numero\":1,\"profondeurRealisee\":18,\"dureeRealisee\":38}]";
@@ -141,8 +153,16 @@ class DroitsFicheSecuriteTest {
     @DisplayName("La sécurité surface lit et complète la fiche, et rien d'autre")
     void securiteSurface() throws Exception {
         String admin = jeton("presidente@club.fr");
-        String surface = jeton("surface@club.fr");
         long seance = creerSeance(admin);
+        String email = "surface-" + UUID.randomUUID().toString().substring(0, 8) + "@club.fr";
+        String cree = mvc.perform(post("/api/admin/securite-surface").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(compteSurface(email, seance)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        var compte = utilisateurs.findById(json.readTree(cree).get("id").asLong()).orElseThrow();
+        compte.setMotDePasse(encodeur.encode("motdepasse-surface"));
+        utilisateurs.save(compte);
+        String surface = jeton(email, "motdepasse-surface");
         long dp = moniteurId(admin, "e3@club.fr");
         mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content(fiche(dp)))
@@ -169,9 +189,7 @@ class DroitsFicheSecuriteTest {
         String admin = jeton("presidente@club.fr");
         String email = "surface-" + UUID.randomUUID().toString().substring(0, 8) + "@club.fr";
         String cree = mvc.perform(post("/api/admin/securite-surface").header("Authorization", admin)
-                        .contentType(MediaType.APPLICATION_JSON).content("""
-                                {"email":"%s","nom":"Bouee","prenom":"Lou"}
-                                """.formatted(email)))
+                        .contentType(MediaType.APPLICATION_JSON).content(compteSurface(email, creerSeance(admin))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.actif").value(true))
                 .andReturn().getResponse().getContentAsString();
@@ -185,9 +203,7 @@ class DroitsFicheSecuriteTest {
         assertThat(moniteurs).doesNotContain(email);
 
         mvc.perform(post("/api/admin/securite-surface").header("Authorization", admin)
-                        .contentType(MediaType.APPLICATION_JSON).content("""
-                                {"email":"e1@club.fr","nom":"X","prenom":"Y"}
-                                """))
+                        .contentType(MediaType.APPLICATION_JSON).content(compteSurface("e1@club.fr", creerSeance(admin))))
                 .andExpect(status().isUnprocessableContent());
         // Un moniteur n'est pas un compte de sécurité surface.
         mvc.perform(delete("/api/admin/securite-surface/" + moniteurId(admin, "e1@club.fr"))

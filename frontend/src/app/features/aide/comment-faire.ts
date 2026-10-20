@@ -49,6 +49,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
 
   { adresse: '/admin', manuels: ['administration', 'ouvrir-une-saison'] },
   { adresse: '/admin/moniteurs', manuels: ['ajouter-un-moniteur'] },
+  { adresse: '/admin/securite-surface', manuels: ['securite-surface'] },
   { adresse: '/admin/eleves', manuels: ['dossier-eleve', 'maintien-sans-formation'] },
   { adresse: '/admin/saisons', manuels: ['ouvrir-une-saison'] },
   { adresse: '/admin/cursus', manuels: ['inscrire-en-formation', 'delivrer-un-brevet', 'maintien-sans-formation'] },

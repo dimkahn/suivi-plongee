@@ -55,7 +55,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 
 - **Établir ou modifier** la fiche (DP, conditions, palanquées, proposition automatique, liaison avec une autre séance) : les moniteurs E3 et E4, les administrateurs, et les moniteurs à qui un administrateur en a donné le droit (écran « Moniteurs »). Pour les autres, la fiche s'ouvre en lecture seule.
 - **Signer** la fiche, une fois la plongée passée : son directeur de plongée, et lui seul (voir « Signer la fiche »). Signée, elle ne se modifie plus.
-- **Compléter au retour de plongée** (heures, profondeurs, durées, paliers) : tous les moniteurs, et les comptes « Sécurité surface », pour une personne qui n'est pas moniteur du club. Ces comptes ne voient que la liste des fiches de sécurité et l'écran « Compléter au retour de plongée ».
+- **Compléter au retour de plongée** (heures, profondeurs, durées, paliers) : tous les moniteurs, et les comptes « Sécurité surface », pour une personne qui n'est pas moniteur du club. Ces comptes ne voient que les fiches des séances qui leur sont confiées, et l'écran « Compléter au retour de plongée », jusqu'à leur date de fin d'accès (écran « Sécurité surface » de l'administration).
 
 ## Avant la mise à l'eau
 

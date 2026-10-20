@@ -5,6 +5,7 @@ import fr.club.plongee.securite.repository.*;
 import fr.club.plongee.securite.service.*;
 
 import fr.club.plongee.commun.ActiviteCaci;
+import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.MedecinCaci;
 import fr.club.plongee.commun.RegleMetierException;
 import jakarta.servlet.http.HttpServletResponse;
@@ -132,6 +133,8 @@ public class AuthController {
         enregistre.setRevoque(true);
         Utilisateur u = enregistre.getUtilisateur();
         if (compteEleveFerme(u)) throw new BadCredentialsException("Session expiree");
+        // Compte désactivé, ou dont la date de fin d'accès est passée (sécurité surface).
+        if (!u.estActifLe(Calendrier.aujourdhui())) throw new BadCredentialsException("Session expiree");
         poserCookieRefresh(u, enregistre.isPersistant(), reponse);
         return session(UtilisateurPrincipal.de(u), u);
     }
@@ -207,7 +210,7 @@ public class AuthController {
     @Transactional
     public void motDePasseOublie(@Valid @RequestBody DemandeMotDePasseOublie demande) {
         utilisateurs.findByEmailIgnoreCase(demande.email())
-                .filter(Utilisateur::isActif)
+                .filter(u -> u.estActifLe(Calendrier.aujourdhui()))
                 .ifPresent(reinitialisations::demander);
     }
 

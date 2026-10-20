@@ -163,6 +163,12 @@ export const routes: Routes = [
       .then(m => m.MoniteursComponent)
   },
   {
+    path: 'admin/securite-surface',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/comptes-securite-surface.component')
+      .then(m => m.ComptesSecuriteSurfaceComponent)
+  },
+  {
     path: 'admin/eleves',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/eleves.component')

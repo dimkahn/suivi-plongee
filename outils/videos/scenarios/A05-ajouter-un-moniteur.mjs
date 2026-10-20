@@ -1,12 +1,12 @@
 // A5 — Ajouter un moniteur.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 13e série, la sécurité surface passe dans son propre écran (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A5',
   titre: 'Ajouter un moniteur',
   public: 'Administrateur',
-  resume: 'Créer le compte d\'un encadrant : niveau d\'encadrement, niveau de plongeur, rôles, CACI ; et les comptes « Sécurité surface ».',
+  resume: 'Créer le compte d\'un encadrant : niveau d\'encadrement, niveau de plongeur, rôles, CACI.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -32,10 +32,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Ajouter le moniteur' }), { apres: 2000 });
     await legende('Julien reçoit un e-mail pour choisir son mot de passe.', 3500);
     await legende('Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l\'image.', 4000);
-    const surface = page.getByRole('heading', { name: 'Sécurité surface' });
-    await surface.scrollIntoViewIfNeeded();
-    await legende('En bas, les comptes « Sécurité surface » : une personne qui n\'est pas moniteur du club.', 4000);
-    await legende('Elle ne voit que les fiches de sécurité, et ne fait que les compléter au retour de plongée.', 4000);
+    await legende('Pour qui n\'est pas moniteur du club, l\'écran « Sécurité surface » : voir la vidéo A18.', 4000);
     await legende(null, 0);
     await pause(500);
   }

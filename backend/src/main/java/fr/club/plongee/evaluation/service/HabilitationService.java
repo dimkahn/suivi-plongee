@@ -8,6 +8,7 @@ import fr.club.plongee.referentiel.domain.BlocCompetence;
 import fr.club.plongee.securite.domain.NiveauEncadrement;
 import fr.club.plongee.securite.domain.RoleNom;
 import fr.club.plongee.securite.UtilisateurPrincipal;
+import fr.club.plongee.securite.repository.UtilisateurRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class HabilitationService {
 
     private final CursusRepository cursusRepository;
+    private final UtilisateurRepository utilisateurs;
 
-    public HabilitationService(CursusRepository cursusRepository) {
+    public HabilitationService(CursusRepository cursusRepository, UtilisateurRepository utilisateurs) {
         this.cursusRepository = cursusRepository;
+        this.utilisateurs = utilisateurs;
     }
 
     /** Droit de saisir une evaluation sur ce cursus. */
@@ -85,6 +88,21 @@ public class HabilitationService {
             throw new RegleMetierException("Seuls les moniteurs " + FicheSecuriteService.NIVEAU_DP_MINIMUM
                     + " ou E4, ou ceux qui en ont reçu le droit (écran Moniteurs), peuvent établir ou modifier "
                     + "une fiche de sécurité. Vous pouvez la compléter au retour de plongée.");
+        }
+    }
+
+    /**
+     * Un compte de sécurité surface (ni moniteur ni administrateur) ne lit et
+     * ne complète que les fiches des séances qui lui ont été confiées (choix
+     * du club, 2026) ; les autres comptes ne sont pas concernés.
+     */
+    @Transactional(readOnly = true)
+    public void verifierAccesSeance(Long seanceId, Authentication authentication) {
+        UtilisateurPrincipal p = principal(authentication);
+        if (p == null || !p.limiteAuxSeancesConfiees()) return;
+        if (!utilisateurs.seanceConfiee(p.id(), seanceId)) {
+            throw new RegleMetierException("Cette séance ne fait pas partie de celles qui vous ont été confiées. "
+                    + "Voyez l'administrateur du club.");
         }
     }
 

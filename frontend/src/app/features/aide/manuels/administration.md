@@ -3,7 +3,7 @@ titre: Tour de l'administration et début de saison
 rubrique: Administrateur
 videos: A1
 ecran: /admin
-mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club, matériel, inventaire, prêts
+mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club, matériel, inventaire, prêts, personnes, sécurité surface
 questions:
 - Où est le matériel quand je suis administrateur ?
 - Que faire en début de saison ?
@@ -31,6 +31,7 @@ La page « Administration » les range par moment de l'année.
 **Personnes**
 
 - **Moniteurs** : les comptes des encadrants (niveau, rôles, CACI).
+- **Sécurité surface** : les comptes de qui n'est pas moniteur et ne fait que compléter les fiches de sécurité, pour les séances confiées et jusqu'à une date de fin d'accès.
 - **Élèves** : les dossiers (autorisations, droit à l'image, photo, tailles de matériel).
 
 **Matériel**
