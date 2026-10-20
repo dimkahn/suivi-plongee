@@ -113,6 +113,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Décision** : une carte par voyage (aller, retour), PDF ou photo JPEG/PNG de 5 Mo au plus, signature du fichier vérifiée (V98, table `sejour_carte_embarquement`, `CartesEmbarquementService`). Elle se joint depuis la carte du vol de « Mon séjour », dans l'appli comme par le lien (`…/participants/{id}/cartes-embarquement/{sens}`, `/api/public/sejour/{code}/cartes-embarquement/{sens}`) ; une nouvelle remplace l'ancienne. Toute photo est recodée en JPEG par le téléphone (`envoiCarte`, `reduirePhoto`), ce qui retire sa position GPS ; un PDF part tel quel, servi en bac à sable (`Content-Security-Policy: sandbox`). **Lue et modifiée seulement par le voyageur et les organisateurs**, comme le dossier : elle porte son nom et permet d'embarquer ; `Trajet.carteEmbarquement` (le type) est retiré par `sansReservation`, le fichier refusé (403) à tout autre. Jamais imprimée ni envoyée par e-mail, jamais gardée en cache (`no-store`). Les organisateurs l'ouvrent depuis « Qui est dans ce vol ». Un voyage effacé emporte sa carte.
 - **Écarté** : lire le code-barres ou le vol sur la carte pour remplir le voyage ; la garder sur le téléphone sans réseau (le séjour demande le réseau) : le manuel conseille de garder aussi le PDF de la compagnie.
 
+## Voir le séjour comme un participant
+
+- **Date** : 2026-10, demande du club.
+- **Contexte** : un organisateur ne savait pas ce que voient les participants, et sur place il voulait suivre le séjour comme les autres, sans tous les boutons d'organisation.
+- **Décision** : « Voir comme un participant » dans le bandeau « Organisation », pour tout encadrant ; « Revenir à l'organisation » pour revenir. `GET /api/sejours/{id}?commeParticipant=true` renvoie le carnet (`SejourService.carnet`, même filtre que pour un participant) et les frais sans les droits d'organisateur. **Une vue seulement** : les droits d'écriture ne changent pas (le serveur les vérifie à chaque écriture), et l'écran relit la vue participant après chaque écriture. Le choix n'est pas gardé : chaque ouverture du séjour repart en mode organisation.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.

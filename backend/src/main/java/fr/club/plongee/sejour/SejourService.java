@@ -285,7 +285,24 @@ public class SejourService {
 
     @Transactional(readOnly = true)
     public SejourVue lire(Long sortieId, UtilisateurPrincipal principal) {
+        return lire(sortieId, principal, false);
+    }
+
+    /**
+     * {@code commeParticipant} : un encadrant (organisateur ou non) voit le
+     * séjour comme un participant, filtré comme le carnet, et les frais sans
+     * les droits d'organisateur (demande du club, 2026). Ce n'est qu'une
+     * vue : ses droits d'écriture ne changent pas.
+     */
+    @Transactional(readOnly = true)
+    public SejourVue lire(Long sortieId, UtilisateurPrincipal principal, boolean commeParticipant) {
         boolean encadrant = encadrant(principal);
+        if (encadrant && commeParticipant) {
+            FraisService.ActeurFrais a = frais.acteur(sortieId, principal);
+            SejourVue complet = vueComplete(sortieId, principal.id(), false, false);
+            return carnet(avecFrais(complet, frais.lire(sortieId,
+                    new FraisService.ActeurFrais(a.utilisateurId(), a.participantId(), false, a.moniteur(), a.eleve()))));
+        }
         boolean gere = encadrant && droits.organise(sortieId, principal.id());
         SejourVue complet = vueComplete(sortieId, principal.id(), gere, encadrant);
         complet = avecFrais(complet, frais.lire(sortieId, frais.acteur(sortieId, principal)));

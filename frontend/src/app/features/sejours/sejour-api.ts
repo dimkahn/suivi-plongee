@@ -556,8 +556,9 @@ export class SejourApi {
     return this.http.get<SejourResumeVue[]>('/api/sejours', { params: { toutes } });
   }
 
-  lire(id: number): Observable<SejourVue> {
-    return this.http.get<SejourVue>(`/api/sejours/${id}`);
+  /** commeParticipant : un encadrant le voit comme un participant (le carnet, filtré par le serveur). */
+  lire(id: number, commeParticipant = false): Observable<SejourVue> {
+    return this.http.get<SejourVue>(`/api/sejours/${id}`, commeParticipant ? { params: { commeParticipant } } : {});
   }
 
   /** Les organisateurs désignés par le créateur (lui-même l'est toujours). */

@@ -78,10 +78,12 @@ public class SejourController {
         return service.lister(toutes, moi);
     }
 
+    /** {@code commeParticipant} : un encadrant le voit comme un participant (le carnet, filtré par le serveur). */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public SejourVue lire(@PathVariable Long id, @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        return service.lire(id, moi);
+    public SejourVue lire(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean commeParticipant,
+                          @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return service.lire(id, moi, commeParticipant);
     }
 
     /** Le créateur choisit qui organise avec lui ; un ADMIN aussi, pour reprendre un séjour. */

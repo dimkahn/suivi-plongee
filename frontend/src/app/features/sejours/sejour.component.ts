@@ -98,7 +98,9 @@ function participantVide(): BrouillonParticipant {
           } @else if (s.encadrant) {
             <span class="secondaire">Aucun organisateur : un administrateur peut en désigner un.</span>
           }
-          @if (s.gere) {
+          @if (commeParticipant()) {
+            <span class="pastille vue-participant">Vue d'un participant</span>
+          } @else if (s.gere) {
             <span class="pastille droit">Vous pouvez modifier</span>
           } @else if (s.encadrant) {
             <span class="pastille">Lecture seule</span>
@@ -110,6 +112,17 @@ function participantVide(): BrouillonParticipant {
           }
         </div>
         <div class="barre-actions" role="group" aria-label="Partager le carnet">
+          @if (s.encadrant || commeParticipant()) {
+            <button type="button" class="bouton-discret action mode-participant" (click)="basculerMode()"
+                    [attr.aria-pressed]="commeParticipant()"
+                    title="Le séjour tel que le voit un participant : son carnet, sans les coordonnées des autres">
+              @if (commeParticipant()) {
+                <span aria-hidden="true">↩</span> Revenir à l'organisation
+              } @else {
+                <span aria-hidden="true">👁</span> Voir comme un participant
+              }
+            </button>
+          }
           <a class="bouton-discret action" [routerLink]="['/sejours', s.sortie.id, 'imprimer']">
             <span aria-hidden="true">🖨</span> Version imprimable
           </a>
@@ -977,6 +990,9 @@ function participantVide(): BrouillonParticipant {
     .organisateurs { display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; min-height: 44px; }
     .etiquette { font-size: .8125rem; text-transform: uppercase; letter-spacing: .04em; color: var(--craie); font-weight: 700; }
     .pastille.droit { background: var(--acquis-clair); color: var(--acquis); }
+    .pastille.vue-participant { background: var(--en-cours-clair); color: var(--en-cours); }
+    .mode-participant[aria-pressed="true"] { border-color: var(--en-cours); color: var(--en-cours); font-weight: 700; }
+    @media print { .mode-participant { display: none; } }
     .bouton-lien { background: none; border: none; padding: 0 4px; min-height: 44px; color: var(--profond); font: inherit;
                    font-weight: 700; text-decoration: underline; cursor: pointer; }
     .barre-actions { display: flex; gap: var(--pas); flex-wrap: wrap; }
@@ -1102,6 +1118,8 @@ export class SejourComponent {
 
   private readonly id = Number(this.route.snapshot.paramMap.get('id'));
   sejour = signal<SejourVue | null>(null);
+  /** Un encadrant regarde le séjour comme un participant (« Voir comme un participant »). */
+  commeParticipant = signal(false);
   chargement = signal(true);
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
@@ -1274,7 +1292,7 @@ export class SejourComponent {
   }
 
   /** Les cartes d'embarquement : la sienne dans « Mon séjour », celles des passagers pour les organisateurs. */
-  readonly portCartes = this.api.portCartes(this.id, s => this.sejour.set(s));
+  readonly portCartes = this.api.portCartes(this.id, s => this.maj(s));
 
   montrerCarte(participantId: number, sens: 'arrivee' | 'depart'): void {
     this.erreur.set(null);
@@ -1414,7 +1432,7 @@ export class SejourComponent {
   }
 
   /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
-  readonly portFrais = this.api.portFrais(this.id, s => this.sejour.set(s));
+  readonly portFrais = this.api.portFrais(this.id, s => this.maj(s));
 
   /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour ». */
   readonly prets = new PretsDuSejour(this.api.portPrets(this.id));
@@ -1792,7 +1810,7 @@ export class SejourComponent {
     appel.subscribe({
       next: s => {
         this.envoi.set(false);
-        this.sejour.set(s);
+        this.maj(s);
         ensuite?.();
       },
       error: (e: HttpErrorResponse) => {
@@ -1808,9 +1826,30 @@ export class SejourComponent {
     });
   }
 
+  /**
+   * Passe de l'organisation à la vue d'un participant, et retour : le
+   * serveur renvoie alors le carnet, filtré comme pour un participant.
+   */
+  basculerMode(): void {
+    this.commeParticipant.update(v => !v);
+    this.message.set(null);
+    this.erreur.set(null);
+    if (this.commeParticipant() && this.onglet() === 'participants') this.onglet.set('programme');
+    void this.charger();
+  }
+
+  /** Le séjour renvoyé par une écriture ; en vue participant, relu comme un participant le voit. */
+  private maj(s: SejourVue): void {
+    if (!this.commeParticipant()) {
+      this.sejour.set(s);
+      return;
+    }
+    this.api.lire(this.id, true).subscribe({ next: v => this.sejour.set(v), error: () => this.sejour.set(s) });
+  }
+
   private async charger(): Promise<void> {
     try {
-      this.sejour.set(await firstValueFrom(this.api.lire(this.id)));
+      this.sejour.set(await firstValueFrom(this.api.lire(this.id, this.commeParticipant())));
     } catch (e) {
       const statut = (e as HttpErrorResponse).status;
       this.message.set(statut === 403 ? "Ce séjour n'est ouvert qu'à ses participants et aux encadrants."
