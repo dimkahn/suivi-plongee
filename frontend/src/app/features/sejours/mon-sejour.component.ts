@@ -5,7 +5,7 @@ import { nomEquipement } from '../../core/nom-equipement';
 import { MonMateriel, PretsDuSejour, monMateriel } from './materiel-sejour';
 import { CarteVoyageComponent } from './carte-voyage.component';
 import { enCarte } from './voyage';
-import { ParticipantVue, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
+import { ParticipantVue, PortCartesEmbarquement, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
 
 /**
  * Où mène chaque tuile : un onglet du séjour, ou la fenêtre « Mes informations » ;
@@ -68,7 +68,8 @@ interface Tuile {
       @if (voyages().length > 0) {
         <div class="voyages">
           @for (v of voyages(); track v.etiquette) {
-            <app-carte-voyage [trajet]="v.trajet" [aller]="v.aller" [etiquette]="v.etiquette" />
+            <app-carte-voyage [trajet]="v.trajet" [aller]="v.aller" [etiquette]="v.etiquette"
+                              [cartes]="cartes()" [participantId]="moi().id" />
           }
         </div>
       }
@@ -138,6 +139,8 @@ export class MonSejourComponent implements OnInit {
   moi = input.required<ParticipantVue>();
   /** Le matériel emprunté, partagé avec l'onglet « Matériel » ; sans lui, ni question ni tuile. */
   prets = input<PretsDuSejour | null>(null);
+  /** Ses cartes d'embarquement, jointes aux cartes de ses voyages ; sans lui, rien à ajouter. */
+  cartes = input<PortCartesEmbarquement | null>(null);
   ouvrir = output<CibleMonSejour>();
 
   envoi = signal(false);

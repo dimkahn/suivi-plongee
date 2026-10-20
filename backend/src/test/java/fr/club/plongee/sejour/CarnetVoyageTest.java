@@ -18,7 +18,7 @@ class CarnetVoyageTest {
     void reservationDansLeCarnet() {
         Trajet aller = new Trajet(LocalDate.of(2026, 10, 22), LocalTime.of(15, 5), MoyenTransport.AVION, "TX510",
                 "Fort-de-France", LocalTime.of(12, 20), "Paris-Orly", null, null, null, null,
-                "4", "ABC123", "https://compagnie.example/ABC123", LocalDateTime.of(2026, 10, 20, 12, 20));
+                "4", "ABC123", "https://compagnie.example/ABC123", LocalDateTime.of(2026, 10, 20, 12, 20), null);
 
         String ligne = CarnetSejourService.trajet(aller, true);
 

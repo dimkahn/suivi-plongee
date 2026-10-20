@@ -77,6 +77,27 @@ export interface Trajet {
   ouvertureEnregistrement?: string | null;
   dossier?: string | null;
   lienEnregistrement?: string | null;
+  /**
+   * Le type de la carte d'embarquement jointe (« application/pdf »,
+   * « image/jpeg »), null sans carte (V98). Comme le dossier, renvoyée au
+   * seul voyageur et aux organisateurs ; ignorée à l'écriture du voyage
+   * (la carte se dépose à part, {@link PortCartesEmbarquement}).
+   */
+  carteEmbarquement?: string | null;
+}
+
+export type SensVoyage = 'ARRIVEE' | 'DEPART';
+
+/**
+ * La carte d'embarquement d'un voyage, pour le séjour dans l'appli comme
+ * pour la page du lien : chaque écriture renvoie le séjour (ou le carnet) à
+ * jour. Par le lien, {@code participantId} est ignoré : c'est toujours la
+ * sienne.
+ */
+export interface PortCartesEmbarquement {
+  deposer(participantId: number, sens: SensVoyage, fichier: File): Observable<SejourVue>;
+  retirer(participantId: number, sens: SensVoyage): Observable<SejourVue>;
+  lire(participantId: number, sens: SensVoyage): Observable<Blob>;
 }
 
 /** Un trajet à modifier dans un formulaire : heures au format des champs (« 10:35 »), vide s'il n'y en a pas. */
@@ -624,6 +645,17 @@ export class SejourApi {
       apprendreLecture: lecon => this.http.post<void>(`${base}/lecture-notes/apprentissage`, lecon),
       ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),
       supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`))
+    };
+  }
+
+  /** Les cartes d'embarquement, pour un compte connecté ; {@code maj} reçoit le séjour à jour. */
+  portCartes(id: number, maj: (s: SejourVue) => void): PortCartesEmbarquement {
+    const url = (participantId: number, sens: SensVoyage) =>
+      `/api/sejours/${id}/participants/${participantId}/cartes-embarquement/${sens}`;
+    return {
+      deposer: (p, sens, fichier) => this.http.post<SejourVue>(url(p, sens), formulairePhoto(fichier)).pipe(tap(maj)),
+      retirer: (p, sens) => this.http.delete<SejourVue>(url(p, sens)).pipe(tap(maj)),
+      lire: (p, sens) => this.http.get(url(p, sens), { responseType: 'blob' })
     };
   }
 

@@ -1,7 +1,30 @@
 import { Component, ChangeDetectionStrategy, computed, input, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Observable, firstValueFrom } from 'rxjs';
+import { reduirePhoto } from '../../core/reduire-photo';
 import { conseilDepart } from './programme-du-jour';
-import { TRANSPORTS, Trajet, jourLong } from './sejour-api';
-import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
+import { PortCartesEmbarquement, SensVoyage, TRANSPORTS, Trajet, jourLong } from './sejour-api';
+import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte } from './voyage';
+
+/**
+ * Ouvre la carte d'embarquement dans un nouvel onglet, pour la montrer à
+ * l'embarquement. L'onglet s'ouvre tout de suite (au toucher) : ouvert
+ * après la réponse du serveur, le navigateur le bloquerait.
+ */
+export function montrerCarte(lecture: Observable<Blob>, echec: () => void): void {
+  const onglet = window.open('', '_blank');
+  lecture.subscribe({
+    next: blob => {
+      const adresse = URL.createObjectURL(blob);
+      if (onglet) onglet.location.href = adresse; else window.location.href = adresse;
+      setTimeout(() => URL.revokeObjectURL(adresse), 60_000);
+    },
+    error: () => {
+      onglet?.close();
+      echec();
+    }
+  });
+}
 
 /**
  * Un voyage du participant connecté, en carte (demande du club, 2026 :
@@ -9,7 +32,9 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
  * départ et d'arrivée face à face, « +1 jour », lieux, terminal, vol et
  * compagnie, ouverture de l'enregistrement en ligne, et sa réservation
  * (numéro de dossier à copier, lien vers l'enregistrement, sinon le site
- * de la compagnie reconnue au numéro de vol). Ce qui est placé dans la
+ * de la compagnie reconnue au numéro de vol). Avec {@code cartes}, sa
+ * carte d'embarquement (PDF ou photo) : l'ajouter, la montrer à
+ * l'embarquement, la remplacer, la retirer (V98). Ce qui est placé dans la
  * balise s'affiche sous le vol : les passagers, dans l'onglet
  * « Transports » des organisateurs.
  */
@@ -58,6 +83,30 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
           </div>
         </div>
       }
+      @if (cartes() && participantId() !== null) {
+        <div class="embarquement">
+          @if (t.carteEmbarquement) {
+            <p class="ligne-carte">✓ {{ billet() ? 'Billet joint' : "Carte d'embarquement jointe" }}
+              ({{ t.carteEmbarquement === 'application/pdf' ? 'PDF' : 'photo' }})</p>
+            <div class="boutons">
+              <button type="button" class="bouton-principal" (click)="montrer()" [disabled]="envoi()">
+                Montrer {{ billet() ? 'le billet' : 'la carte' }}
+              </button>
+              <label class="bouton-discret" [class.inactif]="envoi()">
+                Remplacer
+                <input type="file" class="masque" [accept]="formats" [disabled]="envoi()" (change)="choisir($event)">
+              </label>
+              <button type="button" class="bouton-discret" (click)="retirer()" [disabled]="envoi()">Retirer</button>
+            </div>
+          } @else {
+            <label class="bouton-discret ajout" [class.inactif]="envoi()">
+              @if (envoi()) { Envoi… } @else { + Ajouter {{ billet() ? 'le billet' : "la carte d'embarquement" }} (PDF ou photo) }
+              <input type="file" class="masque" [accept]="formats" [disabled]="envoi()" (change)="choisir($event)">
+            </label>
+          }
+          @if (erreurCarte(); as e) { <p class="erreur" role="alert">{{ e }}</p> }
+        </div>
+      }
     </article>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -91,11 +140,20 @@ import { carteVoyage, compagnieDuVol, enregistrement } from './voyage';
     .dossier { font-family: ui-monospace, monospace; font-size: 1.125rem; letter-spacing: .08em; }
     /* Les deux gestes côte à côte, même largeur, sous le dossier ; l'un sous l'autre sur un petit écran. */
     .boutons { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--pas); }
-    .boutons button, .boutons a { min-height: 44px; margin: 0; width: 100%; box-sizing: border-box;
+    .boutons button, .boutons a, .boutons label { min-height: 44px; margin: 0; width: 100%; box-sizing: border-box;
                                   display: inline-flex; align-items: center; justify-content: center;
                                   text-align: center; text-decoration: none; }
     @media (max-width: 340px) { .boutons { grid-auto-flow: row; } }
-    @media print { .reservation { display: none; } }
+    .embarquement { margin-top: var(--pas); padding-top: var(--pas); border-top: 1px dashed var(--trait); }
+    .ligne-carte { margin: 0 0 var(--pas); font-weight: 700; color: #166534; }
+    .embarquement label { cursor: pointer; }
+    .ajout { width: 100%; }
+    .inactif { opacity: .6; pointer-events: none; }
+    .masque { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+    .erreur { margin: var(--pas) 0 0; color: #B91C1C; font-weight: 700; }
+    .embarquement .ajout { min-height: 44px; margin: 0; box-sizing: border-box; display: inline-flex;
+                           align-items: center; justify-content: center; text-align: center; }
+    @media print { .reservation, .embarquement { display: none; } }
   `]
 })
 export class CarteVoyageComponent {
@@ -103,8 +161,14 @@ export class CarteVoyageComponent {
   /** Vrai : le voyage aller (arrivée au séjour). */
   aller = input.required<boolean>();
   etiquette = input.required<string>();
+  /** Avec le voyageur : sa carte d'embarquement, à ajouter, montrer, remplacer ou retirer. */
+  cartes = input<PortCartesEmbarquement | null>(null);
+  participantId = input<number | null>(null);
 
   readonly jourLong = jourLong;
+  readonly formats = 'application/pdf,image/*';
+  envoi = signal(false);
+  erreurCarte = signal<string | null>(null);
   /** L'heure de l'appareil, prise à l'affichage : l'état de l'enregistrement n'a pas besoin d'être plus précis. */
   private readonly maintenant = new Date();
   copie = signal(false);
@@ -132,6 +196,67 @@ export class CarteVoyageComponent {
     const c = this.compagnie();
     return c && t.dossier ? { adresse: c.site, libelle: 'Site ' + c.nom } : null;
   });
+
+  /** Un train ou un car a un billet ; un avion ou un bateau, une carte d'embarquement. */
+  readonly billet = computed(() => ['TRAIN', 'CAR'].includes(this.trajet().transport ?? ''));
+
+  private sens(): SensVoyage {
+    return this.aller() ? 'ARRIVEE' : 'DEPART';
+  }
+
+  async choisir(e: Event): Promise<void> {
+    const champ = e.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    const port = this.cartes(), id = this.participantId();
+    if (!fichier || !port || id === null) return;
+    this.erreurCarte.set(null);
+    const envoi = envoiCarte(fichier.type, fichier.size);
+    if (envoi === 'refus') {
+      this.erreurCarte.set(fichier.type === 'application/pdf' ? 'Ce PDF dépasse 5 Mo.' : 'Choisissez un PDF ou une photo.');
+      return;
+    }
+    this.envoi.set(true);
+    let aEnvoyer = fichier;
+    if (envoi === 'reduire') {
+      try {
+        aEnvoyer = await reduirePhoto(fichier);
+      } catch {
+        this.envoi.set(false);
+        this.erreurCarte.set("Cette photo n'a pas pu être lue : choisissez un PDF, ou une photo JPEG ou PNG.");
+        return;
+      }
+    }
+    try {
+      await firstValueFrom(port.deposer(id, this.sens(), aEnvoyer));
+    } catch (err) {
+      this.erreurCarte.set((err as HttpErrorResponse).error?.detail ?? "La carte n'a pas pu être envoyée (réseau nécessaire).");
+    } finally {
+      this.envoi.set(false);
+    }
+  }
+
+  retirer(): void {
+    const port = this.cartes(), id = this.participantId();
+    if (!port || id === null) return;
+    this.envoi.set(true);
+    this.erreurCarte.set(null);
+    port.retirer(id, this.sens()).subscribe({
+      next: () => this.envoi.set(false),
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.erreurCarte.set(err.error?.detail ?? "La carte n'a pas pu être retirée (réseau nécessaire).");
+      }
+    });
+  }
+
+  montrer(): void {
+    const port = this.cartes(), id = this.participantId();
+    if (!port || id === null) return;
+    this.erreurCarte.set(null);
+    montrerCarte(port.lire(id, this.sens()), () =>
+      this.erreurCarte.set("La carte n'a pas pu être ouverte (réseau nécessaire)."));
+  }
 
   copier(texte: string): void {
     navigator.clipboard?.writeText(texte).then(() => {

@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, Injector, afterNextRender, computed
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, firstValueFrom, map } from 'rxjs';
+import { Observable, firstValueFrom, map, tap } from 'rxjs';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from '../../core/base-locale';
 import { periode } from '../../core/date-fr';
 import { SejourFraisComponent } from './sejour-frais.component';
@@ -14,7 +14,7 @@ import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
   AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
-  PortFrais, RegleLecture,
+  PortCartesEmbarquement, PortFrais, RegleLecture,
   PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
@@ -95,7 +95,7 @@ interface JetonGarde {
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
-            <app-carnet-sejour [sejour]="c" [prets]="prets" (ouvrirOnglet)="ouvrirDepuisCarnet($event)" />
+            <app-carnet-sejour [sejour]="c" [prets]="prets" [cartes]="portCartes" (ouvrirOnglet)="ouvrirDepuisCarnet($event)" />
             <p class="version-imprimable">
               <button type="button" class="bouton-discret" (click)="ouvrirImprimable()">Version imprimable</button>
             </p>
@@ -250,6 +250,16 @@ export class EspaceParticipantComponent {
     annuler: pretId => this.http.delete<PretsSejourVue>(`${this.base}/prets/${pretId}`, this.options()),
     rienEmprunte: rien => this.http.put<PretsSejourVue>(`${this.base}/prets/rien-emprunte`, { rienEmprunte: rien },
       this.options())
+  };
+
+  /** Ses cartes d'embarquement, avec le jeton du lien : chaque écriture renvoie le carnet à jour. */
+  readonly portCartes: PortCartesEmbarquement = {
+    deposer: (_p, sens, fichier) => this.http.post<SejourVue>(`${this.base}/cartes-embarquement/${sens}`,
+      formulairePhoto(fichier), this.options()).pipe(tap(c => this.carnet.set(c))),
+    retirer: (_p, sens) => this.http.delete<SejourVue>(`${this.base}/cartes-embarquement/${sens}`, this.options())
+      .pipe(tap(c => this.carnet.set(c))),
+    lire: (_p, sens) => this.http.get(`${this.base}/cartes-embarquement/${sens}`,
+      { headers: this.entetes(), responseType: 'blob' })
   };
 
   /** Le matériel emprunté, partagé par la carte « Mon séjour » du carnet et l'onglet « Matériel ». */

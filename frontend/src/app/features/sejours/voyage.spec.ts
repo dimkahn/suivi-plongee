@@ -1,7 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { conseilDepart } from './programme-du-jour';
 import { Trajet, copieTrajet, trajetSaisi } from './sejour-api';
-import { carteVoyage, compagnieDuVol, enregistrement, memeVoyageQue } from './voyage';
+import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, memeVoyageQue } from './voyage';
+
+describe("Carte d'embarquement à envoyer", () => {
+  const Mo = 1024 * 1024;
+  it('part telle quelle en PDF', () => {
+    expect(envoiCarte('application/pdf', 2 * Mo)).toBe('tel-quel');
+  });
+  it("est recodée si c'est une photo, même légère : la position GPS de la prise de vue n'est pas envoyée", () => {
+    expect(envoiCarte('image/jpeg', 100_000)).toBe('reduire');
+    expect(envoiCarte('image/png', 3 * Mo)).toBe('reduire');
+    expect(envoiCarte('image/jpeg', 7 * Mo)).toBe('reduire');
+    expect(envoiCarte('image/heic', 2 * Mo)).toBe('reduire');
+  });
+  it("est refusée si c'est un PDF trop lourd, ou ni un PDF ni une image", () => {
+    expect(envoiCarte('application/pdf', 6 * Mo)).toBe('refus');
+    expect(envoiCarte('text/plain', 10)).toBe('refus');
+  });
+});
 
 const aller: Trajet = {
   date: '2026-10-22', heure: '15:05:00', transport: 'AVION', numero: 'TX 510', lieu: 'Fort-de-France',

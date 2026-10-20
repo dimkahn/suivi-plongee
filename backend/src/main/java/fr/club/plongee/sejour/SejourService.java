@@ -83,13 +83,18 @@ public class SejourService {
      * réservation) et {@code lienEnregistrement}. Dossier et lien permettent
      * de modifier ou d'annuler le billet : seuls le voyageur et les
      * organisateurs les lisent ({@link #sansReservation()}).
+     * <p>
+     * {@code carteEmbarquement} : le type (PDF, photo) de la carte
+     * d'embarquement jointe au voyage (V98, {@link CartesEmbarquementService}),
+     * null sans carte ; lue comme le dossier, ignorée à l'écriture.
      */
     public record Trajet(LocalDate date, LocalTime heure, MoyenTransport transport,
                          @Size(max = 30) String numero, @Size(max = 120) String lieu,
                          LocalTime heureDepart, @Size(max = 120) String lieuDepart, LocalTime heureArrivee,
                          LocalDate dateDepart, LocalDate dateArrivee, @Size(max = 120) String lieuArrivee,
                          @Size(max = 30) String terminal, @Size(max = 30) String dossier,
-                         @Size(max = 500) String lienEnregistrement, LocalDateTime ouvertureEnregistrement) {
+                         @Size(max = 500) String lienEnregistrement, LocalDateTime ouvertureEnregistrement,
+                         String carteEmbarquement) {
         boolean vide() {
             return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu)
                     && heureDepart == null && blanc(lieuDepart) && heureArrivee == null
@@ -100,7 +105,7 @@ public class SejourService {
         /** Le même voyage, sans ce qui permet d'agir sur le billet : pour qui n'est ni le voyageur ni organisateur. */
         Trajet sansReservation() {
             return new Trajet(date, heure, transport, numero, lieu, heureDepart, lieuDepart, heureArrivee,
-                    dateDepart, dateArrivee, lieuArrivee, terminal, null, null, ouvertureEnregistrement);
+                    dateDepart, dateArrivee, lieuArrivee, terminal, null, null, ouvertureEnregistrement, null);
         }
 
         /**
@@ -415,7 +420,11 @@ public class SejourService {
     }
 
     private static final String SELECT_PARTICIPANT = """
-            SELECT p.*, e.utilisateur_id AS compte_eleve, g.nom AS nom_groupe
+            SELECT p.*, e.utilisateur_id AS compte_eleve, g.nom AS nom_groupe,
+                   (SELECT c.type_contenu FROM sejour_carte_embarquement c
+                     WHERE c.participant_id = p.id AND c.sens = 'ARRIVEE') AS arrivee_carte_embarquement,
+                   (SELECT c.type_contenu FROM sejour_carte_embarquement c
+                     WHERE c.participant_id = p.id AND c.sens = 'DEPART') AS depart_carte_embarquement
               FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
               LEFT JOIN membre_groupe_plongeurs m ON m.id = p.membre_groupe_id
               LEFT JOIN groupe_plongeurs g ON g.id = m.groupe_id""";
@@ -568,7 +577,8 @@ public class SejourService {
                 aller ? null : rs.getString("depart_lieu_arrivee"),
                 rs.getString(sens + "_terminal"), rs.getString(sens + "_dossier"),
                 rs.getString(sens + "_lien_enregistrement"),
-                rs.getObject(sens + "_ouverture_enregistrement", LocalDateTime.class));
+                rs.getObject(sens + "_ouverture_enregistrement", LocalDateTime.class),
+                rs.getString(sens + "_carte_embarquement"));
         return t.vide() ? null : t;
     }
 
@@ -684,6 +694,7 @@ public class SejourService {
                        depart_lieu_arrivee = :departLieuArrivee,%s
                        remarques = :remarques
                  WHERE id = :pid""".formatted(RESERVATIONS), p);
+        oublierCartesSansVoyage(sortieId);
         reporterSurLePlongeur(d);
     }
 
@@ -754,6 +765,8 @@ public class SejourService {
                        depart_lieu_arrivee = :departLieuArrivee,%s
                        remarques = :remarques
                  WHERE id = :pid""".formatted(RESERVATIONS), p);
+        oublierCartesSansVoyage(jdbc.queryForObject("SELECT sortie_id FROM sejour_participant WHERE id = :pid",
+                p, Long.class));
     }
 
     /** Les colonnes de réservation des deux voyages (V96), dans un UPDATE. */
@@ -807,6 +820,22 @@ public class SejourService {
                        %1$s_numero = :tNumero, %1$s_lieu = :tLieu, %1$s_terminal = :tTerminal,
                        %1$s_ouverture_enregistrement = :tOuverture%2$s
                  WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens, autreHoraire), p);
+        oublierCartesSansVoyage(sortieId);
+    }
+
+    /**
+     * Un voyage effacé emporte sa carte d'embarquement (V98) : elle ne se
+     * voit plus sans voyage, et ne doit pas rester en base sans être vue.
+     */
+    private void oublierCartesSansVoyage(Long sortieId) {
+        for (String sens : List.of("arrivee", "depart")) {
+            jdbc.update("""
+                    DELETE FROM sejour_carte_embarquement WHERE sens = :sens AND participant_id IN (
+                        SELECT id FROM sejour_participant WHERE sortie_id = :sortie
+                           AND %1$s_date IS NULL AND %1$s_heure IS NULL
+                           AND %1$s_transport IS NULL AND %1$s_numero IS NULL)""".formatted(sens),
+                    new MapSqlParameterSource("sortie", sortieId).addValue("sens", sens.toUpperCase(Locale.ROOT)));
+        }
     }
 
     /** Il quitte aussi sa voiture et sa chambre ; une voiture qu'il conduisait n'a plus de conducteur. */

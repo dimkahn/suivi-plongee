@@ -57,14 +57,17 @@ public class SejourController {
     private final FraisService frais;
     private final AccesSejourService acces;
     private final PretsSejourService pretsSejour;
+    private final CartesEmbarquementService cartes;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
-                            AccesSejourService acces, PretsSejourService pretsSejour) {
+                            AccesSejourService acces, PretsSejourService pretsSejour,
+                            CartesEmbarquementService cartes) {
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
         this.acces = acces;
         this.pretsSejour = pretsSejour;
+        this.cartes = cartes;
     }
 
     /** {@code toutes} : aussi les séjours passés (encadrants). Un participant ne voit que les siens. */
@@ -138,6 +141,55 @@ public class SejourController {
                                           @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.supprimerParticipant(id, participantId);
         return service.lire(id, moi);
+    }
+
+    // ------------------------------------------------------------------
+    //  Carte d'embarquement : le voyageur et les organisateurs (CartesEmbarquementService).
+    // ------------------------------------------------------------------
+
+    /** Un PDF ou une photo, joint à l'aller ({@code ARRIVEE}) ou au retour ({@code DEPART}) ; remplace le précédent. */
+    @PostMapping(value = "/{id}/participants/{participantId}/cartes-embarquement/{sens}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue deposerCarte(@PathVariable Long id, @PathVariable Long participantId, @PathVariable SensTrajet sens,
+                                  @RequestParam("fichier") MultipartFile fichier,
+                                  @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        cartes.verifierDroit(id, participantId, moi);
+        cartes.deposer(id, participantId, sens, octets(fichier), fichier.getContentType());
+        return service.lire(id, moi);
+    }
+
+    @DeleteMapping("/{id}/participants/{participantId}/cartes-embarquement/{sens}")
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue retirerCarte(@PathVariable Long id, @PathVariable Long participantId, @PathVariable SensTrajet sens,
+                                  @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        cartes.verifierDroit(id, participantId, moi);
+        cartes.retirer(id, participantId, sens);
+        return service.lire(id, moi);
+    }
+
+    @GetMapping("/{id}/participants/{participantId}/cartes-embarquement/{sens}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> carte(@PathVariable Long id, @PathVariable Long participantId,
+                                        @PathVariable SensTrajet sens,
+                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        cartes.verifierDroit(id, participantId, moi);
+        return carte(cartes.lire(id, participantId, sens), sens);
+    }
+
+    /**
+     * Montrée dans le navigateur, jamais gardée en cache : elle permet
+     * d'embarquer. En bac à sable (CSP sandbox) : un PDF ne peut rien
+     * exécuter au nom de l'appli.
+     */
+    static ResponseEntity<byte[]> carte(CartesEmbarquementService.ContenuCarte c, SensTrajet sens) {
+        String nom = "carte-embarquement-" + (sens == SensTrajet.ARRIVEE ? "aller" : "retour")
+                + (c.type().equals("application/pdf") ? ".pdf" : c.type().equals("image/png") ? ".png" : ".jpg");
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType(c.type()))
+                .cacheControl(CacheControl.noStore())
+                .header("Content-Disposition", "inline; filename=\"" + nom + "\"")
+                .header("Content-Security-Policy", "sandbox")
+                .body(c.contenu());
     }
 
     @PostMapping("/{id}/voitures")

@@ -15,7 +15,7 @@ import {
   TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { enCarte, memeVoyageQue } from './voyage';
-import { CarteVoyageComponent } from './carte-voyage.component';
+import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
@@ -159,7 +159,7 @@ function participantVide(): BrouillonParticipant {
       </section>
 
       @if (moi(); as m) {
-        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" (ouvrir)="ouvrirDepuisMonSejour($event)" />
+        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
                       (fermer)="mesInfosOuvertes.set(false)">
           @if (mesInfosOuvertes()) {
@@ -348,7 +348,12 @@ function participantVide(): BrouillonParticipant {
                             <p class="titre-passagers">Qui {{ g.trajet.transport === 'TRAIN' ? 'prend ce train' : 'est dans ce ' + (g.trajet.transport === 'AVION' ? 'vol' : 'voyage') }}</p>
                             <ul>
                               @for (p of passagers(g, sens.code); track p.id) {
-                                <li>{{ p.nom }}@if (p.dossier) { <span class="secondaire sans-impression"> · dossier {{ p.dossier }}</span> }</li>
+                                <li>{{ p.nom }}@if (p.dossier) { <span class="secondaire sans-impression"> · dossier {{ p.dossier }}</span> }
+                                  @if (p.carte) {
+                                    <button type="button" class="bouton-discret sans-impression carte-passager"
+                                            (click)="montrerCarte(p.id, sens.code)">Carte d'embarquement</button>
+                                  }
+                                </li>
                               }
                             </ul>
                             @if (s.gere) {
@@ -1026,6 +1031,7 @@ function participantVide(): BrouillonParticipant {
                        letter-spacing: .04em; color: var(--craie); }
     .passagers ul { margin: 4px 0 var(--pas); padding-left: 1.25rem; }
     .passagers li { padding: 2px 0; }
+    .carte-passager { margin: 2px 0 2px var(--pas); min-height: 44px; }
     .cartes p { margin: var(--pas) 0 0; }
     .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); }
     .nom { font-weight: 700; }
@@ -1260,10 +1266,20 @@ export class SejourComponent {
    * Les passagers d'un vol, avec leur dossier : le serveur ne le renvoie
    * qu'aux organisateurs (et à chacun le sien).
    */
-  passagers(g: GroupeTrajet, sens: 'arrivee' | 'depart'): { id: number; nom: string; dossier: string | null }[] {
+  passagers(g: GroupeTrajet, sens: 'arrivee' | 'depart'):
+    { id: number; nom: string; dossier: string | null; carte: boolean }[] {
     return (this.sejour()?.participants ?? [])
       .filter(p => g.ids.includes(p.id))
-      .map(p => ({ id: p.id, nom: nomComplet(p), dossier: p[sens]?.dossier ?? null }));
+      .map(p => ({ id: p.id, nom: nomComplet(p), dossier: p[sens]?.dossier ?? null, carte: !!p[sens]?.carteEmbarquement }));
+  }
+
+  /** Les cartes d'embarquement : la sienne dans « Mon séjour », celles des passagers pour les organisateurs. */
+  readonly portCartes = this.api.portCartes(this.id, s => this.sejour.set(s));
+
+  montrerCarte(participantId: number, sens: 'arrivee' | 'depart'): void {
+    this.erreur.set(null);
+    montrerCarte(this.portCartes.lire(participantId, sens === 'arrivee' ? 'ARRIVEE' : 'DEPART'),
+      () => this.erreur.set("La carte d'embarquement n'a pas pu être ouverte (réseau nécessaire)."));
   }
 
   /** Les arrivées (ou départs) regroupées par jour, heure et vol : qui attendre ensemble. */

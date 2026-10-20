@@ -38,11 +38,14 @@ public class AccesSejourController {
     private final AccesSejourService acces;
     private final FraisService frais;
     private final PretsSejourService pretsSejour;
+    private final CartesEmbarquementService cartes;
 
-    public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour) {
+    public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
+                                 CartesEmbarquementService cartes) {
         this.acces = acces;
         this.frais = frais;
         this.pretsSejour = pretsSejour;
+        this.cartes = cartes;
     }
 
     @GetMapping("/moi")
@@ -63,6 +66,31 @@ public class AccesSejourController {
                                                       @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
                                                       @Valid @RequestBody SejourService.DemandeMesInformations d) {
         return acces.modifierMesInformations(code, acces.acces(code, jeton), d);
+    }
+
+    /** Sa carte d'embarquement (PDF ou photo), jointe à son aller ou à son retour ; renvoie le carnet à jour. */
+    @PostMapping(value = "/cartes-embarquement/{sens}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SejourService.SejourVue deposerCarte(@PathVariable String code, @PathVariable SejourService.SensTrajet sens,
+                                                @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                                @RequestParam("fichier") MultipartFile fichier) {
+        Acces a = acces.acces(code, jeton);
+        cartes.deposer(a.sortieId(), a.participantId(), sens, SejourController.octets(fichier), fichier.getContentType());
+        return acces.carnet(a);
+    }
+
+    @DeleteMapping("/cartes-embarquement/{sens}")
+    public SejourService.SejourVue retirerCarte(@PathVariable String code, @PathVariable SejourService.SensTrajet sens,
+                                                @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        cartes.retirer(a.sortieId(), a.participantId(), sens);
+        return acces.carnet(a);
+    }
+
+    @GetMapping("/cartes-embarquement/{sens}")
+    public ResponseEntity<byte[]> carte(@PathVariable String code, @PathVariable SejourService.SensTrajet sens,
+                                        @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return SejourController.carte(cartes.lire(a.sortieId(), a.participantId(), sens), sens);
     }
 
     @GetMapping

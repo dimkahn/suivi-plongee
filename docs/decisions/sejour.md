@@ -106,6 +106,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Écarté pour l'instant** : lire en direct chez la compagnie le terminal, les retards et l'ouverture de l'enregistrement. Les compagnies n'ont pas d'interface publique ; il faudrait un service de données de vol (AeroDataBox, Aviationstack…), payant, avec une clé par installation. Le lien direct pré-rempli avec le dossier n'est pas fabriqué non plus : l'adresse de chaque compagnie change ; on colle celle du mail de réservation.
 - **Révision (octobre 2026, demande du club)** : en avion, le conseil passe de 2 h à **3 h avant l'embarquement** (`MoyenTransport.AVION`, `AVANCES_TRANSPORT`), partout où il paraît (« Aujourd'hui », cartes de vol, carnet par e-mail). Le résumé `.claude/rules/sejour.md` dit encore 2 h : à corriger à la main (fichier protégé pour l'IA).
 
+## Carte d'embarquement jointe au voyage
+
+- **Date** : 2026-10, demande du club.
+- **Contexte** : chacun cherchait sa carte d'embarquement dans ses mails ou ses fichiers au moment d'embarquer.
+- **Décision** : une carte par voyage (aller, retour), PDF ou photo JPEG/PNG de 5 Mo au plus, signature du fichier vérifiée (V98, table `sejour_carte_embarquement`, `CartesEmbarquementService`). Elle se joint depuis la carte du vol de « Mon séjour », dans l'appli comme par le lien (`…/participants/{id}/cartes-embarquement/{sens}`, `/api/public/sejour/{code}/cartes-embarquement/{sens}`) ; une nouvelle remplace l'ancienne. Toute photo est recodée en JPEG par le téléphone (`envoiCarte`, `reduirePhoto`), ce qui retire sa position GPS ; un PDF part tel quel, servi en bac à sable (`Content-Security-Policy: sandbox`). **Lue et modifiée seulement par le voyageur et les organisateurs**, comme le dossier : elle porte son nom et permet d'embarquer ; `Trajet.carteEmbarquement` (le type) est retiré par `sansReservation`, le fichier refusé (403) à tout autre. Jamais imprimée ni envoyée par e-mail, jamais gardée en cache (`no-store`). Les organisateurs l'ouvrent depuis « Qui est dans ce vol ». Un voyage effacé emporte sa carte.
+- **Écarté** : lire le code-barres ou le vol sur la carte pour remplir le voyage ; la garder sur le téléphone sans réseau (le séjour demande le réseau) : le manuel conseille de garder aussi le PDF de la compagnie.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
@@ -113,3 +120,4 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V120 : le séjour de démo est créé par `e3@club.fr`, sans organisateur désigné.
 - V121 : palanquées de démonstration.
 - V126 : réservation des vols de Camille (terminal, ouverture de l'enregistrement, dossier fictif).
+- V128 : carte d'embarquement fictive (petit PDF) du vol aller de Flora.

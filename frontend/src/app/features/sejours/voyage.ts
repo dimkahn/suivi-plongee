@@ -121,6 +121,20 @@ export function memeVoyageQue(autre: Trajet | null, actuel: Trajet | null): Traj
   return { ...copieTrajet(autre), dossier: actuel?.dossier ?? null, lienEnregistrement: actuel?.lienEnregistrement ?? null };
 }
 
+/** Le serveur refuse au-delà de 5 Mo. */
+const CARTE_MAX_OCTETS = 5 * 1024 * 1024;
+
+/**
+ * La carte d'embarquement choisie : un PDF part tel quel ; toute photo
+ * (JPEG, PNG, HEIC de l'iPhone) est recodée en JPEG par le téléphone, ce
+ * qui en retire les métadonnées (position GPS de la prise de vue) ; le
+ * reste est refusé.
+ */
+export function envoiCarte(type: string, taille: number): 'tel-quel' | 'reduire' | 'refus' {
+  if (type === 'application/pdf') return taille <= CARTE_MAX_OCTETS ? 'tel-quel' : 'refus';
+  return type.startsWith('image/') ? 'reduire' : 'refus';
+}
+
 function moment(jour: string, h: string): Date {
   const [y, m, d] = jour.split('-').map(Number);
   const [hh, mm] = h.split(':').map(Number);

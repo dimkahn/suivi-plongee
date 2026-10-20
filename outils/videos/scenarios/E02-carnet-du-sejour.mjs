@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-20, 25e série, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 26e série, sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer), une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
+  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
@@ -35,6 +35,13 @@ export default {
     await legende('« Mon séjour » : ses vols aller et retour, chacun dans une carte. L\'heure de départ et celle d\'arrivée, le terminal, le vol et sa compagnie.', 5000);
     await page.locator('app-carte-voyage').first().scrollIntoViewIfNeeded();
     await legende('Quand ouvre l\'enregistrement en ligne, son numéro de dossier, et dessous deux boutons : « Copier le dossier » et « S\'enregistrer ». Le dossier n\'est vu que par elle et les organisateurs.', 5500);
+    await legende('Dessous, « Ajouter la carte d\'embarquement » : elle choisit le PDF reçu de la compagnie, ou une capture d\'écran.', 0);
+    await page.locator('app-carte-voyage .embarquement input[type=file]').first().setInputFiles({
+      name: 'carte-embarquement-AF7520.pdf', mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\n%Carte d\'embarquement de demonstration\n%%EOF\n')
+    });
+    await pause(2500);
+    await legende('La carte est jointe à son vol. À l\'aéroport, « Montrer la carte » l\'ouvre en grand. « Remplacer » ou « Retirer » si son vol change.', 5500);
     await legende('Puis une case par sujet : sa voiture, sa chambre, ses comptes, ses informations.', 4000);
     await legende('En orange, une question : « Avez-vous emprunté du matériel du club ? ». Elle a pris une combinaison : « Oui, je déclare mon matériel ».', 0);
     await toucher(page.getByRole('button', { name: 'Oui, je déclare mon matériel' }), { apres: 1500 });
