@@ -14,6 +14,7 @@ import {
   SejourApi, SejourVue,
   TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
+import { memeVoyageQue } from './voyage';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
@@ -40,6 +41,11 @@ interface GroupeTrajet {
 
 function trajetVide(): Trajet {
   return copieTrajet(null);
+}
+
+/** Un vol déjà saisi, à poser sur d'autres : sans le dossier ni le lien de celui qui l'avait (propres à chacun). */
+function volSansReservation(t: Trajet | null): Trajet {
+  return { ...copieTrajet(t), dossier: null, lienEnregistrement: null };
 }
 
 /** Le brouillon de la fenêtre : arrivée et départ toujours présents, vidés à l'envoi s'ils sont restés vides. */
@@ -596,7 +602,24 @@ function participantVide(): BrouillonParticipant {
                 <input id="p-depart-lieu-arrivee" [(ngModel)]="participant.depart.lieuArrivee" maxlength="120"
                        placeholder="Paris-Orly"></div>
             }
+            @if (participant[sens.code].transport && participant[sens.code].transport !== 'VOITURE') {
+              <div><label [for]="'p-' + sens.code + '-terminal'">Terminal de départ</label>
+                <input [id]="'p-' + sens.code + '-terminal'" [(ngModel)]="participant[sens.code].terminal" maxlength="30"
+                       placeholder="4"></div>
+              <div><label [for]="'p-' + sens.code + '-ouverture'">Ouverture de l'enregistrement en ligne</label>
+                <input [id]="'p-' + sens.code + '-ouverture'" type="datetime-local"
+                       [(ngModel)]="participant[sens.code].ouvertureEnregistrement"></div>
+              <div><label [for]="'p-' + sens.code + '-dossier'">N° de dossier (réservation)</label>
+                <input [id]="'p-' + sens.code + '-dossier'" [(ngModel)]="participant[sens.code].dossier" maxlength="30"
+                       placeholder="ABC123" autocapitalize="characters"></div>
+              <div><label [for]="'p-' + sens.code + '-lien'">Lien d'enregistrement</label>
+                <input [id]="'p-' + sens.code + '-lien'" type="url" [(ngModel)]="participant[sens.code].lienEnregistrement"
+                       maxlength="500" placeholder="https://…"></div>
+            }
           </div>
+          @if (participant[sens.code].transport && participant[sens.code].transport !== 'VOITURE') {
+            <p class="secondaire">Le n° de dossier et le lien ne sont vus que par le voyageur et les organisateurs.</p>
+          }
         </fieldset>
       }
 
@@ -821,7 +844,21 @@ function participantVide(): BrouillonParticipant {
           <div><label for="vc-lieu-arrivee">Aéroport ou gare d'arrivée</label>
             <input id="vc-lieu-arrivee" [(ngModel)]="vol.trajet.lieuArrivee" maxlength="120" placeholder="Paris-Orly"></div>
         }
+        @if (vol.trajet.transport && vol.trajet.transport !== 'VOITURE') {
+          <div><label for="vc-terminal">Terminal de départ</label>
+            <input id="vc-terminal" [(ngModel)]="vol.trajet.terminal" maxlength="30" placeholder="4"></div>
+          <div><label for="vc-ouverture">Ouverture de l'enregistrement en ligne</label>
+            <input id="vc-ouverture" type="datetime-local" [(ngModel)]="vol.trajet.ouvertureEnregistrement"></div>
+          <div><label for="vc-dossier">N° de dossier commun</label>
+            <input id="vc-dossier" [(ngModel)]="vol.trajet.dossier" maxlength="30" placeholder="ABC123"
+                   autocapitalize="characters"></div>
+          <div><label for="vc-lien">Lien d'enregistrement commun</label>
+            <input id="vc-lien" type="url" [(ngModel)]="vol.trajet.lienEnregistrement" maxlength="500" placeholder="https://…"></div>
+        }
       </div>
+      @if (vol.trajet.transport && vol.trajet.transport !== 'VOITURE') {
+        <p class="secondaire">Dossier et lien laissés vides : chacun garde le sien (une réservation de groupe : un seul dossier pour tous).</p>
+      }
       <fieldset>
         <legend>Qui prend ce {{ vol.trajet.transport === 'TRAIN' ? 'train' : 'vol' }}</legend>
         <div class="actions">
@@ -1212,12 +1249,12 @@ export class SejourComponent {
     return [...groupes.values()].sort((a, b) => a.tri.localeCompare(b.tri));
   }
 
-  /** Recopie l'arrivée et le départ d'un autre participant dans la fiche ouverte. */
+  /** Recopie l'arrivée et le départ d'un autre participant dans la fiche ouverte, sans son dossier ni son lien. */
   memeVoyageQue(id: number | null): void {
     const autre = (this.sejour()?.participants ?? []).find(p => p.id === id);
     if (!autre) return;
-    this.participant.arrivee = copieTrajet(autre.arrivee);
-    this.participant.depart = copieTrajet(autre.depart);
+    this.participant.arrivee = memeVoyageQue(autre.arrivee, this.participant.arrivee);
+    this.participant.depart = memeVoyageQue(autre.depart, this.participant.depart);
   }
 
   // ---------------- Un même vol pour plusieurs ----------------
@@ -1232,7 +1269,7 @@ export class SejourComponent {
     this.erreur.set(null);
     this.vol = {
       sens,
-      trajet: copieTrajet(g?.trajet ?? null),
+      trajet: volSansReservation(g?.trajet ?? null),
       ids: g ? [...g.ids] : []
     };
     this.volsConnus.set(this.groupesTrajets(sens === 'ARRIVEE' ? 'arrivee' : 'depart'));
@@ -1242,7 +1279,7 @@ export class SejourComponent {
   reprendreVol(i: number | null): void {
     const g = i === null ? null : this.volsConnus()[i];
     if (!g) return;
-    this.vol.trajet = copieTrajet(g.trajet);
+    this.vol.trajet = volSansReservation(g.trajet);
     this.vol.ids = [...new Set([...this.vol.ids, ...g.ids])];
   }
 
@@ -1274,7 +1311,9 @@ export class SejourComponent {
       ...t, numero: t.numero?.trim() || null, lieu: t.lieu?.trim() || null,
       heureDepart: aller ? t.heureDepart || null : null, lieuDepart: aller ? t.lieuDepart?.trim() || null : null,
       heureArrivee: aller ? null : t.heureArrivee || null, lieuArrivee: aller ? null : t.lieuArrivee?.trim() || null,
-      dateDepart: aller ? t.dateDepart || null : null, dateArrivee: aller ? null : t.dateArrivee || null
+      dateDepart: aller ? t.dateDepart || null : null, dateArrivee: aller ? null : t.dateArrivee || null,
+      terminal: t.terminal?.trim() || null, ouvertureEnregistrement: t.ouvertureEnregistrement || null,
+      dossier: t.dossier?.trim() || null, lienEnregistrement: t.lienEnregistrement?.trim() || null
     };
     this.ecrire(this.api.appliquerTrajet(this.id, this.vol.sens, trajet, this.vol.ids), () => {
       this.volOuvert.set(false);

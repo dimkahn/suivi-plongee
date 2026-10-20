@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { dateFr } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
 import { MonMateriel, PretsDuSejour, monMateriel } from './materiel-sejour';
+import { CarteVoyageComponent } from './carte-voyage.component';
 import { ParticipantVue, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
 
 /**
@@ -22,6 +23,11 @@ interface Tuile {
   vide: string;
 }
 
+/** Un voyage par un transport public, avec au moins son jour ou son heure : montré en carte. */
+function enCarte(t: Trajet | null): boolean {
+  return !!t && (!!t.date || !!t.heure) && ['AVION', 'TRAIN', 'BATEAU', 'CAR'].includes(t.transport ?? '');
+}
+
 /**
  * La carte « Mon séjour » du participant connecté (demande du club, 2026 :
  * l'ancienne ligne repliée était trop pauvre et peu lisible). Toujours
@@ -35,6 +41,7 @@ interface Tuile {
  */
 @Component({
   selector: 'app-mon-sejour',
+  imports: [CarteVoyageComponent],
   template: `
     <section class="carte mon-sejour" aria-labelledby="titre-mon-sejour">
       <div class="tete">
@@ -60,6 +67,13 @@ interface Tuile {
             </button>
           </div>
           @if (erreur(); as e) { <p class="erreur" role="alert">{{ e }}</p> }
+        </div>
+      }
+      @if (voyages().length > 0) {
+        <div class="voyages">
+          @for (v of voyages(); track v.etiquette) {
+            <app-carte-voyage [trajet]="v.trajet" [aller]="v.aller" [etiquette]="v.etiquette" />
+          }
         </div>
       }
       <ul class="tuiles">
@@ -95,6 +109,9 @@ interface Tuile {
     .precision { margin: 4px 0 0; font-size: .9375rem; }
     .reponses { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); }
     .erreur { margin: var(--pas) 0 0; color: #B91C1C; font-weight: 700; }
+    .voyages { display: grid; gap: var(--pas); margin-top: var(--pas-2);
+               grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    @media (max-width: 380px) { .voyages { grid-template-columns: 1fr; } }
     .tuiles { list-style: none; margin: var(--pas-2) 0 0; padding: 0; display: grid; gap: var(--pas);
               grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
     .tuile { width: 100%; height: 100%; min-height: 44px; margin: 0; padding: var(--pas) var(--pas-2);
@@ -162,12 +179,24 @@ export class MonSejourComponent implements OnInit {
     ].filter((x): x is string => x !== null);
   });
 
+  /**
+   * Les voyages en avion, train, bateau ou car, en carte (heures face à face,
+   * terminal, enregistrement, dossier) ; les autres restent en tuile.
+   */
+  readonly voyages = computed(() => {
+    const m = this.moi();
+    return [
+      { etiquette: 'Voyage aller', trajet: m.arrivee, aller: true },
+      { etiquette: 'Voyage retour', trajet: m.depart, aller: false }
+    ].filter((v): v is { etiquette: string; trajet: Trajet; aller: boolean } => enCarte(v.trajet));
+  });
+
   readonly tuiles = computed<Tuile[]>(() => {
     const s = this.sejour();
     const m = this.moi();
     return [
-      this.tuileTrajet('Voyage aller', m.arrivee, true),
-      this.tuileTrajet('Voyage retour', m.depart, false),
+      ...(enCarte(m.arrivee) ? [] : [this.tuileTrajet('Voyage aller', m.arrivee, true)]),
+      ...(enCarte(m.depart) ? [] : [this.tuileTrajet('Voyage retour', m.depart, false)]),
       ...this.tuilesVoiture(s, m),
       this.tuileChambre(s, m),
       this.tuileComptes(s, m),

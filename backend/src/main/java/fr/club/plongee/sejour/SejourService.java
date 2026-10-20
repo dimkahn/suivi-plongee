@@ -77,20 +77,44 @@ public class SejourService {
      * {@code dateDepart} (aller) et {@code dateArrivee} (retour) sont leurs
      * jours (V87), pour un vol long qui part ou arrive un autre jour. Vides :
      * le jour de {@code date}, la veille pour un vol aller de nuit.
+     * <p>
+     * La réservation (V96) : {@code terminal} de départ, {@code ouvertureEnregistrement}
+     * (quand ouvre l'enregistrement en ligne), {@code dossier} (numéro de
+     * réservation) et {@code lienEnregistrement}. Dossier et lien permettent
+     * de modifier ou d'annuler le billet : seuls le voyageur et les
+     * organisateurs les lisent ({@link #sansReservation()}).
      */
     public record Trajet(LocalDate date, LocalTime heure, MoyenTransport transport,
                          @Size(max = 30) String numero, @Size(max = 120) String lieu,
                          LocalTime heureDepart, @Size(max = 120) String lieuDepart, LocalTime heureArrivee,
-                         LocalDate dateDepart, LocalDate dateArrivee, @Size(max = 120) String lieuArrivee) {
+                         LocalDate dateDepart, LocalDate dateArrivee, @Size(max = 120) String lieuArrivee,
+                         @Size(max = 30) String terminal, @Size(max = 30) String dossier,
+                         @Size(max = 500) String lienEnregistrement, LocalDateTime ouvertureEnregistrement) {
         boolean vide() {
             return date == null && heure == null && transport == null && blanc(numero) && blanc(lieu)
                     && heureDepart == null && blanc(lieuDepart) && heureArrivee == null
-                    && dateDepart == null && dateArrivee == null && blanc(lieuArrivee);
+                    && dateDepart == null && dateArrivee == null && blanc(lieuArrivee)
+                    && blanc(terminal) && blanc(dossier) && blanc(lienEnregistrement) && ouvertureEnregistrement == null;
         }
 
-        /** Refus si l'avion ou le train arrive un jour avant celui où il part. */
-        static void verifierJours(Trajet t) {
-            if (t == null || t.date() == null) return;
+        /** Le même voyage, sans ce qui permet d'agir sur le billet : pour qui n'est ni le voyageur ni organisateur. */
+        Trajet sansReservation() {
+            return new Trajet(date, heure, transport, numero, lieu, heureDepart, lieuDepart, heureArrivee,
+                    dateDepart, dateArrivee, lieuArrivee, terminal, null, null, ouvertureEnregistrement);
+        }
+
+        /**
+         * Refus si l'avion ou le train arrive un jour avant celui où il part,
+         * ou si le lien d'enregistrement n'est pas une adresse web (il devient
+         * un lien cliquable).
+         */
+        static void verifier(Trajet t) {
+            if (t == null) return;
+            String lien = t.lienEnregistrement() == null ? "" : t.lienEnregistrement().trim().toLowerCase(Locale.ROOT);
+            if (!lien.isEmpty() && !lien.startsWith("https://") && !lien.startsWith("http://")) {
+                throw new RegleMetierException("Le lien d'enregistrement doit être une adresse web commençant par https://");
+            }
+            if (t.date() == null) return;
             if ((t.dateDepart() != null && t.dateDepart().isAfter(t.date()))
                     || (t.dateArrivee() != null && t.dateArrivee().isBefore(t.date()))) {
                 throw new RegleMetierException("L'avion ou le train arrive avant de partir : vérifiez les jours.");
@@ -260,7 +284,10 @@ public class SejourService {
         boolean gere = encadrant && droits.organise(sortieId, principal.id());
         SejourVue complet = vueComplete(sortieId, principal.id(), gere, encadrant);
         complet = avecFrais(complet, frais.lire(sortieId, frais.acteur(sortieId, principal)));
-        if (encadrant) return avecDesignation(complet, droits.peutDesigner(sortieId, principal));
+        if (encadrant) {
+            return avecDesignation(gere ? complet : sansReservationsDesAutres(complet),
+                    droits.peutDesigner(sortieId, principal));
+        }
         if (complet.participants().stream().noneMatch(ParticipantVue::moi)) {
             throw new AccessDeniedException("Ce séjour n'est ouvert qu'à ses participants et aux encadrants.");
         }
@@ -490,11 +517,29 @@ public class SejourService {
     private static SejourVue carnet(SejourVue s) {
         List<ParticipantVue> participants = s.participants().stream()
                 .map(p -> p.moi() ? p : new ParticipantVue(p.id(), null, null, p.nom(), p.prenom(), p.plongeur(),
-                        null, null, Set.of(), null, null, null, p.arrivee(), p.depart(), null, false, null, null))
+                        null, null, Set.of(), null, null, null, sansReservation(p.arrivee()),
+                        sansReservation(p.depart()), null, false, null, null))
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of(),
                 s.organisateurs(), false, s.palanquees());
+    }
+
+    /** Pour un encadrant qui n'organise pas : tout, sauf le dossier et le lien d'enregistrement des autres. */
+    private static SejourVue sansReservationsDesAutres(SejourVue s) {
+        List<ParticipantVue> participants = s.participants().stream()
+                .map(p -> p.moi() ? p : new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(), p.nom(),
+                        p.prenom(), p.plongeur(), p.telephone(), p.email(), p.regimes(), p.regimePrecision(),
+                        p.urgenceNom(), p.urgenceTelephone(), sansReservation(p.arrivee()),
+                        sansReservation(p.depart()), p.remarques(), false, p.membreGroupeId(), p.groupe()))
+                .toList();
+        return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), participants, s.voitures(),
+                s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
+                s.organisateurs(), s.peutDesigner(), s.palanquees());
+    }
+
+    private static Trajet sansReservation(Trajet t) {
+        return t == null ? null : t.sansReservation();
     }
 
     private static ParticipantVue participant(ResultSet rs, Long moi) throws SQLException {
@@ -520,7 +565,10 @@ public class SejourService {
                 aller ? null : rs.getObject("depart_heure_arrivee", LocalTime.class),
                 aller ? rs.getObject("arrivee_date_depart", LocalDate.class) : null,
                 aller ? null : rs.getObject("depart_date_arrivee", LocalDate.class),
-                aller ? null : rs.getString("depart_lieu_arrivee"));
+                aller ? null : rs.getString("depart_lieu_arrivee"),
+                rs.getString(sens + "_terminal"), rs.getString(sens + "_dossier"),
+                rs.getString(sens + "_lien_enregistrement"),
+                rs.getObject(sens + "_ouverture_enregistrement", LocalDateTime.class));
         return t.vide() ? null : t;
     }
 
@@ -633,9 +681,9 @@ public class SejourService {
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
                        arrivee_date_depart = :arriveeDateDepart, depart_date_arrivee = :departDateArrivee,
-                       depart_lieu_arrivee = :departLieuArrivee,
+                       depart_lieu_arrivee = :departLieuArrivee,%s
                        remarques = :remarques
-                 WHERE id = :pid""", p);
+                 WHERE id = :pid""".formatted(RESERVATIONS), p);
         reporterSurLePlongeur(d);
     }
 
@@ -680,8 +728,8 @@ public class SejourService {
     @Transactional
     public void modifierMesInformations(Long participantId, DemandeMesInformations d) {
         ParticipantVue actuel = participant(participantId);
-        Trajet.verifierJours(d.arrivee());
-        Trajet.verifierJours(d.depart());
+        Trajet.verifier(d.arrivee());
+        Trajet.verifier(d.depart());
         LocalDateTime arrivee = moment(d.arrivee());
         LocalDateTime depart = moment(d.depart());
         if (arrivee != null && depart != null && depart.isBefore(arrivee)) {
@@ -703,10 +751,18 @@ public class SejourService {
                        depart_transport = :departTransport, depart_numero = :departNumero,
                        depart_lieu = :departLieu, depart_heure_arrivee = :departHeureArrivee,
                        arrivee_date_depart = :arriveeDateDepart, depart_date_arrivee = :departDateArrivee,
-                       depart_lieu_arrivee = :departLieuArrivee,
+                       depart_lieu_arrivee = :departLieuArrivee,%s
                        remarques = :remarques
-                 WHERE id = :pid""", p);
+                 WHERE id = :pid""".formatted(RESERVATIONS), p);
     }
+
+    /** Les colonnes de réservation des deux voyages (V96), dans un UPDATE. */
+    private static final String RESERVATIONS = """
+
+                       arrivee_terminal = :arriveeTerminal, arrivee_dossier = :arriveeDossier,
+                       arrivee_lien_enregistrement = :arriveeLien, arrivee_ouverture_enregistrement = :arriveeOuverture,
+                       depart_terminal = :departTerminal, depart_dossier = :departDossier,
+                       depart_lien_enregistrement = :departLien, depart_ouverture_enregistrement = :departOuverture,""";
 
     /** Le même vol (ou train) pour plusieurs participants : arrivée ou départ, sans rien recopier. */
     public enum SensTrajet { ARRIVEE, DEPART }
@@ -725,7 +781,7 @@ public class SejourService {
         if (ids.isEmpty()) throw new RegleMetierException("Cochez au moins un participant.");
         verifierParticipants(sortieId, ids);
         Trajet t = d.trajet() == null || d.trajet().vide() ? null : d.trajet();
-        Trajet.verifierJours(t);
+        Trajet.verifier(t);
         for (Long id : ids) {
             ParticipantVue p = participant(id);
             LocalDateTime arrivee = moment(d.sens() == SensTrajet.ARRIVEE ? t : p.arrivee());
@@ -743,9 +799,13 @@ public class SejourService {
                   + " arrivee_date_depart = :tDateDepart"
                 : ", depart_heure_arrivee = :tHeureArrivee, depart_date_arrivee = :tDateArrivee,"
                   + " depart_lieu_arrivee = :tLieuArrivee";
+        // Le dossier et le lien sont souvent propres à chacun : laissés vides, ils ne changent pas.
+        if (t != null && !blanc(t.dossier())) autreHoraire += ", %s_dossier = :tDossier".formatted(sens);
+        if (t != null && !blanc(t.lienEnregistrement())) autreHoraire += ", %s_lien_enregistrement = :tLien".formatted(sens);
         jdbc.update("""
                 UPDATE sejour_participant SET %1$s_date = :tDate, %1$s_heure = :tHeure, %1$s_transport = :tTransport,
-                       %1$s_numero = :tNumero, %1$s_lieu = :tLieu%2$s
+                       %1$s_numero = :tNumero, %1$s_lieu = :tLieu, %1$s_terminal = :tTerminal,
+                       %1$s_ouverture_enregistrement = :tOuverture%2$s
                  WHERE sortie_id = :sortie AND id IN (:ids)""".formatted(sens, autreHoraire), p);
     }
 
@@ -824,8 +884,8 @@ public class SejourService {
                 && compter("SELECT COUNT(*) FROM utilisateur WHERE id = :x", d.utilisateurId()) == 0) {
             throw new RessourceIntrouvableException("Compte introuvable");
         }
-        Trajet.verifierJours(d.arrivee());
-        Trajet.verifierJours(d.depart());
+        Trajet.verifier(d.arrivee());
+        Trajet.verifier(d.depart());
         LocalDateTime arrivee = moment(d.arrivee());
         LocalDateTime depart = moment(d.depart());
         if (arrivee != null && depart != null && depart.isBefore(arrivee)) {
@@ -923,13 +983,19 @@ public class SejourService {
                        arrivee_date, arrivee_heure, arrivee_transport, arrivee_numero, arrivee_lieu,
                        arrivee_heure_depart, arrivee_lieu_depart, arrivee_date_depart,
                        depart_date, depart_heure, depart_transport, depart_numero, depart_lieu,
-                       depart_heure_arrivee, depart_date_arrivee, depart_lieu_arrivee, remarques)
+                       depart_heure_arrivee, depart_date_arrivee, depart_lieu_arrivee,
+                       arrivee_terminal, arrivee_dossier, arrivee_lien_enregistrement, arrivee_ouverture_enregistrement,
+                       depart_terminal, depart_dossier, depart_lien_enregistrement, depart_ouverture_enregistrement,
+                       remarques)
                 VALUES (:sortie, :eleve, :utilisateur, :nom, :prenom, :plongeur, :membreGroupe, :telephone, :email, :regimes,
                        :regimePrecision, :urgenceNom, :urgenceTelephone,
                        :arriveeDate, :arriveeHeure, :arriveeTransport, :arriveeNumero, :arriveeLieu,
                        :arriveeHeureDepart, :arriveeLieuDepart, :arriveeDateDepart,
                        :departDate, :departHeure, :departTransport, :departNumero, :departLieu,
-                       :departHeureArrivee, :departDateArrivee, :departLieuArrivee, :remarques)""",
+                       :departHeureArrivee, :departDateArrivee, :departLieuArrivee,
+                       :arriveeTerminal, :arriveeDossier, :arriveeLien, :arriveeOuverture,
+                       :departTerminal, :departDossier, :departLien, :departOuverture,
+                       :remarques)""",
                 parametres(sortieId, d));
     }
 
@@ -963,7 +1029,11 @@ public class SejourService {
                 .addValue(sens + "HeureArrivee", t == null ? null : t.heureArrivee())
                 .addValue(sens + "DateDepart", t == null ? null : t.dateDepart())
                 .addValue(sens + "DateArrivee", t == null ? null : t.dateArrivee())
-                .addValue(sens + "LieuArrivee", t == null ? null : nettoyer(t.lieuArrivee()));
+                .addValue(sens + "LieuArrivee", t == null ? null : nettoyer(t.lieuArrivee()))
+                .addValue(sens + "Terminal", t == null ? null : nettoyer(t.terminal()))
+                .addValue(sens + "Dossier", t == null ? null : nettoyer(t.dossier()))
+                .addValue(sens + "Lien", t == null ? null : nettoyer(t.lienEnregistrement()))
+                .addValue(sens + "Ouverture", t == null ? null : t.ouvertureEnregistrement());
     }
 
     private static LocalDateTime moment(Trajet t) {

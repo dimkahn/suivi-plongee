@@ -179,7 +179,7 @@ public class CarnetSejourService {
     }
 
     /** aller : le voyage d'arrivée au séjour (le conseil porte sur l'heure de départ de chez soi). */
-    private static String trajet(Trajet tr, boolean aller) {
+    static String trajet(Trajet tr, boolean aller) {
         if (tr == null) return "à préciser";
         List<String> morceaux = new ArrayList<>();
         if (tr.date() != null) morceaux.add(jour(tr.date()) + (tr.heure() == null ? "" : " à " + tr.heure().format(HEURE)));
@@ -202,8 +202,27 @@ public class CarnetSejourService {
             morceaux.add("arrivée" + leJour + (tr.heureArrivee() == null ? "" : " à " + tr.heureArrivee().format(HEURE))
                     + (SejourService.blanc(tr.lieuArrivee()) ? "" : " à " + tr.lieuArrivee().trim()));
         }
+        if (!SejourService.blanc(tr.terminal())) morceaux.add("terminal " + tr.terminal().trim());
         String conseil = tr.transport() == null ? null : tr.transport().conseil(aller ? tr.heureDepart() : tr.heure(), HEURE);
-        return String.join(", ", morceaux) + (conseil == null ? "" : " : " + conseil);
+        return String.join(", ", morceaux) + (conseil == null ? "" : " : " + conseil) + reservation(tr);
+    }
+
+    /** L'ouverture de l'enregistrement, le dossier et son lien (V96) : le carnet ne part qu'au voyageur lui-même. */
+    private static String reservation(Trajet tr) {
+        StringBuilder t = new StringBuilder();
+        if (tr.ouvertureEnregistrement() != null) {
+            t.append(" ; enregistrement en ligne à partir du ")
+                    .append(jour(tr.ouvertureEnregistrement().toLocalDate()).toLowerCase(Locale.FRENCH))
+                    .append(" à ").append(tr.ouvertureEnregistrement().toLocalTime().format(HEURE));
+        }
+        boolean lien = !SejourService.blanc(tr.lienEnregistrement());
+        if (!SejourService.blanc(tr.dossier())) {
+            t.append(" ; dossier ").append(tr.dossier().trim());
+            if (lien) t.append(" (").append(tr.lienEnregistrement().trim()).append(")");
+        } else if (lien) {
+            t.append(" ; enregistrement : ").append(tr.lienEnregistrement().trim());
+        }
+        return t.toString();
     }
 
     private static String horaire(LocalTime debut, LocalTime fin) {

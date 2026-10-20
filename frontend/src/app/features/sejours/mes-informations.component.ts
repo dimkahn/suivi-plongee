@@ -56,7 +56,25 @@ type Brouillon = DemandeMesInformations & { arrivee: Trajet; depart: Trajet };
                 <input id="mi-depart-lieu-arrivee" name="depart-lieu-arrivee" maxlength="120" placeholder="Paris-Orly"
                        [(ngModel)]="b.depart.lieuArrivee"></div>
             }
+            @if (b[sens.code].transport && b[sens.code].transport !== 'VOITURE') {
+              <div><label [for]="'mi-' + sens.code + '-terminal'">Terminal de départ</label>
+                <input [id]="'mi-' + sens.code + '-terminal'" [name]="sens.code + '-terminal'" maxlength="30"
+                       placeholder="4" [(ngModel)]="b[sens.code].terminal"></div>
+              <div><label [for]="'mi-' + sens.code + '-ouverture'">Ouverture de l'enregistrement en ligne</label>
+                <input [id]="'mi-' + sens.code + '-ouverture'" [name]="sens.code + '-ouverture'" type="datetime-local"
+                       [(ngModel)]="b[sens.code].ouvertureEnregistrement"></div>
+              <div><label [for]="'mi-' + sens.code + '-dossier'">N° de dossier (réservation)</label>
+                <input [id]="'mi-' + sens.code + '-dossier'" [name]="sens.code + '-dossier'" maxlength="30"
+                       placeholder="ABC123" autocapitalize="characters" [(ngModel)]="b[sens.code].dossier"></div>
+              <div><label [for]="'mi-' + sens.code + '-lien'">Lien d'enregistrement</label>
+                <input [id]="'mi-' + sens.code + '-lien'" [name]="sens.code + '-lien'" type="url" maxlength="500"
+                       placeholder="https://…" [(ngModel)]="b[sens.code].lienEnregistrement"></div>
+            }
           </div>
+          @if (b[sens.code].transport && b[sens.code].transport !== 'VOITURE') {
+            <p class="secondaire">Le n° de dossier et le lien ne sont vus que par vous et les organisateurs du séjour.
+              Le lien se trouve souvent dans le mail de la compagnie (« S'enregistrer », « Gérer ma réservation »).</p>
+          }
           @if (sens.code === 'arrivee') {
             <p class="secondaire">L'heure de départ sert à vous dire, le jour venu, à quelle heure être à l'aéroport ou à la gare.</p>
           }
