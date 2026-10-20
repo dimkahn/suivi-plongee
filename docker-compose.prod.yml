@@ -42,6 +42,7 @@ services:
       DB_USER: plongee
       DB_PASSWORD: ${DB_PASSWORD:?definir DB_PASSWORD dans .env}
       JWT_SECRET: ${JWT_SECRET:?definir JWT_SECRET dans .env (openssl rand -base64 48)}
+      SIGNATURE_FICHES_CLE: ${SIGNATURE_FICHES_CLE:-}
       CORS_ORIGINES: https://${DOMAINE:?definir DOMAINE dans .env}
       FRONTEND_URL: https://${DOMAINE:?definir DOMAINE dans .env}
       SMTP_HOTE: ${SMTP_HOTE:?definir SMTP_HOTE dans .env (par exemple smtp.gmail.com)}

@@ -17,14 +17,14 @@ import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component
 import {
   aDesDetails, alerteMod, libelleGaz, PPO2_PAR_DEFAUT, PPO2_POSSIBLES, profondeurMaximaleUtilisation, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
   palanqueesAEnregistrer, profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees,
-  resumePalanquee as resumeComposition
+  resumePalanquee as resumeComposition, peutSignerFiche, libelleSignature, alerteIntegrite
 } from '../../core/fiche-securite';
 import { aptitudeSurFiche, separerAptitude } from '../../core/niveaux-plongeur';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { AvecModifications } from '../../core/gardes';
 import {
   DemandeDuplicationSeance, DemandePropositionPalanquees, FicheSecuriteVue, GroupePlongeursVue, PropositionPalanqueesVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
-  PlongeurVue, SeanceLieeVue, SeanceVue
+  PlongeurVue, SeanceLieeVue, SeanceVue, SignatureFicheVue
 } from '../../core/modeles';
 
 function plongeurVide(): PlongeurVue {
@@ -123,14 +123,23 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (entete(); as f) {
-      @if (!auth.etablitFichesSecurite()) {
+      @if (signature(); as sig) {
+        <div class="signature carte" [class.alteree]="!sig.integre" role="status">
+          <strong>✍ {{ libelleSignature(sig) }}</strong>
+          @if (alerteIntegrite(sig); as alerte) {
+            <span>⚠ {{ alerte }}</span>
+          } @else {
+            <span>✓ Contenu vérifié : identique à ce qui a été signé. La fiche ne se modifie plus.</span>
+          }
+        </div>
+      } @else if (!auth.etablitFichesSecurite()) {
         <div class="alerte" role="status">
           Lecture seule : établir ou modifier la fiche revient aux moniteurs E3 ou E4, ou à ceux
           qui en ont reçu le droit. Vous pouvez la compléter au retour de plongée.
         </div>
       }
-      <!-- Sans le droit d'établir, tout le formulaire est désactivé d'un coup (le serveur refuse de toute façon). -->
-      <fieldset class="lecture-seule" [disabled]="!auth.etablitFichesSecurite()">
+      <!-- Sans le droit d'établir, ou signée, tout le formulaire est désactivé d'un coup (le serveur refuse de toute façon). -->
+      <fieldset class="lecture-seule" [disabled]="!modifiable()">
       <h2 class="titre-etape">1. Établir la fiche, avant la mise à l'eau</h2>
       <p class="secondaire">
         Directeur de plongée, conditions, composition des palanquées et profil prévu
@@ -218,7 +227,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           <a routerLink="/groupes" class="bouton-discret">Gérer les groupes →</a>
         </div>
 
-        @if (seancesLiees().length > 0 || seancesLiables().length > 0 || auth.etablitFichesSecurite()) {
+        @if (seancesLiees().length > 0 || seancesLiables().length > 0 || modifiable()) {
           <div class="liaison">
             <p class="secondaire">
               Le même jour, un autre bateau ou un autre site ? Liez les deux séances : sur chaque fiche,
@@ -254,7 +263,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                   Délier cette séance
                 </button>
               }
-              @if (auth.etablitFichesSecurite()) {
+              @if (modifiable()) {
                 <button type="button" class="bouton-discret bouton-dupliquer" (click)="ouvrirDuplication()">
                   Dupliquer et lier…
                 </button>
@@ -336,7 +345,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         </app-dialogue>
 
         @if (groupeSelectionne(); as g) {
-          <div cdkDropList id="pool" [cdkDropListDisabled]="!auth.etablitFichesSecurite()" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
+          <div cdkDropList id="pool" [cdkDropListDisabled]="!modifiable()" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
                class="pool-plongeurs">
             @for (m of poolDisponible(); track m) {
               <button type="button" class="jeton-plongeur" cdkDrag [cdkDragData]="m"
@@ -491,7 +500,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                    [(ngModel)]="p.dureePrevue" [name]="'dp-' + iP"></label>
           </div>
 
-          <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListDisabled]="!auth.etablitFichesSecurite()" [cdkDropListData]="p.membres"
+          <div cdkDropList [id]="'palanquee-' + p.numero" [cdkDropListDisabled]="!modifiable()" [cdkDropListData]="p.membres"
                class="zone-membres" [class.zone-membres-vide]="p.membres.length === 0"
                [cdkDropListConnectedTo]="tousLesIds()" (cdkDropListDropped)="onDropPalanquee($event, iP)">
             @if (p.membres.length === 0) {
@@ -788,7 +797,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             <button type="button" class="bouton-discret" aria-label="Fermer le message" (click)="message.set(null)">✕</button>
           </div>
         }
-        @if (auth.etablitFichesSecurite()) {
+        @if (modifiable()) {
           <button type="button" class="bouton-principal action-ordinateur" (click)="enregistrer()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
           </button>
@@ -809,20 +818,43 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
         }
         @if (dejaEnregistree()) {
           <a class="bouton-discret action-ordinateur" [routerLink]="['/fiches-securite', seanceId, 'realise']">
-            Compléter au retour de plongée →
+            {{ signature() ? 'Profil réalisé →' : 'Compléter au retour de plongée →' }}
           </a>
         }
+        @if (peutSigner()) {
+          <button type="button" class="bouton-principal bouton-signer action-ordinateur" (click)="ouvrirSignature()">
+            ✍ Signer la fiche
+          </button>
+        }
       </div>
+
+      <app-dialogue [ouvert]="signatureOuverte()" titre="Signer la fiche de sécurité" [erreur]="erreurSignature()"
+                    (fermer)="signatureOuverte.set(false)">
+        <p>
+          Vous signez, en tant que directeur de plongée, la fiche telle qu'elle est enregistrée :
+          conditions, palanquées, plongeurs et profils réalisés.
+        </p>
+        <p class="secondaire">
+          Une fois signée, <strong>elle ne pourra plus être modifiée ni complétée</strong>, par personne.
+          Vérifiez d'abord que le profil réalisé de chaque palanquée est saisi.
+        </p>
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" [disabled]="envoiSignature()" (click)="signer()">
+            {{ envoiSignature() ? 'Signature…' : 'Je signe la fiche' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="signatureOuverte.set(false)">Annuler</button>
+        </div>
+      </app-dialogue>
 
       <!--
         Téléphone : un seul bouton rond, en bas à gauche, qui ouvre toutes les
         actions de la fiche ; elles ne prennent plus de place dans la page.
       -->
-      @if (auth.etablitFichesSecurite() || ficheId() !== null || dejaEnregistree()) {
+      @if (modifiable() || ficheId() !== null || dejaEnregistree()) {
         @if (menuActionsOuvert()) {
           <div class="fond-menu-actions" (click)="menuActionsOuvert.set(false)"></div>
           <div class="menu-actions" id="menu-actions" role="menu" aria-label="Actions de la fiche">
-            @if (auth.etablitFichesSecurite()) {
+            @if (modifiable()) {
               <button type="button" role="menuitem" class="bouton-principal" [disabled]="envoi()"
                       (click)="menuActionsOuvert.set(false); enregistrer()">
                 {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
@@ -848,8 +880,12 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             }
             @if (dejaEnregistree()) {
               <a role="menuitem" class="bouton-discret" [routerLink]="['/fiches-securite', seanceId, 'realise']">
-                Compléter au retour de plongée →
+                {{ signature() ? 'Profil réalisé →' : 'Compléter au retour de plongée →' }}
               </a>
+            }
+            @if (peutSigner()) {
+              <button type="button" role="menuitem" class="bouton-principal bouton-signer"
+                      (click)="menuActionsOuvert.set(false); ouvrirSignature()">✍ Signer la fiche</button>
             }
           </div>
         }
@@ -869,6 +905,13 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
   styles: [`
     h1 { margin: var(--pas-3) 0 0; }
     .lecture-seule { border: 0; margin: 0; padding: 0; min-width: 0; }
+    .signature {
+      display: flex; flex-direction: column; gap: var(--pas);
+      padding: var(--pas-2) var(--pas-3); margin: var(--pas-2) 0;
+      border-left: 4px solid var(--acquis); background: var(--acquis-clair);
+    }
+    .signature.alteree { border-left-color: #B3261E; background: #FDECEA; }
+    .signature.alteree span { color: #B3261E; font-weight: 600; }
     .titre-etape { margin: var(--pas-3) 0 0; }
     .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     /*
@@ -1144,6 +1187,17 @@ export class FicheSecuriteComponent implements AvecModifications {
   enAttente = signal(false);
 
   ficheId = signal<number | null>(null);
+  /** Signature du DP : signée, la fiche est en lecture seule pour tous. */
+  signature = signal<SignatureFicheVue | null>(null);
+  /** DP de la fiche enregistrée, pas celui choisi dans le formulaire : lui seul la signe. */
+  private dpEnregistre = signal<number | null>(null);
+  readonly libelleSignature = libelleSignature;
+  readonly alerteIntegrite = alerteIntegrite;
+  /** Établir ou modifier : avec le droit, et tant que la fiche n'est pas signée. */
+  modifiable = computed(() => this.auth.etablitFichesSecurite() && !this.signature());
+  peutSigner = computed(() => !this.enAttente() && peutSignerFiche(
+    { id: this.ficheId(), dpId: this.dpEnregistre(), signature: this.signature() },
+    this.auth.session()?.id, this.seance()?.date, dateDuJour()));
   entete = signal<FormulaireEntete | null>(null);
   palanquees = signal<PalanqueeVue[]>([]);
 
@@ -1248,6 +1302,8 @@ export class FicheSecuriteComponent implements AvecModifications {
       this.moniteurs.set(moniteurs);
       this.plongeursConnus.set(plongeursConnus);
       this.ficheId.set(fiche.id);
+      this.signature.set(fiche.signature ?? null);
+      this.dpEnregistre.set(fiche.dpId);
       this.entete.set({
         dpId: fiche.dpId, meteo: fiche.meteo, etatMer: fiche.etatMer, visibilite: fiche.visibilite,
         courant: fiche.courant, maree: fiche.maree, temperatureEau: fiche.temperatureEau,
@@ -1451,7 +1507,7 @@ export class FicheSecuriteComponent implements AvecModifications {
    * la fiche, rien n'est à enregistrer.
    */
   modificationsNonEnregistrees(): boolean {
-    if (!this.auth.etablitFichesSecurite() || this.empreinteEnregistree === null) return false;
+    if (!this.modifiable() || this.empreinteEnregistree === null) return false;
     return empreinteFiche(this.entete() ?? {}, this.palanquees()) !== this.empreinteEnregistree;
   }
 
@@ -1495,6 +1551,44 @@ export class FicheSecuriteComponent implements AvecModifications {
         this.message.set(await detailErreurFichier(e) ?? (navigator.onLine
           ? "Le PDF de la fiche n'a pas pu être généré."
           : 'Impression impossible hors ligne : reconnectez-vous pour générer le PDF.'));
+      }
+    });
+  }
+
+  // --- Signature par le DP ----------------------------------------------------------------------
+
+  signatureOuverte = signal(false);
+  envoiSignature = signal(false);
+  erreurSignature = signal<string | null>(null);
+
+  /** On signe la fiche enregistrée : des modifications en cours n'y seraient pas. */
+  ouvrirSignature(): void {
+    if (this.modificationsNonEnregistrees()) {
+      this.message.set("Enregistrez d'abord vos modifications : on signe la fiche telle qu'elle est enregistrée.");
+      return;
+    }
+    this.erreurSignature.set(null);
+    this.signatureOuverte.set(true);
+  }
+
+  /** Réseau nécessaire : la signature n'entre pas dans la file hors ligne. */
+  signer(): void {
+    this.envoiSignature.set(true);
+    this.erreurSignature.set(null);
+    this.api.signerFicheSecurite(this.seanceId).subscribe({
+      next: fiche => {
+        this.signature.set(fiche.signature ?? null);
+        this.palanquees.set(fiche.palanquees);
+        this.retenirEtatEnregistre();
+        this.envoiSignature.set(false);
+        this.signatureOuverte.set(false);
+        this.message.set('Fiche signée. Elle ne peut plus être modifiée.');
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoiSignature.set(false);
+        this.erreurSignature.set(e.error?.detail ?? (navigator.onLine
+          ? 'La signature de la fiche a échoué.'
+          : 'Signature impossible hors ligne : reconnectez-vous pour signer.'));
       }
     });
   }
@@ -2107,6 +2201,7 @@ export class FicheSecuriteComponent implements AvecModifications {
 
       if (issue.etat === 'envoyee') {
         this.ficheId.set(issue.reponse.id);
+        this.dpEnregistre.set(issue.reponse.dpId);
         this.palanquees.set(issue.reponse.palanquees);
         this.retenirEtatEnregistre();
         this.enAttente.set(this.file.pourSeance(this.seanceId, 'realise').length > 0);

@@ -38,7 +38,7 @@ class FicheSecuritePdfServiceTest {
                 public byte[] logoPng() {
                     return logoOrigine();
                 }
-            });
+            }, new fr.club.plongee.formation.service.EmpreinteFicheSecurite("cle-de-test", "cle-des-jetons"));
     private final FicheSecuritePdfService service = new FicheSecuritePdfService(excel);
 
     @Test

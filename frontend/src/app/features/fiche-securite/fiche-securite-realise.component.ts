@@ -4,10 +4,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
-import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue } from '../../core/modeles';
+import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue, SignatureFicheVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
-import { empreinteFiche, nomPalanquee } from '../../core/fiche-securite';
+import { alerteIntegrite, empreinteFiche, libelleSignature, nomPalanquee } from '../../core/fiche-securite';
 import {
   bilanRealise, dureeEntre, etatPalanquee, marquerSortie, minutesDepuis, trierParUrgence
 } from '../../core/fiche-securite-realise';
@@ -49,10 +49,19 @@ import { telechargerFichier } from '../../core/telecharger';
         }
       </p>
     } @else {
-      <p class="secondaire">
-        Le profil réellement plongé par chaque palanquée. Sans effet sur le
-        directeur de plongée, les conditions ou la composition des palanquées.
-      </p>
+      @if (signature(); as sig) {
+        <div class="signature carte" [class.alteree]="!sig.integre" role="status">
+          <strong>✍ {{ libelleSignature(sig) }}</strong>
+          <span>{{ alerteIntegrite(sig) ?? 'Le profil réalisé ne se modifie plus.' }}</span>
+        </div>
+      } @else {
+        <p class="secondaire">
+          Le profil réellement plongé par chaque palanquée. Sans effet sur le
+          directeur de plongée, les conditions ou la composition des palanquées.
+        </p>
+      }
+      <!-- Signée par le DP, la fiche ne se complète plus : tous les champs d'un coup. -->
+      <fieldset class="lecture-seule" [disabled]="signature() !== null">
 
       <!-- D'un coup d'œil, et toujours en haut : qui est encore à l'eau, qui dépasse, ce qui reste à saisir. -->
       @if (bilan(); as b) {
@@ -121,7 +130,7 @@ import { telechargerFichier } from '../../core/telecharger';
           }
 
           <!-- Un seul geste à la fois : l'immersion, puis la sortie ; une heure notée ne s'écrase plus d'un appui. -->
-          @switch (etatPalanquee(p)) {
+          @switch (signature() ? null : etatPalanquee(p)) {
             @case ('a-immerger') {
               <button type="button" class="bouton-principal bouton-chrono" [disabled]="envoiRealise()"
                       (click)="marquerImmersion(p)">▶ Immersion maintenant</button>
@@ -170,6 +179,7 @@ import { telechargerFichier } from '../../core/telecharger';
           </details>
         </section>
       }
+      </fieldset>
 
       <section class="carte panneau impression">
         <h3>Imprimer ou archiver</h3>
@@ -202,18 +212,28 @@ import { telechargerFichier } from '../../core/telecharger';
             <button type="button" class="bouton-discret" aria-label="Fermer le message" (click)="message.set(null)">✕</button>
           </div>
         }
-        <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
-          {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
-        </button>
-        <span class="etat-enregistrement" [class.a-enregistrer]="modificationsNonEnregistrees()" role="status">
-          @if (modificationsNonEnregistrees()) { ● Modifications non enregistrées } @else { ✓ Enregistré }
-        </span>
+        @if (!signature()) {
+          <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
+            {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
+          </button>
+          <span class="etat-enregistrement" [class.a-enregistrer]="modificationsNonEnregistrees()" role="status">
+            @if (modificationsNonEnregistrees()) { ● Modifications non enregistrées } @else { ✓ Enregistré }
+          </span>
+        }
       </div>
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin: var(--pas-3) 0 0; }
+    .lecture-seule { border: 0; margin: 0; padding: 0; min-width: 0; }
+    .signature {
+      display: flex; flex-direction: column; gap: var(--pas);
+      padding: var(--pas-2) var(--pas-3); margin: var(--pas-2) 0;
+      border-left: 4px solid var(--acquis); background: var(--acquis-clair);
+    }
+    .signature.alteree { border-left-color: #B3261E; background: #FDECEA; }
+    .signature.alteree span { color: #B3261E; font-weight: 600; }
     .panneau { padding: var(--pas-3); margin: var(--pas-2) 0 var(--pas-3); }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
 
@@ -321,6 +341,10 @@ export class FicheSecuriteRealiseComponent implements AvecModifications {
   exportSortieEnCours = signal(false);
 
   ficheEtablie = signal(false);
+  /** Signée par le DP : la fiche ne se complète plus. */
+  signature = signal<SignatureFicheVue | null>(null);
+  readonly libelleSignature = libelleSignature;
+  readonly alerteIntegrite = alerteIntegrite;
   sortie = signal<{ id: number; nom: string } | null>(null);
   palanquees = signal<PalanqueeVue[]>([]);
 
@@ -377,6 +401,7 @@ export class FicheSecuriteRealiseComponent implements AvecModifications {
       const { fiche, etablie } = this.file.ficheAJour(this.seanceId, ficheLue);
       this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
       this.ficheEtablie.set(etablie);
+      this.signature.set(fiche.signature ?? null);
       this.palanquees.set(fiche.palanquees);
       this.retenirEtatEnregistre();
       this.sortie.set(fiche.sortie ?? null);

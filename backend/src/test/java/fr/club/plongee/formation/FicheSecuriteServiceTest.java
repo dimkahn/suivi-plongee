@@ -55,7 +55,7 @@ class FicheSecuriteServiceTest {
     @BeforeEach
     void avantChaqueTest() {
         service = new FicheSecuriteService(fiches, seances, utilisateurs, eleves, pdfService, excelService,
-                liaisons, sorties);
+                liaisons, sorties, new EmpreinteFicheSecurite("cle-de-test", "cle-des-jetons"));
     }
 
     /** E3 : niveau minimal d'un directeur de plongée. */

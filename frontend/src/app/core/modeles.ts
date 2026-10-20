@@ -888,6 +888,19 @@ export interface FicheSecuriteVue {
   seancesLiees: SeanceLieeVue[];
   /** La sortie (séjour) dont fait partie la séance : ses fiches s'impriment toutes d'un coup. */
   sortie?: { id: number; nom: string } | null;
+  /** Signature du DP ; absente tant que la fiche n'est pas signée (et d'une fiche gardée hors ligne avant son ajout). */
+  signature?: SignatureFicheVue | null;
+}
+
+/**
+ * Signée, la fiche ne se modifie plus. `integre` : faux si son contenu a
+ * changé depuis la signature (empreinte scellée recalculée par le serveur).
+ */
+export interface SignatureFicheVue {
+  signataireId: number;
+  signataire: string;
+  signeeLe: string;
+  integre: boolean;
 }
 
 /**

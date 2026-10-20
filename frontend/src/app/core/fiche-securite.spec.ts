@@ -2,7 +2,8 @@ import { PalanqueeVue, PlongeurVue } from './modeles';
 import {
   aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
   alerteMod, fractionOxygene, libelleGaz, profondeurMaximaleUtilisation, palanqueesAEnregistrer,
-  profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee
+  profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee,
+  peutSignerFiche, libelleSignature, alerteIntegrite
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
@@ -360,5 +361,32 @@ describe('Une seule fenêtre pour une nouvelle palanquée et la fonction d\'un e
   it('Une fonction déjà choisie ne se redemande pas', () => {
     expect(questionsAjout(false, { ...encadrant, fonction: 'GUIDE_PALANQUEE' })).toEqual({ profil: false, fonction: false });
     expect(questionsAjout(true, { ...encadrant, fonction: 'ENCADRANT' })).toEqual({ profil: true, fonction: false });
+  });
+});
+
+describe('Signature de la fiche par le DP', () => {
+  const fiche = { id: 4, dpId: 12, signature: null };
+  const signature = { signataireId: 12, signataire: 'Gwendoline Marchand', signeeLe: '2026-06-08T16:30:00Z', integre: true };
+
+  it('Le DP signe sa fiche enregistrée, le jour de la plongée ou après', () => {
+    expect(peutSignerFiche(fiche, 12, '2026-06-08', '2026-06-08')).toBe(true);
+    expect(peutSignerFiche(fiche, 12, '2026-06-08', '2026-10-20')).toBe(true);
+  });
+
+  it('Ni un autre moniteur, ni avant la plongée, ni une fiche pas encore enregistrée', () => {
+    expect(peutSignerFiche(fiche, 7, '2026-06-08', '2026-10-20')).toBe(false);
+    expect(peutSignerFiche(fiche, undefined, '2026-06-08', '2026-10-20')).toBe(false);
+    expect(peutSignerFiche(fiche, 12, '2026-11-02', '2026-10-20')).toBe(false);
+    expect(peutSignerFiche({ ...fiche, id: null }, 12, '2026-06-08', '2026-10-20')).toBe(false);
+  });
+
+  it('Une fiche déjà signée ne se signe pas deux fois', () => {
+    expect(peutSignerFiche({ ...fiche, signature }, 12, '2026-06-08', '2026-10-20')).toBe(false);
+  });
+
+  it('Le bandeau dit qui a signé et quand, et alerte si la fiche a été modifiée depuis', () => {
+    expect(libelleSignature(signature)).toMatch(/^Signée par Gwendoline Marchand le 08\/06\/2026 à \d\d:30$/);
+    expect(alerteIntegrite(signature)).toBeNull();
+    expect(alerteIntegrite({ ...signature, integre: false })).toContain('modifiée après sa signature');
   });
 });

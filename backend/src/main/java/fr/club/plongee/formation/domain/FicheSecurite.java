@@ -6,6 +6,7 @@ import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,7 +15,8 @@ import java.util.List;
  * jour, sécurité surface, plan de secours, et le détail par palanquée porté
  * par {@link Palanquee}. Le nom de la structure, le DP, la date et le lieu ne
  * sont pas dupliqués ici : le DP est propre à la fiche (voir {@link #dp}),
- * date et lieu restent portés par {@link Seance}. Modifiable : historisée via
+ * date et lieu restent portés par {@link Seance}. Modifiable jusqu'à sa
+ * signature par le DP ({@link #signataire}), figée ensuite ; historisée via
  * Envers (voir fr.club.plongee.audit). Les palanquées et leurs membres ne le
  * sont pas, comme {@link Participation} : ce sont des lignes remplacées en
  * bloc à chaque enregistrement, pas des décisions qu'on a besoin de tracer
@@ -59,6 +61,21 @@ public class FicheSecurite {
     @OneToMany(mappedBy = "ficheSecurite", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("numero")
     private List<Palanquee> palanquees = new ArrayList<>();
+
+    /** Le DP qui a signé la fiche ; null tant qu'elle n'est pas signée. Signée, elle ne se modifie plus. */
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "signataire_id")
+    private Utilisateur signataire;
+
+    private Instant signeeLe;
+
+    /** Empreinte scellée du contenu signé : voir {@code EmpreinteFicheSecurite}. */
+    private String empreinte;
+
+    public boolean estSignee() {
+        return signeeLe != null;
+    }
 
     public Long getId() {
         return id;
@@ -158,5 +175,29 @@ public class FicheSecurite {
 
     public List<Palanquee> getPalanquees() {
         return palanquees;
+    }
+
+    public Utilisateur getSignataire() {
+        return signataire;
+    }
+
+    public void setSignataire(Utilisateur signataire) {
+        this.signataire = signataire;
+    }
+
+    public Instant getSigneeLe() {
+        return signeeLe;
+    }
+
+    public void setSigneeLe(Instant signeeLe) {
+        this.signeeLe = signeeLe;
+    }
+
+    public String getEmpreinte() {
+        return empreinte;
+    }
+
+    public void setEmpreinte(String empreinte) {
+        this.empreinte = empreinte;
     }
 }

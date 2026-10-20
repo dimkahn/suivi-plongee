@@ -12,8 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -89,7 +91,14 @@ public class FicheSecuriteService {
                                    String temperatureEau, String securiteSurface,
                                    String planSecours, String observations,
                                    List<PalanqueeVue> palanquees, List<SeanceLieeVue> seancesLiees,
-                                   SortieFicheVue sortie) {}
+                                   SortieFicheVue sortie, SignatureVue signature) {}
+
+    /**
+     * La signature du DP ({@link #signer}), null tant que la fiche n'est pas
+     * signée ; {@code integre} : faux si son contenu a changé depuis (voir
+     * {@link EmpreinteFicheSecurite}).
+     */
+    public record SignatureVue(Long signataireId, String signataire, Instant signeeLe, boolean integre) {}
 
     /** La sortie (séjour) dont fait partie la séance, pour imprimer toutes ses fiches d'un coup ; null sinon. */
     public record SortieFicheVue(Long id, String nom) {}
@@ -112,11 +121,14 @@ public class FicheSecuriteService {
     private final FicheSecuriteExcelService excelService;
     private final LiaisonSeancesRepository liaisons;
     private final SortieRepository sorties;
+    private final EmpreinteFicheSecurite empreintes;
 
     public FicheSecuriteService(FicheSecuriteRepository fiches, SeanceRepository seances,
                                 UtilisateurRepository utilisateurs, EleveRepository eleves,
                                 FicheSecuritePdfService pdfService, FicheSecuriteExcelService excelService,
-                                LiaisonSeancesRepository liaisons, SortieRepository sorties) {
+                                LiaisonSeancesRepository liaisons, SortieRepository sorties,
+                                EmpreinteFicheSecurite empreintes) {
+        this.empreintes = empreintes;
         this.sorties = sorties;
         this.fiches = fiches;
         this.seances = seances;
@@ -132,7 +144,7 @@ public class FicheSecuriteService {
     public FicheSecuriteVue consulter(Long seanceId) {
         return fiches.findBySeanceId(seanceId).map(this::vue).orElseGet(() -> new FicheSecuriteVue(
                 null, null, null, null, null, null, null, null, null, null, null, null,
-                List.of(), seancesLiees(seanceId), sortie(seanceId)));
+                List.of(), seancesLiees(seanceId), sortie(seanceId), null));
     }
 
     private SortieFicheVue sortie(Long seanceId) {
@@ -235,6 +247,7 @@ public class FicheSecuriteService {
             f.setSeance(seance);
             return f;
         });
+        verifierNonSignee(fiche, "modifier");
         fiche.setDp(dp);
         fiche.setMeteo(saisie.meteo());
         fiche.setEtatMer(saisie.etatMer());
@@ -329,6 +342,9 @@ public class FicheSecuriteService {
                 .orElseThrow(() -> new RessourceIntrouvableException("Séance introuvable"));
         Utilisateur dp = directeurDePlongee(demande.dpId());
         FicheSecurite ficheOrigine = fiches.findBySeanceId(seanceId).orElse(null);
+        if (ficheOrigine != null && !demande.palanquees().isEmpty()) {
+            verifierNonSignee(ficheOrigine, "en déplacer des palanquées");
+        }
 
         List<Palanquee> aDeplacer = new ArrayList<>();
         for (Integer numero : new LinkedHashSet<>(demande.palanquees())) {
@@ -439,6 +455,7 @@ public class FicheSecuriteService {
         FicheSecurite fiche = fiches.findBySeanceId(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException(
                         "Cette séance n'a pas encore de fiche de sécurité établie"));
+        verifierNonSignee(fiche, "compléter");
         fiche.getSeance().verifierQueLaSeanceAEuLieu("saisir le profil réalisé");
 
         Map<Integer, Palanquee> parNumero = fiche.getPalanquees().stream()
@@ -464,7 +481,42 @@ public class FicheSecuriteService {
     public void supprimer(Long seanceId) {
         FicheSecurite fiche = fiches.findBySeanceId(seanceId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Fiche de sécurité introuvable"));
+        verifierNonSignee(fiche, "supprimer");
         fiches.delete(fiche);
+    }
+
+    /**
+     * Signature électronique de la fiche par son DP, une fois la plongée
+     * passée (demande du club, octobre 2026) : fixe le signataire, la date et
+     * l'empreinte scellée du contenu. Signée, la fiche ne se modifie plus,
+     * ne se complète plus et ne se supprime plus.
+     */
+    @Transactional
+    public FicheSecuriteVue signer(Long seanceId, Long utilisateurId) {
+        FicheSecurite fiche = fiches.findBySeanceId(seanceId)
+                .orElseThrow(() -> new RessourceIntrouvableException(
+                        "Cette séance n'a pas encore de fiche de sécurité établie"));
+        if (fiche.estSignee()) {
+            throw new RegleMetierException("Cette fiche de sécurité est déjà signée par "
+                    + fiche.getSignataire().nomComplet() + ".");
+        }
+        if (!fiche.getDp().getId().equals(utilisateurId)) {
+            throw new RegleMetierException("Seul le directeur de plongée de la fiche, "
+                    + fiche.getDp().nomComplet() + ", peut la signer.");
+        }
+        fiche.getSeance().verifierQueLaSeanceAEuLieu("signer la fiche de sécurité");
+        fiche.setSignataire(fiche.getDp());
+        // À la seconde : la base ne garde pas les nanosecondes, l'empreinte doit retomber juste à la relecture.
+        fiche.setSigneeLe(Instant.now().truncatedTo(ChronoUnit.SECONDS));
+        fiche.setEmpreinte(empreintes.calculer(fiche));
+        return vue(fiches.save(fiche));
+    }
+
+    private static void verifierNonSignee(FicheSecurite fiche, String quoi) {
+        if (fiche.estSignee()) {
+            throw new RegleMetierException("Cette fiche de sécurité est signée par "
+                    + fiche.getSignataire().nomComplet() + " : impossible de la " + quoi + ".");
+        }
     }
 
     /** Le rendu PDF doit rester dans la transaction : il parcourt dp, seance, palanquees et membres. */
@@ -547,7 +599,9 @@ public class FicheSecuriteService {
         return new FicheSecuriteVue(f.getId(), f.getDp().getId(), f.getDp().nomComplet(),
                 f.getMeteo(), f.getEtatMer(), f.getVisibilite(), f.getCourant(), f.getMaree(),
                 f.getTemperatureEau(), f.getSecuriteSurface(), f.getPlanSecours(), f.getObservations(),
-                palanquees, seancesLiees(f.getSeance().getId()), sortie(f.getSeance().getId()));
+                palanquees, seancesLiees(f.getSeance().getId()), sortie(f.getSeance().getId()),
+                f.estSignee() ? new SignatureVue(f.getSignataire().getId(), f.getSignataire().nomComplet(),
+                        f.getSigneeLe(), empreintes.estIntegre(f)) : null);
     }
 
     private PalanqueeVue vue(Palanquee p) {

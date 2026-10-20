@@ -1,10 +1,14 @@
 ---
 titre: Établir et compléter une fiche de sécurité
 rubrique: Moniteur
-videos: M10, M11
+videos: M10, M11, M26
 ecran: /fiches-securite
-mots: fiche de sécurité, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, paysage, format, orientation, en largeur, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant, déplacer un plongeur, changer de palanquée, permuter, téléphone, mobile, bouton rond, bouton flottant, menu, enregistrer, où est le bouton, reprendre, recopier, réutiliser, même palanquée, palanquée d'une autre séance, autre jour, séance précédente, fonction, rôle, guide de palanquée, GP, chef de palanquée, ajouter un encadrant, ajout refusé, aptitude insuffisante, trop profond, prérogatives, profondeur prévue, durée prévue, nouvelle palanquée, nom de l'encadrant, nom de la palanquée, ouvrir, fermer, replier, déplier, résumé, compact, vue d'ensemble, une seule fenêtre, fenêtre de création, modifier un plongeur, toucher la ligne, crayon, fenêtre du plongeur, ouvrir pour modifier, MOD, profondeur maximale d'utilisation, ppO2, pression partielle, oxygène, nitrox, EAN, trimix, mélange, 1,4, 1,6, à l'eau, immersion maintenant, sortie maintenant, annuler, erreur, bilan, dépassement, en tête, durée calculée, corriger les heures, retour de plongée
+mots: fiche de sécurité, signer, signée, signature électronique, valider, clôturer, verrouiller, verrouillée, ne peut plus être modifiée, intégrité, modifiée après signature, falsifiée, empreinte, preuve, directeur de plongée, DP, palanquée, plongeur, immersion, sortie, paliers, profondeur, durée, milieu naturel, fosse, archives, imprimer, impression, journée, automatique, proposition, composer, répartir, binôme, encadrant, droit, lecture seule, E3, E4, sécurité surface, compléter, dupliquer, copier, lier, seconde rotation, deuxième bateau, numéro de plongée, info complémentaire, déplacer, deux tours, 1er tour, 2e tour, matin, après-midi, une seule impression, une page, paysage, format, orientation, en largeur, encadrants en colonnes, autonomes, nombre d'encadrants, signature, explo, PN3, excel, détails, gaz, nitrox, désaturation, non enregistré, modifications, perdre, quitter, retirer, ligne vide, nom manquant, déplacer un plongeur, changer de palanquée, permuter, téléphone, mobile, bouton rond, bouton flottant, menu, enregistrer, où est le bouton, reprendre, recopier, réutiliser, même palanquée, palanquée d'une autre séance, autre jour, séance précédente, fonction, rôle, guide de palanquée, GP, chef de palanquée, ajouter un encadrant, ajout refusé, aptitude insuffisante, trop profond, prérogatives, profondeur prévue, durée prévue, nouvelle palanquée, nom de l'encadrant, nom de la palanquée, ouvrir, fermer, replier, déplier, résumé, compact, vue d'ensemble, une seule fenêtre, fenêtre de création, modifier un plongeur, toucher la ligne, crayon, fenêtre du plongeur, ouvrir pour modifier, MOD, profondeur maximale d'utilisation, ppO2, pression partielle, oxygène, nitrox, EAN, trimix, mélange, 1,4, 1,6, à l'eau, immersion maintenant, sortie maintenant, annuler, erreur, bilan, dépassement, en tête, durée calculée, corriger les heures, retour de plongée
 questions:
+- Comment le directeur de plongée signe-t-il la fiche de sécurité ?
+- Pourquoi je ne vois pas le bouton « Signer la fiche » ?
+- Peut-on modifier une fiche de sécurité signée ?
+- Que veut dire « modifiée après sa signature » ?
 - J'ai touché « Immersion » ou « Sortie » par erreur, comment annuler ?
 - Comment savoir quelles palanquées sont encore à l'eau ?
 - La durée réalisée se calcule-t-elle toute seule ?
@@ -49,6 +53,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 ## Qui fait quoi
 
 - **Établir ou modifier** la fiche (DP, conditions, palanquées, proposition automatique, liaison avec une autre séance) : les moniteurs E3 et E4, les administrateurs, et les moniteurs à qui un administrateur en a donné le droit (écran « Moniteurs »). Pour les autres, la fiche s'ouvre en lecture seule.
+- **Signer** la fiche, une fois la plongée passée : son directeur de plongée, et lui seul (voir « Signer la fiche »). Signée, elle ne se modifie plus.
 - **Compléter au retour de plongée** (heures, profondeurs, durées, paliers) : tous les moniteurs, et les comptes « Sécurité surface », pour une personne qui n'est pas moniteur du club. Ces comptes ne voient que la liste des fiches de sécurité et l'écran « Compléter au retour de plongée ».
 
 ## Avant la mise à l'eau
@@ -63,7 +68,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, le directeur de plong�
 7. Enregistrez avec « Enregistrer la fiche », dans la barre toujours visible en bas de l'écran. Elle indique « Modifications non enregistrées » tant qu'il reste à enregistrer, puis « Enregistrée » ; les messages (fiche enregistrée, oubli à corriger) s'y affichent aussi. Quitter la fiche avec des modifications non enregistrées demande confirmation.
 8. « Imprimer (PDF) », dans la même barre, imprime la fiche enregistrée tout de suite (avec l'autre plongée de sa feuille).
 
-**Sur téléphone**, les boutons de la fiche sont rassemblés dans le **bouton rond en bas à gauche** (☰) : touchez-le pour ouvrir « Enregistrer la fiche », « + Palanquée », « Reprendre une palanquée d'une autre séance… », « Proposer les palanquées automatiquement » (milieu naturel, avec un groupe choisi), « Imprimer (PDF) » et « Compléter au retour de plongée ». Un point orange sur le bouton rappelle qu'il reste des modifications à enregistrer ; la barre du bas garde l'état (« Modifications non enregistrées », « Enregistrée ») et les messages. Toucher à côté du menu le referme.
+**Sur téléphone**, les boutons de la fiche sont rassemblés dans le **bouton rond en bas à gauche** (☰) : touchez-le pour ouvrir « Enregistrer la fiche », « + Palanquée », « Reprendre une palanquée d'une autre séance… », « Proposer les palanquées automatiquement » (milieu naturel, avec un groupe choisi), « Imprimer (PDF) », « Compléter au retour de plongée » et, pour le directeur de plongée après la plongée, « ✍ Signer la fiche ». Un point orange sur le bouton rappelle qu'il reste des modifications à enregistrer ; la barre du bas garde l'état (« Modifications non enregistrées », « Enregistrée ») et les messages. Toucher à côté du menu le referme.
 
 Retirer une palanquée qui a des plongeurs demande confirmation.
 
@@ -121,9 +126,22 @@ Le jour de la plongée, le bouton « Compléter au retour de plongée » de la p
    - **une colonne par encadrant** (le guide de palanquée, sinon l'encadrant de la palanquée), son nom tourné en haut sur fond jaune et son niveau (E1, E3…) dessous ; le nombre d'encadrants est en rouge à gauche. Les palanquées sans encadrant vont dans les colonnes « **Autonomes** » ;
    - **la case d'un plongeur dit à quel tour** il plonge dans cette colonne : « 1 », « 2 », ou « 1-2 » s'il plonge avec le même encadrant aux deux tours ;
    - **« Observations »** : le niveau préparé (« PN3 » pour un plongeur qui prépare le N3), sinon « explo », puis les observations saisies ;
-   - en bas, pour chaque tour, colonne par colonne : profondeur et durée prévues, heures de départ et de sortie, profondeur et durée réalisées. Les heures prévues et la signature du directeur de plongée restent à remplir à la main.
+   - en bas, pour chaque tour, colonne par colonne : profondeur et durée prévues, heures de départ et de sortie, profondeur et durée réalisées. Les heures prévues restent à remplir à la main, comme la signature du directeur de plongée tant que la fiche n'est pas signée dans l'appli ; signée, la case dit « signée électroniquement le … » (voir plus bas).
 4. Si la plongée fait partie d'une sortie (un séjour), « Toutes les fiches de … (PDF) » réunit les fiches de toutes ses plongées dans un seul PDF, deux plongées du même jour par page (ou une par page, case décochée) : tout s'imprime d'un coup. Les plongées sans fiche sont sautées.
 5. Pour imprimer toutes les fiches d'une journée (plusieurs plongées, plusieurs bateaux), choisissez la date dans la liste « Fiches de sécurité » puis « Imprimer les fiches du … (PDF) » : deux plongées du même lieu par page (ou une par page, case décochée), dans l'ordre des plongées. Les séances sans fiche sont sautées ; une fiche saisie hors ligne n'y figure qu'une fois envoyée.
+
+## Signer la fiche (directeur de plongée)
+
+Une fois la plongée passée et la fiche complète, le directeur de plongée la signe dans l'appli. Signée, **elle ne peut plus être modifiée, ni complétée, ni supprimée, par personne** (pas même un administrateur).
+
+1. Le directeur de plongée de la fiche ouvre sa fiche (« Modifier la fiche » dans la liste). Vérifiez d'abord que le profil réalisé de chaque palanquée est saisi.
+2. « ✍ Signer la fiche », dans la barre du bas (sur téléphone, dans le bouton rond ☰).
+3. Une fenêtre rappelle que la fiche ne pourra plus être modifiée : « Je signe la fiche ».
+4. En haut de la fiche, un encadré vert dit « Signée par … le … à … » ; tous les champs sont grisés, sur la fiche comme dans « Compléter au retour de plongée ».
+
+Le bouton n'apparaît que pour **le directeur de plongée choisi sur la fiche**, connecté avec son propre compte, sur une fiche **enregistrée**, **le jour de la plongée ou après**, et pas déjà signée. Des modifications pas encore enregistrées ? Enregistrez d'abord : on signe la fiche telle qu'elle est enregistrée. La signature demande le réseau.
+
+**Vérification du contenu** : à la signature, l'appli calcule une empreinte de toute la fiche (conditions, palanquées, plongeurs, profils, nom du signataire et date), scellée par une clé secrète du serveur. À chaque ouverture et à chaque impression, elle la recalcule : si quelqu'un a changé la fiche après coup (directement dans la base de données, par exemple), l'encadré devient **rouge** : « modifiée après sa signature… prévenez un administrateur », et la fiche imprimée porte « ⚠ modifiée après sa signature » au lieu de « signée électroniquement ».
 
 ## Bon à savoir
 

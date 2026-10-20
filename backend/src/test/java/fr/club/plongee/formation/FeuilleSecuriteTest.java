@@ -100,6 +100,23 @@ class FeuilleSecuriteTest {
                 .containsExactly(List.of(p1, p2), List.of(ailleurs), List.of(p3));
     }
 
+    @Test
+    @DisplayName("Signée par le DP, la case signature dit quand ; modifiée depuis, elle le dit aussi")
+    void signatureDuDp() {
+        FicheSecurite matin = fiche(1, "Sainte-Luce", null);
+        FicheSecurite apresMidi = fiche(2, "Sainte-Luce", null);
+        assertThat(FeuilleSecurite.depuis(List.of(matin, apresMidi)).signatures(f -> true)).isEqualTo("signature");
+
+        matin.setSignataire(matin.getDp());
+        matin.setSigneeLe(java.time.Instant.parse("2026-04-12T16:30:00Z"));
+        assertThat(FeuilleSecurite.depuis(List.of(matin)).signatures(f -> true))
+                .isEqualTo("signée électroniquement le 12/04/2026 à 18:30");
+        assertThat(FeuilleSecurite.depuis(List.of(matin, apresMidi)).signatures(f -> true))
+                .isEqualTo("1er tour : signée électroniquement le 12/04/2026 à 18:30\n2e tour : signature");
+        assertThat(FeuilleSecurite.depuis(List.of(matin)).signatures(f -> false))
+                .isEqualTo("⚠ modifiée après sa signature du 12/04/2026 à 18:30");
+    }
+
     private static FicheSecurite fiche(int ordre, String lieu, String site) {
         Seance s = new Seance();
         s.setDateSeance(JOUR);

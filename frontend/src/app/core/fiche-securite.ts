@@ -1,4 +1,32 @@
-import { PalanqueeVue, PlongeurVue } from './modeles';
+import { PalanqueeVue, PlongeurVue, SignatureFicheVue } from './modeles';
+
+/**
+ * Le bouton « Signer la fiche » : pour son DP seulement (le DP enregistré,
+ * pas celui choisi dans le formulaire), sur une fiche enregistrée, pas encore
+ * signée, le jour de la plongée ou après. Simple confort : le serveur
+ * revérifie tout.
+ */
+export function peutSignerFiche(fiche: { id: number | null; dpId: number | null; signature?: SignatureFicheVue | null },
+                                utilisateurId: number | undefined, dateSeance: string | undefined,
+                                aujourdhui: string): boolean {
+  return fiche.id !== null && !fiche.signature && utilisateurId !== undefined && fiche.dpId === utilisateurId
+    && !!dateSeance && dateSeance <= aujourdhui;
+}
+
+/** « Signée par Gwendoline Marchand le 08/06/2026 à 18:30 », à l'heure de l'appareil. */
+export function libelleSignature(s: SignatureFicheVue): string {
+  const d = new Date(s.signeeLe);
+  const deux = (n: number) => String(n).padStart(2, '0');
+  return `Signée par ${s.signataire} le ${deux(d.getDate())}/${deux(d.getMonth() + 1)}/${d.getFullYear()}`
+    + ` à ${deux(d.getHours())}:${deux(d.getMinutes())}`;
+}
+
+/** Null si la fiche n'a pas changé depuis la signature ; sinon l'alerte à montrer. */
+export function alerteIntegrite(s: SignatureFicheVue): string | null {
+  return s.integre ? null
+    : 'Attention : cette fiche a été modifiée après sa signature, en dehors de l\'application. '
+      + 'Son contenu ne correspond plus à ce que le directeur de plongée a signé : prévenez un administrateur.';
+}
 
 /** Un texte fait de blancs vaut une case vide. */
 function rempli(texte: string | null | undefined): boolean {

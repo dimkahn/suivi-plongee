@@ -106,6 +106,11 @@ fichier) :
 - `DB_PASSWORD` : un mot de passe fort quelconque ;
 - `JWT_SECRET` : le résultat de `openssl rand -base64 48`.
 
+Facultatif : `SIGNATURE_FICHES_CLE` (même commande) scelle les fiches de
+sécurité signées par le directeur de plongée ; vide, `JWT_SECRET` sert aussi
+à ça. Une fois des fiches signées, ne plus changer la clé qui les scelle :
+elles paraîtraient toutes « modifiées après leur signature ».
+
 Puis :
 
 ```bash
@@ -398,7 +403,9 @@ scp plongee-transfert.sql.gz .env utilisateur@nouvelle-machine:~/
 Le `.env` n'est pas dans git et contient des secrets (`DB_PASSWORD`,
 `JWT_SECRET`, identifiants SMTP) : ne pas le faire transiter par e-mail ni
 par un service de partage public. Garder le même `JWT_SECRET` évite que tout
-le monde doive se reconnecter.
+le monde doive se reconnecter, et que les fiches de sécurité signées
+paraissent modifiées (si `SIGNATURE_FICHES_CLE` est vide) : garder de même
+`SIGNATURE_FICHES_CLE`.
 
 **3. Sur la nouvelle machine**, installer Docker (étape 4), cloner le dépôt,
 y placer `.env` et le dump, puis **démarrer la base seule** avant

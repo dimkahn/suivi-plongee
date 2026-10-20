@@ -23,6 +23,7 @@ services:
       DB_USER: plongee
       DB_PASSWORD: ${DB_PASSWORD:-plongee}
       JWT_SECRET: ${JWT_SECRET:-Y2hhbmdlLW1lLWVuLXByb2R1Y3Rpb24tY2xlLWRlLTQ4LW9jdGV0cy1taW5pbXVt}
+      SIGNATURE_FICHES_CLE: ${SIGNATURE_FICHES_CLE:-}
       CORS_ORIGINES: http://localhost:4200
     depends_on:
       db:

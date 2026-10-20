@@ -418,6 +418,11 @@ export class ApiService {
     return this.http.post<PropositionPalanqueesVue>(`/api/seances/${seanceId}/fiche-securite/proposition`, demande);
   }
 
+  /** Signature de la fiche par son DP, une fois la plongée passée : elle ne se modifie plus ensuite. Réseau nécessaire. */
+  signerFicheSecurite(seanceId: number): Observable<FicheSecuriteVue> {
+    return this.http.post<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite/signature`, null);
+  }
+
   supprimerFicheSecurite(seanceId: number): Observable<unknown> {
     return this.http.delete(`/api/seances/${seanceId}/fiche-securite`);
   }

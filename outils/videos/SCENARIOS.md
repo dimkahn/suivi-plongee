@@ -338,6 +338,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 36 s
 8. En bas : « Modifications non enregistrées » tant qu'on n'a pas enregistré.
 9. La fiche est complète. « Imprimer ou archiver » : PDF ou tableur, sur le modèle du club, les deux plongées du jour sur une page, une colonne par encadrant.
 10. Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n'est pas moniteur.
+11. Complète, le directeur de plongée la signe : ensuite, plus rien ne se modifie.
 
 ### M12 — Groupes de plongeurs pour un séjour
 
@@ -550,6 +551,19 @@ Inscrit au séjour, le moniteur ouvre les frais par l'encart en haut de la page 
 Compte : `e2@club.fr` · formats téléphone et ordinateur
 
 _Pas encore tournée : le texte viendra au premier enregistrement._
+
+### M26 — Signer la fiche de sécurité
+
+Après la plongée, le directeur de plongée signe sa fiche dans l'appli : elle ne se modifie plus, et l'appli vérifie que rien n'a changé depuis.
+
+Compte : `e3@club.fr` · formats téléphone et ordinateur
+
+1. Samedi, à la gravière : Gwendoline était directrice de plongée, la fiche est complète.
+2. Seul le directeur de plongée de la fiche voit « Signer la fiche », une fois la plongée passée.
+3. L'appli prévient : signée, la fiche ne pourra plus être modifiée ni complétée, par personne.
+4. En haut, qui a signé et quand. Les champs sont grisés : plus rien ne se modifie.
+5. À chaque ouverture, l'appli vérifie que le contenu est bien celui qui a été signé ; sinon, une alerte rouge.
+6. Sur la fiche imprimée, la case signature dit « signée électroniquement », avec la date.
 
 ## Administrateur
 

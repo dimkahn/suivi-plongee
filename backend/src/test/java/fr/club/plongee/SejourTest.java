@@ -533,7 +533,9 @@ class SejourTest {
     @DisplayName("Dans le programme : l'encadrant voit toutes les palanquées, Camille seulement la sienne")
     void palanqueesDuProgramme() throws Exception {
         String dt = jeton("e3@club.fr");
-        LocalDate samedi = AUJOURDHUI.plusDays(250).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        // Le dernier samedi de la saison de démo 2026-2027 (fin le 30/06/2027) : une séance hors saison est
+        // refusée, et « aujourd'hui + 250 jours » en sortait depuis le 18/10/2026.
+        LocalDate samedi = LocalDate.of(2027, 6, 30).with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY));
         long seance = envoyer("POST", "/api/seances/serie", dt, """
                 {"dateDebut":"%s","dateFin":"%s","plongeesParJour":1,"milieu":"NATUREL","lieu":"Cassis"}"""
                 .formatted(samedi, samedi), 201).get(0).get("id").asLong();

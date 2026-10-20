@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-18, 16e série, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-20, 17e série, signature du DP annoncée à la fin, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -50,6 +50,7 @@ export default {
     await page.locator('section.impression').scrollIntoViewIfNeeded();
     await legende('La fiche est complète. « Imprimer ou archiver » : PDF ou tableur, sur le modèle du club, les deux plongées du jour sur une page, une colonne par encadrant.', 5500);
     await legende('Tous les moniteurs peuvent la compléter, et aussi une sécurité surface qui n\'est pas moniteur.', 4500);
+    await legende('Complète, le directeur de plongée la signe : ensuite, plus rien ne se modifie.', 4000);
     await legende(null, 0);
     await pause(500);
   }

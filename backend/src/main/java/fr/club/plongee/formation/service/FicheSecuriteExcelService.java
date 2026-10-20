@@ -49,9 +49,12 @@ public class FicheSecuriteExcelService {
 
     /** Nom et logo de la structure, en-tête de la fiche. */
     private final IdentiteStructureService identite;
+    /** Une fiche signée puis modifiée ne s'imprime pas comme signée. */
+    private final EmpreinteFicheSecurite empreintes;
 
-    public FicheSecuriteExcelService(IdentiteStructureService identite) {
+    public FicheSecuriteExcelService(IdentiteStructureService identite, EmpreinteFicheSecurite empreintes) {
         this.identite = identite;
+        this.empreintes = empreintes;
     }
 
     /** Une feuille : une plongée, ou deux du même jour (1er et 2e tour). */
@@ -103,7 +106,8 @@ public class FicheSecuriteExcelService {
             }
             fusion(feuille, 1, derniereLigneLieux, 0, 0, "", st.cadre);
             fusion(feuille, 1, derniereLigneLieux, NB_COLONNES_FIXES, obs,
-                    "Directeur de Plongée : " + f.directeursDePlongee() + "\n\nsignature", st.etiquetteCentree);
+                    "Directeur de Plongée : " + f.directeursDePlongee() + "\n\n" + f.signatures(empreintes::estIntegre),
+                    st.etiquetteCentree);
 
             // Libellés des colonnes, tournés à 45° ; les encadrants sur fond jaune.
             Row entetes = ligne(feuille, derniereLigneLieux + 1, 95);

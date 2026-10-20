@@ -203,7 +203,18 @@ public class FicheSecuriteController {
         return service.delier(seanceId);
     }
 
-    /** Réservée à l'ADMIN, comme la suppression d'une séance : un geste rare, pour corriger une erreur. */
+    /**
+     * Signature électronique par le DP de la fiche, et lui seul : voir
+     * {@link FicheSecuriteService#signer}. Le signataire est l'utilisateur
+     * connecté, jamais un identifiant reçu.
+     */
+    @PostMapping("/signature")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
+    public FicheSecuriteService.FicheSecuriteVue signer(@PathVariable Long seanceId, Authentication authentication) {
+        return service.signer(seanceId, HabilitationService.principal(authentication).id());
+    }
+
+    /** Réservée à l'ADMIN, comme la suppression d'une séance : un geste rare, pour corriger une erreur. Pas une fiche signée. */
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('ADMIN')")

@@ -28,6 +28,11 @@ app:
     # Case décochée : cookie de session (effacé à la fermeture du navigateur),
     # borné aussi côté serveur, certains navigateurs restaurant ces cookies.
     duree-session-heures: 12
+  # Cle qui scelle l'empreinte des fiches de securite signees par le DP
+  # (EmpreinteFicheSecurite). Vide : celle des jetons (JWT_SECRET). A ne plus
+  # changer une fois des fiches signees : elles paraitraient toutes modifiees.
+  signature-fiches:
+    cle: ${SIGNATURE_FICHES_CLE:}
   cors:
     origines: ${CORS_ORIGINES:http://localhost:4200}
   # Sert a construire les liens envoyes par courriel (reinitialisation de
