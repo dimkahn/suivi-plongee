@@ -11,6 +11,7 @@ import fr.club.plongee.notification.relance.TextesRelancesCaci.Courriel;
 import fr.club.plongee.notification.service.ServiceNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -19,6 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -29,7 +31,8 @@ import static fr.club.plongee.commun.Calendrier.DATE_FR;
 
 /**
  * Traitement quotidien des relances CACI (spec 2026-10-21-relances-caci) pour
- * un jour D donné : lit le périmètre en quelques requêtes (moniteurs et
+ * un jour D donné : purge d'abord la trace de plus de deux ans (R20) et les
+ * relances faites qui ne servent plus, puis lit le périmètre en quelques requêtes (moniteurs et
  * administrateurs actifs, élèves de la saison ouverte, relances déjà faites),
  * laisse {@link CalculRelancesCaci} décider de ce qui est dû, envoie par
  * {@link ServiceNotification#envoyerCourriel} (console en profil dev), trace.
@@ -45,6 +48,8 @@ import static fr.club.plongee.commun.Calendrier.DATE_FR;
  * le traitement continue ; la contrainte d'unicité de
  * {@code relance_caci_faite} interdit toute double inscription.
  * Un e-mail refusé n'arrête pas les autres (R16).
+ *
+ * <p>{@link #lireTrace()} sert la consultation ADMIN de la trace (R21).
  */
 @Service
 public class RelancesCaciService {
@@ -52,6 +57,13 @@ public class RelancesCaciService {
     private static final Logger log = LoggerFactory.getLogger(RelancesCaciService.class);
 
     private record Compte(long id, String email, String nom, String prenom, LocalDate finValidite) {}
+
+    /** Ligne de trace (R19) : date, destinataire, personnes concernées ; rien d'autre. */
+    public record EnvoiTrace(long id, LocalDate envoyeLe, String destinataireNom, String destinatairePrenom,
+                             String destinataireEmail, List<PersonneTracee> personnes) {}
+
+    /** Personne concernée par un envoi, par son nom et son prénom seulement (R19). */
+    public record PersonneTracee(String nom, String prenom) {}
 
     private final NamedParameterJdbcTemplate jdbc;
     private final ServiceNotification notification;
@@ -67,6 +79,7 @@ public class RelancesCaciService {
     }
 
     public void executer(LocalDate jour) {
+        purger(jour);
         Map<Long, Compte> moniteurs = comptesActifs("MONITEUR", jour).stream()
                 .collect(Collectors.toMap(Compte::id, Function.identity()));
         var resultat = CalculRelancesCaci.calculer(jour,
@@ -78,6 +91,38 @@ public class RelancesCaciService {
                 .filter(r -> !relancerMoniteur(jour, moniteurs.get(r.personneId()), r))
                 .toList();
         if (resultat.recapitulatifDu()) envoyerRecapitulatif(jour, resultat, injoignables);
+    }
+
+    /**
+     * Avant tout envoi. R20 : traces de plus de deux ans (personnes concernées
+     * supprimées en cascade). Relances faites qui ne servent plus : « bientôt »
+     * et « jour J » dès que F &lt; D (plus rien n'est dû, R7) ; citations
+     * « Sans CACI renseigné » antérieures à D − 6, hors de la fenêtre de R12.
+     * Chaque purge dans sa transaction : un échec est journalisé sans donnée
+     * personnelle et n'arrête pas les relances du jour.
+     */
+    private void purger(LocalDate jour) {
+        ecrire(jour, "la purge de la trace n'a pas pu être faite", () -> jdbc.update(
+                "DELETE FROM relance_caci_envoi WHERE envoye_le < :seuil",
+                new MapSqlParameterSource("seuil", premierEnvoiConserve(jour))));
+        ecrire(jour, "la purge des relances faites n'a pas pu être faite", () -> jdbc.update("""
+                DELETE FROM relance_caci_faite
+                 WHERE (moment <> 'SANS_CACI' AND fin_validite < :jour)
+                    OR (moment = 'SANS_CACI' AND faite_le < :debutSemaine)""",
+                new MapSqlParameterSource("jour", jour).addValue("debutSemaine", jour.minusDays(6))));
+    }
+
+    /**
+     * R20 : un envoi est supprimé le jour D si envoi + 2 ans &lt; D, calculé avec
+     * {@code plusYears(2)} comme {@code Caci.finValidite} (un 29 février donne le
+     * 28 février), en Java : l'arithmétique d'intervalles diffère entre H2 et
+     * PostgreSQL. Renvoie le premier envoi conservé, donc la purge supprime les
+     * envois antérieurs. {@code minusYears(2)} seul ne suffit pas : le
+     * 29/02/2032, il donnerait le 28/02/2030, qui doit pourtant être supprimé.
+     */
+    static LocalDate premierEnvoiConserve(LocalDate jour) {
+        LocalDate envoi = jour.minusYears(2);
+        return envoi.plusYears(2).isBefore(jour) ? envoi.plusDays(1) : envoi;
     }
 
     /** R10, R11, R15 : un récapitulatif par administrateur actif ; parti vers au moins un, les élèves comptent comme relancés (R17). */
@@ -181,6 +226,28 @@ public class RelancesCaciService {
                             utilisateur != null ? utilisateur : rs.getLong(2), Moment.valueOf(rs.getString(3)),
                             rs.getObject(4, LocalDate.class), rs.getObject(5, LocalDate.class));
                 });
+    }
+
+    /**
+     * R21 : la trace, du plus récent au plus ancien ; les personnes de tous les
+     * envois sont lues en une requête. Rien de {@code relance_caci_faite}.
+     */
+    public List<EnvoiTrace> lireTrace() {
+        List<EnvoiTrace> envois = jdbc.query("""
+                SELECT id, envoye_le, destinataire_nom, destinataire_prenom, destinataire_email
+                  FROM relance_caci_envoi ORDER BY envoye_le DESC, id DESC""",
+                (rs, i) -> new EnvoiTrace(rs.getLong(1), rs.getObject(2, LocalDate.class), rs.getString(3),
+                        rs.getString(4), rs.getString(5), new ArrayList<>()));
+        if (envois.isEmpty()) return envois;
+        Map<Long, EnvoiTrace> parId = envois.stream()
+                .collect(Collectors.toMap(EnvoiTrace::id, Function.identity()));
+        jdbc.query("""
+                SELECT envoi_id, nom, prenom FROM relance_caci_envoi_personne
+                 WHERE envoi_id IN (:ids) ORDER BY envoi_id, ordre""",
+                new MapSqlParameterSource("ids", parId.keySet()),
+                (RowCallbackHandler) rs -> parId.get(rs.getLong(1)).personnes()
+                        .add(new PersonneTracee(rs.getString(2), rs.getString(3))));
+        return envois;
     }
 
     /**

@@ -504,7 +504,8 @@ class RelancesCaciRecapitulatifTest {
     @Test
     @DisplayName("Seuls les élèves non archivés de la saison ouverte, par formation ou adhésion, sont cités")
     void perimetreDesEleves() throws Exception {
-        LocalDate examen = ancre(2);
+        // Fenêtre [ancre, ancre + 30], comme les autres tests : examen = ancre + 30 − 1 an.
+        LocalDate examen = ancre(2).plusDays(30).minusYears(1);
         LocalDate fin = examen.plusYears(1);
         long saisonPassee = jdbc.queryForObject("SELECT id FROM saison WHERE libelle = '2025-2026'", Long.class);
         inscrire(creerEleve("Ancien", "Leo", examen, null), saisonPassee);
@@ -528,7 +529,8 @@ class RelancesCaciRecapitulatifTest {
     @Test
     @DisplayName("Un élève est cité à J-30 sous bientôt, à J sous aujourd'hui, jamais entre les deux")
     void eleveAuRecapitulatif() throws Exception {
-        LocalDate examen = ancre(1);
+        // Fenêtre [ancre, ancre + 30], comme les autres tests : examen = ancre + 30 − 1 an.
+        LocalDate examen = ancre(1).plusDays(30).minusYears(1);
         LocalDate fin = examen.plusYears(1);
         LocalDate jour = fin.minusDays(30);
         inscrire(creerEleve("Lemaire", "Hugo", examen, null), saisonOuverte());

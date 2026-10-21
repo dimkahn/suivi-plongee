@@ -30,13 +30,19 @@ Complète « Données personnelles » de CLAUDE.md.
 ## Relances CACI (spec `docs/specs/2026-10-21-relances-caci`)
 
 - `relance_caci_faite` garde la fin de validité calculée (rien d'autre du
-  CACI) pour éviter une double relance ; jamais exposée par l'API, ses lignes
-  sont purgées dès que la fin de validité est passée.
+  CACI) pour éviter une double relance ; jamais exposée par l'API. Purgée au
+  début de chaque traitement : « bientôt » et « jour J » dès que la fin de
+  validité est passée, citations « Sans CACI renseigné » hors des 7 jours de
+  R12 (avant D − 6).
 - La trace `relance_caci_envoi` (+ `_personne`) recopie nom, prénom et adresse
   du destinataire et les noms des personnes concernées, sans clé étrangère :
   elle survit 2 ans à la suppression d'un dossier, puis est purgée (choix du
-  club, 2026). Ni fin de validité, ni mention élève ou moniteur, ni texte de
-  l'e-mail.
+  club, 2026 : supprimée le premier jour D où envoi + 2 ans < D,
+  `plusYears(2)`, calculé en Java). Ni fin de validité, ni mention élève ou
+  moniteur, ni texte de l'e-mail. Lue seulement par
+  `GET /api/admin/relances-caci` (`hasRole('ADMIN')` : ni niveau E1 à E4 ni
+  DIRECTEUR_TECHNIQUE), records de vue sans identifiant ; aucune route
+  d'écriture ni de déclenchement.
 - E-mails : prénom, nom, mention, fin de validité et date du jour seulement.
   Journal : jamais d'adresse, de nom, d'identifiant ni de date de CACI (type
   de l'exception seulement).
