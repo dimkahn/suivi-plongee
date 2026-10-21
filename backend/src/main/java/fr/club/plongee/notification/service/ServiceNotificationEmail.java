@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
  * application.yml, profil prod). Un echec d'envoi ne doit pas empecher la
  * demande de reinitialisation elle-meme d'etre enregistree : il est trace et
  * avale, comme le ferait un prestataire transactionnel en cas de bounce.
+ * Le journal ne cite pas l'adresse du destinataire (R17 des relances CACI,
+ * appliqué à tous les e-mails) : les appelants signalent l'échec à leur façon.
  */
 @Service
 @Profile("!dev")
@@ -63,7 +65,8 @@ public class ServiceNotificationEmail implements ServiceNotification {
             mailSender.send(message);
             return true;
         } catch (Exception e) {
-            log.error("Échec de l'envoi du courriel à {}", adresse, e);
+            // Seulement le type d'erreur : le message d'un refus SMTP cite souvent l'adresse.
+            log.error("Échec de l'envoi d'un courriel (destinataire non journalisé) : {}", e.getClass().getSimpleName());
             return false;
         }
     }
