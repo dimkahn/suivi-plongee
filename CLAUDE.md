@@ -26,7 +26,10 @@ Le frontend proxifie `/api` vers `localhost:8080`. Comptes de démo dans le
 README, mot de passe `plongee2026`. Outils `.claude/` : skills `nouvel-ecran`,
 `nouvel-endpoint`, `nouvelle-migration`, `lancer-appli`, `bonnes-pratiques-angular`, `bonnes-pratiques-spring` ; agent
 `relecteur-donnees-personnelles` (avant un commit qui touche des données de
-personnes). Historique des choix : `docs/decisions/`.
+personnes). Chaîne spec → code (skill `de-la-spec-au-code`, dossiers
+`docs/specs/`) : agents `redacteur-intention`, `redacteur-spec`,
+`concepteur-plan`, `developpeur-tdd`, `validateur`, validation humaine entre
+chaque étape. Historique des choix : `docs/decisions/`.
 Modèle des agents : `haiku` pour chercher dans le code, `sonnet` pour une
 tâche cadrée et relue (réécriture, lancer l'appli) ; le modèle principal pour
 concevoir, coder, tester et relire les données personnelles.
