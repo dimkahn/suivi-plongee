@@ -147,9 +147,28 @@ export interface ParticipantVue {
   membreGroupeId: number | null;
   /** Le nom de ce groupe. */
   groupe: string | null;
+  /**
+   * Le type de son attestation d'assurance (« application/pdf »,
+   * « image/jpeg »), null sans attestation (V99). Renvoyée au seul
+   * participant et aux organisateurs ; elle se dépose à part
+   * ({@link PortAttestationAssurance}).
+   */
+  attestationAssurance?: string | null;
 }
 
-export type DemandeParticipant = Omit<ParticipantVue, 'id' | 'moi' | 'groupe'>;
+export type DemandeParticipant = Omit<ParticipantVue, 'id' | 'moi' | 'groupe' | 'attestationAssurance'>;
+
+/**
+ * L'attestation d'assurance d'un participant, pour le séjour dans l'appli
+ * comme pour la page du lien : chaque écriture renvoie le séjour (ou le
+ * carnet) à jour. Par le lien, {@code participantId} est ignoré : c'est
+ * toujours la sienne.
+ */
+export interface PortAttestationAssurance {
+  deposer(participantId: number, fichier: File): Observable<SejourVue>;
+  retirer(participantId: number): Observable<SejourVue>;
+  lire(participantId: number): Observable<Blob>;
+}
 
 /** Ce que le participant renseigne lui-même (le nom et le reste restent à l'organisateur). */
 export type DemandeMesInformations = Pick<ParticipantVue, 'telephone' | 'regimes' | 'regimePrecision' | 'urgenceNom'
@@ -485,7 +504,18 @@ export interface SejourVue {
   groupesProposes: GroupeProposeVue[];
   /** Palanquées des plongées (fiches de sécurité) : toutes pour un encadrant, la sienne pour un participant. */
   palanquees: PalanqueeVue[];
+  /** Le conseil de l'organisateur montré à qui n'a pas joint son attestation d'assurance (V99) ; null : pas d'encart. */
+  conseilAssurance?: string | null;
 }
+
+/**
+ * Le message proposé à l'organisateur pour le conseil d'assurance
+ * (demande du club, 2026) : Lafont est l'assureur de la FFESSM.
+ */
+export const CONSEIL_ASSURANCE_TYPE = "Pour celles et ceux qui ne l'ont pas déjà fait, une assurance complémentaire "
+  + '(Loisir 1 minimum) est fortement recommandée. Vous pouvez souscrire avec votre numéro de licencié sur '
+  + 'https://www.espaceclient.lafont-assurances.com/espace-client/contrat.aspx\n'
+  + "Pour toute question, n'hésitez pas à nous contacter.";
 
 /** Un plongeur d'une palanquée ; moi : celui qui regarde. */
 export interface MembrePalanqueeVue {
@@ -564,6 +594,10 @@ export class SejourApi {
   /** Les organisateurs désignés par le créateur (lui-même l'est toujours). */
   definirOrganisateurs(id: number, utilisateurIds: number[]): Observable<SejourVue> {
     return this.http.put<SejourVue>(`/api/sejours/${id}/organisateurs`, { utilisateurIds });
+  }
+
+  definirConseilAssurance(id: number, conseilAssurance: string | null): Observable<SejourVue> {
+    return this.http.put<SejourVue>(`/api/sejours/${id}/conseil-assurance`, { conseilAssurance });
   }
 
   definirInfos(id: number, infosPratiques: string | null): Observable<SejourVue> {
@@ -657,6 +691,16 @@ export class SejourApi {
       deposer: (p, sens, fichier) => this.http.post<SejourVue>(url(p, sens), formulairePhoto(fichier)).pipe(tap(maj)),
       retirer: (p, sens) => this.http.delete<SejourVue>(url(p, sens)).pipe(tap(maj)),
       lire: (p, sens) => this.http.get(url(p, sens), { responseType: 'blob' })
+    };
+  }
+
+  /** Les attestations d'assurance, pour un compte connecté ; {@code maj} reçoit le séjour à jour. */
+  portAttestations(id: number, maj: (s: SejourVue) => void): PortAttestationAssurance {
+    const url = (participantId: number) => `/api/sejours/${id}/participants/${participantId}/attestation-assurance`;
+    return {
+      deposer: (p, fichier) => this.http.post<SejourVue>(url(p), formulairePhoto(fichier)).pipe(tap(maj)),
+      retirer: p => this.http.delete<SejourVue>(url(p)).pipe(tap(maj)),
+      lire: p => this.http.get(url(p), { responseType: 'blob' })
     };
   }
 

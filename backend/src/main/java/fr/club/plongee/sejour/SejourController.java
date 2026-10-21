@@ -9,6 +9,7 @@ import fr.club.plongee.sejour.SejourService.*;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -36,6 +37,8 @@ public class SejourController {
 
     public record DemandeInfos(String infosPratiques) {}
 
+    public record DemandeConseilAssurance(@Size(max = 2000) String conseilAssurance) {}
+
     public record DemandeGroupe(@NotNull Long groupeId) {}
 
     public record DemandeAffaires(@NotNull List<@Valid DemandeAffaire> affaires) {}
@@ -58,16 +61,18 @@ public class SejourController {
     private final AccesSejourService acces;
     private final PretsSejourService pretsSejour;
     private final CartesEmbarquementService cartes;
+    private final AttestationsAssuranceService attestations;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             AccesSejourService acces, PretsSejourService pretsSejour,
-                            CartesEmbarquementService cartes) {
+                            CartesEmbarquementService cartes, AttestationsAssuranceService attestations) {
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
         this.acces = acces;
         this.pretsSejour = pretsSejour;
         this.cartes = cartes;
+        this.attestations = attestations;
     }
 
     /** {@code toutes} : aussi les séjours passés (encadrants). Un participant ne voit que les siens. */
@@ -100,6 +105,15 @@ public class SejourController {
     public SejourVue definirInfos(@PathVariable Long id, @RequestBody DemandeInfos d,
                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.definirInfos(id, d.infosPratiques());
+        return service.lire(id, moi);
+    }
+
+    /** Le conseil montré à qui n'a pas joint son attestation d'assurance ; vide, pas d'encart. */
+    @PutMapping("/{id}/conseil-assurance")
+    @PreAuthorize(GERE)
+    public SejourVue definirConseilAssurance(@PathVariable Long id, @Valid @RequestBody DemandeConseilAssurance d,
+                                             @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        service.definirConseilAssurance(id, d.conseilAssurance());
         return service.lire(id, moi);
     }
 
@@ -179,13 +193,51 @@ public class SejourController {
         return carte(cartes.lire(id, participantId, sens), sens);
     }
 
+    // ------------------------------------------------------------------
+    //  Attestation d'assurance : le participant et les organisateurs (AttestationsAssuranceService).
+    // ------------------------------------------------------------------
+
+    /** Un PDF ou une photo ; remplace la précédente. */
+    @PostMapping(value = "/{id}/participants/{participantId}/attestation-assurance",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue deposerAttestation(@PathVariable Long id, @PathVariable Long participantId,
+                                        @RequestParam("fichier") MultipartFile fichier,
+                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        attestations.verifierDroit(id, participantId, moi);
+        attestations.deposer(id, participantId, octets(fichier), fichier.getContentType());
+        return service.lire(id, moi);
+    }
+
+    @DeleteMapping("/{id}/participants/{participantId}/attestation-assurance")
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue retirerAttestation(@PathVariable Long id, @PathVariable Long participantId,
+                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        attestations.verifierDroit(id, participantId, moi);
+        attestations.retirer(id, participantId);
+        return service.lire(id, moi);
+    }
+
+    @GetMapping("/{id}/participants/{participantId}/attestation-assurance")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> attestation(@PathVariable Long id, @PathVariable Long participantId,
+                                              @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        attestations.verifierDroit(id, participantId, moi);
+        return document(attestations.lire(id, participantId), "attestation-assurance");
+    }
+
     /**
      * Montrée dans le navigateur, jamais gardée en cache : elle permet
      * d'embarquer. En bac à sable (CSP sandbox) : un PDF ne peut rien
      * exécuter au nom de l'appli.
      */
     static ResponseEntity<byte[]> carte(CartesEmbarquementService.ContenuCarte c, SensTrajet sens) {
-        String nom = "carte-embarquement-" + (sens == SensTrajet.ARRIVEE ? "aller" : "retour")
+        return document(c, "carte-embarquement-" + (sens == SensTrajet.ARRIVEE ? "aller" : "retour"));
+    }
+
+    /** Une carte d'embarquement ou une attestation d'assurance, servie de la même façon. */
+    static ResponseEntity<byte[]> document(CartesEmbarquementService.ContenuCarte c, String nomSansExtension) {
+        String nom = nomSansExtension
                 + (c.type().equals("application/pdf") ? ".pdf" : c.type().equals("image/png") ? ".png" : ".jpg");
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(c.type()))
                 .cacheControl(CacheControl.noStore())

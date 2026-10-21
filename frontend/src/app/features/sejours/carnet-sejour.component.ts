@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import { dateDuJour } from '../../core/date-fr';
 import {
-  CATEGORIES, CategorieAffaire, ParticipantVue, PortCartesEmbarquement, SejourVue, TRANSPORTS, heure, jourLong, nomComplet
+  CATEGORIES, CategorieAffaire, ParticipantVue, PortAttestationAssurance, PortCartesEmbarquement, SejourVue, TRANSPORTS, heure, jourLong, nomComplet
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
@@ -35,7 +35,8 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
   template: `
     @let s = sejour();
     @if (moi(); as m) {
-      <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets()" [cartes]="cartes()" (ouvrir)="ouvrirDepuisMonSejour($event)" />
+      <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets()" [cartes]="cartes()"
+                      [attestations]="attestations()" (ouvrir)="ouvrirDepuisMonSejour($event)" />
     }
 
     @if (sommaire().length > 1) {
@@ -199,6 +200,8 @@ export class CarnetSejourComponent {
   prets = input<PretsDuSejour | null>(null);
   /** Ses cartes d'embarquement, sur les cartes de ses voyages. */
   cartes = input<PortCartesEmbarquement | null>(null);
+  /** Son attestation d'assurance, dans « Mon séjour ». */
+  attestations = input<PortAttestationAssurance | null>(null);
   /** « Modifier mes informations », « Mes comptes », le matériel : l'onglet de la page qui s'en occupe. */
   ouvrirOnglet = output<'infos' | 'frais' | 'materiel' | 'declarer'>();
 

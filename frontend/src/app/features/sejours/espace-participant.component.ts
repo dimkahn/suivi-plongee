@@ -14,7 +14,7 @@ import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
   AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
-  PortCartesEmbarquement, PortFrais, RegleLecture,
+  PortAttestationAssurance, PortCartesEmbarquement, PortFrais, RegleLecture,
   PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
@@ -95,7 +95,8 @@ interface JetonGarde {
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
-            <app-carnet-sejour [sejour]="c" [prets]="prets" [cartes]="portCartes" (ouvrirOnglet)="ouvrirDepuisCarnet($event)" />
+            <app-carnet-sejour [sejour]="c" [prets]="prets" [cartes]="portCartes"
+                               [attestations]="portAttestations" (ouvrirOnglet)="ouvrirDepuisCarnet($event)" />
             <p class="version-imprimable">
               <button type="button" class="bouton-discret" (click)="ouvrirImprimable()">Version imprimable</button>
             </p>
@@ -260,6 +261,15 @@ export class EspaceParticipantComponent {
       .pipe(tap(c => this.carnet.set(c))),
     lire: (_p, sens) => this.http.get(`${this.base}/cartes-embarquement/${sens}`,
       { headers: this.entetes(), responseType: 'blob' })
+  };
+
+  /** Son attestation d'assurance, avec le jeton du lien : chaque écriture renvoie le carnet à jour. */
+  readonly portAttestations: PortAttestationAssurance = {
+    deposer: (_p, fichier) => this.http.post<SejourVue>(`${this.base}/attestation-assurance`,
+      formulairePhoto(fichier), this.options()).pipe(tap(c => this.carnet.set(c))),
+    retirer: () => this.http.delete<SejourVue>(`${this.base}/attestation-assurance`, this.options())
+      .pipe(tap(c => this.carnet.set(c))),
+    lire: () => this.http.get(`${this.base}/attestation-assurance`, { headers: this.entetes(), responseType: 'blob' })
   };
 
   /** Le matériel emprunté, partagé par la carte « Mon séjour » du carnet et l'onglet « Matériel ». */

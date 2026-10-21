@@ -133,13 +133,17 @@ public class SejourService {
      * remarques des autres sont vides. {@code membreGroupeId} : le plongeur
      * d'un groupe de plongeurs qu'il est aussi (V79), {@code groupe} le nom
      * de ce groupe ; null pour un accompagnant ou un plongeur hors groupe.
+     * {@code attestationAssurance} : le type (PDF, photo) de son attestation
+     * d'assurance (V99, {@link AttestationsAssuranceService}), null sans
+     * attestation ; renvoyée comme la carte d'embarquement, au seul
+     * participant et aux organisateurs.
      */
     public record ParticipantVue(Long id, Long eleveId, Long utilisateurId, String nom, String prenom,
                                  boolean plongeur, String telephone, String email,
                                  Set<RegimeAlimentaire> regimes, String regimePrecision,
                                  String urgenceNom, String urgenceTelephone,
                                  Trajet arrivee, Trajet depart, String remarques, boolean moi,
-                                 Long membreGroupeId, String groupe) {}
+                                 Long membreGroupeId, String groupe, String attestationAssurance) {}
 
     public record DemandeParticipant(Long eleveId, Long utilisateurId,
                                      @NotBlank @Size(max = 120) String nom, @NotBlank @Size(max = 120) String prenom,
@@ -208,14 +212,17 @@ public class SejourService {
      * carnet d'un participant) ; {@code peutDesigner} : il choisit les
      * organisateurs (le créateur, ou un ADMIN). {@code palanquees} : celles
      * des plongées de la sortie, toutes pour un encadrant, la sienne seulement
-     * pour un participant.
+     * pour un participant. {@code conseilAssurance} : le texte de
+     * l'organisateur montré à qui n'a pas joint son attestation d'assurance
+     * (V99), null sans conseil.
      */
     public record SejourVue(SortieVue sortie, boolean gere, boolean encadrant, String infosPratiques,
                             List<ParticipantVue> participants, List<VoitureVue> voitures,
                             List<LogementVue> logements, List<AffaireVue> affaires,
                             List<EvenementVue> evenements, FraisService.FraisVue frais, List<String> avertissements,
                             List<GroupeProposeVue> groupesProposes, List<OrganisateurVue> organisateurs,
-                            boolean peutDesigner, List<PalanqueesSejourService.PalanqueeVue> palanquees) {}
+                            boolean peutDesigner, List<PalanqueesSejourService.PalanqueeVue> palanquees,
+                            String conseilAssurance) {}
 
     /** Une ligne de la liste des séjours. */
     public record SejourResumeVue(Long sortieId, String nom, String lieu, LocalDate dateDebut, LocalDate dateFin,
@@ -324,6 +331,8 @@ public class SejourService {
 
         List<String> infos = jdbc.queryForList(
                 "SELECT infos_pratiques FROM sejour WHERE sortie_id = :id", id, String.class);
+        List<String> conseil = jdbc.queryForList(
+                "SELECT conseil_assurance FROM sejour WHERE sortie_id = :id", id, String.class);
         List<ParticipantVue> participants = jdbc.query(SELECT_PARTICIPANT + " WHERE p.sortie_id = :id", id,
                 (rs, i) -> participant(rs, moi));
         participants = participants.stream()
@@ -379,7 +388,7 @@ public class SejourService {
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
                 voitures, logements, affaires, evenements, frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
                 avertissements(participants, voitures, logements), groupes, organisateurs(sortieId), false,
-                palanquees.palanquees(sortieId, monId, encadrant));
+                palanquees.palanquees(sortieId, monId, encadrant), conseil.isEmpty() ? null : conseil.getFirst());
     }
 
     /** Le créateur d'abord, puis les organisateurs qu'il a désignés. */
@@ -441,7 +450,9 @@ public class SejourService {
                    (SELECT c.type_contenu FROM sejour_carte_embarquement c
                      WHERE c.participant_id = p.id AND c.sens = 'ARRIVEE') AS arrivee_carte_embarquement,
                    (SELECT c.type_contenu FROM sejour_carte_embarquement c
-                     WHERE c.participant_id = p.id AND c.sens = 'DEPART') AS depart_carte_embarquement
+                     WHERE c.participant_id = p.id AND c.sens = 'DEPART') AS depart_carte_embarquement,
+                   (SELECT a.type_contenu FROM sejour_attestation_assurance a
+                     WHERE a.participant_id = p.id) AS attestation_assurance
               FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
               LEFT JOIN membre_groupe_plongeurs m ON m.id = p.membre_groupe_id
               LEFT JOIN groupe_plongeurs g ON g.id = m.groupe_id""";
@@ -518,25 +529,26 @@ public class SejourService {
                 .map(p -> !p.id().equals(participantId) ? p : new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(),
                         p.nom(), p.prenom(), p.plongeur(), p.telephone(), p.email(), p.regimes(), p.regimePrecision(),
                         p.urgenceNom(), p.urgenceTelephone(), p.arrivee(), p.depart(), p.remarques(), true,
-                        p.membreGroupeId(), p.groupe()))
+                        p.membreGroupeId(), p.groupe(), p.attestationAssurance()))
                 .toList();
         return carnet(new SejourVue(complet.sortie(), false, false, complet.infosPratiques(), participants,
                 complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(),
                 frais.lire(sortieId, frais.acteurParticipant(participantId)), List.of(), List.of(),
-                complet.organisateurs(), false, palanquees.palanquees(sortieId, participantId, false)));
+                complet.organisateurs(), false, palanquees.palanquees(sortieId, participantId, false),
+                complet.conseilAssurance()));
     }
 
     /** Le même séjour, avec les frais vus par celui qui agit (ce qu'il peut saisir, modifier). */
     private static SejourVue avecFrais(SejourVue s, FraisService.FraisVue f) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), f, s.avertissements(), s.groupesProposes(),
-                s.organisateurs(), s.peutDesigner(), s.palanquees());
+                s.organisateurs(), s.peutDesigner(), s.palanquees(), s.conseilAssurance());
     }
 
     private static SejourVue avecDesignation(SejourVue s, boolean peutDesigner) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
-                s.organisateurs(), peutDesigner, s.palanquees());
+                s.organisateurs(), peutDesigner, s.palanquees(), s.conseilAssurance());
     }
 
     /** Le carnet d'un participant : ses propres données, et des autres seulement ce qui organise le séjour. */
@@ -544,24 +556,27 @@ public class SejourService {
         List<ParticipantVue> participants = s.participants().stream()
                 .map(p -> p.moi() ? p : new ParticipantVue(p.id(), null, null, p.nom(), p.prenom(), p.plongeur(),
                         null, null, Set.of(), null, null, null, sansReservation(p.arrivee()),
-                        sansReservation(p.depart()), null, false, null, null))
+                        sansReservation(p.depart()), null, false, null, null, null))
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of(),
-                s.organisateurs(), false, s.palanquees());
+                s.organisateurs(), false, s.palanquees(), s.conseilAssurance());
     }
 
-    /** Pour un encadrant qui n'organise pas : tout, sauf le dossier et le lien d'enregistrement des autres. */
+    /**
+     * Pour un encadrant qui n'organise pas : tout, sauf le dossier, le lien
+     * d'enregistrement et l'attestation d'assurance des autres.
+     */
     private static SejourVue sansReservationsDesAutres(SejourVue s) {
         List<ParticipantVue> participants = s.participants().stream()
                 .map(p -> p.moi() ? p : new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(), p.nom(),
                         p.prenom(), p.plongeur(), p.telephone(), p.email(), p.regimes(), p.regimePrecision(),
                         p.urgenceNom(), p.urgenceTelephone(), sansReservation(p.arrivee()),
-                        sansReservation(p.depart()), p.remarques(), false, p.membreGroupeId(), p.groupe()))
+                        sansReservation(p.depart()), p.remarques(), false, p.membreGroupeId(), p.groupe(), null))
                 .toList();
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), participants, s.voitures(),
                 s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
-                s.organisateurs(), s.peutDesigner(), s.palanquees());
+                s.organisateurs(), s.peutDesigner(), s.palanquees(), s.conseilAssurance());
     }
 
     private static Trajet sansReservation(Trajet t) {
@@ -577,7 +592,8 @@ public class SejourService {
                 rs.getString("telephone"), rs.getString("email"), lireRegimes(rs.getString("regimes")),
                 rs.getString("regime_precision"), rs.getString("urgence_nom"), rs.getString("urgence_telephone"),
                 trajet(rs, "arrivee"), trajet(rs, "depart"), rs.getString("remarques"), estMoi,
-                rs.getObject("membre_groupe_id", Long.class), rs.getString("nom_groupe"));
+                rs.getObject("membre_groupe_id", Long.class), rs.getString("nom_groupe"),
+                rs.getString("attestation_assurance"));
     }
 
     private static Trajet trajet(ResultSet rs, String sens) throws SQLException {
@@ -676,6 +692,16 @@ public class SejourService {
         }
     }
 
+    /** Le conseil d'assurance (V99) : vide, plus d'encart dans « Mon séjour ». */
+    @Transactional
+    public void definirConseilAssurance(Long sortieId, String conseil) {
+        sorties.sortie(sortieId);
+        var p = new MapSqlParameterSource("id", sortieId).addValue("conseil", nettoyer(conseil));
+        if (jdbc.update("UPDATE sejour SET conseil_assurance = :conseil WHERE sortie_id = :id", p) == 0) {
+            jdbc.update("INSERT INTO sejour (sortie_id, conseil_assurance) VALUES (:id, :conseil)", p);
+        }
+    }
+
     // ------------------------------------------------------------------
     //  Participants
     // ------------------------------------------------------------------
@@ -749,7 +775,7 @@ public class SejourService {
         ParticipantVue p = lignes.getFirst();
         return new ParticipantVue(p.id(), p.eleveId(), p.utilisateurId(), p.nom(), p.prenom(), p.plongeur(),
                 p.telephone(), p.email(), p.regimes(), p.regimePrecision(), p.urgenceNom(), p.urgenceTelephone(),
-                p.arrivee(), p.depart(), p.remarques(), true, p.membreGroupeId(), p.groupe());
+                p.arrivee(), p.depart(), p.remarques(), true, p.membreGroupeId(), p.groupe(), p.attestationAssurance());
     }
 
     /** Le participant complète ses informations : le reste de sa ligne ne change pas. */

@@ -114,6 +114,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Révision (octobre 2026, demande du club : ne pas garder les cartes)** : **effacées le lendemain de la fin du séjour**, ou du retour du voyageur s'il rentre plus tard (`depart_date`, `depart_date_arrivee`), par une tâche de chaque nuit à 3 h 30 (`CartesEmbarquementService.effacerChaqueNuit`, première tâche planifiée de l'appli : `@EnableScheduling`). Une nuit manquée (serveur arrêté) est rattrapée la suivante. Les sauvegardes gardent la carte jusqu'à leur propre effacement.
 - **Écarté** : lire le code-barres ou le vol sur la carte pour remplir le voyage ; la garder sur le téléphone sans réseau (le séjour demande le réseau) : le manuel conseille de garder aussi le PDF de la compagnie.
 
+## Attestation d'assurance jointe par chaque participant
+
+- **Date** : 2026-10, demande du club.
+- **Contexte** : les organisateurs réclamaient l'attestation d'assurance de chacun par e-mail, et la cherchaient ensuite dans leur boîte.
+- **Décision** : une attestation par participant, PDF ou photo JPEG/PNG de 5 Mo au plus, signature vérifiée (V99, table `sejour_attestation_assurance`, `AttestationsAssuranceService`, même contrôle que la carte d'embarquement). Elle se joint depuis « Mon séjour », dans l'appli comme par le lien (`…/participants/{id}/attestation-assurance`, `/api/public/sejour/{code}/attestation-assurance`) ; un organisateur peut aussi la joindre depuis la fiche du participant. Photo recodée par le téléphone (sans position GPS), PDF servi en bac à sable, `no-store`. **Lue et modifiée seulement par le participant et les organisateurs** : elle porte son nom, son adresse et son numéro de contrat ; `ParticipantVue.attestationAssurance` (le type) est vide pour tout autre (participants, moniteurs qui n'organisent pas), le fichier refusé (403), même pour un ADMIN. Jamais imprimée ni envoyée par e-mail. Les organisateurs voient « … sur … ont joint leur attestation d'assurance » dans l'onglet Participants ; « Mon séjour » la rappelle dans « À compléter » tant qu'elle manque, avec, en orange, le **conseil d'assurance du séjour** : un texte écrit par l'organisateur dans l'onglet Participants (`sejour.conseil_assurance`, V99, `PUT …/conseil-assurance`, 2 000 caractères au plus), adresses http(s) rendues cliquables par l'écran (`texte-liens.ts`), rien d'autre interprété. Vide : pas d'encart. « Reprendre le message type (Lafont) » propose celui du club : une assurance complémentaire (Loisir 1 minimum) fortement recommandée, à souscrire avec son numéro de licencié sur l'espace client de Lafont Assurances. Réglé par séjour plutôt qu'écrit dans l'appli (demande du club) : chaque organisateur, et chaque structure, garde son message. **Effacée le lendemain de la fin du séjour**, ou du retour du participant s'il rentre plus tard, par une tâche de chaque nuit (3 h 35), comme les cartes d'embarquement : le club qui doit la garder l'enregistre ailleurs.
+- **Écarté** : lire sur l'attestation l'assureur, le contrat ou la date de fin de garantie ; la rendre obligatoire (rien n'est bloqué sans elle). L'attestation n'est pas une donnée de santé : elle reste hors des règles du CACI.
+
 ## Voir le séjour comme un participant
 
 - **Date** : 2026-10, demande du club.
@@ -128,3 +135,4 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V121 : palanquées de démonstration.
 - V126 : réservation des vols de Camille (terminal, ouverture de l'enregistrement, dossier fictif).
 - V128 : carte d'embarquement fictive (petit PDF) du vol aller de Flora.
+- V129 : attestation d'assurance fictive (petit PDF) de Flora, et le message type comme conseil d'assurance du séjour.

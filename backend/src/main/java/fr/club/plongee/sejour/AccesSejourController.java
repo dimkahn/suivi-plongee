@@ -39,13 +39,15 @@ public class AccesSejourController {
     private final FraisService frais;
     private final PretsSejourService pretsSejour;
     private final CartesEmbarquementService cartes;
+    private final AttestationsAssuranceService attestations;
 
     public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
-                                 CartesEmbarquementService cartes) {
+                                 CartesEmbarquementService cartes, AttestationsAssuranceService attestations) {
         this.acces = acces;
         this.frais = frais;
         this.pretsSejour = pretsSejour;
         this.cartes = cartes;
+        this.attestations = attestations;
     }
 
     @GetMapping("/moi")
@@ -91,6 +93,31 @@ public class AccesSejourController {
                                         @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
         Acces a = acces.acces(code, jeton);
         return SejourController.carte(cartes.lire(a.sortieId(), a.participantId(), sens), sens);
+    }
+
+    /** Son attestation d'assurance (PDF ou photo) ; renvoie le carnet à jour. */
+    @PostMapping(value = "/attestation-assurance", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public SejourService.SejourVue deposerAttestation(@PathVariable String code,
+                                                      @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                                      @RequestParam("fichier") MultipartFile fichier) {
+        Acces a = acces.acces(code, jeton);
+        attestations.deposer(a.sortieId(), a.participantId(), SejourController.octets(fichier), fichier.getContentType());
+        return acces.carnet(a);
+    }
+
+    @DeleteMapping("/attestation-assurance")
+    public SejourService.SejourVue retirerAttestation(@PathVariable String code,
+                                                      @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        attestations.retirer(a.sortieId(), a.participantId());
+        return acces.carnet(a);
+    }
+
+    @GetMapping("/attestation-assurance")
+    public ResponseEntity<byte[]> attestation(@PathVariable String code,
+                                              @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return SejourController.document(attestations.lire(a.sortieId(), a.participantId()), "attestation-assurance");
     }
 
     @GetMapping

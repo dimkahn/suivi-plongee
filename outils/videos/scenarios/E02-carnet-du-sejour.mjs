@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-20, 26e série, sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-21, 27e série, son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
+  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
@@ -42,6 +42,15 @@ export default {
     });
     await pause(2500);
     await legende('La carte est jointe à son vol. À l\'aéroport, « Montrer la carte » l\'ouvre en grand. « Remplacer » ou « Retirer » si son vol change.', 5500);
+    await page.locator('app-mon-sejour app-attestation-assurance').scrollIntoViewIfNeeded();
+    await legende('Sous ses vols, « Mon attestation d\'assurance ». Tant qu\'elle manque, en orange, le conseil de l\'organisatrice : une assurance complémentaire, Loisir 1 au minimum, à souscrire chez Lafont avec son numéro de licencié. L\'adresse s\'ouvre d\'un appui.', 6500);
+    await legende('Elle a la sienne : elle y joint le PDF de son assureur, ou une photo de l\'attestation.', 0);
+    await page.locator('app-mon-sejour app-attestation-assurance input[type=file]').setInputFiles({
+      name: 'attestation-assurance.pdf', mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\n%Attestation d\'assurance de demonstration\n%%EOF\n')
+    });
+    await pause(2500);
+    await legende('L\'attestation est jointe : seuls elle et les organisateurs du séjour la voient, et elle est effacée après le séjour.', 5000);
     await legende('Puis une case par sujet : sa voiture, sa chambre, ses comptes, ses informations.', 4000);
     await legende('En orange, une question : « Avez-vous emprunté du matériel du club ? ». Elle a pris une combinaison : « Oui, je déclare mon matériel ».', 0);
     await toucher(page.getByRole('button', { name: 'Oui, je déclare mon matériel' }), { apres: 1500 });

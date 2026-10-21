@@ -12,10 +12,11 @@ import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   SejourApi, SejourVue,
-  TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
+  CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { enCarte, memeVoyageQue } from './voyage';
 import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
+import { AttestationAssuranceComponent } from './attestation-assurance.component';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
@@ -74,7 +75,7 @@ function participantVide(): BrouillonParticipant {
 @Component({
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
-            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent],
+            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -172,7 +173,8 @@ function participantVide(): BrouillonParticipant {
       </section>
 
       @if (moi(); as m) {
-        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes" (ouvrir)="ouvrirDepuisMonSejour($event)" />
+        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes"
+                        [attestations]="portAttestations" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
                       (fermer)="mesInfosOuvertes.set(false)">
           @if (mesInfosOuvertes()) {
@@ -266,6 +268,22 @@ function participantVide(): BrouillonParticipant {
           } @else {
             <p class="secondaire">{{ complets() }} sur {{ s.participants.length }} ont donné leur arrivée, leur départ et
               la personne à prévenir. Touchez un nom pour voir sa fiche.</p>
+            @if (s.gere) {
+              <p class="secondaire">{{ assures() }} sur {{ s.participants.length }} ont joint leur attestation d'assurance.</p>
+            }
+          }
+          @if (s.gere) {
+            <div class="carte conseil-assurance">
+              <div class="ligne">
+                <strong>Conseil d'assurance</strong>
+                <button type="button" class="bouton-discret sans-impression" (click)="ouvrirConseilAssurance()">Modifier</button>
+              </div>
+              @if (s.conseilAssurance) {
+                <p class="texte-libre secondaire">{{ s.conseilAssurance }}</p>
+              } @else {
+                <p class="secondaire">Aucun : écrivez ici ce que voit, dans « Mon séjour », chaque participant qui n'a pas encore joint son attestation.</p>
+              }
+            </div>
           }
           <ul class="liste-participants">
             @for (p of s.participants; track p.id) {
@@ -300,6 +318,7 @@ function participantVide(): BrouillonParticipant {
                 <p class="secondaire">Arrivée : {{ texteTrajet(p.arrivee) }} · Départ : {{ texteTrajet(p.depart) }}</p>
                 @if (p.remarques) { <p class="texte-libre secondaire">{{ p.remarques }}</p> }
                 @if (s.gere) {
+                  <app-attestation-assurance [type]="p.attestationAssurance" [port]="portAttestations" [participantId]="p.id" />
                   <div class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirParticipant(p)">Modifier</button>
                     @if (p.email) {
@@ -959,6 +978,19 @@ function participantVide(): BrouillonParticipant {
       </div>
     </app-dialogue>
 
+    <app-dialogue [ouvert]="conseilOuvert()" [large]="true" [erreur]="erreur()" titre="Conseil d'assurance"
+                  (fermer)="conseilOuvert.set(false)">
+      <label for="c-assurance">Montré dans « Mon séjour » à chaque participant qui n'a pas encore joint son attestation d'assurance. Les adresses web y deviennent des liens.</label>
+      <textarea id="c-assurance" rows="6" maxlength="2000" [(ngModel)]="conseil"></textarea>
+      <p>
+        <button type="button" class="bouton-discret" (click)="conseil = conseilType">Reprendre le message type (Lafont)</button>
+      </p>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrerConseilAssurance()" [disabled]="envoi()">Enregistrer</button>
+        <button type="button" class="bouton-discret" (click)="conseilOuvert.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
+
     <app-dialogue [ouvert]="organisateursOuverts()" [erreur]="erreur()" titre="Organisateurs du séjour"
                   (fermer)="organisateursOuverts.set(false)">
       <p class="aide">
@@ -1048,6 +1080,9 @@ function participantVide(): BrouillonParticipant {
     .passagers ul { margin: 4px 0 var(--pas); padding-left: 1.25rem; }
     .passagers li { padding: 2px 0; }
     .carte-passager { margin: 2px 0 2px var(--pas); min-height: 44px; }
+    .conseil-assurance { margin: var(--pas) 0; padding: var(--pas) var(--pas-2); }
+    .conseil-assurance p { margin: var(--pas) 0 0; }
+    .conseil-assurance button { min-height: 44px; }
     .cartes p { margin: var(--pas) 0 0; }
     .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); }
     .nom { font-weight: 700; }
@@ -1154,6 +1189,8 @@ export class SejourComponent {
 
   /** Ceux qui ont tout renseigné (arrivée, départ, personne à prévenir), pour l'onglet Participants. */
   readonly complets = computed(() => (this.sejour()?.participants ?? []).filter(p => this.manque(p).length === 0).length);
+  /** Qui a joint son attestation d'assurance : le serveur ne le dit qu'aux organisateurs. */
+  readonly assures = computed(() => (this.sejour()?.participants ?? []).filter(p => !!p.attestationAssurance).length);
 
   readonly moi = computed(() => this.sejour()?.participants.find(p => p.moi) ?? null);
   private readonly parId = computed(() => new Map((this.sejour()?.participants ?? []).map(p => [p.id, p])));
@@ -1214,6 +1251,10 @@ export class SejourComponent {
 
   infosOuvertes = signal(false);
   infos = '';
+
+  conseilOuvert = signal(false);
+  conseil = '';
+  readonly conseilType = CONSEIL_ASSURANCE_TYPE;
 
   organisateursOuverts = signal(false);
   candidats = signal<MoniteurOptionVue[]>([]);
@@ -1293,6 +1334,8 @@ export class SejourComponent {
 
   /** Les cartes d'embarquement : la sienne dans « Mon séjour », celles des passagers pour les organisateurs. */
   readonly portCartes = this.api.portCartes(this.id, s => this.maj(s));
+  /** Les attestations d'assurance : la sienne dans « Mon séjour », celles de chacun pour les organisateurs. */
+  readonly portAttestations = this.api.portAttestations(this.id, s => this.maj(s));
 
   montrerCarte(participantId: number, sens: 'arrivee' | 'depart'): void {
     this.erreur.set(null);
@@ -1774,6 +1817,17 @@ export class SejourComponent {
     this.ecrire(this.api.definirInfos(this.id, this.infos.trim() || null), () => this.infosOuvertes.set(false));
   }
 
+  /** Le conseil d'assurance du séjour ; vide la première fois, le message type est à un bouton. */
+  ouvrirConseilAssurance(): void {
+    this.erreur.set(null);
+    this.conseil = this.sejour()?.conseilAssurance ?? '';
+    this.conseilOuvert.set(true);
+  }
+
+  enregistrerConseilAssurance(): void {
+    this.ecrire(this.api.definirConseilAssurance(this.id, this.conseil.trim() || null), () => this.conseilOuvert.set(false));
+  }
+
   // ---------------- Organisateurs ----------------
 
   estCreateur(id: number): boolean {
@@ -1819,7 +1873,7 @@ export class SejourComponent {
         this.erreur.set(texte);
         if (!this.participantOuvert() && !this.voitureOuverte() && !this.logementOuvert() && !this.mesInfosOuvertes()
           && !this.volOuvert()
-          && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes() && !this.organisateursOuverts()) {
+          && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes() && !this.conseilOuvert() && !this.organisateursOuverts()) {
           this.message.set(texte);
         }
       }

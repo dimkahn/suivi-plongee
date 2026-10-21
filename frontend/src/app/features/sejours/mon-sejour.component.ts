@@ -4,8 +4,9 @@ import { dateFr } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
 import { MonMateriel, PretsDuSejour, monMateriel } from './materiel-sejour';
 import { CarteVoyageComponent } from './carte-voyage.component';
+import { AttestationAssuranceComponent } from './attestation-assurance.component';
 import { enCarte } from './voyage';
-import { ParticipantVue, PortCartesEmbarquement, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
+import { ParticipantVue, PortAttestationAssurance, PortCartesEmbarquement, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
 
 /**
  * Où mène chaque tuile : un onglet du séjour, ou la fenêtre « Mes informations » ;
@@ -33,11 +34,11 @@ interface Tuile {
  * bouton pour le donner ; toucher une tuile ouvre l'onglet qui en donne le
  * détail. Tant qu'il n'a ni déclaré d'emprunt ni dit n'avoir rien emprunté,
  * un encart lui demande s'il a pris du matériel du club (demande du club,
- * 2026).
+ * 2026). Sous ses voyages, son attestation d'assurance (V99).
  */
 @Component({
   selector: 'app-mon-sejour',
-  imports: [CarteVoyageComponent],
+  imports: [CarteVoyageComponent, AttestationAssuranceComponent],
   template: `
     <section class="carte mon-sejour" aria-labelledby="titre-mon-sejour">
       <div class="tete">
@@ -72,6 +73,10 @@ interface Tuile {
                               [cartes]="cartes()" [participantId]="moi().id" />
           }
         </div>
+      }
+      @if (attestations(); as port) {
+        <app-attestation-assurance [type]="moi().attestationAssurance" [port]="port" [participantId]="moi().id"
+                                   titre="Mon attestation d'assurance" [conseil]="sejour().conseilAssurance" />
       }
       <ul class="tuiles">
         @for (t of tuiles(); track t.etiquette) {
@@ -141,6 +146,8 @@ export class MonSejourComponent implements OnInit {
   prets = input<PretsDuSejour | null>(null);
   /** Ses cartes d'embarquement, jointes aux cartes de ses voyages ; sans lui, rien à ajouter. */
   cartes = input<PortCartesEmbarquement | null>(null);
+  /** Son attestation d'assurance, à ajouter, ouvrir, remplacer ou retirer ; sans lui, pas d'encart. */
+  attestations = input<PortAttestationAssurance | null>(null);
   ouvrir = output<CibleMonSejour>();
 
   envoi = signal(false);
@@ -175,7 +182,8 @@ export class MonSejourComponent implements OnInit {
       rien(m.arrivee) ? 'votre voyage aller' : null,
       rien(m.depart) ? 'votre voyage retour' : null,
       !m.telephone ? 'votre téléphone' : null,
-      !m.urgenceNom && !m.urgenceTelephone ? 'la personne à prévenir' : null
+      !m.urgenceNom && !m.urgenceTelephone ? 'la personne à prévenir' : null,
+      this.attestations() && !m.attestationAssurance ? "votre attestation d'assurance" : null
     ].filter((x): x is string => x !== null);
   });
 

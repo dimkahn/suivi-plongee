@@ -29,7 +29,6 @@ public class CartesEmbarquementService {
 
     static final int TAILLE_MAX_OCTETS = 5 * 1024 * 1024;
     private static final Set<String> TYPES = Set.of("application/pdf", "image/jpeg", "image/png");
-    private static final String REFUS_TYPE = "La carte d'embarquement doit être un PDF ou une photo (JPEG, PNG).";
 
     public record ContenuCarte(byte[] contenu, String type) {}
 
@@ -55,7 +54,7 @@ public class CartesEmbarquementService {
     @Transactional
     public void deposer(Long sortieId, Long participantId, SensTrajet sens, byte[] contenu, String type) {
         verifierParticipant(sortieId, participantId);
-        String verifie = verifierFichier(contenu, type);
+        String verifie = verifierFichier(contenu, type, "La carte d'embarquement");
         String colonne = sens == SensTrajet.ARRIVEE ? "arrivee" : "depart";
         Integer voyage = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM sejour_participant
@@ -117,12 +116,13 @@ public class CartesEmbarquementService {
     /**
      * Le type annoncé par le navigateur ne suffit pas : la signature du
      * fichier doit le confirmer, puisqu'on le resservira tel quel. Renvoie
-     * le type, en minuscules.
+     * le type, en minuscules. {@code document} nomme le fichier dans les
+     * refus (« La carte d'embarquement », « L'attestation d'assurance »).
      */
-    static String verifierFichier(byte[] contenu, String type) {
+    static String verifierFichier(byte[] contenu, String type, String document) {
         if (contenu == null || contenu.length == 0) throw new RegleMetierException("Le fichier est vide.");
         if (contenu.length > TAILLE_MAX_OCTETS) {
-            throw new RegleMetierException("La carte d'embarquement dépasse la taille maximale de 5 Mo.");
+            throw new RegleMetierException(document + " dépasse la taille maximale de 5 Mo.");
         }
         String t = type == null ? "" : type.toLowerCase(Locale.ROOT);
         boolean pdf = contenu.length > 4 && contenu[0] == '%' && contenu[1] == 'P' && contenu[2] == 'D'
@@ -133,7 +133,7 @@ public class CartesEmbarquementService {
                 && contenu[2] == 'N' && contenu[3] == 'G';
         if (!TYPES.contains(t) || (t.equals("application/pdf") && !pdf) || (t.equals("image/jpeg") && !jpeg)
                 || (t.equals("image/png") && !png)) {
-            throw new RegleMetierException(REFUS_TYPE);
+            throw new RegleMetierException(document + " doit être un PDF ou une photo (JPEG, PNG).");
         }
         return t;
     }
