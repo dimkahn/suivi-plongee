@@ -8,6 +8,7 @@ import { AuthService } from '../../core/auth.service';
 import { DemandeSortie, SeancePossibleVue, SeanceSortieVue, SortieVue } from '../../core/modeles';
 import { DateFrPipe, dateFr, periode } from '../../core/date-fr';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 
 const JOURS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
@@ -22,7 +23,7 @@ function sortieVide(): DemandeSortie {
  */
 @Component({
   selector: 'app-sorties',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, OngletsComponent],
   template: `
     <div class="entete">
       <div>
@@ -70,12 +71,7 @@ function sortieVide(): DemandeSortie {
       </form>
     </app-dialogue>
 
-    <div class="onglets" role="tablist">
-      <button type="button" role="tab" class="bouton-discret" [class.actif]="recentes()"
-              [attr.aria-selected]="recentes()" (click)="changerFiltre(true)">À venir</button>
-      <button type="button" role="tab" class="bouton-discret" [class.actif]="!recentes()"
-              [attr.aria-selected]="!recentes()" (click)="changerFiltre(false)">Toutes</button>
-    </div>
+    <app-onglets [options]="periodes" [choisi]="recentes()" (choisir)="changerFiltre($event)" />
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -233,8 +229,6 @@ function sortieVide(): DemandeSortie {
     .grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 var(--pas-2); }
     textarea { resize: vertical; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; }
-    .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
 
     .sorties { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     .sorties > li { padding: var(--pas-2); }
@@ -268,6 +262,7 @@ export class SortiesComponent {
 
   liste = signal<SortieVue[]>([]);
   recentes = signal(true);
+  readonly periodes: OptionOnglet<boolean>[] = [{ valeur: true, libelle: 'À venir' }, { valeur: false, libelle: 'Toutes' }];
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);

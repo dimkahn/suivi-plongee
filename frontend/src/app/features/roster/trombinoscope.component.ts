@@ -12,6 +12,7 @@ import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { GroupeEntrainementVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur } from '../../core/modeles';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { dessinerTrombinoscope } from './image-trombinoscope';
 
 type Population = 'ELEVES' | 'MONITEURS';
@@ -27,20 +28,12 @@ function idCible(c: Cible): number {
 
 @Component({
   selector: 'app-trombinoscope',
-  imports: [RouterLink, FormsModule, NgTemplateOutlet, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent],
+  imports: [RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent],
   template: `
     <h1>Trombinoscope</h1>
 
-    <div class="onglets" role="group" aria-label="Élèves ou moniteurs">
-      <button type="button" class="bouton-discret" [class.actif]="population() === 'ELEVES'"
-              [attr.aria-pressed]="population() === 'ELEVES'" (click)="population.set('ELEVES')">
-        Élèves
-      </button>
-      <button type="button" class="bouton-discret" [class.actif]="population() === 'MONITEURS'"
-              [attr.aria-pressed]="population() === 'MONITEURS'" (click)="afficherMoniteurs()">
-        Moniteurs
-      </button>
-    </div>
+    <app-onglets [options]="populations" [choisi]="population()" libelle="Élèves ou moniteurs" [boutons]="true"
+                 (choisir)="$event === 'MONITEURS' ? afficherMoniteurs() : population.set($event)" />
 
     @if (population() === 'ELEVES') {
       <p class="secondaire">Par groupe d'entraînement, saison courante. Sans photo si le droit à l'image n'a pas été recueilli.</p>
@@ -253,8 +246,6 @@ function idCible(c: Cible): number {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; }
-    .onglets .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
     .filtres { margin: var(--pas-3) 0; }
     .etiquette-recherche { display: block; margin: 0 0 4px; font-weight: 700; font-size: .9375rem; }
     .recherche { max-width: 320px; margin-bottom: var(--pas-3); }
@@ -334,6 +325,9 @@ export class TrombinoscopeComponent implements OnDestroy {
   private urlsPhotos = signal<Map<number, string>>(new Map());
 
   population = signal<Population>('ELEVES');
+  readonly populations: OptionOnglet<Population>[] = [
+    { valeur: 'ELEVES', libelle: 'Élèves' }, { valeur: 'MONITEURS', libelle: 'Moniteurs' }
+  ];
   /** Chargés au premier passage sur l'onglet : la plupart des consultations concernent les élèves. */
   moniteurs = signal<LigneTrombinoscopeMoniteur[] | null>(null);
   erreurMoniteurs = signal<string | null>(null);

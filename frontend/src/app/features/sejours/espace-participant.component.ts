@@ -5,6 +5,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { Observable, firstValueFrom, map, tap } from 'rxjs';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from '../../core/base-locale';
 import { periode } from '../../core/date-fr';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { MesInformationsComponent } from './mes-informations.component';
 import { SeanceSortieVue } from '../../core/modeles';
@@ -62,7 +63,7 @@ interface JetonGarde {
  */
 @Component({
   selector: 'app-espace-participant',
-  imports: [FormsModule, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
+  imports: [FormsModule, OngletsComponent, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
             CarnetSejourComponent, CarnetImprimableComponent],
   template: `
     @if (imprimable() && carnet(); as c) {
@@ -82,16 +83,7 @@ interface JetonGarde {
                               [programme]="programme()" [affaires]="affaires()" [comptes]="mesComptes()"
                               [cartes]="portCartes" ouCompleter="Mes informations" />
         }
-        <div class="onglets" role="tablist" id="onglets-participant">
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'carnet'"
-                  [attr.aria-selected]="onglet() === 'carnet'" (click)="changerOnglet('carnet')">Carnet</button>
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'infos'"
-                  [attr.aria-selected]="onglet() === 'infos'" (click)="changerOnglet('infos')">Mes informations</button>
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'frais'"
-                  [attr.aria-selected]="onglet() === 'frais'" (click)="changerOnglet('frais')">Frais</button>
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'materiel'"
-                  [attr.aria-selected]="onglet() === 'materiel'" (click)="changerOnglet('materiel')">Matériel</button>
-        </div>
+        <app-onglets id="onglets-participant" [options]="onglets" [choisi]="onglet()" (choisir)="changerOnglet($event)" />
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
@@ -158,8 +150,6 @@ interface JetonGarde {
   styles: [`
     .qui { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap;
            margin: var(--pas-2) 0; }
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; flex-wrap: wrap; }
-    .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
     .connexion { padding: var(--pas-2); max-width: 32rem; margin-top: var(--pas-2); }
     .connexion h2 { margin-top: 0; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; }
@@ -212,6 +202,10 @@ export class EspaceParticipantComponent {
         : `${nom(r.deId)} vous doit ${euros(r.montantCentimes)}`);
   });
   /** L'ancienne adresse /frais/… ouvre directement les frais. */
+  readonly onglets: OptionOnglet<Onglet>[] = [
+    { valeur: 'carnet', libelle: 'Carnet' }, { valeur: 'infos', libelle: 'Mes informations' },
+    { valeur: 'frais', libelle: 'Frais' }, { valeur: 'materiel', libelle: 'Matériel' }
+  ];
   onglet = signal<Onglet>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'carnet');
   chargement = signal(true);
   erreur = signal<string | null>(null);

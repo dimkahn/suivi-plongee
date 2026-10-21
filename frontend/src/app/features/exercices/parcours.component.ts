@@ -11,6 +11,7 @@ import {
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { periodeDuMois, plagePeriode } from '../../core/progression';
 import { dateDuJour } from '../../core/date-fr';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -31,7 +32,7 @@ interface GroupeCompetence {
  */
 @Component({
   selector: 'app-parcours',
-  imports: [FormsModule, RouterLink, PastillePhaseComponent],
+  imports: [FormsModule, RouterLink, OngletsComponent, PastillePhaseComponent],
   template: `
     <h1>Parcours de formation</h1>
     <p class="secondaire">
@@ -43,12 +44,8 @@ interface GroupeCompetence {
     @if (!reseau.enLigne()) { <div class="alerte" role="status">Le parcours de formation demande le réseau.</div> }
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    <nav class="onglets" aria-label="Niveau">
-      @for (n of niveaux; track n) {
-        <button type="button" class="onglet" [class.actif]="niveau() === n" [attr.aria-pressed]="niveau() === n"
-                (click)="choisirNiveau(n)">{{ n }}</button>
-      }
-    </nav>
+    <app-onglets [options]="onglets" [choisi]="niveau()" (choisir)="choisirNiveau($event)"
+                 libelle="Niveau" [boutons]="true" />
 
     @if (progressionsDuNiveau().length > 1) {
       <label for="progression">Progression</label>
@@ -148,12 +145,6 @@ interface GroupeCompetence {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; }
-    .onglet {
-      min-height: 44px; padding: 0 var(--pas-3); border-radius: var(--r-s);
-      border: 1px solid var(--trait); background: #fff; font-weight: 700; cursor: pointer;
-    }
-    .onglet.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
     #progression { max-width: 480px; }
     .carte { padding: var(--pas-2) var(--pas-3); margin-top: var(--pas-2); }
     .entete h2 { margin: 0; font-size: 1.0625rem; }
@@ -193,7 +184,7 @@ export class ParcoursComponent {
   private api = inject(ApiService);
   private router = inject(Router);
   reseau = inject(ReseauService);
-  readonly niveaux = NIVEAUX;
+  readonly onglets: OptionOnglet<Niveau>[] = NIVEAUX.map(n => ({ valeur: n, libelle: n }));
   readonly phases = PHASES;
   readonly plage = plagePeriode;
 

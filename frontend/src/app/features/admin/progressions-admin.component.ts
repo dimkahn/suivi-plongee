@@ -11,6 +11,7 @@ import {
 } from '../../core/modeles';
 import { MOIS_SAISON, nomMois, plagePeriode } from '../../core/progression';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
@@ -46,7 +47,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
 
 @Component({
   selector: 'app-progressions-admin',
-  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent],
+  imports: [FormsModule, RouterLink, DialogueComponent, OngletsComponent, PastillePhaseComponent],
   template: `
     <h1>Progressions types</h1>
     <p class="secondaire">
@@ -59,14 +60,8 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    <nav class="onglets">
-      @for (n of niveaux; track n) {
-        <button type="button" class="onglet" [class.actif]="selectionNiveau() === n"
-                (click)="selectionnerNiveau(n)">
-          {{ n }}
-        </button>
-      }
-    </nav>
+    <app-onglets [options]="onglets" [choisi]="selectionNiveau()" (choisir)="selectionnerNiveau($event)"
+                 libelle="Niveau" [boutons]="true" />
 
     @if (chargement()) {
       <p class="secondaire">Chargement…</p>
@@ -358,12 +353,6 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-3) 0 var(--pas-2); }
-    .onglet {
-      min-height: 44px; padding: 0 var(--pas-3); border-radius: var(--r-s);
-      border: 1px solid var(--trait); background: #fff; font-weight: 700; cursor: pointer;
-    }
-    .onglet.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
     .barre { display: flex; align-items: center; gap: var(--pas-2); margin-bottom: var(--pas-2); flex-wrap: wrap; }
     .barre label { font-weight: 700; }
     .barre select { margin: 0; max-width: 100%; }
@@ -432,7 +421,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
 })
 export class ProgressionsAdminComponent {
   private api = inject(ApiService);
-  readonly niveaux = NIVEAUX;
+  readonly onglets: OptionOnglet<Niveau>[] = NIVEAUX.map(n => ({ valeur: n, libelle: n }));
   readonly moisSaison = MOIS_SAISON;
 
   liste = signal<ProgressionResume[]>([]);

@@ -14,6 +14,7 @@ import { descriptionEquipement } from './materiel';
 import { nomEquipement } from '../../core/nom-equipement';
 import { PhotosPretComponent } from './photos-pret.component';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 
 /** Élèves et encadrants partagent la même liste : ids pairs pour les élèves, impairs pour les encadrants. */
 function cleEmprunteur(e: EmprunteurVue): number {
@@ -30,7 +31,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
  */
 @Component({
   selector: 'app-prets',
-  imports: [FormsModule, RouterLink, DateFrPipe, ComboboxComponent, PhotosPretComponent, DialogueComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, OngletsComponent, ComboboxComponent, PhotosPretComponent, DialogueComponent],
   template: `
     <div class="entete">
       <h1>Prêts de matériel</h1>
@@ -144,16 +145,8 @@ interface LigneRetour { incident: string; horsService: boolean; }
       </form>
     </app-dialogue>
 
-    <div class="onglets" role="tablist">
-      <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'EN_COURS'"
-              [attr.aria-selected]="onglet() === 'EN_COURS'" (click)="onglet.set('EN_COURS')">
-        En cours ({{ enCours().length }})
-      </button>
-      <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'RENDUS'"
-              [attr.aria-selected]="onglet() === 'RENDUS'" (click)="afficherRendus()">
-        Rendus
-      </button>
-    </div>
+    <app-onglets [options]="onglets()" [choisi]="onglet()"
+                 (choisir)="$event === 'RENDUS' ? afficherRendus() : onglet.set($event)" />
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -276,7 +269,6 @@ interface LigneRetour { incident: string; horsService: boolean; }
     textarea { resize: vertical; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
 
-    .onglets { display: flex; gap: var(--pas); margin-bottom: var(--pas-2); }
     .prets { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     .prets > li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas); }
@@ -303,6 +295,9 @@ export class PretsComponent {
   readonly aujourdhui = dateDuJour();
 
   onglet = signal<'EN_COURS' | 'RENDUS'>('EN_COURS');
+  onglets = computed((): OptionOnglet<'EN_COURS' | 'RENDUS'>[] => [
+    { valeur: 'EN_COURS', libelle: `En cours (${this.enCours().length})` }, { valeur: 'RENDUS', libelle: 'Rendus' }
+  ]);
   enCours = signal<PretVue[]>([]);
   rendus = signal<PretVue[]>([]);
   private rendusCharges = false;

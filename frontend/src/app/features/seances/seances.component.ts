@@ -9,6 +9,7 @@ import { CalendrierSeancesComponent } from '../../core/calendrier-seances.compon
 import { lieuEtSite } from '../../core/seance-lieu';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -52,7 +53,7 @@ function formulaireVide(): FormulaireSeance {
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, ProgrammeSeanceComponent,
+  imports: [FormsModule, RouterLink, DateFrPipe, OngletsComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent,
             DialogueComponent],
   template: `
     <div class="entete">
@@ -195,16 +196,8 @@ function formulaireVide(): FormulaireSeance {
       }
     </app-dialogue>
 
-    <div class="onglets" role="group" aria-label="Affichage des séances">
-      <button type="button" class="bouton-discret" [class.actif]="vue() === 'LISTE'"
-              [attr.aria-pressed]="vue() === 'LISTE'" (click)="vue.set('LISTE')">
-        Liste
-      </button>
-      <button type="button" class="bouton-discret" [class.actif]="vue() === 'CALENDRIER'"
-              [attr.aria-pressed]="vue() === 'CALENDRIER'" (click)="vue.set('CALENDRIER')">
-        Calendrier
-      </button>
-    </div>
+    <app-onglets [options]="vues" [choisi]="vue()" (choisir)="vue.set($event)"
+                 libelle="Affichage des séances" [boutons]="true" />
 
     @if (vue() === 'LISTE') {
       <label for="recherche-seance">Rechercher une séance</label>
@@ -339,8 +332,6 @@ function formulaireVide(): FormulaireSeance {
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .danger { color: #B3261E; border-color: #B3261E; }
 
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-3) 0 var(--pas-2); }
-    .onglets .bouton-discret.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
 
     .calendrier { padding: var(--pas-2); margin-bottom: var(--pas-3); max-width: 900px; }
     .titre-jour { margin: 0 0 var(--pas-2); }
@@ -366,6 +357,9 @@ export class SeancesComponent {
   readonly lieuEtSite = lieuEtSite;
 
   vue = signal<'LISTE' | 'CALENDRIER'>('LISTE');
+  readonly vues: OptionOnglet<'LISTE' | 'CALENDRIER'>[] = [
+    { valeur: 'LISTE', libelle: 'Liste' }, { valeur: 'CALENDRIER', libelle: 'Calendrier' }
+  ];
   jourSelectionne = signal<string | null>(dateDuJour());
 
   /** En liste : le résultat de la recherche ; en calendrier : les séances du jour touché. */

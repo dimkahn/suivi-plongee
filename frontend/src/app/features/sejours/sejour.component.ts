@@ -6,6 +6,7 @@ import { Observable, firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { MoniteurOptionVue, PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { dateDuJour, periode } from '../../core/date-fr';
 import {
@@ -74,7 +75,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, RouterLink, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
+  imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent],
   template: `
     @if (sejour(); as s) {
@@ -185,16 +186,8 @@ function participantVide(): BrouillonParticipant {
         </app-dialogue>
       }
 
-      <div class="onglets sans-impression" role="tablist" id="onglets-sejour">
-        @for (o of onglets(); track o.code) {
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === o.code"
-                  [attr.aria-selected]="onglet() === o.code" (click)="onglet.set(o.code)">
-            {{ o.libelle }}@if (o.alertes > 0) {
-              <span class="compteur-alertes" [attr.aria-label]="o.alertes + ' à vérifier'">{{ o.alertes }}</span>
-            }
-          </button>
-        }
-      </div>
+      <app-onglets class="sans-impression" id="onglets-sejour" [options]="onglets()" [choisi]="onglet()"
+                   (choisir)="onglet.set($event)" [defilant]="true" />
 
       <!-- Programme -->
       @if (voir('programme')) {
@@ -1046,14 +1039,6 @@ function participantVide(): BrouillonParticipant {
     textarea { resize: vertical; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; }
     .titre-section { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
-    /* Une seule rangée d'onglets, qui défile sur téléphone plutôt que de s'empiler. */
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; overflow-x: auto; padding-bottom: 4px;
-               scrollbar-width: thin; }
-    .onglets button { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
-    .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
-    .compteur-alertes { min-width: 1.4rem; height: 1.4rem; padding: 0 5px; border-radius: 999px; font-size: .75rem;
-                        font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
-                        background: var(--en-cours); color: #fff; }
     .avertissements { margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2) var(--pas) 2rem; border-radius: var(--r-s);
                       background: var(--en-cours-clair); color: var(--en-cours); }
     .encart-frais { margin: var(--pas-2) 0; padding: var(--pas-2); display: flex; align-items: center; gap: var(--pas-2);
@@ -1178,16 +1163,16 @@ export class SejourComponent {
   readonly onglets = computed(() => {
     const s = this.sejour();
     const a = this.avertissementsDe();
-    const liste: { code: Onglet; libelle: string; alertes: number }[] = [
-      { code: 'frais', libelle: 'Frais', alertes: 0 },
-      { code: 'programme', libelle: 'Programme', alertes: 0 },
-      { code: 'participants', libelle: 'Participants', alertes: 0 },
-      { code: 'transports', libelle: 'Transports', alertes: a.transports.length },
-      { code: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
-      { code: 'materiel', libelle: 'Matériel', alertes: 0 },
-      { code: 'pratique', libelle: 'Pratique', alertes: 0 }
+    const liste: OptionOnglet<Onglet>[] = [
+      { valeur: 'frais', libelle: 'Frais' },
+      { valeur: 'programme', libelle: 'Programme' },
+      { valeur: 'participants', libelle: 'Participants' },
+      { valeur: 'transports', libelle: 'Transports', alertes: a.transports.length },
+      { valeur: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
+      { valeur: 'materiel', libelle: 'Matériel' },
+      { valeur: 'pratique', libelle: 'Pratique' }
     ];
-    return s?.encadrant ? liste : liste.filter(o => o.code !== 'participants');
+    return s?.encadrant ? liste : liste.filter(o => o.valeur !== 'participants');
   });
 
   /** Ceux qui ont tout renseigné (arrivée, départ, personne à prévenir), pour l'onglet Participants. */

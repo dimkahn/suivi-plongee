@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { periode } from '../../core/date-fr';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { SejourApi, SejourResumeVue } from './sejour-api';
 
 /**
@@ -11,7 +12,7 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
  */
 @Component({
   selector: 'app-sejours-liste',
-  imports: [RouterLink],
+  imports: [RouterLink, OngletsComponent],
   template: `
     <h1>Séjours</h1>
     <p class="secondaire">
@@ -32,12 +33,7 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
     }
 
     @if (encadrant()) {
-      <div class="onglets" role="tablist">
-        <button type="button" role="tab" class="bouton-discret" [class.actif]="!toutes()"
-                [attr.aria-selected]="!toutes()" (click)="changer(false)">À venir</button>
-        <button type="button" role="tab" class="bouton-discret" [class.actif]="toutes()"
-                [attr.aria-selected]="toutes()" (click)="changer(true)">Tous</button>
-      </div>
+      <app-onglets [options]="periodes" [choisi]="toutes()" (choisir)="changer($event)" />
     }
 
     @if (erreur(); as e) { <div class="alerte" role="alert">{{ e }}</div> }
@@ -64,8 +60,6 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-2) 0; }
-    .onglets .actif { background: var(--profond); color: #fff; border-color: var(--profond); font-weight: 700; }
     .sejours { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     .groupes { display: flex; flex-direction: column; gap: 2px; padding: var(--pas-2); min-height: 44px;
                margin: var(--pas-2) 0; text-decoration: none; color: inherit; }
@@ -82,6 +76,7 @@ export class SejoursListeComponent {
 
   liste = signal<SejourResumeVue[]>([]);
   toutes = signal(false);
+  readonly periodes: OptionOnglet<boolean>[] = [{ valeur: false, libelle: 'À venir' }, { valeur: true, libelle: 'Tous' }];
   chargement = signal(true);
   erreur = signal<string | null>(null);
 

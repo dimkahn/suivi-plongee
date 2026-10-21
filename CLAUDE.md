@@ -79,7 +79,7 @@ automatiquement avec les fichiers du domaine : référentiel, progression,
 encadrants et fiche de sécurité, planning, matériel, séjour, évaluation,
 exercices, hors ligne, audit (Envers), élèves et saisons, données
 personnelles (CACI, photos), comptes et e-mail, identité, aide et vidéos,
-navigation. Les lire avant de concevoir une modification qui les concerne.
+navigation, composants partagés du front. Les lire avant de concevoir une modification qui les concerne.
 
 - **Sécurité à deux niveaux** : le rôle (`hasRole('MONITEUR')`), puis
   l'habilitation métier (`@habilitation.peutEvaluer(#cursusId,

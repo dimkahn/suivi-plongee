@@ -11,6 +11,7 @@ import { dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { libellePreparation } from '../../core/niveaux';
 import { PhotoEleveComponent } from '../../core/photo-eleve.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 
 const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 'théorie', PLONGEE: 'plongée' };
 
@@ -24,7 +25,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
  */
 @Component({
   selector: 'app-synthese-seance',
-  imports: [RouterLink, NgTemplateOutlet, PastillePhaseComponent, PhotoEleveComponent, PlurielPipe],
+  imports: [RouterLink, NgTemplateOutlet, OngletsComponent, PastillePhaseComponent, PhotoEleveComponent, PlurielPipe],
   template: `
     <h1>Synthèse des notes</h1>
 
@@ -60,14 +61,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
           }
         </p>
 
-        <div class="vues" role="tablist">
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="vue() === 'TABLEAU'"
-                  [attr.aria-selected]="vue() === 'TABLEAU'" (click)="vue.set('TABLEAU')">Tableau</button>
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="vue() === 'CRITERES'"
-                  [attr.aria-selected]="vue() === 'CRITERES'" (click)="vue.set('CRITERES')">Par critère</button>
-          <button type="button" role="tab" class="bouton-discret" [class.actif]="vue() === 'ELEVES'"
-                  [attr.aria-selected]="vue() === 'ELEVES'" (click)="vue.set('ELEVES')">Par élève</button>
-        </div>
+        <app-onglets class="vues" [options]="vues" [choisi]="vue()" (choisir)="vue.set($event)" />
 
         @if (vue() === 'TABLEAU') {
           <div class="defilement">
@@ -193,8 +187,8 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
   `,
   styles: [`
     h1 { margin-bottom: var(--pas); }
-    .niveaux, .vues { display: flex; flex-wrap: wrap; gap: var(--pas); margin: var(--pas-2) 0; }
-    .niveaux .actif, .vues .actif { background: var(--profond); border-color: var(--profond); color: #fff; }
+    .niveaux { display: flex; flex-wrap: wrap; gap: var(--pas); margin: var(--pas-2) 0; }
+    .niveaux .actif { background: var(--profond); border-color: var(--profond); color: #fff; }
     .imprimer { margin-left: auto; }
     .bilan { color: var(--craie); font-size: .875rem; }
     .non-notes { color: var(--en-cours); }
@@ -253,6 +247,10 @@ export class SyntheseSeanceComponent {
   chargement = signal(false);
   message = signal<string | null>(null);
   vue = signal<'TABLEAU' | 'CRITERES' | 'ELEVES'>('TABLEAU');
+  readonly vues: OptionOnglet<'TABLEAU' | 'CRITERES' | 'ELEVES'>[] = [
+    { valeur: 'TABLEAU', libelle: 'Tableau' }, { valeur: 'CRITERES', libelle: 'Par critère' },
+    { valeur: 'ELEVES', libelle: 'Par élève' }
+  ];
 
   readonly dateFr = dateFr;
   readonly libellePreparation = libellePreparation;

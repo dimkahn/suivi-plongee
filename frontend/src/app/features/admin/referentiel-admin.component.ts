@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DateFrPipe } from '../../core/date-fr';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import {
   BlocReferentielVue, CritereReferentielVue, DemandeBlocReferentiel, DemandeCritereReferentiel,
@@ -62,21 +63,15 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
 
 @Component({
   selector: 'app-referentiel-admin',
-  imports: [FormsModule, DateFrPipe, DialogueComponent],
+  imports: [FormsModule, DateFrPipe, DialogueComponent, OngletsComponent],
   template: `
     <h1>Référentiel MFT</h1>
 
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
-    <nav class="onglets">
-      @for (n of niveaux; track n) {
-        <button type="button" class="onglet" [class.actif]="selectionNiveau() === n"
-                (click)="selectionnerNiveau(n)">
-          {{ n }}
-        </button>
-      }
-    </nav>
+    <app-onglets [options]="onglets" [choisi]="selectionNiveau()" (choisir)="selectionnerNiveau($event)"
+                 libelle="Niveau" [boutons]="true" />
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -356,12 +351,6 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
     h1 { margin-bottom: var(--pas); }
     code { background: var(--fond); padding: 1px 6px; border-radius: var(--r-s); }
 
-    .onglets { display: flex; gap: var(--pas); margin: var(--pas-3) 0 var(--pas-2); }
-    .onglet {
-      min-height: 44px; padding: 0 var(--pas-3); border-radius: var(--r-s);
-      border: 1px solid var(--trait); background: #fff; font-weight: 700; cursor: pointer;
-    }
-    .onglet.actif { background: var(--profond); color: #fff; border-color: var(--profond); }
 
     .barre-versions { display: flex; align-items: center; gap: var(--pas-2); margin-bottom: var(--pas-2); flex-wrap: wrap; }
     .barre-versions label { font-weight: 700; }
@@ -424,6 +413,7 @@ export class ReferentielAdminComponent {
   private api = inject(ApiService);
 
   readonly niveaux = NIVEAUX;
+  readonly onglets: OptionOnglet<Niveau>[] = NIVEAUX.map(n => ({ valeur: n, libelle: n }));
   readonly encadrements = ENCADREMENTS;
 
   liste = signal<ReferentielVue[]>([]);
