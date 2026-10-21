@@ -1,5 +1,5 @@
 // A1 — Tour de l'administration.
-// Tournage du 2026-10-20, 14e série, carte « Sécurité surface » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-21, 15e série, carte « Relances CACI » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -31,7 +31,8 @@ export default {
       ['Personnes', 'Les personnes :', [
         ['Moniteurs', 'Les comptes des encadrants : niveau, rôles, CACI.'],
         ['Sécurité surface', 'Qui n\'est pas moniteur : les fiches des séances confiées, jusqu\'à une date de fin.'],
-        ['Élèves', 'Les dossiers : autorisations, droit à l\'image, photo, tailles de matériel.']
+        ['Élèves', 'Les dossiers : autorisations, droit à l\'image, photo, tailles de matériel.'],
+        ['Relances CACI', 'Les e-mails de relance des certificats médicaux déjà partis, gardés deux ans.']
       ]],
       ['Matériel', 'Le matériel du club, que l\'administrateur gère avec le directeur technique :', [
         ['Inventaire du matériel', 'Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.'],

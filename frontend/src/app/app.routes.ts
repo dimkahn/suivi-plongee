@@ -175,6 +175,12 @@ export const routes: Routes = [
       .then(m => m.ElevesComponent)
   },
   {
+    path: 'admin/relances-caci',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/relances-caci.component')
+      .then(m => m.RelancesCaciComponent)
+  },
+  {
     path: 'admin/saisons',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/saisons.component')

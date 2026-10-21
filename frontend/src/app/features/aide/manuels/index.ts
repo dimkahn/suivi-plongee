@@ -32,6 +32,7 @@ import gererLesSeances from './gerer-les-seances.md';
 import ajouterUnMoniteur from './ajouter-un-moniteur.md';
 import securiteSurface from './securite-surface.md';
 import dossierEleve from './dossier-eleve.md';
+import relancesCaci from './relances-caci.md';
 import inscrireEnFormation from './inscrire-en-formation.md';
 import maintienSansFormation from './maintien-sans-formation.md';
 import delivrerUnBrevet from './delivrer-un-brevet.md';
@@ -98,6 +99,7 @@ const SOURCES: Record<string, string> = {
   'ajouter-un-moniteur': ajouterUnMoniteur,
   'securite-surface': securiteSurface,
   'dossier-eleve': dossierEleve,
+  'relances-caci': relancesCaci,
   'inscrire-en-formation': inscrireEnFormation,
   'maintien-sans-formation': maintienSansFormation,
   'delivrer-un-brevet': delivrerUnBrevet,

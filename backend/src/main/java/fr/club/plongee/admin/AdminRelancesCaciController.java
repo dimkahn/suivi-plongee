@@ -15,7 +15,7 @@ import java.util.List;
  * le rôle DIRECTEUR_TECHNIQUE n'y donnent accès. Restreint aussi par
  * {@code /api/admin/**} dans SecurityConfig (redondance délibérée, comme
  * {@link AdminMoniteurController}). Aucune route n'écrit la trace ni ne
- * déclenche le traitement (R22). Pas d'écran (Q7).
+ * déclenche le traitement (R22). Écran : « Relances CACI » (/admin/relances-caci), en lecture seule.
  */
 @RestController
 @RequestMapping("/api/admin/relances-caci")

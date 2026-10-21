@@ -52,6 +52,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/admin/moniteurs', manuels: ['ajouter-un-moniteur'] },
   { adresse: '/admin/securite-surface', manuels: ['securite-surface'] },
   { adresse: '/admin/eleves', manuels: ['dossier-eleve', 'maintien-sans-formation'] },
+  { adresse: '/admin/relances-caci', manuels: ['relances-caci'] },
   { adresse: '/admin/saisons', manuels: ['ouvrir-une-saison'] },
   { adresse: '/admin/cursus', manuels: ['inscrire-en-formation', 'delivrer-un-brevet', 'maintien-sans-formation'] },
   { adresse: '/admin/referentiel', manuels: ['referentiel-mft'] },

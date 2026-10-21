@@ -5,7 +5,7 @@ import {
   AdhesionVue, InscriptionClubVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   DemandePropositionPalanquees, PropositionPalanqueesVue,
   DemandeDuplicationSeance, EleveVue, EvaluationVue, FicheSecuriteVue, SeanceDupliqueeVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
-  CompteSurfaceVue, DemandeCompteSurface, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RosterVue,
+  CompteSurfaceVue, DemandeCompteSurface, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RelanceCaciVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue, ResultatModeleCentreMer,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
@@ -519,6 +519,11 @@ export class ApiService {
 
   moniteurs(): Observable<MoniteurVue[]> {
     return this.http.get<MoniteurVue[]>('/api/admin/moniteurs');
+  }
+
+  /** Les e-mails de relance CACI partis ces deux dernières années, du plus récent au plus ancien (ADMIN). */
+  relancesCaci(): Observable<RelanceCaciVue[]> {
+    return this.http.get<RelanceCaciVue[]>('/api/admin/relances-caci');
   }
 
   creerMoniteur(demande: {

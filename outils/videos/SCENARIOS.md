@@ -591,16 +591,17 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 61 s
 12. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
 13. Sécurité surface : Qui n'est pas moniteur : les fiches des séances confiées, jusqu'à une date de fin.
 14. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
-15. Le matériel du club, que l'administrateur gère avec le directeur technique :
-16. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
-17. Prêts de matériel : Prêter, rendre, avec les photos avant et après.
-18. Puis le contenu pédagogique, qui se règle rarement :
-19. Référentiel MFT : Les compétences fédérales, niveau par niveau.
-20. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
-21. Enfin la structure, réglée une fois à l'installation :
-22. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
+15. Relances CACI : Les e-mails de relance des certificats médicaux déjà partis, gardés deux ans.
+16. Le matériel du club, que l'administrateur gère avec le directeur technique :
+17. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
+18. Prêts de matériel : Prêter, rendre, avec les photos avant et après.
+19. Puis le contenu pédagogique, qui se règle rarement :
+20. Référentiel MFT : Les compétences fédérales, niveau par niveau.
+21. Progressions types : Chaque niveau découpé en périodes de mois, ou en plongées pour un stage en mer.
+22. Enfin la structure, réglée une fois à l'installation :
+23. Identité de la structure : Le nom, le logo et les couleurs du club, jusque sur les documents.
 
-_À retourner (tournage du 2026-10-12)._
+_À retourner (tournage du 2026-10-21)._
 
 ### A2 — Ouvrir une nouvelle saison
 

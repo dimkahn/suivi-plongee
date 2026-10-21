@@ -532,6 +532,18 @@ export interface MoniteurVue {
   aPhoto: boolean;
 }
 
+/**
+ * Un e-mail de relance CACI parti (trace gardée 2 ans) : date, destinataire
+ * et personnes concernées, jamais la fin de validité ni le texte de l'e-mail.
+ */
+export interface RelanceCaciVue {
+  envoyeLe: string;
+  destinataireNom: string;
+  destinatairePrenom: string;
+  destinataireEmail: string;
+  personnes: { nom: string; prenom: string }[];
+}
+
 /** Une séance confiée à un compte de sécurité surface. */
 export interface SeanceConfieeVue {
   id: number;

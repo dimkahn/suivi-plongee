@@ -35,6 +35,7 @@ La page « Administration » les range par moment de l'année.
 - **Moniteurs** : les comptes des encadrants (niveau, rôles, CACI).
 - **Sécurité surface** : les comptes de qui n'est pas moniteur et ne fait que compléter les fiches de sécurité, pour les séances confiées et jusqu'à une date de fin d'accès.
 - **Élèves** : les dossiers (autorisations, droit à l'image, photo, tailles de matériel).
+- **Relances CACI** : l'historique des e-mails de relance des certificats médicaux partis ces deux dernières années (voir [Historique des relances CACI](/aide?m=relances-caci)).
 
 **Matériel**
 
@@ -59,6 +60,7 @@ Chaque administrateur reçoit un e-mail « CACI à suivre : récapitulatif du �
 - Une personne sans CACI renseigné n'y figure **qu'une fois par semaine** au plus.
 - Les moniteurs reçoivent leur propre e-mail ; **les élèves, rien** : transmettez-leur, ou à leur responsable légal pour un mineur.
 - Pour agir : [Élèves](/admin/eleves) ou [Moniteurs](/admin/moniteurs), filtre « CACI » → « À vérifier », puis saisissez le nouveau CACI.
+- Pour revoir les e-mails partis (relances des moniteurs et récapitulatifs) : [Relances CACI](/admin/relances-caci).
 
 ## La rentrée, dans l'ordre
 

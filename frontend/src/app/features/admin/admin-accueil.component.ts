@@ -43,7 +43,9 @@ const RUBRIQUES: { titre: string; aide: string; ecrans: Ecran[] }[] = [
         detail: 'Comptes des encadrants : ajout, modification, niveau, activation, mot de passe' },
       { lien: '/admin/securite-surface', nom: 'Sécurité surface',
         detail: 'Comptes de qui n\'est pas moniteur : séances confiées, fin d\'accès, réactivation' },
-      { lien: '/admin/eleves', nom: 'Élèves', detail: 'Dossiers, autorisations, droit à l\'image' }
+      { lien: '/admin/eleves', nom: 'Élèves', detail: 'Dossiers, autorisations, droit à l\'image' },
+      { lien: '/admin/relances-caci', nom: 'Relances CACI',
+        detail: 'Historique des e-mails de relance des certificats médicaux, gardé deux ans' }
     ]
   },
   {
