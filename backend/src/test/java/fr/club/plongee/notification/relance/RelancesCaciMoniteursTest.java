@@ -21,7 +21,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.sql.Date;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static fr.club.plongee.commun.Calendrier.DATE_FR;
@@ -237,6 +240,23 @@ class RelancesCaciMoniteursTest {
                 + " : la trace d'un e-mail de relance parti n'a pas pu être écrite"));
         assertThat(journal.getAll()).doesNotContain(fin.toString()).doesNotContain(DATE_FR.format(fin))
                 .doesNotContain("paul.marin.trace").doesNotContain("Marin");
+    }
+
+    @Test
+    @DisplayName("À 22 h 30 UTC le 20/10, le traitement prend la date du club, le 21/10")
+    void fuseauDuClub() throws Exception {
+        // Exemple filé de la spec : examen le 20/11/2025, F = 20/11/2026, J-30 = 21/10/2026.
+        creerMoniteur("paul.marin.ca32@exemple.fr", "Marin", "Paul", LocalDate.of(2025, 11, 20));
+        Clock horloge = Clock.fixed(Instant.parse("2026-10-20T22:30:00Z"), ZoneOffset.UTC);
+
+        new DeclencheurRelancesCaci(horloge, relances).declencher();
+
+        List<Message> recus = messagerie.vers("paul.marin.ca32@exemple.fr");
+        assertThat(recus).hasSize(1);
+        assertThat(recus.getFirst().sujet()).isEqualTo("Votre CACI expire le 20/11/2026");
+        assertThat(recus.getFirst().corps()).isEqualTo(corpsBientot("Paul", LocalDate.of(2026, 11, 20)));
+        assertThat(jdbc.queryForObject("SELECT envoye_le FROM relance_caci_envoi WHERE destinataire_email = ?",
+                LocalDate.class, "paul.marin.ca32@exemple.fr")).isEqualTo(LocalDate.of(2026, 10, 21));
     }
 
     @Test

@@ -3,12 +3,14 @@ titre: Tour de l'administration et début de saison
 rubrique: Administrateur
 videos: A1
 ecran: /admin
-mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club, matériel, inventaire, prêts, personnes, sécurité surface
+mots: administration, admin, administrateur, rentrée, début de saison, chaque semaine, contenu pédagogique, ordre, checklist, gestion du club, matériel, inventaire, prêts, personnes, sécurité surface, CACI, certificat médical, relance, rappel, expiration, récapitulatif, e-mail
 questions:
 - Où est le matériel quand je suis administrateur ?
 - Que faire en début de saison ?
 - Dans quel ordre préparer la rentrée ?
 - Que contient l'administration ?
+- Qu'est-ce que l'e-mail « CACI à suivre » ?
+- Comment savoir quels CACI arrivent à échéance ?
 ---
 Un compte administrateur voit tout ce que voit un moniteur, plus « Administration ». À la rentrée : saison, séances, élèves et inscriptions, groupes, puis planning.
 
@@ -47,6 +49,16 @@ La page « Administration » les range par moment de l'année.
 - **Identité de la structure** : le nom, le logo et les couleurs du club ou du centre, réglés une fois à l'installation.
 
 Sur chacun, « Nouveau… » ou « Modifier » ouvre une fenêtre devant la liste : « Enregistrer » en bas, « Annuler » ou la croix pour la refermer sans rien changer. Un refus (champ manquant, règle du club) s'affiche en haut de la fenêtre.
+
+## Le récapitulatif « CACI à suivre »
+
+Chaque administrateur reçoit un e-mail « CACI à suivre : récapitulatif du … », le matin vers 7 h, **seulement les jours où un CACI arrive à 30 jours de sa fin de validité ou à son dernier jour**.
+
+- Il cite, par rubrique : les CACI qui expirent bientôt, ceux qui expirent aujourd'hui, les personnes sans CACI renseigné, et les moniteurs que l'e-mail de relance n'a pas pu joindre. Une rubrique vide n'apparaît pas.
+- Sont concernés les moniteurs actifs et les élèves non archivés de la saison ouverte (en formation ou en maintien). Une personne à la fois moniteur et élève n'est citée qu'une fois, comme moniteur.
+- Une personne sans CACI renseigné n'y figure **qu'une fois par semaine** au plus.
+- Les moniteurs reçoivent leur propre e-mail ; **les élèves, rien** : transmettez-leur, ou à leur responsable légal pour un mineur.
+- Pour agir : [Élèves](/admin/eleves) ou [Moniteurs](/admin/moniteurs), filtre « CACI » → « À vérifier », puis saisissez le nouveau CACI.
 
 ## La rentrée, dans l'ordre
 

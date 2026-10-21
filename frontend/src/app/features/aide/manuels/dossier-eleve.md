@@ -3,7 +3,7 @@ titre: Créer le dossier d'un élève
 rubrique: Administrateur
 videos: A6
 ecran: /admin/eleves
-mots: élève, dossier, créer, nouveau, CACI, certificat médical, date de l'examen, cases cochées, mineur, autorisation parentale, responsable légal, droit à l'image, photo, appareil photo, galerie, prendre une photo, archiver, tailles, inscription, inscription au club, cotisation, adhésion, à jour, ok, ko, vert, rouge, réglé, payé
+mots: élève, dossier, créer, nouveau, CACI, certificat médical, date de l'examen, cases cochées, relance, rappel, expiration, récapitulatif, mineur, autorisation parentale, responsable légal, droit à l'image, photo, appareil photo, galerie, prendre une photo, archiver, tailles, inscription, inscription au club, cotisation, adhésion, à jour, ok, ko, vert, rouge, réglé, payé
 questions:
 - Comment ajouter un nouvel élève ?
 - Où saisir le certificat médical ?
@@ -11,6 +11,7 @@ questions:
 - Un élève quitte le club, que faire ?
 - Comment noter qu'un élève a réglé son inscription au club ?
 - Qui n'est pas à jour de son inscription ?
+- L'élève est-il prévenu quand son CACI expire ?
 ---
 Administration, « Élèves » : identité, CACI (date de l'examen, fin de validité, cases cochées), contact d'urgence, autorisation de pratiquer (responsable légal pour un mineur) et droit à l'image. La formation se choisit ensuite à l'inscription.
 
@@ -27,6 +28,7 @@ Administration, « Élèves » : identité, CACI (date de l'examen, fin de valid
 ## Bon à savoir
 
 - Du certificat médical, **seuls ses dates, le médecin et les cases cochées** sont gardés : ni le document, ni le texte écrit par le médecin (activités en compétition, détail des limites), aucune donnée de santé.
+- **Rappels du CACI** : l'élève ne reçoit aucun e-mail, même avec une adresse dans son dossier. Le récapitulatif envoyé aux administrateurs le cite 30 jours avant la fin de validité, puis le dernier jour : prévenez-le, ou son responsable légal pour un mineur. Seuls comptent les élèves non archivés de la saison ouverte, inscrits en formation ou en maintien.
 - Retirer le droit à l'image supprime la photo.
 - Un élève qui quitte le club s'archive : son historique reste.
 - L'inscription au club vaut pour une saison : à la saison suivante, chacun repart à KO jusqu'à ce que vous la notiez. Seul un administrateur la change.

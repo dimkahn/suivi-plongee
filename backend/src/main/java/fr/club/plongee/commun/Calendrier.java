@@ -1,5 +1,6 @@
 package fr.club.plongee.commun;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -17,6 +18,11 @@ public final class Calendrier {
     private Calendrier() {}
 
     public static LocalDate aujourdhui() {
-        return LocalDate.now(ZONE_CLUB);
+        return aujourdhui(Clock.systemUTC());
+    }
+
+    /** La date du club à l'instant donné par l'horloge, quel que soit le fuseau de l'horloge (remplaçable en test). */
+    public static LocalDate aujourdhui(Clock horloge) {
+        return LocalDate.ofInstant(horloge.instant(), ZONE_CLUB);
     }
 }

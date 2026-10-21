@@ -123,8 +123,10 @@ Le club suit des mineurs.
 
 1. Import du classeur Google Sheets existant (4ᵉ statut `NA`, non acquis, que
    `StatutAcquisition` ne représente pas encore).
-2. Relances automatiques : CACI qui expirent, RIFAP échus, 4 plongées en
-   milieu naturel dues par un N1 certifié en piscine.
+2. Relances automatiques : RIFAP échus, 4 plongées en milieu naturel dues
+   par un N1 certifié en piscine. Celles des CACI qui expirent sont faites
+   (`docs/specs/2026-10-21-relances-caci/`, `notification/relance/`) : s'en
+   inspirer.
 
 ## Garde-fous pour l'IA (`.claude/settings.json`)
 

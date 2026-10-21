@@ -3,13 +3,14 @@ titre: Mon compte
 rubrique: Découverte
 videos: M2
 ecran: /mon-compte
-mots: profil, photo, selfie, appareil photo, galerie, e-mail, adresse, mot de passe, licence, CACI, certificat, niveau, nom, déconnexion, se déconnecter, quitter
+mots: profil, photo, selfie, appareil photo, galerie, e-mail, adresse, mot de passe, licence, CACI, certificat, relance, rappel, expiration, expire, niveau, nom, déconnexion, se déconnecter, quitter
 questions:
 - Comment me déconnecter ?
 - Comment changer mon mot de passe ?
 - Comment mettre ma photo ?
 - Comment changer mon adresse e-mail ?
 - Mon niveau ou mon CACI est faux
+- Pourquoi ai-je reçu un e-mail sur mon CACI ?
 ---
 « Mon compte » s'ouvre en touchant votre nom dans le menu (sur téléphone, derrière « Plus », en bas de l'écran) : photo, numéro de licence, e-mail, mot de passe, et « Se déconnecter » tout en bas.
 
@@ -30,6 +31,12 @@ questions:
 :::
 4. Plus bas : numéro de licence, e-mail de connexion et mot de passe (10 caractères au moins).
 5. Tout en bas, « Se déconnecter » : à faire sur un appareil partagé.
+
+## Les rappels du CACI (moniteurs)
+
+- Un e-mail automatique vous prévient **30 jours avant la fin de votre CACI**, puis **le dernier jour de validité**. Il part le matin, vers 7 h. Il ne contient aucun lien : rien à ouvrir.
+- Remettez le nouveau certificat à un administrateur : une fois la nouvelle date saisie, l'e-mail du dernier jour ne part pas, et les rappels reprennent pour la nouvelle date.
+- Rien après la fin de validité. Sans CACI enregistré, vous ne recevez rien : les administrateurs en sont prévenus.
 
 ## Bon à savoir
 

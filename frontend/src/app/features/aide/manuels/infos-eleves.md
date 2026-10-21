@@ -3,13 +3,14 @@ titre: Infos élèves
 rubrique: Moniteur
 videos: M16, M22
 ecran: /eleves
-mots: élèves, liste, accueil, progression, barre de progression, avancement, pourcentage, où en est l'élève, CACI, certificat médical, expiré, date de l'examen, cases cochées, apnée, compétition, contact d'urgence, téléphone, séances suivies, rechercher, synthèse des compétences, avancement du groupe, taille, gilet, combinaison, modifier les tailles, plus d'actions
+mots: élèves, liste, accueil, progression, barre de progression, avancement, pourcentage, où en est l'élève, CACI, certificat médical, expiré, relance, rappel, expiration, date de l'examen, cases cochées, apnée, compétition, contact d'urgence, téléphone, séances suivies, rechercher, synthèse des compétences, avancement du groupe, taille, gilet, combinaison, modifier les tailles, plus d'actions
 questions:
 - Où voir la liste des élèves ?
 - Où en est chaque élève dans sa formation ?
 - Quand expire le certificat médical d'un élève ?
 - Que veulent dire les couleurs du CACI ?
 - Quelles activités le CACI d'un élève couvre-t-il ?
+- L'élève est-il prévenu quand son CACI expire ?
 - Comment trouver le contact d'urgence d'un élève ?
 - Comment modifier la taille de gilet ou de combinaison d'un élève ?
 - Comment noter un élève sur une séance depuis Infos élèves ?
@@ -50,4 +51,5 @@ Touchez la case CACI d'un élève : une fenêtre donne la date de l'examen, la f
 - Si la case « limites et préconisations » est cochée, un encadré le signale : lisez le certificat papier, le détail n'est pas dans l'appli.
 - Aucune donnée de santé n'est enregistrée : seules les dates, le médecin et les cases, jamais le texte écrit par le médecin.
 - Les cases se saisissent dans le dossier de l'élève, par un administrateur.
+- L'élève ne reçoit aucun e-mail quand son CACI arrive à échéance : les administrateurs reçoivent un récapitulatif et le préviennent (ou son responsable légal pour un mineur).
 - Un élève ne se note que sur une séance passée où il est noté présent : sinon la grille le dit et propose sa dernière séance.

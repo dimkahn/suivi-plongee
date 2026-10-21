@@ -3,7 +3,7 @@ titre: Ajouter un moniteur
 rubrique: Administrateur
 videos: A5
 ecran: /admin/moniteurs
-mots: moniteur, encadrant, compte, créer, niveau d'encadrement, E1, E2, E3, rôle, administrateur, directeur technique, TIV, désactiver, lien, CACI, certificat médical, cases cochées, médecin, niveau préparé, stagiaire, formation, tuteur, fiche de sécurité, droit, photo, appareil photo, galerie
+mots: moniteur, encadrant, compte, créer, niveau d'encadrement, E1, E2, E3, rôle, administrateur, directeur technique, TIV, désactiver, lien, CACI, certificat médical, cases cochées, médecin, relance, rappel, expiration, récapitulatif, niveau préparé, stagiaire, formation, tuteur, fiche de sécurité, droit, photo, appareil photo, galerie
 questions:
 - Comment permettre à un moniteur qui n'est pas E3 d'établir les fiches de sécurité ?
 - Comment indiquer qu'un moniteur prépare le E3 ?
@@ -12,6 +12,7 @@ questions:
 - Comment donner le rôle d'administrateur ?
 - Comment désactiver un compte ?
 - Un moniteur n'a pas reçu son e-mail
+- Le moniteur est-il prévenu quand son CACI expire ?
 ---
 Administration, « Moniteurs » : créez le compte avec le niveau d'encadrement, le niveau de plongeur, les rôles et son CACI. Le moniteur reçoit un e-mail pour choisir son mot de passe.
 
@@ -31,4 +32,5 @@ Administration, « Moniteurs » : créez le compte avec le niveau d'encadrement,
 - Dans la liste, touchez la date du CACI d'un moniteur pour voir son détail (médecin, cases cochées). « · limites » signale un CACI avec limites et préconisations : le détail est sur le certificat papier, pas dans l'appli.
 - Depuis la même liste : désactiver un compte, renvoyer le lien de mot de passe, recueillir le droit à l'image et mettre une photo (« Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » la galerie du téléphone).
 - Fiches de sécurité : les E3, E4 et administrateurs les établissent et les modifient d'office ; un autre moniteur seulement si vous lui donnez ce droit (case « Établir les fiches de sécurité sans être E3 ni E4 », badge « Fiches sécu » dans la liste). Ce droit ne fait pas de lui un directeur de plongée, qui reste E3 minimum. Tous les moniteurs complètent les fiches au retour de plongée.
+- **Rappels du CACI** : le CACI saisi déclenche des e-mails automatiques au moniteur, 30 jours avant la fin de validité puis le dernier jour ; les administrateurs le retrouvent dans leur récapitulatif (voir « Tour de l'administration »). Sans CACI saisi, il ne reçoit rien et figure sous « Sans CACI renseigné » du récapitulatif. Si la messagerie refuse son adresse, il figure sous « Moniteurs que l'e-mail de relance n'a pas pu joindre » : vérifiez l'e-mail de son compte.
 - Pour une personne qui n'est pas moniteur du club (la sécurité surface d'une sortie en bateau), voir l'écran [Sécurité surface](/admin/securite-surface) de l'administration.
