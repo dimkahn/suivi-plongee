@@ -50,6 +50,12 @@ describe('L\'aide ne montre que ce que les droits du compte permettent', () => {
     expect(visibles(DT)).not.toContain('ouvrir-une-saison');
   });
 
+  it('Un séjour s\'organise par un moniteur désigné ou le créateur de la sortie (DT)', () => {
+    expect(visibles(MONITEUR)).toContain('organiser-un-sejour');
+    expect(visibles(DT)).toContain('organiser-un-sejour');
+    expect(visibles(ELEVE)).not.toContain('organiser-un-sejour');
+  });
+
   it('Une vidéo se voit par sa rubrique ou par un manuel visible qui la cite', () => {
     const inspection = MANUELS.find(m => m.id === 'inspection-tiv')!.videos[0];
     expect(videoPermise({ id: inspection, public: 'Directeur technique' }, TIV)).toBe(true);
