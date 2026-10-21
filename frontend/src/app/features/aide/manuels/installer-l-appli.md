@@ -1,6 +1,7 @@
 ---
 titre: Installer l'appli sur son téléphone
 rubrique: Découverte
+pour: sans-compte
 videos:
 ecran: /connexion
 mots: installer, installation, application, appli, app, écran d'accueil, raccourci, icône, logo, Android, Chrome, Samsung Internet, Firefox, Edge, iPhone, iPad, iOS, Safari, partager, sur l'écran d'accueil, ajouter à l'écran d'accueil, PWA, plein écran, store, Play Store, App Store, télécharger, hors ligne, mise à jour, nouvelle version, désinstaller, supprimer, tablette

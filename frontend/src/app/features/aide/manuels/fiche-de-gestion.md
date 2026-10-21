@@ -1,6 +1,7 @@
 ---
 titre: La fiche de gestion d'un équipement
 rubrique: Directeur technique
+pour: inspection
 videos: D3
 ecran: /materiel
 mots: fiche de gestion, EPI, journal, révision, réparation, désinfection, intervention, historique, imprimer, Code du sport

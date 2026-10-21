@@ -1,13 +1,13 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { IdentiteService } from '../../core/identite.service';
 
 @Component({
   selector: 'app-connexion',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   template: `
     <div class="accueil">
       <div class="carte panneau">
@@ -51,8 +51,6 @@ import { IdentiteService } from '../../core/identite.service';
             Mot de passe oublié ?
           </button>
 
-          <a routerLink="/videos" class="lien-oubli lien-videos">Vidéos d'aide : l'appli en images</a>
-          <a routerLink="/aide" class="lien-oubli lien-videos">Une question ? L'aide et les manuels</a>
         } @else {
           <p class="secondaire">
             Indiquez votre e-mail : si un compte lui correspond, un lien de
@@ -100,7 +98,6 @@ import { IdentiteService } from '../../core/identite.service';
       background: none; border: none; color: var(--profond); font-size: .875rem;
       text-decoration: underline; text-align: center;
     }
-    .lien-videos { display: flex; align-items: center; justify-content: center; min-height: 44px; }
     .succes {
       background: #e6f4ea; color: #1e4620; border-radius: var(--r-s); padding: var(--pas-2);
     }

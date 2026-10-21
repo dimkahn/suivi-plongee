@@ -1,6 +1,7 @@
 ---
 titre: Étiquettes QR code et scanner
 rubrique: Directeur technique
+pour: inspection
 ecran: /materiel/scanner
 mots: QR code, étiquette, étiquettes, scanner, scan, imprimer, appareil photo, coller, iPhone, référence, ancien numéro
 questions:

@@ -1,9 +1,10 @@
 ---
 titre: Se connecter et s'y retrouver
 rubrique: Découverte
+pour: sans-compte
 videos: M1
 ecran: /connexion
-mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent, ordinateur, téléphone, format, version, aide pour
+mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent, ordinateur, téléphone, format, version, aide pour, droits, je ne trouve pas, manuel absent
 questions:
 - Comment me connecter ?
 - J'ai oublié mon mot de passe
@@ -12,6 +13,7 @@ questions:
 - Où est passé le menu ?
 - Où sont les vidéos d'aide ?
 - Comment avoir de l'aide sur l'écran où je suis ?
+- Pourquoi je ne trouve pas le manuel d'un écran ?
 - Comment revenir à l'écran précédent ?
 - Comment voir l'aide pour l'ordinateur ou pour le téléphone ?
 ---
@@ -54,4 +56,5 @@ En haut de chaque écran, la même barre :
 - La page « Aide » et chaque « Comment faire ? » montrent l'aide **pour le téléphone ou pour l'ordinateur** : vidéo filmée sur cet appareil, étapes qui lui correspondent. Celle de votre appareil s'affiche d'abord ; « Aide pour : Téléphone | Ordinateur » change de version, et le choix reste sur l'appareil.
 - Installez l'appli sur l'écran d'accueil du téléphone : elle s'ouvrira comme une application (voir « Installer l'appli sur son téléphone »).
 - Les vidéos d'aide sont dans « Aide » et derrière « Comment faire ? » : chaque réponse montre la sienne, et « Toutes les vidéos » les liste toutes.
+- L'aide s'ouvre **une fois connecté** (sur la page de connexion, « Comment faire ? » montre seulement celle-ci), et chacun n'y trouve que les manuels et vidéos des écrans de son compte : un élève ne voit pas ceux des moniteurs, un moniteur ceux de l'administration ou du matériel.
 - Pas encore de compte ? C'est un administrateur du club qui le crée : vous recevez alors un e-mail pour choisir votre mot de passe.

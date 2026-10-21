@@ -1,3 +1,4 @@
+import { Droits, manuelPermis } from './droits';
 import { Manuel } from './manuel';
 import { MANUELS } from './manuels';
 
@@ -87,17 +88,18 @@ function correspond(adresse: string, segments: string[]): boolean {
 
 /**
  * Les manuels qui expliquent l'écran ouvert, le plus utile d'abord. Le chemin
- * est l'adresse sans paramètres (« /cursus/12 »). Une adresse précise
+ * est l'adresse sans paramètres (« /cursus/12 ») ; un manuel hors des droits
+ * du compte n'est pas montré. Une adresse précise
  * (« /materiel/scanner ») passe avant une adresse variable (« /materiel/:x »).
  */
-export function manuelsDeLEcran(chemin: string, encadrant: boolean): Manuel[] {
+export function manuelsDeLEcran(chemin: string, droits: Droits): Manuel[] {
   const segments = chemin.split('/').filter(s => s);
   const candidats = ECRANS.filter(e => correspond(e.adresse, segments));
   const ecran = candidats.find(e => !e.adresse.includes(':x')) ?? candidats[0];
-  const ids = ecran ? (!encadrant && ecran.pourEleve ? ecran.pourEleve : ecran.manuels) : PAR_DEFAUT;
+  const ids = ecran ? (!droits.encadrant && ecran.pourEleve ? ecran.pourEleve : ecran.manuels) : PAR_DEFAUT;
   return ids
     .map(id => MANUELS.find(m => m.id === id))
-    .filter((m): m is Manuel => !!m);
+    .filter((m): m is Manuel => !!m && manuelPermis(m, droits));
 }
 
 /** Un manuel renommé ou supprimé sans mettre cette liste à jour se signale dans la console. */

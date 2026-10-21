@@ -301,15 +301,17 @@ export const routes: Routes = [
     loadComponent: () => import('./features/sejours/espace-participant.component')
       .then(m => m.EspaceParticipantComponent)
   },
-  // Page publique : les vidéos d'aide se regardent sans compte.
+  // L'aide (vidéos, questions fréquentes) demande un compte ; chacun n'y voit
+  // que ce que ses droits lui ouvrent (features/aide/droits.ts).
   {
     path: 'videos',
+    canActivate: [gardeConnecte],
     loadComponent: () => import('./features/videos/videos.component')
       .then(m => m.VideosComponent)
   },
-  // Page publique aussi : les questions fréquentes, un manuel par écran.
   {
     path: 'aide',
+    canActivate: [gardeConnecte],
     loadComponent: () => import('./features/aide/aide.component')
       .then(m => m.AideComponent)
   },

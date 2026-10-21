@@ -2,12 +2,15 @@ import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } 
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../core/auth.service';
+import { droitsDe, manuelPermis } from './droits';
 import { RUBRIQUES, chercher } from './manuel';
 import { ManuelComponent } from './manuel.component';
 import { MANUELS } from './manuels';
 
 /**
- * Page publique d'aide, sans connexion : les questions fréquentes. On tape
+ * Page d'aide, pour un compte connecté : les questions fréquentes, limitées
+ * aux manuels des écrans que ses droits lui ouvrent (droits.ts). On tape
  * sa question, l'appli retrouve le manuel qui y répond (manuels/*.md) et
  * montre la vidéo d'aide qui va avec. La recherche se fait dans le
  * navigateur, sur les manuels embarqués : elle marche sans réseau ; seules
@@ -50,14 +53,14 @@ import { MANUELS } from './manuels';
 
       @if (!question().trim() || !resultats().length) {
         <nav class="rubriques" aria-label="Rubriques">
-          @for (r of rubriques; track r.nom) {
+          @for (r of rubriques(); track r.nom) {
             <button type="button" class="bouton-discret" (click)="allerA(r.nom)">
               {{ r.nom }} <span class="compte">{{ r.manuels.length }}</span>
             </button>
           }
           <a routerLink="/videos" class="bouton-discret">Toutes les vidéos</a>
         </nav>
-        @for (r of rubriques; track r.nom) {
+        @for (r of rubriques(); track r.nom) {
           <section [id]="ancre(r.nom)">
             <h2>{{ r.nom }}</h2>
             <ul class="manuels">
@@ -131,6 +134,13 @@ import { MANUELS } from './manuels';
 export class AideComponent {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private auth = inject(AuthService);
+
+  /** Les manuels que le compte connecté peut lire. */
+  private manuels = computed(() => {
+    const droits = droitsDe(this.auth);
+    return MANUELS.filter(m => manuelPermis(m, droits));
+  });
 
   private parametres = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
@@ -139,14 +149,14 @@ export class AideComponent {
 
   manuelOuvert = computed(() => {
     const id = this.parametres().get('m');
-    return MANUELS.find(m => m.id === id) ?? null;
+    return this.manuels().find(m => m.id === id) ?? null;
   });
 
-  resultats = computed(() => chercher(MANUELS, this.question()));
+  resultats = computed(() => chercher(this.manuels(), this.question()));
 
-  readonly rubriques = RUBRIQUES
-    .map(nom => ({ nom, manuels: MANUELS.filter(m => m.rubrique === nom) }))
-    .filter(r => r.manuels.length > 0);
+  rubriques = computed(() => RUBRIQUES
+    .map(nom => ({ nom, manuels: this.manuels().filter(m => m.rubrique === nom) }))
+    .filter(r => r.manuels.length > 0));
 
   constructor() {
     // Ouvrir un manuel, ou revenir à la liste, repart du haut de la page.

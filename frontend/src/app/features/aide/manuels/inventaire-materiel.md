@@ -1,6 +1,7 @@
 ---
 titre: L'inventaire du matériel
 rubrique: Directeur technique
+pour: inspection
 videos: D1
 ecran: /materiel
 mots: matériel, inventaire, bloc, bouteille, détendeur, gilet, stab, combinaison, échéance, à surveiller, disponible, prêté, hors service, à régulariser, ancien numéro, ancienne référence, renuméroté

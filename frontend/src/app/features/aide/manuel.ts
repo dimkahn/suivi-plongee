@@ -30,6 +30,11 @@ export interface Manuel {
   rubrique: string;
   /** Les vidéos d'aide qui montrent la fonctionnalité (« M3 »). */
   videos: string[];
+  /**
+   * Qui peut lire le manuel (« pour: inspection, materiel ») ; vide : le
+   * public de sa rubrique. Voir droits.ts.
+   */
+  pour: string[];
   /** L'écran de l'appli concerné, s'il y en a un. */
   ecran: string | null;
   /** Les questions auxquelles le manuel répond, telles qu'on les poserait. */
@@ -48,7 +53,7 @@ export const RUBRIQUES = ['Découverte', 'Moniteur', 'Administrateur', 'Directeu
 
 /**
  * Lit un manuel : un en-tête entre deux lignes « --- » (titre, rubrique,
- * videos, ecran, mots, puis la liste des questions), puis le texte en
+ * videos, pour, ecran, mots, puis la liste des questions), puis le texte en
  * Markdown simple (## titres, listes « - » ou « 1. », **gras**,
  * [lien](/ecran)).
  */
@@ -77,6 +82,7 @@ export function lireManuel(id: string, source: string): Manuel {
     titre,
     rubrique: entete['rubrique'] || 'Découverte',
     videos: liste(entete['videos']),
+    pour: liste(entete['pour']),
     ecran: entete['ecran'] || null,
     questions,
     resume,

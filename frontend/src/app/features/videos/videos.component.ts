@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { ChoixFormatAideComponent } from '../../core/choix-format-aide.component';
 import { FormatAideService, fichiersVideo } from '../../core/format-aide';
+import { droitsDe, manuelPermis, videoPermise } from '../aide/droits';
 import { manuelDeLaVideo } from '../aide/manuels';
 import { Catalogue, Video, chargerCatalogue, dureeVideo, urlVideo } from './catalogue';
 
@@ -17,8 +18,9 @@ const PRESENTATION: Record<string, string> = {
 };
 
 /**
- * Page publique des vidéos d'aide, sans connexion : rangées par rôle, comme
- * la liste des scénarios (outils/videos/SCENARIOS.md). Les données filmées
+ * Page des vidéos d'aide, pour un compte connecté : rangées par rôle, comme
+ * la liste des scénarios (outils/videos/SCENARIOS.md), sans celles des
+ * écrans que ses droits ne lui ouvrent pas (aide/droits.ts). Les données filmées
  * sont celles de démonstration, noms fictifs.
  */
 @Component({
@@ -199,12 +201,13 @@ export class VideosComponent {
   etat = signal<'chargement' | 'pret' | 'absent'>('chargement');
   enLecture = signal<Video | null>(null);
 
-  /** Les rubriques dans l'ordre du catalogue, sans celles qui n'ont aucune vidéo. */
+  /** Les rubriques dans l'ordre du catalogue, sans celles qui n'ont aucune vidéo permise. */
   rubriques = computed(() => {
     const c = this.catalogue();
     if (!c) return [];
+    const droits = droitsDe(this.auth);
     return c.publics
-      .map(nom => ({ nom, videos: c.videos.filter(v => v.public === nom) }))
+      .map(nom => ({ nom, videos: c.videos.filter(v => v.public === nom && videoPermise(v, droits)) }))
       .filter(r => r.videos.length > 0);
   });
 
@@ -219,7 +222,7 @@ export class VideosComponent {
       this.etat.set('pret');
       // Lien direct vers une vidéo : /videos?v=M04
       const demandee = this.route.snapshot.queryParamMap.get('v');
-      const v = c.videos.find(x => x.id === demandee);
+      const v = c.videos.find(x => x.id === demandee && videoPermise(x, droitsDe(this.auth)));
       if (v) this.ouvrir(v);
     } catch {
       this.etat.set('absent');
@@ -236,7 +239,8 @@ export class VideosComponent {
   }
 
   manuel(v: Video) {
-    return manuelDeLaVideo(v.id, v.public);
+    const m = manuelDeLaVideo(v.id, v.public);
+    return m && manuelPermis(m, droitsDe(this.auth)) ? m : undefined;
   }
 
   presentation(rubrique: string): string | null {

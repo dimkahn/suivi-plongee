@@ -42,7 +42,7 @@ import { ManuelComponent } from '../features/aide/manuel.component';
             ‹ Les autres questions de cet écran
           </button>
         }
-        <app-manuel [manuel]="m" [avecTitre]="false" [avecEcran]="m.ecran !== navigation.chemin()"
+        <app-manuel [manuel]="m" [avecTitre]="false" [avecEcran]="auth.connecte() && m.ecran !== navigation.chemin()"
                     (lienSuivi)="fermer()" />
       } @else {
         <p class="secondaire">Les manuels de cet écran, avec leur vidéo d'aide quand il y en a une.</p>
@@ -61,7 +61,9 @@ import { ManuelComponent } from '../features/aide/manuel.component';
         </ul>
       }
       <div class="actions-dialogue">
-        <a routerLink="/aide" class="bouton-discret" (click)="fermer()">Toutes les questions</a>
+        @if (auth.connecte()) {
+          <a routerLink="/aide" class="bouton-discret" (click)="fermer()">Toutes les questions</a>
+        }
         <button type="button" class="bouton-principal" (click)="fermer()">Revenir à l'écran</button>
       </div>
     </app-dialogue>
@@ -102,10 +104,13 @@ import { ManuelComponent } from '../features/aide/manuel.component';
 })
 export class BarrePageComponent {
   protected navigation = inject(NavigationService);
-  private auth = inject(AuthService);
+  protected auth = inject(AuthService);
 
   retour = this.navigation.retour;
-  /** La page Aide est elle-même l'aide. */
+  /**
+   * La page Aide est elle-même l'aide. Sans compte, « Comment faire ? » ne
+   * montre que l'aide des écrans publics (connexion, séjour par lien).
+   */
   avecAide = computed(() => this.navigation.chemin() !== '/aide');
 
   ouvert = signal(false);
@@ -114,8 +119,10 @@ export class BarrePageComponent {
 
   /** Les manuels ne se chargent qu'au premier appui (ils sont embarqués, sans réseau). */
   async ouvrir(): Promise<void> {
-    const { manuelsDeLEcran } = await import('../features/aide/comment-faire');
-    const manuels = manuelsDeLEcran(this.navigation.chemin(), this.auth.estMoniteur() || this.auth.estAdmin());
+    const [{ manuelsDeLEcran }, { droitsDe }] = await Promise.all([
+      import('../features/aide/comment-faire'), import('../features/aide/droits')
+    ]);
+    const manuels = manuelsDeLEcran(this.navigation.chemin(), droitsDe(this.auth));
     this.manuels.set(manuels);
     this.choisi.set(manuels.length === 1 ? manuels[0] : null);
     this.ouvert.set(true);

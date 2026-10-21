@@ -1,6 +1,7 @@
 ---
 titre: Déclarer le matériel emprunté pendant un séjour
 rubrique: Découverte
+pour: sans-compte
 videos: E2, A17
 ecran: /sejours
 mots: matériel, emprunt, avez-vous emprunté du matériel, question, rien emprunté, pas emprunté, aucun matériel, mon séjour, emprunter, emprunté, prêt, prêter, déclarer, déclaration, gilet, stab, détendeur, bloc, bouteille, combinaison, désinfection, désinfecté, retour, rendre, rendu, directeur technique, séjour, lien, code, annuler, ancien numéro

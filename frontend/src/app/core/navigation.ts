@@ -73,7 +73,6 @@ export class NavigationService {
 
   private retourParDefaut(s: string[], q: Params): Retour | null {
     const encadrant = this.auth.estMoniteur() || this.auth.estAdmin();
-    const connecte = this.auth.connecte();
     const presences = (seance: unknown, groupe: unknown): Retour => ({
       libelle: 'Feuille de présence', lien: '/presences',
       parametres: { seance: seance ?? null, groupe: /^\d+$/.test(String(groupe ?? '')) ? groupe : null }
@@ -84,9 +83,9 @@ export class NavigationService {
         return { libelle: 'Connexion', lien: '/connexion' };
       case 'aide':
         if (q['m']) return { libelle: 'Toutes les questions', lien: '/aide', parametres: { q: q['q'] ?? null } };
-        return connecte ? null : { libelle: 'Se connecter', lien: '/connexion' };
+        return null;
       case 'videos':
-        return connecte ? { libelle: 'Aide', lien: '/aide' } : { libelle: 'Se connecter', lien: '/connexion' };
+        return { libelle: 'Aide', lien: '/aide' };
 
       case 'cursus':
         if (s.length === 2) {

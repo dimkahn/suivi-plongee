@@ -334,8 +334,8 @@ docker compose -f docker-compose.prod.yml logs -f backend
 
 ## Vidéos d'aide
 
-La page publique `/videos` de l'appli (sans connexion, liée depuis la page
-de connexion et le menu) présente les vidéos de prise en main. Les fichiers
+La page `/videos` de l'appli (connexion requise, liée depuis l'Aide ;
+chacun n'y voit que les vidéos de ses droits) présente les vidéos de prise en main. Les fichiers
 ne sont ni dans le dépôt ni dans les images : Caddy les sert sous
 `/medias/videos/` depuis un dossier de la machine, monté en lecture seule
 (`VIDEOS` dans le `.env`, `videos-publiees/` du dépôt par défaut). Tant que

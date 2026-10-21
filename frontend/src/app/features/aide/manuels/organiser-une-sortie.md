@@ -1,6 +1,7 @@
 ---
 titre: Organiser une sortie
 rubrique: Administrateur
+pour: materiel
 videos: A15, D8
 ecran: /admin/sorties
 mots: sortie, week-end, séjour, mer, milieu naturel, plongées, lieu, dates, carrière, gravière

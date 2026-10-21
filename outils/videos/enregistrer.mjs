@@ -205,7 +205,7 @@ async function ecrireScenarios(videos) {
     'Une vidéo par geste, rangées par rôle. Chacune existe en deux formes : ce texte (le',
     'déroulé et la voix off, pour tourner soi-même ou commenter une vidéo muette) et le',
     'scénario Playwright qui l\'enregistre (voir `LISEZ-MOI.md`). Mot de passe des comptes',
-    'de démonstration : `plongee2026`. La page publique `/videos` de l\'appli les présente',
+    'de démonstration : `plongee2026`. La page `/videos` de l\'appli (connexion requise) les présente',
     'dans le même ordre.',
     ''
   ];

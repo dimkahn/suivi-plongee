@@ -1,6 +1,7 @@
 ---
 titre: La fiche d'inspection TIV d'un bloc
 rubrique: Directeur technique
+pour: inspection
 videos: D10
 ecran: /materiel
 mots: TIV, inspection, fiche d'évaluation, compte rendu, bouteille, filetage, robinet, avis favorable, défavorable, rebut, aluminium, oxygène

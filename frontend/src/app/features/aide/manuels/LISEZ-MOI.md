@@ -1,7 +1,7 @@
 # Les manuels d'utilisation
 
 Un petit manuel par fonctionnalité de l'appli, en Markdown. La page
-**Aide** (`/aide`, publique comme `/videos`) les présente sous forme de
+**Aide** (`/aide`, comme `/videos`, pour un compte connecté) les présente sous forme de
 questions fréquentes : on tape sa question, l'appli retrouve le manuel qui
 y répond et montre la ou les vidéos d'aide qui vont avec.
 
@@ -26,6 +26,7 @@ manuel se relit, se cherche, et décrit aussi ce qu'aucune vidéo ne montre.
 titre: Faire l'appel d'une séance
 rubrique: Moniteur
 videos: M3, M17
+pour: encadrant
 ecran: /presences
 mots: présence, absent, feuille, appel
 questions:
@@ -46,7 +47,17 @@ Le premier paragraphe est la réponse courte, affichée sous la question.
 
 - `rubrique` : `Découverte`, `Moniteur`, `Administrateur`,
   `Directeur technique` ou `Élève` (les rubriques des vidéos).
+- `pour` (facultatif) : qui peut lire le manuel, quand ce n'est pas le
+  public de sa rubrique. L'aide ne montre à chacun que les manuels de ses
+  droits (`../droits.ts`) : `sans-compte` (même sans connexion : l'aide
+  des écrans publics, connexion et séjour par lien), `tous` (tout compte connecté), `encadrant`
+  (moniteur ou admin), `admin`, `materiel` (DT ou admin), `inspection` (le
+  TIV en plus), `fiches-securite` (encadrants et sécurité surface), séparés
+  par des virgules (l'un d'eux suffit). Sans `pour`, la rubrique décide :
+  Découverte et Élève pour tous, Moniteur pour les encadrants,
+  Administrateur pour l'admin, Directeur technique pour le matériel.
 - `videos` : les codes des vidéos (`M3`, `A10`…), séparés par des virgules.
+  Une vidéo se voit si sa rubrique est permise ou si un manuel permis la cite.
 - `ecran` : l'adresse de l'écran, pour le bouton « Ouvrir l'écran ».
 - `mots` : les synonymes qu'on taperait sans qu'ils soient dans le texte.
 - `questions` : les questions telles qu'un moniteur les poserait ; elles

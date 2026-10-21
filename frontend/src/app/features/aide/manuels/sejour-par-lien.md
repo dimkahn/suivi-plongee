@@ -1,6 +1,7 @@
 ---
 titre: Mon séjour, par le lien reçu par e-mail
 rubrique: Découverte
+pour: sans-compte
 videos: A17
 ecran: /aide
 mots: séjour, lien, avez-vous emprunté du matériel, rien emprunté, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, vol long, lendemain, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, billet, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, pdf du billet, capture d'écran, assurance, attestation d'assurance, responsabilité civile, assurance plongée, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire
