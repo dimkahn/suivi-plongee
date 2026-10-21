@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -132,13 +132,8 @@ function idCible(c: Cible): number {
       }
     </ng-template>
 
-    <dialog #dialogueActions class="dialogue-seance" aria-labelledby="titre-actions"
-            (close)="choisi.set(null)">
+    <app-dialogue [titre]="titreActions()" [choix]="true" [ouvert]="!!choisi()" (fermer)="choisi.set(null)">
       @if (choisi(); as c) {
-        <div class="entete-dialogue">
-          <h2 id="titre-actions">{{ nomCible(c) }}</h2>
-          <button type="button" class="bouton-discret" (click)="fermerActions()" aria-label="Fermer">✕</button>
-        </div>
         <p class="secondaire">
           {{ c.sorte === 'ELEVE' ? libellePreparation(c.ligne.niveau) : (c.ligne.niveauEncadrement ?? 'Niveau non renseigné') }}
         </p>
@@ -192,7 +187,7 @@ function idCible(c: Cible): number {
           </section>
         }
       }
-    </dialog>
+    </app-dialogue>
 
     <app-dialogue [ouvert]="exportOuvert()" titre="Exporter en image" [erreur]="erreurExport()"
                   (fermer)="exportOuvert.set(false)">
@@ -277,10 +272,11 @@ export class TrombinoscopeComponent implements OnDestroy {
   private api = inject(ApiService);
   private reseau = inject(ReseauService);
   auth = inject(AuthService);
-  private dialogueActions = viewChild<ElementRef<HTMLDialogElement>>('dialogueActions');
 
   /** Carte dont le menu d'actions est ouvert (admins seulement). */
   choisi = signal<Cible | null>(null);
+  /** Le titre de la fenêtre d'actions : la personne touchée. */
+  titreActions = computed(() => { const c = this.choisi(); return c ? this.nomCible(c) : ''; });
   messageActions = signal<string | null>(null);
   envoi = signal(false);
   consentementConfirme = false;
@@ -407,11 +403,10 @@ export class TrombinoscopeComponent implements OnDestroy {
     this.choisi.set(c);
     this.messageActions.set(null);
     this.consentementConfirme = false;
-    this.dialogueActions()?.nativeElement.showModal();
   }
 
   fermerActions(): void {
-    this.dialogueActions()?.nativeElement.close();
+    this.choisi.set(null);
   }
 
   /** Relit la carte dans sa liste : l'état a pu changer depuis l'ouverture du menu. */

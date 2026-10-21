@@ -1,5 +1,5 @@
 import {
-  Component, ElementRef, OnDestroy, computed, inject, input, signal, viewChild, ChangeDetectionStrategy
+  Component, OnDestroy, computed, inject, input, signal, ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -18,6 +18,7 @@ import { RouterLink } from '@angular/router';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { DialogueComponent } from '../../core/dialogue.component';
 import { AvatarComponent } from '../../core/avatar.component';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 import { AuthService } from '../../core/auth.service';
@@ -92,7 +93,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, RouterLink, AvatarComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
+  imports: [FormsModule, RouterLink, AvatarComponent, DialogueComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
             NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent, PlurielPipe],
   template: `
     <!-- L'aide de l'écran est « Comment faire ? », dans la barre de page (manuel « Faire l'appel »). -->
@@ -114,13 +115,9 @@ function normaliser(texte: string): string {
       <span class="changer">Changer</span>
     </button>
 
-    <dialog #dialogueSeance class="dialogue-seance" aria-labelledby="titre-dialogue-seance"
-            (close)="dialogueSeanceOuvert.set(false)">
+    <app-dialogue titre="Choisir la séance" [choix]="true" [ouvert]="dialogueSeanceOuvert()"
+                  (fermer)="dialogueSeanceOuvert.set(false)">
       @if (dialogueSeanceOuvert()) {
-        <div class="entete-dialogue">
-          <h2 id="titre-dialogue-seance">Choisir la séance</h2>
-          <button type="button" class="bouton-discret" (click)="fermerDialogueSeance()">Fermer</button>
-        </div>
         <app-calendrier-seances [seances]="seances()" [jourMax]="jourMax"
                                 [seanceMarquee]="seanceId()"
                                 [jourSelectionne]="jourDialogue()"
@@ -144,7 +141,7 @@ function normaliser(texte: string): string {
           }
         }
       }
-    </dialog>
+    </app-dialogue>
 
     @if (seanceChoisie(); as s) {
       <div class="programme">
@@ -672,7 +669,6 @@ export class PresencesComponent implements OnDestroy {
   readonly aujourdhui = dateDuJour();
   /** Dernier jour dont on peut renseigner les présences (miroir de Seance.JOURS_ANTICIPATION_PRESENCE). */
   readonly jourMax = dateDansJours(7);
-  private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
   dialogueSeanceOuvert = signal(false);
   /** Jour touché dans le calendrier du dialogue. */
   jourDialogue = signal<string | null>(null);
@@ -783,11 +779,10 @@ export class PresencesComponent implements OnDestroy {
     // Le calendrier s'ouvre sur le mois de la séance en cours.
     this.jourDialogue.set(this.seanceChoisie()?.date ?? this.aujourdhui);
     this.dialogueSeanceOuvert.set(true);
-    this.dialogueSeance().nativeElement.showModal();
   }
 
   fermerDialogueSeance(): void {
-    this.dialogueSeance().nativeElement.close();
+    this.dialogueSeanceOuvert.set(false);
   }
 
   seancesDuJour(jour: string): SeanceVue[] {

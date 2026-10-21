@@ -162,6 +162,7 @@ input, select, textarea {
   width: min(640px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: var(--pas-2);
   border: none; border-radius: var(--r); box-shadow: var(--ombre); background: var(--carte); color: var(--encre);
 }
+.dialogue-seance.large { width: min(720px, calc(100vw - 16px)); }
 .dialogue-seance::backdrop { background: rgba(15, 23, 42, .5); }
 .dialogue-seance .entete-dialogue {
   display: flex; align-items: center; justify-content: space-between; gap: var(--pas); margin-bottom: var(--pas);

@@ -1,5 +1,5 @@
 import {
-  Component, ElementRef, OnDestroy, computed, effect, inject, input, signal, untracked, viewChild,
+  Component, OnDestroy, computed, effect, inject, input, signal, untracked,
   ChangeDetectionStrategy
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
@@ -330,13 +330,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
         }
       }
 
-      <dialog #dialogueSeance class="dialogue-seance" aria-labelledby="titre-dialogue-seance"
-              (close)="dialogueSeanceOuvert.set(false)">
+      <app-dialogue titre="Séance évaluée" [choix]="true" [ouvert]="dialogueSeanceOuvert()"
+                    (fermer)="dialogueSeanceOuvert.set(false)">
         @if (dialogueSeanceOuvert()) {
-          <div class="entete-dialogue">
-            <h2 id="titre-dialogue-seance">Séance évaluée</h2>
-            <button type="button" class="bouton-discret" (click)="fermerDialogueSeance()">Fermer</button>
-          </div>
           <app-calendrier-seances [seances]="seancesUtilisables()" [jourMax]="aujourdhui"
                                   [seanceMarquee]="seanceId()"
                                   [jourSelectionne]="jourDialogue()"
@@ -369,7 +365,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             </button>
           }
         }
-      </dialog>
+      </app-dialogue>
 
       <!-- Les boutons de note n'affichent que les sigles : la légende les explique une fois pour toutes. -->
       <p class="legende-etats" aria-hidden="true">
@@ -1974,7 +1970,6 @@ export class GrilleComponent implements OnDestroy {
   }
 
   readonly aujourdhui = dateDuJour();
-  private dialogueSeance = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueSeance');
   dialogueSeanceOuvert = signal(false);
   /** Jour touché dans le calendrier du dialogue. */
   jourDialogue = signal<string | null>(null);
@@ -2136,11 +2131,10 @@ export class GrilleComponent implements OnDestroy {
     // la dernière séance utilisable (saison terminée : pas un mois vide).
     this.jourDialogue.set(this.seanceChoisie()?.date ?? this.seancesUtilisables().at(-1)?.date ?? this.aujourdhui);
     this.dialogueSeanceOuvert.set(true);
-    this.dialogueSeance().nativeElement.showModal();
   }
 
   fermerDialogueSeance(): void {
-    this.dialogueSeance().nativeElement.close();
+    this.dialogueSeanceOuvert.set(false);
   }
 
   seancesDuJour(jour: string): SeanceVue[] {

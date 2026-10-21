@@ -13,17 +13,25 @@ let compteur = 0;
  * Le contenu (champs, puis boutons dans un `<div class="actions-dialogue">`)
  * est projeté : il garde les styles de l'écran parent. Un toucher à côté de
  * la fenêtre ne la ferme pas, pour ne pas perdre une saisie.
+ *
+ * Avec `choix`, une fenêtre de choix plus légère (choisir une séance, une
+ * date, une action) : pas plein écran sur téléphone, « Fermer » en toutes
+ * lettres (styles.css, `.dialogue-seance`).
  */
 @Component({
   selector: 'app-dialogue',
   template: `
-    <dialog #fenetre class="dialogue-formulaire" [class.large]="large()"
+    <dialog #fenetre [class]="choix() ? 'dialogue-seance' : 'dialogue-formulaire'" [class.large]="large()"
             [attr.aria-labelledby]="idTitre" (close)="fermer.emit()">
       @if (ouvert()) {
         <div class="entete-dialogue">
           <h2 [id]="idTitre">{{ titre() }}</h2>
-          <button type="button" class="bouton-discret fermer-dialogue" aria-label="Fermer"
-                  (click)="fenetre.close()">✕</button>
+          @if (choix()) {
+            <button type="button" class="bouton-discret" (click)="fenetre.close()">Fermer</button>
+          } @else {
+            <button type="button" class="bouton-discret fermer-dialogue" aria-label="Fermer"
+                    (click)="fenetre.close()">✕</button>
+          }
         </div>
         @if (erreur(); as e) { <div class="alerte" role="alert">{{ e }}</div> }
         <ng-content />
@@ -38,6 +46,8 @@ export class DialogueComponent {
   erreur = input<string | null>(null);
   /** Fenêtre plus large, pour les formulaires en plusieurs colonnes. */
   large = input(false);
+  /** Fenêtre de choix plutôt que formulaire. */
+  choix = input(false);
   fermer = output<void>();
 
   readonly idTitre = `titre-dialogue-${++compteur}`;

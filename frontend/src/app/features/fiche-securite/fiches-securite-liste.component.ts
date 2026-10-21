@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, effect, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,12 +10,13 @@ import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { correspondLieuSiteInfo } from '../../core/seance-lieu';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent],
   template: `
     <h1>Fiches de sécurité</h1>
     <p class="secondaire">
@@ -80,13 +81,8 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
       <p class="alerte" role="alert">{{ messageImpression() }}</p>
     }
 
-    <dialog #dialogueDate class="dialogue-seance" aria-labelledby="titre-dialogue-date"
-            (close)="dialogueOuvert.set(false)">
+    <app-dialogue titre="Choisir la date" [choix]="true" [ouvert]="dialogueOuvert()" (fermer)="dialogueOuvert.set(false)">
       @if (dialogueOuvert()) {
-        <div class="entete-dialogue">
-          <h2 id="titre-dialogue-date">Choisir la date</h2>
-          <button type="button" class="bouton-discret" (click)="fermerDialogueDate()">Fermer</button>
-        </div>
         <app-calendrier-seances [seances]="concernees()"
                                 [jourSelectionne]="jourDialogue()"
                                 (jourSelectionneChange)="toucherJour($event)" />
@@ -101,7 +97,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
           </button>
         }
       }
-    </dialog>
+    </app-dialogue>
 
     @if (chargement()) {
       <p class="vide">Chargement…</p>
@@ -235,7 +231,6 @@ export class FichesSecuriteListeComponent {
       });
   });
 
-  private dialogueDate = viewChild.required<ElementRef<HTMLDialogElement>>('dialogueDate');
   dialogueOuvert = signal(false);
   /** Jour touché dans le calendrier du dialogue. */
   jourDialogue = signal<string | null>(null);
@@ -275,11 +270,10 @@ export class FichesSecuriteListeComponent {
   ouvrirDialogueDate(): void {
     this.jourDialogue.set(this.filtreDate() || dateDuJour());
     this.dialogueOuvert.set(true);
-    this.dialogueDate().nativeElement.showModal();
   }
 
   fermerDialogueDate(): void {
-    this.dialogueDate().nativeElement.close();
+    this.dialogueOuvert.set(false);
   }
 
   aDesSeances(jour: string): boolean {

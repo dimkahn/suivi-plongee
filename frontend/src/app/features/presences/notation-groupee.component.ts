@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, ElementRef, WritableSignal, computed, inject, input, output, signal, viewChild
+  ChangeDetectionStrategy, Component, WritableSignal, computed, inject, input, output, signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,6 +11,7 @@ import { BlocReferentielVue, ExerciceVue, LignePresence, ProgressionVue, Referen
 import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
 import { PlurielPipe, pluriel } from '../../core/pluriel';
+import { DialogueComponent } from '../../core/dialogue.component';
 
 /**
  * Notation groupée depuis la feuille de présence : le moniteur coche des
@@ -25,19 +26,14 @@ import { PlurielPipe, pluriel } from '../../core/pluriel';
  */
 @Component({
   selector: 'app-notation-groupee',
-  imports: [FormsModule, PlurielPipe],
+  imports: [FormsModule, PlurielPipe, DialogueComponent],
   template: `
     <button type="button" class="bouton-principal" (click)="ouvrir()">
       Noter les présents
     </button>
 
-    <dialog #dialogue class="dialogue-seance notation" aria-labelledby="titre-notation"
-            (close)="ouvert.set(false)">
+    <app-dialogue titre="Noter les présents" [choix]="true" [large]="true" [ouvert]="ouvert()" (fermer)="ouvert.set(false)">
       @if (ouvert()) {
-        <div class="entete-dialogue">
-          <h2 id="titre-notation">Noter les présents</h2>
-          <button type="button" class="bouton-discret" (click)="fermer()">Fermer</button>
-        </div>
         <p class="secondaire">
           Chaque critère coché demande son commentaire. Un critère déjà acquis reste acquis, un critère
           en cours reste en cours : seul le commentaire s'ajoute. Un critère non abordé passe en cours,
@@ -151,11 +147,10 @@ import { PlurielPipe, pluriel } from '../../core/pluriel';
           </div>
         }
       }
-    </dialog>
+    </app-dialogue>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
-    .notation { width: min(720px, calc(100vw - 16px)); }
     h3 { margin: var(--pas-2) 0 var(--pas); }
     .formations { display: flex; flex-wrap: wrap; gap: var(--pas); }
     .formations .actif { background: var(--profond); color: #fff; border-color: var(--profond); }
@@ -219,7 +214,6 @@ export class NotationGroupeeComponent {
   /** Message de bilan, affiché par la feuille de présence une fois le dialogue fermé. */
   notee = output<string>();
 
-  private dialogue = viewChild.required<ElementRef<HTMLDialogElement>>('dialogue');
   ouvert = signal(false);
   chargement = signal(false);
   envoi = signal(false);
@@ -329,7 +323,6 @@ export class NotationGroupeeComponent {
     const formations = this.formations();
     const actuelle = formations.find(f => f.referentielId === this.referentielId());
     this.ouvert.set(true);
-    this.dialogue().nativeElement.showModal();
     if (formations.length === 0) {
       this.erreur.set('Aucun élève présent à noter : enregistrez d\'abord les présences.');
       return;
@@ -338,7 +331,7 @@ export class NotationGroupeeComponent {
   }
 
   fermer(): void {
-    this.dialogue().nativeElement.close();
+    this.ouvert.set(false);
   }
 
   async choisirFormation(referentielId: number): Promise<void> {
