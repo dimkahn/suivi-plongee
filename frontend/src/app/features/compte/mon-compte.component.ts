@@ -6,6 +6,8 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { etatCaci, libelleCaci } from '../../core/caci';
+import { AvatarComponent } from '../../core/avatar.component';
+import { NomPersonne } from '../../core/initiales';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { FileAttenteService } from '../../core/file-attente.service';
@@ -21,7 +23,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
  */
 @Component({
   selector: 'app-mon-compte',
-  imports: [FormsModule, RecadragePhotoComponent, DetailCaciComponent, DialogueComponent],
+  imports: [FormsModule, AvatarComponent, RecadragePhotoComponent, DetailCaciComponent, DialogueComponent],
   template: `
     <h1>Mon compte</h1>
     @if (auth.niveau(); as n) {
@@ -53,11 +55,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
         @if (messages().photo; as m) { <div [class]="m.ok ? 'succes' : 'alerte'" role="status">{{ m.texte }}</div> }
 
         <div class="photo">
-          @if (urlPhoto(); as url) {
-            <img class="avatar" [src]="url" alt="Ma photo" width="120" height="120">
-          } @else {
-            <div class="avatar silhouette" aria-label="Pas de photo">{{ initiales() }}</div>
-          }
+          <app-avatar [url]="urlPhoto()" [nom]="nomPersonne()" alt="Ma photo" libelleInitiales="Pas de photo" />
           <div class="actions-photo">
             <!-- « capture » ouvre directement l'appareil photo (côté écran : un selfie) ; sans lui, la galerie. -->
             <label class="bouton-discret upload">
@@ -182,13 +180,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
     .caci-bientot { color: var(--en-cours); }
     .caci-expire, .caci-absent { color: #B3261E; }
     .photo { display: flex; align-items: center; gap: var(--pas-3); flex-wrap: wrap; }
-    .avatar {
-      width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background: var(--fond); flex: none;
-    }
-    .silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-size: 2rem; font-weight: 700; color: var(--craie);
-    }
+    app-avatar { --taille-avatar: 120px; }
     .actions-photo { display: flex; flex-direction: column; gap: var(--pas); }
     .upload { margin: 0; cursor: pointer; font-size: inherit; }
     .danger { color: #B3261E; border-color: #B3261E; }
@@ -226,9 +218,9 @@ export class MonCompteComponent implements OnDestroy {
     if (this.auth.estMoniteur()) this.chargerPhoto();
   }
 
-  initiales(): string {
+  nomPersonne(): NomPersonne {
     const s = this.auth.session();
-    return ((s?.prenom?.[0] ?? '') + (s?.nom?.[0] ?? '')).toUpperCase();
+    return { prenom: s?.prenom ?? '', nom: s?.nom ?? '' };
   }
 
   private chargerPhoto(): void {

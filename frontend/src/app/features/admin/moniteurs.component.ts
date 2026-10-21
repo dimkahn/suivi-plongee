@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { MoniteurVue } from '../../core/modeles';
+import { AvatarComponent } from '../../core/avatar.component';
 import { CACI_LIMITES, EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
@@ -19,7 +20,7 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
+  imports: [FormsModule, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
   template: `
     <div class="entete">
       <div>
@@ -136,11 +137,7 @@ function aVerifier(m: MoniteurVue): boolean {
         @for (m of listeFiltree(); track m.id) {
           <li class="carte">
             <div class="ligne">
-              @if (urlPhoto(m.id); as url) {
-                <img class="avatar" [src]="url" [alt]="m.prenom + ' ' + m.nom" width="56" height="56">
-              } @else {
-                <div class="avatar silhouette" aria-hidden="true">{{ initiales(m) }}</div>
-              }
+              <app-avatar [url]="urlPhoto(m.id)" [nom]="m" [alt]="m.prenom + ' ' + m.nom" />
               <div class="identite">
                 <span class="nom">{{ m.prenom }} {{ m.nom }}</span>
                 <span class="secondaire">{{ m.email }}</span>
@@ -367,13 +364,7 @@ function aVerifier(m: MoniteurVue): boolean {
     li { padding: var(--pas-2); }
     .ligne { display: flex; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .avatar {
-      flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--fond);
-    }
-    .silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-size: .9375rem; font-weight: 700; color: var(--craie);
-    }
+    app-avatar { --taille-avatar: 56px; }
     .nom { font-weight: 700; }
     .etat {
       flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
@@ -485,10 +476,6 @@ export class MoniteursComponent {
 
   urlPhoto(moniteurId: number): string | null {
     return this.urlsPhotos().get(moniteurId) ?? null;
-  }
-
-  initiales(m: MoniteurVue): string {
-    return ((m.prenom[0] ?? '') + (m.nom[0] ?? '')).toUpperCase();
   }
 
   private async charger(): Promise<void> {

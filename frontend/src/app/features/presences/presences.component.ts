@@ -18,6 +18,7 @@ import { RouterLink } from '@angular/router';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
+import { AvatarComponent } from '../../core/avatar.component';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 import { AuthService } from '../../core/auth.service';
 import { NotationGroupeeComponent } from './notation-groupee.component';
@@ -91,7 +92,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, RouterLink, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
+  imports: [FormsModule, RouterLink, AvatarComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
             NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent, PlurielPipe],
   template: `
     <!-- L'aide de l'écran est « Comment faire ? », dans la barre de page (manuel « Faire l'appel »). -->
@@ -301,11 +302,7 @@ function normaliser(texte: string): string {
           @for (l of lignesFiltrees(); track l.cursusId) {
             <li class="carte">
               <button type="button" class="zone-identite" (click)="ouvrirChoixMobile(l)">
-                @if (urlPhoto(l.eleveId); as url) {
-                  <img class="avatar" [src]="url" [alt]="l.eleve" width="56" height="56">
-                } @else {
-                  <div class="avatar silhouette" [attr.aria-label]="l.eleve">{{ initiales(l.eleve) }}</div>
-                }
+                <app-avatar [url]="urlPhoto(l.eleveId)" [nom]="l.eleve" [alt]="l.eleve" [libelleInitiales]="l.eleve" />
                 <span class="identite">
                   <span class="nom">{{ l.eleve }}</span>
                   <span class="niveau">{{ libellePreparation(l.niveau) }}</span>
@@ -454,14 +451,7 @@ function normaliser(texte: string): string {
       display: flex; align-items: center; gap: var(--pas); flex: 1 1 auto; min-width: 0;
       padding: 0; text-align: left; background: none; border: none;
     }
-    .avatar {
-      width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--fond);
-      flex-shrink: 0;
-    }
-    .avatar.silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-weight: 700; font-size: 1.125rem; color: var(--craie);
-    }
+    app-avatar { --taille-avatar: 56px; }
     .identite { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; min-width: 0; }
     .nom { font-weight: 700; }
     .niveau {
@@ -518,8 +508,6 @@ function normaliser(texte: string): string {
       .eleves { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
       .eleves li { flex-direction: column; padding: var(--pas); gap: 4px; }
       .zone-identite { flex-direction: column; text-align: center; gap: 4px; }
-      .avatar { width: 56px; height: 56px; }
-      .avatar.silhouette { font-size: 1.125rem; }
       .identite { flex-direction: column; gap: 2px; }
       .etat-mini { display: inline-block; }
       .choix { display: none; }
@@ -882,10 +870,6 @@ export class PresencesComponent implements OnDestroy {
 
   urlPhoto(eleveId: number): string | null {
     return this.urlsPhotos().get(eleveId) ?? null;
-  }
-
-  initiales(nom: string): string {
-    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
   }
 
   /** Sur téléphone (voir le média-query 600px), la carte n'affiche plus les boutons : la toucher ouvre la barre du bas. */

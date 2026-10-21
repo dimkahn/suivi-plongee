@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CursusVue, EleveVue, GroupeEntrainementVue, InscriptionClubVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
+import { AvatarComponent } from '../../core/avatar.component';
 import { etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
@@ -60,7 +61,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
 @Component({
   selector: 'app-eleves',
-  imports: [FormsModule, NgTemplateOutlet, DateFrPipe, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent],
+  imports: [FormsModule, NgTemplateOutlet, DateFrPipe, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent],
   template: `
     <!-- Suggestions pour le gilet ; la taille reste libre. La combinaison n'en a pas : texte libre seulement. -->
     <datalist id="tailles-gilet">
@@ -275,11 +276,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         @for (e of listeFiltree(); track e.id) {
           <li class="carte">
               <div class="ligne">
-                @if (urlPhoto(e.id); as url) {
-                  <img class="avatar" [src]="url" [alt]="e.prenom + ' ' + e.nom" width="56" height="56">
-                } @else {
-                  <div class="avatar silhouette" aria-hidden="true">{{ initiales(e) }}</div>
-                }
+                <app-avatar [url]="urlPhoto(e.id)" [nom]="e" [alt]="e.prenom + ' ' + e.nom" />
                 <div class="identite">
                   <span class="nom">{{ e.prenom }} {{ e.nom }}</span>
                   <span class="secondaire">
@@ -469,13 +466,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     li { padding: var(--pas-2); }
     .ligne { display: flex; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-    .avatar {
-      flex: none; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--fond);
-    }
-    .silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-size: .9375rem; font-weight: 700; color: var(--craie);
-    }
+    app-avatar { --taille-avatar: 56px; }
     .nom { font-weight: 700; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; margin-top: 0; }
@@ -666,10 +657,6 @@ export class ElevesComponent {
 
   urlPhoto(eleveId: number): string | null {
     return this.urlsPhotos().get(eleveId) ?? null;
-  }
-
-  initiales(e: EleveVue): string {
-    return ((e.prenom[0] ?? '') + (e.nom[0] ?? '')).toUpperCase();
   }
 
   private async charger(): Promise<void> {

@@ -25,6 +25,7 @@ import { PlurielPipe } from '../../core/pluriel';
 import { CalendrierSeancesComponent } from '../../core/calendrier-seances.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { periodeDeLaPlongee, periodeDuMois, plagePeriode } from '../../core/progression';
+import { AvatarComponent } from '../../core/avatar.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { EtatAccords, modeValidation } from '../../core/validation-competence';
 
@@ -86,7 +87,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   selector: 'app-grille',
   standalone: true,
   imports: [
-    NgTemplateOutlet, FormsModule, RouterLink, DateFrPipe, PlurielPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
+    NgTemplateOutlet, FormsModule, RouterLink, DateFrPipe, AvatarComponent, PlurielPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
     SchemaExerciceComponent
   ],
   template: `
@@ -111,11 +112,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     }
     @if (grilleAffichee(); as g) {
       <div class="carte entete">
-        @if (urlPhoto(); as photo) {
-          <img class="avatar" [src]="photo" [alt]="g.eleve" width="72" height="72">
-        } @else {
-          <div class="avatar silhouette" [attr.aria-label]="g.eleve">{{ initiales(g.eleve) }}</div>
-        }
+        <app-avatar [url]="urlPhoto()" [nom]="g.eleve" [alt]="g.eleve" [libelleInitiales]="g.eleve" />
 
         <svg class="jauge" viewBox="0 0 64 168" role="img"
              [attr.aria-label]="'Progression : ' + g.criteresAcquis + ' critères acquis sur ' + g.criteresTotal">
@@ -1020,11 +1017,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     }
     .voisins .rang { font-size: .875rem; }
     .entete { display: flex; gap: var(--pas-3); align-items: center; padding: var(--pas-3); }
-    .avatar { flex: none; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; background: var(--fond); }
-    .silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--craie);
-    }
+    app-avatar { --taille-avatar: 72px; }
     .jauge { width: 64px; height: 168px; flex: none; }
     .jauge rect:nth-child(2) { transition: height .35s ease-out; }
     /* min-width: 0 : sans cela, un e-mail long empêche le résumé de
@@ -1267,7 +1260,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
        laissaient trop peu de place au nom et au score. */
     @media (max-width: 400px) {
       .entete { flex-wrap: wrap; }
-      .avatar { width: 56px; height: 56px; }
+      app-avatar { --taille-avatar: 56px; }
       .jauge { width: 40px; height: 120px; }
       .resume { flex: 1 1 100%; }
     }
@@ -2131,10 +2124,6 @@ export class GrilleComponent implements OnDestroy {
   ngOnDestroy(): void {
     const url = this.urlPhoto();
     if (url) URL.revokeObjectURL(url);
-  }
-
-  initiales(nom: string): string {
-    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
   }
 
   private async afficherAgeDuCache(): Promise<void> {

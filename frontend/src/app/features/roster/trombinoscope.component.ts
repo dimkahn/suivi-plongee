@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { libellePreparation } from '../../core/niveaux';
+import { AvatarComponent } from '../../core/avatar.component';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { AuthService } from '../../core/auth.service';
@@ -28,7 +29,7 @@ function idCible(c: Cible): number {
 
 @Component({
   selector: 'app-trombinoscope',
-  imports: [RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent],
+  imports: [RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, AvatarComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent],
   template: `
     <h1>Trombinoscope</h1>
 
@@ -112,11 +113,8 @@ function idCible(c: Cible): number {
     }
 
     <ng-template #contenuFicheMoniteur let-m>
-      @if (m.aPhoto) {
-        <img [src]="urlPhotoMoniteur(m.id)" [alt]="m.nomComplet" width="120" height="120">
-      } @else {
-        <div class="silhouette" [attr.aria-label]="m.nomComplet">{{ initiales(m.nomComplet) }}</div>
-      }
+      <app-avatar [url]="(m.aPhoto && urlPhotoMoniteur(m.id)) || null" [nom]="m.nomComplet" [alt]="m.nomComplet"
+                  [libelleInitiales]="m.nomComplet" />
       <span class="nom">{{ m.nomComplet }}</span>
       <span class="secondaire">{{ m.niveauEncadrement ?? 'Niveau non renseigné' }}</span>
       @if (!m.autorisationImage) {
@@ -125,13 +123,8 @@ function idCible(c: Cible): number {
     </ng-template>
 
     <ng-template #contenuFiche let-l>
-      @if (l.aPhoto) {
-        <img [src]="urlPhoto(l.eleveId)" [alt]="l.eleve" width="120" height="120">
-      } @else {
-        <div class="silhouette" [attr.aria-label]="l.eleve">
-          {{ initiales(l.eleve) }}
-        </div>
-      }
+      <app-avatar [url]="(l.aPhoto && urlPhoto(l.eleveId)) || null" [nom]="l.eleve" [alt]="l.eleve"
+                  [libelleInitiales]="l.eleve" />
       <span class="nom">{{ l.eleve }}</span>
       <span class="secondaire">{{ libellePreparation(l.niveau) }}</span>
       @if (!l.autorisationImage) {
@@ -257,13 +250,7 @@ function idCible(c: Cible): number {
       display: flex; flex-direction: column; align-items: center; gap: 4px;
       padding: var(--pas-2); text-decoration: none; color: inherit; text-align: center;
     }
-    .fiche img, .silhouette {
-      width: 120px; height: 120px; border-radius: 50%; object-fit: cover; background: var(--fond);
-    }
-    .silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-size: 2rem; font-weight: 700; color: var(--craie);
-    }
+    app-avatar { --taille-avatar: 120px; }
     button.fiche { width: 100%; font: inherit; border: none; cursor: pointer; }
     .nom { font-weight: 700; margin-top: 4px; }
 
@@ -584,10 +571,6 @@ export class TrombinoscopeComponent implements OnDestroy {
 
   private nomFichier(titre: string): string {
     return this.normaliser(titre).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'groupe';
-  }
-
-  initiales(nom: string): string {
-    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
   }
 
   ngOnDestroy(): void {

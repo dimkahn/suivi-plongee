@@ -10,6 +10,7 @@ import { AvancementFormation, GroupeEntrainementVue, LigneRoster, RosterVue } fr
 import { DialogueComponent } from '../../core/dialogue.component';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DateFrPipe } from '../../core/date-fr';
+import { AvatarComponent } from '../../core/avatar.component';
 
 const LIBELLES: Record<string, string> = {
   NAGE: 'Nage', BLOC: 'Bloc', THEORIE: 'Théorie', PLONGEE: 'Plongée',
@@ -18,7 +19,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink, FormsModule, DateFrPipe, FiltreGroupeComponent, DialogueComponent, DetailCaciComponent],
+  imports: [RouterLink, FormsModule, DateFrPipe, AvatarComponent, FiltreGroupeComponent, DialogueComponent, DetailCaciComponent],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
@@ -77,12 +78,8 @@ const LIBELLES: Record<string, string> = {
               <tr>
                 <td class="figee">
                   <a class="eleve-cellule" [routerLink]="['/cursus', e.cursusId]">
-                    @if (urlPhoto(e.eleveId); as url) {
-                      <!-- alt vide : le nom suit dans le lien, le lire deux fois ne sert à rien. -->
-                      <img class="avatar" [src]="url" alt="" width="40" height="40">
-                    } @else {
-                      <div class="avatar silhouette" aria-hidden="true">{{ initiales(e.eleve) }}</div>
-                    }
+                    <!-- alt vide : le nom suit dans le lien, le lire deux fois ne sert à rien. -->
+                    <app-avatar [url]="urlPhoto(e.eleveId)" [nom]="e.eleve" />
                     <div class="identite-cellule">
                       <span class="nom">{{ e.eleve }}</span>
                       @if (e.avancement; as a) {
@@ -180,13 +177,6 @@ const LIBELLES: Record<string, string> = {
       color: inherit; text-decoration: none;
     }
     .eleve-cellule:hover, .eleve-cellule:focus-visible { background: var(--fond); }
-    .avatar {
-      flex: none; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--fond);
-    }
-    .silhouette {
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-titres), sans-serif; font-size: .8125rem; font-weight: 700; color: var(--craie);
-    }
     th.figee { background: var(--fond); }
     td.figee { background: var(--carte); }
     .identite-cellule { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
@@ -305,10 +295,6 @@ export class RosterComponent implements OnDestroy {
 
   urlPhoto(eleveId: number): string | null {
     return this.urlsPhotos().get(eleveId) ?? null;
-  }
-
-  initiales(nom: string): string {
-    return nom.split(' ').filter(Boolean).map(m => m[0]).slice(0, 2).join('').toUpperCase();
   }
 
   ngOnDestroy(): void {
