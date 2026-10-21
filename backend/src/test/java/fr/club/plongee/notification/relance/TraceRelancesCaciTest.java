@@ -164,9 +164,10 @@ class TraceRelancesCaciTest {
                 .map(p -> p.get("nom").asText() + " " + p.get("prenom").asText()).toList())
                 .contains("LemaireTrace Hugo", "MarinTrace Paul", "VidalTrace Tom");
         // Ni F de l'élève, ni date d'examen, ni médecin, ni case, ni mention, ni texte de l'e-mail.
+        // Mention cherchée comme chaîne JSON entière : la base, partagée, peut contenir un nom en « …eleve ».
         assertThat(brut).doesNotContain(finEleve.toString(), finEleve.minusYears(1).toString(),
                 jour.minusYears(1).toString(), DATE_FR.format(finEleve), "FEDERAL", "ENSEMBLE",
-                "élève", "eleve\"", "moniteur\"", "CACI", "Bonjour", "fin", "valid", "sujet", "corps");
+                "élève", "\"eleve\"", "\"moniteur\"", "CACI", "Bonjour", "fin", "valid", "sujet", "corps");
     }
 
     @Test
