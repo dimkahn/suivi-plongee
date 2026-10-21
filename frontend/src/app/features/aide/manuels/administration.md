@@ -52,10 +52,10 @@ Sur chacun, « Nouveau… » ou « Modifier » ouvre une fenêtre devant la list
 
 ## Le récapitulatif « CACI à suivre »
 
-Chaque administrateur reçoit un e-mail « CACI à suivre : récapitulatif du … », le matin vers 7 h, **seulement les jours où un CACI arrive à 30 jours de sa fin de validité ou à son dernier jour**.
+Chaque administrateur reçoit un e-mail « CACI à suivre : récapitulatif du … », le matin vers 7 h, **seulement les jours où un CACI entre dans ses 30 derniers jours (ou dès sa saisie s'il y est déjà) ou arrive à son dernier jour**. Le tout premier récapitulatif, à la mise en service, est plus long : il reprend tous les CACI déjà dans leurs 30 derniers jours et toutes les personnes sans CACI.
 
 - Il cite, par rubrique : les CACI qui expirent bientôt, ceux qui expirent aujourd'hui, les personnes sans CACI renseigné, et les moniteurs que l'e-mail de relance n'a pas pu joindre. Une rubrique vide n'apparaît pas.
-- Sont concernés les moniteurs actifs et les élèves non archivés de la saison ouverte (en formation ou en maintien). Une personne à la fois moniteur et élève n'est citée qu'une fois, comme moniteur.
+- Sont concernés les moniteurs actifs et les élèves non archivés rattachés à la saison ouverte (formation, même en abandon ou suspendue, ou maintien) : archivez ceux qui ont quitté le club. Une personne à la fois moniteur et élève n'est citée qu'une fois, comme moniteur.
 - Une personne sans CACI renseigné n'y figure **qu'une fois par semaine** au plus.
 - Les moniteurs reçoivent leur propre e-mail ; **les élèves, rien** : transmettez-leur, ou à leur responsable légal pour un mineur.
 - Pour agir : [Élèves](/admin/eleves) ou [Moniteurs](/admin/moniteurs), filtre « CACI » → « À vérifier », puis saisissez le nouveau CACI.

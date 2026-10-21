@@ -28,7 +28,7 @@ Administration, « Élèves » : identité, CACI (date de l'examen, fin de valid
 ## Bon à savoir
 
 - Du certificat médical, **seuls ses dates, le médecin et les cases cochées** sont gardés : ni le document, ni le texte écrit par le médecin (activités en compétition, détail des limites), aucune donnée de santé.
-- **Rappels du CACI** : l'élève ne reçoit aucun e-mail, même avec une adresse dans son dossier. Le récapitulatif envoyé aux administrateurs le cite 30 jours avant la fin de validité, puis le dernier jour : prévenez-le, ou son responsable légal pour un mineur. Seuls comptent les élèves non archivés de la saison ouverte, inscrits en formation ou en maintien.
+- **Rappels du CACI** : l'élève ne reçoit aucun e-mail, même avec une adresse dans son dossier. Le récapitulatif envoyé aux administrateurs le cite quand son CACI entre dans ses 30 derniers jours (ou dès sa saisie s'il y est déjà), puis le dernier jour : prévenez-le, ou son responsable légal pour un mineur. Comptent les élèves non archivés rattachés à la saison ouverte (formation, même en abandon ou suspendue, ou maintien) : archivez ceux qui ont quitté le club.
 - Retirer le droit à l'image supprime la photo.
 - Un élève qui quitte le club s'archive : son historique reste.
 - L'inscription au club vaut pour une saison : à la saison suivante, chacun repart à KO jusqu'à ce que vous la notiez. Seul un administrateur la change.

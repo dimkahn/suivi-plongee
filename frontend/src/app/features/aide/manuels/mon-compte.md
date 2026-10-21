@@ -34,7 +34,7 @@ questions:
 
 ## Les rappels du CACI (moniteurs)
 
-- Un e-mail automatique vous prévient **30 jours avant la fin de votre CACI**, puis **le dernier jour de validité**. Il part le matin, vers 7 h. Il ne contient aucun lien : rien à ouvrir.
+- Un e-mail automatique vous prévient **quand votre CACI entre dans ses 30 derniers jours** (ou dès sa saisie s'il y est déjà), puis **le dernier jour de validité**. Il part le matin, vers 7 h. Il ne contient aucun lien : rien à ouvrir.
 - Remettez le nouveau certificat à un administrateur : une fois la nouvelle date saisie, l'e-mail du dernier jour ne part pas, et les rappels reprennent pour la nouvelle date.
 - Rien après la fin de validité. Sans CACI enregistré, vous ne recevez rien : les administrateurs en sont prévenus.
 
