@@ -6,9 +6,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
 
@@ -36,6 +38,16 @@ public class GestionnaireErreurs {
     @ExceptionHandler(AuthenticationException.class)
     ProblemDetail authentification(AuthenticationException e) {
         return probleme(HttpStatus.UNAUTHORIZED, "Identifiants invalides ou session expiree.");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ProblemDetail methodeNonPriseEnCharge(HttpRequestMethodNotSupportedException e) {
+        return probleme(HttpStatus.METHOD_NOT_ALLOWED, "Cette action n'existe pas pour cette adresse.");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ProblemDetail routeInconnue(NoResourceFoundException e) {
+        return probleme(HttpStatus.NOT_FOUND, "Cette adresse n'existe pas.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
