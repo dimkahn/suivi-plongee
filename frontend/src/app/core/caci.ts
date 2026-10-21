@@ -1,6 +1,9 @@
 import { dateDuJour, dateFr } from './date-fr';
 
-/** À partir de combien de jours avant l'échéance on prévient. */
+/**
+ * À partir de combien de jours avant l'échéance on prévient. Même valeur côté
+ * serveur : `Caci.JOURS_AVANT_ECHEANCE`, figée par `CalculRelancesCaciTest`.
+ */
 export const JOURS_AVANT_ECHEANCE = 30;
 
 export type EtatCaci = 'valide' | 'bientot' | 'expire' | 'absent';

@@ -11,6 +11,9 @@ import java.util.Set;
  */
 public record Caci(LocalDate dateExamen, MedecinCaci medecin, Set<ActiviteCaci> activites) {
 
+    /** Délai « bientôt échu » : même valeur que JOURS_AVANT_ECHEANCE de core/caci.ts (écran), figée des deux côtés (R2). */
+    public static final int JOURS_AVANT_ECHEANCE = 30;
+
     /** Un CACI vaut un an à compter de l'examen (choix du club, 2026). */
     public static LocalDate finValidite(LocalDate dateExamen) {
         return dateExamen == null ? null : dateExamen.plusYears(1);
