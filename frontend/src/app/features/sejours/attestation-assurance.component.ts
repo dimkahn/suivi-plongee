@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, computed, input, signal } from '@an
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { reduirePhoto } from '../../core/reduire-photo';
-import { PortAttestationAssurance } from './sejour-api';
+import { CONSEIL_ASSURANCE_TYPE, PortAttestationAssurance } from './sejour-api';
 import { envoiCarte } from './voyage';
 import { texteAvecLiens } from './texte-liens';
 import { montrerCarte } from './carte-voyage.component';
@@ -17,8 +17,13 @@ import { montrerCarte } from './carte-voyage.component';
 @Component({
   selector: 'app-attestation-assurance',
   template: `
-    <div class="attestation sans-impression" role="group" [attr.aria-label]="titre()">
-      <span class="etiquette">{{ titre() }}</span>
+    <div class="attestation sans-impression" role="group" [attr.aria-label]="titre()"
+         [class.a-joindre]="monSejour() && !type()">
+      @if (monSejour() && !type()) {
+        <p class="titre-alerte">Attestation d'assurance à joindre</p>
+      } @else {
+        <span class="etiquette">{{ titre() }}</span>
+      }
       @if (type(); as t) {
         <p class="jointe">✓ Attestation jointe ({{ t === 'application/pdf' ? 'PDF' : 'photo' }})</p>
         <div class="boutons">
@@ -30,10 +35,11 @@ import { montrerCarte } from './carte-voyage.component';
           <button type="button" class="bouton-discret" (click)="retirer()" [disabled]="envoi()">Retirer</button>
         </div>
       } @else {
-        @if (conseil(); as c) {
-          <p class="conseil texte-libre" role="note">@for (m of morceaux(); track $index) {@if (m.lien) {<a [href]="m.lien" target="_blank" rel="noopener noreferrer">{{ m.texte }}</a>} @else {<span>{{ m.texte }}</span>}}</p>
+        @if (monSejour()) {
+          <p class="conseil">@for (m of morceaux(); track $index) {@if (m.lien) {<a [href]="m.lien" target="_blank" rel="noopener noreferrer">{{ m.texte }} ↗</a>} @else {<span>{{ m.texte }}</span>}}</p>
         }
-        <label class="bouton-discret ajout" [class.inactif]="envoi()">
+        <label class="ajout" [class.bouton-principal]="monSejour()" [class.bouton-discret]="!monSejour()"
+               [class.inactif]="envoi()">
           @if (envoi()) { Envoi… } @else { + Ajouter l'attestation d'assurance (PDF ou photo) }
           <input type="file" class="masque" [accept]="formats" [disabled]="envoi()" (change)="choisir($event)">
         </label>
@@ -57,9 +63,11 @@ import { montrerCarte } from './carte-voyage.component';
     .inactif { opacity: .6; pointer-events: none; }
     .masque { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
     .erreur { margin: var(--pas) 0 0; color: #B91C1C; font-weight: 700; }
-    .conseil { margin: 0 0 var(--pas); padding: var(--pas) var(--pas-2); border-radius: var(--r-s);
-               border: 2px solid var(--en-cours); background: var(--en-cours-clair); }
-    .conseil { white-space: pre-line; overflow-wrap: anywhere; }
+    /* À joindre, dans « Mon séjour » : bien en vue, comme la question sur le matériel emprunté. */
+    .a-joindre { margin-top: var(--pas-2); padding: var(--pas-2); border: 2px solid var(--en-cours);
+                 background: var(--en-cours-clair); }
+    .titre-alerte { margin: 0 0 var(--pas); font-size: 1.125rem; font-weight: 700; color: var(--en-cours); }
+    .conseil { margin: 0 0 var(--pas-2); white-space: pre-line; overflow-wrap: anywhere; }
     .conseil a { font-weight: 700; }
   `]
 })
@@ -70,12 +78,14 @@ export class AttestationAssuranceComponent {
   participantId = input.required<number>();
   titre = input("Attestation d'assurance");
   /**
-   * Dans « Mon séjour », sans attestation : le conseil d'assurance écrit
-   * par l'organisateur du séjour (demande du club, 2026), adresses web
-   * cliquables. Pas dans la fiche vue des organisateurs.
+   * Vrai dans « Mon séjour » : sans attestation, l'encart passe en orange
+   * (demande du club, 2026 : bien visible), avec le conseil d'assurance.
+   * Faux dans la fiche vue des organisateurs.
    */
+  monSejour = input(false);
+  /** Le conseil d'assurance écrit par l'organisateur ; sans lui, le message type (Lafont). */
   conseil = input<string | null | undefined>(null);
-  readonly morceaux = computed(() => texteAvecLiens(this.conseil() ?? ''));
+  readonly morceaux = computed(() => texteAvecLiens(this.conseil() || CONSEIL_ASSURANCE_TYPE));
 
   readonly formats = 'application/pdf,image/*';
   envoi = signal(false);

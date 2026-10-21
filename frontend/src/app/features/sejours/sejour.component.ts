@@ -281,7 +281,9 @@ function participantVide(): BrouillonParticipant {
               @if (s.conseilAssurance) {
                 <p class="texte-libre secondaire">{{ s.conseilAssurance }}</p>
               } @else {
-                <p class="secondaire">Aucun : écrivez ici ce que voit, dans « Mon séjour », chaque participant qui n'a pas encore joint son attestation.</p>
+                <p class="secondaire">Message type (Lafont), vu dans « Mon séjour » par chaque participant qui n'a pas encore
+                  joint son attestation : « Modifier » pour écrire le vôtre.</p>
+                <p class="texte-libre secondaire">{{ conseilType }}</p>
               }
             </div>
           }
@@ -980,7 +982,7 @@ function participantVide(): BrouillonParticipant {
 
     <app-dialogue [ouvert]="conseilOuvert()" [large]="true" [erreur]="erreur()" titre="Conseil d'assurance"
                   (fermer)="conseilOuvert.set(false)">
-      <label for="c-assurance">Montré dans « Mon séjour » à chaque participant qui n'a pas encore joint son attestation d'assurance. Les adresses web y deviennent des liens.</label>
+      <label for="c-assurance">Montré dans « Mon séjour » à chaque participant qui n'a pas encore joint son attestation d'assurance. Les adresses web y deviennent des liens. Laissé vide, c'est le message type qui s'affiche.</label>
       <textarea id="c-assurance" rows="6" maxlength="2000" [(ngModel)]="conseil"></textarea>
       <p>
         <button type="button" class="bouton-discret" (click)="conseil = conseilType">Reprendre le message type (Lafont)</button>
@@ -1817,10 +1819,10 @@ export class SejourComponent {
     this.ecrire(this.api.definirInfos(this.id, this.infos.trim() || null), () => this.infosOuvertes.set(false));
   }
 
-  /** Le conseil d'assurance du séjour ; vide la première fois, le message type est à un bouton. */
+  /** Le conseil d'assurance du séjour ; sans le sien, on part du message type (vidé, c'est lui qui revient). */
   ouvrirConseilAssurance(): void {
     this.erreur.set(null);
-    this.conseil = this.sejour()?.conseilAssurance ?? '';
+    this.conseil = this.sejour()?.conseilAssurance ?? CONSEIL_ASSURANCE_TYPE;
     this.conseilOuvert.set(true);
   }
 

@@ -43,7 +43,7 @@ export default {
     await pause(2500);
     await legende('La carte est jointe à son vol. À l\'aéroport, « Montrer la carte » l\'ouvre en grand. « Remplacer » ou « Retirer » si son vol change.', 5500);
     await page.locator('app-mon-sejour app-attestation-assurance').scrollIntoViewIfNeeded();
-    await legende('Sous ses vols, « Mon attestation d\'assurance ». Tant qu\'elle manque, en orange, le conseil de l\'organisatrice : une assurance complémentaire, Loisir 1 au minimum, à souscrire chez Lafont avec son numéro de licencié. L\'adresse s\'ouvre d\'un appui.', 6500);
+    await legende('En haut de « Mon séjour », en orange : « Attestation d\'assurance à joindre ». Une assurance complémentaire, Loisir 1 au minimum, est fortement recommandée, à souscrire chez Lafont avec son numéro de licencié : le lien ouvre leur site.', 6500);
     await legende('Elle a la sienne : elle y joint le PDF de son assureur, ou une photo de l\'attestation.', 0);
     await page.locator('app-mon-sejour app-attestation-assurance input[type=file]').setInputFiles({
       name: 'attestation-assurance.pdf', mimeType: 'application/pdf',

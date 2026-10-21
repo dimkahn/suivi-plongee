@@ -5,9 +5,14 @@ describe('texteAvecLiens', () => {
   it("rend cliquable l'adresse web du conseil d'assurance, sans le point qui la suit", () => {
     expect(texteAvecLiens('Souscrivez sur https://www.lafont.example/contrat.aspx. Merci')).toEqual([
       { texte: 'Souscrivez sur ', lien: null },
-      { texte: 'https://www.lafont.example/contrat.aspx', lien: 'https://www.lafont.example/contrat.aspx' },
+      { texte: 'lafont.example', lien: 'https://www.lafont.example/contrat.aspx' },
       { texte: '. Merci', lien: null }
     ]);
+  });
+
+  it("montre le nom du site plutôt que l'adresse entière, illisible sur un téléphone", () => {
+    expect(texteAvecLiens('https://www.espaceclient.lafont-assurances.com/espace-client/contrat.aspx')[0].texte)
+      .toBe('espaceclient.lafont-assurances.com');
   });
 
   it('laisse un texte sans adresse tel quel', () => {

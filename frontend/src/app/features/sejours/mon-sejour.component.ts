@@ -34,7 +34,8 @@ interface Tuile {
  * bouton pour le donner ; toucher une tuile ouvre l'onglet qui en donne le
  * détail. Tant qu'il n'a ni déclaré d'emprunt ni dit n'avoir rien emprunté,
  * un encart lui demande s'il a pris du matériel du club (demande du club,
- * 2026). Sous ses voyages, son attestation d'assurance (V99).
+ * 2026). Puis son attestation d'assurance (V99), en orange tant qu'elle
+ * manque, avec le conseil d'assurance du séjour.
  */
 @Component({
   selector: 'app-mon-sejour',
@@ -66,6 +67,11 @@ interface Tuile {
           @if (erreur(); as e) { <p class="erreur" role="alert">{{ e }}</p> }
         </div>
       }
+      @if (attestations(); as port) {
+        <app-attestation-assurance [type]="moi().attestationAssurance" [port]="port" [participantId]="moi().id"
+                                   titre="Mon attestation d'assurance" [monSejour]="true"
+                                   [conseil]="sejour().conseilAssurance" />
+      }
       @if (voyages().length > 0) {
         <div class="voyages">
           @for (v of voyages(); track v.etiquette) {
@@ -73,10 +79,6 @@ interface Tuile {
                               [cartes]="cartes()" [participantId]="moi().id" />
           }
         </div>
-      }
-      @if (attestations(); as port) {
-        <app-attestation-assurance [type]="moi().attestationAssurance" [port]="port" [participantId]="moi().id"
-                                   titre="Mon attestation d'assurance" [conseil]="sejour().conseilAssurance" />
       }
       <ul class="tuiles">
         @for (t of tuiles(); track t.etiquette) {
@@ -182,8 +184,7 @@ export class MonSejourComponent implements OnInit {
       rien(m.arrivee) ? 'votre voyage aller' : null,
       rien(m.depart) ? 'votre voyage retour' : null,
       !m.telephone ? 'votre téléphone' : null,
-      !m.urgenceNom && !m.urgenceTelephone ? 'la personne à prévenir' : null,
-      this.attestations() && !m.attestationAssurance ? "votre attestation d'assurance" : null
+      !m.urgenceNom && !m.urgenceTelephone ? 'la personne à prévenir' : null
     ].filter((x): x is string => x !== null);
   });
 
