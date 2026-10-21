@@ -146,7 +146,8 @@ function participantVide(): BrouillonParticipant {
       <!-- Le programme du jour, du voyage aller au voyage retour ; la veille, un rappel (demande du club, 2026). -->
       <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant" [encadrant]="s.encadrant"
                           [moiId]="moi()?.id ?? null" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
-                          [programme]="programme()" [affaires]="s.affaires" [comptes]="mesComptes()" />
+                          [programme]="programme()" [affaires]="s.affaires" [comptes]="mesComptes()"
+                          [cartes]="portCartes" />
 
       <!-- Frais partagés : en tête de page, pour qu'on les trouve sans chercher (demande du club, 2026). -->
       <section class="carte encart-frais sans-impression" aria-label="Frais du séjour">

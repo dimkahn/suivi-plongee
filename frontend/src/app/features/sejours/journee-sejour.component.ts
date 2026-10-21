@@ -1,8 +1,10 @@
 import { Component, ChangeDetectionStrategy, computed, input, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
+import { CarteVoyageComponent } from './carte-voyage.component';
 import { dateDuJour } from '../../core/date-fr';
-import { AffaireVue, ParticipantVue, jourLong } from './sejour-api';
+import { AffaireVue, ParticipantVue, PortCartesEmbarquement, Trajet, jourLong } from './sejour-api';
+import { voyageEnCarte } from './voyage';
 import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage, voyagesDuJour } from './programme-du-jour';
 
 /**
@@ -12,13 +14,15 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
  * qui partent ce jour-là avec l'heure à laquelle être à l'aéroport ou à la
  * gare, puis le programme du jour. La veille d'un voyage, un rappel ; la
  * veille du départ, les affaires indispensables ; la veille du retour, ses
- * comptes à régler. Rien hors de ces jours. La date est celle de
+ * comptes à régler. Son propre vol (train, bateau, car) se montre avec la
+ * carte de « Mon séjour » et sa carte d'embarquement (demande du club,
+ * 2026) ; ceux des autres restent en ligne. Rien hors de ces jours. La date est celle de
  * l'appareil : c'est sur place que compte « aujourd'hui ».
  * Sert dans le séjour (appli) et sur la page du lien reçu par e-mail.
  */
 @Component({
   selector: 'app-journee-sejour',
-  imports: [NgTemplateOutlet, PalanqueesPlongeeComponent],
+  imports: [NgTemplateOutlet, PalanqueesPlongeeComponent, CarteVoyageComponent],
   template: `
     @if (journee(); as a) {
       <section class="carte encart-jour" aria-label="Aujourd'hui">
@@ -63,15 +67,26 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
       </section>
     }
     <ng-template #voyage let-v>
-      <div class="voyage">
-        <p><strong>{{ v.sens === 'aller' ? 'Voyage aller' : 'Voyage retour' }} : {{ v.moyen }}</strong>@if (v.heureDepart) { à {{ v.heureDepart }}}@if (v.lieuDepart) {, {{ v.lieuDepart }}}</p>
-        @if (v.conseil) { <p class="conseil">{{ v.conseil }}</p> }
-        @if (v.heureManquante && aMoi(v)) {
-          <p class="secondaire">Donnez l'heure de départ dans « {{ ouCompleter() }} » : vous saurez à quelle heure être sur place.</p>
-        }
-        @if (v.arrivee) { <p class="secondaire">Arrivée : {{ v.arrivee }}</p> }
-        @if (montrerNoms()) { <p class="secondaire">{{ v.noms.join(', ') }}</p> }
-      </div>
+      @if (enCarte(v); as t) {
+        <app-carte-voyage class="voyage-carte" [trajet]="t" [aller]="v.sens === 'aller'"
+                          [etiquette]="v.sens === 'aller' ? 'Voyage aller' : 'Voyage retour'"
+                          [cartes]="cartes()" [participantId]="moiId()">
+          @if (v.heureManquante) {
+            <p class="secondaire">Donnez l'heure de départ dans « {{ ouCompleter() }} » : vous saurez à quelle heure être sur place.</p>
+          }
+          @if (montrerNoms()) { <p class="secondaire">{{ v.noms.join(', ') }}</p> }
+        </app-carte-voyage>
+      } @else {
+        <div class="voyage">
+          <p><strong>{{ v.sens === 'aller' ? 'Voyage aller' : 'Voyage retour' }} : {{ v.moyen }}</strong>@if (v.heureDepart) { à {{ v.heureDepart }}}@if (v.lieuDepart) {, {{ v.lieuDepart }}}</p>
+          @if (v.conseil) { <p class="conseil">{{ v.conseil }}</p> }
+          @if (v.heureManquante && aMoi(v)) {
+            <p class="secondaire">Donnez l'heure de départ dans « {{ ouCompleter() }} » : vous saurez à quelle heure être sur place.</p>
+          }
+          @if (v.arrivee) { <p class="secondaire">Arrivée : {{ v.arrivee }}</p> }
+          @if (montrerNoms()) { <p class="secondaire">{{ v.noms.join(', ') }}</p> }
+        </div>
+      }
     </ng-template>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -87,6 +102,8 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
     .texte-libre { white-space: pre-line; display: block; }
     .voyage { margin: var(--pas) 0; padding: var(--pas) var(--pas-2); border-radius: var(--r-s); background: #E0F2FE; }
     .voyage p { margin: 2px 0; }
+    .voyage-carte { margin: var(--pas) 0; height: auto; }
+    .voyage-carte p { margin: var(--pas) 0 0; }
     .conseil { font-weight: 700; color: var(--profond-fonce); font-size: 1.0625rem; }
     .rappel { margin-top: var(--pas-2); padding-top: var(--pas-2); border-top: 1px solid var(--trait); }
     .rappel.seul { margin-top: 0; padding-top: 0; border-top: none; }
@@ -109,11 +126,18 @@ export class JourneeSejourComponent {
   affaires = input<AffaireVue[]>([]);
   /** Ses remboursements à faire ou à recevoir (« vous devez 25,00 € à Inès Roux »), rappelés la veille du retour. */
   comptes = input<string[]>([]);
+  /** Ses cartes d'embarquement, à joindre ou montrer depuis la carte de son vol. */
+  cartes = input<PortCartesEmbarquement | null>(null);
   /** Où l'on complète son voyage : « Modifier mes informations », « Mes informations ». */
   ouCompleter = input('Modifier mes informations');
 
   readonly jourLong = jourLong;
   readonly aujourdhui = signal(dateDuJour());
+
+  /** Son propre vol (ou train, bateau, car) : la carte de « Mon séjour », avec sa carte d'embarquement. */
+  enCarte(v: VoyageDuJour): Trajet | null {
+    return voyageEnCarte(v, this.participants().find(p => p.id === this.moiId()));
+  }
 
   /** Ce voyage est le sien (pour l'inviter à compléter l'heure de départ). */
   aMoi(v: VoyageDuJour): boolean {

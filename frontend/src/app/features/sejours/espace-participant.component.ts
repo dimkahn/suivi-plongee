@@ -77,10 +77,10 @@ interface JetonGarde {
           <span>Vous êtes <strong>{{ v.moi.prenom }} {{ v.moi.nom }}</strong>.</span>
           <button type="button" class="bouton-discret" (click)="deconnecter()">Se déconnecter</button>
         </div>
-        @if (moi(); as p) {
+        @if (voyageur(); as p) {
           <app-journee-sejour [participants]="[p]" [moiId]="p.id" [dateDebut]="e.dateDebut" [dateFin]="e.dateFin"
                               [programme]="programme()" [affaires]="affaires()" [comptes]="mesComptes()"
-                              ouCompleter="Mes informations" />
+                              [cartes]="portCartes" ouCompleter="Mes informations" />
         }
         <div class="onglets" role="tablist" id="onglets-participant">
           <button type="button" role="tab" class="bouton-discret" [class.actif]="onglet() === 'carnet'"
@@ -182,6 +182,8 @@ export class EspaceParticipantComponent {
   moi = signal<ParticipantVue | null>(null);
   /** Tout le séjour vu par ce participant (onglet « Carnet »). */
   carnet = signal<SejourVue | null>(null);
+  /** Soi-même pour « Aujourd'hui » : la fiche du carnet, à jour de sa carte d'embarquement. */
+  readonly voyageur = computed(() => this.carnet()?.participants.find(p => p.moi) ?? this.moi());
   /** Le carnet mis en page pour le papier, à la place de la page. */
   imprimable = signal(false);
 

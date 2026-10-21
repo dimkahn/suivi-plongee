@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { conseilDepart } from './programme-du-jour';
-import { Trajet, copieTrajet, trajetSaisi } from './sejour-api';
-import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, memeVoyageQue } from './voyage';
+import { VoyageDuJour, conseilDepart } from './programme-du-jour';
+import { ParticipantVue, Trajet, copieTrajet, trajetSaisi } from './sejour-api';
+import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, memeVoyageQue, voyageEnCarte } from './voyage';
 
 describe("Carte d'embarquement à envoyer", () => {
   const Mo = 1024 * 1024;
@@ -112,5 +112,22 @@ describe('Réservation dans le formulaire', () => {
   it("un trajet avec seulement un numéro de dossier n'est pas vide", () => {
     expect(trajetSaisi({ date: null, heure: null, transport: null, numero: null, lieu: null, dossier: 'ABC123' }))
       .not.toBeNull();
+  });
+});
+
+describe('Voyage du rappel, en carte', () => {
+  const moi = { id: 7, arrivee: aller, depart: retour } as unknown as ParticipantVue;
+  const voyage = (sens: 'aller' | 'retour', ids: number[]) => ({ sens, ids }) as VoyageDuJour;
+
+  it('montre en carte son propre vol, comme dans « Mon séjour »', () => {
+    expect(voyageEnCarte(voyage('aller', [7]), moi)).toBe(aller);
+    expect(voyageEnCarte(voyage('retour', [3, 7]), moi)).toBe(retour);
+  });
+
+  it("laisse en ligne le voyage des autres, la voiture, et quand on ne sait pas qui l'on est", () => {
+    expect(voyageEnCarte(voyage('aller', [3]), moi)).toBeNull();
+    expect(voyageEnCarte(voyage('aller', [7]), undefined)).toBeNull();
+    const enVoiture = { ...moi, arrivee: { ...aller, transport: 'VOITURE' } } as ParticipantVue;
+    expect(voyageEnCarte(voyage('aller', [7]), enVoiture)).toBeNull();
   });
 });

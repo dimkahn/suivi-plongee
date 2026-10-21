@@ -1,5 +1,5 @@
-import { decalerJour, jourDuDepart } from './programme-du-jour';
-import { Trajet, copieTrajet, heure, jourLong } from './sejour-api';
+import { VoyageDuJour, decalerJour, jourDuDepart } from './programme-du-jour';
+import { ParticipantVue, Trajet, copieTrajet, heure, jourLong } from './sejour-api';
 
 // ----------------------------------------------------------------
 //  La carte d'un voyage (demande du club, 2026 : lisible comme la page
@@ -119,6 +119,17 @@ export function enregistrement(t: Trajet, aller: boolean, maintenant: Date): Eta
  */
 export function memeVoyageQue(autre: Trajet | null, actuel: Trajet | null): Trajet {
   return { ...copieTrajet(autre), dossier: actuel?.dossier ?? null, lienEnregistrement: actuel?.lienEnregistrement ?? null };
+}
+
+/**
+ * Un voyage de l'encart « Aujourd'hui » (ou du rappel de la veille) : le
+ * sien, en avion, train, bateau ou car, se montre en carte comme dans « Mon
+ * séjour » (demande du club, 2026) ; null pour les autres, qui restent en ligne.
+ */
+export function voyageEnCarte(v: VoyageDuJour, moi: ParticipantVue | undefined): Trajet | null {
+  if (!moi || !v.ids.includes(moi.id)) return null;
+  const t = v.sens === 'aller' ? moi.arrivee : moi.depart;
+  return enCarte(t) ? t : null;
 }
 
 /** Le serveur refuse au-delà de 5 Mo. */

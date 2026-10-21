@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-21, 27e série, son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-21, 28e série, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
+  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
@@ -21,7 +21,8 @@ export default {
     }), 0);
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
-    await legende('C\'est la veille du départ : en haut, le rappel de son vol, et l\'heure à laquelle être à l\'aéroport.', 4500);
+    await legende('C\'est la veille du départ : en haut, le rappel de son vol, dans la même carte que dans « Mon séjour », et l\'heure à laquelle être à l\'aéroport.', 5000);
+    await legende('Sa carte d\'embarquement est là aussi : à ajouter, puis à montrer d\'un geste à l\'aéroport.', 4000);
     await legende('Trois heures avant l\'embarquement pour un avion, trente minutes pour un train. Et les papiers à ne pas oublier.', 4500);
     await vignette();
 
@@ -33,10 +34,10 @@ export default {
     await legende('Le jour du retour, il rappelle de même l\'heure du vol, et la veille ses comptes à régler.', 4000);
 
     await legende('« Mon séjour » : ses vols aller et retour, chacun dans une carte. L\'heure de départ et celle d\'arrivée, le terminal, le vol et sa compagnie.', 5000);
-    await page.locator('app-carte-voyage').first().scrollIntoViewIfNeeded();
+    await page.locator('app-mon-sejour app-carte-voyage').first().scrollIntoViewIfNeeded();
     await legende('Quand ouvre l\'enregistrement en ligne, son numéro de dossier, et dessous deux boutons : « Copier le dossier » et « S\'enregistrer ». Le dossier n\'est vu que par elle et les organisateurs.', 5500);
     await legende('Dessous, « Ajouter la carte d\'embarquement » : elle choisit le PDF reçu de la compagnie, ou une capture d\'écran.', 0);
-    await page.locator('app-carte-voyage .embarquement input[type=file]').first().setInputFiles({
+    await page.locator('app-mon-sejour app-carte-voyage .embarquement input[type=file]').first().setInputFiles({
       name: 'carte-embarquement-AF7520.pdf', mimeType: 'application/pdf',
       buffer: Buffer.from('%PDF-1.4\n%Carte d\'embarquement de demonstration\n%%EOF\n')
     });
