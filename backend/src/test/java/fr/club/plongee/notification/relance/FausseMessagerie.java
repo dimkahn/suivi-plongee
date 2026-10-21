@@ -47,6 +47,11 @@ public class FausseMessagerie {
             return messages.stream().filter(m -> m.adresse().equals(adresse)).toList();
         }
 
+        /** Tous les courriels partis, dans l'ordre d'envoi. */
+        public synchronized List<Message> tous() {
+            return List.copyOf(messages);
+        }
+
         public synchronized void refuser(String adresse) {
             refusees.add(adresse);
         }
