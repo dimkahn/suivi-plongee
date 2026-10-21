@@ -11,7 +11,7 @@ import {
   TYPES_EQUIPEMENT, TYPES_INTERVENTION, TypeEquipement
 } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
-import { descriptionEquipement } from './materiel';
+import { TON_STATUT_EQUIPEMENT, descriptionEquipement } from './materiel';
 import { nomEquipement } from '../../core/nom-equipement';
 import { DialogueComponent } from '../../core/dialogue.component';
 
@@ -278,7 +278,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
           @if (e.ancienneReference) { <p class="ancien">Ancien n° {{ e.ancienneReference }}</p> }
           @if (description(e); as d) { <p class="secondaire">{{ d }}</p> }
         </div>
-        <span [class]="'etat statut-' + e.statut">{{ libelleStatut[e.statut] }}</span>
+        <span class="etiquette-etat" [class]="tonStatut[e.statut]">{{ libelleStatut[e.statut] }}</span>
       </div>
 
       @for (a of e.alertes; track a.message) {
@@ -491,12 +491,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
     h1 { margin-bottom: var(--pas); }
     h3 { margin: var(--pas-2) 0 4px; font-size: .9375rem; }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
-    .etat { flex: none; padding: 4px 12px; border-radius: var(--r-s); font-size: .875rem; font-weight: 700; }
-    .statut-DISPONIBLE { background: var(--acquis-clair); color: var(--acquis); }
-    .statut-PRETE { background: #E0F2FE; color: var(--profond-fonce); }
-    .statut-A_REGULARISER { background: #FEE2E2; color: #B91C1C; }
-    .statut-HORS_SERVICE { background: var(--en-cours-clair); color: var(--en-cours); }
-    .statut-REBUTE { background: #EEF2F4; color: var(--craie); }
+    .entete .etiquette-etat { padding: 4px 12px; font-size: .875rem; }
     .alerte.bloquant { border-left-color: #B91C1C; background: #FEE2E2; }
 
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin: var(--pas-2) 0; }
@@ -556,6 +551,7 @@ export class FicheEquipementComponent {
 
   readonly types = TYPES_EQUIPEMENT;
   readonly libelleStatut = LIBELLES_STATUT_EQUIPEMENT;
+  readonly tonStatut = TON_STATUT_EQUIPEMENT;
   readonly description = descriptionEquipement;
   readonly nom = nomEquipement;
   readonly aujourdhui = dateDuJour();

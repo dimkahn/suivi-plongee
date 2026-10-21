@@ -126,6 +126,21 @@ input, select, textarea {
   margin-bottom: var(--pas-2);
 }
 
+/*
+ * Étiquette d'état (« Ouverte », « Actif », « Prêté », « En retard »…) :
+ * bleue par défaut, le ton par une classe. Pas « .etat », qui désigne
+ * aussi des boutons dans les présences et la grille.
+ */
+.etiquette-etat {
+  flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
+  background: #E0F2FE; color: var(--profond-fonce);
+}
+.etiquette-etat.ok { background: var(--acquis-clair); color: var(--acquis); }
+.etiquette-etat.neutre { background: #EEF2F4; color: var(--craie); }
+.etiquette-etat.attention { background: var(--en-cours-clair); color: var(--en-cours); }
+.etiquette-etat.danger { background: #FEE2E2; color: #B91C1C; }
+.etiquette-etat.fort { background: var(--profond); color: #fff; }
+
 .vide {
   padding: var(--pas-4) var(--pas-2);
   text-align: center;

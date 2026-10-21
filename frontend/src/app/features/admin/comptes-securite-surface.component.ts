@@ -53,7 +53,7 @@ type Mode = 'creation' | 'modification' | 'reactivation';
               <span class="nom">{{ c.prenom }} {{ c.nom }}</span>
               <span class="secondaire">{{ c.email }}</span>
             </div>
-            <span class="etat" [class.actif]="c.actif" [class.inactif]="!c.actif">
+            <span class="etiquette-etat" [class.ok]="c.actif" [class.neutre]="!c.actif">
               {{ c.actif ? 'Actif' : (c.accesTermine ? 'Accès terminé' : 'Désactivé') }}
             </span>
             <div class="acces">
@@ -155,9 +155,6 @@ type Mode = 'creation' | 'modification' | 'reactivation';
     .comptes > li { padding: var(--pas-2); display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; flex: 1 1 200px; min-width: 0; }
     .nom { font-weight: 700; }
-    .etat { flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700; }
-    .etat.actif { background: var(--acquis-clair); color: var(--acquis); }
-    .etat.inactif { background: #EEF2F4; color: var(--craie); }
     .acces { display: flex; flex-direction: column; gap: 2px; flex-basis: 100%; font-size: .9375rem; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; flex-basis: 100%; }
     .danger { color: #B3261E; border-color: #B3261E; }

@@ -152,11 +152,11 @@ function aVerifier(m: MoniteurVue): boolean {
                 </button>
               </div>
               <div class="badges">
-                @if (m.admin) { <span class="etat admin">Admin</span> }
-                @if (m.directeurTechnique) { <span class="etat admin" title="Directeur technique">DT</span> }
-                @if (m.tiv) { <span class="etat admin" title="Technicien en inspection visuelle">TIV</span> }
-                @if (m.ficheSecurite) { <span class="etat admin" title="Établit les fiches de sécurité sans être E3 ni E4">Fiches sécu</span> }
-                <span class="etat" [class.actif]="m.actif" [class.inactif]="!m.actif">
+                @if (m.admin) { <span class="etiquette-etat fort">Admin</span> }
+                @if (m.directeurTechnique) { <span class="etiquette-etat fort" title="Directeur technique">DT</span> }
+                @if (m.tiv) { <span class="etiquette-etat fort" title="Technicien en inspection visuelle">TIV</span> }
+                @if (m.ficheSecurite) { <span class="etiquette-etat fort" title="Établit les fiches de sécurité sans être E3 ni E4">Fiches sécu</span> }
+                <span class="etiquette-etat" [class.ok]="m.actif" [class.neutre]="!m.actif">
                   {{ m.actif ? 'Actif' : 'Désactivé' }}
                 </span>
               </div>
@@ -366,12 +366,6 @@ function aVerifier(m: MoniteurVue): boolean {
     .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
     app-avatar { --taille-avatar: 56px; }
     .nom { font-weight: 700; }
-    .etat {
-      flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
-    }
-    .etat.actif { background: var(--acquis-clair); color: var(--acquis); }
-    .etat.inactif { background: #EEF2F4; color: var(--craie); }
-    .etat.admin { background: var(--profond); color: #fff; }
     .badges { display: flex; gap: var(--pas); flex: none; }
 
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }

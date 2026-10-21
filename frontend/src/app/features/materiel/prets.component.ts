@@ -168,8 +168,8 @@ interface LigneRetour { incident: string; horsService: boolean; }
                     @else if (p.motif) { {{ p.motif }} }
                   </span>
                 </div>
-                @if (p.enRetard) { <span class="etat retard">En retard</span> }
-                @if (p.dateRetour) { <span class="etat rendu">Rendu</span> }
+                @if (p.enRetard) { <span class="etiquette-etat danger">En retard</span> }
+                @if (p.dateRetour) { <span class="etiquette-etat neutre">Rendu</span> }
               </div>
               <p class="dates">
                 Prêté le {{ p.datePret | dateFr }}@if (p.pretePar) { par {{ p.pretePar }}}
@@ -273,9 +273,6 @@ interface LigneRetour { incident: string; horsService: boolean; }
     .prets > li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas); }
     .nom { font-weight: 700; }
-    .etat { flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700; }
-    .retard { background: #FEE2E2; color: #B91C1C; }
-    .rendu { background: #EEF2F4; color: var(--craie); }
     .dates { margin: var(--pas) 0; }
     .materiel-prete { margin: 0; padding-left: 1.25rem; display: grid; gap: 2px; }
     .texte-libre { white-space: pre-line; margin: var(--pas) 0 0; }

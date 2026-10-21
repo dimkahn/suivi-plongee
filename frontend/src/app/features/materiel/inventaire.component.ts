@@ -10,7 +10,7 @@ import {
 } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
-import { descriptionEquipement, prochaineEcheance } from './materiel';
+import { TON_STATUT_EQUIPEMENT, descriptionEquipement, prochaineEcheance } from './materiel';
 
 /**
  * Inventaire du matériel du club : état de chaque équipement, calculé par
@@ -175,7 +175,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
                       </span>
                       @if (description(e); as d) { <span class="secondaire">{{ d }}</span> }
                     </span>
-                    <span [class]="'etat statut-' + e.statut">{{ libelleStatut[e.statut] }}</span>
+                    <span class="etiquette-etat" [class]="tonStatut[e.statut]">{{ libelleStatut[e.statut] }}</span>
                   </span>
                 </label>
               } @else {
@@ -187,7 +187,7 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
                     </span>
                     @if (description(e); as d) { <span class="secondaire">{{ d }}</span> }
                   </div>
-                  <span [class]="'etat statut-' + e.statut">{{ libelleStatut[e.statut] }}</span>
+                  <span class="etiquette-etat" [class]="tonStatut[e.statut]">{{ libelleStatut[e.statut] }}</span>
                 </div>
                 @if (e.pretEnCours; as p) {
                   <span class="secondaire">
@@ -262,13 +262,6 @@ import { descriptionEquipement, prochaineEcheance } from './materiel';
     .identite { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .nom { font-weight: 700; }
     .ancien { font-weight: 400; color: var(--craie); }
-    .etat { flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700; }
-    .statut-DISPONIBLE { background: var(--acquis-clair); color: var(--acquis); }
-    .statut-PRETE { background: #E0F2FE; color: var(--profond-fonce); }
-    .statut-A_REGULARISER { background: #FEE2E2; color: #B91C1C; }
-    .statut-HORS_SERVICE { background: var(--en-cours-clair); color: var(--en-cours); }
-    .statut-REBUTE { background: #EEF2F4; color: var(--craie); }
-    .compteur[class*="statut-"] { background: var(--carte); color: var(--encre); }
     .compteur.statut-A_REGULARISER .nombre { color: #B91C1C; }
     .compteur.statut-HORS_SERVICE .nombre { color: var(--en-cours); }
     .compteur.statut-DISPONIBLE .nombre { color: var(--acquis); }
@@ -284,6 +277,7 @@ export class InventaireComponent {
 
   readonly types = TYPES_EQUIPEMENT;
   readonly libelleStatut = LIBELLES_STATUT_EQUIPEMENT;
+  readonly tonStatut = TON_STATUT_EQUIPEMENT;
   readonly description = descriptionEquipement;
   readonly echeance = prochaineEcheance;
 

@@ -36,7 +36,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
                   <span class="nom">{{ s.libelle }}</span>
                   <span class="secondaire">Du {{ s.dateDebut | dateFr }} au {{ s.dateFin | dateFr }}</span>
                 </div>
-                <span class="etat" [class.actif]="s.ouverte" [class.inactif]="!s.ouverte">
+                <span class="etiquette-etat" [class.ok]="s.ouverte" [class.neutre]="!s.ouverte">
                   {{ s.ouverte ? 'Ouverte' : 'Fermée' }}
                 </span>
               </div>
@@ -136,9 +136,6 @@ import { DialogueComponent } from '../../core/dialogue.component';
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
-    .etat { flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700; }
-    .etat.actif { background: var(--acquis-clair); color: var(--acquis); }
-    .etat.inactif { background: #EEF2F4; color: var(--craie); }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .progressions { margin-top: var(--pas-2); padding-top: var(--pas-2); border-top: 1px solid var(--trait); }

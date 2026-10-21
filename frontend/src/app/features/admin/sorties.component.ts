@@ -94,7 +94,7 @@ function sortieVide(): DemandeSortie {
                     {{ majuscule(periode(s.dateDebut, s.dateFin)) }}@if (s.lieu) { · {{ s.lieu }}}
                   </span>
                 </div>
-                <span class="etat" [class.sans-plongee]="s.nombrePlongees === 0">
+                <span class="etiquette-etat" [class.attention]="s.nombrePlongees === 0">
                   {{ s.nombrePlongees }} plongée{{ s.nombrePlongees > 1 ? 's' : '' }}
                 </span>
               </div>
@@ -235,9 +235,6 @@ function sortieVide(): DemandeSortie {
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas); }
     .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
-    .etat { flex: none; padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
-            background: #E0F2FE; color: var(--profond-fonce); }
-    .etat.sans-plongee { background: var(--en-cours-clair); color: var(--en-cours); }
     .texte-libre { white-space: pre-line; margin: var(--pas) 0 0; }
     .seances { margin: var(--pas) 0 0; padding-left: 1.25rem; display: grid; gap: 2px; font-size: .9375rem; }
 
