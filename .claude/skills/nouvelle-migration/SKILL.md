@@ -10,16 +10,24 @@ argument-hint: "[ce que la migration doit faire]"
 
 | Contenu | Dossier | Numéro |
 |---|---|---|
-| Schéma, données de référence (production comprise) | `backend/src/main/resources/db/migration/` | le suivant après le plus grand `V<n>__` de ce dossier, **sous 100** |
+| Schéma, données de référence (production comprise) | `backend/src/main/resources/db/migration/` | le suivant après la plus grande version de ce dossier, **sous 100** : `V<n>__` jusqu'à `V99`, puis `V99_1__`, `V99_2__`… (voir ci-dessous) |
 | Données de démonstration (profil `dev` seulement, noms fictifs) | `backend/src/main/resources/db/demo/` | le suivant après le plus grand `V1<nn>__` |
 | Migration qui charge des fichiers (images…) | `backend/src/main/java/db/migration/` (classe Java) | même suite que le SQL de `db/migration` |
 
 ```bash
-ls backend/src/main/resources/db/migration backend/src/main/java/db/migration | grep -o '^V[0-9]*' | sort -V | tail -1
+ls backend/src/main/resources/db/migration backend/src/main/java/db/migration | grep -o '^V[0-9_]*[0-9]' | sort -V | tail -1
 ls backend/src/main/resources/db/demo | sort -V | tail -1
 ```
 
-Nom : `V<n>__<description_en_snake_case_francais>.sql`. En-tête en commentaire :
+**Après `V99`** (décision Tech, 2026-10-21, relances CACI) : les numéros
+≥ 100 restent à la démo (`db/demo`, profil `dev`). Le schéma continue en
+sous-versions Flyway : `V99_1__…` (version 99.1), puis `V99_2__…`,
+`V99_3__…` ; Flyway les ordonne entre 99 et 100, donc avant la démo en `dev`
+et à la suite de V99 en production. Même règle pour une migration Java
+(`V99_2__…` dans `backend/src/main/java/db/migration/`). Ne pas prendre
+`V130__…` dans `db/migration` : les suites schéma et démo s'entremêleraient.
+
+Nom : `V<n>__<description_en_snake_case_francais>.sql` (ou `V99_<n>__…`). En-tête en commentaire :
 ce que fait la migration et pourquoi (même style que les voisines).
 
 ## 2. Règles
