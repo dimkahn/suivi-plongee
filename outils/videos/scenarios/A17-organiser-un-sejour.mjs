@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-21, 29e série, attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-22, 30e série, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,11 +7,11 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
-  async jouer({ page, pause, legende, toucher, saisir, dater, menu, defiler, enHaut, vignette }) {
+  async jouer({ page, pause, legende, toucher, saisir, dater, menu, defiler, enHaut, vignette, reseau }) {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await legende('Menu « Séjours » : chaque sortie a son séjour.', 0);
@@ -139,6 +139,23 @@ export default {
     await legende('« Imprimer ou enregistrer en PDF », puis on revient au séjour.', 0);
     await page.goBack();
     await pause(1500);
+    await legende('Au gîte ou sur l\'île, plus de réseau ? Le séjour déjà ouvert sur le téléphone s\'ouvre quand même.', 0);
+    await reseau(false);
+    await menu('Séjours');
+    await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
+    await page.locator('.bandeau-hors-ligne').waitFor();
+    await legende('« Hors ligne » : le séjour tel qu\'il était à la dernière ouverture. On le modifie comme d\'habitude.', 0);
+    await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1000 });
+    await toucher(page.getByRole('button', { name: 'Ajouter un rendez-vous' }), { apres: 800 });
+    await dater('#e-jour', '2027-06-05');
+    await saisir('#e-debut', '1230');
+    await saisir('#e-titre', 'Pique-nique au fort');
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1500 });
+    await page.locator('.bandeau-hors-ligne').scrollIntoViewIfNeeded();
+    await legende('Le rendez-vous se voit tout de suite, et l\'encart le liste : « gardée sur ce téléphone ». Dépenses et remboursements aussi.', 5000);
+    await legende('Le réseau revient : tout part tout seul, dans l\'ordre. Un refus du serveur s\'affiche dans le bandeau.', 0);
+    await reseau(true);
+    await pause(4000);
     await legende('Pendant le séjour, un encart « Aujourd\'hui » en haut de la page : le programme du jour, les vols à prendre, et la veille un rappel.', 5000);
     await legende('Pas d\'information médicale dans l\'appli : seulement des choix de table.', 4000);
     await legende(null, 0);

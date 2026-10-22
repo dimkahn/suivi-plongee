@@ -62,10 +62,12 @@ public class SejourController {
     private final PretsSejourService pretsSejour;
     private final CartesEmbarquementService cartes;
     private final AttestationsAssuranceService attestations;
+    private final RejeuSejour rejeu;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             AccesSejourService acces, PretsSejourService pretsSejour,
-                            CartesEmbarquementService cartes, AttestationsAssuranceService attestations) {
+                            CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
+                            RejeuSejour rejeu) {
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
@@ -73,6 +75,7 @@ public class SejourController {
         this.pretsSejour = pretsSejour;
         this.cartes = cartes;
         this.attestations = attestations;
+        this.rejeu = rejeu;
     }
 
     /** {@code toutes} : aussi les séjours passés (encadrants). Un participant ne voit que les siens. */
@@ -120,8 +123,9 @@ public class SejourController {
     @PostMapping("/{id}/participants")
     @PreAuthorize(GERE)
     public SejourVue ajouterParticipant(@PathVariable Long id, @Valid @RequestBody DemandeParticipant d,
+                                        @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        service.ajouterParticipant(id, d);
+        rejeu.uneFois(id, reference, () -> service.ajouterParticipant(id, d));
         return service.lire(id, moi);
     }
 
@@ -249,8 +253,9 @@ public class SejourController {
     @PostMapping("/{id}/voitures")
     @PreAuthorize(GERE)
     public SejourVue creerVoiture(@PathVariable Long id, @Valid @RequestBody DemandeVoiture d,
+                                  @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        service.creerVoiture(id, d);
+        rejeu.uneFois(id, reference, () -> service.creerVoiture(id, d));
         return service.lire(id, moi);
     }
 
@@ -274,8 +279,9 @@ public class SejourController {
     @PostMapping("/{id}/logements")
     @PreAuthorize(GERE)
     public SejourVue creerLogement(@PathVariable Long id, @Valid @RequestBody DemandeLogement d,
+                                   @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                    @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        service.creerLogement(id, d);
+        rejeu.uneFois(id, reference, () -> service.creerLogement(id, d));
         return service.lire(id, moi);
     }
 
@@ -307,8 +313,9 @@ public class SejourController {
     @PostMapping("/{id}/evenements")
     @PreAuthorize(GERE)
     public SejourVue creerEvenement(@PathVariable Long id, @Valid @RequestBody DemandeEvenement d,
+                                    @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        service.creerEvenement(id, d);
+        rejeu.uneFois(id, reference, () -> service.creerEvenement(id, d));
         return service.lire(id, moi);
     }
 
@@ -336,8 +343,10 @@ public class SejourController {
     @PostMapping("/{id}/depenses")
     @PreAuthorize("isAuthenticated()")
     public DepenseCreee creerDepense(@PathVariable Long id, @Valid @RequestBody FraisService.DemandeDepense d,
+                                     @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                      @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        long depenseId = frais.creerDepense(id, d, frais.acteur(id, moi));
+        FraisService.ActeurFrais acteur = frais.acteur(id, moi);
+        long depenseId = rejeu.idCreeUneFois(id, reference, () -> frais.creerDepense(id, d, acteur));
         return new DepenseCreee(depenseId, service.lire(id, moi));
     }
 
@@ -415,8 +424,10 @@ public class SejourController {
     @PostMapping("/{id}/versements")
     @PreAuthorize("isAuthenticated()")
     public SejourVue creerVersement(@PathVariable Long id, @Valid @RequestBody FraisService.DemandeVersement d,
+                                    @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        frais.creerVersement(id, d, frais.acteur(id, moi));
+        FraisService.ActeurFrais acteur = frais.acteur(id, moi);
+        rejeu.uneFois(id, reference, () -> frais.creerVersement(id, d, acteur));
         return service.lire(id, moi);
     }
 

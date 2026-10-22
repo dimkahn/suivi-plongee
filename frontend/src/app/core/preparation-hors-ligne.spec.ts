@@ -1,6 +1,6 @@
 import {
   CONTENUS_HORS_LIGNE, choixDeLaFormule, formuleDuChoix, journeeAEmporter, resumePreparation, resumePreparationSurface,
-  seancesAEmbarquer
+  seancesAEmbarquer, sejoursAEmporter
 } from './preparation-hors-ligne';
 
 describe('Préparer hors ligne', () => {
@@ -66,5 +66,22 @@ describe('Préparer hors ligne', () => {
     expect(seancesAEmbarquer(seances, 'proches').map(s => s.id)).toEqual([1, 2, 3, 4]);
     expect(seancesAEmbarquer([...seances, { id: 5, date: '2026-12-01' }], 'proches').map(s => s.id))
       .not.toContain(5);
+  });
+
+  it('Séjours : on emporte ceux en cours et ceux qui commencent dans les 30 jours, pas les finis', () => {
+    const sejours = [
+      { sortieId: 1, dateDebut: '2026-10-18', dateFin: '2026-10-22' },
+      { sortieId: 2, dateDebut: '2026-11-10', dateFin: '2026-11-12' },
+      { sortieId: 3, dateDebut: '2027-06-04', dateFin: '2027-06-07' },
+      { sortieId: 4, dateDebut: '2026-10-01', dateFin: '2026-10-05' }
+    ];
+    expect(sejoursAEmporter(sejours).map(s => s.sortieId)).toEqual([1, 2]);
+  });
+
+  it('Le bilan compte aussi les séjours emportés', () => {
+    expect(resumePreparation({ grilles: null, feuilles: null, fiches: 1, photos: null, sejours: 2 }))
+      .toBe('Disponibles hors ligne : 1 fiche de sécurité, 2 séjours.');
+    expect(resumePreparation({ grilles: null, feuilles: null, fiches: null, photos: null, sejours: 0 }))
+      .toBe('Aucun séjour à emporter : aucun n’est en cours ni ne commence dans les 30 jours.');
   });
 });

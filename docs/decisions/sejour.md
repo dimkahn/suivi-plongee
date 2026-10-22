@@ -127,6 +127,18 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Contexte** : un organisateur ne savait pas ce que voient les participants, et sur place il voulait suivre le séjour comme les autres, sans tous les boutons d'organisation.
 - **Décision** : « Voir comme un participant » dans le bandeau « Organisation », pour tout encadrant ; « Revenir à l'organisation » pour revenir. `GET /api/sejours/{id}?commeParticipant=true` renvoie le carnet (`SejourService.carnet`, même filtre que pour un participant) et les frais sans les droits d'organisateur. **Une vue seulement** : les droits d'écriture ne changent pas (le serveur les vérifie à chaque écriture), et l'écran relit la vue participant après chaque écriture. Le choix n'est pas gardé : chaque ouverture du séjour repart en mode organisation.
 
+## Le séjour sans réseau
+
+- **Date** : 2026-10-22, demande du club (« voir et gérer le séjour hors ligne »).
+- **Contexte** : au gîte, sur l'île ou sur le bateau, le réseau manque ; le séjour était jusque-là « réseau obligatoire ».
+- **Décision** : comme les fiches de sécurité, une copie pour lire et une file pour écrire, jamais un cache d'écriture (`FileSejourService`, logique pure `sejour-hors-ligne.ts`, base IndexedDB v4, magasins `sejour` et `refusSejour`).
+  - Lecture : chaque séjour, la liste, le matériel emprunté et le carnet imprimable lus avec du réseau sont copiés sur le téléphone, et relus sur la copie faute de réseau (pas de réponse ou 5xx). Un 403 ou 404 efface la copie : ce qu'on n'a plus le droit de lire ne reste pas. « Préparer hors ligne » a une case « Séjours » (en cours ou à 30 jours). Encart « Hors ligne. Le séjour tel qu'il était … » en tête du séjour.
+  - Écriture : participants, trajet commun, voitures, logements, affaires, programme, infos pratiques, conseil d'assurance, « Mes informations », dépenses et remboursements passent par la file, envoyés tout de suite avec du réseau, sinon gardés et montrés aussitôt (le séjour montré = copie + file ; comptes recalculés comme `FraisSejour`). Une entrée par cible, la dernière version au rang de la première ; un ajout a un id provisoire négatif, le modifier ou le supprimer avant l'envoi change ou retire l'ajout ; une fois envoyé, son vrai id remplace le provisoire dans ce qui suit (participant dans une voiture, une dépense).
+  - Créations rejouables : en-tête `X-Reference-Client`, notée par `RejeuSejour` dans la transaction de la création (table `sejour_reference_client`, V99_2, supprimée avec la sortie) : une réponse perdue puis un nouvel envoi ne font pas de doublon ; une création refusée ne garde pas sa référence. Droits revérifiés à chaque envoi (`@PreAuthorize`).
+  - Refus différé : au bandeau de synchronisation, avec le nom du séjour ; jamais absorbé.
+- **Restent en ligne** : e-mails, organisateurs, « Inscrire un groupe », cartes d'embarquement et attestations (jamais copiées, `no-store`), photos et lecture des notes (une dépense gardée reçoit sa photo une fois envoyée), déclaration du matériel (un prêt se vérifie contre le serveur). La page du lien (`/sejour/{code}`) se lit sans réseau sur sa copie, effacée par « Se déconnecter » ou un jeton refusé ; elle n'écrit qu'avec le réseau.
+- **Écarté** : rejouer les écritures de la page du lien hors ligne (jeton à part, file à part) ; à revoir si le club le demande.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.

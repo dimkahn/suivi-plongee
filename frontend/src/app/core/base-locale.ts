@@ -9,7 +9,7 @@
  */
 
 const NOM_BASE = 'suivi-plongee';
-const VERSION = 3;
+const VERSION = 4;
 
 export const MAGASIN_ATTENTE = 'attente';
 export const MAGASIN_REFUS = 'refus';
@@ -20,6 +20,9 @@ export const MAGASIN_CACHE = 'cache';
  */
 export const MAGASIN_ECRITURES = 'ecritures';
 export const MAGASIN_REFUS_ECRITURES = 'refusEcritures';
+/** Modifications d'un séjour faites hors ligne (`FileSejourService`), et leurs refus. */
+export const MAGASIN_SEJOUR = 'sejour';
+export const MAGASIN_REFUS_SEJOUR = 'refusSejour';
 
 let ouverture: Promise<IDBDatabase> | null = null;
 
@@ -51,6 +54,10 @@ function base(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(MAGASIN_REFUS_ECRITURES)) {
         db.createObjectStore(MAGASIN_REFUS_ECRITURES, { keyPath: 'cle' });
+      }
+      // Version 4 : le séjour géré hors ligne.
+      for (const magasin of [MAGASIN_SEJOUR, MAGASIN_REFUS_SEJOUR]) {
+        if (!db.objectStoreNames.contains(magasin)) db.createObjectStore(magasin, { keyPath: 'cle' });
       }
     };
 

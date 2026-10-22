@@ -7,10 +7,10 @@
 import { pluriel } from './pluriel';
 
 /** Un morceau de l'appli qu'on peut emporter sans réseau. */
-export type ContenuHorsLigne = 'grilles' | 'presences' | 'fiches' | 'planning' | 'eleves' | 'photos';
+export type ContenuHorsLigne = 'grilles' | 'presences' | 'fiches' | 'planning' | 'eleves' | 'photos' | 'sejours';
 
 export const CONTENUS_HORS_LIGNE: readonly ContenuHorsLigne[] =
-  ['grilles', 'presences', 'fiches', 'planning', 'eleves', 'photos'];
+  ['grilles', 'presences', 'fiches', 'planning', 'eleves', 'photos', 'sejours'];
 
 /** Libellés des cases « Sur mesure », dans l'ordre d'affichage. */
 export const LIBELLES_CONTENUS: Record<ContenuHorsLigne, { titre: string; detail: string }> = {
@@ -19,7 +19,8 @@ export const LIBELLES_CONTENUS: Record<ContenuHorsLigne, { titre: string; detail
   fiches: { titre: 'Fiches de sécurité', detail: 'palanquées, moniteurs, plongeurs et groupes' },
   planning: { titre: 'Planning du bassin', detail: 'qui encadre quel groupe' },
   eleves: { titre: 'Infos élèves et trombinoscopes', detail: 'listes, sans les photos' },
-  photos: { titre: 'Photos', detail: 'élèves et moniteurs ; le plus long à copier' }
+  photos: { titre: 'Photos', detail: 'élèves et moniteurs ; le plus long à copier' },
+  sejours: { titre: 'Séjours', detail: 'en cours ou dans les 30 jours : programme, voitures, chambres, frais' }
 };
 
 /** Séances dont on embarque présences et fiches : celles du jour, ou celles à ±30 jours. */
@@ -71,6 +72,8 @@ export interface BilanPreparation {
   feuilles: number | null;
   fiches: number | null;
   photos: number | null;
+  /** Les séjours en cours ou proches, avec leur matériel emprunté. */
+  sejours?: number | null;
 }
 
 export function resumePreparation(bilan: BilanPreparation): string {
@@ -78,10 +81,14 @@ export function resumePreparation(bilan: BilanPreparation): string {
     [bilan.grilles, 'grille', 'grilles'],
     [bilan.feuilles, 'feuille de présence', 'feuilles de présence'],
     [bilan.fiches, 'fiche de sécurité', 'fiches de sécurité'],
-    [bilan.photos, 'photo', 'photos']
+    [bilan.photos, 'photo', 'photos'],
+    [bilan.sejours ?? null, 'séjour', 'séjours']
   ] as const).filter(([n]) => n !== null) as [number, string, string][];
   // Planning ou Infos élèves seuls : rien à compter.
   if (morceaux.length === 0) return 'Votre choix est disponible hors ligne.';
+  if (morceaux.length === 1 && bilan.sejours === 0) {
+    return 'Aucun séjour à emporter : aucun n’est en cours ni ne commence dans les 30 jours.';
+  }
   if (morceaux.every(([n]) => n === 0)) {
     const rien = morceaux.map(([, singulier]) => singulier).join(' ni ');
     return `Aucune ${rien} à emporter : pas de séance sur la période choisie.`;
@@ -109,6 +116,11 @@ export function resumePreparationSurface(journee: string | null, fiches: number)
     return `Aucune fiche de sécurité établie pour le ${jour} : réessayez quand le directeur de plongée l'aura faite.`;
   }
   return `${fiches > 1 ? 'Disponibles' : 'Disponible'} hors ligne : ${pluriel(fiches, 'fiche de sécurité', 'fiches de sécurité')} du ${jour}.`;
+}
+
+/** Les séjours à emporter : en cours, ou qui commencent dans les 30 jours ; pas ceux qui sont finis. */
+export function sejoursAEmporter<S extends { dateDebut: string; dateFin: string }>(sejours: S[]): S[] {
+  return sejours.filter(s => ecartEnJours(s.dateFin) >= 0 && ecartEnJours(s.dateDebut) <= JOURS_SEANCES_PROCHES);
 }
 
 export function seancesAEmbarquer<S extends { date: string }>(seances: S[], periode: PeriodeHorsLigne): S[] {

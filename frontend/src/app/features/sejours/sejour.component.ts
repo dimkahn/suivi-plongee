@@ -1,9 +1,15 @@
-import { Component, ChangeDetectionStrategy, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component, ChangeDetectionStrategy, Injector, afterNextRender, computed, effect, inject, signal, untracked, viewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, from, map, mergeMap, of, throwError } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { ReseauService } from '../../core/reseau.service';
+import { PlurielPipe } from '../../core/pluriel';
+import { FileSejourService } from './file-sejour.service';
+import { ModificationSejour, appliquerEnAttente, cleSejour } from './sejour-hors-ligne';
 import { MoniteurOptionVue, PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
@@ -12,7 +18,7 @@ import { dateDuJour, periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
-  SejourApi, SejourVue,
+  FraisVue, PortFrais, PortPrets, SejourApi, SejourVue,
   CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { enCarte, memeVoyageQue } from './voyage';
@@ -76,7 +82,7 @@ function participantVide(): BrouillonParticipant {
 @Component({
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
-            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent],
+            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -86,6 +92,28 @@ function participantVide(): BrouillonParticipant {
           · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
         </p>
       </header>
+
+      <!-- Sans réseau : la copie du téléphone, et ce qui attend d'être envoyé (demande du club, 2026). -->
+      @if (copieDu() !== null || enAttente().length > 0) {
+        <section class="carte bandeau-hors-ligne sans-impression" role="status" aria-label="Séjour hors ligne">
+          @if (copieDu(); as d) {
+            <p><strong>Hors ligne.</strong> Le séjour tel qu'il était {{ quand(d) }}, sur ce téléphone.</p>
+          }
+          @if (enAttente().length > 0) {
+            <p>
+              {{ enAttente().length | pluriel:'modification' }} gardée{{ enAttente().length > 1 ? 's' : '' }} sur ce
+              téléphone, déjà visible{{ enAttente().length > 1 ? 's' : '' }} ici :
+              {{ fileSejour.synchronisation() ? 'envoi en cours…' : reseau.enLigne() ? 'envoi au plus tôt.' : 'envoi au retour du réseau.' }}
+            </p>
+            <ul class="en-attente">
+              @for (e of enAttente(); track e.cle) { <li>{{ e.libelle }}</li> }
+            </ul>
+            @if (reseau.enLigne() && !fileSejour.synchronisation()) {
+              <button type="button" class="bouton-discret envoyer-maintenant" (click)="envoyerMaintenant()">Envoyer maintenant</button>
+            }
+          }
+        </section>
+      }
 
       <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
       <section class="carte bandeau-organisation" aria-label="Organisation du séjour">
@@ -1115,6 +1143,10 @@ function participantVide(): BrouillonParticipant {
       .heure { width: 4.5rem; }
     }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
+    .bandeau-hors-ligne { padding: var(--pas-2); margin: var(--pas-2) 0; background: var(--en-cours-clair); }
+    .bandeau-hors-ligne p { margin: 0 0 var(--pas); }
+    .bandeau-hors-ligne .en-attente { margin: 0 0 var(--pas); padding-left: var(--pas-3); font-size: .9rem; }
+    .envoyer-maintenant { min-height: 44px; }
     .acces-frais { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     @media print {
       .sans-impression { display: none !important; }
@@ -1140,7 +1172,18 @@ export class SejourComponent {
   ];
 
   private readonly id = Number(this.route.snapshot.paramMap.get('id'));
-  sejour = signal<SejourVue | null>(null);
+  readonly fileSejour = inject(FileSejourService);
+  readonly reseau = inject(ReseauService);
+  /** Le séjour tel que le serveur (ou la copie du téléphone) le connaît. */
+  private base = signal<SejourVue | null>(null);
+  /** Ce qui est montré : la base, avec les modifications qui attendent d'être envoyées. */
+  readonly sejour = computed(() => {
+    const b = this.base();
+    return b ? appliquerEnAttente(b, this.fileSejour.pour(this.id)) : null;
+  });
+  readonly enAttente = computed(() => this.fileSejour.pour(this.id));
+  /** La date de la copie montrée faute de réseau ; null : lu sur le serveur. */
+  copieDu = signal<number | null>(null);
   /** Un encadrant regarde le séjour comme un participant (« Voir comme un participant »). */
   commeParticipant = signal(false);
   chargement = signal(true);
@@ -1250,6 +1293,32 @@ export class SejourComponent {
 
   constructor() {
     void this.charger();
+    // Une modification gardée hors ligne vient de partir : le séjour renvoyé devient la base.
+    effect(() => {
+      const s = this.fileSejour.sejourAJour();
+      if (s?.sortie.id === this.id) untracked(() => this.maj(s));
+    });
+    // Le réseau revient : la copie du téléphone laisse la place au séjour à jour, une fois la file partie.
+    effect(() => {
+      if (this.reseau.enLigne() && untracked(this.copieDu) !== null) {
+        untracked(() => void this.fileSejour.vider().then(() => this.charger()));
+      }
+    });
+  }
+
+  /** « le 12/06 à 18h30 », « aujourd'hui à 9h05 » : quand la copie du téléphone a été faite. */
+  quand(ms: number): string {
+    const d = new Date(ms);
+    const deux = (n: number) => String(n).padStart(2, '0');
+    const jour = d.toDateString() === new Date().toDateString()
+      ? 'aujourd’hui' : `le ${deux(d.getDate())}/${deux(d.getMonth() + 1)}`;
+    return `${jour} à ${d.getHours()}h${deux(d.getMinutes())}`;
+  }
+
+  envoyerMaintenant(): void {
+    void this.fileSejour.vider().then(() => {
+      if (this.enAttente().length === 0 && this.copieDu() !== null) void this.charger();
+    });
   }
 
   voir(o: Onglet): boolean {
@@ -1425,7 +1494,8 @@ export class SejourComponent {
       terminal: t.terminal?.trim() || null, ouvertureEnregistrement: t.ouvertureEnregistrement || null,
       dossier: t.dossier?.trim() || null, lienEnregistrement: t.lienEnregistrement?.trim() || null
     };
-    this.ecrire(this.api.appliquerTrajet(this.id, this.vol.sens, trajet, this.vol.ids), () => {
+    this.modifier({ type: 'trajet', sens: this.vol.sens, trajet, participantIds: this.vol.ids },
+      aller ? 'Trajet aller commun' : 'Trajet retour commun', () => {
       this.volOuvert.set(false);
       this.message.set(`Trajet enregistré pour ${this.vol.ids.length} personne${this.vol.ids.length > 1 ? 's' : ''}.`);
     });
@@ -1462,11 +1532,15 @@ export class SejourComponent {
     }
   }
 
-  /** Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. */
-  readonly portFrais = this.api.portFrais(this.id, s => this.maj(s));
+  /**
+   * Les frais du séjour pour l'onglet « Frais » : chaque écriture met le séjour à jour. Dépenses et
+   * remboursements passent par la file du téléphone (gardés sans réseau) ; photos et lecture des
+   * notes demandent le réseau.
+   */
+  readonly portFrais: PortFrais = this.portFraisHorsLigne(this.api.portFrais(this.id, s => this.maj(s)));
 
-  /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour ». */
-  readonly prets = new PretsDuSejour(this.api.portPrets(this.id));
+  /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour » ; lu sans réseau sur la copie. */
+  readonly prets = new PretsDuSejour(this.portPretsAvecCopie(this.api.portPrets(this.id)));
   private readonly materiel = viewChild(SejourMaterielComponent);
   private readonly injector = inject(Injector);
 
@@ -1483,7 +1557,7 @@ export class SejourComponent {
 
   /** Le participant connecté complète ses informations (voyage, repas, personne à prévenir). */
   enregistrerMesInformations(d: DemandeMesInformations): void {
-    this.ecrire(this.api.modifierMesInformations(this.id, d), () => {
+    this.modifier({ type: 'mes-informations', demande: d }, 'Mes informations', () => {
       this.mesInfosOuvertes.set(false);
       this.message.set('Vos informations sont enregistrées.');
     });
@@ -1630,14 +1704,13 @@ export class SejourComponent {
       return;
     }
     const demande = { ...d, arrivee: trajetSaisi(d.arrivee), depart: trajetSaisi(d.depart) };
-    this.ecrire(this.participantId === null
-      ? this.api.ajouterParticipant(this.id, demande)
-      : this.api.modifierParticipant(this.id, this.participantId, demande), () => this.participantOuvert.set(false));
+    this.modifier({ type: 'participant', id: this.participantId, demande }, `Participant « ${nomComplet(demande)} »`,
+      () => this.participantOuvert.set(false));
   }
 
   supprimerParticipant(p: ParticipantVue): void {
     if (!confirm(`Retirer ${nomComplet(p)} du séjour ? Il quitte aussi sa voiture et sa chambre.`)) return;
-    this.ecrire(this.api.supprimerParticipant(this.id, p.id));
+    this.modifier({ type: 'suppression', objet: 'participant', id: p.id }, `Retrait de ${nomComplet(p)}`);
   }
 
   importerGroupe(groupeId: number | null): void {
@@ -1693,12 +1766,13 @@ export class SejourComponent {
       return;
     }
     const d = { ...this.voiture, passagerIds: this.voiture.passagerIds.filter(p => p !== this.voiture.conducteurId) };
-    this.ecrire(this.api.enregistrerVoiture(this.id, this.voitureId, d), () => this.voitureOuverte.set(false));
+    this.modifier({ type: 'voiture', id: this.voitureId, demande: d }, `Voiture « ${d.nom} »`,
+      () => this.voitureOuverte.set(false));
   }
 
   supprimerVoiture(v: VoitureVue): void {
     if (!confirm(`Supprimer la voiture « ${v.nom} » ?`)) return;
-    this.ecrire(this.api.supprimerVoiture(this.id, v.id));
+    this.modifier({ type: 'suppression', objet: 'voiture', id: v.id }, `Suppression de la voiture « ${v.nom} »`);
   }
 
   // ---------------- Logements ----------------
@@ -1734,12 +1808,13 @@ export class SejourComponent {
       this.erreur.set('Le nom du logement, et le nom et les couchages de chaque chambre, sont obligatoires.');
       return;
     }
-    this.ecrire(this.api.enregistrerLogement(this.id, this.logementId, this.logement), () => this.logementOuvert.set(false));
+    this.modifier({ type: 'logement', id: this.logementId, demande: this.logement }, `Logement « ${this.logement.nom} »`,
+      () => this.logementOuvert.set(false));
   }
 
   supprimerLogement(l: LogementVue): void {
     if (!confirm(`Supprimer « ${l.nom} » et ses chambres ?`)) return;
-    this.ecrire(this.api.supprimerLogement(this.id, l.id));
+    this.modifier({ type: 'suppression', objet: 'logement', id: l.id }, `Suppression de « ${l.nom} »`);
   }
 
   // ---------------- Affaires ----------------
@@ -1764,7 +1839,7 @@ export class SejourComponent {
     const liste = this.affaires.filter(a => a.libelle.trim());
     const ordre = CATEGORIES.map(c => c.code);
     liste.sort((a, b) => ordre.indexOf(a.categorie) - ordre.indexOf(b.categorie));
-    this.ecrire(this.api.definirAffaires(this.id, liste), () => this.affairesOuvertes.set(false));
+    this.modifier({ type: 'affaires', affaires: liste }, 'Affaires à prévoir', () => this.affairesOuvertes.set(false));
   }
 
   // ---------------- Programme ----------------
@@ -1785,12 +1860,14 @@ export class SejourComponent {
       return;
     }
     const d = { ...this.evenement, heureDebut: this.evenement.heureDebut || null, heureFin: this.evenement.heureFin || null };
-    this.ecrire(this.api.enregistrerEvenement(this.id, this.evenementId, d), () => this.evenementOuvert.set(false));
+    this.modifier({ type: 'evenement', id: this.evenementId, demande: d }, `Rendez-vous « ${d.titre} »`,
+      () => this.evenementOuvert.set(false));
   }
 
   supprimerEvenement(): void {
     if (this.evenementId === null || !confirm('Supprimer ce rendez-vous ?')) return;
-    this.ecrire(this.api.supprimerEvenement(this.id, this.evenementId), () => this.evenementOuvert.set(false));
+    this.modifier({ type: 'suppression', objet: 'evenement', id: this.evenementId }, 'Suppression d’un rendez-vous',
+      () => this.evenementOuvert.set(false));
   }
 
   // ---------------- Infos ----------------
@@ -1802,7 +1879,7 @@ export class SejourComponent {
   }
 
   enregistrerInfos(): void {
-    this.ecrire(this.api.definirInfos(this.id, this.infos.trim() || null), () => this.infosOuvertes.set(false));
+    this.modifier({ type: 'infos', texte: this.infos.trim() || null }, 'Infos pratiques', () => this.infosOuvertes.set(false));
   }
 
   /** Le conseil d'assurance du séjour ; sans le sien, on part du message type (vidé, c'est lui qui revient). */
@@ -1813,7 +1890,8 @@ export class SejourComponent {
   }
 
   enregistrerConseilAssurance(): void {
-    this.ecrire(this.api.definirConseilAssurance(this.id, this.conseil.trim() || null), () => this.conseilOuvert.set(false));
+    this.modifier({ type: 'conseil', texte: this.conseil.trim() || null }, 'Conseil d’assurance',
+      () => this.conseilOuvert.set(false));
   }
 
   // ---------------- Organisateurs ----------------
@@ -1859,11 +1937,7 @@ export class SejourComponent {
         this.envoi.set(false);
         const texte = e.error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).";
         this.erreur.set(texte);
-        if (!this.participantOuvert() && !this.voitureOuverte() && !this.logementOuvert() && !this.mesInfosOuvertes()
-          && !this.volOuvert()
-          && !this.affairesOuvertes() && !this.evenementOuvert() && !this.infosOuvertes() && !this.conseilOuvert() && !this.organisateursOuverts()) {
-          this.message.set(texte);
-        }
+        if (!this.fenetreOuverte()) this.message.set(texte);
       }
     });
   }
@@ -1880,24 +1954,133 @@ export class SejourComponent {
     void this.charger();
   }
 
+  /**
+   * Une modification du séjour, gardée sur le téléphone puis envoyée (tout de
+   * suite si le réseau est là) : le séjour montré la porte aussitôt. Un refus
+   * immédiat s'affiche comme {@link ecrire} ; un refus différé, au bandeau.
+   */
+  private modifier(modification: ModificationSejour, libelle: string, ensuite?: () => void): void {
+    const nomSejour = this.sejour()?.sortie.nom ?? '';
+    this.envoi.set(true);
+    this.erreur.set(null);
+    this.message.set(null);
+    void this.fileSejour.enregistrer({ sejourId: this.id, nomSejour, modification, libelle }).then(issue => {
+      this.envoi.set(false);
+      if (issue.etat === 'refusee') {
+        this.erreur.set(issue.raison);
+        if (!this.fenetreOuverte()) this.message.set(issue.raison);
+        return;
+      }
+      if (issue.etat === 'envoyee' && issue.reponse) {
+        this.maj(issue.reponse);
+        this.copieDu.set(null);
+      }
+      ensuite?.();
+      if (issue.etat === 'en-attente') this.message.set(MESSAGE_EN_ATTENTE);
+    });
+  }
+
+  private fenetreOuverte(): boolean {
+    return this.participantOuvert() || this.voitureOuverte() || this.logementOuvert() || this.mesInfosOuvertes()
+      || this.volOuvert() || this.affairesOuvertes() || this.evenementOuvert() || this.infosOuvertes()
+      || this.conseilOuvert() || this.organisateursOuverts();
+  }
+
+  /**
+   * Les frais par la file du téléphone : la dépense ou le remboursement
+   * partent tout de suite avec du réseau, sinon attendent et se montrent
+   * déjà, comptes recalculés. Une photo se joint à une dépense envoyée.
+   */
+  private portFraisHorsLigne(enLigne: PortFrais): PortFrais {
+    const fraisMontres = () => this.sejour()!.frais;
+    const passer = <T>(modification: ModificationSejour, libelle: string,
+                       envoyee: (reponse: T | null) => T | FraisVue): Observable<T | FraisVue> =>
+      from(this.fileSejour.enregistrer<T>({ sejourId: this.id, nomSejour: this.sejour()?.sortie.nom ?? '',
+        modification, libelle })).pipe(mergeMap(issue => {
+        if (issue.etat === 'refusee') {
+          return throwError(() => new HttpErrorResponse({ status: 422, error: { detail: issue.raison } }));
+        }
+        if (issue.etat === 'envoyee') {
+          this.copieDu.set(null);
+          return of(envoyee(issue.reponse));
+        }
+        return of(fraisMontres());
+      }));
+    return {
+      ...enLigne,
+      enregistrerDepense: (depenseId, d) => {
+        const enAttente = this.fileSejour.pour(this.id).map(e => e.idProvisoire);
+        return passer<{ depenseId: number; sejour: SejourVue } | SejourVue>(
+          { type: 'depense', id: depenseId, demande: d }, `Dépense « ${d.libelle} »`,
+          r => r ?? fraisMontres()).pipe(map(r => {
+            if ('depenseId' in r) {
+              this.maj(r.sejour);
+              return { depenseId: r.depenseId, frais: r.sejour.frais };
+            }
+            if ('sortie' in r) this.maj(r);
+            // Gardée sur le téléphone : son id provisoire, celui de la nouvelle entrée de la file.
+            const id = depenseId ?? this.fileSejour.pour(this.id).map(e => e.idProvisoire)
+              .find(i => i !== null && !enAttente.includes(i)) ?? null;
+            return { depenseId: id ?? 0, frais: this.sejour()!.frais };
+          }));
+      },
+      supprimerDepense: depenseId => this.fraisDe(passer<SejourVue>(
+        { type: 'suppression', objet: 'depense', id: depenseId }, 'Suppression d’une dépense', r => r ?? fraisMontres())),
+      ajouterPhoto: (depenseId, fichier) => depenseId < 0
+        ? throwError(() => new HttpErrorResponse({ status: 0, error: { detail:
+            'La dépense est gardée sur ce téléphone. La photo de la note se joindra une fois la dépense envoyée '
+            + '(réseau nécessaire) : rouvrez alors la dépense.' } }))
+        : enLigne.ajouterPhoto(depenseId, fichier),
+      ajouterVersement: d => this.fraisDe(passer<SejourVue>(
+        { type: 'versement', demande: d }, 'Remboursement', r => r ?? fraisMontres())),
+      supprimerVersement: versementId => this.fraisDe(passer<SejourVue>(
+        { type: 'suppression', objet: 'versement', id: versementId }, 'Annulation d’un remboursement',
+        r => r ?? fraisMontres()))
+    };
+  }
+
+  /** Le séjour renvoyé met l'écran à jour ; l'onglet reçoit les frais montrés. */
+  private fraisDe(o: Observable<SejourVue | FraisVue>): Observable<FraisVue> {
+    return o.pipe(map(r => {
+      if ('sortie' in r) this.maj(r);
+      return this.sejour()!.frais;
+    }));
+  }
+
+  /** Le matériel emprunté se lit sur la copie du téléphone sans réseau ; il ne se déclare qu'avec le réseau. */
+  private portPretsAvecCopie(enLigne: PortPrets): PortPrets {
+    return {
+      ...enLigne,
+      lire: () => from(this.fileSejour.lireAvecCopie(`prets-sejour:${this.id}`, () => enLigne.lire())).pipe(map(l => l.valeur))
+    };
+  }
+
   /** Le séjour renvoyé par une écriture ; en vue participant, relu comme un participant le voit. */
   private maj(s: SejourVue): void {
     if (!this.commeParticipant()) {
-      this.sejour.set(s);
+      this.base.set(s);
       return;
     }
-    this.api.lire(this.id, true).subscribe({ next: v => this.sejour.set(v), error: () => this.sejour.set(s) });
+    this.api.lire(this.id, true).subscribe({ next: v => this.base.set(v), error: () => this.base.set(s) });
   }
 
   private async charger(): Promise<void> {
     try {
-      this.sejour.set(await firstValueFrom(this.api.lire(this.id, this.commeParticipant())));
+      const cp = this.commeParticipant();
+      const lu = await this.fileSejour.lireAvecCopie(cleSejour(this.id, cp), () => this.api.lire(this.id, cp));
+      this.base.set(lu.valeur);
+      this.copieDu.set(lu.copieDu);
     } catch (e) {
       const statut = (e as HttpErrorResponse).status;
+      this.base.set(null);
       this.message.set(statut === 403 ? "Ce séjour n'est ouvert qu'à ses participants et aux encadrants."
-        : statut === 404 ? 'Séjour introuvable.' : 'Impossible de charger le séjour (réseau nécessaire).');
+        : statut === 404 ? 'Séjour introuvable.'
+        : 'Impossible de charger le séjour : pas de réseau, et il n’a pas encore été ouvert sur ce téléphone.');
     } finally {
       this.chargement.set(false);
     }
   }
 }
+
+const MESSAGE_EN_ATTENTE = 'Pas de réseau : la modification est gardée sur ce téléphone '
+  + 'et partira toute seule au retour du réseau.';

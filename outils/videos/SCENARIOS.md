@@ -241,7 +241,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 75 s
 2. On choisit ce qu'on emporte : tout, la séance du jour, ou seulement la fiche de sécurité du jour.
 3. « Sur mesure » : on coche ce dont on a besoin. Les photos sont le plus long à copier.
 4. Ici, tout.
-5. Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.
+5. Grilles, feuilles de présence, fiches de sécurité, planning et séjours proches sont sur le téléphone.
 6. Au bord du bassin : plus de réseau.
 7. L'appli s'ouvre quand même : on retrouve la grille de Léa.
 8. « Grille consultée hors ligne » : la version embarquée avant de partir.
@@ -807,7 +807,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A17 — Organiser un séjour
 
-Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient, et ils peuvent le voir comme un participant ; l'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d'assurance, le conseil d'assurance à leur montrer), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l'aller, jour, heure et lieu d'arrivée du retour, terminal, ouverture de l'enregistrement, numéro de dossier, carte d'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant, qui n'a rien emprunté, qui n'a pas répondu) et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; pendant le séjour, l'encart « Aujourd'hui ».
+Seuls le créateur du séjour et les organisateurs qu'il désigne le modifient, et ils peuvent le voir comme un participant ; l'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d'assurance, le conseil d'assurance à leur montrer), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l'aller, jour, heure et lieu d'arrivée du retour, terminal, ouverture de l'enregistrement, numéro de dossier, carte d'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais, le matériel du club emprunté (déclaré pour un participant, qui n'a rien emprunté, qui n'a pas répondu) et les affaires, l'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l'encart « Aujourd'hui ».
 
 Compte : `e3@club.fr` (créatrice du séjour de démonstration) · formats téléphone et ordinateur
 

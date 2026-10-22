@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-20, 13e série, la sécurité surface emporte sa journée (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-22, 14e série, « Tout » emporte aussi les séjours proches (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -29,8 +29,8 @@ export default {
     await toucher(fenetre.getByRole('button', { name: 'Préparer', exact: true }));
     await page.locator('app-bandeau-sync').getByText(/Disponibles hors ligne/).waitFor({ timeout: 30000 });
     await legende(g.selon({
-      telephone: 'Grilles, feuilles de présence, fiches de sécurité et planning sont sur le téléphone.',
-      ordinateur: 'Grilles, feuilles de présence, fiches de sécurité et planning sont sur l\'appareil : au bassin, c\'est le téléphone.'
+      telephone: 'Grilles, feuilles de présence, fiches de sécurité, planning et séjours proches sont sur le téléphone.',
+      ordinateur: 'Grilles, feuilles de présence, fiches de sécurité, planning et séjours proches sont sur l\'appareil : au bassin, c\'est le téléphone.'
     }), 4500);
 
     // Ouvre une fois les écrans en ligne : le code de chaque écran est ainsi

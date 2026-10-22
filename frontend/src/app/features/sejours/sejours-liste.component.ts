@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { FileSejourService } from './file-sejour.service';
+import { cleListeSejours } from './sejour-hors-ligne';
 import { periode } from '../../core/date-fr';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { SejourApi, SejourResumeVue } from './sejour-api';
@@ -37,6 +38,12 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
     }
 
     @if (erreur(); as e) { <div class="alerte" role="alert">{{ e }}</div> }
+    @if (horsLigne()) {
+      <p class="secondaire hors-ligne" role="status">
+        Hors ligne : la liste telle qu'elle était à la dernière ouverture. Seuls les séjours déjà ouverts sur ce
+        téléphone (ou emportés par « Préparer hors ligne ») s'ouvrent sans réseau.
+      </p>
+    }
     @if (chargement()) {
       <p class="vide">Chargement…</p>
     } @else if (liste().length === 0) {
@@ -71,7 +78,10 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
 })
 export class SejoursListeComponent {
   private api = inject(SejourApi);
+  private file = inject(FileSejourService);
   auth = inject(AuthService);
+  /** La liste vient de la copie du téléphone, faute de réseau. */
+  horsLigne = signal(false);
   readonly periode = periode;
 
   liste = signal<SejourResumeVue[]>([]);
@@ -100,10 +110,12 @@ export class SejoursListeComponent {
   private async charger(): Promise<void> {
     this.chargement.set(true);
     try {
-      this.liste.set(await firstValueFrom(this.api.lister(this.toutes())));
+      const lu = await this.file.lireAvecCopie(cleListeSejours(this.toutes()), () => this.api.lister(this.toutes()));
+      this.liste.set(lu.valeur);
+      this.horsLigne.set(lu.copieDu !== null);
       this.erreur.set(null);
     } catch {
-      this.erreur.set('Impossible de charger les séjours (réseau nécessaire).');
+      this.erreur.set('Impossible de charger les séjours : pas de réseau, et la liste n’a pas encore été ouverte sur ce téléphone.');
     } finally {
       this.chargement.set(false);
     }

@@ -20,6 +20,7 @@ import {
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
+import { cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
 
 type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel';
 
@@ -48,6 +49,12 @@ interface MesInformationsVue {
 interface JetonGarde {
   cle: string;
   valeur: string;
+}
+
+/** Le carnet gardé sur l'appareil pour le lire sans réseau ; effacé par « Se déconnecter » ou un jeton refusé. */
+interface CopieLien {
+  cle: string;
+  valeur: { entete: EnteteVue; frais: FraisPublicVue; infos: MesInformationsVue; carnet: SejourVue };
 }
 
 /**
@@ -82,6 +89,12 @@ interface JetonGarde {
           <app-journee-sejour [participants]="[p]" [moiId]="p.id" [dateDebut]="e.dateDebut" [dateFin]="e.dateFin"
                               [programme]="programme()" [affaires]="affaires()" [comptes]="mesComptes()"
                               [cartes]="portCartes" ouCompleter="Mes informations" />
+        }
+        @if (horsLigne()) {
+          <p class="alerte hors-ligne" role="status">
+            Hors ligne : votre carnet tel qu'il était à la dernière ouverture sur ce téléphone. Pour enregistrer
+            vos informations ou vos frais, attendez d'avoir du réseau.
+          </p>
         }
         <app-onglets id="onglets-participant" [options]="onglets" [choisi]="onglet()" (choisir)="changerOnglet($event)" />
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -172,6 +185,8 @@ export class EspaceParticipantComponent {
   moi = signal<ParticipantVue | null>(null);
   /** Tout le séjour vu par ce participant (onglet « Carnet »). */
   carnet = signal<SejourVue | null>(null);
+  /** Le carnet vient de la copie du téléphone, faute de réseau : lecture seule. */
+  horsLigne = signal(false);
   /** Soi-même pour « Aujourd'hui » : la fiche du carnet, à jour de sa carte d'embarquement. */
   readonly voyageur = computed(() => this.carnet()?.participants.find(p => p.moi) ?? this.moi());
   /** Le carnet mis en page pour le papier, à la place de la page. */
@@ -380,6 +395,13 @@ export class EspaceParticipantComponent {
     try {
       this.entete.set(await firstValueFrom(this.http.get<EnteteVue>(this.base)));
     } catch (e) {
+      const action = lectureEchouee((e as HttpErrorResponse).status ?? 0);
+      if (action === 'copie' && await this.reprendreCopie()) {
+        this.chargement.set(false);
+        return;
+      }
+      // Séjour supprimé ou adresse inconnue : sa copie ne reste pas sur le téléphone.
+      if (action === 'effacer') await this.oublierJeton();
       this.erreur.set((e as HttpErrorResponse).status === 404
         ? 'Adresse inconnue : vérifiez le lien reçu, ou demandez-le à l’organisateur du séjour.'
         : 'Impossible d’ouvrir le séjour (réseau nécessaire).');
@@ -407,16 +429,42 @@ export class EspaceParticipantComponent {
       this.carnet.set(carnet);
       this.moi.set(infos.moi);
       this.contenu.set(infos.programme);
+      this.horsLigne.set(false);
+      // Le carnet reste lisible sans réseau, sur ce téléphone, jusqu'à « Se déconnecter ».
+      const entete = this.entete();
+      if (entete) {
+        await ecrire<CopieLien>(MAGASIN_CACHE, { cle: cleLienSejour(this.code), valeur: { entete, frais, infos, carnet } })
+          .catch(() => undefined);
+      }
     } catch (e) {
-      if ((e as HttpErrorResponse).status === 403) {
+      const statut = (e as HttpErrorResponse).status ?? 0;
+      if (lectureEchouee(statut) === 'effacer') {
         await this.oublierJeton();
         this.erreur.set('Votre connexion a expiré : demandez un nouveau code.');
+      } else if (lectureEchouee(statut) === 'copie' && await this.reprendreCopie()) {
+        return;
       }
       throw e;
     }
   }
 
+  /** Sans réseau : le carnet tel qu'il était à la dernière ouverture sur ce téléphone ; faux s'il n'y en a pas. */
+  private async reprendreCopie(): Promise<boolean> {
+    const copie = (await lire<CopieLien>(MAGASIN_CACHE, cleLienSejour(this.code)).catch(() => undefined))?.valeur;
+    if (!copie) return false;
+    this.entete.set(copie.entete);
+    this.frais.set(copie.frais);
+    this.carnet.set(copie.carnet);
+    this.moi.set(copie.infos.moi);
+    this.contenu.set(copie.infos.programme);
+    this.horsLigne.set(true);
+    this.erreur.set(null);
+    return true;
+  }
+
   private async oublierJeton(): Promise<void> {
+    try { await supprimer(MAGASIN_CACHE, cleLienSejour(this.code)); } catch { /* rien à effacer */ }
+    this.horsLigne.set(false);
     this.jeton = null;
     this.frais.set(null);
     this.moi.set(null);

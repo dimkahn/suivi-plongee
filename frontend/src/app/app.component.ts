@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FileAttenteService } from './core/file-attente.service';
 import { FileEcrituresService } from './core/file-ecritures.service';
+import { FileSejourService } from './features/sejours/file-sejour.service';
 import { MiseAJourService } from './core/mise-a-jour.service';
 import { IdentiteService } from './core/identite.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
@@ -256,6 +257,7 @@ export class AppComponent {
   auth = inject(AuthService);
   private file = inject(FileAttenteService);
   private ecritures = inject(FileEcrituresService);
+  private fileSejour = inject(FileSejourService);
   miseAJour = inject(MiseAJourService);
   identite = inject(IdentiteService);
 
@@ -292,6 +294,7 @@ export class AppComponent {
     // rafraîchissement du jeton échoue.
     void this.file.demarrer();
     void this.ecritures.demarrer();
+    void this.fileSejour.demarrer();
 
     this.auth.initialiser();
     this.miseAJour.demarrer();

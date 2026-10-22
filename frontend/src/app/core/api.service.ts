@@ -18,8 +18,10 @@ import {
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 import {
-  BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, journeeAEmporter, resumePreparationSurface, seancesAEmbarquer
+  BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, journeeAEmporter, resumePreparationSurface, seancesAEmbarquer,
+  sejoursAEmporter
 } from './preparation-hors-ligne';
+import { cleListeSejours, cleSejour } from '../features/sejours/sejour-hors-ligne';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
 
@@ -151,7 +153,7 @@ export class ApiService {
    */
   async precharger(choix: ChoixHorsLigne): Promise<BilanPreparation> {
     const veut = (c: ContenuHorsLigne) => choix.contenus.has(c);
-    const bilan: BilanPreparation = { grilles: null, feuilles: null, fiches: null, photos: null };
+    const bilan: BilanPreparation = { grilles: null, feuilles: null, fiches: null, photos: null, sejours: null };
 
     // Séances et saisons servent à tous les écrans : toujours embarquées.
     let seances: SeanceVue[];
@@ -205,6 +207,21 @@ export class ApiService {
     for (const p of aCharger) {
       if (!p.aPhoto) await supprimer(MAGASIN_CACHE, p.cle);
       else if (veut('photos') && await this.tenter(p.lire)) bilan.photos!++;
+    }
+
+    // Séjours en cours ou proches, et le matériel qui y est emprunté : à consulter et gérer sur place.
+    if (veut('sejours')) {
+      bilan.sejours = 0;
+      const sejours = await this.tenter(() => this.lireEtGarder(cleListeSejours(false),
+        () => this.http.get<{ sortieId: number; dateDebut: string; dateFin: string }[]>('/api/sejours',
+          { params: { toutes: false } }))) ?? [];
+      for (const s of sejoursAEmporter(sejours)) {
+        if (await this.tenter(() => this.lireEtGarder(cleSejour(s.sortieId), () => this.http.get(`/api/sejours/${s.sortieId}`)))) {
+          bilan.sejours++;
+        }
+        await this.tenter(() => this.lireEtGarder(`prets-sejour:${s.sortieId}`,
+          () => this.http.get(`/api/sejours/${s.sortieId}/prets`)));
+      }
     }
 
     // Schémas des exercices de la base, pour les montrer au bord du bassin.
@@ -1076,6 +1093,13 @@ export class ApiService {
       if (entree) return entree.valeur;
       throw erreur;
     }
+  }
+
+  /** Lu sur le serveur et gardé sur l'appareil, sans repli : pour « Préparer hors ligne ». */
+  private async lireEtGarder<T>(cle: string, appel: () => Observable<T>): Promise<T> {
+    const valeur = await firstValueFrom(appel());
+    await this.deposer(cle, valeur);
+    return valeur;
   }
 
   private deposer<T>(cle: string, valeur: T): Promise<IDBValidKey> {

@@ -3,6 +3,8 @@ import { ApiService } from '../../core/api.service';
 import { FileAttenteService, SaisieRefusee } from '../../core/file-attente.service';
 import { EcritureRefusee, FileEcrituresService } from '../../core/file-ecritures.service';
 import { ReseauService } from '../../core/reseau.service';
+import { FileSejourService } from '../sejours/file-sejour.service';
+import { ModificationRefusee } from '../sejours/sejour-hors-ligne';
 import { DateFrPipe } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { ChoixHorsLigne, resumePreparation } from '../../core/preparation-hors-ligne';
@@ -38,6 +40,13 @@ import { ChoixHorsLigne, resumePreparation } from '../../core/preparation-hors-l
                 <span>{{ r.raison }}</span>
                 <span class="secondaire">{{ r.libelle }}, séance du {{ r.dateSeance | dateFr }}</span>
                 <button type="button" class="lien" (click)="ecarterEcriture(r)">Écarter</button>
+              </li>
+            }
+            @for (r of sejour.refus(); track r.cle) {
+              <li>
+                <span>{{ r.raison }}</span>
+                <span class="secondaire">{{ r.libelle }}, séjour « {{ r.nomSejour }} »</span>
+                <button type="button" class="lien" (click)="ecarterSejour(r)">Écarter</button>
               </li>
             }
           </ul>
@@ -88,19 +97,27 @@ import { ChoixHorsLigne, resumePreparation } from '../../core/preparation-hors-l
 export class BandeauSyncComponent {
   file = inject(FileAttenteService);
   ecritures = inject(FileEcrituresService);
+  sejour = inject(FileSejourService);
   reseau = inject(ReseauService);
   private api = inject(ApiService);
 
   message = signal<string | null>(null);
 
-  /** Notations, présences et fiches de sécurité confondues : pour le moniteur, ce sont toutes des saisies. */
-  readonly nombreEnAttente = computed(() => this.file.enAttente().length + this.ecritures.enAttente().length);
-  readonly nombreRefus = computed(() => this.file.refus().length + this.ecritures.refus().length);
-  readonly enSynchronisation = computed(() => this.file.synchronisation() || this.ecritures.synchronisation());
+  /** Notations, présences, fiches de sécurité et séjours confondus : pour le moniteur, ce sont toutes des saisies. */
+  readonly nombreEnAttente = computed(() =>
+    this.file.enAttente().length + this.ecritures.enAttente().length + this.sejour.enAttente().length);
+  readonly nombreRefus = computed(() => this.file.refus().length + this.ecritures.refus().length + this.sejour.refus().length);
+  readonly enSynchronisation = computed(() =>
+    this.file.synchronisation() || this.ecritures.synchronisation() || this.sejour.synchronisation());
 
   synchroniser(): void {
     void this.file.vider();
     void this.ecritures.vider();
+    void this.sejour.vider();
+  }
+
+  ecarterSejour(refus: ModificationRefusee): void {
+    void this.sejour.ecarterRefus(refus.cle);
   }
 
   ecarterEcriture(refus: EcritureRefusee): void {

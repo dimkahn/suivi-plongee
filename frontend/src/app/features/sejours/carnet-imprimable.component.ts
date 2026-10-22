@@ -2,7 +2,8 @@ import { Component, ChangeDetectionStrategy, OnInit, computed, inject, input, ou
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { FileSejourService } from './file-sejour.service';
+import { cleSejour } from './sejour-hors-ligne';
 import { NavigationService } from '../../core/navigation';
 import { IdentiteService } from '../../core/identite.service';
 import { periode } from '../../core/date-fr';
@@ -336,6 +337,7 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
 })
 export class CarnetImprimableComponent implements OnInit {
   private api = inject(SejourApi);
+  private file = inject(FileSejourService);
   private route = inject(ActivatedRoute);
   private navigation = inject(NavigationService);
   readonly identite = inject(IdentiteService);
@@ -400,7 +402,8 @@ export class CarnetImprimableComponent implements OnInit {
 
   private async charger(id: number): Promise<void> {
     try {
-      this.charge.set(await firstValueFrom(this.api.lire(id)));
+      // Sans réseau, la copie du téléphone : le carnet s'imprime ou se lit aussi sur place.
+      this.charge.set((await this.file.lireAvecCopie(cleSejour(id), () => this.api.lire(id))).valeur);
     } catch (e) {
       this.erreur.set(e instanceof HttpErrorResponse && e.error?.detail ? e.error.detail : 'Séjour introuvable.');
     }

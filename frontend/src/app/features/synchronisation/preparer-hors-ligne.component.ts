@@ -102,7 +102,7 @@ export class PreparerHorsLigneComponent {
   readonly contenus = CONTENUS_HORS_LIGNE;
   readonly libelles = LIBELLES_CONTENUS;
   readonly formules: { valeur: FormuleHorsLigne; titre: string; detail: string }[] = [
-    { valeur: 'tout', titre: 'Tout', detail: 'notes, présences, fiches de sécurité, planning, infos élèves et photos ; séances à 30 jours' },
+    { valeur: 'tout', titre: 'Tout', detail: 'notes, présences, fiches de sécurité, planning, infos élèves, photos et séjours ; à 30 jours' },
     { valeur: 'seance-du-jour', titre: 'La séance du jour', detail: "appel, notes des élèves et fiche de sécurité d'aujourd'hui, sans les photos" },
     { valeur: 'fiche-du-jour', titre: 'La fiche de sécurité du jour', detail: "seulement les fiches de sécurité d'aujourd'hui : le plus rapide" },
     { valeur: 'sur-mesure', titre: 'Sur mesure', detail: 'cochez ce que vous voulez' }
