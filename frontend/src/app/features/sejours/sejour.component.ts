@@ -183,7 +183,7 @@ function participantVide(): BrouillonParticipant {
                     (fermer)="trombinoscopeOuvert.set(false)">
         @if (trombinoscopeOuvert()) {
           <app-trombinoscope-sejour [port]="portTrombinoscope()" [gere]="s.gere && !commeParticipant()"
-                                    [vueParticipant]="!s.encadrant || commeParticipant()" />
+                                    [vueParticipant]="!s.encadrant || commeParticipant()" [nomSejour]="s.sortie.nom" />
         }
       </app-dialogue>
 

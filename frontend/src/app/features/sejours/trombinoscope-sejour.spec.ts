@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LigneTrombinoscopeSejour, SANS_GROUPE, duGroupe, filtresGroupes } from './trombinoscope-sejour';
+import { LigneTrombinoscopeSejour, SANS_GROUPE, duGroupe, filtresGroupes, titreImage } from './trombinoscope-sejour';
 
 function ligne(participantId: number, prenom: string, groupe: string | null): LigneTrombinoscopeSejour {
   return { participantId, nom: 'Test', prenom, plongeur: groupe !== null, groupe, aptitude: null, aPhoto: false, invite: false, visibleParticipants: false };
@@ -20,5 +20,11 @@ describe('Trombinoscope du séjour', () => {
     expect(duGroupe(lignes, 'Requins').map(l => l.prenom)).toEqual(['Lou', 'Inès']);
     expect(duGroupe(lignes, SANS_GROUPE).map(l => l.prenom)).toEqual(['Sam']);
     expect(duGroupe(lignes, '')).toHaveLength(4);
+  });
+
+  it("propose pour l'image le nom du séjour, suivi du groupe choisi", () => {
+    expect(titreImage('Port-Cros 2027', '')).toBe('Port-Cros 2027');
+    expect(titreImage('Port-Cros 2027', 'Requins')).toBe('Port-Cros 2027 — Requins');
+    expect(titreImage('Port-Cros 2027', SANS_GROUPE)).toBe('Port-Cros 2027 — Sans groupe');
   });
 });

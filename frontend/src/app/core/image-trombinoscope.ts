@@ -1,5 +1,5 @@
 /**
- * Image PNG d'un trombinoscope (un groupe d'entraînement, par exemple),
+ * Image PNG d'un trombinoscope (un groupe d'entraînement, un séjour),
  * dessinée dans le navigateur à partir des photos déjà affichées : rien ne
  * repasse par le serveur.
  *
@@ -121,6 +121,13 @@ function cercle(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
   ctx.beginPath();
   ctx.arc(cx, cy, DIAMETRE / 2, 0, Math.PI * 2);
   ctx.closePath();
+}
+
+/** Nom du fichier téléchargé, tiré du titre : sans accents ni espaces (« trombinoscope-port-cros-2027.png »). */
+export function nomFichierTrombinoscope(titre: string): string {
+  const nom = titre.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'groupe';
+  return `trombinoscope-${nom}.png`;
 }
 
 /** Coupe le texte d'un « … » s'il dépasse la largeur de la carte. */

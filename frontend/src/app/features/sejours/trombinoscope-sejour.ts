@@ -54,3 +54,9 @@ export function duGroupe(lignes: LigneTrombinoscopeSejour[], filtre: string): Li
   if (filtre === SANS_GROUPE) return lignes.filter(l => !l.groupe);
   return lignes.filter(l => l.groupe === filtre);
 }
+
+/** Le titre proposé pour l'image exportée : le séjour, et le groupe choisi s'il y en a un. */
+export function titreImage(nomSejour: string, filtre: string): string {
+  if (filtre === '') return nomSejour;
+  return `${nomSejour} — ${filtre === SANS_GROUPE ? 'Sans groupe' : filtre}`;
+}

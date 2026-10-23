@@ -14,7 +14,7 @@ import { GroupeEntrainementVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur }
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
-import { dessinerTrombinoscope } from './image-trombinoscope';
+import { ExportTrombinoscopeComponent, PersonneExport } from '../../core/export-trombinoscope.component';
 
 type Population = 'ELEVES' | 'MONITEURS';
 
@@ -29,7 +29,8 @@ function idCible(c: Cible): number {
 
 @Component({
   selector: 'app-trombinoscope',
-  imports: [RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, AvatarComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent],
+  imports: [RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, AvatarComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent,
+            ExportTrombinoscopeComponent],
   template: `
     <h1>Trombinoscope</h1>
 
@@ -189,41 +190,8 @@ function idCible(c: Cible): number {
       }
     </app-dialogue>
 
-    <app-dialogue [ouvert]="exportOuvert()" titre="Exporter en image" [erreur]="erreurExport()"
-                  (fermer)="exportOuvert.set(false)">
-      <label for="titreExport">Titre de l'image</label>
-      <input id="titreExport" type="text" [ngModel]="titreExport()" (ngModelChange)="titreExport.set($event)">
-
-      <p class="secondaire">
-        Les {{ personnesExport().length }} personnes affichées, dans cet ordre. Cochez celles dont la photo
-        doit être remplacée par une icône (celles qui n'ont pas de photo l'ont déjà).
-      </p>
-      <div class="choix-masque">
-        <button type="button" class="bouton-discret" (click)="masquerTout(true)">Tout masquer</button>
-        <button type="button" class="bouton-discret" (click)="masquerTout(false)">Ne rien masquer</button>
-      </div>
-      <ul class="liste-export">
-        @for (p of personnesExport(); track p.id) {
-          <li>
-            <label class="case">
-              <input type="checkbox" [disabled]="!p.photo"
-                     [checked]="!p.photo || masques().has(p.id)" (change)="basculerMasque(p.id)">
-              <span>
-                {{ p.nom }}
-                @if (!p.photo) { <span class="secondaire"> — pas de photo</span> }
-              </span>
-            </label>
-          </li>
-        }
-      </ul>
-
-      <div class="actions-dialogue">
-        <button type="button" class="bouton-discret" (click)="exportOuvert.set(false)">Annuler</button>
-        <button type="button" class="bouton-principal" (click)="exporter()" [disabled]="exportEnCours()">
-          {{ exportEnCours() ? 'Préparation…' : "Télécharger l'image" }}
-        </button>
-      </div>
-    </app-dialogue>
+    <app-export-trombinoscope [ouvert]="exportOuvert()" [personnes]="personnesExport()" [titreInitial]="titreExport()"
+                              (fermer)="exportOuvert.set(false)" />
 
     @if (recadrage(); as r) {
       <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + nomCible(r.cible)"
@@ -259,10 +227,6 @@ function idCible(c: Cible): number {
     .case { display: flex; align-items: flex-start; gap: var(--pas); min-height: 44px; }
     .case input { width: auto; flex: none; margin-top: 4px; }
     .barre-export { margin-bottom: var(--pas-3); }
-    .choix-masque { display: flex; gap: var(--pas); flex-wrap: wrap; margin: var(--pas) 0; }
-    .liste-export { list-style: none; padding: 0; margin: 0 0 var(--pas-2); }
-    .liste-export .case { align-items: center; }
-    .liste-export .case input { margin-top: 0; }
     .choix-photo { display: grid; gap: var(--pas); }
     .upload { display: flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
               border: 1px solid var(--trait); border-radius: var(--r-s); }
@@ -499,7 +463,7 @@ export class TrombinoscopeComponent implements OnDestroy {
   }
 
   /** Export en image : les cartes affichées (onglet, groupe et recherche compris), dans l'ordre de l'écran. */
-  personnesExport = computed(() => this.population() === 'ELEVES'
+  personnesExport = computed<PersonneExport[]>(() => this.population() === 'ELEVES'
     ? this.lignesFiltrees().map(l => ({
         id: l.eleveId, nom: l.eleve, sousTitre: libellePreparation(l.niveau),
         photo: (l.aPhoto && this.urlPhoto(l.eleveId)) || null
@@ -510,11 +474,8 @@ export class TrombinoscopeComponent implements OnDestroy {
       })));
 
   exportOuvert = signal(false);
-  exportEnCours = signal(false);
-  erreurExport = signal<string | null>(null);
+  /** Le titre proposé : le groupe et l'onglet affichés. */
   titreExport = signal('');
-  /** Personnes dont la photo est remplacée par l'icône sur l'image (choix de l'export en cours). */
-  masques = signal<Set<number>>(new Set());
 
   ouvrirExport(): void {
     if (!this.auth.estAdmin()) return;
@@ -526,46 +487,7 @@ export class TrombinoscopeComponent implements OnDestroy {
       : filtre === 'SANS'
         ? (eleves ? 'Élèves sans groupe' : 'Moniteurs sans groupe')
         : (eleves ? 'Élèves' : 'Moniteurs'));
-    this.masques.set(new Set());
-    this.erreurExport.set(null);
     this.exportOuvert.set(true);
-  }
-
-  basculerMasque(id: number): void {
-    const copie = new Set(this.masques());
-    if (!copie.delete(id)) copie.add(id);
-    this.masques.set(copie);
-  }
-
-  masquerTout(masquer: boolean): void {
-    this.masques.set(masquer ? new Set(this.personnesExport().map(p => p.id)) : new Set());
-  }
-
-  async exporter(): Promise<void> {
-    this.exportEnCours.set(true);
-    this.erreurExport.set(null);
-    try {
-      const titre = this.titreExport().trim() || 'Trombinoscope';
-      const personnes = this.personnesExport().map(p => ({
-        nom: p.nom, sousTitre: p.sousTitre, photo: this.masques().has(p.id) ? null : p.photo
-      }));
-      const blob = await dessinerTrombinoscope(titre, personnes);
-      const url = URL.createObjectURL(blob);
-      const lien = document.createElement('a');
-      lien.href = url;
-      lien.download = `trombinoscope-${this.nomFichier(titre)}.png`;
-      lien.click();
-      URL.revokeObjectURL(url);
-      this.exportOuvert.set(false);
-    } catch (e) {
-      this.erreurExport.set((e as Error).message || "L'image n'a pas pu être fabriquée.");
-    } finally {
-      this.exportEnCours.set(false);
-    }
-  }
-
-  private nomFichier(titre: string): string {
-    return this.normaliser(titre).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'groupe';
   }
 
   ngOnDestroy(): void {

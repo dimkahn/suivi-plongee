@@ -153,6 +153,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Décision** : le club est un payeur possible, sans être un participant : `sejour_depense.payeur_id` null ; un remboursement `de_id` ou `a_id` null vient du club ou va au club (contrainte : jamais les deux). `FraisSejour` lui donne un solde (`participantId` null, après les participants) et le fait entrer dans les remboursements à faire, comme un participant ; il ne prend jamais de part d'une dépense. Choisir « Le club » comme payeur suit la règle d'un autre payeur : organisateurs et moniteurs du séjour (`pourLesAutres`) ; ce qu'on verse au club est noté par eux aussi (le club ne note rien lui-même). À l'écran, « Le club » dans « Payé par », « Qui a remboursé » et « À qui » ; « vous devez … au club » partout où le solde est rappelé (`remboursementsDe`), dans l'e-mail du carnet aussi.
 - **Conséquences** : un id null signifie « le club » dans `FraisVue` (dépenses, remboursements faits, soldes, remboursements à faire) ; tout code qui lit ces ids doit le prévoir (comparer par `moi.equals(id)`, pas l'inverse).
 
+## Trombinoscope du séjour exporté en image
+
+- **Date** : 2026-10-24, demande du club.
+- **Décision** : « Exporter en image » dans le trombinoscope du séjour, la même fenêtre que le trombinoscope du club (`ExportTrombinoscopeComponent`, dessin `core/image-trombinoscope.ts`) : PNG des cartes affichées (groupe choisi), titre proposé « nom du séjour — groupe », photos masquables par une icône, fabriqué dans le navigateur à partir des photos déjà chargées (aucune route nouvelle). **Créateur et organisateurs seulement** : ce sont eux qui recueillent les accords des photos du séjour ; le trombinoscope du club réserve de même l'export aux administrateurs.
+- **Conséquence** : l'image sort de l'appli et n'est pas effacée après le séjour comme les photos d'invités ; le manuel demande de ne la partager qu'avec l'accord des personnes.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.

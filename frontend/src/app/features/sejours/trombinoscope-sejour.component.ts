@@ -7,7 +7,8 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent } from '../../core/onglets.component';
 import { ReseauService } from '../../core/reseau.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
-import { LigneTrombinoscopeSejour, PortTrombinoscope, duGroupe, filtresGroupes } from './trombinoscope-sejour';
+import { ExportTrombinoscopeComponent, PersonneExport } from '../../core/export-trombinoscope.component';
+import { LigneTrombinoscopeSejour, PortTrombinoscope, duGroupe, filtresGroupes, titreImage } from './trombinoscope-sejour';
 
 /** Ce que l'organisateur confirme : ajouter la photo d'un invité, ou montrer une photo aux participants. */
 type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
@@ -24,7 +25,8 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
  */
 @Component({
   selector: 'app-trombinoscope-sejour',
-  imports: [FormsModule, AvatarComponent, DialogueComponent, OngletsComponent, RecadragePhotoComponent],
+  imports: [FormsModule, AvatarComponent, DialogueComponent, OngletsComponent, RecadragePhotoComponent,
+            ExportTrombinoscopeComponent],
   template: `
     @if (lignes() === null) {
       <p class="vide">Chargement…</p>
@@ -45,6 +47,15 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
           @if (gere()) { « Visible des participants » : les autres participants la voient aussi. }
         }
       </p>
+
+      <!-- Export réservé aux organisateurs : ils recueillent les accords des photos du séjour. -->
+      @if (gere()) {
+        <div class="barre-export">
+          <button type="button" class="bouton-discret exporter-image" (click)="exportOuvert.set(true)">Exporter en image</button>
+        </div>
+        <app-export-trombinoscope [ouvert]="exportOuvert()" [personnes]="personnesExport()"
+                                  [titreInitial]="titreExport()" (fermer)="exportOuvert.set(false)" />
+      }
 
       @if (message() && !demande()) { <div class="alerte" role="status">{{ message() }}</div> }
 
@@ -95,7 +106,7 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
             <app-avatar [url]="urls().get(l.participantId) ?? null" [nom]="{ prenom: l.prenom, nom: l.nom }"
                         [alt]="l.prenom + ' ' + l.nom" [libelleInitiales]="l.prenom + ' ' + l.nom" />
             <span class="nom">{{ l.prenom }} {{ l.nom }}</span>
-            <span class="secondaire">{{ l.aptitude ?? (l.plongeur ? 'Plongeur' : 'Accompagnant') }}</span>
+            <span class="secondaire">{{ sousTitre(l) }}</span>
             @if (l.groupe && filtre() === '') { <span class="secondaire">{{ l.groupe }}</span> }
             @if (gere()) {
               @if (l.aPhoto) {
@@ -134,6 +145,7 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
     app-avatar { --taille-avatar: 96px; }
     .nom { font-weight: 700; margin-top: 4px; }
     .fiche .bouton-lien { min-height: 44px; }
+    .barre-export { margin-top: var(--pas); }
     .case { display: flex; align-items: flex-start; gap: var(--pas); min-height: 44px; }
     .case input { width: auto; flex: none; margin-top: 4px; }
     .upload { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
@@ -149,6 +161,8 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
   readonly gere = input(false);
   /** Lu par un participant (ou « comme un participant ») : seulement les photos qu'on lui a rendues visibles. */
   readonly vueParticipant = input(false);
+  /** Le nom du séjour, proposé comme titre de l'image exportée. */
+  readonly nomSejour = input('');
 
   lignes = signal<LigneTrombinoscopeSejour[] | null>(null);
   erreur = signal<string | null>(null);
@@ -167,6 +181,14 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
 
   filtres = computed(() => filtresGroupes(this.lignes() ?? []));
   affichees = computed(() => duGroupe(this.lignes() ?? [], this.filtre()));
+  exportOuvert = signal(false);
+  /** Export en image : les cartes affichées (groupe choisi), dans l'ordre de l'écran, avec les photos chargées. */
+  personnesExport = computed<PersonneExport[]>(() => this.affichees().map(l => ({
+    id: l.participantId, nom: `${l.prenom} ${l.nom}`, sousTitre: this.sousTitre(l),
+    photo: this.urls().get(l.participantId) ?? null
+  })));
+  titreExport = computed(() => titreImage(this.nomSejour() || 'Séjour', this.filtre()));
+
   titreDemande = computed(() => {
     const d = this.demande();
     if (!d) return '';
@@ -184,6 +206,10 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
         : 'Le trombinoscope a besoin du réseau : réessayez quand vous en aurez.');
       this.lignes.set([]);
     }
+  }
+
+  sousTitre(l: LigneTrombinoscopeSejour): string {
+    return l.aptitude ?? (l.plongeur ? 'Plongeur' : 'Accompagnant');
   }
 
   private chargerPhoto(participantId: number): void {
