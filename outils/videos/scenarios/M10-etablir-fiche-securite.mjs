@@ -1,12 +1,12 @@
 // M10 — Établir une fiche de sécurité avant la mise à l'eau.
-// Tournage du 2026-10-19, 14e série, actions en boutons à l'ordinateur, fiche neuve sans palanquée, fonction en sélecteur compact, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-23, 15e série, site de la séance changé depuis la fiche, actions en boutons à l'ordinateur, fiche neuve sans palanquée, fonction en sélecteur compact, MOD et ppO2 max d'un nitrox, palanquées compactes et fenêtre du plongeur, palanquées fermées par défaut, une seule fenêtre pour le profil et la fonction, palanquées ouvertes ou fermées, palanquée au nom de son encadrant, profil demandé à la création, plongeur refusé au-delà de son aptitude, fonction demandée à l'ajout d'un encadrant, reprendre une palanquée d'une autre séance, bouton rond des actions sur téléphone, déplacer un plongeur, détails repliés (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M10',
   titre: 'Établir une fiche de sécurité',
   public: 'Moniteur',
-  resume: 'Avant la mise à l\'eau : directeur de plongée, conditions, palanquées et plongeurs ; reprendre une palanquée d\'une autre séance ; dupliquer et lier une seconde séance.',
+  resume: 'Avant la mise à l\'eau : site, directeur de plongée, conditions, palanquées et plongeurs ; reprendre une palanquée d\'une autre séance ; dupliquer et lier une seconde séance.',
   compte: 'e2@club.fr',
 
   async jouer(g) {
@@ -37,6 +37,8 @@ export default {
     await legende('Établir la fiche : les E3, E4, ou un moniteur qui en a reçu le droit, comme Flora ici.', 0);
     await toucher(page.getByRole('link', { name: 'Établir la fiche' }).first(), { apres: 1800 });
 
+    await legende('Le site de plongée : changé ici, il l\'est pour toute la séance.', 0);
+    await saisir('#site', 'Grand bassin');
     await legende('Le directeur de plongée : seuls les E3 et E4 sont proposés.', 0);
     await rechercherEtChoisir('dp', 'Gwen', 'Gwendoline');
     await legende('Les conditions du jour…', 0);

@@ -85,6 +85,8 @@ function memePlongeur(a: Identite, b: Identite): boolean {
 
 interface FormulaireEntete {
   dpId: number | null;
+  /** Le site de plongée de la séance, enregistré avec la fiche. */
+  site: string | null;
   meteo: string | null;
   etatMer: string | null;
   visibilite: string | null;
@@ -148,6 +150,17 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
 
       <section class="carte panneau">
         <h3>Directeur de plongée et conditions</h3>
+
+        <label for="site">Site de plongée</label>
+        <input id="site" name="site" type="text" maxlength="120" list="sites-du-lieu" [(ngModel)]="f.site"
+               placeholder="ex. La Gabinière, le tombant nord…">
+        <datalist id="sites-du-lieu">
+          @for (s of sitesDuLieu(); track s) { <option [value]="s"></option> }
+        </datalist>
+        <p class="secondaire">
+          Le point de plongée{{ seance()?.lieu ? ' à ' + seance()?.lieu : '' }} : changé ici, il l'est pour
+          toute la séance en enregistrant la fiche.
+        </p>
 
         <label for="dp">Directeur de plongée</label>
         <app-combobox idChamp="dp" [options]="dpsPossibles()" [(valeur)]="f.dpId"
@@ -1213,6 +1226,12 @@ export class FicheSecuriteComponent implements AvecModifications {
 
   /** Toutes les séances connues, pour proposer celles du même jour à lier. */
   toutesSeances = signal<SeanceVue[]>([]);
+  /** Les sites déjà donnés aux séances du même lieu, proposés en saisissant celui de cette séance. */
+  sitesDuLieu = computed(() => {
+    const lieu = this.seance()?.lieu ?? null;
+    const sites = this.toutesSeances().filter(s => s.lieu === lieu && s.site?.trim()).map(s => s.site!.trim());
+    return [...new Set(sites)].sort((a, b) => a.localeCompare(b, 'fr'));
+  });
   /** Séances du même jour liées à celle-ci (deux bateaux…), et les plongeurs déjà placés sur leurs fiches. */
   seancesLiees = signal<SeanceLieeVue[]>([]);
   seanceALier = signal<number | null>(null);
@@ -1304,8 +1323,12 @@ export class FicheSecuriteComponent implements AvecModifications {
       this.ficheId.set(fiche.id);
       this.signature.set(fiche.signature ?? null);
       this.dpEnregistre.set(fiche.dpId);
+      // Un site changé hors ligne, pas encore parti, l'emporte sur celui de la séance.
+      const siteEnAttente = this.file.pourSeance(this.seanceId, 'fiche').at(0)?.demande.site;
+      const site = siteEnAttente !== undefined ? siteEnAttente || null : this.seance()?.site ?? null;
+      if (siteEnAttente !== undefined) this.seance.update(s => s && { ...s, site });
       this.entete.set({
-        dpId: fiche.dpId, meteo: fiche.meteo, etatMer: fiche.etatMer, visibilite: fiche.visibilite,
+        dpId: fiche.dpId, site, meteo: fiche.meteo, etatMer: fiche.etatMer, visibilite: fiche.visibilite,
         courant: fiche.courant, maree: fiche.maree, temperatureEau: fiche.temperatureEau,
         securiteSurface: fiche.securiteSurface, planSecours: fiche.planSecours,
         observations: fiche.observations
@@ -2188,6 +2211,8 @@ export class FicheSecuriteComponent implements AvecModifications {
       const issue = await this.file.enregistrer<FicheSecuriteVue>({
         type: 'fiche', seanceId: this.seanceId, demande: {
           dpId: f.dpId,
+          // Vide plutôt que null : le serveur garde le site d'une séance quand il n'en reçoit aucun.
+          site: f.site?.trim() ?? '',
           meteo: f.meteo, etatMer: f.etatMer, visibilite: f.visibilite,
           courant: f.courant, maree: f.maree, temperatureEau: f.temperatureEau,
           securiteSurface: f.securiteSurface, planSecours: f.planSecours,
@@ -2199,6 +2224,10 @@ export class FicheSecuriteComponent implements AvecModifications {
         }
       }, 'Fiche de sécurité', this.seance()?.date ?? dateDuJour());
 
+      if (issue.etat !== 'refusee') {
+        // Le titre reprend le nouveau site, envoyé ou gardé sur l'appareil.
+        this.seance.update(s => s && { ...s, site: f.site?.trim() || null });
+      }
       if (issue.etat === 'envoyee') {
         this.ficheId.set(issue.reponse.id);
         this.dpEnregistre.set(issue.reponse.dpId);

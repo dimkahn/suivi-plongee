@@ -8,6 +8,7 @@ import fr.club.plongee.formation.service.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -59,7 +60,8 @@ public class FicheSecuriteController {
     public record DemandePalanquee(@NotNull Integer numero, Integer profondeurPrevue, Integer dureePrevue,
                                    @NotNull List<@Valid DemandePlongeur> membres) {}
 
-    public record DemandeFicheSecurite(@NotNull Long dpId, String meteo, String etatMer,
+    /** {@code site} : le site de plongée de la séance ; null (ancienne version de l'appli) : inchangé. */
+    public record DemandeFicheSecurite(@NotNull Long dpId, @Size(max = 120) String site, String meteo, String etatMer,
                                        String visibilite, String courant, String maree,
                                        String temperatureEau, String securiteSurface,
                                        String planSecours, String observations,
@@ -145,7 +147,7 @@ public class FicheSecuriteController {
                                                              Authentication authentication) {
         habilitation.verifierEtablissementFicheSecurite(authentication);
         FicheSecuriteService.Saisie saisie = new FicheSecuriteService.Saisie(
-                demande.dpId(), demande.meteo(), demande.etatMer(), demande.visibilite(),
+                demande.dpId(), demande.site(), demande.meteo(), demande.etatMer(), demande.visibilite(),
                 demande.courant(), demande.maree(), demande.temperatureEau(),
                 demande.securiteSurface(), demande.planSecours(), demande.observations(),
                 demande.palanquees().stream()

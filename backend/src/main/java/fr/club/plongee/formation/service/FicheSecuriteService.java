@@ -63,9 +63,19 @@ public class FicheSecuriteService {
     public record GroupePlongeurs(int numero, Integer profondeurPrevue, Integer dureePrevue,
                                   List<Plongeur> membres) {}
 
-    public record Saisie(Long dpId, String meteo, String etatMer, String visibilite, String courant,
+    /** {@code site} : le site de plongée de la séance, changé avec la fiche ; null : inchangé. */
+    public record Saisie(Long dpId, String site, String meteo, String etatMer, String visibilite, String courant,
                          String maree, String temperatureEau, String securiteSurface,
-                         String planSecours, String observations, List<GroupePlongeurs> palanquees) {}
+                         String planSecours, String observations, List<GroupePlongeurs> palanquees) {
+
+        /** Sans site : celui de la séance ne change pas. */
+        public Saisie(Long dpId, String meteo, String etatMer, String visibilite, String courant,
+                      String maree, String temperatureEau, String securiteSurface,
+                      String planSecours, String observations, List<GroupePlongeurs> palanquees) {
+            this(dpId, null, meteo, etatMer, visibilite, courant, maree, temperatureEau, securiteSurface,
+                    planSecours, observations, palanquees);
+        }
+    }
 
     /** Le profil réellement plongé par une palanquée, saisi après le retour. */
     public record ProfilRealise(int numero, Integer profondeurRealisee, Integer dureeRealisee,
@@ -248,6 +258,9 @@ public class FicheSecuriteService {
             return f;
         });
         verifierNonSignee(fiche, "modifier");
+        if (saisie.site() != null) {
+            seance.setSite(saisie.site().isBlank() ? null : saisie.site().trim());
+        }
         fiche.setDp(dp);
         fiche.setMeteo(saisie.meteo());
         fiche.setEtatMer(saisie.etatMer());

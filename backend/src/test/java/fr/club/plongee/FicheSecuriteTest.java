@@ -157,6 +157,74 @@ class FicheSecuriteTest {
         assertThat(membres.get(1).get("gaz").asText()).isEqualTo("Nitrox 32");
     }
 
+    /** La séance telle que la liste des séances de la saison courante la renvoie. */
+    private JsonNode seanceListee(String jeton, long id) throws Exception {
+        String reponse = mvc.perform(get("/api/seances").header("Authorization", jeton))
+                .andReturn().getResponse().getContentAsString();
+        for (JsonNode s : json.readTree(reponse)) {
+            if (s.get("id").asLong() == id) return s;
+        }
+        throw new IllegalStateException("Séance introuvable : " + id);
+    }
+
+    /** Une séance de la saison courante, sur un site déjà renseigné. */
+    private long creerSeanceSurSite(String jeton, String site) throws Exception {
+        String reponse = mvc.perform(post("/api/seances").header("Authorization", jeton)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"dateSeance":"2026-11-14","milieu":"NATUREL","lieu":"Port-Cros","site":"%s","profondeurMax":20}
+                                """.formatted(site)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return json.readTree(reponse).get("id").asLong();
+    }
+
+    @Test
+    @DisplayName("Le site de la séance se change depuis la fiche de sécurité, en l'enregistrant")
+    void siteChangeDepuisLaFiche() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        String moniteur = jeton("e2@club.fr");
+        long seance = creerSeanceSurSite(admin, "La Gabinière");
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", moniteur)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"dpId": %d, "site": "La Galère", "palanquees": []}
+                                """.formatted(dpId)))
+                .andExpect(status().isOk());
+
+        assertThat(seanceListee(admin, seance).get("site").asText()).isEqualTo("La Galère");
+    }
+
+    @Test
+    @DisplayName("Une fiche enregistrée sans site (ancienne version de l'appli) ne touche pas au site de la séance")
+    void sansSiteLaSeanceGardeLeSien() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeanceSurSite(admin, "La Gabinière");
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content(demandeEtablissement(dpId)))
+                .andExpect(status().isOk());
+
+        assertThat(seanceListee(admin, seance).get("site").asText()).isEqualTo("La Gabinière");
+    }
+
+    @Test
+    @DisplayName("Sans le droit d'établir la fiche, un moniteur ne change pas le site par elle")
+    void siteNonChangeSansDroitDEtablir() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = creerSeanceSurSite(admin, "La Gabinière");
+        long dpId = moniteurId(admin, "e3@club.fr");
+
+        mvc.perform(put("/api/seances/" + seance + "/fiche-securite").header("Authorization", jeton("e1@club.fr"))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"dpId": %d, "site": "La Galère", "palanquees": []}
+                                """.formatted(dpId)))
+                .andExpect(status().isUnprocessableContent());
+
+        assertThat(seanceListee(admin, seance).get("site").asText()).isEqualTo("La Gabinière");
+    }
+
     /** Une palanquée prévue à 30 m, un seul plongeur au nitrox avec la ppO2 maximale donnée. */
     private String demandeNitrox(long dpId, String ppo2Max) {
         return """

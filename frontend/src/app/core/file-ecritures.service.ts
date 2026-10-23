@@ -7,6 +7,8 @@ import { MAGASIN_ECRITURES, MAGASIN_REFUS_ECRITURES, ecrire, lire, lireTout, sup
 /** Établissement de la fiche de sécurité : DP, conditions, composition et profil prévu. */
 export interface DemandeFicheSecurite {
   dpId: number;
+  /** Site de plongée de la séance, changé avec la fiche ; absent d'une fiche gardée avant son ajout : inchangé. */
+  site?: string | null;
   meteo?: string | null;
   etatMer?: string | null;
   visibilite?: string | null;
