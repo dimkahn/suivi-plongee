@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-23, 31e série, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-23, 32e série, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -40,6 +40,12 @@ export default {
     await legende('Dessous, le conseil d\'assurance : ce que voit chaque participant qui n\'a pas encore joint la sienne. « Modifier », et « Reprendre le message type » propose celui de Lafont.', 0);
     await toucher(page.locator('.conseil-assurance').getByRole('button', { name: 'Modifier' }), { apres: 4000 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
+    await page.locator('.ouvrir-trombinoscope').scrollIntoViewIfNeeded();
+    await legende('« Trombinoscope » : les visages des participants, pour mettre un nom sur chacun dès le premier jour.', 0);
+    await toucher(page.locator('.ouvrir-trombinoscope'), { apres: 3000 });
+    await legende('Un bouton par groupe de plongeurs : on ne garde que ceux du groupe. Pas de photo sans le droit à l\'image : les initiales à la place.', 0);
+    await toucher(page.getByRole('group', { name: 'Filtrer par groupe de plongeurs' }).getByRole('button').nth(1), { apres: 4000 });
+    await toucher(page.getByRole('button', { name: 'Fermer' }).first(), { apres: 800 });
     await legende('Pas besoin de tout saisir : « Demander les informations… », en haut de la page, leur envoie un e-mail.', 4500);
     await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
     await legende('Par ce lien, ils lisent aussi le carnet du séjour, toujours à jour : programme, voitures, chambres, affaires.', 4500);

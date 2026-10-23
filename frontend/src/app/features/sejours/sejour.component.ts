@@ -33,6 +33,7 @@ import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
 import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
+import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 
 type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'pratique';
 
@@ -83,7 +84,8 @@ function participantVide(): BrouillonParticipant {
 @Component({
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
-            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe],
+            MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
+            TrombinoscopeSejourComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -265,6 +267,10 @@ function participantVide(): BrouillonParticipant {
         <section>
           <div class="titre-section">
             <h2>Participants</h2>
+            @if (s.participants.length > 0 && !copieDu()) {
+              <button type="button" class="bouton-discret sans-impression ouvrir-trombinoscope"
+                      (click)="trombinoscopeOuvert.set(true)">Trombinoscope</button>
+            }
             @if (s.gere) {
               <div class="actions sans-impression">
                 <button type="button" class="bouton-principal" (click)="ouvrirParticipant(null)">Ajouter un participant</button>
@@ -359,6 +365,14 @@ function participantVide(): BrouillonParticipant {
               </li>
             }
           </ul>
+
+          <!-- Les visages par groupe de plongeurs, pour les encadrants (demande du club, 2026). -->
+          <app-dialogue [ouvert]="trombinoscopeOuvert()" [large]="true" [titre]="'Trombinoscope — ' + s.sortie.nom"
+                        (fermer)="trombinoscopeOuvert.set(false)">
+            @if (trombinoscopeOuvert()) {
+              <app-trombinoscope-sejour [sejourId]="s.sortie.id" />
+            }
+          </app-dialogue>
 
           <h3>Repas</h3>
           <p>{{ s.participants.length }} couverts, dont {{ sansRegime().length }} sans régime particulier.</p>
@@ -1192,6 +1206,8 @@ export class SejourComponent {
   erreur = signal<string | null>(null);
   envoi = signal(false);
   onglet = signal<Onglet>('programme');
+  /** La fenêtre « Trombinoscope » de l'onglet Participants (encadrants, réseau obligatoire). */
+  trombinoscopeOuvert = signal(false);
 
   /**
    * Les avertissements du serveur (SejourService.avertissements), rangés

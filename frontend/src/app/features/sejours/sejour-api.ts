@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
 import { FonctionPalanquee, SortieVue } from '../../core/modeles';
+import { LigneTrombinoscopeSejour } from './trombinoscope-sejour';
 
 // ----------------------------------------------------------------
 //  Le séjour d'une sortie (SejourController) : participants, trajets,
@@ -733,6 +734,16 @@ export class SejourApi {
       retirer: p => this.http.delete<SejourVue>(url(p)).pipe(tap(maj)),
       lire: p => this.http.get(url(p), { responseType: 'blob' })
     };
+  }
+
+  /** Encadrants seulement : les participants avec leur groupe de plongeurs. */
+  trombinoscope(id: number): Observable<LigneTrombinoscopeSejour[]> {
+    return this.http.get<LigneTrombinoscopeSejour[]>(`/api/sejours/${id}/trombinoscope`);
+  }
+
+  /** Jamais sans le droit à l'image (404). */
+  photoParticipant(id: number, participantId: number): Observable<Blob> {
+    return this.http.get(`/api/sejours/${id}/participants/${participantId}/photo`, { responseType: 'blob' });
   }
 
   /** Le matériel emprunté pendant le séjour, pour un compte connecté. */

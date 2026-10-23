@@ -63,11 +63,13 @@ public class SejourController {
     private final CartesEmbarquementService cartes;
     private final AttestationsAssuranceService attestations;
     private final RejeuSejour rejeu;
+    private final TrombinoscopeSejourService trombinoscope;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             AccesSejourService acces, PretsSejourService pretsSejour,
                             CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
-                            RejeuSejour rejeu) {
+                            RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope) {
+        this.trombinoscope = trombinoscope;
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
@@ -195,6 +197,26 @@ public class SejourController {
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         cartes.verifierDroit(id, participantId, moi);
         return carte(cartes.lire(id, participantId, sens), sens);
+    }
+
+    // ------------------------------------------------------------------
+    //  Trombinoscope : les encadrants seulement, jamais une photo sans le droit à l'image.
+    // ------------------------------------------------------------------
+
+    /** Les participants avec leur groupe de plongeurs ; un élève n'y a pas accès (photos de mineurs). */
+    @GetMapping("/{id}/trombinoscope")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN','DIRECTEUR_TECHNIQUE')")
+    public List<TrombinoscopeSejourService.LigneTrombinoscopeSejour> trombinoscope(@PathVariable Long id) {
+        return trombinoscope.lister(id);
+    }
+
+    @GetMapping("/{id}/participants/{participantId}/photo")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN','DIRECTEUR_TECHNIQUE')")
+    public ResponseEntity<byte[]> photo(@PathVariable Long id, @PathVariable Long participantId) {
+        return trombinoscope.photo(id, participantId)
+                .map(p -> ResponseEntity.ok().contentType(MediaType.parseMediaType(p.type()))
+                        .cacheControl(CacheControl.noStore()).body(p.contenu()))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // ------------------------------------------------------------------
