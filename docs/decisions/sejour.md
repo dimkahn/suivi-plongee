@@ -70,6 +70,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Décision** : onglet « Matériel » du séjour et de la page du lien (`PretsSejourService`, `/api/sejours/{id}/prets`, `/api/public/sejour/{code}/prets`). Chaque déclaration est un vrai prêt (`PretService.declarer`), rattaché à la sortie, avec tous les contrôles du matériel (déjà prêté, échéances jusqu'à la fin du séjour, désinfection des détendeurs) ; `sejour_pret` (V84) garde le participant emprunteur et qui a déclaré. Tout participant déclare pour lui-même, élève compris (pas d'argent en jeu), sauf un détendeur : sa désinfection entre au journal légal (A322-81, A322-177) et s'atteste par un encadrant identifié ; un refus « déjà prêté » ne nomme pas l'emprunteur (mineurs) ; organisateurs et moniteurs inscrits pour les autres ; chacun annule ce qu'il a déclaré tant que ce n'est pas rendu. Un participant ne voit que ses emprunts, les encadrants tous. Le retour reste au directeur technique.
 - **Conséquences** : les prêts « Déclaré depuis le séjour par … » apparaissent dans « Matériel », « Prêts », sans « prêté par ».
 
+## Détendeur déclaré par son emprunteur, désinfecté au retour
+
+- **Date** : 2026-10-23.
+- **Contexte** : un participant ne trouvait pas les détendeurs dans la liste du matériel à déclarer : seuls l'organisateur et les moniteurs du séjour pouvaient en déclarer un, en attestant sa désinfection à la remise. Le club veut que chacun déclare aussi son détendeur, et qu'un moniteur atteste la désinfection au retour.
+- **Décision** : les détendeurs sont proposés à tous les participants. Déclaré par l'emprunteur lui-même, le prêt porte `desinfection_au_retour` (V99_6) : rien n'est inscrit au journal à la remise ; au retour (« Matériel », « Prêts »), celui qui reçoit le matériel doit cocher « Le détendeur a été désinfecté au retour », inscrite au journal à la date du retour (422 sinon). Déclaré par l'organisateur ou un moniteur pour un autre, la désinfection s'atteste toujours à la déclaration.
+- **Conséquences** : le prêt affiche « Désinfection au retour » dans les prêts en cours. L'attestation reste celle d'un encadrant identifié (le directeur technique ou l'ADMIN, seuls à noter un retour). Entre deux prêts, la désinfection se fait au retour plutôt qu'à la remise : un détendeur rendu d'un prêt ordinaire puis déclaré par un participant n'a pas été désinfecté entre les deux ; c'est au directeur technique de le désinfecter avant de le ranger.
+
 ## « Avez-vous emprunté du matériel ? » dans « Mon séjour »
 
 - **Date** : 2026-10.

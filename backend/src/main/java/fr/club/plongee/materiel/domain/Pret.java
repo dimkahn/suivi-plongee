@@ -61,6 +61,10 @@ public class Pret {
     @Column(columnDefinition = "text")
     private String remarques;
 
+    /** Détendeur déclaré par l'emprunteur, sans désinfection attestée à la remise : elle s'atteste au retour. */
+    @Column(nullable = false)
+    private boolean desinfectionAuRetour;
+
     /** Fixé à la création du prêt : pas de table _aud pour la liaison (même choix que les rôles d'un utilisateur). */
     @NotAudited
     @ManyToMany
@@ -159,6 +163,14 @@ public class Pret {
 
     public String getRemarques() {
         return remarques;
+    }
+
+    public boolean isDesinfectionAuRetour() {
+        return desinfectionAuRetour;
+    }
+
+    public void setDesinfectionAuRetour(boolean desinfectionAuRetour) {
+        this.desinfectionAuRetour = desinfectionAuRetour;
     }
 
     public void setRemarques(String remarques) {

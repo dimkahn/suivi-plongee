@@ -33,7 +33,8 @@ import java.util.stream.Stream;
  * équipement déjà prêté, rebuté, hors service ou hors échéance jusqu'à la
  * fin du prêt (voir {@link EcheancesEquipement}), et exige la désinfection
  * des détendeurs à chaque changement d'utilisateur (art. A322-81), inscrite
- * au journal de chacun.
+ * au journal de chacun : à la remise, ou au retour pour un détendeur déclaré
+ * depuis un séjour par son emprunteur.
  */
 @Service
 public class PretService {
@@ -50,7 +51,8 @@ public class PretService {
                           LocalDate sortieFin, int nombrePlongees, String motif,
                           LocalDate datePret, LocalDate dateRetourPrevue, LocalDate dateRetour,
                           boolean enRetard, String pretePar, String recuPar, String remarques,
-                          List<EquipementPreteVue> equipements, long photosAvant, long photosApres) {}
+                          List<EquipementPreteVue> equipements, long photosAvant, long photosApres,
+                          boolean desinfectionAuRetour) {}
 
     /** Un seul emprunteur : {@code eleveId} ou {@code utilisateurId}. */
     public record DemandePret(Long eleveId, Long utilisateurId, Long sortieId, @Size(max = 120) String motif,
@@ -61,8 +63,9 @@ public class PretService {
     /** {@code incident} non vide : inscrit au journal de l'équipement ; {@code horsService} : le retire des prêts. */
     public record RetourEquipement(@NotNull Long equipementId, String incident, Boolean horsService) {}
 
+    /** {@code detendeursDesinfectes} : exigé pour un prêt dont la désinfection s'atteste au retour. */
     public record DemandeRetour(@NotNull LocalDate dateRetour, List<@Valid RetourEquipement> equipements,
-                                String remarques) {}
+                                String remarques, Boolean detendeursDesinfectes) {}
 
     private final PretRepository prets;
     private final MaterielService materiel;
@@ -133,7 +136,7 @@ public class PretService {
         Utilisateur auteur = utilisateurs.getReferenceById(auteurId);
         p.setPretePar(auteur);
         return enregistrer(p, d.sortieId(), d.datePret(), d.dateRetourPrevue(), d.equipementIds(),
-                d.detendeursDesinfectes(), auteur, true);
+                d.detendeursDesinfectes(), false, auteur, true);
     }
 
     /**
@@ -145,10 +148,12 @@ public class PretService {
      * Un refus ne nomme pas l'emprunteur d'un équipement déjà prêté : celui
      * qui déclare n'est pas le directeur technique, et les emprunteurs
      * peuvent être mineurs.
+     * {@code desinfectionAuRetour} : l'emprunteur déclare lui-même, sans
+     * pouvoir attester la désinfection d'un détendeur ; elle s'atteste au retour.
      */
     public record DeclarationPret(Long eleveId, Long utilisateurId, String emprunteurNom, Long sortieId,
                                   LocalDate datePret, List<Long> equipementIds, Boolean detendeursDesinfectes,
-                                  String declarePar, Long declareParUtilisateurId) {}
+                                  boolean desinfectionAuRetour, String declarePar, Long declareParUtilisateurId) {}
 
     @Transactional
     public PretVue declarer(DeclarationPret d) {
@@ -159,14 +164,8 @@ public class PretService {
         p.setRemarques("Déclaré depuis le séjour par " + d.declarePar().trim() + ".");
         Utilisateur auteur = d.declareParUtilisateurId() == null ? null
                 : utilisateurs.getReferenceById(d.declareParUtilisateurId());
-        return enregistrer(p, d.sortieId(), d.datePret(), null, d.equipementIds(), d.detendeursDesinfectes(), auteur,
-                false);
-    }
-
-    /** Parmi ces équipements, un détendeur (sa désinfection est à attester). */
-    @Transactional(readOnly = true)
-    public boolean contientUnDetendeur(List<Long> equipementIds) {
-        return equipementIds.stream().map(materiel::equipement).anyMatch(e -> e.getType() == TypeEquipement.DETENDEUR);
+        return enregistrer(p, d.sortieId(), d.datePret(), null, d.equipementIds(), d.detendeursDesinfectes(),
+                d.desinfectionAuRetour(), auteur, false);
     }
 
     /** Les prêts rattachés à une sortie, en cours ou rendus, les plus récents d'abord. */
@@ -193,12 +192,13 @@ public class PretService {
     /**
      * Les contrôles d'un prêt, puis son enregistrement : sortie et retour
      * prévu, équipements ni déjà prêtés ni hors échéance jusqu'au retour,
-     * désinfection des détendeurs (inscrite au journal de chacun).
+     * désinfection des détendeurs (inscrite au journal de chacun), sauf si
+     * elle s'atteste au retour ({@code desinfectionAuRetour}).
      * {@code nommerEmprunteur} : le refus d'un équipement déjà prêté dit à qui.
      */
     private PretVue enregistrer(Pret p, Long sortieId, LocalDate datePret, LocalDate retourPrevuDemande,
-                                List<Long> equipementIds, Boolean detendeursDesinfectes, Utilisateur auteur,
-                                boolean nommerEmprunteur) {
+                                List<Long> equipementIds, Boolean detendeursDesinfectes,
+                                boolean desinfectionAuRetour, Utilisateur auteur, boolean nommerEmprunteur) {
         LocalDate retourPrevu = retourPrevuDemande;
         if (sortieId != null) {
             Sortie s = sorties.sortie(sortieId);
@@ -234,8 +234,11 @@ public class PretService {
             throw new RegleMetierException("Prêt impossible. " + String.join(" ", refus));
         }
 
-        List<Equipement> detendeurs = p.getEquipements().stream()
-                .filter(e -> e.getType() == TypeEquipement.DETENDEUR).toList();
+        List<Equipement> detendeurs = detendeurs(p);
+        if (!detendeurs.isEmpty() && desinfectionAuRetour) {
+            p.setDesinfectionAuRetour(true);
+            return vue(prets.save(p));
+        }
         if (!detendeurs.isEmpty() && !Boolean.TRUE.equals(detendeursDesinfectes)) {
             throw new RegleMetierException("Les détendeurs se désinfectent avant d'être remis à un nouvel "
                     + "utilisateur (Code du sport, art. A322-81) : confirmez la désinfection.");
@@ -263,6 +266,16 @@ public class PretService {
         p.getEquipements().forEach(e -> duPret.put(e.getId(), e));
 
         Utilisateur auteur = utilisateurs.getReferenceById(auteurId);
+        if (p.isDesinfectionAuRetour()) {
+            if (!Boolean.TRUE.equals(d.detendeursDesinfectes())) {
+                throw new RegleMetierException("Ce détendeur a été déclaré par son emprunteur : "
+                        + "confirmez sa désinfection au retour (Code du sport, art. A322-81).");
+            }
+            for (Equipement e : detendeurs(p)) {
+                materiel.journaliser(e, TypeIntervention.DESINFECTION, d.dateRetour(), null,
+                        "Au retour du prêt de " + p.getEmprunteurNom() + ".", p, auteur);
+            }
+        }
         for (RetourEquipement r : d.equipements() == null ? List.<RetourEquipement>of() : d.equipements()) {
             Equipement e = duPret.get(r.equipementId());
             if (e == null) throw new RegleMetierException("Cet équipement ne fait pas partie du prêt.");
@@ -289,6 +302,10 @@ public class PretService {
             throw new RegleMetierException("Un prêt rendu fait partie de l'historique du matériel : il ne s'annule plus.");
         }
         prets.delete(p);
+    }
+
+    private static List<Equipement> detendeurs(Pret p) {
+        return p.getEquipements().stream().filter(e -> e.getType() == TypeEquipement.DETENDEUR).toList();
     }
 
     private Pret pret(Long id) {
@@ -324,7 +341,8 @@ public class PretService {
                 p.getPretePar() == null ? null : p.getPretePar().nomComplet(),
                 p.getRecuPar() == null ? null : p.getRecuPar().nomComplet(),
                 p.getRemarques(), equipements,
-                photosDuPret.getOrDefault(Moment.AVANT, 0L), photosDuPret.getOrDefault(Moment.APRES, 0L));
+                photosDuPret.getOrDefault(Moment.AVANT, 0L), photosDuPret.getOrDefault(Moment.APRES, 0L),
+                p.isDesinfectionAuRetour());
     }
 
     private static EquipementPreteVue vueEquipement(Equipement e) {

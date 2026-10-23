@@ -1540,6 +1540,8 @@ export interface PretVue {
     ancienneReference: string | null; description: string }[];
   photosAvant: number;
   photosApres: number;
+  /** Détendeur déclaré depuis un séjour par son emprunteur : sa désinfection s'atteste au retour. */
+  desinfectionAuRetour: boolean;
 }
 
 export type MomentPhotoPret = 'AVANT' | 'APRES';
@@ -1722,6 +1724,7 @@ export interface DemandeRetour {
   dateRetour: string;
   equipements: { equipementId: number; incident: string | null; horsService: boolean }[];
   remarques: string | null;
+  detendeursDesinfectes?: boolean;
 }
 
 /** Synthèse des notations d'une séance : dernière note d'un élève sur un critère ce jour-là. */

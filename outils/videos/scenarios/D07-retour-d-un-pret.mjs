@@ -1,5 +1,5 @@
 // D7 — Retour et annulation d'un prêt.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-23, 13e série, détendeur déclaré depuis un séjour désinfecté au retour (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -19,6 +19,7 @@ export default {
     await legende('Pour chaque équipement : un incident éventuel.', 0);
     await saisir(dialogue.locator('input[id^="incident-"]').nth(2), 'Purge basse qui colle');
     await legende('Et si besoin, hors service : il ne sera plus proposé au prêt.', 3500);
+    await legende('Un détendeur déclaré depuis un séjour par son emprunteur porte « Désinfection au retour » : on le désinfecte, et on le coche ici.', 4500);
     await vignette();
     await toucher(dialogue.getByRole('button', { name: 'Valider le retour' }), { apres: 2000 });
     await legende('L\'incident est inscrit au journal de l\'équipement.', 3500);

@@ -907,9 +907,10 @@ Compte : `e3@club.fr` · formats téléphone et ordinateur · 30 s
 1. Camille rapporte le matériel de son week-end.
 2. Pour chaque équipement : un incident éventuel.
 3. Et si besoin, hors service : il ne sera plus proposé au prêt.
-4. L'incident est inscrit au journal de l'équipement.
-5. Les prêts rendus restent consultables, avec leurs photos.
-6. « Annuler le prêt » sert seulement à défaire une erreur de saisie, avant tout retour.
+4. Un détendeur déclaré depuis un séjour par son emprunteur porte « Désinfection au retour » : on le désinfecte, et on le coche ici.
+5. L'incident est inscrit au journal de l'équipement.
+6. Les prêts rendus restent consultables, avec leurs photos.
+7. « Annuler le prêt » sert seulement à défaire une erreur de saisie, avant tout retour.
 
 ### D8 — Prêter pour une sortie
 

@@ -3,7 +3,6 @@ package fr.club.plongee.sejour;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.service.SortieService;
-import fr.club.plongee.materiel.domain.TypeEquipement;
 import fr.club.plongee.materiel.service.PretService;
 import fr.club.plongee.materiel.service.PretService.DeclarationPret;
 import fr.club.plongee.materiel.service.PretService.EquipementPreteVue;
@@ -35,10 +34,12 @@ import java.util.stream.Collectors;
  * Droits, selon qui agit ({@link ActeurFrais}, comme pour les frais) :
  * <ul>
  *   <li>tout participant déclare ce qu'il a emprunté lui-même, élève
- *   compris (une déclaration n'engage pas d'argent), sauf un détendeur :
- *   sa désinfection entre au journal légal et s'atteste par un encadrant ;</li>
+ *   compris (une déclaration n'engage pas d'argent), détendeur compris :
+ *   sa désinfection entre au journal légal et s'atteste par un encadrant,
+ *   ici au retour, par celui qui reçoit le matériel (demande du club, 2026) ;</li>
  *   <li>les organisateurs et les moniteurs inscrits déclarent pour
- *   n'importe quel participant, détendeurs compris ;</li>
+ *   n'importe quel participant, et attestent alors la désinfection d'un
+ *   détendeur à la déclaration ;</li>
  *   <li>un refus ne nomme pas l'emprunteur d'un équipement déjà prêté ;</li>
  *   <li>chacun annule ce qu'il a déclaré, tant que le matériel n'est pas
  *   rendu ; l'organisateur annule tout ;</li>
@@ -124,9 +125,7 @@ public class PretsSejourService {
         List<Inscrit> sansEmprunt = !tout ? List.of()
                 : inscrits.stream().filter(p -> !ontEmprunte.contains(p.id())).toList();
         List<EquipementPreteVue> disponibles = !droits.peutDeclarer() ? List.of()
-                : prets.disponibles(sorties.sortie(sortieId).getDateFin()).stream()
-                        .filter(e -> droits.pourLesAutres() || e.type() != TypeEquipement.DETENDEUR)
-                        .toList();
+                : prets.disponibles(sorties.sortie(sortieId).getDateFin());
         List<EmprunteurPossibleVue> pourQui = inscrits.stream()
                 .filter(p -> droits.pourLesAutres() || (droits.peutDeclarer() && p.id().equals(acteur.participantId())))
                 .map(PretsSejourService::possible)
@@ -146,15 +145,14 @@ public class PretsSejourService {
             throw new RegleMetierException("Vous ne déclarez que le matériel que vous avez emprunté vous-même ; "
                     + "pour un autre, passez par un moniteur du séjour.");
         }
-        // La désinfection entre au journal légal du détendeur : elle s'atteste par un encadrant identifié.
-        if (!droits.pourLesAutres() && prets.contientUnDetendeur(d.equipementIds())) {
-            throw new RegleMetierException("Un détendeur se déclare par l'organisateur ou un moniteur du séjour : "
-                    + "c'est lui qui atteste sa désinfection.");
-        }
         Inscrit emprunteur = inscrits(sortieId).stream().filter(p -> p.id().equals(d.participantId())).findFirst()
                 .orElseThrow(() -> new RessourceIntrouvableException("Participant introuvable dans ce séjour"));
+        // La désinfection d'un détendeur entre à son journal légal et s'atteste par un encadrant identifié :
+        // à la déclaration s'il déclare, sinon au retour, par celui qui reçoit le matériel.
+        boolean parUnEncadrant = droits.pourLesAutres();
         PretVue pret = prets.declarer(new DeclarationPret(emprunteur.eleveId(), emprunteur.utilisateurId(),
-                emprunteur.nomComplet(), sortieId, d.datePret(), d.equipementIds(), d.detendeursDesinfectes(),
+                emprunteur.nomComplet(), sortieId, d.datePret(), d.equipementIds(),
+                parUnEncadrant ? d.detendeursDesinfectes() : null, !parUnEncadrant,
                 nomDe(sortieId, acteur), acteur.utilisateurId()));
         noter(new PretDeclare(pret.id(), emprunteur.id(), acteur.utilisateurId(), acteur.participantId()));
         repondre(emprunteur.id(), false);

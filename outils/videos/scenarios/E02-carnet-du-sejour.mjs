@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-23, 29e série, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-23, 30e série, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -59,7 +59,7 @@ export default {
     await toucher(page.getByRole('button', { name: 'Combinaisons' }), { apres: 1500 });
     await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 3000 });
-    await legende('Un détendeur, lui, se déclare par un moniteur du séjour : il atteste sa désinfection.', 3500);
+    await legende('Un détendeur se déclare de même : sa désinfection se fait à son retour, attestée par le directeur technique.', 4000);
     await enHaut();
     await legende('La question a disparu : sa combinaison est dans la case « Matériel emprunté », avec le jour où le rendre. Rien emprunté ? « Non, je n\'ai rien emprunté », et la question ne revient plus.', 5500);
     await legende('Toucher une case ouvre le détail : ici sa chambre, dans l\'onglet Hébergement.', 0);

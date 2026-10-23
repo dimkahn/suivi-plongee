@@ -124,21 +124,22 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
               }
             </ul>
           }
-          @if (!v.droits.pourLesAutres) {
-            <p class="secondaire">Un détendeur emprunté ? Un moniteur du séjour le déclare pour vous : il atteste
-              sa désinfection.</p>
-          }
           @if (choisis().length > 0) {
             <p class="secondaire">{{ choisis().length }} choisi{{ choisis().length > 1 ? 's' : '' }}</p>
           }
         </fieldset>
 
         @if (avecDetendeur()) {
-          <label class="case desinfection">
-            <input type="checkbox" [(ngModel)]="desinfecte">
-            Le détendeur a été désinfecté avant d'être remis à l'emprunteur (obligatoire à chaque changement
-            d'utilisateur ; inscrit à son journal).
-          </label>
+          @if (v.droits.pourLesAutres) {
+            <label class="case desinfection">
+              <input type="checkbox" [(ngModel)]="desinfecte">
+              Le détendeur a été désinfecté avant d'être remis à l'emprunteur (obligatoire à chaque changement
+              d'utilisateur ; inscrit à son journal).
+            </label>
+          } @else {
+            <p class="note-detendeur">Un détendeur se désinfecte à son retour : le directeur technique, qui reçoit
+              le matériel, l'atteste et l'inscrit à son journal (Code du sport).</p>
+          }
         }
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" (click)="declarer()" [disabled]="envoi()">
@@ -174,6 +175,8 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; }
     .desinfection { font-weight: 700; }
+    .note-detendeur { font-weight: 700; background: var(--en-cours-clair); padding: var(--pas) var(--pas-2);
+                      border-radius: var(--r-s); }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
     .reponses { margin-top: var(--pas-2); padding: var(--pas) var(--pas-2); }
     .reponses h3 { margin: 0 0 var(--pas); font-size: 1rem; }

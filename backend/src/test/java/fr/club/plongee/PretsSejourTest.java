@@ -174,13 +174,10 @@ class PretsSejourTest {
         assertThat(vuePaul.get("droits").get("pourLesAutres").asBoolean()).isFalse();
         assertThat(vuePaul.get("droits").get("moiId").asLong()).isEqualTo(pPaul);
         assertThat(contient(vuePaul.get("disponibles"), gilet)).isTrue();
-        // Un détendeur ne lui est pas proposé : sa désinfection est attestée par un moniteur du séjour.
-        assertThat(contient(vuePaul.get("disponibles"), detendeur)).isFalse();
-        JsonNode refus = envoyer("POST", pub + "/prets", jetonPaul, declaration(pPaul, aujourdhui, true, detendeur), 422);
-        assertThat(refus.get("detail").asText()).isEqualTo("Un détendeur se déclare par l'organisateur ou un moniteur "
-                + "du séjour : c'est lui qui atteste sa désinfection.");
+        // Un détendeur lui est proposé aussi : sa désinfection s'atteste au retour (detendeurDesinfecteAuRetour).
+        assertThat(contient(vuePaul.get("disponibles"), detendeur)).isTrue();
 
-        refus = envoyer("POST", pub + "/prets", jetonPaul, declaration(pFlora, aujourdhui, null, gilet), 422);
+        JsonNode refus = envoyer("POST", pub + "/prets", jetonPaul, declaration(pFlora, aujourdhui, null, gilet), 422);
         assertThat(refus.get("detail").asText()).isEqualTo("Vous ne déclarez que le matériel que vous avez emprunté "
                 + "vous-même ; pour un autre, passez par un moniteur du séjour.");
 
@@ -248,6 +245,46 @@ class PretsSejourTest {
 
         envoyer("GET", pub + "/prets", null, null, 403);
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
+
+    @Test
+    @DisplayName("Un participant déclare lui-même son détendeur ; sa désinfection s'atteste au retour, par celui qui le reçoit")
+    void detendeurDesinfecteAuRetour() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate aujourdhui = LocalDate.now(ZoneId.of("Europe/Paris"));
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour détendeur","dateDebut":"%s","dateFin":"%s"}""".formatted(aujourdhui, aujourdhui.plusDays(1)),
+                201).get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+        long pZoe = ajouter(base, dt, """
+                {"nom":"Invitée","prenom":"Zoé","plongeur":true,"email":"zoe.detendeur@exemple.fr"}""");
+        long detendeur = creerEquipement(dt, "DETENDEUR", "D-RET-" + UUID.randomUUID().toString().substring(0, 6));
+
+        envoyer("POST", base + "/invitations", dt, null, 200);
+        String pub = "/api/public/sejour/" + extraire(dernierPour("zoe.detendeur@exemple.fr"), "/sejour/([A-Za-z0-9_-]+)");
+        String jetonZoe = entrerParLeLien(pub, "zoe.detendeur@exemple.fr");
+
+        // Le détendeur lui est proposé, et elle le déclare sans rien attester.
+        assertThat(contient(envoyer("GET", pub + "/prets", jetonZoe, null, 200).get("disponibles"), detendeur)).isTrue();
+        long pret = envoyer("POST", pub + "/prets", jetonZoe, declaration(pZoe, aujourdhui, null, detendeur), 200)
+                .get("prets").get(0).get("id").asLong();
+
+        // Personne n'a attesté sa désinfection à la remise : rien au journal, elle est due au retour.
+        JsonNode fiche = envoyer("GET", "/api/materiel/equipements/" + detendeur, dt, null, 200);
+        for (JsonNode i : fiche.get("journal")) assertThat(i.get("type").asText()).isNotEqualTo("DESINFECTION");
+        assertThat(fiche.get("prets").get(0).get("desinfectionAuRetour").asBoolean()).isTrue();
+
+        String retour = "{\"dateRetour\":\"%s\"%s}";
+        JsonNode refus = envoyer("POST", "/api/materiel/prets/" + pret + "/retour", dt,
+                retour.formatted(aujourdhui, ""), 422);
+        assertThat(refus.get("detail").asText()).isEqualTo("Ce détendeur a été déclaré par son emprunteur : "
+                + "confirmez sa désinfection au retour (Code du sport, art. A322-81).");
+
+        envoyer("POST", "/api/materiel/prets/" + pret + "/retour", dt,
+                retour.formatted(aujourdhui, ",\"detendeursDesinfectes\":true"), 200);
+        JsonNode apres = envoyer("GET", "/api/materiel/equipements/" + detendeur, dt, null, 200).get("journal").get(0);
+        assertThat(apres.get("type").asText()).isEqualTo("DESINFECTION");
+        assertThat(apres.get("pretId").asLong()).isEqualTo(pret);
     }
 
     @Test

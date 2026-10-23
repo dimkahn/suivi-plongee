@@ -170,6 +170,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
                 </div>
                 @if (p.enRetard) { <span class="etiquette-etat danger">En retard</span> }
                 @if (p.dateRetour) { <span class="etiquette-etat neutre">Rendu</span> }
+                @else if (p.desinfectionAuRetour) { <span class="etiquette-etat attention">Désinfection au retour</span> }
               </div>
               <p class="dates">
                 Prêté le {{ p.datePret | dateFr }}@if (p.pretePar) { par {{ p.pretePar }}}
@@ -228,6 +229,13 @@ interface LigneRetour { incident: string; horsService: boolean; }
                         </label>
                       </div>
                     }
+                    @if (p.desinfectionAuRetour) {
+                      <label class="case desinfection">
+                        <input type="checkbox" [(ngModel)]="desinfecteAuRetour">
+                        Le détendeur a été désinfecté au retour (obligatoire : l'emprunteur l'a déclaré lui-même
+                        depuis le séjour ; inscrit à son journal).
+                      </label>
+                    }
                     <h3 class="titre-photos">Photos de l'état au retour</h3>
                     <app-photos-pret [pret]="p" (nombres)="majNombres(p.id, $event)" />
                     <label [for]="'remarquesRetour-' + p.id">Remarques</label>
@@ -277,6 +285,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
     .materiel-prete { margin: 0; padding-left: 1.25rem; display: grid; gap: 2px; }
     .texte-libre { white-space: pre-line; margin: var(--pas) 0 0; }
     .retour-equipement { border-top: 1px solid var(--trait); margin-top: var(--pas-2); }
+    .case.desinfection { font-weight: 700; border-top: 1px solid var(--trait); margin-top: var(--pas-2); }
     .bouton-photos { margin-top: var(--pas-2); }
     .galerie { margin-top: var(--pas); padding: var(--pas) var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
     .titre-photos { margin: var(--pas-2) 0 0; padding-top: var(--pas-2); border-top: 1px solid var(--trait); font-size: 1rem; }
@@ -324,6 +333,7 @@ export class PretsComponent {
   dateRetour = dateDuJour();
   lignesRetour: Record<number, LigneRetour> = {};
   remarquesRetour = '';
+  desinfecteAuRetour = false;
 
   optionsEmprunteurs = computed<OptionCombobox[]>(() => this.emprunteurs().map(e => ({
     id: cleEmprunteur(e),
@@ -446,6 +456,7 @@ export class PretsComponent {
     this.message.set(null);
     this.dateRetour = this.aujourdhui;
     this.remarquesRetour = '';
+    this.desinfecteAuRetour = false;
     this.lignesRetour = {};
     for (const e of p.equipements) this.lignesRetour[e.id] = { incident: '', horsService: false };
     this.retourOuvert.set(p.id);
@@ -461,7 +472,8 @@ export class PretsComponent {
         incident: this.lignesRetour[e.id]?.incident.trim() || null,
         horsService: !!this.lignesRetour[e.id]?.horsService
       })),
-      remarques: this.remarquesRetour.trim() || null
+      remarques: this.remarquesRetour.trim() || null,
+      detendeursDesinfectes: p.desinfectionAuRetour ? this.desinfecteAuRetour : undefined
     }).subscribe({
       next: rendu => {
         this.envoi.set(false);
