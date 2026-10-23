@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { AvatarComponent } from '../../core/avatar.component';
 import { OngletsComponent } from '../../core/onglets.component';
 import { ReseauService } from '../../core/reseau.service';
-import { reduirePhoto } from '../../core/reduire-photo';
+import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { SejourApi } from './sejour-api';
 import { LigneTrombinoscopeSejour, duGroupe, filtresGroupes } from './trombinoscope-sejour';
 
@@ -20,7 +20,7 @@ import { LigneTrombinoscopeSejour, duGroupe, filtresGroupes } from './trombinosc
  */
 @Component({
   selector: 'app-trombinoscope-sejour',
-  imports: [FormsModule, AvatarComponent, OngletsComponent],
+  imports: [FormsModule, AvatarComponent, OngletsComponent, RecadragePhotoComponent],
   template: `
     @if (lignes() === null) {
       <p class="vide">Chargement…</p>
@@ -62,6 +62,13 @@ import { LigneTrombinoscopeSejour, duGroupe, filtresGroupes } from './trombinosc
           </div>
           @if (envoi()) { <p class="secondaire">Envoi…</p> }
         </section>
+      }
+
+      <!-- Même recadrage que le trombinoscope du club ; dans le contenu du dialogue, qui rend le reste inerte. -->
+      @if (recadrage(); as r) {
+        <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.ligne.prenom + ' ' + r.ligne.nom"
+                             [enCours]="envoi()" (valide)="deposer(r.ligne, $event)"
+                             (annule)="recadrage.set(null)" (illisible)="imageIllisible()" />
       }
 
       <ul class="grille">
@@ -125,6 +132,8 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
   accord = false;
   envoi = signal(false);
   message = signal<string | null>(null);
+  /** La photo choisie, en cours de recadrage avant l'envoi. */
+  recadrage = signal<{ ligne: LigneTrombinoscopeSejour; fichier: File } | null>(null);
 
   filtres = computed(() => filtresGroupes(this.lignes() ?? []));
   affichees = computed(() => duGroupe(this.lignes() ?? [], this.filtre()));
@@ -169,21 +178,34 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
     this.choisi.set(l);
   }
 
-  async choisirPhoto(evenement: Event, l: LigneTrombinoscopeSejour): Promise<void> {
+  /** Ouvre le recadrage ; la photo n'est envoyée qu'une fois validée, comme dans le trombinoscope du club. */
+  choisirPhoto(evenement: Event, l: LigneTrombinoscopeSejour): void {
     const entree = evenement.target as HTMLInputElement;
     const fichier = entree.files?.[0];
     entree.value = '';
     if (!fichier || !this.accord) return;
+    this.message.set(null);
+    this.recadrage.set({ ligne: l, fichier });
+  }
+
+  imageIllisible(): void {
+    this.recadrage.set(null);
+    this.message.set("Cette image n'a pas pu être lue.");
+  }
+
+  /** La photo recadrée (carrée, 480 px, 300 Ko au plus, par le recadrage du club). */
+  async deposer(l: LigneTrombinoscopeSejour, fichier: File): Promise<void> {
     this.envoi.set(true);
     this.message.set(null);
     try {
-      await firstValueFrom(this.api.deposerPhotoInvite(this.sejourId(), l.participantId, await reduirePhoto(fichier)));
+      await firstValueFrom(this.api.deposerPhotoInvite(this.sejourId(), l.participantId, fichier));
       this.majLigne(l.participantId, true);
       this.chargerPhoto(l.participantId);
       this.choisi.set(null);
     } catch (e) {
       this.message.set(this.detail(e, "La photo n'a pas pu être ajoutée."));
     } finally {
+      this.recadrage.set(null);
       this.envoi.set(false);
     }
   }
