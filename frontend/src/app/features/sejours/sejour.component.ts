@@ -159,6 +159,11 @@ function participantVide(): BrouillonParticipant {
           <a class="bouton-discret action" [routerLink]="['/sejours', s.sortie.id, 'imprimer']">
             <span aria-hidden="true">🖨</span> Version imprimable
           </a>
+          @if (s.participants.length > 0 && !copieDu()) {
+            <button type="button" class="bouton-discret action ouvrir-trombinoscope" (click)="trombinoscopeOuvert.set(true)">
+              <span aria-hidden="true">👥</span> Trombinoscope
+            </button>
+          }
           @if (s.gere) {
             <button type="button" class="bouton-discret action" (click)="choisirDestinataires('carnet')" [disabled]="envoi()">
               <span aria-hidden="true">✉</span> Envoyer le carnet…
@@ -172,6 +177,15 @@ function participantVide(): BrouillonParticipant {
           }
         </div>
       </section>
+
+      <!-- Les visages par groupe de plongeurs, pour tous les participants ; le serveur choisit les photos (demande du club, 2026). -->
+      <app-dialogue [ouvert]="trombinoscopeOuvert()" [large]="true" [titre]="'Trombinoscope — ' + s.sortie.nom"
+                    (fermer)="trombinoscopeOuvert.set(false)">
+        @if (trombinoscopeOuvert()) {
+          <app-trombinoscope-sejour [port]="portTrombinoscope()" [gere]="s.gere && !commeParticipant()"
+                                    [vueParticipant]="!s.encadrant || commeParticipant()" />
+        }
+      </app-dialogue>
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
@@ -267,10 +281,6 @@ function participantVide(): BrouillonParticipant {
         <section>
           <div class="titre-section">
             <h2>Participants</h2>
-            @if (s.participants.length > 0 && !copieDu()) {
-              <button type="button" class="bouton-discret sans-impression ouvrir-trombinoscope"
-                      (click)="trombinoscopeOuvert.set(true)">Trombinoscope</button>
-            }
             @if (s.gere) {
               <div class="actions sans-impression">
                 <button type="button" class="bouton-principal" (click)="ouvrirParticipant(null)">Ajouter un participant</button>
@@ -365,14 +375,6 @@ function participantVide(): BrouillonParticipant {
               </li>
             }
           </ul>
-
-          <!-- Les visages par groupe de plongeurs, pour les encadrants (demande du club, 2026). -->
-          <app-dialogue [ouvert]="trombinoscopeOuvert()" [large]="true" [titre]="'Trombinoscope — ' + s.sortie.nom"
-                        (fermer)="trombinoscopeOuvert.set(false)">
-            @if (trombinoscopeOuvert()) {
-              <app-trombinoscope-sejour [sejourId]="s.sortie.id" [gere]="s.gere" />
-            }
-          </app-dialogue>
 
           <h3>Repas</h3>
           <p>{{ s.participants.length }} couverts, dont {{ sansRegime().length }} sans régime particulier.</p>
@@ -1206,7 +1208,7 @@ export class SejourComponent {
   erreur = signal<string | null>(null);
   envoi = signal(false);
   onglet = signal<Onglet>('programme');
-  /** La fenêtre « Trombinoscope » de l'onglet Participants (encadrants, réseau obligatoire). */
+  /** La fenêtre « Trombinoscope » du bandeau Organisation (tous les participants, réseau obligatoire). */
   trombinoscopeOuvert = signal(false);
 
   /**
@@ -1406,6 +1408,8 @@ export class SejourComponent {
   readonly portCartes = this.api.portCartes(this.id, s => this.maj(s));
   /** Les attestations d'assurance : la sienne dans « Mon séjour », celles de chacun pour les organisateurs. */
   readonly portAttestations = this.api.portAttestations(this.id, s => this.maj(s));
+  /** Le trombinoscope : complet pour un encadrant, celui des participants « comme un participant ». */
+  readonly portTrombinoscope = computed(() => this.api.portTrombinoscope(this.id, this.commeParticipant()));
 
   montrerCarte(participantId: number, sens: 'arrivee' | 'depart'): void {
     this.erreur.set(null);

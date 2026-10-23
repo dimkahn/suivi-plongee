@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
 import { FonctionPalanquee, SortieVue } from '../../core/modeles';
-import { LigneTrombinoscopeSejour } from './trombinoscope-sejour';
+import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 
 // ----------------------------------------------------------------
 //  Le séjour d'une sortie (SejourController) : participants, trajets,
@@ -736,25 +736,27 @@ export class SejourApi {
     };
   }
 
-  /** Encadrants seulement : les participants avec leur groupe de plongeurs. */
-  trombinoscope(id: number): Observable<LigneTrombinoscopeSejour[]> {
-    return this.http.get<LigneTrombinoscopeSejour[]>(`/api/sejours/${id}/trombinoscope`);
-  }
-
-  /** Jamais sans le droit à l'image (404). */
-  photoParticipant(id: number, participantId: number): Observable<Blob> {
-    return this.http.get(`/api/sejours/${id}/participants/${participantId}/photo`, { responseType: 'blob' });
-  }
-
-  /** Organisateurs : la photo d'un invité (sans dossier ni compte), avec son accord confirmé. */
-  deposerPhotoInvite(id: number, participantId: number, fichier: File): Observable<void> {
-    const corps = formulairePhoto(fichier);
-    corps.append('accord', 'true');
-    return this.http.post<void>(`/api/sejours/${id}/participants/${participantId}/photo`, corps);
-  }
-
-  retirerPhotoInvite(id: number, participantId: number): Observable<void> {
-    return this.http.delete<void>(`/api/sejours/${id}/participants/${participantId}/photo`);
+  /**
+   * Le trombinoscope pour un compte connecté : complet pour un encadrant, sauf
+   * {@code commeParticipant} ; un participant n'a que les photos qu'on lui a
+   * rendues visibles (filtré par le serveur). Les écritures supposent
+   * l'organisateur ; l'accord de la personne est confirmé à l'écran.
+   */
+  portTrombinoscope(id: number, commeParticipant: boolean): PortTrombinoscope {
+    const base = `/api/sejours/${id}`;
+    const options = commeParticipant ? { params: { commeParticipant } } : {};
+    return {
+      lister: () => this.http.get<LigneTrombinoscopeSejour[]>(`${base}/trombinoscope`, options),
+      photo: p => this.http.get(`${base}/participants/${p}/photo`, { ...options, responseType: 'blob' }),
+      deposerPhotoInvite: (p, fichier, accord) => {
+        const corps = formulairePhoto(fichier);
+        corps.append('accord', String(accord));
+        return this.http.post<void>(`${base}/participants/${p}/photo`, corps);
+      },
+      retirerPhotoInvite: p => this.http.delete<void>(`${base}/participants/${p}/photo`),
+      rendreVisible: (p, visible, accord) =>
+        this.http.put<void>(`${base}/participants/${p}/photo-visible`, { visible, accord })
+    };
   }
 
   /** Le matériel emprunté pendant le séjour, pour un compte connecté. */

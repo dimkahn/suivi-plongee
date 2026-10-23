@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
@@ -29,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("dev")
+@Import(FraisParticipantsTest.BoiteAuxLettres.class)
 class TrombinoscopeSejourTest {
 
     @Autowired MockMvc mvc;
@@ -56,6 +58,23 @@ class TrombinoscopeSejourTest {
                         .content(corps == null ? "" : corps))
                 .andExpect(status().is(attendu)).andReturn().getResponse().getContentAsString();
         return reponse.isEmpty() ? null : json.readTree(reponse);
+    }
+
+    /** Le dernier courriel parti vers cette adresse (boîte de test de {@link FraisParticipantsTest}). */
+    private String dernierPour(String adresse) {
+        synchronized (FraisParticipantsTest.COURRIELS) {
+            for (int i = FraisParticipantsTest.COURRIELS.size() - 1; i >= 0; i--) {
+                var c = FraisParticipantsTest.COURRIELS.get(i);
+                if (c.adresse().equals(adresse)) return c.corps();
+            }
+        }
+        throw new AssertionError("Aucun courriel pour " + adresse);
+    }
+
+    private static String extraire(String texte, String motif) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile(motif).matcher(texte);
+        assertThat(m.find()).as("« %s » dans : %s", motif, texte).isTrue();
+        return m.group(1);
     }
 
     private JsonNode ligneDe(JsonNode trombinoscope, String prenom) {
@@ -199,12 +218,15 @@ class TrombinoscopeSejourTest {
         deposer(photo, dt, "true").andExpect(status().isNoContent());
         JsonNode ligne = ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam");
         assertThat(ligne.get("aPhoto").asBoolean()).isTrue();
+        // L'accord donné pour un invité vaut pour les participants du séjour.
+        assertThat(ligne.get("visibleParticipants").asBoolean()).isTrue();
         mvc.perform(get(photo).header("Authorization", jeton("e1@club.fr")))
                 .andExpect(status().isOk()).andExpect(content().bytes(PNG));
 
         mvc.perform(delete(photo).header("Authorization", dt)).andExpect(status().isNoContent());
-        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam").get("aPhoto").asBoolean())
-                .isFalse();
+        ligne = ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam");
+        assertThat(ligne.get("aPhoto").asBoolean()).isFalse();
+        assertThat(ligne.get("visibleParticipants").asBoolean()).isFalse();
         mvc.perform(get(photo).header("Authorization", dt)).andExpect(status().isNotFound());
     }
 
@@ -301,8 +323,133 @@ class TrombinoscopeSejourTest {
                 .isFalse();
     }
 
+    private long participant(JsonNode sejour, String prenom) {
+        for (JsonNode p : sejour.get("participants")) if (p.get("prenom").asText().equals(prenom)) return p.get("id").asLong();
+        throw new AssertionError(prenom + " absent du séjour");
+    }
+
+    private long eleveAvecPhoto(String admin, String prenom, String marque) throws Exception {
+        long id = envoyer("POST", "/api/eleves", admin, """
+                {"nom":"Vu%s","prenom":"%s","autorisationLegale":true}""".formatted(marque, prenom), 201)
+                .get("id").asLong();
+        autorisationImage(admin, id, true);
+        mvc.perform(multipart("/api/eleves/" + id + "/photo")
+                        .file(new MockMultipartFile("fichier", "p.png", MediaType.IMAGE_PNG_VALUE, PNG))
+                        .header("Authorization", admin))
+                .andExpect(status().isNoContent());
+        return id;
+    }
+
+    private JsonNode parLien(String methode, String url, String jetonLien, String corps, int attendu) throws Exception {
+        var requete = "PUT".equals(methode) ? put(url) : "POST".equals(methode) ? post(url) : get(url);
+        if (jetonLien != null) requete = requete.header("X-Jeton-Sejour", jetonLien);
+        String reponse = mvc.perform(requete.contentType(MediaType.APPLICATION_JSON).content(corps == null ? "" : corps))
+                .andExpect(status().is(attendu)).andReturn().getResponse().getContentAsString();
+        return reponse.isEmpty() ? null : json.readTree(reponse);
+    }
+
     @Test
-    @DisplayName("Un élève ne voit pas le trombinoscope du séjour ni les photos des participants")
+    @DisplayName("Tous les participants voient le trombinoscope, avec les seules photos qu'un organisateur a rendues visibles")
+    void trombinoscopeDesParticipants() throws Exception {
+        String dt = jeton("e3@club.fr"), admin = jeton("presidente@club.fr"), camille = jeton("eleve@club.fr");
+        String marque = UUID.randomUUID().toString().substring(0, 8);
+        long lou = eleveAvecPhoto(admin, "Lou", marque), noe = eleveAvecPhoto(admin, "Noé", marque);
+        long dossierCamille = 0;
+        for (JsonNode p : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {
+            if (p.get("prenom").asText().equals("Camille") && p.hasNonNull("eleveId")) dossierCamille = p.get("eleveId").asLong();
+        }
+        String base = "/api/sejours/" + sejour(dt, "Séjour partagé", 190);
+        envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Vu%s","prenom":"Lou","plongeur":true}""".formatted(lou, marque), 200);
+        envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Vu%s","prenom":"Noé","plongeur":true}""".formatted(noe, marque), 200);
+        envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true}""".formatted(dossierCamille), 200);
+        JsonNode s = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Invité","prenom":"Paul","plongeur":false,"email":"paul-%s@club.fr"}""".formatted(marque), 200);
+        long pLou = participant(s, "Lou"), pNoe = participant(s, "Noé");
+
+        // Avant tout accord, Camille voit les noms, aucune photo.
+        JsonNode vu = envoyer("GET", base + "/trombinoscope", camille, null, 200);
+        assertThat(vu).hasSize(4);
+        assertThat(ligneDe(vu, "Lou").get("aPhoto").asBoolean()).isFalse();
+        assertThat(ligneDe(vu, "Lou").get("invite").asBoolean()).isFalse();
+
+        // Montrer la photo de Lou aux participants : l'accord est exigé, et seul un organisateur le fait.
+        String visible = base + "/participants/" + pLou + "/photo-visible";
+        assertThat(envoyer("PUT", visible, dt, "{\"visible\":true}", 422).get("detail").asText()).contains("accord");
+        envoyer("PUT", visible, jeton("e1@club.fr"), "{\"visible\":true,\"accord\":true}", 403);
+        envoyer("PUT", visible, dt, "{\"visible\":true,\"accord\":true}", 204);
+
+        vu = envoyer("GET", base + "/trombinoscope", camille, null, 200);
+        assertThat(ligneDe(vu, "Lou").get("aPhoto").asBoolean()).isTrue();
+        assertThat(ligneDe(vu, "Noé").get("aPhoto").asBoolean()).isFalse();
+        mvc.perform(get(base + "/participants/" + pLou + "/photo").header("Authorization", camille))
+                .andExpect(status().isOk()).andExpect(content().bytes(PNG));
+        mvc.perform(get(base + "/participants/" + pNoe + "/photo").header("Authorization", camille))
+                .andExpect(status().isNotFound());
+
+        // Les encadrants voient toujours tout ; « comme un participant », ce que voit Camille.
+        JsonNode encadrant = envoyer("GET", base + "/trombinoscope", jeton("e1@club.fr"), null, 200);
+        assertThat(ligneDe(encadrant, "Noé").get("aPhoto").asBoolean()).isTrue();
+        assertThat(ligneDe(encadrant, "Lou").get("visibleParticipants").asBoolean()).isTrue();
+        assertThat(ligneDe(encadrant, "Noé").get("visibleParticipants").asBoolean()).isFalse();
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope?commeParticipant=true", dt, null, 200), "Noé")
+                .get("aPhoto").asBoolean()).isFalse();
+
+        // Paul, invité, par le lien et le code reçus par e-mail.
+        envoyer("POST", base + "/invitations", dt, "{\"participantIds\":[%d]}".formatted(participant(s, "Paul")), 200);
+        String courriel = dernierPour("paul-" + marque + "@club.fr");
+        String pub = "/api/public/sejour/" + extraire(courriel, "/sejour/([A-Za-z0-9_-]+)");
+        parLien("POST", pub + "/code", null, "{\"email\":\"paul-%s@club.fr\"}".formatted(marque), 204);
+        String chiffres = extraire(dernierPour("paul-" + marque + "@club.fr"), "(\\d{6})");
+        String jetonPaul = parLien("POST", pub + "/connexion", null,
+                "{\"email\":\"paul-%s@club.fr\",\"code\":\"%s\"}".formatted(marque, chiffres), 200).get("jeton").asText();
+        JsonNode parLeLien = parLien("GET", pub + "/trombinoscope", jetonPaul, null, 200);
+        assertThat(ligneDe(parLeLien, "Lou").get("aPhoto").asBoolean()).isTrue();
+        assertThat(ligneDe(parLeLien, "Noé").get("aPhoto").asBoolean()).isFalse();
+        mvc.perform(get(pub + "/trombinoscope/" + pLou + "/photo").header("X-Jeton-Sejour", jetonPaul))
+                .andExpect(status().isOk());
+        mvc.perform(get(pub + "/trombinoscope/" + pNoe + "/photo").header("X-Jeton-Sejour", jetonPaul))
+                .andExpect(status().isNotFound());
+        parLien("GET", pub + "/trombinoscope", null, null, 403);
+
+        // L'organisateur ne la montre plus : elle disparaît pour les participants.
+        envoyer("PUT", visible, dt, "{\"visible\":false}", 204);
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", camille, null, 200), "Lou").get("aPhoto").asBoolean())
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("Rattacher un participant à un autre dossier retire sa photo de la vue des participants")
+    void rattacherAilleursRetireLAccord() throws Exception {
+        String dt = jeton("e3@club.fr"), admin = jeton("presidente@club.fr"), camille = jeton("eleve@club.fr");
+        String marque = UUID.randomUUID().toString().substring(0, 8);
+        long lou = eleveAvecPhoto(admin, "Lou", marque), zoe = eleveAvecPhoto(admin, "Zoé", marque);
+        long dossierCamille = 0;
+        for (JsonNode p : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {
+            if (p.get("prenom").asText().equals("Camille") && p.hasNonNull("eleveId")) dossierCamille = p.get("eleveId").asLong();
+        }
+        String base = "/api/sejours/" + sejour(dt, "Séjour rattaché", 195);
+        envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true}""".formatted(dossierCamille), 200);
+        long pLou = participant(envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Vu%s","prenom":"Lou","plongeur":true}""".formatted(lou, marque), 200), "Lou");
+        envoyer("PUT", base + "/participants/" + pLou + "/photo-visible", dt, "{\"visible\":true,\"accord\":true}", 204);
+
+        // La ligne est corrigée : c'était Zoé. Son accord à elle n'a pas été donné.
+        envoyer("PUT", base + "/participants/" + pLou, dt, """
+                {"eleveId":%d,"nom":"Vu%s","prenom":"Zoé","plongeur":true}""".formatted(zoe, marque), 200);
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", camille, null, 200), "Zoé").get("aPhoto").asBoolean())
+                .isFalse();
+        mvc.perform(get(base + "/participants/" + pLou + "/photo").header("Authorization", camille))
+                .andExpect(status().isNotFound());
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Zoé")
+                .get("visibleParticipants").asBoolean()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Un élève qui ne participe pas au séjour ne voit ni son trombinoscope ni les photos")
     void eleveRefuse() throws Exception {
         String dt = jeton("e3@club.fr"), eleve = jeton("eleve@club.fr");
         LocalDate debut = LocalDate.now().plusDays(150);

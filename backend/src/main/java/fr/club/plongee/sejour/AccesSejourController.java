@@ -40,9 +40,12 @@ public class AccesSejourController {
     private final PretsSejourService pretsSejour;
     private final CartesEmbarquementService cartes;
     private final AttestationsAssuranceService attestations;
+    private final TrombinoscopeSejourService trombinoscope;
 
     public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
-                                 CartesEmbarquementService cartes, AttestationsAssuranceService attestations) {
+                                 CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
+                                 TrombinoscopeSejourService trombinoscope) {
+        this.trombinoscope = trombinoscope;
         this.acces = acces;
         this.frais = frais;
         this.pretsSejour = pretsSejour;
@@ -118,6 +121,20 @@ public class AccesSejourController {
                                               @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
         Acces a = acces.acces(code, jeton);
         return SejourController.document(attestations.lire(a.sortieId(), a.participantId()), "attestation-assurance");
+    }
+
+    /** Le trombinoscope du séjour, avec les seules photos rendues visibles aux participants. */
+    @GetMapping("/trombinoscope")
+    public List<TrombinoscopeSejourService.LigneTrombinoscopeSejour> trombinoscope(
+            @PathVariable String code, @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        return trombinoscope.lister(acces.acces(code, jeton).sortieId(), false);
+    }
+
+    @GetMapping("/trombinoscope/{participantId}/photo")
+    public ResponseEntity<byte[]> photoTrombinoscope(@PathVariable String code, @PathVariable Long participantId,
+                                                     @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return SejourController.photoTrombinoscope(trombinoscope.photo(a.sortieId(), participantId, false));
     }
 
     @GetMapping

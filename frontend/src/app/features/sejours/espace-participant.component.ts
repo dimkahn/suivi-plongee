@@ -21,8 +21,10 @@ import {
 import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
 import { cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
+import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
+import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 
-type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel';
+type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel' | 'trombinoscope';
 
 interface EnteteVue {
   nom: string;
@@ -63,7 +65,8 @@ interface CopieLien {
  * donne son e-mail, reçoit un code à 6 chiffres, puis lit le carnet du
  * séjour, toujours à jour (programme, voitures, chambres, affaires, infos
  * pratiques), renseigne ses informations (voyage, repas, personne à prévenir), voit et saisit les
- * frais (un élève les consulte seulement) et déclare le matériel du club qu'il a emprunté. Pendant le séjour, l'encart
+ * frais (un élève les consulte seulement), déclare le matériel du club qu'il a emprunté et voit le
+ * trombinoscope (les seules photos rendues visibles aux participants). Pendant le séjour, l'encart
  * « Aujourd'hui » : son voyage du jour, le programme, le rappel de la veille. Sans connexion à l'appli ; le
  * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après
  * le séjour.
@@ -71,7 +74,7 @@ interface CopieLien {
 @Component({
   selector: 'app-espace-participant',
   imports: [FormsModule, OngletsComponent, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
-            CarnetSejourComponent, CarnetImprimableComponent],
+            CarnetSejourComponent, CarnetImprimableComponent, TrombinoscopeSejourComponent],
   template: `
     @if (imprimable() && carnet(); as c) {
       <app-carnet-imprimable [sejour]="c" (fermer)="imprimable.set(false)" />
@@ -120,6 +123,8 @@ interface CopieLien {
           }
         } @else if (onglet() === 'materiel') {
           <app-sejour-materiel [prets]="prets" />
+        } @else if (onglet() === 'trombinoscope') {
+          <app-trombinoscope-sejour [port]="portTrombinoscope" [vueParticipant]="true" />
         } @else {
           <app-sejour-frais [frais]="v.frais" [participants]="v.participants" [port]="port"
                             (maj)="majFrais($event)" />
@@ -215,7 +220,8 @@ export class EspaceParticipantComponent {
   /** L'ancienne adresse /frais/… ouvre directement les frais. */
   readonly onglets: OptionOnglet<Onglet>[] = [
     { valeur: 'carnet', libelle: 'Carnet' }, { valeur: 'infos', libelle: 'Mes informations' },
-    { valeur: 'frais', libelle: 'Frais' }, { valeur: 'materiel', libelle: 'Matériel' }
+    { valeur: 'frais', libelle: 'Frais' }, { valeur: 'materiel', libelle: 'Matériel' },
+    { valeur: 'trombinoscope', libelle: 'Trombinoscope' }
   ];
   onglet = signal<Onglet>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'carnet');
   chargement = signal(true);
@@ -249,6 +255,12 @@ export class EspaceParticipantComponent {
     ajouterVersement: d => this.suivre(this.http.post<FraisPublicVue>(`${this.base}/versements`, d, this.options())),
     supprimerVersement: versementId => this.suivre(
       this.http.delete<FraisPublicVue>(`${this.base}/versements/${versementId}`, this.options()))
+  };
+
+  /** Le trombinoscope, avec le jeton du lien : les seules photos rendues visibles aux participants. */
+  readonly portTrombinoscope: PortTrombinoscope = {
+    lister: () => this.http.get<LigneTrombinoscopeSejour[]>(`${this.base}/trombinoscope`, this.options()),
+    photo: p => this.http.get(`${this.base}/trombinoscope/${p}/photo`, { headers: this.entetes(), responseType: 'blob' })
   };
 
   /** Le matériel emprunté, avec le jeton du lien. */

@@ -11,6 +11,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +23,10 @@ import java.util.Optional;
 /**
  * Le trombinoscope d'un séjour : chaque participant avec son groupe de
  * plongeurs, pour reconnaître les visages d'un groupe. Lu par les
- * encadrants seulement (le contrôleur le vérifie). La photo vient du
+ * encadrants (toutes les photos consenties) et par les participants du
+ * séjour, qui ne voient que les photos qu'un organisateur leur a rendues
+ * visibles avec l'accord de la personne (V99_5, demande du club 2026 ;
+ * les contrôleurs choisissent la vue). La photo vient du
  * dossier élève, sinon du compte d'encadrant, et jamais sans le droit à
  * l'image de ce dossier ou de ce compte : retirer le consentement supprime
  * la photo, elle disparaît donc aussi d'ici. Un invité, sans dossier ni
@@ -35,10 +41,14 @@ public class TrombinoscopeSejourService {
      * {@code groupe} : le nom du groupe de plongeurs du participant, null
      * hors groupe ; {@code aptitude} : son niveau dans ce groupe ;
      * {@code invite} : ni dossier élève ni compte, sa photo se dépose dans
-     * le séjour.
+     * le séjour ; {@code visibleParticipants} : un organisateur a confirmé
+     * l'accord pour montrer sa photo aux autres participants. Pour un
+     * participant, {@code aPhoto} ne vaut que pour ces photos-là, et
+     * {@code invite} et {@code visibleParticipants} sont toujours faux.
      */
     public record LigneTrombinoscopeSejour(Long participantId, String nom, String prenom, boolean plongeur,
-                                           String groupe, String aptitude, boolean aPhoto, boolean invite) {}
+                                           String groupe, String aptitude, boolean aPhoto, boolean invite,
+                                           boolean visibleParticipants) {}
 
     /** Le contenu d'une photo et son type (image/jpeg ou image/png). */
     public record Photo(byte[] contenu, String type) {}
@@ -91,11 +101,16 @@ public class TrombinoscopeSejourService {
         this.sorties = sorties;
     }
 
-    /** Les participants, rangés par nom puis prénom ; le groupe sert de filtre à l'écran. */
-    public List<LigneTrombinoscopeSejour> lister(Long sortieId) {
+    /**
+     * Les participants, rangés par nom puis prénom ; le groupe sert de filtre
+     * à l'écran. {@code complet} : la vue d'un encadrant (toutes les photos
+     * consenties) ; sinon celle d'un participant (les seules photos rendues
+     * visibles aux participants).
+     */
+    public List<LigneTrombinoscopeSejour> lister(Long sortieId, boolean complet) {
         sorties.sortie(sortieId);
         return jdbc.query("""
-                SELECT p.id, p.nom, p.prenom, p.plongeur, g.nom AS groupe, m.aptitude,
+                SELECT p.id, p.nom, p.prenom, p.plongeur, g.nom AS groupe, m.aptitude, p.photo_visible_participants,
                        %s AS type_photo, CASE WHEN %s THEN TRUE ELSE FALSE END AS invite
                   FROM sejour_participant p
                   LEFT JOIN membre_groupe_plongeurs m ON m.id = p.membre_groupe_id
@@ -103,19 +118,29 @@ public class TrombinoscopeSejourService {
                  WHERE p.sortie_id = :sortie
                  ORDER BY LOWER(p.nom), LOWER(p.prenom), p.id""".formatted(PHOTO.formatted("type_contenu", DOSSIER, INVITE), INVITE),
                 new MapSqlParameterSource("sortie", sortieId),
-                (rs, i) -> new LigneTrombinoscopeSejour(rs.getLong("id"), rs.getString("nom"), rs.getString("prenom"),
-                        rs.getBoolean("plongeur"), rs.getString("groupe"), rs.getString("aptitude"),
-                        rs.getString("type_photo") != null, rs.getBoolean("invite")));
+                (rs, i) -> {
+                    boolean visible = rs.getBoolean("photo_visible_participants");
+                    boolean aPhoto = rs.getString("type_photo") != null && (complet || visible);
+                    return new LigneTrombinoscopeSejour(rs.getLong("id"), rs.getString("nom"), rs.getString("prenom"),
+                            rs.getBoolean("plongeur"), rs.getString("groupe"), rs.getString("aptitude"), aPhoto,
+                            complet && rs.getBoolean("invite"), complet && visible);
+                });
     }
 
-    /** Vide si le participant n'est pas du séjour, n'a pas de photo ou pas le droit à l'image. */
-    public Optional<Photo> photo(Long sortieId, Long participantId) {
+    /**
+     * Vide si le participant n'est pas du séjour, n'a pas de photo ou pas le
+     * droit à l'image ; sans {@code complet} (un participant), aussi si sa
+     * photo n'a pas été rendue visible aux participants.
+     */
+    public Optional<Photo> photo(Long sortieId, Long participantId, boolean complet) {
         return jdbc.query("""
                 SELECT %s AS contenu, %s AS type_photo
                   FROM sejour_participant p
-                 WHERE p.id = :participant AND p.sortie_id = :sortie"""
+                 WHERE p.id = :participant AND p.sortie_id = :sortie
+                   AND (:complet OR p.photo_visible_participants)"""
                         .formatted(PHOTO.formatted("contenu", DOSSIER, INVITE), PHOTO.formatted("type_contenu", DOSSIER, INVITE)),
-                new MapSqlParameterSource("sortie", sortieId).addValue("participant", participantId),
+                new MapSqlParameterSource("sortie", sortieId).addValue("participant", participantId)
+                        .addValue("complet", complet),
                 (rs, i) -> rs.getString("type_photo") == null ? null
                         : new Photo(rs.getBytes("contenu"), rs.getString("type_photo")))
                 .stream().filter(Objects::nonNull).findFirst();
@@ -141,6 +166,8 @@ public class TrombinoscopeSejourService {
                 INSERT INTO sejour_participant_photo (participant_id, contenu, type_contenu, accord_par_utilisateur_id)
                 VALUES (:p, :contenu, :type, :auteur)""",
                 p.addValue("contenu", contenu).addValue("type", type).addValue("auteur", auteur));
+        // L'accord d'un invité vaut pour tout le trombinoscope du séjour, participants compris.
+        marquerVisible(participantId, true, auteur);
     }
 
     /** Retirer la photo, c'est retirer l'accord : rien n'est gardé. */
@@ -149,6 +176,36 @@ public class TrombinoscopeSejourService {
         invite(sortieId, participantId);
         jdbc.update("DELETE FROM sejour_participant_photo WHERE participant_id = :p",
                 new MapSqlParameterSource("p", participantId));
+        marquerVisible(participantId, false, null);
+    }
+
+    /**
+     * Montrer (ou ne plus montrer) la photo d'un participant aux autres
+     * participants du séjour. {@code accord} : l'organisateur confirme
+     * celui de la personne (ou de son responsable légal si elle est
+     * mineure) ; exigé pour montrer, 422 sinon. Ne crée aucune photo : sans
+     * droit à l'image dans son dossier, rien n'est montré.
+     */
+    @Transactional
+    public void rendreVisible(Long sortieId, Long participantId, boolean visible, boolean accord, Long auteur) {
+        Integer n = jdbc.queryForObject("SELECT COUNT(*) FROM sejour_participant WHERE id = :p AND sortie_id = :sortie",
+                new MapSqlParameterSource("p", participantId).addValue("sortie", sortieId), Integer.class);
+        if (n == null || n == 0) throw new RessourceIntrouvableException("Participant introuvable dans ce séjour");
+        if (visible && !accord) {
+            throw new RegleMetierException("Cochez l'accord de la personne (ou de son responsable légal si elle "
+                    + "est mineure) pour montrer sa photo aux autres participants.");
+        }
+        marquerVisible(participantId, visible, auteur);
+    }
+
+    private void marquerVisible(Long participantId, boolean visible, Long auteur) {
+        jdbc.update("""
+                UPDATE sejour_participant SET photo_visible_participants = :visible,
+                       photo_visible_accord_par = :auteur, photo_visible_accord_le = :le
+                 WHERE id = :p""",
+                new MapSqlParameterSource("p", participantId).addValue("visible", visible)
+                        .addValue("auteur", visible ? auteur : null, Types.BIGINT)
+                        .addValue("le", visible ? Timestamp.from(Instant.now()) : null, Types.TIMESTAMP));
     }
 
     /**

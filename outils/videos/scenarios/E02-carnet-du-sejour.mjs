@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-21, 28e série, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-23, 29e série, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir et ses frais, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
+  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir, ses frais et le trombinoscope du séjour, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
@@ -76,6 +76,10 @@ export default {
     await legende('Les frais sont en haut de la page : « Voir les frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
     await toucher(page.getByRole('button', { name: 'Voir les frais' }), { apres: 3500 });
     await legende('Elle a payé quelque chose ? Elle donne la note à un moniteur du séjour, qui la saisit pour elle.', 4000);
+    await enHaut();
+    await legende('En haut de la page, « Trombinoscope » : les participants, par groupe de plongeurs. Une photo n\'y paraît qu\'avec l\'accord de la personne ; sinon, ses initiales.', 0);
+    await toucher(page.locator('.ouvrir-trombinoscope'), { apres: 4000 });
+    await toucher(page.getByRole('button', { name: 'Fermer' }).first(), { apres: 800 });
     await legende('En haut de la page, « Version imprimable » : le carnet mis en page pour le papier, à garder sans réseau.', 4000);
     await legende(null, 0);
     await pause(500);

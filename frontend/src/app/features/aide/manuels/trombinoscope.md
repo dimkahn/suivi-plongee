@@ -30,4 +30,4 @@ Menu, « Trombinoscope » : les élèves de la saison rangés par groupe d'entra
 - **Pas de photo sans droit à l'image** : c'est un accord distinct de l'autorisation de plonger, recueilli par un administrateur dans le dossier de l'élève.
 - Une carte sans photo : une fois le droit à l'image enregistré, « Prendre une photo » ouvre l'appareil photo, « Choisir dans mes photos » la galerie du téléphone.
 - Votre propre photo se dépose depuis « Mon compte ».
-- Les visages d'un **séjour**, par groupe de plongeurs : bouton « Trombinoscope » de l'onglet Participants du séjour (voir « Organiser un séjour ») ; on y ajoute aussi la photo d'un invité, effacée après le séjour.
+- Les visages d'un **séjour**, par groupe de plongeurs : bouton « Trombinoscope » du bandeau Organisation du séjour (voir « Organiser un séjour ») ; on y ajoute aussi la photo d'un invité, effacée après le séjour. Les participants le voient aussi, avec les seules photos qu'un organisateur leur montre, avec l'accord de la personne.

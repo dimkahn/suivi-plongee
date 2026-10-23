@@ -3,7 +3,7 @@ titre: Le carnet du séjour
 rubrique: Élève
 videos: E2
 ecran: /sejours
-mots: séjour, carnet, rembourser le club, dû au club, payé par le club, matériel emprunté, avez-vous emprunté du matériel, rien emprunté, voir les frais, mon séjour, mes comptes, mes informations, à compléter, solde, transports, hébergement, pratique, voyage, vol, arrivée, départ, voiture, chambre, programme, affaires, valise, liste, frais, rembourser, argent, dépenses, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, encadrant, fonction, binôme, rappel, veille, à quelle heure, aéroport, gare, embarquement, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, où arrive, vol long, vol de nuit, lendemain, retour, retard, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, PNR, billet, compagnie, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, joindre, pdf du billet, capture d'écran, qr code, code-barres, assurance, attestation d'assurance, mon attestation d'assurance, responsabilité civile, assurance plongée, licence, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire, hors ligne, sans réseau, pas de réseau
+mots: séjour, carnet, rembourser le club, dû au club, payé par le club, matériel emprunté, avez-vous emprunté du matériel, rien emprunté, voir les frais, mon séjour, mes comptes, mes informations, à compléter, solde, transports, hébergement, pratique, voyage, vol, arrivée, départ, voiture, chambre, programme, affaires, valise, liste, frais, rembourser, argent, dépenses, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, encadrant, fonction, binôme, rappel, veille, à quelle heure, aéroport, gare, embarquement, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, où arrive, vol long, vol de nuit, lendemain, retour, retard, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, PNR, billet, compagnie, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, joindre, pdf du billet, capture d'écran, qr code, code-barres, assurance, attestation d'assurance, mon attestation d'assurance, responsabilité civile, assurance plongée, licence, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire, hors ligne, sans réseau, pas de réseau, trombinoscope, trombi, photos, visages, qui est qui, groupe de plongeurs
 questions:
 - Où trouver le programme du séjour ?
 - Qu'est-ce qu'on fait aujourd'hui pendant le séjour ?
@@ -22,6 +22,7 @@ questions:
 - Où mettre mon attestation d'assurance pour le séjour ?
 - Faut-il une assurance complémentaire pour le séjour ?
 - J'ai emprunté un gilet du club pour le séjour : où le noter ?
+- Où voir les photos des autres participants du séjour ?
 ---
 Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, votre voiture, votre chambre, le programme jour par jour, les affaires à prévoir et les frais partagés. **Élèves** : les comptes élèves ne sont pas encore ouverts au club ; passez par le lien de l'e-mail « Vos informations pour le séjour » (voir « Mon séjour, par le lien reçu par e-mail »).
 
@@ -38,7 +39,8 @@ Menu « Séjours » : les séjours où vous êtes inscrit, avec votre voyage, vo
 4. En haut aussi, l'encart **Frais du séjour** : le total dépensé, ce que vous devez ou ce qu'on vous doit, et le bouton « **Voir les frais** ».
 5. Les onglets : Frais, Programme (le jour même y est marqué « aujourd'hui » ; votre palanquée sous chaque plongée), Transports (arrivées, départs et voitures), Hébergement (chambres), Matériel (le matériel du club que vous avez emprunté : « Déclarer un emprunt »), Pratique (affaires à prévoir et infos pratiques).
 6. « Frais » : en tête, **votre solde** (ce que vous devez, à qui, ou ce qu'on vous doit ; « au club » quand le club a avancé une dépense, un bateau par exemple), puis qui doit combien à qui et les dépenses, une ligne chacune ; touchez une dépense pour voir le partage et la photo de la note. Le compte de chacun est dans « Détail des comptes », en bas. Vous avez payé quelque chose ? Donnez la note à un moniteur du séjour : il la saisit pour vous.
-7. « Version imprimable », en haut de la page : le carnet mis en page pour le papier (programme avec votre palanquée, participants, transports, chambres, affaires à cocher, infos pratiques, frais). Décochez les rubriques inutiles, puis « Imprimer ou enregistrer en PDF » pour l'avoir sans réseau.
+7. « **Trombinoscope** », en haut de la page : les participants du séjour, filtrables par groupe de plongeurs. Une photo n'y paraît que si la personne (ou son responsable légal) a donné son accord à l'organisateur ; sinon, ses initiales. Il faut du réseau.
+8. « Version imprimable », en haut de la page : le carnet mis en page pour le papier (programme avec votre palanquée, participants, transports, chambres, affaires à cocher, infos pratiques, frais). Décochez les rubriques inutiles, puis « Imprimer ou enregistrer en PDF » pour l'avoir sans réseau.
 
 ## Bon à savoir
 

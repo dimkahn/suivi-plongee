@@ -1,4 +1,20 @@
+import { Observable } from 'rxjs';
 import { OptionOnglet } from '../../core/onglets.component';
+
+/**
+ * Le trombinoscope du séjour, dans l'appli comme par la page du lien : le
+ * serveur filtre selon qui lit. Les écritures (photo d'un invité, photo
+ * montrée aux participants) n'existent que pour les organisateurs, dans
+ * l'appli.
+ */
+export interface PortTrombinoscope {
+  lister(): Observable<LigneTrombinoscopeSejour[]>;
+  photo(participantId: number): Observable<Blob>;
+  /** {@code accord} : la case cochée à l'écran, revérifiée par le serveur. */
+  deposerPhotoInvite?(participantId: number, fichier: File, accord: boolean): Observable<void>;
+  retirerPhotoInvite?(participantId: number): Observable<void>;
+  rendreVisible?(participantId: number, visible: boolean, accord: boolean): Observable<void>;
+}
 
 /** Un participant du séjour dans le trombinoscope (TrombinoscopeSejourService). */
 export interface LigneTrombinoscopeSejour {
@@ -14,6 +30,8 @@ export interface LigneTrombinoscopeSejour {
   aPhoto: boolean;
   /** Ni dossier élève ni compte : sa photo se dépose dans le séjour, par un organisateur. */
   invite: boolean;
+  /** Sa photo est montrée aux autres participants (accord confirmé par un organisateur). */
+  visibleParticipants: boolean;
 }
 
 /** Valeur du bouton « Sans groupe » : un nom de groupe ne commence jamais par ce caractère. */

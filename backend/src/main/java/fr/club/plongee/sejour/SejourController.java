@@ -200,21 +200,52 @@ public class SejourController {
     }
 
     // ------------------------------------------------------------------
-    //  Trombinoscope : les encadrants seulement, jamais une photo sans le droit à l'image.
+    //  Trombinoscope : jamais une photo sans le droit à l'image ; les encadrants voient toutes
+    //  les photos consenties, les participants celles qu'un organisateur leur a rendues visibles.
     // ------------------------------------------------------------------
 
-    /** Les participants avec leur groupe de plongeurs ; un élève n'y a pas accès (photos de mineurs). */
+    /** Les participants avec leur groupe de plongeurs, filtrés par le serveur selon qui lit. */
     @GetMapping("/{id}/trombinoscope")
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN','DIRECTEUR_TECHNIQUE')")
-    public List<TrombinoscopeSejourService.LigneTrombinoscopeSejour> trombinoscope(@PathVariable Long id) {
-        return trombinoscope.lister(id);
+    @PreAuthorize("isAuthenticated()")
+    public List<TrombinoscopeSejourService.LigneTrombinoscopeSejour> trombinoscope(
+            @PathVariable Long id, @RequestParam(defaultValue = "false") boolean commeParticipant,
+            @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return trombinoscope.lister(id, vueComplete(id, moi, commeParticipant));
     }
 
     @GetMapping("/{id}/participants/{participantId}/photo")
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN','DIRECTEUR_TECHNIQUE')")
-    public ResponseEntity<byte[]> photo(@PathVariable Long id, @PathVariable Long participantId) {
-        return trombinoscope.photo(id, participantId)
-                .map(p -> ResponseEntity.ok().contentType(MediaType.parseMediaType(p.type()))
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> photo(@PathVariable Long id, @PathVariable Long participantId,
+                                        @RequestParam(defaultValue = "false") boolean commeParticipant,
+                                        @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return photoTrombinoscope(trombinoscope.photo(id, participantId, vueComplete(id, moi, commeParticipant)));
+    }
+
+    /** Montrer sa photo aux autres participants : l'organisateur confirme l'accord de la personne. */
+    public record DemandePhotoVisible(@NotNull Boolean visible, Boolean accord) {}
+
+    @PutMapping("/{id}/participants/{participantId}/photo-visible")
+    @PreAuthorize(GERE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void rendrePhotoVisible(@PathVariable Long id, @PathVariable Long participantId,
+                                   @Valid @RequestBody DemandePhotoVisible d,
+                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        trombinoscope.rendreVisible(id, participantId, d.visible(), Boolean.TRUE.equals(d.accord()), moi.id());
+    }
+
+    /**
+     * Un encadrant voit le trombinoscope complet (sauf « comme un participant ») ;
+     * un participant du séjour, la vue des participants ; les autres, 403.
+     */
+    private boolean vueComplete(Long id, UtilisateurPrincipal moi, boolean commeParticipant) {
+        boolean encadrant = SejourService.encadrant(moi);
+        if (encadrant && !commeParticipant) return true;
+        if (encadrant || frais.acteur(id, moi).participantId() != null) return false;
+        throw new AccessDeniedException("Le trombinoscope n'est ouvert qu'aux participants du séjour et aux encadrants.");
+    }
+
+    static ResponseEntity<byte[]> photoTrombinoscope(java.util.Optional<TrombinoscopeSejourService.Photo> photo) {
+        return photo.map(p -> ResponseEntity.ok().contentType(MediaType.parseMediaType(p.type()))
                         .cacheControl(CacheControl.noStore()).body(p.contenu()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

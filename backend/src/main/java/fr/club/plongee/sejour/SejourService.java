@@ -720,6 +720,12 @@ public class SejourService {
         verifierParticipants(sortieId, List.of(participantId));
         verifier(sortieId, participantId, d);
         var p = parametres(sortieId, d).addValue("pid", participantId);
+        // Rattaché à une autre personne : l'accord pour montrer sa photo aux participants ne la suit pas.
+        jdbc.update("""
+                UPDATE sejour_participant SET photo_visible_participants = FALSE,
+                       photo_visible_accord_par = NULL, photo_visible_accord_le = NULL
+                 WHERE id = :pid AND (eleve_id IS DISTINCT FROM :eleve OR utilisateur_id IS DISTINCT FROM :utilisateur
+                       OR membre_groupe_id IS DISTINCT FROM :membreGroupe)""", p);
         jdbc.update("""
                 UPDATE sejour_participant SET eleve_id = :eleve, utilisateur_id = :utilisateur, nom = :nom,
                        prenom = :prenom, plongeur = :plongeur, membre_groupe_id = :membreGroupe,
@@ -926,7 +932,9 @@ public class SejourService {
             if (deja != null) {
                 if (memesCoordonnees(deja.id(), m)) {
                     jdbc.update("""
-                            UPDATE sejour_participant SET membre_groupe_id = :membre, plongeur = TRUE
+                            UPDATE sejour_participant SET membre_groupe_id = :membre, plongeur = TRUE,
+                                   photo_visible_participants = FALSE, photo_visible_accord_par = NULL,
+                                   photo_visible_accord_le = NULL
                              WHERE id = :pid AND membre_groupe_id IS NULL""",
                             new MapSqlParameterSource("membre", m.membreGroupeId()).addValue("pid", deja.id()));
                 }
