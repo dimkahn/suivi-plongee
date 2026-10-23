@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { AvatarComponent } from '../../core/avatar.component';
+import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent } from '../../core/onglets.component';
 import { ReseauService } from '../../core/reseau.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
@@ -23,7 +24,7 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
  */
 @Component({
   selector: 'app-trombinoscope-sejour',
-  imports: [FormsModule, AvatarComponent, OngletsComponent, RecadragePhotoComponent],
+  imports: [FormsModule, AvatarComponent, DialogueComponent, OngletsComponent, RecadragePhotoComponent],
   template: `
     @if (lignes() === null) {
       <p class="vide">Chargement…</p>
@@ -45,45 +46,48 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
         }
       </p>
 
-      @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+      @if (message() && !demande()) { <div class="alerte" role="status">{{ message() }}</div> }
 
-      @if (demande(); as d) {
-        <!-- L'accord de la personne, confirmé par l'organisateur (règle du club pour les photos de personnes). -->
-        <section class="carte ajout-photo" [attr.aria-label]="d.sorte === 'PHOTO' ? 'Ajouter une photo' : 'Montrer aux participants'">
-          <h3>{{ d.sorte === 'PHOTO' ? 'Photo de' : 'Montrer aux participants la photo de' }} {{ d.ligne.prenom }} {{ d.ligne.nom }}</h3>
-          <label class="case">
-            <input type="checkbox" [(ngModel)]="accord" name="accordPhotoSejour">
-            {{ d.ligne.prenom }} (ou son responsable légal s'il est mineur) accepte que sa photo figure dans le
-            trombinoscope du séjour, vu des encadrants et des autres participants, et effacé de ce trombinoscope après le séjour.
-          </label>
-          <div class="choix-photo">
-            @if (d.sorte === 'PHOTO') {
-              <!-- « capture » ouvre directement l'appareil photo ; sans lui, la galerie du téléphone. -->
-              <label class="bouton-discret upload" [class.inactif]="!accord || envoi()">
-                📷 Prendre une photo
-                <input type="file" accept="image/*" capture="environment" hidden [disabled]="!accord || envoi()"
-                       (change)="choisirPhoto($event, d.ligne)">
-              </label>
-              <label class="bouton-discret upload" [class.inactif]="!accord || envoi()">
-                🖼️ Choisir dans mes photos
-                <input type="file" accept="image/*" hidden [disabled]="!accord || envoi()" (change)="choisirPhoto($event, d.ligne)">
-              </label>
-            } @else {
-              <button type="button" class="bouton-principal" [disabled]="!accord || envoi()"
-                      (click)="rendreVisible(d.ligne, true)">Montrer aux participants</button>
-            }
-            <button type="button" class="bouton-discret" (click)="demande.set(null)">Annuler</button>
+      <!-- L'accord de la personne, confirmé par l'organisateur (règle du club pour les photos de personnes).
+           Une fenêtre par-dessus le trombinoscope : visible sans défiler, quelle que soit la carte touchée. -->
+      <app-dialogue [ouvert]="!!demande()" [erreur]="message()" (fermer)="fermerDemande()"
+                    [titre]="titreDemande()">
+        @if (demande(); as d) {
+          <div class="ajout-photo">
+            <label class="case">
+              <input type="checkbox" [(ngModel)]="accord" name="accordPhotoSejour">
+              {{ d.ligne.prenom }} (ou son responsable légal s'il est mineur) accepte que sa photo figure dans le
+              trombinoscope du séjour, vu des encadrants et des autres participants, et effacé de ce trombinoscope après le séjour.
+            </label>
+            <div class="actions-dialogue choix-photo">
+              @if (d.sorte === 'PHOTO') {
+                <!-- « capture » ouvre directement l'appareil photo ; sans lui, la galerie du téléphone. -->
+                <label class="bouton-discret upload" [class.inactif]="!accord || envoi()">
+                  📷 Prendre une photo
+                  <input type="file" accept="image/*" capture="environment" hidden [disabled]="!accord || envoi()"
+                         (change)="choisirPhoto($event, d.ligne)">
+                </label>
+                <label class="bouton-discret upload" [class.inactif]="!accord || envoi()">
+                  🖼️ Choisir dans mes photos
+                  <input type="file" accept="image/*" hidden [disabled]="!accord || envoi()" (change)="choisirPhoto($event, d.ligne)">
+                </label>
+              } @else {
+                <button type="button" class="bouton-principal" [disabled]="!accord || envoi()"
+                        (click)="rendreVisible(d.ligne, true)">Montrer aux participants</button>
+              }
+              <button type="button" class="bouton-discret" (click)="fermerDemande()">Annuler</button>
+            </div>
+            @if (envoi()) { <p class="secondaire">Envoi…</p> }
           </div>
-          @if (envoi()) { <p class="secondaire">Envoi…</p> }
-        </section>
-      }
 
-      <!-- Même recadrage que le trombinoscope du club ; dans le contenu du dialogue, qui rend le reste inerte. -->
-      @if (recadrage(); as r) {
-        <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.ligne.prenom + ' ' + r.ligne.nom"
-                             [enCours]="envoi()" (valide)="deposer(r.ligne, $event)"
-                             (annule)="recadrage.set(null)" (illisible)="imageIllisible()" />
-      }
+          <!-- Même recadrage que le trombinoscope du club ; dans le contenu du dialogue, qui rend le reste inerte. -->
+          @if (recadrage(); as r) {
+            <app-recadrage-photo [fichier]="r.fichier" [titre]="'Recadrer la photo de ' + r.ligne.prenom + ' ' + r.ligne.nom"
+                                 [enCours]="envoi()" (valide)="deposer(r.ligne, $event)"
+                                 (annule)="recadrage.set(null)" (illisible)="imageIllisible()" />
+          }
+        }
+      </app-dialogue>
 
       <ul class="grille">
         @for (l of affichees(); track l.participantId) {
@@ -130,12 +134,8 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
     app-avatar { --taille-avatar: 96px; }
     .nom { font-weight: 700; margin-top: 4px; }
     .fiche .bouton-lien { min-height: 44px; }
-    .ajout-photo { display: grid; gap: var(--pas); margin: var(--pas-2) 0; }
-    .ajout-photo h3 { margin: 0; }
     .case { display: flex; align-items: flex-start; gap: var(--pas); min-height: 44px; }
     .case input { width: auto; flex: none; margin-top: 4px; }
-    .choix-photo { display: flex; flex-wrap: wrap; gap: var(--pas); }
-    .choix-photo .bouton-principal { width: auto; margin-top: 0; }
     .upload { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer;
               border: 1px solid var(--trait); border-radius: var(--r-s); }
     .upload.inactif { opacity: .5; cursor: not-allowed; }
@@ -167,6 +167,11 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
 
   filtres = computed(() => filtresGroupes(this.lignes() ?? []));
   affichees = computed(() => duGroupe(this.lignes() ?? [], this.filtre()));
+  titreDemande = computed(() => {
+    const d = this.demande();
+    if (!d) return '';
+    return `${d.sorte === 'PHOTO' ? 'Photo de' : 'Montrer aux participants la photo de'} ${d.ligne.prenom} ${d.ligne.nom}`;
+  });
 
   async ngOnInit(): Promise<void> {
     try {
@@ -206,6 +211,13 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
     this.accord = false;
     this.message.set(null);
     this.demande.set({ sorte, ligne });
+  }
+
+  /** Annuler, la croix ou Échap : l'erreur affichée dans la fenêtre part avec elle. */
+  fermerDemande(): void {
+    this.demande.set(null);
+    this.recadrage.set(null);
+    this.message.set(null);
   }
 
   /** Ouvre le recadrage ; la photo n'est envoyée qu'une fois validée, comme dans le trombinoscope du club. */
