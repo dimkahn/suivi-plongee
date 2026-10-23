@@ -1,12 +1,12 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo de la note.
-// Tournage du 2026-10-16, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-23, 14e série, une dépense avancée par le club (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M25',
   titre: 'Noter une dépense du séjour',
   public: 'Moniteur',
-  resume: 'Inscrit au séjour, le moniteur ouvre les frais par l\'encart en haut de la page et note ce qu\'il a payé, ou ce qu\'un élève a payé, avec la photo de la note.',
+  resume: 'Inscrit au séjour, le moniteur ouvre les frais par l\'encart en haut de la page et note ce qu\'il a payé, ou ce qu\'un élève a payé, avec la photo de la note, ou ce que le club a avancé.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, choisir, menu, vignette, selon }) {
@@ -38,6 +38,13 @@ export default {
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2000 });
     await legende('Les comptes se recalculent aussitôt. Flora ne modifie que ce qu\'elle a saisi.', 4000);
+    await legende('Le club a payé le gonflage des blocs ? « Payé par » : « Le club ». Chacun lui doit sa part.', 0);
+    await toucher(page.getByRole('button', { name: 'Ajouter une dépense' }), { apres: 900 });
+    await saisir('#d-libelle', 'Gonflage des blocs');
+    await saisir('#d-montant', '36,00');
+    await choisir('#d-payeur', 'Le club');
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
+    await legende('Dans « Qui doit combien à qui » : « … doit … au club ». Un moniteur du séjour note le remboursement.', 4500);
     await legende('Les participants qui ne sont pas moniteurs reçoivent un lien et un code par e-mail pour noter les leurs.', 4500);
     await legende(null, 0);
     await pause(500);

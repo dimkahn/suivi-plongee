@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Les frais d'un séjour (V76, V77) : lecture, dépenses, remboursements et
@@ -74,14 +75,17 @@ public class FraisService {
     public record FraisVue(List<FraisSejour.Depense> depenses, List<FraisSejour.Versement> versements,
                            FraisSejour.Comptes comptes, DroitsFrais droits) {}
 
-    /** {@code parts} : les participants qui partagent la dépense, chacun avec son poids. */
+    /**
+     * {@code parts} : les participants qui partagent la dépense, chacun avec son poids ;
+     * {@code payeurId} null : avancée par le club.
+     */
     public record DemandeDepense(@NotBlank @Size(max = 160) String libelle,
                                  @NotNull FraisSejour.CategorieDepense categorie,
-                                 @NotNull Long montantCentimes, @NotNull Long payeurId, LocalDate jour,
+                                 @NotNull Long montantCentimes, Long payeurId, LocalDate jour,
                                  List<FraisSejour.Part> parts) {}
 
-    public record DemandeVersement(@NotNull Long deId, @NotNull Long aId, @NotNull Long montantCentimes,
-                                   LocalDate jour) {}
+    /** {@code deId} null : versé par le club ; {@code aId} null : versé au club. */
+    public record DemandeVersement(Long deId, Long aId, @NotNull Long montantCentimes, LocalDate jour) {}
 
     public record ContenuPhoto(byte[] contenu, String type) {}
 
@@ -155,14 +159,15 @@ public class FraisService {
                 SELECT * FROM sejour_depense WHERE sortie_id = :id ORDER BY jour, id""", id,
                 (rs, i) -> new FraisSejour.Depense(rs.getLong("id"), rs.getString("libelle"),
                         FraisSejour.CategorieDepense.valueOf(rs.getString("categorie")),
-                        rs.getLong("montant_centimes"), rs.getLong("payeur_id"),
+                        rs.getLong("montant_centimes"), rs.getObject("payeur_id", Long.class),
                         rs.getObject("jour", LocalDate.class), parts.getOrDefault(rs.getLong("id"), List.of()),
                         photos.getOrDefault(rs.getLong("id"), List.of()),
                         rs.getObject("saisie_par_utilisateur_id", Long.class),
                         rs.getObject("saisie_par_participant_id", Long.class)));
         List<FraisSejour.Versement> versements = jdbc.query("""
                 SELECT * FROM sejour_versement WHERE sortie_id = :id ORDER BY jour, id""", id,
-                (rs, i) -> new FraisSejour.Versement(rs.getLong("id"), rs.getLong("de_id"), rs.getLong("a_id"),
+                (rs, i) -> new FraisSejour.Versement(rs.getLong("id"),
+                        rs.getObject("de_id", Long.class), rs.getObject("a_id", Long.class),
                         rs.getLong("montant_centimes"), rs.getObject("jour", LocalDate.class),
                         rs.getObject("saisie_par_utilisateur_id", Long.class),
                         rs.getObject("saisie_par_participant_id", Long.class)));
@@ -261,10 +266,13 @@ public class FraisService {
         jdbc.update("DELETE FROM sejour_depense WHERE id = :d", new MapSqlParameterSource("d", depenseId));
     }
 
-    /** Les parts retenues : une par participant, au moins une. Payé par soi-même, sauf organisateur ou moniteur. */
+    /**
+     * Les parts retenues : une par participant, au moins une. Payé par soi-même, sauf organisateur ou
+     * moniteur (pour un autre ou pour le club).
+     */
     private List<FraisSejour.Part> verifier(Long sortieId, DemandeDepense d, ActeurFrais acteur) {
         verifierMontant(d.montantCentimes());
-        if (!acteur.pourLesAutres() && !d.payeurId().equals(acteur.participantId())) {
+        if (!acteur.pourLesAutres() && (d.payeurId() == null || !d.payeurId().equals(acteur.participantId()))) {
             throw new RegleMetierException("Vous ne pouvez saisir que les dépenses que vous avez payées vous-même ; "
                     + "pour un autre, passez par un moniteur du séjour.");
         }
@@ -280,7 +288,7 @@ public class FraisService {
             throw new RegleMetierException("Cochez au moins un participant qui partage cette dépense.");
         }
         List<Long> tous = new ArrayList<>(parts.keySet());
-        tous.add(d.payeurId());
+        if (d.payeurId() != null) tous.add(d.payeurId());
         verifierParticipants(sortieId, tous);
         return new ArrayList<>(parts.values());
     }
@@ -323,15 +331,16 @@ public class FraisService {
     @Transactional
     public void creerVersement(Long sortieId, DemandeVersement d, ActeurFrais acteur) {
         sorties.sortie(sortieId);
-        boolean recu = acteur.peutAjouter() && d.aId().equals(acteur.participantId());
+        // Celui que le club rembourse le note ; ce qu'on verse au club, l'organisateur ou un moniteur du séjour.
+        boolean recu = acteur.peutAjouter() && d.aId() != null && d.aId().equals(acteur.participantId());
         if (!acteur.pourLesAutres() && !recu) {
             throw new RegleMetierException("Un remboursement se note par celui qui l'a reçu, ou par un moniteur du séjour.");
         }
         verifierMontant(d.montantCentimes());
-        if (d.deId().equals(d.aId())) {
-            throw new RegleMetierException("Un remboursement va d'un participant à un autre.");
+        if (Objects.equals(d.deId(), d.aId())) {
+            throw new RegleMetierException("Un remboursement va d'un participant à un autre, ou au club.");
         }
-        verifierParticipants(sortieId, List.of(d.deId(), d.aId()));
+        verifierParticipants(sortieId, Stream.of(d.deId(), d.aId()).filter(Objects::nonNull).toList());
         jdbc.update("""
                 INSERT INTO sejour_versement (sortie_id, de_id, a_id, montant_centimes, jour,
                        saisie_par_utilisateur_id, saisie_par_participant_id)

@@ -183,4 +183,20 @@ describe('Les comptes des frais calculés sur le téléphone, comme le serveur',
     expect(apres.soldes.map(s => s.soldeCentimes)).toEqual([6000, -6000, 0]);
     expect(apres.remboursements).toEqual([{ deId: 2, aId: 1, montantCentimes: 6000 }]);
   });
+
+  it('le club peut avancer une dépense : on lui rembourse sa part comme à un participant', () => {
+    const tous = [{ participantId: 1, parts: 1 }, { participantId: 2, parts: 1 }, { participantId: 3, parts: 1 }];
+    const depense = (id: number, montant: number, payeurId: number | null) => ({
+      id, libelle: '', categorie: 'AUTRE' as const, montantCentimes: montant, payeurId, jour: null, parts: tous,
+      photos: [], saisieParUtilisateurId: null, saisieParParticipantId: null
+    });
+    const depenses = [depense(1, 30000, null), depense(2, 6000, 1)];
+    const c = comptesFrais([1, 2, 3], { depenses, versements: [] });
+    expect(c.soldes.map(s => [s.participantId, s.soldeCentimes])).toEqual([[1, -6000], [2, -12000], [3, -12000], [null, 30000]]);
+    expect(c.remboursements).toEqual([{ deId: 2, aId: null, montantCentimes: 12000 },
+      { deId: 3, aId: null, montantCentimes: 12000 }, { deId: 1, aId: null, montantCentimes: 6000 }]);
+
+    const apres = comptesFrais([1, 2, 3], { depenses, versements: [{ id: 1, deId: 2, aId: null, montantCentimes: 12000, jour: null }] });
+    expect(apres.remboursements).toEqual([{ deId: 3, aId: null, montantCentimes: 12000 }, { deId: 1, aId: null, montantCentimes: 6000 }]);
+  });
 });

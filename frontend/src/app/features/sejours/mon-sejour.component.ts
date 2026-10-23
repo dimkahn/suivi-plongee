@@ -6,7 +6,8 @@ import { MonMateriel, PretsDuSejour, monMateriel } from './materiel-sejour';
 import { CarteVoyageComponent } from './carte-voyage.component';
 import { AttestationAssuranceComponent } from './attestation-assurance.component';
 import { enCarte } from './voyage';
-import { ParticipantVue, PortAttestationAssurance, PortCartesEmbarquement, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, nomComplet } from './sejour-api';
+import { ParticipantVue, PortAttestationAssurance, PortCartesEmbarquement, REGIMES, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong, majuscule, nomComplet,
+  remboursementsDe } from './sejour-api';
 
 /**
  * Où mène chaque tuile : un onglet du séjour, ou la fenêtre « Mes informations » ;
@@ -281,11 +282,7 @@ export class MonSejourComponent implements OnInit {
   /** Son solde (payé, sa part) et les remboursements qui le concernent. */
   private tuileComptes(s: SejourVue, m: ParticipantVue): Tuile {
     const solde = s.frais.comptes.soldes.find(x => x.participantId === m.id);
-    const lignes = s.frais.comptes.remboursements
-      .filter(r => r.deId === m.id || r.aId === m.id)
-      .map(r => r.deId === m.id
-        ? `Vous devez ${euros(r.montantCentimes)} à ${this.nomDe(r.aId)}`
-        : `${this.nomDe(r.deId)} vous doit ${euros(r.montantCentimes)}`);
+    const lignes = remboursementsDe(s.frais.comptes.remboursements, m.id, i => this.nomDe(i)).map(majuscule);
     if (!solde || (solde.payeCentimes === 0 && solde.duCentimes === 0)) {
       return { cible: 'frais', etiquette: 'Mes comptes', principal: null, details: lignes, aCompleter: false, vide: 'Aucune dépense pour vous' };
     }

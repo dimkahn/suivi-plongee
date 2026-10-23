@@ -247,7 +247,8 @@ export interface DepenseVue {
   libelle: string;
   categorie: CategorieDepense;
   montantCentimes: number;
-  payeurId: number;
+  /** null : avancée par le club. */
+  payeurId: number | null;
   jour: string | null;
   /** Qui partage la dépense, et avec combien de parts (2 pour un couple…). */
   parts: { participantId: number; parts: number }[];
@@ -259,10 +260,11 @@ export interface DepenseVue {
 
 export type DemandeDepense = Pick<DepenseVue, 'libelle' | 'categorie' | 'montantCentimes' | 'payeurId' | 'jour' | 'parts'>;
 
+/** Un id null : le club. */
 export interface VersementVue {
   id: number;
-  deId: number;
-  aId: number;
+  deId: number | null;
+  aId: number | null;
   montantCentimes: number;
   jour: string | null;
 }
@@ -285,9 +287,9 @@ export interface DroitsFrais {
   lireNotes: boolean;
 }
 
-/** Solde positif : on lui doit de l'argent ; négatif : il en doit. */
+/** Solde positif : on lui doit de l'argent ; négatif : il en doit. {@code participantId} null : le club. */
 export interface SoldeVue {
-  participantId: number;
+  participantId: number | null;
   payeCentimes: number;
   duCentimes: number;
   soldeCentimes: number;
@@ -300,9 +302,38 @@ export interface FraisVue {
     totalCentimes: number;
     soldes: SoldeVue[];
     /** Les virements qui soldent les comptes, calculés par le serveur. */
-    remboursements: { deId: number; aId: number; montantCentimes: number }[];
+    remboursements: Remboursement[];
   };
   droits: DroitsFrais;
+}
+
+/** Un virement à faire ; un id null : le club. */
+export interface Remboursement {
+  deId: number | null;
+  aId: number | null;
+  montantCentimes: number;
+}
+
+/** Celui qui a payé une dépense : un participant, ou le club (null). */
+export function nomPayeur(id: number | null, nom: (id: number) => string): string {
+  return id === null ? 'le club' : nom(id);
+}
+
+/**
+ * Ce que doit le participant {@code moi}, ou ce qu'on lui doit : « vous devez 25,00 € à Inès Roux »,
+ * « vous devez 40,00 € au club », « Léo Durand vous doit 10,00 € », « le club vous doit 5,00 € ».
+ */
+export function remboursementsDe(remboursements: Remboursement[], moi: number, nom: (id: number) => string): string[] {
+  return remboursements
+    .filter(r => r.deId === moi || r.aId === moi)
+    .map(r => r.deId === moi
+      ? `vous devez ${euros(r.montantCentimes)} ${r.aId === null ? 'au club' : 'à ' + nom(r.aId)}`
+      : `${nomPayeur(r.deId, nom)} vous doit ${euros(r.montantCentimes)}`);
+}
+
+/** « Vous devez… » en tête de phrase. */
+export function majuscule(texte: string): string {
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
 }
 
 /** Un participant, tel que l'onglet des frais en a besoin. */

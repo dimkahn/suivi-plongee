@@ -7,16 +7,24 @@ import { dateFr } from '../../core/date-fr';
 import { reduirePhoto } from '../../core/reduire-photo';
 import {
   CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, RegleLecture,
-  completerAvecNote, enCentimes, euros, nomComplet
+  Remboursement, completerAvecNote, enCentimes, euros, majuscule, nomComplet, nomPayeur, remboursementsDe
 } from './sejour-api';
 import { leconDuTicket } from './lecture-ticket';
+
+/** Dans les listes « Payé par », « Qui a remboursé », « À qui » : le club (null pour le serveur). */
+const CLUB = 'club';
+
+/** Le club s'envoie au serveur comme null. */
+function pourLeServeur(id: number | typeof CLUB): number | null {
+  return id === CLUB ? null : id;
+}
 
 /** Brouillon d'une dépense : le montant tel que tapé, les parts par participant (0 = ne partage pas). */
 interface BrouillonDepense {
   libelle: string;
   categorie: CategorieDepense;
   montant: string;
-  payeurId: number | null;
+  payeurId: number | typeof CLUB | null;
   jour: string | null;
   parts: Record<number, number>;
 }
@@ -29,7 +37,7 @@ interface PhotoAEnvoyer {
 
 /**
  * Les frais partagés d'un séjour : les dépenses avancées par les uns pour
- * les autres, avec la photo de la note, les remboursements faits, le compte
+ * les autres (ou par le club), avec la photo de la note, les remboursements faits, le compte
  * de chacun et les remboursements qui restent à faire (calculés par le
  * serveur, au centime près). Sert à l'onglet « Frais » du séjour (compte
  * connecté) et à la page des invités sans compte (/frais/…) : les écritures
@@ -50,7 +58,7 @@ interface PhotoAEnvoyer {
         }
         @if (d.pourLesAutres) {
           <button type="button" class="bouton-discret" (click)="ouvrirVersement(null)"
-                  [disabled]="participants().length < 2">Noter un remboursement</button>
+                  [disabled]="participants().length === 0">Noter un remboursement</button>
         }
       </div>
     </div>
@@ -62,7 +70,8 @@ interface PhotoAEnvoyer {
 
     @if (f.depenses.length === 0) {
       <p class="vide">Aucune dépense pour l'instant. Gîte, location de voiture, courses, plongées : chacun note
-        ce qu'il a avancé, avec la photo de la note ; l'appli calcule qui doit combien à qui.</p>
+        ce qu'il a avancé, avec la photo de la note (ce que le club a avancé aussi) ; l'appli calcule qui doit
+        combien à qui.</p>
     } @else {
       @if (monSolde(); as m) {
         <div class="carte mon-solde" [class.doit]="m.doit" [class.a-jour]="m.lignes.length === 0">
@@ -81,9 +90,9 @@ interface PhotoAEnvoyer {
       } @else {
         <ul class="lignes-cartes">
           @for (r of f.comptes.remboursements; track r.deId + '-' + r.aId) {
-            <li class="carte remboursement" [class.moi]="r.deId === d.moiId || r.aId === d.moiId">
-              <span><strong>{{ nomDe(r.deId) }}</strong> doit <strong>{{ euros(r.montantCentimes) }}</strong>
-                à <strong>{{ nomDe(r.aId) }}</strong></span>
+            <li class="carte remboursement" [class.moi]="d.moiId !== null && (r.deId === d.moiId || r.aId === d.moiId)">
+              <span><strong>{{ majuscule(nomDe(r.deId)) }}</strong> doit <strong>{{ euros(r.montantCentimes) }}</strong>
+                @if (r.aId === null) { au <strong>club</strong> } @else { à <strong>{{ nomDe(r.aId) }}</strong> }</span>
               @if (d.pourLesAutres || (d.peutAjouter && r.aId === d.moiId)) {
                 <button type="button" class="bouton-discret sans-impression"
                         (click)="ouvrirVersement(r)">C'est remboursé</button>
@@ -142,8 +151,8 @@ interface PhotoAEnvoyer {
               <th scope="col">Solde</th></tr></thead>
             <tbody>
               @for (c of f.comptes.soldes; track c.participantId) {
-                <tr [class.moi]="c.participantId === d.moiId">
-                  <th scope="row">{{ nomDe(c.participantId) }}</th>
+                <tr [class.moi]="d.moiId !== null && c.participantId === d.moiId">
+                  <th scope="row">{{ majuscule(nomDe(c.participantId)) }}</th>
                   <td>{{ euros(c.payeCentimes) }}</td>
                   <td>{{ euros(c.duCentimes) }}</td>
                   <td [class.positif]="c.soldeCentimes > 0" [class.negatif]="c.soldeCentimes < 0">
@@ -162,7 +171,7 @@ interface PhotoAEnvoyer {
           <ul class="lignes-simples">
             @for (v of f.versements; track v.id) {
               <li>
-                <span>{{ nomDe(v.deId) }} → {{ nomDe(v.aId) }} : {{ euros(v.montantCentimes) }}@if (v.jour) {, le {{ dateFr(v.jour) }}}</span>
+                <span>{{ majuscule(nomDe(v.deId)) }} → {{ majuscule(nomDe(v.aId)) }} : {{ euros(v.montantCentimes) }}@if (v.jour) {, le {{ dateFr(v.jour) }}}</span>
                 @if (d.versementsSupprimables.includes(v.id)) {
                   <button type="button" class="bouton-discret danger sans-impression"
                           (click)="supprimerVersement(v.id)">Annuler</button>
@@ -201,6 +210,7 @@ interface PhotoAEnvoyer {
         <div><label for="d-payeur">Payé par *</label>
           <select id="d-payeur" [(ngModel)]="depense.payeurId" [disabled]="!d.pourLesAutres">
             @for (p of participants(); track p.id) { <option [ngValue]="p.id">{{ nomComplet(p) }}</option> }
+            @if (d.pourLesAutres) { <option [ngValue]="CLUB">Le club</option> }
           </select></div>
         <div><label for="d-categorie">Catégorie</label>
           <select id="d-categorie" [(ngModel)]="depense.categorie">
@@ -291,10 +301,12 @@ interface PhotoAEnvoyer {
         <div><label for="v-de">Qui a remboursé *</label>
           <select id="v-de" [(ngModel)]="versement.deId">
             @for (p of participants(); track p.id) { <option [ngValue]="p.id">{{ nomComplet(p) }}</option> }
+            <option [ngValue]="CLUB">Le club</option>
           </select></div>
         <div><label for="v-a">À qui *</label>
           <select id="v-a" [(ngModel)]="versement.aId" [disabled]="!d.pourLesAutres">
             @for (p of participants(); track p.id) { <option [ngValue]="p.id">{{ nomComplet(p) }}</option> }
+            <option [ngValue]="CLUB">Le club</option>
           </select></div>
         <div><label for="v-montant">Montant (€) *</label>
           <input id="v-montant" inputmode="decimal" [(ngModel)]="versement.montant"></div>
@@ -383,7 +395,9 @@ export class SejourFraisComponent {
   readonly euros = euros;
   readonly dateFr = dateFr;
   readonly nomComplet = nomComplet;
+  readonly majuscule = majuscule;
   readonly categories = CATEGORIES_DEPENSE;
+  readonly CLUB = CLUB;
 
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
@@ -396,11 +410,7 @@ export class SejourFraisComponent {
     const f = this.frais();
     const moi = f.droits.moiId;
     if (moi === null) return null;
-    const lignes = f.comptes.remboursements
-      .filter(r => r.deId === moi || r.aId === moi)
-      .map(r => r.deId === moi
-        ? `Vous devez ${euros(r.montantCentimes)} à ${this.nomDe(r.aId)}.`
-        : `${this.nomDe(r.deId)} vous doit ${euros(r.montantCentimes)}.`);
+    const lignes = remboursementsDe(f.comptes.remboursements, moi, i => this.nomDe(i)).map(l => majuscule(l) + '.');
     return { lignes, doit: f.comptes.remboursements.some(r => r.deId === moi) };
   });
 
@@ -423,7 +433,9 @@ export class SejourFraisComponent {
   private regles?: Promise<RegleLecture[]>;
 
   versementOuvert = signal(false);
-  versement = { deId: null as number | null, aId: null as number | null, montant: '', jour: null as string | null };
+  versement = {
+    deId: null as number | typeof CLUB | null, aId: null as number | typeof CLUB | null, montant: '', jour: null as string | null
+  };
 
   photoAgrandie = signal<{ depenseId: number; photoId: number } | null>(null);
   /** Photos lues (en blob, la lecture demande le jeton), gardées le temps de l'écran. */
@@ -437,9 +449,12 @@ export class SejourFraisComponent {
     });
   }
 
-  nomDe(id: number): string {
-    const p = this.parId().get(id);
-    return p ? nomComplet(p) : '?';
+  /** Un participant, ou « le club » (id null). */
+  nomDe(id: number | null): string {
+    return nomPayeur(id, i => {
+      const p = this.parId().get(i);
+      return p ? nomComplet(p) : '?';
+    });
   }
 
   libelleCategorie(c: CategorieDepense): string {
@@ -487,7 +502,7 @@ export class SejourFraisComponent {
     this.depense = d
       ? {
           libelle: d.libelle, categorie: d.categorie, montant: (d.montantCentimes / 100).toFixed(2).replace('.', ','),
-          payeurId: d.payeurId, jour: d.jour,
+          payeurId: d.payeurId ?? CLUB, jour: d.jour,
           parts: Object.fromEntries(d.parts.map(p => [p.participantId, p.parts]))
         }
       : {
@@ -656,7 +671,7 @@ export class SejourFraisComponent {
     this.message.set(null);
     try {
       const r = await firstValueFrom(this.port().enregistrerDepense(this.depenseId, {
-        libelle: d.libelle.trim(), categorie: d.categorie, montantCentimes: montant, payeurId: d.payeurId,
+        libelle: d.libelle.trim(), categorie: d.categorie, montantCentimes: montant, payeurId: pourLeServeur(d.payeurId),
         jour: d.jour || null, parts
       }));
       this.depenseId = r.depenseId;
@@ -688,12 +703,12 @@ export class SejourFraisComponent {
   // ---------------- Remboursements ----------------
 
   /** Depuis « C'est remboursé » : le virement proposé, déjà rempli. */
-  ouvrirVersement(r: { deId: number; aId: number; montantCentimes: number } | null): void {
+  ouvrirVersement(r: Remboursement | null): void {
     this.erreur.set(null);
     const participants = this.participants();
     this.versement = r
-      ? { deId: r.deId, aId: r.aId, montant: (r.montantCentimes / 100).toFixed(2).replace('.', ','), jour: null }
-      : { deId: participants[0]?.id ?? null, aId: participants[1]?.id ?? null, montant: '', jour: null };
+      ? { deId: r.deId ?? CLUB, aId: r.aId ?? CLUB, montant: (r.montantCentimes / 100).toFixed(2).replace('.', ','), jour: null }
+      : { deId: participants[0]?.id ?? null, aId: participants[1]?.id ?? CLUB, montant: '', jour: null };
     this.versementOuvert.set(true);
   }
 
@@ -705,11 +720,12 @@ export class SejourFraisComponent {
       return;
     }
     if (v.deId === v.aId) {
-      this.erreur.set('Un remboursement va d’un participant à un autre.');
+      this.erreur.set('Un remboursement va d’un participant à un autre, ou au club.');
       return;
     }
-    this.ecrire(this.port().ajouterVersement({ deId: v.deId, aId: v.aId, montantCentimes: montant, jour: v.jour || null }),
-      () => this.versementOuvert.set(false));
+    this.ecrire(this.port().ajouterVersement({
+      deId: pourLeServeur(v.deId), aId: pourLeServeur(v.aId), montantCentimes: montant, jour: v.jour || null
+    }), () => this.versementOuvert.set(false));
   }
 
   supprimerVersement(id: number): void {

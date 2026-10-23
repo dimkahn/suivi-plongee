@@ -15,6 +15,10 @@ import java.util.*;
  * l'argent ; négatif, il en doit. Les remboursements proposés associent le
  * plus gros débiteur au plus gros créancier, jusqu'à épuisement : au plus
  * un virement de moins que de personnes concernées.
+ * <p>
+ * Le club peut avancer une dépense (payeur null) et recevoir ou faire un
+ * remboursement (de ou à null) : il a alors son solde, null en guise d'id,
+ * après ceux des participants. Il ne prend jamais de part d'une dépense.
  */
 public final class FraisSejour {
 
@@ -80,23 +84,27 @@ public final class FraisSejour {
         return new Comptes(total, soldes, remboursements(soldes));
     }
 
+    /** Ce qui reste à verser ou à recevoir ; {@code id} null : le club. */
+    private record Reste(Long id, long montant) {}
+
     private static List<Remboursement> remboursements(List<Solde> soldes) {
-        // Débiteurs et créanciers, du plus gros montant au plus petit (à égalité, par id).
-        Comparator<long[]> ordre = Comparator.<long[]>comparingLong(x -> -x[1]).thenComparingLong(x -> x[0]);
-        PriorityQueue<long[]> debiteurs = new PriorityQueue<>(ordre);
-        PriorityQueue<long[]> creanciers = new PriorityQueue<>(ordre);
+        // Débiteurs et créanciers, du plus gros montant au plus petit (à égalité, par id, le club d'abord).
+        Comparator<Reste> ordre = Comparator.comparingLong((Reste x) -> -x.montant())
+                .thenComparing(Reste::id, Comparator.nullsFirst(Comparator.naturalOrder()));
+        PriorityQueue<Reste> debiteurs = new PriorityQueue<>(ordre);
+        PriorityQueue<Reste> creanciers = new PriorityQueue<>(ordre);
         for (Solde s : soldes) {
-            if (s.soldeCentimes() < 0) debiteurs.add(new long[]{s.participantId(), -s.soldeCentimes()});
-            if (s.soldeCentimes() > 0) creanciers.add(new long[]{s.participantId(), s.soldeCentimes()});
+            if (s.soldeCentimes() < 0) debiteurs.add(new Reste(s.participantId(), -s.soldeCentimes()));
+            if (s.soldeCentimes() > 0) creanciers.add(new Reste(s.participantId(), s.soldeCentimes()));
         }
         List<Remboursement> resultat = new ArrayList<>();
         while (!debiteurs.isEmpty() && !creanciers.isEmpty()) {
-            long[] d = debiteurs.poll();
-            long[] c = creanciers.poll();
-            long montant = Math.min(d[1], c[1]);
-            resultat.add(new Remboursement(d[0], c[0], montant));
-            if (d[1] > montant) debiteurs.add(new long[]{d[0], d[1] - montant});
-            if (c[1] > montant) creanciers.add(new long[]{c[0], c[1] - montant});
+            Reste d = debiteurs.poll();
+            Reste c = creanciers.poll();
+            long montant = Math.min(d.montant(), c.montant());
+            resultat.add(new Remboursement(d.id(), c.id(), montant));
+            if (d.montant() > montant) debiteurs.add(new Reste(d.id(), d.montant() - montant));
+            if (c.montant() > montant) creanciers.add(new Reste(c.id(), c.montant() - montant));
         }
         return resultat;
     }

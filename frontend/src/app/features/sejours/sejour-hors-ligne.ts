@@ -10,7 +10,7 @@
  */
 import {
   DemandeAffaire, DemandeDepense, DemandeEvenement, DemandeLogement, DemandeMesInformations, DemandeParticipant,
-  DemandeVersement, DemandeVoiture, DepenseVue, FraisVue, SejourVue, SensVoyage, Trajet
+  DemandeVersement, DemandeVoiture, DepenseVue, FraisVue, Remboursement, SejourVue, SensVoyage, Trajet
 } from './sejour-api';
 
 export type ModificationSejour =
@@ -194,11 +194,11 @@ export function remplacerParticipant(m: ModificationSejour, provisoire: number, 
     };
     case 'depense': return {
       ...m, demande: {
-        ...m.demande, payeurId: r(m.demande.payeurId)!,
+        ...m.demande, payeurId: r(m.demande.payeurId),
         parts: m.demande.parts.map(p => ({ ...p, participantId: r(p.participantId)! }))
       }
     };
-    case 'versement': return { ...m, demande: { ...m.demande, deId: r(m.demande.deId)!, aId: r(m.demande.aId)! } };
+    case 'versement': return { ...m, demande: { ...m.demande, deId: r(m.demande.deId), aId: r(m.demande.aId) } };
     default: return m;
   }
 }
@@ -322,10 +322,11 @@ export function repartir(montant: number, parts: { participantId: number; parts:
 /**
  * Soldes et remboursements à faire, comme `FraisSejour.calculer` côté
  * serveur (qui fait foi à l'envoi) : pour les montrer à jour sans réseau.
+ * Le club (id null), quand il a avancé des frais, a son solde après ceux des participants.
  */
 export function comptesFrais(participants: number[], frais: Pick<FraisVue, 'depenses' | 'versements'>): FraisVue['comptes'] {
-  const comptes = new Map<number, [number, number, number, number]>(); // payé, dû, remboursé, reçu
-  const de = (id: number) => {
+  const comptes = new Map<number | null, [number, number, number, number]>(); // payé, dû, remboursé, reçu
+  const de = (id: number | null) => {
     if (!comptes.has(id)) comptes.set(id, [0, 0, 0, 0]);
     return comptes.get(id)!;
   };
@@ -345,12 +346,13 @@ export function comptesFrais(participants: number[], frais: Pick<FraisVue, 'depe
   return { totalCentimes: total, soldes, remboursements: remboursements(soldes) };
 }
 
-function remboursements(soldes: { participantId: number; soldeCentimes: number }[]) {
-  // Du plus gros montant au plus petit (à égalité, par id), comme le serveur.
-  const ordre = (a: [number, number], b: [number, number]) => b[1] - a[1] || a[0] - b[0];
-  const debiteurs: [number, number][] = soldes.filter(s => s.soldeCentimes < 0).map(s => [s.participantId, -s.soldeCentimes]);
-  const creanciers: [number, number][] = soldes.filter(s => s.soldeCentimes > 0).map(s => [s.participantId, s.soldeCentimes]);
-  const resultat: { deId: number; aId: number; montantCentimes: number }[] = [];
+function remboursements(soldes: { participantId: number | null; soldeCentimes: number }[]): Remboursement[] {
+  // Du plus gros montant au plus petit (à égalité, par id, le club d'abord), comme le serveur.
+  const parId = (a: number | null, b: number | null) => a === b ? 0 : a === null ? -1 : b === null ? 1 : a - b;
+  const ordre = (a: [number | null, number], b: [number | null, number]) => b[1] - a[1] || parId(a[0], b[0]);
+  const debiteurs: [number | null, number][] = soldes.filter(s => s.soldeCentimes < 0).map(s => [s.participantId, -s.soldeCentimes]);
+  const creanciers: [number | null, number][] = soldes.filter(s => s.soldeCentimes > 0).map(s => [s.participantId, s.soldeCentimes]);
+  const resultat: Remboursement[] = [];
   while (debiteurs.length > 0 && creanciers.length > 0) {
     debiteurs.sort(ordre);
     creanciers.sort(ordre);

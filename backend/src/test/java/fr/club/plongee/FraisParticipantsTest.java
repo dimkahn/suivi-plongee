@@ -324,4 +324,63 @@ class FraisParticipantsTest {
 
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
     }
+
+    @Test
+    @DisplayName("Le club peut avancer des frais : organisateur et moniteurs du séjour le notent, on le rembourse")
+    void fraisAvancesParLeClub() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String e2 = jeton("e2@club.fr");
+        LocalDate debut = LocalDate.now(ZoneId.of("Europe/Paris")).plusDays(270);
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour avance du club","dateDebut":"%s","dateFin":"%s"}"""
+                .formatted(debut, debut.plusDays(2)), 201).get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+        long flora = 0;
+        for (JsonNode c : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {
+            if (c.get("prenom").asText().equals("Flora") && c.hasNonNull("utilisateurId")) flora = c.get("utilisateurId").asLong();
+        }
+        long pFlora = ajouter(base, dt, """
+                {"utilisateurId":%d,"nom":"Vasseur","prenom":"Flora","plongeur":true}""".formatted(flora));
+        long pPaul = ajouter(base, dt, """
+                {"nom":"Avance","prenom":"Paul","plongeur":false,"email":"paul.avance@exemple.fr"}""");
+        String bateau = """
+                {"libelle":"Bateau","categorie":"PLONGEE","montantCentimes":8000,"payeurId":null,
+                 "parts":[{"participantId":%d,"parts":1},{"participantId":%d,"parts":1}]}""".formatted(pFlora, pPaul);
+
+        // L'organisateur note le bateau payé par le club : chacun doit sa part au club.
+        JsonNode frais = envoyer("POST", base + "/depenses", dt, bateau, 200).get("sejour").get("frais");
+        assertThat(frais.get("depenses").get(0).get("payeurId").isNull()).isTrue();
+        assertThat(frais.get("comptes").get("remboursements").toString())
+                .contains("{\"deId\":%d,\"aId\":null,\"montantCentimes\":4000}".formatted(pFlora))
+                .contains("{\"deId\":%d,\"aId\":null,\"montantCentimes\":4000}".formatted(pPaul));
+        // Un moniteur inscrit au séjour le peut aussi ; un moniteur qui n'en est pas, ni l'un ni l'autre.
+        envoyer("POST", base + "/depenses", e2, bateau, 200);
+        String e1 = jeton("e1@club.fr");
+        envoyer("POST", base + "/depenses", e1, bateau, 422);
+        envoyer("POST", base + "/versements", e1, "{\"deId\":%d,\"aId\":null,\"montantCentimes\":100}".formatted(pPaul), 422);
+
+        // Paul, invité entré par le lien, ne note ni une dépense du club ni ce qu'il lui rembourse.
+        envoyer("POST", base + "/invitations", dt, "{\"participantIds\":[%d]}".formatted(pPaul), 200);
+        String pub = "/api/public/sejour/" + extraire(dernierPour("paul.avance@exemple.fr").corps(),
+                "/sejour/([A-Za-z0-9_-]+)");
+        envoyer("POST", pub + "/code", null, "{\"email\":\"paul.avance@exemple.fr\"}", 204);
+        String jetonPaul = envoyer("POST", pub + "/connexion", null, "{\"email\":\"paul.avance@exemple.fr\",\"code\":\"%s\"}"
+                .formatted(extraire(dernierPour("paul.avance@exemple.fr").corps(), "(\\d{6})")), 200).get("jeton").asText();
+        JsonNode refus = envoyer("POST", pub + "/depenses", jetonPaul, bateau, 422);
+        assertThat(refus.get("detail").asText()).contains("que vous avez payées vous-même");
+        String versementPaul = "{\"deId\":%d,\"aId\":null,\"montantCentimes\":8000}".formatted(pPaul);
+        envoyer("POST", pub + "/versements", jetonPaul, versementPaul, 422);
+
+        // Flora, moniteur du séjour, note que Paul a remboursé le club ; il ne reste que sa propre part.
+        frais = envoyer("POST", base + "/versements", e2, versementPaul, 200).get("frais");
+        assertThat(frais.get("comptes").get("remboursements")).hasSize(1);
+        assertThat(frais.get("comptes").get("remboursements").get(0).get("deId").asLong()).isEqualTo(pFlora);
+        envoyer("POST", base + "/versements", e2, "{\"deId\":null,\"aId\":null,\"montantCentimes\":100}", 422);
+
+        // Le carnet de Flora lui dit ce qu'elle doit au club.
+        envoyer("POST", base + "/envoi-carnet", dt, "{\"participantIds\":[%d]}".formatted(pFlora), 200);
+        assertThat(dernierPour("e2@club.fr").corps()).contains("À rembourser au club : 80,00 €");
+
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
 }

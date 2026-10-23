@@ -19,7 +19,8 @@ import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
   FraisVue, PortFrais, PortPrets, SejourApi, SejourVue,
-  CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet, texteTrajet, trajetSaisi
+  CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet,
+  remboursementsDe, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { enCarte, memeVoyageQue } from './voyage';
 import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
@@ -1361,13 +1362,9 @@ export class SejourComponent {
     return this.voituresDe(id).find(v => v.id !== this.voitureId)?.nom ?? null;
   }
 
-  /** « vous devez 25,00 € à Inès Roux », « Léo Durand vous doit 10,00 € ». */
+  /** « vous devez 25,00 € à Inès Roux », « vous devez 40,00 € au club », « Léo Durand vous doit 10,00 € ». */
   mesRemboursements(id: number): string[] {
-    return (this.sejour()?.frais.comptes.remboursements ?? [])
-      .filter(r => r.deId === id || r.aId === id)
-      .map(r => r.deId === id
-        ? `vous devez ${euros(r.montantCentimes)} à ${this.nomDe(r.aId)}`
-        : `${this.nomDe(r.deId)} vous doit ${euros(r.montantCentimes)}`);
+    return remboursementsDe(this.sejour()?.frais.comptes.remboursements ?? [], id, i => this.nomDe(i));
   }
 
   libellesRegimes(codes: RegimeAlimentaire[]): string {

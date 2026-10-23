@@ -139,6 +139,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Restent en ligne** : e-mails, organisateurs, « Inscrire un groupe », cartes d'embarquement et attestations (jamais copiées, `no-store`), photos et lecture des notes (une dépense gardée reçoit sa photo une fois envoyée), déclaration du matériel (un prêt se vérifie contre le serveur). La page du lien (`/sejour/{code}`) se lit sans réseau sur sa copie, effacée par « Se déconnecter » ou un jeton refusé ; elle n'écrit qu'avec le réseau.
 - **Écarté** : rejouer les écritures de la page du lien hors ligne (jeton à part, file à part) ; à revoir si le club le demande.
 
+## Frais avancés par le club
+
+- **Date** : 2026-10-23, V99_3, demande du club.
+- **Contexte** : pendant un séjour, le club avance des frais (bateau, gîte) que les participants lui remboursent ; jusque-là, seul un participant pouvait être le payeur.
+- **Décision** : le club est un payeur possible, sans être un participant : `sejour_depense.payeur_id` null ; un remboursement `de_id` ou `a_id` null vient du club ou va au club (contrainte : jamais les deux). `FraisSejour` lui donne un solde (`participantId` null, après les participants) et le fait entrer dans les remboursements à faire, comme un participant ; il ne prend jamais de part d'une dépense. Choisir « Le club » comme payeur suit la règle d'un autre payeur : organisateurs et moniteurs du séjour (`pourLesAutres`) ; ce qu'on verse au club est noté par eux aussi (le club ne note rien lui-même). À l'écran, « Le club » dans « Payé par », « Qui a remboursé » et « À qui » ; « vous devez … au club » partout où le solde est rappelé (`remboursementsDe`), dans l'e-mail du carnet aussi.
+- **Conséquences** : un id null signifie « le club » dans `FraisVue` (dépenses, remboursements faits, soldes, remboursements à faire) ; tout code qui lit ces ids doit le prévoir (comparer par `moi.equals(id)`, pas l'inverse).
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
@@ -148,3 +155,4 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V126 : réservation des vols de Camille (terminal, ouverture de l'enregistrement, dossier fictif).
 - V128 : carte d'embarquement fictive (petit PDF) du vol aller de Flora.
 - V129 : attestation d'assurance fictive (petit PDF) de Flora, et le message type comme conseil d'assurance du séjour.
+- V130 : le bateau du samedi avancé par le club (240 €, partagé entre les plongeurs).

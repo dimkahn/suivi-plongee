@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { jourDuDepart, voyagesDuJour } from './programme-du-jour';
-import { ParticipantVue, completerAvecNote, copieTrajet, texteTrajet, trajetSaisi } from './sejour-api';
+import {
+  ParticipantVue, completerAvecNote, copieTrajet, euros, nomPayeur, remboursementsDe, texteTrajet, trajetSaisi
+} from './sejour-api';
+
+describe('Ce que doit un participant, ou ce qu’on lui doit', () => {
+  const nom = (id: number) => ({ 1: 'Inès Roux', 2: 'Léo Durand' } as Record<number, string>)[id];
+  const remboursements = [
+    { deId: 3, aId: 1, montantCentimes: 2500 }, { deId: 3, aId: null, montantCentimes: 4000 },
+    { deId: 2, aId: 3, montantCentimes: 1000 }, { deId: null, aId: 3, montantCentimes: 500 },
+    { deId: 2, aId: 1, montantCentimes: 700 }
+  ];
+
+  it('à un participant ou au club, qui avance aussi des frais', () => {
+    expect(remboursementsDe(remboursements, 3, nom)).toEqual([
+      `vous devez ${euros(2500)} à Inès Roux`, `vous devez ${euros(4000)} au club`,
+      `Léo Durand vous doit ${euros(1000)}`, `le club vous doit ${euros(500)}`]);
+  });
+
+  it('le payeur d’une dépense : un participant, ou le club', () => {
+    expect(nomPayeur(1, nom)).toBe('Inès Roux');
+    expect(nomPayeur(null, nom)).toBe('le club');
+  });
+});
 
 describe('Montant, date et catégorie lus sur la photo de la note', () => {
   const lue = { montantCentimes: 4580, jour: '2027-06-12', categorie: 'REPAS' as const };

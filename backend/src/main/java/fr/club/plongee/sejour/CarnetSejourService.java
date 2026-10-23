@@ -152,7 +152,7 @@ public class CarnetSejourService {
         }
 
         FraisSejour.Comptes comptes = s.frais().comptes();
-        comptes.soldes().stream().filter(x -> x.participantId().equals(moi.id())).findFirst()
+        comptes.soldes().stream().filter(x -> moi.id().equals(x.participantId())).findFirst()
                 .filter(x -> x.payeCentimes() != 0 || x.duCentimes() != 0)
                 .ifPresent(solde -> {
                     t.append("\nVOS FRAIS\n")
@@ -160,11 +160,12 @@ public class CarnetSejourService {
                             .append(" ; votre part des dépenses : ").append(FraisSejour.euros(solde.duCentimes()))
                             .append(".\n");
                     for (FraisSejour.Remboursement r : comptes.remboursements()) {
-                        if (r.deId().equals(moi.id())) {
-                            t.append("  À rembourser à ").append(nom.apply(r.aId())).append(" : ")
-                                    .append(FraisSejour.euros(r.montantCentimes())).append("\n");
-                        } else if (r.aId().equals(moi.id())) {
-                            t.append("  ").append(nom.apply(r.deId())).append(" vous doit ")
+                        // Un id null : le club, qui a avancé des frais.
+                        if (moi.id().equals(r.deId())) {
+                            t.append("  À rembourser ").append(r.aId() == null ? "au club" : "à " + nom.apply(r.aId()))
+                                    .append(" : ").append(FraisSejour.euros(r.montantCentimes())).append("\n");
+                        } else if (moi.id().equals(r.aId())) {
+                            t.append("  ").append(r.deId() == null ? "Le club" : nom.apply(r.deId())).append(" vous doit ")
                                     .append(FraisSejour.euros(r.montantCentimes())).append("\n");
                         }
                     }

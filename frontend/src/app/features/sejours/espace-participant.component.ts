@@ -16,7 +16,7 @@ import { programmeParJour } from './programme-du-jour';
 import {
   AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
   PortAttestationAssurance, PortCartesEmbarquement, PortFrais, RegleLecture,
-  PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto
+  PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto, remboursementsDe
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
@@ -210,11 +210,7 @@ export class EspaceParticipantComponent {
       const p = v.participants.find(x => x.id === id);
       return p ? `${p.prenom} ${p.nom}` : '?';
     };
-    return v.frais.comptes.remboursements
-      .filter(r => r.deId === v.moi.id || r.aId === v.moi.id)
-      .map(r => r.deId === v.moi.id
-        ? `vous devez ${euros(r.montantCentimes)} à ${nom(r.aId)}`
-        : `${nom(r.deId)} vous doit ${euros(r.montantCentimes)}`);
+    return remboursementsDe(v.frais.comptes.remboursements, v.moi.id, nom);
   });
   /** L'ancienne adresse /frais/… ouvre directement les frais. */
   readonly onglets: OptionOnglet<Onglet>[] = [

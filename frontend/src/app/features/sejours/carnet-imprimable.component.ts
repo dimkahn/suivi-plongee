@@ -10,7 +10,7 @@ import { periode } from '../../core/date-fr';
 import { FonctionPalanquee } from '../../core/modeles';
 import {
   CATEGORIES, PalanqueeVue, ParticipantVue, REGIMES, SejourApi, SejourVue, TRANSPORTS, Trajet, euros, heure, jourLong,
-  nomComplet
+  majuscule, nomComplet, nomPayeur
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
 
@@ -250,7 +250,8 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
               <table>
                 <tbody>
                   @for (r of s.frais.comptes.remboursements; track $index) {
-                    <tr><td>{{ nomDe(s, r.deId) }} doit à {{ nomDe(s, r.aId) }}</td><td class="montant">{{ euros(r.montantCentimes) }}</td></tr>
+                    <tr><td>{{ payeur(s, r.deId) }} doit {{ r.aId === null ? 'au club' : 'à ' + nomDe(s, r.aId) }}</td>
+                      <td class="montant">{{ euros(r.montantCentimes) }}</td></tr>
                   }
                 </tbody>
               </table>
@@ -264,7 +265,7 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
                 @for (d of s.frais.depenses; track d.id) {
                   <tr>
                     <td>{{ d.jour ? jourLong(d.jour) : '' }}</td><td>{{ d.libelle }}</td>
-                    <td>{{ nomDe(s, d.payeurId) }}</td><td class="montant">{{ euros(d.montantCentimes) }}</td>
+                    <td>{{ payeur(s, d.payeurId) }}</td><td class="montant">{{ euros(d.montantCentimes) }}</td>
                   </tr>
                 }
               </tbody>
@@ -468,6 +469,11 @@ export class CarnetImprimableComponent implements OnInit {
   nomDe(s: SejourVue, id: number | null): string {
     const p = id == null ? undefined : s.participants.find(x => x.id === id);
     return p ? nomComplet(p) : '';
+  }
+
+  /** Qui a payé ou doit : un participant, ou « Le club » (id null). */
+  payeur(s: SejourVue, id: number | null): string {
+    return majuscule(nomPayeur(id, i => this.nomDe(s, i)));
   }
 
   nomsDe(s: SejourVue, ids: number[]): string {
