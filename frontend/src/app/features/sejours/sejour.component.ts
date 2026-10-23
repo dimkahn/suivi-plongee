@@ -370,7 +370,7 @@ function participantVide(): BrouillonParticipant {
           <app-dialogue [ouvert]="trombinoscopeOuvert()" [large]="true" [titre]="'Trombinoscope — ' + s.sortie.nom"
                         (fermer)="trombinoscopeOuvert.set(false)">
             @if (trombinoscopeOuvert()) {
-              <app-trombinoscope-sejour [sejourId]="s.sortie.id" />
+              <app-trombinoscope-sejour [sejourId]="s.sortie.id" [gere]="s.gere" />
             }
           </app-dialogue>
 

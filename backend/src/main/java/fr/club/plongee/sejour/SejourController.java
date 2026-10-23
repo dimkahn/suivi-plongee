@@ -219,6 +219,24 @@ public class SejourController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /** La photo d'un invité (sans dossier ni compte), avec son accord ; remplace la précédente. */
+    @PostMapping(value = "/{id}/participants/{participantId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(GERE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deposerPhoto(@PathVariable Long id, @PathVariable Long participantId,
+                             @RequestParam("fichier") MultipartFile fichier,
+                             @RequestParam(defaultValue = "false") boolean accord,
+                             @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        trombinoscope.deposer(id, participantId, accord, octets(fichier), fichier.getContentType(), moi.id());
+    }
+
+    @DeleteMapping("/{id}/participants/{participantId}/photo")
+    @PreAuthorize(GERE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void retirerPhoto(@PathVariable Long id, @PathVariable Long participantId) {
+        trombinoscope.retirer(id, participantId);
+    }
+
     // ------------------------------------------------------------------
     //  Attestation d'assurance : le participant et les organisateurs (AttestationsAssuranceService).
     // ------------------------------------------------------------------

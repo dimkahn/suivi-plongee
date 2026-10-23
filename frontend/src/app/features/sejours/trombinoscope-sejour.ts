@@ -12,6 +12,8 @@ export interface LigneTrombinoscopeSejour {
   aptitude: string | null;
   /** Faux sans photo ou sans droit à l'image. */
   aPhoto: boolean;
+  /** Ni dossier élève ni compte : sa photo se dépose dans le séjour, par un organisateur. */
+  invite: boolean;
 }
 
 /** Valeur du bouton « Sans groupe » : un nom de groupe ne commence jamais par ce caractère. */

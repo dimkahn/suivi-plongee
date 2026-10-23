@@ -738,6 +738,7 @@ public class SejourService {
                        remarques = :remarques
                  WHERE id = :pid""".formatted(RESERVATIONS), p);
         oublierCartesSansVoyage(sortieId);
+        jdbc.update(TrombinoscopeSejourService.OUBLIER_PHOTOS_DES_NON_INVITES, Map.of());
         reporterSurLePlongeur(d);
     }
 
@@ -934,6 +935,7 @@ public class SejourService {
             inserer(sortieId, completerDuDossier(m));
             ajoutes++;
         }
+        jdbc.update(TrombinoscopeSejourService.OUBLIER_PHOTOS_DES_NON_INVITES, Map.of());
         return ajoutes;
     }
 

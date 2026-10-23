@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LigneTrombinoscopeSejour, SANS_GROUPE, duGroupe, filtresGroupes } from './trombinoscope-sejour';
 
 function ligne(participantId: number, prenom: string, groupe: string | null): LigneTrombinoscopeSejour {
-  return { participantId, nom: 'Test', prenom, plongeur: groupe !== null, groupe, aptitude: null, aPhoto: false };
+  return { participantId, nom: 'Test', prenom, plongeur: groupe !== null, groupe, aptitude: null, aPhoto: false, invite: false };
 }
 
 const lignes = [ligne(1, 'Lou', 'Requins'), ligne(2, 'Noé', 'Mérous'), ligne(3, 'Sam', null), ligne(4, 'Inès', 'Requins')];

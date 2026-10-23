@@ -1,5 +1,6 @@
 package fr.club.plongee;
 
+import fr.club.plongee.sejour.TrombinoscopeSejourService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,8 +33,9 @@ class TrombinoscopeSejourTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
+    @Autowired TrombinoscopeSejourService trombinoscope;
 
-    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G'};
+    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0, 0, 0};
 
     private String jeton(String email) throws Exception {
         String reponse = mvc.perform(post("/api/auth/connexion").contentType(MediaType.APPLICATION_JSON)
@@ -167,6 +169,136 @@ class TrombinoscopeSejourTest {
         mvc.perform(get("/api/sejours/" + autre + "/participants/" + lina + "/photo").header("Authorization", dt))
                 .andExpect(status().isNotFound());
         envoyer("GET", "/api/sejours/999999999/trombinoscope", dt, null, 404);
+    }
+
+    private long sejour(String dt, String nom, int dans) throws Exception {
+        LocalDate debut = LocalDate.now().plusDays(dans);
+        return envoyer("POST", "/api/sorties", dt, """
+                {"nom":"%s","dateDebut":"%s","dateFin":"%s"}""".formatted(nom, debut, debut.plusDays(2)), 201)
+                .get("id").asLong();
+    }
+
+    private org.springframework.test.web.servlet.ResultActions deposer(String url, String jeton, String accord)
+            throws Exception {
+        var requete = multipart(url).file(new MockMultipartFile("fichier", "invite.png", MediaType.IMAGE_PNG_VALUE, PNG))
+                .header("Authorization", jeton);
+        return mvc.perform(accord == null ? requete : requete.param("accord", accord));
+    }
+
+    @Test
+    @DisplayName("Un organisateur ajoute la photo d'un invité, avec son accord, puis la retire")
+    void photoDUnInvite() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = "/api/sejours/" + sejour(dt, "Séjour avec invité", 170);
+        long sam = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Invité","prenom":"Sam","plongeur":true}""", 200).get("participants").get(0).get("id").asLong();
+        String photo = base + "/participants/" + sam + "/photo";
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam").get("invite").asBoolean())
+                .isTrue();
+
+        deposer(photo, dt, "true").andExpect(status().isNoContent());
+        JsonNode ligne = ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam");
+        assertThat(ligne.get("aPhoto").asBoolean()).isTrue();
+        mvc.perform(get(photo).header("Authorization", jeton("e1@club.fr")))
+                .andExpect(status().isOk()).andExpect(content().bytes(PNG));
+
+        mvc.perform(delete(photo).header("Authorization", dt)).andExpect(status().isNoContent());
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam").get("aPhoto").asBoolean())
+                .isFalse();
+        mvc.perform(get(photo).header("Authorization", dt)).andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Pas de photo d'invité sans son accord, ni pour qui a un dossier, ni par un encadrant qui n'organise pas")
+    void photoDUnInviteRefusee() throws Exception {
+        String dt = jeton("e3@club.fr"), admin = jeton("presidente@club.fr");
+        String base = "/api/sejours/" + sejour(dt, "Séjour sans accord", 175);
+        long sam = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Invité","prenom":"Sam","plongeur":true}""", 200).get("participants").get(0).get("id").asLong();
+        String photo = base + "/participants/" + sam + "/photo";
+
+        String detail = deposer(photo, dt, null).andExpect(status().isUnprocessableEntity())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(detail).contains("accord");
+        deposer(photo, dt, "false").andExpect(status().isUnprocessableEntity());
+        deposer(photo, jeton("e1@club.fr"), "true").andExpect(status().isForbidden());
+        deposer(photo, admin, "true").andExpect(status().isForbidden());
+
+        // Un élève du club : sa photo se dépose dans son dossier, pas dans le séjour.
+        long eleve = envoyer("POST", "/api/eleves", admin, """
+                {"nom":"Dossier%s","prenom":"Eva","autorisationLegale":true}"""
+                .formatted(UUID.randomUUID().toString().substring(0, 8)), 201).get("id").asLong();
+        JsonNode s = envoyer("POST", base + "/participants", dt, """
+                {"eleveId":%d,"nom":"Dossier","prenom":"Eva","plongeur":true}""".formatted(eleve), 200);
+        long eva = 0;
+        for (JsonNode p : s.get("participants")) if (p.get("prenom").asText().equals("Eva")) eva = p.get("id").asLong();
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Eva").get("invite").asBoolean())
+                .isFalse();
+        String refus = deposer(base + "/participants/" + eva + "/photo", dt, "true")
+                .andExpect(status().isUnprocessableEntity()).andReturn().getResponse().getContentAsString();
+        assertThat(refus).contains("dossier").doesNotContain("Eva");
+    }
+
+    @Test
+    @DisplayName("La photo d'un invité est supprimée dès qu'il est lié à un dossier élève, directement ou par son groupe")
+    void photoDUnInviteSupprimeeQuandIlEstLie() throws Exception {
+        String dt = jeton("e3@club.fr"), admin = jeton("presidente@club.fr");
+        String marque = UUID.randomUUID().toString().substring(0, 8);
+        long dossier = envoyer("POST", "/api/eleves", admin, """
+                {"nom":"Lie%s","prenom":"Tom","autorisationLegale":true}""".formatted(marque), 201).get("id").asLong();
+        String base = "/api/sejours/" + sejour(dt, "Séjour lié au dossier", 185);
+
+        // Lié directement à son dossier, puis délié : la photo du séjour ne revient pas.
+        long tom = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Lie%s","prenom":"Tom","plongeur":true}""".formatted(marque), 200)
+                .get("participants").get(0).get("id").asLong();
+        deposer(base + "/participants/" + tom + "/photo", dt, "true").andExpect(status().isNoContent());
+        envoyer("PUT", base + "/participants/" + tom, dt, """
+                {"eleveId":%d,"nom":"Lie%s","prenom":"Tom","plongeur":true}""".formatted(dossier, marque), 200);
+        envoyer("PUT", base + "/participants/" + tom, dt, """
+                {"nom":"Lie%s","prenom":"Tom","plongeur":true}""".formatted(marque), 200);
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Tom").get("aPhoto").asBoolean())
+                .isFalse();
+
+        // Lié à un plongeur de groupe qui a un dossier : ce n'est plus un invité.
+        JsonNode saison = null;
+        for (JsonNode x : envoyer("GET", "/api/saisons", dt, null, 200)) if (x.get("ouverte").asBoolean()) saison = x;
+        String base2 = "/api/sejours/" + envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour lié au groupe","dateDebut":"%s","dateFin":"%s"}"""
+                .formatted(LocalDate.parse(saison.get("dateFin").asText()).minusDays(4),
+                        LocalDate.parse(saison.get("dateFin").asText()).minusDays(2)), 201).get("id").asLong();
+        long membre = envoyer("POST", "/api/groupes-plongeurs", dt, """
+                {"nom":"Groupe %s","saisonId":%d,"membres":[{"eleveId":%d,"nom":"Lie%s","prenom":"Tom"}]}"""
+                .formatted(marque, saison.get("id").asLong(), dossier, marque), 200)
+                .get("membres").get(0).get("id").asLong();
+        long tom2 = envoyer("POST", base2 + "/participants", dt, """
+                {"nom":"Lie%s","prenom":"Tom","plongeur":true}""".formatted(marque), 200)
+                .get("participants").get(0).get("id").asLong();
+        deposer(base2 + "/participants/" + tom2 + "/photo", dt, "true").andExpect(status().isNoContent());
+        envoyer("PUT", base2 + "/participants/" + tom2, dt, """
+                {"nom":"Lie%s","prenom":"Tom","plongeur":true,"membreGroupeId":%d}""".formatted(marque, membre), 200);
+        JsonNode ligne = ligneDe(envoyer("GET", base2 + "/trombinoscope", dt, null, 200), "Tom");
+        assertThat(ligne.get("invite").asBoolean()).isFalse();
+        assertThat(ligne.get("aPhoto").asBoolean()).isFalse();
+        deposer(base2 + "/participants/" + tom2 + "/photo", dt, "true").andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @DisplayName("La photo d'un invité est effacée le lendemain de la fin du séjour")
+    void photoDUnInviteEffaceeApresLeSejour() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = "/api/sejours/" + sejour(dt, "Séjour qui finit", 180);
+        long sam = envoyer("POST", base + "/participants", dt, """
+                {"nom":"Invité","prenom":"Sam","plongeur":true}""", 200).get("participants").get(0).get("id").asLong();
+        deposer(base + "/participants/" + sam + "/photo", dt, "true").andExpect(status().isNoContent());
+        LocalDate fin = LocalDate.now().plusDays(182);
+
+        trombinoscope.effacerApresLeSejour(fin);
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam").get("aPhoto").asBoolean())
+                .isTrue();
+        trombinoscope.effacerApresLeSejour(fin.plusDays(1));
+        assertThat(ligneDe(envoyer("GET", base + "/trombinoscope", dt, null, 200), "Sam").get("aPhoto").asBoolean())
+                .isFalse();
     }
 
     @Test

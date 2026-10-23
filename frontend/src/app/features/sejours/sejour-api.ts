@@ -746,6 +746,17 @@ export class SejourApi {
     return this.http.get(`/api/sejours/${id}/participants/${participantId}/photo`, { responseType: 'blob' });
   }
 
+  /** Organisateurs : la photo d'un invité (sans dossier ni compte), avec son accord confirmé. */
+  deposerPhotoInvite(id: number, participantId: number, fichier: File): Observable<void> {
+    const corps = formulairePhoto(fichier);
+    corps.append('accord', 'true');
+    return this.http.post<void>(`/api/sejours/${id}/participants/${participantId}/photo`, corps);
+  }
+
+  retirerPhotoInvite(id: number, participantId: number): Observable<void> {
+    return this.http.delete<void>(`/api/sejours/${id}/participants/${participantId}/photo`);
+  }
+
   /** Le matériel emprunté pendant le séjour, pour un compte connecté. */
   portPrets(id: number): PortPrets {
     const base = `/api/sejours/${id}/prets`;
