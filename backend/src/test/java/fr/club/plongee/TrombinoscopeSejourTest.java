@@ -190,6 +190,31 @@ class TrombinoscopeSejourTest {
         envoyer("GET", "/api/sejours/999999999/trombinoscope", dt, null, 404);
     }
 
+    @Test
+    @DisplayName("Un encadrant inscrit au séjour a son niveau d'encadrement et son niveau de plongeur dans le trombinoscope")
+    void niveauxDesEncadrants() throws Exception {
+        String dt = jeton("e3@club.fr"), admin = jeton("presidente@club.fr");
+        String marque = UUID.randomUUID().toString().substring(0, 8);
+        long compte = envoyer("POST", "/api/admin/moniteurs", admin, """
+                {"email":"initiateur-%s@club.fr","nom":"Initiateur%s","prenom":"Yann","niveauEncadrement":"E1",
+                 "niveauPlongeur":"N2"}""".formatted(marque, marque), 201).get("id").asLong();
+        long sortie = sejour(dt, "Séjour des encadrants", 170);
+        String base = "/api/sejours/" + sortie;
+        envoyer("POST", base + "/participants", dt, """
+                {"utilisateurId":%d,"nom":"Initiateur%s","prenom":"Yann","plongeur":true}"""
+                .formatted(compte, marque), 200);
+        envoyer("POST", base + "/participants", dt, """
+                {"nom":"Invite%s","prenom":"Zoé","plongeur":true}""".formatted(marque), 200);
+
+        JsonNode trombinoscope = envoyer("GET", base + "/trombinoscope", dt, null, 200);
+        JsonNode yann = ligneDe(trombinoscope, "Yann");
+        assertThat(yann.get("niveauEncadrement").asText()).isEqualTo("E1");
+        assertThat(yann.get("niveauPlongeur").asText()).isEqualTo("N2");
+        JsonNode zoe = ligneDe(trombinoscope, "Zoé");
+        assertThat(zoe.get("niveauEncadrement").isNull()).isTrue();
+        assertThat(zoe.get("niveauPlongeur").isNull()).isTrue();
+    }
+
     private long sejour(String dt, String nom, int dans) throws Exception {
         LocalDate debut = LocalDate.now().plusDays(dans);
         return envoyer("POST", "/api/sorties", dt, """

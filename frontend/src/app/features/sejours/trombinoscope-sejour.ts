@@ -32,6 +32,22 @@ export interface LigneTrombinoscopeSejour {
   invite: boolean;
   /** Sa photo est montrée aux autres participants (accord confirmé par un organisateur). */
   visibleParticipants: boolean;
+  /** Celui de son compte d'encadrant (E1 à E4), null sans compte. */
+  niveauEncadrement: string | null;
+  /** Son niveau de plongeur (N1 à N5), lu sur le même compte. */
+  niveauPlongeur: string | null;
+}
+
+/**
+ * La ligne sous le nom, à l'écran et sur l'image : pour un encadrant, son
+ * niveau d'encadrement, et aussi son niveau de plongeur s'il est E1 (un E1
+ * peut n'être que N2 : demande du club, 2026) ; sinon son aptitude.
+ */
+export function sousTitre(l: LigneTrombinoscopeSejour): string {
+  if (l.niveauEncadrement) {
+    return l.niveauEncadrement === 'E1' && l.niveauPlongeur ? `E1 · ${l.niveauPlongeur}` : l.niveauEncadrement;
+  }
+  return l.aptitude ?? (l.plongeur ? 'Plongeur' : 'Accompagnant');
 }
 
 /** Valeur du bouton « Sans groupe » : un nom de groupe ne commence jamais par ce caractère. */

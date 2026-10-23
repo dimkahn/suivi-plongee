@@ -8,7 +8,7 @@ import { OngletsComponent } from '../../core/onglets.component';
 import { ReseauService } from '../../core/reseau.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { ExportTrombinoscopeComponent, PersonneExport } from '../../core/export-trombinoscope.component';
-import { LigneTrombinoscopeSejour, PortTrombinoscope, duGroupe, filtresGroupes, titreImage } from './trombinoscope-sejour';
+import { LigneTrombinoscopeSejour, PortTrombinoscope, duGroupe, filtresGroupes, sousTitre, titreImage } from './trombinoscope-sejour';
 
 /** Ce que l'organisateur confirme : ajouter la photo d'un invité, ou montrer une photo aux participants. */
 type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
@@ -208,9 +208,7 @@ export class TrombinoscopeSejourComponent implements OnInit, OnDestroy {
     }
   }
 
-  sousTitre(l: LigneTrombinoscopeSejour): string {
-    return l.aptitude ?? (l.plongeur ? 'Plongeur' : 'Accompagnant');
-  }
+  readonly sousTitre = sousTitre;
 
   private chargerPhoto(participantId: number): void {
     firstValueFrom(this.port().photo(participantId)).then(

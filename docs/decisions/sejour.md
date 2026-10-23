@@ -157,6 +157,7 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 
 - **Date** : 2026-10-24, demande du club.
 - **Décision** : « Exporter en image » dans le trombinoscope du séjour, la même fenêtre que le trombinoscope du club (`ExportTrombinoscopeComponent`, dessin `core/image-trombinoscope.ts`) : PNG des cartes affichées (groupe choisi), titre proposé « nom du séjour — groupe », photos masquables par une icône, fabriqué dans le navigateur à partir des photos déjà chargées (aucune route nouvelle). **Créateur et organisateurs seulement** : ce sont eux qui recueillent les accords des photos du séjour ; le trombinoscope du club réserve de même l'export aux administrateurs.
+- **Niveau des encadrants** (même demande) : sous un encadrant, à l'écran comme sur l'image, son niveau d'encadrement, et aussi son niveau de plongeur s'il est E1 (« E1 · N2 » : un E1 peut n'être que N2). Lus sur son compte (`utilisateur.niveau_encadrement`, `niveau_plongeur`), celui du participant ou du plongeur du groupe auquel il est lié ; montrés aussi aux participants, comme les aptitudes des palanquées.
 - **Conséquence** : l'image sort de l'appli et n'est pas effacée après le séjour comme les photos d'invités ; le manuel demande de ne la partager qu'avec l'accord des personnes.
 
 ## Démonstrations

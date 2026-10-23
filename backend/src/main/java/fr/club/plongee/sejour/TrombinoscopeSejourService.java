@@ -42,13 +42,16 @@ public class TrombinoscopeSejourService {
      * hors groupe ; {@code aptitude} : son niveau dans ce groupe ;
      * {@code invite} : ni dossier élève ni compte, sa photo se dépose dans
      * le séjour ; {@code visibleParticipants} : un organisateur a confirmé
-     * l'accord pour montrer sa photo aux autres participants. Pour un
+     * l'accord pour montrer sa photo aux autres participants ;
+     * {@code niveauEncadrement} (E1 à E4) et {@code niveauPlongeur} (N1 à
+     * N5) : ceux de son compte d'encadrant, null sans compte. Pour un
      * participant, {@code aPhoto} ne vaut que pour ces photos-là, et
      * {@code invite} et {@code visibleParticipants} sont toujours faux.
      */
     public record LigneTrombinoscopeSejour(Long participantId, String nom, String prenom, boolean plongeur,
                                            String groupe, String aptitude, boolean aPhoto, boolean invite,
-                                           boolean visibleParticipants) {}
+                                           boolean visibleParticipants, String niveauEncadrement,
+                                           String niveauPlongeur) {}
 
     /** Le contenu d'une photo et son type (image/jpeg ou image/png). */
     public record Photo(byte[] contenu, String type) {}
@@ -111,10 +114,12 @@ public class TrombinoscopeSejourService {
         sorties.sortie(sortieId);
         return jdbc.query("""
                 SELECT p.id, p.nom, p.prenom, p.plongeur, g.nom AS groupe, m.aptitude, p.photo_visible_participants,
+                       u.niveau_encadrement, u.niveau_plongeur,
                        %s AS type_photo, CASE WHEN %s THEN TRUE ELSE FALSE END AS invite
                   FROM sejour_participant p
                   LEFT JOIN membre_groupe_plongeurs m ON m.id = p.membre_groupe_id
                   LEFT JOIN groupe_plongeurs g ON g.id = m.groupe_id
+                  LEFT JOIN utilisateur u ON u.id = COALESCE(p.utilisateur_id, m.utilisateur_id)
                  WHERE p.sortie_id = :sortie
                  ORDER BY LOWER(p.nom), LOWER(p.prenom), p.id""".formatted(PHOTO.formatted("type_contenu", DOSSIER, INVITE), INVITE),
                 new MapSqlParameterSource("sortie", sortieId),
@@ -123,7 +128,8 @@ public class TrombinoscopeSejourService {
                     boolean aPhoto = rs.getString("type_photo") != null && (complet || visible);
                     return new LigneTrombinoscopeSejour(rs.getLong("id"), rs.getString("nom"), rs.getString("prenom"),
                             rs.getBoolean("plongeur"), rs.getString("groupe"), rs.getString("aptitude"), aPhoto,
-                            complet && rs.getBoolean("invite"), complet && visible);
+                            complet && rs.getBoolean("invite"), complet && visible,
+                            rs.getString("niveau_encadrement"), rs.getString("niveau_plongeur"));
                 });
     }
 
