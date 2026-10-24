@@ -37,8 +37,8 @@ import java.util.*;
  * jusqu'à 60 jours après la fin du séjour. En base, ni code ni jeton en
  * clair : leur empreinte SHA-256 seulement.
  * <p>
- * Les droits sur les frais sont ceux de {@link FraisService} (un élève
- * consulte seulement) ; ses informations, chacun les modifie. La réponse à
+ * Les droits sur les frais sont ceux de {@link FraisService} (chacun saisit
+ * ce qu'il a payé) ; ses informations, chacun les modifie. La réponse à
  * une demande de code est la même que l'e-mail soit connu ou non : la page
  * ne dit pas qui participe.
  */

@@ -29,9 +29,8 @@ import java.util.stream.Stream;
  *   {@link DroitsSejour}) font tout ;</li>
  *   <li>un moniteur inscrit au séjour saisit toute dépense, quel qu'en soit
  *   le payeur : c'est par lui que passent les élèves ;</li>
- *   <li>un autre participant (invité entré par le lien et le code, compte
- *   sans rôle d'élève) saisit les dépenses qu'il a payées lui-même ;</li>
- *   <li>un élève consulte seulement ;</li>
+ *   <li>tout autre participant (élève, invité entré par le lien et le
+ *   code) saisit les dépenses qu'il a payées lui-même ;</li>
  *   <li>chacun modifie, supprime et complète de photos ce qu'il a saisi ;
  *   un remboursement reçu se note par celui qui le reçoit.</li>
  * </ul>
@@ -46,16 +45,14 @@ public class FraisService {
     /**
      * Qui agit sur les frais. {@code participantId} : sa ligne parmi les
      * participants (null pour un encadrant ou un organisateur qui n'en est
-     * pas) ; {@code eleve} : ce participant est un élève sans compte de
-     * moniteur, qui passe par un moniteur pour saisir.
+     * pas).
      */
-    public record ActeurFrais(Long utilisateurId, Long participantId, boolean gestionnaire, boolean moniteur,
-                              boolean eleve) {
+    public record ActeurFrais(Long utilisateurId, Long participantId, boolean gestionnaire, boolean moniteur) {
         /** Lecture seule, sans être participant (encadrant, envoi du carnet). */
-        public static final ActeurFrais LECTURE = new ActeurFrais(null, null, false, false, false);
+        public static final ActeurFrais LECTURE = new ActeurFrais(null, null, false, false);
 
         boolean peutAjouter() {
-            return gestionnaire || (participantId != null && !eleve);
+            return gestionnaire || participantId != null;
         }
 
         /** Saisir pour un autre payeur, noter tout remboursement : l'organisateur et les moniteurs du séjour. */
@@ -113,22 +110,16 @@ public class FraisService {
     public ActeurFrais acteur(Long sortieId, UtilisateurPrincipal p) {
         boolean gestionnaire = droits.organise(sortieId, p.id());
         boolean moniteur = p.getAuthorities().stream().anyMatch(a -> "ROLE_MONITEUR".equals(a.getAuthority()));
-        List<Map<String, Object>> lignes = jdbc.queryForList("""
-                SELECT p.id, p.eleve_id FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
+        List<Long> lignes = jdbc.queryForList("""
+                SELECT p.id FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
                  WHERE p.sortie_id = :sortie AND (p.utilisateur_id = :moi OR e.utilisateur_id = :moi)
-                 ORDER BY p.id""", new MapSqlParameterSource("sortie", sortieId).addValue("moi", p.id()));
-        if (lignes.isEmpty()) return new ActeurFrais(p.id(), null, gestionnaire, moniteur, false);
-        Map<String, Object> ligne = lignes.getFirst();
-        Long participant = ((Number) ligne.get("id")).longValue();
-        return new ActeurFrais(p.id(), participant, gestionnaire, moniteur, ligne.get("eleve_id") != null && !moniteur);
+                 ORDER BY p.id""", new MapSqlParameterSource("sortie", sortieId).addValue("moi", p.id()), Long.class);
+        return new ActeurFrais(p.id(), lignes.isEmpty() ? null : lignes.getFirst(), gestionnaire, moniteur);
     }
 
     /** L'acteur entré par le lien et le code : un participant sans compte. */
-    @Transactional(readOnly = true)
     public ActeurFrais acteurParticipant(Long participantId) {
-        Map<String, Object> ligne = jdbc.queryForMap("SELECT eleve_id FROM sejour_participant WHERE id = :p",
-                new MapSqlParameterSource("p", participantId));
-        return new ActeurFrais(null, participantId, false, false, ligne.get("eleve_id") != null);
+        return new ActeurFrais(null, participantId, false, false);
     }
 
     // ------------------------------------------------------------------
@@ -180,10 +171,9 @@ public class FraisService {
         return new FraisVue(depenses, versements, FraisSejour.calculer(participants, depenses, versements), droits);
     }
 
-    /** L'organisateur, ou celui qui a saisi la ligne (élève exclu : il ne saisit rien). */
+    /** L'organisateur, ou celui qui a saisi la ligne. */
     private static boolean auteur(ActeurFrais a, Long parUtilisateur, Long parParticipant) {
         if (a.gestionnaire()) return true;
-        if (a.eleve()) return false;
         return (a.utilisateurId() != null && a.utilisateurId().equals(parUtilisateur))
                 || (a.participantId() != null && a.participantId().equals(parParticipant));
     }
@@ -241,9 +231,7 @@ public class FraisService {
 
     private static void verifierPeutAjouter(ActeurFrais acteur) {
         if (!acteur.peutAjouter()) {
-            throw new RegleMetierException(acteur.eleve()
-                    ? "Les élèves passent par un moniteur du séjour pour saisir leurs frais."
-                    : "Seuls les participants du séjour saisissent des frais.");
+            throw new RegleMetierException("Seuls les participants du séjour saisissent des frais.");
         }
     }
 

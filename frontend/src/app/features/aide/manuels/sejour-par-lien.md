@@ -4,7 +4,7 @@ rubrique: Découverte
 pour: sans-compte
 videos: A17
 ecran: /aide
-mots: séjour, lien, rembourser le club, dû au club, payé par le club, avez-vous emprunté du matériel, rien emprunté, code, e-mail, otp, invité, sans compte, élève, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, vol long, lendemain, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, billet, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, pdf du billet, capture d'écran, assurance, attestation d'assurance, responsabilité civile, assurance plongée, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire, hors ligne, sans réseau, pas de réseau, trombinoscope, trombi, photos, visages, qui est qui, groupe de plongeurs, restaurant, menu, menu du restaurant, choisir mon plat, choisir mes plats, entrée, plat, dessert, boisson, commande, changer d'avis
+mots: séjour, lien, rembourser le club, dû au club, payé par le club, avez-vous emprunté du matériel, rien emprunté, code, e-mail, otp, invité, sans compte, élève, élève ajoute une dépense, ajouter des frais, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, vol long, lendemain, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, billet, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, pdf du billet, capture d'écran, assurance, attestation d'assurance, responsabilité civile, assurance plongée, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire, hors ligne, sans réseau, pas de réseau, trombinoscope, trombi, photos, visages, qui est qui, groupe de plongeurs, restaurant, menu, menu du restaurant, choisir mon plat, choisir mes plats, entrée, plat, dessert, boisson, commande, changer d'avis
 questions:
 - À quelle heure dois-je être à l'aéroport pour le séjour ?
 - J'ai reçu un e-mail pour le séjour : comment entrer ?
@@ -17,6 +17,7 @@ questions:
 - Où souscrire l'assurance complémentaire conseillée pour le séjour ?
 - Comment indiquer mon régime alimentaire pour le séjour ?
 - Je n'ai pas de compte : comment noter ce que j'ai payé ?
+- Je suis élève : puis-je ajouter moi-même une dépense du séjour ?
 - Le montant de ma note peut-il être lu sur la photo ?
 - Je n'ai pas reçu le code
 - J'ai emprunté du matériel du club : où le déclarer ?
@@ -46,6 +47,7 @@ L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donn
 - Pas de code ? Regardez dans les indésirables, vérifiez l'adresse (celle donnée à l'organisateur), et redemandez-en un au bout d'une minute.
 - Revenez quand vous voulez compléter ou corriger (un vol changé, par exemple) : l'organisateur voit tout de suite la mise à jour.
 - **Pas d'information médicale** (allergie, traitement) dans l'appli : voyez-la directement avec l'organisateur.
-- **Élèves** : c'est votre façon d'entrer, les comptes élèves ne sont pas encore ouverts au club. Vous voyez les frais, mais passez par un moniteur du séjour pour noter une dépense.
+- **Élèves** : c'est votre façon d'entrer, les comptes élèves ne sont pas encore ouverts au club. Comme tout participant, vous notez dans « Frais » les dépenses que vous avez payées vous-même ; un moniteur du séjour peut aussi les saisir pour vous si vous lui donnez la note.
+- Les photos des notes sont vues par tous les participants : **pas de ticket de pharmacie**, voyez-le directement avec l'organisateur.
 - Les moniteurs du club n'utilisent pas ce lien : ils se connectent à l'appli, menu « Séjours ».
 - **Sans réseau** : la page montre votre carnet tel qu'il était la dernière fois que vous l'avez ouvert sur ce téléphone (« Hors ligne » en haut). Ouvrez-le donc une fois avant de partir. Pour enregistrer vos informations ou une dépense, il faut du réseau. « Se déconnecter » efface aussi cette copie.

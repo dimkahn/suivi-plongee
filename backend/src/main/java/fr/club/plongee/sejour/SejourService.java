@@ -308,7 +308,7 @@ public class SejourService {
             FraisService.ActeurFrais a = frais.acteur(sortieId, principal);
             SejourVue complet = vueComplete(sortieId, principal.id(), false, false);
             return carnet(avecFrais(complet, frais.lire(sortieId,
-                    new FraisService.ActeurFrais(a.utilisateurId(), a.participantId(), false, a.moniteur(), a.eleve()))));
+                    new FraisService.ActeurFrais(a.utilisateurId(), a.participantId(), false, a.moniteur()))));
         }
         boolean gere = encadrant && droits.organise(sortieId, principal.id());
         SejourVue complet = vueComplete(sortieId, principal.id(), gere, encadrant);

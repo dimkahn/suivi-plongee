@@ -21,6 +21,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Décision** : droits selon qui agit (`ActeurFrais`) ; photos des notes ; demande d'informations par e-mail et page publique par lien, code à 6 chiffres puis jeton.
 - **Conséquences** : `/frais/{code}` est l'ancienne adresse de la page publique, gardée : elle ouvre les frais.
 
+## Les élèves saisissent aussi leurs frais
+
+- **Date** : 2026-10-24, demande du club.
+- **Contexte** : un élève lisait les frais sans rien saisir ; il devait donner sa note à un moniteur du séjour.
+- **Décision** : tous les participants ajoutent des frais. Un élève (avec ou sans compte) a les droits d'un invité : les dépenses qu'il a payées lui-même, modifiées et supprimées par lui seul ; un remboursement qu'il a reçu. Saisir pour un autre payeur reste à l'organisateur et aux moniteurs du séjour.
+- **Conséquences** : `ActeurFrais` n'a plus de drapeau « élève » ; le moniteur peut toujours saisir pour un élève.
+
 ## Heure et lieu de départ du voyage aller
 
 - **Date** : 2026, V78.

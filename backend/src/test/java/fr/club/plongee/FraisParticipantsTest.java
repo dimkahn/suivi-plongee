@@ -31,8 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Les frais saisis par les participants : moniteur du séjour, élève qui
- * passe par lui, invité sans compte entré par le lien et le code reçu par
+ * Les frais saisis par les participants : moniteur du séjour, élève,
+ * invité sans compte entré par le lien et le code reçu par
  * e-mail, photos des notes.
  */
 @SpringBootTest
@@ -152,10 +152,10 @@ class FraisParticipantsTest {
         long glaces = creee.get("depenseId").asLong();
         assertThat(creee.get("sejour").get("frais").get("droits").get("depensesModifiables").toString())
                 .contains(String.valueOf(glaces));
-        // Camille elle-même ne saisit rien ; un moniteur hors du séjour non plus.
+        // Camille elle-même ne saisit pas ce qu'une autre a payé ; un moniteur hors du séjour ne saisit rien.
         JsonNode refus = envoyer("POST", base + "/depenses", jeton("eleve@club.fr"),
-                depense("Bonbons", pCamille, pCamille), 422);
-        assertThat(refus.get("detail").asText()).contains("passent par un moniteur");
+                depense("Bonbons", pFlora, pCamille), 422);
+        assertThat(refus.get("detail").asText()).contains("que vous avez payées vous-même");
         envoyer("POST", base + "/depenses", jeton("e1@club.fr"), depense("Café", pFlora, pFlora), 422);
 
         // Photo de la note, ajoutée par celle qui a saisi la dépense, lue par l'élève.
@@ -286,7 +286,7 @@ class FraisParticipantsTest {
         }
         envoyer("GET", pub + "/carnet", null, null, 403);
 
-        // Anis, élève sans compte : il entre par le lien pour lire, mais passe par un moniteur pour saisir.
+        // Anis, élève sans compte : il entre par le lien et saisit ce qu'il a payé, pas pour un autre.
         long anis = 0;
         for (JsonNode c : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {
             if (c.get("prenom").asText().equals("Anis") && c.hasNonNull("eleveId")) anis = c.get("eleveId").asLong();
@@ -299,21 +299,22 @@ class FraisParticipantsTest {
         String jetonAnis = envoyer("POST", pub + "/connexion", null,
                 "{\"email\":\"anis.sejour@exemple.fr\",\"code\":\"%s\"}".formatted(codeAnis), 200).get("jeton").asText();
         assertThat(envoyer("GET", pub + "/frais", jetonAnis, null, 200).get("frais").get("droits")
-                .get("peutAjouter").asBoolean()).isFalse();
-        envoyer("POST", pub + "/depenses", jetonAnis, depense("Glace", pAnis, pAnis), 422);
+                .get("peutAjouter").asBoolean()).isTrue();
+        envoyer("POST", pub + "/depenses", jetonAnis, depense("Glace", pPaul, pAnis), 422);
+        envoyer("POST", pub + "/depenses", jetonAnis, depense("Glace", pAnis, pAnis), 200);
 
         // Se déconnecter supprime le jeton.
         envoyer("POST", pub + "/deconnexion", jetonLina, null, 204);
         envoyer("GET", pub + "/frais", jetonLina, null, 403);
 
-        // Camille, élève avec un compte : elle entre aussi par le lien (pas moniteur), en lecture seule pour les frais.
+        // Camille, élève avec un compte : elle entre aussi par le lien (pas moniteur), et peut saisir ses frais.
         envoyer("POST", pub + "/code", null, "{\"email\":\"camille.sejour@exemple.fr\"}", 204);
         String codeCamille = extraire(dernierPour("camille.sejour@exemple.fr").corps(), "(\\d{6})");
         String jetonCamille = envoyer("POST", pub + "/connexion", null,
                 "{\"email\":\"camille.sejour@exemple.fr\",\"code\":\"%s\"}".formatted(codeCamille), 200)
                 .get("jeton").asText();
         assertThat(envoyer("GET", pub + "/frais", jetonCamille, null, 200).get("frais").get("droits")
-                .get("peutAjouter").asBoolean()).isFalse();
+                .get("peutAjouter").asBoolean()).isTrue();
         // Dans l'appli, elle complète aussi ses informations ; un moniteur hors du séjour ne le peut pas.
         envoyer("PUT", base + "/mes-informations", jeton("eleve@club.fr"), """
                 {"regimes":["SANS_PORC"],"remarques":"Arrive avec ses parents"}""", 200);
@@ -321,6 +322,37 @@ class FraisParticipantsTest {
 
         // Une demande à un seul participant.
         envoyer("POST", base + "/invitations?participantId=" + pFlora, dt, null, 200);
+
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
+
+    @Test
+    @DisplayName("Un élève du séjour note les dépenses qu'il a payées lui-même, pas celles des autres")
+    void eleveNoteSesDepenses() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate debut = LocalDate.now(ZoneId.of("Europe/Paris")).plusDays(280);
+        long sortie = envoyer("POST", "/api/sorties", dt, """
+                {"nom":"Séjour frais des élèves","dateDebut":"%s","dateFin":"%s"}"""
+                .formatted(debut, debut.plusDays(2)), 201).get("id").asLong();
+        String base = "/api/sejours/" + sortie;
+        long camille = 0;
+        for (JsonNode c : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {
+            if (c.get("prenom").asText().equals("Camille") && c.hasNonNull("eleveId")) camille = c.get("eleveId").asLong();
+        }
+        long pCamille = ajouter(base, dt, """
+                {"eleveId":%d,"nom":"Berthier","prenom":"Camille","plongeur":true}""".formatted(camille));
+        long pPaul = ajouter(base, dt, """
+                {"nom":"Invité","prenom":"Paul","plongeur":false}""");
+        String eleve = jeton("eleve@club.fr");
+
+        assertThat(envoyer("GET", base, eleve, null, 200).get("frais").get("droits")
+                .get("peutAjouter").asBoolean()).isTrue();
+        long bonbons = envoyer("POST", base + "/depenses", eleve, depense("Bonbons", pCamille, pCamille, pPaul), 200)
+                .get("depenseId").asLong();
+        envoyer("POST", base + "/depenses", eleve, depense("Pain", pPaul, pCamille, pPaul), 422);
+        // Elle modifie et supprime ce qu'elle a saisi.
+        envoyer("PUT", base + "/depenses/" + bonbons, eleve, depense("Bonbons et glaces", pCamille, pCamille), 200);
+        envoyer("DELETE", base + "/depenses/" + bonbons, eleve, null, 200);
 
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
     }

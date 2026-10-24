@@ -1,5 +1,5 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo de la note.
-// Tournage du 2026-10-23, 14e série, une dépense avancée par le club (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-24, 15e série, les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -22,7 +22,7 @@ export default {
     await legende('« Gérer les frais » : son solde, puis qui doit combien à qui, et les dépenses.', 0);
     await toucher(page.getByRole('button', { name: 'Gérer les frais' }), { apres: 3000 });
 
-    await legende('Camille, élève, a payé les glaces : elle donne la note à Flora, qui la saisit pour elle.', 0);
+    await legende('Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle.', 0);
     await toucher(page.getByRole('button', { name: 'Ajouter une dépense' }), { apres: 900 });
     await saisir('#d-libelle', 'Glaces sur le port');
     await saisir('#d-montant', '18,00');
@@ -45,7 +45,7 @@ export default {
     await choisir('#d-payeur', 'Le club');
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
     await legende('Dans « Qui doit combien à qui » : « … doit … au club ». Un moniteur du séjour note le remboursement.', 4500);
-    await legende('Les participants qui ne sont pas moniteurs reçoivent un lien et un code par e-mail pour noter les leurs.', 4500);
+    await legende('Tous les participants, élèves compris, notent aussi ce qu\'ils ont payé : par le lien et le code reçus par e-mail.', 4500);
     await legende(null, 0);
     await pause(500);
   }

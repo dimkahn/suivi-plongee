@@ -105,7 +105,7 @@ class ApprentissageLectureTest {
     }
 
     @Test
-    @DisplayName("Rien n'est appris d'un nom de commerçant ou d'un libellé illisible, ni d'un élève, ni sans connexion")
+    @DisplayName("Rien n'est appris d'un nom de commerçant ou d'un libellé illisible, ni d'un encadrant hors du séjour, ni sans connexion")
     void lesApprentissagesRefuses() throws Exception {
         String base = sejour();
         String e2 = jeton("e2@club.fr");
@@ -114,9 +114,9 @@ class ApprentissageLectureTest {
         envoyer("POST", url, e2, "{\"enseigne\":\"#@\",\"categorie\":\"REPAS\"}", 422);
         envoyer("POST", url, e2, "{\"enseigne\":\"CHEZ MARCEL\",\"libelleTotal\":\"12,50\"}", 422);
         envoyer("POST", url, e2, "{\"enseigne\":\"CHEZ MARCEL\"}", 422);
-        JsonNode refus = envoyer("POST", url, jeton("eleve@club.fr"),
+        JsonNode refus = envoyer("POST", url, jeton("e1@club.fr"),
                 "{\"enseigne\":\"CHEZ MARCEL\",\"categorie\":\"REPAS\"}", 422);
-        assertThat(refus.get("detail").asText()).contains("passent par un moniteur");
+        assertThat(refus.get("detail").asText()).contains("Seuls les participants");
         envoyer("POST", "/api/public/sejour/inconnu/lecture-notes/apprentissage", null,
                 "{\"enseigne\":\"CHEZ MARCEL\",\"categorie\":\"REPAS\"}", 403);
     }

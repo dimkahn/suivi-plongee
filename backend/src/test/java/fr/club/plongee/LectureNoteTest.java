@@ -143,15 +143,18 @@ class LectureNoteTest {
     }
 
     @Test
-    @DisplayName("Qui ne peut pas saisir de dépense ne fait pas lire de note : élève, encadrant hors du séjour")
+    @DisplayName("Un élève du séjour fait lire sa note ; un encadrant hors du séjour, qui ne saisit rien, non")
     void quiNeSaisitPasNeFaitPasLire() throws Exception {
         String base = sejour();
         String eleve = jeton("eleve@club.fr");
+        String e1 = jeton("e1@club.fr");
 
         assertThat(envoyer("GET", base, eleve, null, 200).get("frais").get("droits").get("lireNotes").asBoolean())
+                .isTrue();
+        assertThat(lireNote(base, eleve, 200).get("montantCentimes").asLong()).isEqualTo(4580);
+        assertThat(envoyer("GET", base, e1, null, 200).get("frais").get("droits").get("lireNotes").asBoolean())
                 .isFalse();
-        assertThat(lireNote(base, eleve, 422).get("detail").asText()).contains("passent par un moniteur");
-        lireNote(base, jeton("e1@club.fr"), 422);
+        assertThat(lireNote(base, e1, 422).get("detail").asText()).contains("Seuls les participants");
     }
 
     @Test

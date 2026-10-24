@@ -67,7 +67,7 @@ interface CopieLien {
  * donne son e-mail, reçoit un code à 6 chiffres, puis lit le carnet du
  * séjour, toujours à jour (programme, voitures, chambres, affaires, infos
  * pratiques), renseigne ses informations (voyage, repas, personne à prévenir), voit et saisit les
- * frais (un élève les consulte seulement), déclare le matériel du club qu'il a emprunté et voit le
+ * frais (ce qu'il a payé), déclare le matériel du club qu'il a emprunté et voit le
  * trombinoscope (les seules photos rendues visibles aux participants). Pendant le séjour, l'encart
  * « Aujourd'hui » : son voyage du jour, le programme, le rappel de la veille. Sans connexion à l'appli ; le
  * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après

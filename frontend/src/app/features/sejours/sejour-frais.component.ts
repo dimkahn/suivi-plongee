@@ -62,10 +62,6 @@ interface PhotoAEnvoyer {
         }
       </div>
     </div>
-    @if (!d.peutAjouter && d.moiId !== null) {
-      <p class="secondaire sans-impression">Une dépense à noter ? Donnez la note à un moniteur du séjour : il la saisira
-        pour vous, avec sa photo.</p>
-    }
     @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
     @if (f.depenses.length === 0) {
