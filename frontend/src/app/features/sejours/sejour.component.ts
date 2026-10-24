@@ -35,8 +35,10 @@ import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { SejourCoursesComponent } from './sejour-courses.component';
+import { SejourRestaurantComponent } from './sejour-restaurant.component';
 
-type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'courses' | 'pratique';
+type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'courses' | 'restaurant'
+  | 'pratique';
 
 /** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
 interface GroupeTrajet {
@@ -86,7 +88,7 @@ function participantVide(): BrouillonParticipant {
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
-            TrombinoscopeSejourComponent, SejourCoursesComponent],
+            TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -607,6 +609,18 @@ function participantVide(): BrouillonParticipant {
             <p class="vide">La liste de courses demande le réseau.</p>
           } @else {
             <app-sejour-courses [sejour]="s" [port]="portRepas" [gere]="s.gere" />
+          }
+        </section>
+      }
+
+      <!-- Menus des restaurants : chacun choisit, les organisateurs importent et lisent la commande ; réseau obligatoire -->
+      @if (voir('restaurant')) {
+        <section id="restaurant-sejour">
+          @if (copieDu()) {
+            <p class="vide">Les menus du restaurant demandent le réseau.</p>
+          } @else {
+            <app-sejour-restaurant [port]="portMenus" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
+                                   [vueParticipant]="commeParticipant()" />
           }
         </section>
       }
@@ -1245,6 +1259,7 @@ export class SejourComponent {
       { valeur: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
       { valeur: 'materiel', libelle: 'Matériel' },
       { valeur: 'courses', libelle: 'Courses' },
+      { valeur: 'restaurant', libelle: 'Restaurant' },
       { valeur: 'pratique', libelle: 'Pratique' }
     ];
     return s?.encadrant ? liste : liste.filter(o => o.valeur !== 'participants' && o.valeur !== 'courses');
@@ -1571,6 +1586,9 @@ export class SejourComponent {
 
   /** Les repas pris au restaurant, pour l'onglet « Courses ». */
   readonly portRepas = this.api.portRepas(this.id);
+
+  /** Les menus des restaurants, pour l'onglet « Restaurant ». */
+  readonly portMenus = this.api.portMenus(this.id);
 
   /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour » ; lu sans réseau sur la copie. */
   readonly prets = new PretsDuSejour(this.portPretsAvecCopie(this.api.portPrets(this.id)));

@@ -41,11 +41,13 @@ public class AccesSejourController {
     private final CartesEmbarquementService cartes;
     private final AttestationsAssuranceService attestations;
     private final TrombinoscopeSejourService trombinoscope;
+    private final MenusRestaurantService menus;
 
     public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
                                  CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
-                                 TrombinoscopeSejourService trombinoscope) {
+                                 TrombinoscopeSejourService trombinoscope, MenusRestaurantService menus) {
         this.trombinoscope = trombinoscope;
+        this.menus = menus;
         this.acces = acces;
         this.frais = frais;
         this.pretsSejour = pretsSejour;
@@ -135,6 +137,22 @@ public class AccesSejourController {
                                                      @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
         Acces a = acces.acces(code, jeton);
         return SejourController.photoTrombinoscope(trombinoscope.photo(a.sortieId(), participantId, false));
+    }
+
+    /** Les menus des restaurants du séjour, avec son propre choix (jamais celui des autres). */
+    @GetMapping("/menus")
+    public MenusRestaurantService.MenusVue menus(@PathVariable String code,
+                                                 @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return menus.lireParticipant(a.sortieId(), a.participantId());
+    }
+
+    @PutMapping("/menus/{menuId}/choix")
+    public MenusRestaurantService.MenusVue choisir(@PathVariable String code, @PathVariable Long menuId,
+                                                   @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                                   @Valid @RequestBody MenusRestaurantService.DemandeChoix d) {
+        Acces a = acces.acces(code, jeton);
+        return menus.choisirParticipant(a.sortieId(), menuId, a.participantId(), d.platIds());
     }
 
     @GetMapping

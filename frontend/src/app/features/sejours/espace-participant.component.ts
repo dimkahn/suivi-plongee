@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, Injector, afterNextRender, computed
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Observable, firstValueFrom, map, tap } from 'rxjs';
+import { Observable, firstValueFrom, map, tap, throwError } from 'rxjs';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from '../../core/base-locale';
 import { periode } from '../../core/date-fr';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
@@ -23,8 +23,10 @@ import { PretsDuSejour } from './materiel-sejour';
 import { cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
+import { SejourRestaurantComponent } from './sejour-restaurant.component';
+import { MenusVue, PortMenus } from './menus-restaurant';
 
-type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel' | 'trombinoscope';
+type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel' | 'restaurant' | 'trombinoscope';
 
 interface EnteteVue {
   nom: string;
@@ -74,7 +76,7 @@ interface CopieLien {
 @Component({
   selector: 'app-espace-participant',
   imports: [FormsModule, OngletsComponent, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
-            CarnetSejourComponent, CarnetImprimableComponent, TrombinoscopeSejourComponent],
+            CarnetSejourComponent, CarnetImprimableComponent, TrombinoscopeSejourComponent, SejourRestaurantComponent],
   template: `
     @if (imprimable() && carnet(); as c) {
       <app-carnet-imprimable [sejour]="c" (fermer)="imprimable.set(false)" />
@@ -123,6 +125,12 @@ interface CopieLien {
           }
         } @else if (onglet() === 'materiel') {
           <app-sejour-materiel [prets]="prets" />
+        } @else if (onglet() === 'restaurant') {
+          @if (horsLigne()) {
+            <p class="vide">Les menus du restaurant demandent le réseau.</p>
+          } @else {
+            <app-sejour-restaurant [port]="portMenus" [dateDebut]="e.dateDebut" [dateFin]="e.dateFin" />
+          }
         } @else if (onglet() === 'trombinoscope') {
           <app-trombinoscope-sejour [port]="portTrombinoscope" [vueParticipant]="true" />
         } @else {
@@ -221,7 +229,7 @@ export class EspaceParticipantComponent {
   readonly onglets: OptionOnglet<Onglet>[] = [
     { valeur: 'carnet', libelle: 'Carnet' }, { valeur: 'infos', libelle: 'Mes informations' },
     { valeur: 'frais', libelle: 'Frais' }, { valeur: 'materiel', libelle: 'Matériel' },
-    { valeur: 'trombinoscope', libelle: 'Trombinoscope' }
+    { valeur: 'restaurant', libelle: 'Restaurant' }, { valeur: 'trombinoscope', libelle: 'Trombinoscope' }
   ];
   onglet = signal<Onglet>(this.route.snapshot.url[0]?.path === 'frais' ? 'frais' : 'carnet');
   chargement = signal(true);
@@ -261,6 +269,15 @@ export class EspaceParticipantComponent {
   readonly portTrombinoscope: PortTrombinoscope = {
     lister: () => this.http.get<LigneTrombinoscopeSejour[]>(`${this.base}/trombinoscope`, this.options()),
     photo: p => this.http.get(`${this.base}/trombinoscope/${p}/photo`, { headers: this.entetes(), responseType: 'blob' })
+  };
+
+  /** Les menus des restaurants, avec le jeton du lien : on ne choisit que pour soi, ni import ni commande complète. */
+  readonly portMenus: PortMenus = {
+    lire: () => this.http.get<MenusVue>(`${this.base}/menus`, this.options()),
+    importer: () => throwError(() => new Error('Réservé aux organisateurs')),
+    supprimer: () => throwError(() => new Error('Réservé aux organisateurs')),
+    choisir: (menuId, _p, platIds) =>
+      this.http.put<MenusVue>(`${this.base}/menus/${menuId}/choix`, { platIds }, this.options())
   };
 
   /** Le matériel emprunté, avec le jeton du lien. */

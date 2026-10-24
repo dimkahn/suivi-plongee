@@ -167,6 +167,14 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **La destination** ne change pas le calcul : elle donne le titre et les dates ; ce que le lieu ou le logement fournit se corrige à la main. *Pourquoi :* rien de fiable à en déduire sans saisie de plus.
 - Cases « dans le chariot » sur l'écran seulement ; « Copier la liste » la met en texte. Réseau obligatoire.
 
+## Menu du restaurant : chacun choisit, l'organisateur commande
+
+- **Date** : 2026-10-24, demande du club (« importer un fichier xls des menus, généré à partir d'un prompt ; chaque participant choisit ce qu'il veut, l'organisateur a la commande complète »).
+- **Décision** : onglet « Restaurant » dans le séjour et sur la page du lien. Un menu par repas (`sejour_menu`, V99_8 : jour, repas, restaurant ; `sejour_menu_plat` : catégorie, nom, description, prix en centimes facultatif, rang du fichier ; `sejour_menu_choix` : plat × participant). Le créateur et les organisateurs importent un classeur **.xlsx ou .xls** (`POST /api/sejours/{id}/menus`, multipart, 422 hors des dates ou fichier illisible), lu par `LecteurMenu` (POI) : première feuille, une ligne d'en-tête « Catégorie | Plat | Description | Prix » cherchée dans les 20 premières lignes (accents et majuscules indifférents, seule « Plat » obligatoire), lignes sans plat ignorées, prix « 12,50 € » ou nombre (illisible : sans prix), 300 plats au plus. Le fichier se fabrique avec le **prompt donné par l'écran** (`PROMPT_MENU`), à coller dans une IA avec la photo du menu : rien n'est envoyé à une IA par l'appli. Réimporter un repas remplace son menu et **efface ses choix** (l'écran prévient) ; le repas devient « pris au restaurant » pour la liste de courses.
+- **Choix** : le participant pour lui-même (`PUT …/menus/{menuId}/choix/{participantId}`, ou `PUT /api/public/sejour/{code}/menus/{menuId}/choix` par le lien), un organisateur pour tout participant (enfant, invité sans e-mail) ; plusieurs plats possibles, aucune quantité ni commentaire libre (pas de porte d'entrée à une donnée de santé : une allergie se dit à l'organisateur, hors de l'appli). Un plat d'un autre menu : 422.
+- **Qui lit quoi** : menus lus par les encadrants et les participants du séjour (403 pour un élève qui n'y est pas) ; chacun ne reçoit que son choix (`monChoix`) ; **la commande complète** (`commande` : nombre par plat, choix et total de chacun, qui n'a pas choisi, total) **seulement pour le créateur et les organisateurs, filtrée par le serveur** (null pour les autres, même un ADMIN ; masquée aussi en « Voir comme un participant »). « Copier la commande » la met en texte pour le restaurant, **en prénom et initiale du nom seulement, sans la liste de ceux qui n'ont pas choisi** : ce texte sort du club et des mineurs sont suivis (relecture « données personnelles »).
+- **Écarté** : relier les prix aux frais du séjour (l'addition réelle se saisit dans « Frais ») ; clore les choix à une date (l'organisateur commande quand il veut ; à revoir si le club le demande) ; lire la photo du menu dans l'appli par une IA (coût, et le prompt suffit).
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
@@ -178,3 +186,4 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V129 : attestation d'assurance fictive (petit PDF) de Flora, et le message type comme conseil d'assurance du séjour.
 - V130 : le bateau du samedi avancé par le club (240 €, partagé entre les plongeurs).
 - V132 : deux repas au restaurant (dîner du samedi 5, déjeuner du dimanche 6 juin).
+- V133 : le menu de La Trinquette pour le dîner du samedi 5 juin, où Camille a déjà choisi.

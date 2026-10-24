@@ -4,6 +4,7 @@ import { Observable, map, tap } from 'rxjs';
 import { FonctionPalanquee, SortieVue } from '../../core/modeles';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 import type { RepasDuJour } from './liste-courses';
+import type { MenusVue, PortMenus } from './menus-restaurant';
 
 /** Les repas du séjour pris au restaurant (RepasSejourService). */
 interface RepasSejourVue {
@@ -699,6 +700,25 @@ export class SejourApi {
       lire: () => this.http.get<RepasSejourVue>(`/api/sejours/${id}/repas`).pipe(map(v => v.auRestaurant)),
       definir: auRestaurant => this.http.put<RepasSejourVue>(`/api/sejours/${id}/repas`, { auRestaurant })
         .pipe(map(v => v.auRestaurant))
+    };
+  }
+
+  /** Les menus des restaurants : importés par les organisateurs, choisis par chaque participant. */
+  portMenus(id: number): PortMenus {
+    const base = `/api/sejours/${id}/menus`;
+    return {
+      lire: () => this.http.get<MenusVue>(base),
+      importer: (jour, repas, restaurant, fichier) => {
+        const f = new FormData();
+        f.append('jour', jour);
+        f.append('repas', repas);
+        f.append('restaurant', restaurant);
+        f.append('fichier', fichier, fichier.name);
+        return this.http.post<MenusVue>(base, f);
+      },
+      supprimer: menuId => this.http.delete<MenusVue>(`${base}/${menuId}`),
+      choisir: (menuId, participantId, platIds) =>
+        this.http.put<MenusVue>(`${base}/${menuId}/choix/${participantId}`, { platIds })
     };
   }
 
