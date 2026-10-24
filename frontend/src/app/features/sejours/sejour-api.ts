@@ -3,6 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
 import { FonctionPalanquee, SortieVue } from '../../core/modeles';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
+import type { RepasDuJour } from './liste-courses';
+
+/** Les repas du séjour pris au restaurant (RepasSejourService). */
+interface RepasSejourVue {
+  auRestaurant: RepasDuJour[];
+}
+
+/** Lire et remplacer les repas pris au restaurant ; chaque appel renvoie la liste à jour. */
+export interface PortRepas {
+  lire(): Observable<RepasDuJour[]>;
+  definir(auRestaurant: RepasDuJour[]): Observable<RepasDuJour[]>;
+}
 
 // ----------------------------------------------------------------
 //  Le séjour d'une sortie (SejourController) : participants, trajets,
@@ -679,6 +691,15 @@ export class SejourApi {
 
   definirAffaires(id: number, affaires: DemandeAffaire[]): Observable<SejourVue> {
     return this.http.put<SejourVue>(`/api/sejours/${id}/affaires`, { affaires });
+  }
+
+  /** Les repas pris au restaurant, pour la liste de courses (encadrants ; modifiés par les organisateurs). */
+  portRepas(id: number): PortRepas {
+    return {
+      lire: () => this.http.get<RepasSejourVue>(`/api/sejours/${id}/repas`).pipe(map(v => v.auRestaurant)),
+      definir: auRestaurant => this.http.put<RepasSejourVue>(`/api/sejours/${id}/repas`, { auRestaurant })
+        .pipe(map(v => v.auRestaurant))
+    };
   }
 
   enregistrerEvenement(id: number, evenementId: number | null, d: DemandeEvenement): Observable<SejourVue> {

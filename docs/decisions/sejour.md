@@ -160,6 +160,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Niveau des encadrants** (même demande) : sous un encadrant, à l'écran comme sur l'image, son niveau d'encadrement, et aussi son niveau de plongeur s'il est E1 (« E1 · N2 » : un E1 peut n'être que N2). Lus sur son compte (`utilisateur.niveau_encadrement`, `niveau_plongeur`), celui du participant ou du plongeur du groupe auquel il est lié ; montrés aussi aux participants, comme les aptitudes des palanquées.
 - **Conséquence** : l'image sort de l'appli et n'est pas effacée après le séjour comme les photos d'invités ; le manuel demande de ne la partager qu'avec l'accord des personnes.
 
+## Liste de courses
+
+- **Date** : 2026-10-24, demande du club (« une liste des courses selon la destination, le nombre de personnes et les habitudes alimentaires, sans les jours au restaurant »).
+- **Décision** : onglet « Courses » pour les encadrants (qui voient déjà les régimes). Seuls les repas pris au restaurant sont stockés (`sejour_repas_au_restaurant`, V99_7 : jour et petit-déjeuner, déjeuner ou dîner), choisis par le créateur et les organisateurs (`PUT /api/sejours/{id}/repas`, liste remplacée d'un bloc, 422 hors des dates de la sortie) ; lus par les encadrants (`GET …/repas`, 403 pour un élève). La liste elle-même est **calculée sur le téléphone, jamais stockée** (`liste-courses.ts`, testé à part) : pour chaque repas préparé, les présents à son heure (8 h, 12 h 30, 19 h 30) selon l'arrivée et le départ du participant, sans heure toute la journée ; une assiette moyenne par personne qui suit ses régimes (le plus strict l'emporte pour la protéine : végétalien, végétarien, pescétarien, halal, casher ; sans porc : la viande proposée n'en a pas) ; quantités arrondies au-dessus, rayon par rayon, plus les produits de base à vérifier sur place.
+- **La destination** ne change pas le calcul : elle donne le titre et les dates ; ce que le lieu ou le logement fournit se corrige à la main. *Pourquoi :* rien de fiable à en déduire sans saisie de plus.
+- Cases « dans le chariot » sur l'écran seulement ; « Copier la liste » la met en texte. Réseau obligatoire.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
@@ -170,3 +177,4 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V128 : carte d'embarquement fictive (petit PDF) du vol aller de Flora.
 - V129 : attestation d'assurance fictive (petit PDF) de Flora, et le message type comme conseil d'assurance du séjour.
 - V130 : le bateau du samedi avancé par le club (240 €, partagé entre les plongeurs).
+- V132 : deux repas au restaurant (dîner du samedi 5, déjeuner du dimanche 6 juin).

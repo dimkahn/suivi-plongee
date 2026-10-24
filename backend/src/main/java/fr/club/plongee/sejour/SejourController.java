@@ -64,12 +64,14 @@ public class SejourController {
     private final AttestationsAssuranceService attestations;
     private final RejeuSejour rejeu;
     private final TrombinoscopeSejourService trombinoscope;
+    private final RepasSejourService repas;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             AccesSejourService acces, PretsSejourService pretsSejour,
                             CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
-                            RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope) {
+                            RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope, RepasSejourService repas) {
         this.trombinoscope = trombinoscope;
+        this.repas = repas;
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
@@ -379,6 +381,20 @@ public class SejourController {
                                      @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.definirAffaires(id, d.affaires());
         return service.lire(id, moi);
+    }
+
+    /** Les repas pris au restaurant, pour la liste de courses : lue par les encadrants, qui voient les régimes. */
+    @GetMapping("/{id}/repas")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN','DIRECTEUR_TECHNIQUE')")
+    public RepasSejourService.RepasSejourVue repas(@PathVariable Long id) {
+        return repas.lire(id);
+    }
+
+    @PutMapping("/{id}/repas")
+    @PreAuthorize(GERE)
+    public RepasSejourService.RepasSejourVue definirRepas(@PathVariable Long id,
+                                                          @Valid @RequestBody RepasSejourService.DemandeRepas d) {
+        return repas.definir(id, d.auRestaurant());
     }
 
     @PostMapping("/{id}/evenements")

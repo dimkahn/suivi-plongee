@@ -34,8 +34,9 @@ import { PretsDuSejour } from './materiel-sejour';
 import { MesInformationsComponent } from './mes-informations.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
+import { SejourCoursesComponent } from './sejour-courses.component';
 
-type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'pratique';
+type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'courses' | 'pratique';
 
 /** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
 interface GroupeTrajet {
@@ -85,7 +86,7 @@ function participantVide(): BrouillonParticipant {
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
-            TrombinoscopeSejourComponent],
+            TrombinoscopeSejourComponent, SejourCoursesComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -595,6 +596,17 @@ function participantVide(): BrouillonParticipant {
             <p class="secondaire sans-impression acces-frais">
               Les participants qui ne sont pas moniteurs déclarent leurs emprunts par le même lien que les frais.
             </p>
+          }
+        </section>
+      }
+
+      <!-- Liste de courses (encadrants, qui voient les régimes) : réseau obligatoire -->
+      @if (s.encadrant && voir('courses')) {
+        <section id="courses-sejour">
+          @if (copieDu()) {
+            <p class="vide">La liste de courses demande le réseau.</p>
+          } @else {
+            <app-sejour-courses [sejour]="s" [port]="portRepas" [gere]="s.gere" />
           }
         </section>
       }
@@ -1232,9 +1244,10 @@ export class SejourComponent {
       { valeur: 'transports', libelle: 'Transports', alertes: a.transports.length },
       { valeur: 'hebergement', libelle: 'Hébergement', alertes: a.hebergement.length },
       { valeur: 'materiel', libelle: 'Matériel' },
+      { valeur: 'courses', libelle: 'Courses' },
       { valeur: 'pratique', libelle: 'Pratique' }
     ];
-    return s?.encadrant ? liste : liste.filter(o => o.valeur !== 'participants');
+    return s?.encadrant ? liste : liste.filter(o => o.valeur !== 'participants' && o.valeur !== 'courses');
   });
 
   /** Ceux qui ont tout renseigné (arrivée, départ, personne à prévenir), pour l'onglet Participants. */
@@ -1555,6 +1568,9 @@ export class SejourComponent {
    * notes demandent le réseau.
    */
   readonly portFrais: PortFrais = this.portFraisHorsLigne(this.api.portFrais(this.id, s => this.maj(s)));
+
+  /** Les repas pris au restaurant, pour l'onglet « Courses ». */
+  readonly portRepas = this.api.portRepas(this.id);
 
   /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour » ; lu sans réseau sur la copie. */
   readonly prets = new PretsDuSejour(this.portPretsAvecCopie(this.api.portPrets(this.id)));

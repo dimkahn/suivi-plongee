@@ -1,5 +1,5 @@
-// A17 — Organiser un séjour : les sept onglets (programme, participants et repas, transports, hébergement, frais, matériel, pratique).
-// Tournage du 2026-10-24, 36e série, le trombinoscope du séjour exporté en image et le niveau des encadrants sous leur photo, la photo d'un invité et « Montrer aux participants » dans une fenêtre, le trombinoscope dans le bandeau et ouvert aux participants, la photo d'un invité, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// A17 — Organiser un séjour : les huit onglets (programme, participants et repas, transports, hébergement, frais, matériel, courses, pratique).
+// Tournage du 2026-10-24, 37e série, la liste de courses et les repas au restaurant, le trombinoscope du séjour exporté en image et le niveau des encadrants sous leur photo, la photo d'un invité et « Montrer aux participants » dans une fenêtre, le trombinoscope dans le bandeau et ouvert aux participants, la photo d'un invité, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les sept onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs, ouvert aux participants avec les seules photos qu\'on leur montre, le niveau des encadrants, exporté en image, et la photo d\'un invité, ajoutée dans une fenêtre), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les huit onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs, ouvert aux participants avec les seules photos qu\'on leur montre, le niveau des encadrants, exporté en image, et la photo d\'un invité, ajoutée dans une fenêtre), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant), la liste de courses (repas au restaurant choisis jour par jour, quantités selon les présents et les régimes) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -28,7 +28,7 @@ export default {
     await legende('« Revenir à l\'organisation » lui rend la main.', 0);
     await toucher(page.getByRole('button', { name: /Revenir à l'organisation/ }), { apres: 2500 });
     await legende('Tout en haut, l\'encart « Frais du séjour » : le total dépensé, et « Gérer les frais » pour les ouvrir.', 4500);
-    await legende('Puis sept onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
+    await legende('Puis huit onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
 
     await legende('« Participants » : une ligne par personne, avec ce qu\'elle n\'a pas encore donné.', 0);
     await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 2500 });
@@ -111,6 +111,18 @@ export default {
     await toucher(page.locator('.choix input[type=checkbox]').first(), { apres: 2500 });
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
     await legende('C\'est un vrai prêt : le directeur technique le retrouve dans ses prêts, et note le retour.', 4500);
+
+    await legende('« Courses » : les repas du séjour, jour par jour, et combien sont à table, selon les arrivées et les départs.', 0);
+    await toucher(page.getByRole('tab', { name: 'Courses' }), { apres: 3500 });
+    await legende('« Choisir les repas au restaurant » : on coche ceux que l\'on ne prépare pas. Ici, en plus, le dîner du dimanche.', 0);
+    await toucher(page.locator('.choisir-restaurant'), { apres: 1500 });
+    await toucher(page.locator('dialog[open]').getByLabel('Dîner du Dimanche 06/06/2027 au restaurant'), { apres: 1500 });
+    await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
+    await legende('Dessous, la liste de courses, rayon par rayon, qui suit les régimes de chacun : œufs pour un végétarien, pain sans gluten…', 0);
+    await page.locator('app-sejour-courses .rayons').scrollIntoViewIfNeeded();
+    await pause(5000);
+    await legende('Dans le magasin, on coche ce qui est dans le chariot. « Copier la liste » la met dans un message au groupe.', 4500);
+    await enHaut();
 
     await legende('« Pratique » : les affaires à prévoir, et les infos pratiques. « Partir de la liste type » remplit la liste d\'un coup.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
