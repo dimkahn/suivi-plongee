@@ -3,7 +3,7 @@ import {
   aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
   alerteMod, fractionOxygene, libelleGaz, profondeurMaximaleUtilisation, palanqueesAEnregistrer,
   profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee,
-  peutSignerFiche, libelleSignature, alerteIntegrite
+  peutSignerFiche, peutSignerDepuisLaListe, libelleSignature, alerteIntegrite
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
@@ -388,5 +388,20 @@ describe('Signature de la fiche par le DP', () => {
     expect(libelleSignature(signature)).toMatch(/^Signée par Gwendoline Marchand le 08\/06\/2026 à \d\d:30$/);
     expect(alerteIntegrite(signature)).toBeNull();
     expect(alerteIntegrite({ ...signature, integre: false })).toContain('modifiée après sa signature');
+  });
+});
+
+describe('La fiche dans la liste des fiches de sécurité', () => {
+  const seance = { date: '2026-06-08', ficheSecurite: true, ficheSignee: false, ficheDpId: 12 };
+
+  it('Le lien « Signer la fiche » ne s\'offre qu\'à son DP, une fois la plongée passée', () => {
+    expect(peutSignerDepuisLaListe(seance, 12, '2026-06-08')).toBe(true);
+    expect(peutSignerDepuisLaListe(seance, 7, '2026-06-08')).toBe(false);
+    expect(peutSignerDepuisLaListe(seance, 12, '2026-06-07')).toBe(false);
+  });
+
+  it('Ni sans fiche enregistrée, ni sur une fiche déjà signée', () => {
+    expect(peutSignerDepuisLaListe({ ...seance, ficheSecurite: false }, 12, '2026-06-08')).toBe(false);
+    expect(peutSignerDepuisLaListe({ ...seance, ficheSignee: true }, 12, '2026-06-08')).toBe(false);
   });
 });

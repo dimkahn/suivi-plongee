@@ -72,6 +72,36 @@ class FicheSecuritePdfServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.DisplayName("Une profondeur ou une durée réalisée au-delà du prévu s'imprime en rouge, pas les autres")
+    void depassementEnRouge() throws IOException {
+        FicheSecurite fiche = fiche(4, 2);
+        Palanquee trop = fiche.getPalanquees().get(0);
+        trop.setProfondeurRealisee(24);
+        trop.setDureeRealisee(45);
+        Palanquee bien = fiche.getPalanquees().get(1);
+        bien.setProfondeurRealisee(20);
+        bien.setDureeRealisee(38);
+        byte[] xlsx = excel.generer(java.util.List.of(fiche)).contenu();
+
+        try (var classeur = new org.apache.poi.xssf.usermodel.XSSFWorkbook(new java.io.ByteArrayInputStream(xlsx))) {
+            var feuille = classeur.getSheetAt(0);
+            for (String libelle : java.util.List.of("Prof 1er T", "Durée 1er T")) {
+                var ligne = java.util.stream.StreamSupport.stream(feuille.spliterator(), false)
+                        .filter(r -> r.getCell(1) != null && libelle.equals(r.getCell(1).getStringCellValue()))
+                        .findFirst().orElseThrow();
+                // Colonnes 5 et 6 : les deux guides de palanquée, dans l'ordre des palanquées.
+                assertThat(couleur(ligne.getCell(5))).as(libelle + " dépassée").isEqualTo("FF0000");
+                assertThat(couleur(ligne.getCell(6))).as(libelle + " dans le prévu").isNotEqualTo("FF0000");
+            }
+        }
+    }
+
+    private static String couleur(org.apache.poi.ss.usermodel.Cell cellule) {
+        var c = ((org.apache.poi.xssf.usermodel.XSSFCellStyle) cellule.getCellStyle()).getFont().getXSSFColor();
+        return c == null || c.getRGB() == null ? "" : java.util.HexFormat.of().withUpperCase().formatHex(c.getRGB());
+    }
+
+    @Test
     void une_feuille_pleine_tient_sur_une_page() throws IOException {
         byte[] pdf = service.generer(java.util.List.of(fiche(23, 8), fiche(23, 8))).contenu();
 

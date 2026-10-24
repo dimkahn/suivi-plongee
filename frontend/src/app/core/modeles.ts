@@ -485,6 +485,10 @@ export interface SeanceVue {
   modifiable: boolean;
   /** Une fiche de sécurité (A322-72) a déjà été enregistrée pour cette séance. */
   ficheSecurite: boolean;
+  /** Sa fiche est signée par le DP : elle ne se modifie plus, elle s'imprime. Absent des données hors ligne. */
+  ficheSignee?: boolean;
+  /** Le DP enregistré sur sa fiche, seul à pouvoir la signer ; null sans fiche. */
+  ficheDpId?: number | null;
 }
 
 export interface EvaluationVue {

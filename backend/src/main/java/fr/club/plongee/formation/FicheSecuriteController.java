@@ -239,6 +239,17 @@ public class FicheSecuriteController {
                 .body(pdf.contenu());
     }
 
+    /**
+     * La feuille imprimée de cette plongée seule, en image, pour la page de
+     * signature : un PDF intégré ne s'affiche pas sur tous les téléphones.
+     */
+    @GetMapping(value = "/apercu.png", produces = MediaType.IMAGE_PNG_VALUE)
+    @PreAuthorize(LECTURE_ET_COMPLEMENT)
+    public ResponseEntity<byte[]> apercu(@PathVariable Long seanceId, Authentication authentication) {
+        habilitation.verifierAccesSeance(seanceId, authentication);
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(service.genererApercu(seanceId));
+    }
+
     @GetMapping(value = "/fiche.xlsx",
             produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     @PreAuthorize(LECTURE_ET_COMPLEMENT)

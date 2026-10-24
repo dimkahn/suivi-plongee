@@ -470,6 +470,11 @@ export class ApiService {
    * plongées du même jour au même lieu sur une feuille (1er et 2e tour) ; sinon
    * une feuille par plongée.
    */
+  /** La feuille imprimée de cette plongée seule, en image : la page de signature la montre. Réseau nécessaire. */
+  ficheSecuriteApercu(seanceId: number): Observable<Blob> {
+    return this.http.get(`/api/seances/${seanceId}/fiche-securite/apercu.png`, { responseType: 'blob' });
+  }
+
   ficheSecuritePdf(seanceId: number, regrouper = true): Observable<Blob> {
     return this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`,
       { params: { regrouper }, responseType: 'blob' });

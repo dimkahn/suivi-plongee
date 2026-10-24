@@ -1,5 +1,5 @@
 import { PalanqueeVue } from './modeles';
-import { bilanRealise, dureeEntre, etatPalanquee, marquerSortie, minutesDepuis, trierParUrgence } from './fiche-securite-realise';
+import { bilanRealise, depassements, dureeEntre, etatPalanquee, marquerSortie, minutesDepuis, trierParUrgence } from './fiche-securite-realise';
 
 function palanquee(champs: Partial<PalanqueeVue> = {}): PalanqueeVue {
   return {
@@ -79,5 +79,17 @@ describe('Bilan des palanquées pour la sécurité surface', () => {
       palanquee({ heureImmersion: '10:00', heureSortie: '10:42', profondeurRealisee: 18, dureeRealisee: 42 })
     ]);
     expect(bilan).toEqual({ aImmerger: 1, aLEau: 1, sorties: 2, aCompleter: 1 });
+  });
+});
+
+describe('Paramètres réalisés au-delà du prévu', () => {
+  it('Plus profond ou plus long que prévu : en rouge', () => {
+    expect(depassements(palanquee({ profondeurRealisee: 24, dureeRealisee: 45 }))).toEqual({ profondeur: true, duree: true });
+  });
+
+  it('Égal au prévu, en dessous, ou pas encore saisi : rien', () => {
+    expect(depassements(palanquee({ profondeurRealisee: 20, dureeRealisee: 38 }))).toEqual({ profondeur: false, duree: false });
+    expect(depassements(palanquee())).toEqual({ profondeur: false, duree: false });
+    expect(depassements(palanquee({ profondeurPrevue: null, profondeurRealisee: 30 }))).toEqual({ profondeur: false, duree: false });
   });
 });

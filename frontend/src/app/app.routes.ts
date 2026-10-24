@@ -114,6 +114,12 @@ export const routes: Routes = [
       .then(m => m.FicheSecuriteRealiseComponent)
   },
   {
+    path: 'fiches-securite/:id/signature',
+    canActivate: [gardeConnecte, gardeEncadrant],
+    loadComponent: () => import('./features/fiche-securite/signature-fiche-securite.component')
+      .then(m => m.SignatureFicheSecuriteComponent)
+  },
+  {
     path: 'planning',
     canActivate: [gardeConnecte, gardeEncadrant],
     loadComponent: () => import('./features/planning/planning.component')

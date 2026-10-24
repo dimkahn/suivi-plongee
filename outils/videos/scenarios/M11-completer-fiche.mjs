@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-20, 17e série, signature du DP annoncée à la fin, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-24, 18e série, dépassement du prévu en rouge, signature du DP annoncée à la fin, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -41,9 +41,11 @@ export default {
     await saisir(p1.getByLabel('Profondeur réalisée (m)'), '28');
     await saisir(p1.getByLabel('Paliers'), '3 min à 3 m');
     await pause(1000);
-    await saisir(p2.getByLabel('Profondeur réalisée (m)'), '18');
+    await saisir(p2.getByLabel('Profondeur réalisée (m)'), '22');
     await saisir(p2.getByLabel('Durée réalisée (min)'), '33');
     await saisir(p2.getByLabel('Paliers'), '3 min à 3 m');
+    await p2.locator('.depassement').scrollIntoViewIfNeeded();
+    await legende('22 m pour 20 m prévus : au-delà du prévu, la valeur passe en rouge, ici comme sur la fiche imprimée.', 4000);
     await legende('En bas : « Modifications non enregistrées » tant qu\'on n\'a pas enregistré.', 2500);
     await vignette();
     await toucher(page.getByRole('button', { name: 'Enregistrer les paramètres réalisés' }), { apres: 2000 });

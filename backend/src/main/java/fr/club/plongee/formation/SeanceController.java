@@ -41,7 +41,7 @@ public class SeanceController {
 
     public record SeanceVue(Long id, LocalDate date, Integer ordre, String milieu, String lieu, String site,
                             Integer profondeurMax, String commentaire, boolean modifiable,
-                            boolean ficheSecurite) {}
+                            boolean ficheSecurite, boolean ficheSignee, Long ficheDpId) {}
 
     public record DemandeSeance(@NotNull LocalDate dateSeance, Integer ordre, @NotNull Milieu milieu,
                                 String lieu, String site, Integer profondeurMax, String commentaire) {}
@@ -127,9 +127,22 @@ public class SeanceController {
                     .toList();
         }
         Long saison = saisonId != null ? saisonId : saisonCourante().getId();
+        boolean litLesFiches = litLesFichesSecurite(moi);
         return seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
                 .map(this::vue)
+                .map(v -> litLesFiches ? v : sansSignature(v))
                 .toList();
+    }
+
+    /** Le DP et la signature d'une fiche, comme la fiche elle-même : moniteurs, administrateurs, sécurité surface. */
+    private static boolean litLesFichesSecurite(UtilisateurPrincipal moi) {
+        return moi != null && moi.getAuthorities().stream().map(a -> a.getAuthority())
+                .anyMatch(a -> a.equals("ROLE_MONITEUR") || a.equals("ROLE_ADMIN") || a.equals("ROLE_SECURITE_SURFACE"));
+    }
+
+    private static SeanceVue sansSignature(SeanceVue v) {
+        return new SeanceVue(v.id(), v.date(), v.ordre(), v.milieu(), v.lieu(), v.site(), v.profondeurMax(),
+                v.commentaire(), v.modifiable(), v.ficheSecurite(), false, null);
     }
 
     /**
@@ -400,9 +413,12 @@ public class SeanceController {
         return !participations.existsBySeanceId(s.getId()) && !evaluations.existsBySeanceId(s.getId());
     }
 
+    /** {@code ficheSignee} et {@code ficheDpId} : le pictogramme et le lien « Signer » de la liste des fiches. */
     private SeanceVue vue(Seance s) {
+        FicheSecurite fiche = fichesSecurite.findBySeanceId(s.getId()).orElse(null);
         return new SeanceVue(s.getId(), s.getDateSeance(), s.getOrdre(), s.getMilieu().name(),
                 s.getLieu(), s.getSite(), s.getProfondeurMax(), s.getCommentaire(), estModifiableEnProfondeur(s),
-                fichesSecurite.existsBySeanceId(s.getId()));
+                fiche != null, fiche != null && fiche.estSignee(),
+                fiche == null || fiche.getDp() == null ? null : fiche.getDp().getId());
     }
 }

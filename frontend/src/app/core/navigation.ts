@@ -101,6 +101,8 @@ export class NavigationService {
         return { libelle: 'Parcours de formation', lien: '/parcours' };
       case 'fiches-securite':
         if (s.length === 2) return { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
+        // La page de signature s'ouvre depuis la liste : on y revient.
+        if (s.length === 3 && s[2] === 'signature') return { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
         // La sécurité surface n'ouvre pas la fiche elle-même : elle remonte à la liste.
         if (s.length === 3) return encadrant
           ? { libelle: 'Fiche de sécurité', lien: `/fiches-securite/${s[1]}` }

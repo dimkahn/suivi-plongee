@@ -50,6 +50,15 @@ export function trierParUrgence(palanquees: PalanqueeVue[],
 }
 
 /**
+ * Profondeur ou durée réalisée au-delà du prévu : en rouge à l'écran, comme
+ * sur la fiche imprimée (Palanquee.profondeurDepassee côté serveur).
+ */
+export function depassements(p: PalanqueeVue): { profondeur: boolean; duree: boolean } {
+  const depasse = (realise: number | null, prevu: number | null) => realise != null && prevu != null && realise > prevu;
+  return { profondeur: depasse(p.profondeurRealisee, p.profondeurPrevue), duree: depasse(p.dureeRealisee, p.dureePrevue) };
+}
+
+/**
  * Le bandeau de la sécurité surface : combien de palanquées sont à
  * immerger, à l'eau, sorties, et, parmi les sorties, combien attendent
  * encore leur profondeur ou leur durée réalisée.

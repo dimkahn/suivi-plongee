@@ -540,6 +540,14 @@ public class FicheSecuriteService {
         return pdfService.generer(regrouper ? feuilleDe(fiche) : List.of(fiche));
     }
 
+    /** La feuille imprimée de cette seule plongée, en image : ce que le DP relit avant de signer. */
+    @Transactional(readOnly = true)
+    public byte[] genererApercu(Long seanceId) {
+        FicheSecurite fiche = fiches.findBySeanceId(seanceId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Cette séance n'a pas encore de fiche de sécurité"));
+        return pdfService.apercuPng(List.of(fiche));
+    }
+
     /**
      * La feuille imprimée qui porte cette fiche : avec l'autre plongée du
      * même jour au même lieu, 1er et 2e tour (voir {@link FeuilleSecurite#regrouper}).

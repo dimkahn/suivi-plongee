@@ -9,7 +9,7 @@ import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { alerteIntegrite, empreinteFiche, libelleSignature, nomPalanquee } from '../../core/fiche-securite';
 import {
-  bilanRealise, dureeEntre, etatPalanquee, marquerSortie, minutesDepuis, trierParUrgence
+  bilanRealise, depassements, dureeEntre, etatPalanquee, marquerSortie, minutesDepuis, trierParUrgence
 } from '../../core/fiche-securite-realise';
 import { AvecModifications } from '../../core/gardes';
 import { telechargerFichier } from '../../core/telecharger';
@@ -148,14 +148,23 @@ import { telechargerFichier } from '../../core/telecharger';
           }
 
           <!-- Toujours là : une fiche se complète aussi après coup, sans heures notées sur le moment. -->
+          <!-- Au-delà du prévu : en rouge, comme sur la fiche imprimée. -->
           <div class="ligne-profil">
-            <label>Profondeur réalisée (m) <input type="number" min="0" inputmode="numeric"
+            <label [class.depasse]="depassements(p).profondeur">Profondeur réalisée (m) <input type="number" min="0" inputmode="numeric"
                    [(ngModel)]="p.profondeurRealisee" [name]="'preal-' + p.numero"></label>
-            <label>Durée réalisée (min) <input type="number" min="0" inputmode="numeric"
+            <label [class.depasse]="depassements(p).duree">Durée réalisée (min) <input type="number" min="0" inputmode="numeric"
                    [(ngModel)]="p.dureeRealisee" [name]="'dreal-' + p.numero"></label>
             <label>Paliers <input type="text" placeholder="ex. 3 min à 3 m" [(ngModel)]="p.paliers"
                    [name]="'pal-' + p.numero"></label>
           </div>
+          @if (depassements(p); as d) {
+            @if (d.profondeur || d.duree) {
+              <p class="alerte-texte urgence depassement">
+                ⛔ Au-delà du prévu :
+                {{ d.profondeur ? p.profondeurRealisee + ' m pour ' + p.profondeurPrevue + ' m prévus' : '' }}{{ d.profondeur && d.duree ? ', ' : '' }}{{ d.duree ? p.dureeRealisee + ' min pour ' + p.dureePrevue + ' min prévues' : '' }}.
+              </p>
+            }
+          }
 
           <details class="corriger-heures">
             <summary>
@@ -249,6 +258,8 @@ import { telechargerFichier } from '../../core/telecharger';
     }
     .ligne-profil label { margin: 0; font-weight: 400; }
     .ligne-profil input { width: 100%; }
+    .ligne-profil .depasse { color: #B3261E; font-weight: 700; }
+    .ligne-profil .depasse input { color: #B3261E; border-color: #B3261E; font-weight: 700; }
 
     .ligne-titre { display: flex; justify-content: space-between; align-items: baseline; gap: var(--pas); flex-wrap: wrap; }
     .ligne-titre h3 { margin: 0; }
@@ -317,6 +328,7 @@ import { telechargerFichier } from '../../core/telecharger';
 export class FicheSecuriteRealiseComponent implements AvecModifications {
   readonly lieuEtSite = lieuEtSite;
   readonly nomPalanquee = nomPalanquee;
+  readonly depassements = depassements;
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);

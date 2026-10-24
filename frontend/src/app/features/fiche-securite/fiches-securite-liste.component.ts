@@ -11,6 +11,7 @@ import { CalendrierSeancesComponent } from '../../core/calendrier-seances.compon
 import { correspondLieuSiteInfo } from '../../core/seance-lieu';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { peutSignerDepuisLaListe } from '../../core/fiche-securite';
 
 type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
@@ -128,8 +129,22 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
                 }
               </div>
               <div class="actions">
+                @if (s.ficheSignee) {
+                  <!-- Signée par le DP : elle ne se modifie plus, elle se relit et s'imprime. -->
+                  <span class="etiquette signee" title="Fiche signée par le directeur de plongée">
+                    <span aria-hidden="true">✍</span> Signée
+                  </span>
+                  @if (auth.estMoniteur() || auth.estAdmin()) {
+                    <a [routerLink]="['/fiches-securite', s.id, 'signature']" class="bouton-discret">Voir la fiche signée</a>
+                  }
+                } @else {
                 @if (aUneFiche(s)) {
                   <span class="etiquette">Fiche enregistrée</span>
+                }
+                @if (peutSigner(s)) {
+                  <a [routerLink]="['/fiches-securite', s.id, 'signature']" class="bouton-principal lien-signer">
+                    ✍ Signer la fiche
+                  </a>
                 }
                 @if (auth.etablitFichesSecurite()) {
                   <a [routerLink]="['/fiches-securite', s.id]" class="bouton-discret">
@@ -144,6 +159,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
                   <a [routerLink]="['/fiches-securite', s.id, 'realise']" class="bouton-discret">
                     Compléter au retour de plongée
                   </a>
+                }
                 }
                 @if (s.ficheSecurite) {
                   <button type="button" class="bouton-discret" (click)="imprimerFiche(s)"
@@ -187,6 +203,8 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
       font-size: .8125rem; font-weight: 700; color: var(--profond);
       border: 1px solid var(--profond); border-radius: var(--r-s); padding: 2px 8px;
     }
+    .etiquette.signee { color: var(--acquis); border-color: var(--acquis); background: var(--acquis-clair); }
+    .lien-signer { width: auto; margin: 0; min-height: 44px; display: inline-flex; align-items: center; }
   `]
 })
 export class FichesSecuriteListeComponent {
@@ -197,6 +215,11 @@ export class FichesSecuriteListeComponent {
   /** Une fiche établie hors ligne, pas encore partie, compte déjà. */
   aUneFiche(s: SeanceVue): boolean {
     return s.ficheSecurite || this.file.pourSeance(s.id, 'fiche').length > 0;
+  }
+
+  /** Le lien « Signer la fiche » : pour son DP, une fois la plongée passée. */
+  peutSigner(s: SeanceVue): boolean {
+    return peutSignerDepuisLaListe(s, this.auth.session()?.id, dateDuJour());
   }
 
   toutes = signal<SeanceVue[]>([]);

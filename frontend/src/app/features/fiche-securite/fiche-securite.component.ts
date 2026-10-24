@@ -1,6 +1,6 @@
 import { Component, HostListener, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -829,9 +829,10 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
           </button>
         }
-        @if (dejaEnregistree()) {
+        <!-- Signée, la fiche ne sert plus qu'à l'impression. -->
+        @if (dejaEnregistree() && !signature()) {
           <a class="bouton-discret action-ordinateur" [routerLink]="['/fiches-securite', seanceId, 'realise']">
-            {{ signature() ? 'Profil réalisé →' : 'Compléter au retour de plongée →' }}
+            Compléter au retour de plongée →
           </a>
         }
         @if (peutSigner()) {
@@ -840,24 +841,6 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           </button>
         }
       </div>
-
-      <app-dialogue [ouvert]="signatureOuverte()" titre="Signer la fiche de sécurité" [erreur]="erreurSignature()"
-                    (fermer)="signatureOuverte.set(false)">
-        <p>
-          Vous signez, en tant que directeur de plongée, la fiche telle qu'elle est enregistrée :
-          conditions, palanquées, plongeurs et profils réalisés.
-        </p>
-        <p class="secondaire">
-          Une fois signée, <strong>elle ne pourra plus être modifiée ni complétée</strong>, par personne.
-          Vérifiez d'abord que le profil réalisé de chaque palanquée est saisi.
-        </p>
-        <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" [disabled]="envoiSignature()" (click)="signer()">
-            {{ envoiSignature() ? 'Signature…' : 'Je signe la fiche' }}
-          </button>
-          <button type="button" class="bouton-discret" (click)="signatureOuverte.set(false)">Annuler</button>
-        </div>
-      </app-dialogue>
 
       <!--
         Téléphone : un seul bouton rond, en bas à gauche, qui ouvre toutes les
@@ -891,9 +874,9 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
                 {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
               </button>
             }
-            @if (dejaEnregistree()) {
+            @if (dejaEnregistree() && !signature()) {
               <a role="menuitem" class="bouton-discret" [routerLink]="['/fiches-securite', seanceId, 'realise']">
-                {{ signature() ? 'Profil réalisé →' : 'Compléter au retour de plongée →' }}
+                Compléter au retour de plongée →
               </a>
             }
             @if (peutSigner()) {
@@ -1166,6 +1149,7 @@ export class FicheSecuriteComponent implements AvecModifications {
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
   private navigation = inject(NavigationService);
+  private router = inject(Router);
   auth = inject(AuthService);
 
   seanceId = Number(this.route.snapshot.paramMap.get('id'));
@@ -1580,40 +1564,17 @@ export class FicheSecuriteComponent implements AvecModifications {
 
   // --- Signature par le DP ----------------------------------------------------------------------
 
-  signatureOuverte = signal(false);
-  envoiSignature = signal(false);
-  erreurSignature = signal<string | null>(null);
-
-  /** On signe la fiche enregistrée : des modifications en cours n'y seraient pas. */
+  /**
+   * On signe la fiche enregistrée, sur sa page de signature (la feuille telle
+   * qu'elle s'imprime) : des modifications en cours n'y seraient pas.
+   */
   ouvrirSignature(): void {
     if (this.modificationsNonEnregistrees()) {
       this.message.set("Enregistrez d'abord vos modifications : on signe la fiche telle qu'elle est enregistrée.");
       return;
     }
-    this.erreurSignature.set(null);
-    this.signatureOuverte.set(true);
-  }
-
-  /** Réseau nécessaire : la signature n'entre pas dans la file hors ligne. */
-  signer(): void {
-    this.envoiSignature.set(true);
-    this.erreurSignature.set(null);
-    this.api.signerFicheSecurite(this.seanceId).subscribe({
-      next: fiche => {
-        this.signature.set(fiche.signature ?? null);
-        this.palanquees.set(fiche.palanquees);
-        this.retenirEtatEnregistre();
-        this.envoiSignature.set(false);
-        this.signatureOuverte.set(false);
-        this.message.set('Fiche signée. Elle ne peut plus être modifiée.');
-      },
-      error: (e: HttpErrorResponse) => {
-        this.envoiSignature.set(false);
-        this.erreurSignature.set(e.error?.detail ?? (navigator.onLine
-          ? 'La signature de la fiche a échoué.'
-          : 'Signature impossible hors ligne : reconnectez-vous pour signer.'));
-      }
-    });
+    this.menuActionsOuvert.set(false);
+    void this.router.navigate(['/fiches-securite', this.seanceId, 'signature']);
   }
 
   /** Le nouveau plongeur s'ouvre aussitôt dans sa fenêtre, recherche dans le club en tête. */

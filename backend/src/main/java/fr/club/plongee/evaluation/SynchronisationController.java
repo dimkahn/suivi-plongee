@@ -163,7 +163,7 @@ public class SynchronisationController {
                 // défaut, ces écrans revérifient toujours en direct.
                 .map(s -> new SeanceController.SeanceVue(s.getId(), s.getDateSeance(), s.getOrdre(),
                         s.getMilieu().name(), s.getLieu(), s.getSite(), s.getProfondeurMax(),
-                        s.getCommentaire(), true, true))
+                        s.getCommentaire(), true, true, false, null))
                 .toList();
 
         List<ReferentielController.ReferentielVue> vuesReferentiels = referentiels

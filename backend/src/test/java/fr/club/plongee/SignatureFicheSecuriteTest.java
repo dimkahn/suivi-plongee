@@ -97,6 +97,66 @@ class SignatureFicheSecuriteTest {
     }
 
     @Test
+    @DisplayName("La liste des séances dit le DP de la fiche et si elle est signée")
+    void laListeDitSiLaFicheEstSignee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = seanceAvecFiche(admin);
+        long dpId = moniteurId(admin, "e3@club.fr");
+        String filtre = "$[?(@.id == %d)]".formatted(seance);
+
+        mvc.perform(get("/api/seances?saisonId=" + saisonDe(admin, seance)).header("Authorization", admin))
+                .andExpect(jsonPath(filtre + ".ficheSignee").value(false))
+                .andExpect(jsonPath(filtre + ".ficheDpId").value((int) dpId));
+        mvc.perform(post("/api/seances/" + seance + "/fiche-securite/signature")
+                        .header("Authorization", jeton("e3@club.fr")))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/seances?saisonId=" + saisonDe(admin, seance)).header("Authorization", admin))
+                .andExpect(jsonPath(filtre + ".ficheSignee").value(true));
+    }
+
+    @Test
+    @DisplayName("La page de signature montre la fiche imprimée en image, A4 paysage, aux mêmes comptes que le PDF")
+    void apercuDeLaFicheImprimee() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = seanceAvecFiche(admin);
+
+        byte[] png = mvc.perform(get("/api/seances/" + seance + "/fiche-securite/apercu.png")
+                        .header("Authorization", jeton("e3@club.fr")))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Type", "image/png"))
+                .andReturn().getResponse().getContentAsByteArray();
+        var image = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));
+        org.assertj.core.api.Assertions.assertThat(image.getWidth()).isGreaterThan(image.getHeight());
+
+        mvc.perform(get("/api/seances/" + seance + "/fiche-securite/apercu.png")
+                        .header("Authorization", jeton("eleve@club.fr")))
+                .andExpect(status().isForbidden());
+        // La sécurité surface ne voit que les séances qui lui sont confiées.
+        mvc.perform(get("/api/seances/" + seance + "/fiche-securite/apercu.png")
+                        .header("Authorization", jeton("surface@club.fr")))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    @DisplayName("Un élève ne lit pas dans la liste des séances le DP de la fiche ni sa signature")
+    void lEleveNeVoitPasLeDp() throws Exception {
+        String admin = jeton("presidente@club.fr");
+        long seance = seanceAvecFiche(admin);
+        String filtre = "$[?(@.id == %d)]".formatted(seance);
+
+        mvc.perform(get("/api/seances?saisonId=" + saisonDe(admin, seance)).header("Authorization", jeton("eleve@club.fr")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(filtre + ".id").value((int) seance))
+                .andExpect(jsonPath(filtre + ".ficheDpId").value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())))
+                .andExpect(jsonPath(filtre + ".ficheSignee").value(false));
+    }
+
+    private long saisonDe(String admin, long seance) {
+        return jdbc.queryForObject("SELECT saison_id FROM seance WHERE id = ?", Long.class, seance);
+    }
+
+    @Test
     @DisplayName("Seul le DP de la fiche la signe, pas un autre E3 ni un administrateur")
     void seulLeDpSigne() throws Exception {
         String admin = jeton("presidente@club.fr");

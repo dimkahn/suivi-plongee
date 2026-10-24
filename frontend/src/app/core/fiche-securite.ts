@@ -1,4 +1,4 @@
-import { PalanqueeVue, PlongeurVue, SignatureFicheVue } from './modeles';
+import { PalanqueeVue, PlongeurVue, SeanceVue, SignatureFicheVue } from './modeles';
 
 /**
  * Le bouton « Signer la fiche » : pour son DP seulement (le DP enregistré,
@@ -11,6 +11,16 @@ export function peutSignerFiche(fiche: { id: number | null; dpId: number | null;
                                 aujourdhui: string): boolean {
   return fiche.id !== null && !fiche.signature && utilisateurId !== undefined && fiche.dpId === utilisateurId
     && !!dateSeance && dateSeance <= aujourdhui;
+}
+
+/**
+ * Le lien « Signer la fiche » de la liste des fiches : même règle que le
+ * bouton de la fiche, lue sur la séance (DP enregistré, fiche signée ou non).
+ */
+export function peutSignerDepuisLaListe(s: Pick<SeanceVue, 'date' | 'ficheSecurite' | 'ficheSignee' | 'ficheDpId'>,
+                                        utilisateurId: number | undefined, aujourdhui: string): boolean {
+  return s.ficheSecurite && !s.ficheSignee && peutSignerFiche(
+    { id: 0, dpId: s.ficheDpId ?? null }, utilisateurId, s.date, aujourdhui);
 }
 
 /** « Signée par Gwendoline Marchand le 08/06/2026 à 18:30 », à l'heure de l'appareil. */

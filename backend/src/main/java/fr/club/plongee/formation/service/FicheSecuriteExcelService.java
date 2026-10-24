@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Export Excel de la fiche de sécurité, même feuille que {@link
@@ -183,14 +184,17 @@ public class FicheSecuriteExcelService {
     /** Les six lignes d'un tour (prévu, heures, réalisé), le nom du tour fusionné à gauche. */
     private int blocTour(Sheet feuille, int debut, FeuilleSecurite f, int t, Styles st) {
         String n = t == 0 ? "1er" : "2e";
-        record LigneTour(String libelle, boolean gris, Function<Palanquee, Object> valeur) {}
+        // depassement : la valeur réalisée au-delà du prévu, écrite en rouge.
+        record LigneTour(String libelle, boolean gris, Function<Palanquee, Object> valeur,
+                         Predicate<Palanquee> depassement) {}
+        Predicate<Palanquee> jamais = p -> false;
         List<LigneTour> lignes = List.of(
-                new LigneTour("Prof prévue", true, Palanquee::getProfondeurPrevue),
-                new LigneTour("Durée prévue", true, Palanquee::getDureePrevue),
-                new LigneTour("Heure de départ", false, p -> heure(p.getHeureImmersion())),
-                new LigneTour("Heure de sortie", false, p -> heure(p.getHeureSortie())),
-                new LigneTour("Prof", true, Palanquee::getProfondeurRealisee),
-                new LigneTour("Durée", true, Palanquee::getDureeRealisee));
+                new LigneTour("Prof prévue", true, Palanquee::getProfondeurPrevue, jamais),
+                new LigneTour("Durée prévue", true, Palanquee::getDureePrevue, jamais),
+                new LigneTour("Heure de départ", false, p -> heure(p.getHeureImmersion()), jamais),
+                new LigneTour("Heure de sortie", false, p -> heure(p.getHeureSortie()), jamais),
+                new LigneTour("Prof", true, Palanquee::getProfondeurRealisee, Palanquee::profondeurDepassee),
+                new LigneTour("Durée", true, Palanquee::getDureeRealisee, Palanquee::dureeDepassee));
         int ligne = debut;
         for (LigneTour l : lignes) {
             Row row = ligne(feuille, ligne, 16);
@@ -204,7 +208,8 @@ public class FicheSecuriteExcelService {
                 Cell cell = row.createCell(NB_COLONNES_FIXES + c);
                 if (v instanceof Integer i) cell.setCellValue(i);
                 else cell.setCellValue(v == null ? "" : v.toString());
-                cell.setCellStyle(c % 2 == 0 ? fondPair : fond);
+                CellStyle style = c % 2 == 0 ? fondPair : fond;
+                cell.setCellStyle(p != null && l.depassement().test(p) ? st.enRouge(style) : style);
             }
             cellule(row, NB_COLONNES_FIXES + f.colonnes().size(), "", fond);
             ligne++;
@@ -332,6 +337,19 @@ public class FicheSecuriteExcelService {
             nomTour.setWrapText(true);
             nomTourFonce = centre(style(police(false, 8, BLEU, true), GRIS_FONCE));
             nomTourFonce.setWrapText(true);
+        }
+
+        private final java.util.Map<CellStyle, XSSFCellStyle> rouges = new java.util.HashMap<>();
+
+        /** Le même style, police en rouge : un paramètre réalisé au-delà du prévu. */
+        XSSFCellStyle enRouge(CellStyle base) {
+            return rouges.computeIfAbsent(base, b -> {
+                XSSFCellStyle s = classeur.createCellStyle();
+                s.cloneStyleFrom(b);
+                XSSFFont p = police(true, 10, ROUGE, false);
+                s.setFont(p);
+                return s;
+            });
         }
 
         private XSSFFont police(boolean gras, int taille, byte[] couleur, boolean serif) {

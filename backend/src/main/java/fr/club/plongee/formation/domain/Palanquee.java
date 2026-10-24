@@ -95,6 +95,20 @@ public class Palanquee {
         return dureeRealisee;
     }
 
+    /** Descendue plus profond que prévu : en rouge sur la fiche imprimée. */
+    public boolean profondeurDepassee() {
+        return depasse(profondeurRealisee, profondeurPrevue);
+    }
+
+    /** Restée sous l'eau plus longtemps que prévu : en rouge sur la fiche imprimée. */
+    public boolean dureeDepassee() {
+        return depasse(dureeRealisee, dureePrevue);
+    }
+
+    private static boolean depasse(Integer realise, Integer prevu) {
+        return realise != null && prevu != null && realise > prevu;
+    }
+
     public void setDureeRealisee(Integer dureeRealisee) {
         this.dureeRealisee = dureeRealisee;
     }
