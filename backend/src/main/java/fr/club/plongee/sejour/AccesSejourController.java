@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -42,10 +43,13 @@ public class AccesSejourController {
     private final AttestationsAssuranceService attestations;
     private final TrombinoscopeSejourService trombinoscope;
     private final MenusRestaurantService menus;
+    private final JourneesSejourService journees;
 
     public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
                                  CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
-                                 TrombinoscopeSejourService trombinoscope, MenusRestaurantService menus) {
+                                 TrombinoscopeSejourService trombinoscope, MenusRestaurantService menus,
+                                 JourneesSejourService journees) {
+        this.journees = journees;
         this.trombinoscope = trombinoscope;
         this.menus = menus;
         this.acces = acces;
@@ -259,6 +263,15 @@ public class AccesSejourController {
                                         @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
         Acces a = acces.acces(code, jeton);
         return SejourController.image(frais.photo(a.sortieId(), depenseId, photoId));
+    }
+
+    /** Une photo du lieu d'une journée du programme. */
+    @GetMapping("/journees/{jour}/photos/{photoId}")
+    public ResponseEntity<byte[]> photoJournee(@PathVariable String code, @PathVariable LocalDate jour,
+                                               @PathVariable Long photoId,
+                                               @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return SejourController.image(journees.photo(a.sortieId(), jour, photoId));
     }
 
     @PostMapping("/versements")

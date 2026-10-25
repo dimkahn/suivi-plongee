@@ -1,5 +1,5 @@
 // A17 — Organiser un séjour : les dix onglets (programme, participants et repas, transports, hébergement, frais, matériel, courses, restaurant, fiches de sécurité, pratique).
-// Tournage du 2026-10-25, 44e série, « Payer l'addition » sans attendre tout le monde (fenêtre ouverte, payeur cherché parmi tous les participants), « Modifier » le menu du restaurant à la main, « Payer l'addition » du restaurant (la part de chacun dans les frais, sauf qui paie de son côté), l'onglet « Fiches de sécurité » (état de chaque fiche, ajouter une plongée, tout imprimer), le menu du restaurant (import Excel, choix de chacun, commande complète), la liste de courses et les repas au restaurant, le trombinoscope du séjour exporté en image et le niveau des encadrants sous leur photo, la photo d'un invité et « Montrer aux participants » dans une fenêtre, le trombinoscope dans le bandeau et ouvert aux participants, la photo d'un invité, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-25, 45e série, la présentation d'une journée du programme (titre, trajet, photos des lieux, à découvrir, conseil, hébergement), « Payer l'addition » sans attendre tout le monde (fenêtre ouverte, payeur cherché parmi tous les participants), « Modifier » le menu du restaurant à la main, « Payer l'addition » du restaurant (la part de chacun dans les frais, sauf qui paie de son côté), l'onglet « Fiches de sécurité » (état de chaque fiche, ajouter une plongée, tout imprimer), le menu du restaurant (import Excel, choix de chacun, commande complète), la liste de courses et les repas au restaurant, le trombinoscope du séjour exporté en image et le niveau des encadrants sous leur photo, la photo d'un invité et « Montrer aux participants » dans une fenêtre, le trombinoscope dans le bandeau et ouvert aux participants, la photo d'un invité, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les dix onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs, ouvert aux participants avec les seules photos qu\'on leur montre, le niveau des encadrants, exporté en image, et la photo d\'un invité, ajoutée dans une fenêtre), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme, le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant), la liste de courses (repas au restaurant choisis jour par jour, quantités selon les présents et les régimes), le menu du restaurant (importé d\'un fichier Excel fabriqué par une IA, corrigé à la main, le choix de chacun, la commande complète, l\'addition payée et la part de chacun mise dans les frais), les fiches de sécurité des plongées (leur état jour par jour, une plongée ajoutée, toutes les fiches imprimées d\'un coup) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les dix onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs, ouvert aux participants avec les seules photos qu\'on leur montre, le niveau des encadrants, exporté en image, et la photo d\'un invité, ajoutée dans une fenêtre), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme (chaque journée présentée comme un carnet de voyage : titre, trajet, photos des lieux, à découvrir, conseil, hébergement), le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant), la liste de courses (repas au restaurant choisis jour par jour, quantités selon les présents et les régimes), le menu du restaurant (importé d\'un fichier Excel fabriqué par une IA, corrigé à la main, le choix de chacun, la commande complète, l\'addition payée et la part de chacun mise dans les frais), les fiches de sécurité des plongées (leur état jour par jour, une plongée ajoutée, toutes les fiches imprimées d\'un coup) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -171,7 +171,7 @@ export default {
     await legende('« Pratique » : les affaires à prévoir, et les infos pratiques. « Partir de la liste type » remplit la liste d\'un coup.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
 
-    await legende('« Programme » : les rendez-vous, et les plongées de la sortie.', 0);
+    await legende('« Programme » : les rendez-vous, les plongées de la sortie, et la présentation de chaque journée.', 0);
     await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1200 });
     await toucher(page.getByRole('button', { name: 'Ajouter un rendez-vous' }), { apres: 800 });
     await dater('#e-jour', '2027-06-06');
@@ -179,7 +179,35 @@ export default {
     await saisir('#e-titre', 'Apéritif sur la plage');
     await saisir('#e-lieu', 'Plage de l\'Almanarre');
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
-    await defiler(400, 1500);
+    await legende('Les deux premiers jours sont présentés comme un carnet de voyage : le titre du jour, le trajet, puis « À découvrir », un conseil et l\'hébergement.', 0);
+    await defiler(400, 4000);
+    await legende('« Présenter la journée » sous le dimanche : son titre, son trajet, et deux photos des lieux.', 0);
+    await toucher(page.locator('app-journee-programme').filter({ hasText: 'Apéritif sur la plage' })
+      .getByRole('button', { name: 'Présenter la journée' }), { apres: 1200 });
+    await saisir('#j-titre', 'Jour 3 — Plongée de nuit à Bagaud');
+    await saisir('#j-trajet', 'Port-Cros → île de Bagaud · 10 min de bateau');
+    // Deux images d'illustration dessinées dans la page (mer et plage), comme des photos du téléphone.
+    const images = await page.evaluate(() => [['#0E7490', '#67E8F9'], ['#FDE68A', '#0891B2']].map(([haut, bas]) => {
+      const c = document.createElement('canvas');
+      c.width = 800; c.height = 600;
+      const g = c.getContext('2d');
+      const d = g.createLinearGradient(0, 0, 0, 600);
+      d.addColorStop(0, haut); d.addColorStop(1, bas);
+      g.fillStyle = d; g.fillRect(0, 0, 800, 600);
+      return c.toDataURL('image/png').split(',')[1];
+    }));
+    await page.locator('#j-photos').setInputFiles(images.map((b, i) => ({
+      name: `bagaud-${i + 1}.png`, mimeType: 'image/png', buffer: Buffer.from(b, 'base64')
+    })));
+    await pause(3000);
+    await legende('Des paysages seulement, sans personne reconnaissable : quatre photos au plus, allégées par le téléphone.', 4500);
+    await saisir('#j-descriptif', 'Un îlot interdit au débarquement, des tombants couverts de gorgonies, et la nuit les poulpes de sortie.');
+    await saisir('#j-conseil', 'Une lampe chacun et une de secours ; repas léger avant de partir.');
+    await saisir('#j-hebergement', 'Gîte des Salins — 3ᵉ nuit');
+    await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Enregistrer' }), { apres: 2000 });
+    await legende('Le jour se lit comme une page de carnet : les photos deux par deux, puis le programme, ce qu\'on y découvre, le conseil et où l\'on dort. Les participants le voient ainsi, dans l\'appli et par le lien.', 0);
+    await page.locator('app-journee-programme').filter({ hasText: 'Jour 3 — Plongée de nuit' }).scrollIntoViewIfNeeded();
+    await pause(5000);
     await enHaut();
 
     await legende('« Gérer les frais » : qui a avancé quoi, pour qui. L\'appli calcule qui doit combien à qui.', 0);

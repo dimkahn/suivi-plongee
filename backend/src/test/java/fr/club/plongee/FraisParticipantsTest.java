@@ -286,6 +286,25 @@ class FraisParticipantsTest {
         }
         envoyer("GET", pub + "/carnet", null, null, 403);
 
+        // La présentation d'une journée et sa photo, lues par le lien ; pas sans jeton.
+        envoyer("PUT", base + "/journees/" + debut, dt, "{\"titre\":\"Arrivée à Port-Cros\"}", 200);
+        mvc.perform(multipart(base + "/journees/" + debut + "/photos")
+                        .file(new MockMultipartFile("fichier", "ile.png", "image/png", PNG)).header("Authorization", dt))
+                .andExpect(status().isOk());
+        JsonNode journee = envoyer("GET", pub + "/carnet", jetonLina, null, 200).get("journees").get(0);
+        assertThat(journee.get("titre").asText()).isEqualTo("Arrivée à Port-Cros");
+        String photoJournee = pub + "/journees/" + debut + "/photos/" + journee.get("photos").get(0).asLong();
+        mvc.perform(get(photoJournee).header("X-Jeton-Sejour", jetonLina))
+                .andExpect(status().isOk()).andExpect(header().string("Content-Type", "image/png"));
+        envoyer("GET", photoJournee, null, null, 403);
+        assertThat(envoyer("GET", pub + "/moi", jetonLina, null, 200).get("programme").get("journees")).hasSize(1);
+        // Dans le carnet par e-mail : le titre, le trajet et l'hébergement du jour (les photos restent dans l'appli).
+        envoyer("PUT", base + "/journees/" + debut, dt, """
+                {"titre":"Arrivée à Port-Cros","trajet":"Hyères → Port-Cros","hebergement":"Gîte du Fort"}""", 200);
+        envoyer("POST", base + "/envoi-carnet", dt, "{\"participantIds\":[%d]}".formatted(pLina), 200);
+        assertThat(dernierPour("Lina@Exemple.fr").corps()).contains("Arrivée à Port-Cros")
+                .contains("Hyères → Port-Cros").contains("Hébergement : Gîte du Fort");
+
         // Anis, élève sans compte : il entre par le lien et saisit ce qu'il a payé, pas pour un autre.
         long anis = 0;
         for (JsonNode c : envoyer("GET", "/api/plongeurs-connus", dt, null, 200)) {

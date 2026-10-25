@@ -1,10 +1,10 @@
 import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
 import { dateDuJour } from '../../core/date-fr';
 import {
-  CATEGORIES, CategorieAffaire, ParticipantVue, PortAttestationAssurance, PortCartesEmbarquement, SejourVue, TRANSPORTS, heure, jourLong, nomComplet
+  CATEGORIES, CategorieAffaire, LecturePhotoJournee, ParticipantVue, PortAttestationAssurance, PortCartesEmbarquement, SejourVue, TRANSPORTS, heure, jourLong, nomComplet
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
-import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
+import { JourneeProgrammeComponent } from './journee-programme.component';
 import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 import { PretsDuSejour } from './materiel-sejour';
 
@@ -31,7 +31,7 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
  */
 @Component({
   selector: 'app-carnet-sejour',
-  imports: [MonSejourComponent, PalanqueesPlongeeComponent],
+  imports: [MonSejourComponent, JourneeProgrammeComponent],
   template: `
     @let s = sejour();
     @if (moi(); as m) {
@@ -51,21 +51,8 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
       <h2 id="t-programme">Programme</h2>
       @if (programme().length === 0) { <p class="vide">Le programme sera bientôt là.</p> }
       @for (j of programme(); track j.jour) {
-        <div class="carte jour" [class.aujourdhui]="j.jour === aujourdhui" [class.passe]="j.jour < aujourdhui">
-          <h3>{{ jourLong(j.jour) }}@if (j.jour === aujourdhui) { <span class="pastille">aujourd'hui</span>}</h3>
-          <ul class="lignes">
-            @for (l of j.lignes; track $index) {
-              <li>
-                <span class="heure">{{ l.heure }}</span>
-                <span class="quoi">
-                  <strong>{{ l.titre }}</strong>@if (l.lieu) { <span class="secondaire"> — {{ l.lieu }}</span>}
-                  @if (l.details) { <span class="texte-libre secondaire">{{ l.details }}</span> }
-                  @if (l.palanquees.length > 0) { <app-palanquees-plongee [palanquees]="l.palanquees" /> }
-                </span>
-              </li>
-            }
-          </ul>
-        </div>
+        <app-journee-programme [jour]="j" [lirePhoto]="lirePhoto()" [aujourdhui]="j.jour === aujourdhui"
+                               [passe]="j.jour < aujourdhui" />
       }
     </section>
 
@@ -168,15 +155,6 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
     .a-moi { border-left: 6px solid var(--profond); }
     .nom { font-weight: 700; }
     .texte-libre { white-space: pre-line; display: block; }
-    .jour { padding: var(--pas-2); margin-bottom: var(--pas); }
-    .jour.aujourdhui { border-left: 6px solid var(--profond); }
-    .jour.passe { opacity: .6; }
-    .jour h3 { margin: 0 0 var(--pas); display: flex; align-items: center; gap: var(--pas); }
-    .pastille { padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; background: var(--profond); color: #fff; }
-    .lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
-    .lignes li { display: flex; gap: var(--pas-2); align-items: flex-start; }
-    .heure { flex: none; width: 6.5rem; font-weight: 700; color: var(--profond-fonce); }
-    .quoi { flex: 1; min-width: 0; }
     .logement { padding: var(--pas-2); margin-bottom: var(--pas); }
     .logement h3 { margin: 0; }
     .adresse { display: inline-flex; align-items: center; min-height: 44px; }
@@ -191,7 +169,6 @@ const NUMERO = /(?:\+33\s?|\b0)[1-9](?:[\s.-]?\d{2}){4}\b|\b(?:112|196|15|17|18|
     .coches { margin: 0; padding-left: 1.25rem; display: grid; gap: var(--pas); }
     .indispensable { font-size: .8125rem; color: var(--en-cours); margin-left: var(--pas); }
     .infos { padding: var(--pas-2); margin: 0; overflow-wrap: anywhere; }
-    @media (max-width: 640px) { .heure { width: 4.5rem; } }
   `]
 })
 export class CarnetSejourComponent {
@@ -202,6 +179,8 @@ export class CarnetSejourComponent {
   cartes = input<PortCartesEmbarquement | null>(null);
   /** Son attestation d'assurance, dans « Mon séjour ». */
   attestations = input<PortAttestationAssurance | null>(null);
+  /** Les photos des lieux des journées du programme. */
+  lirePhoto = input<LecturePhotoJournee | null>(null);
   /** « Modifier mes informations », « Mes comptes », le matériel : l'onglet de la page qui s'en occupe. */
   ouvrirOnglet = output<'infos' | 'frais' | 'materiel' | 'declarer'>();
 
@@ -210,7 +189,8 @@ export class CarnetSejourComponent {
   readonly aujourdhui = dateDuJour();
 
   readonly moi = computed(() => this.sejour().participants.find(p => p.moi) ?? null);
-  readonly programme = computed(() => programmeParJour(this.sejour().evenements, this.sejour().sortie.seances, this.sejour().palanquees));
+  readonly programme = computed(() => programmeParJour(this.sejour().evenements, this.sejour().sortie.seances,
+    this.sejour().palanquees, this.sejour().journees ?? []));
   private readonly parId = computed(() => new Map(this.sejour().participants.map(p => [p.id, p])));
 
   /** Arrivées et départs regroupés par jour, heure et vol : qui voyage ensemble. */

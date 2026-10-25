@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -65,11 +66,14 @@ public class SejourController {
     private final RejeuSejour rejeu;
     private final TrombinoscopeSejourService trombinoscope;
     private final RepasSejourService repas;
+    private final JourneesSejourService journees;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             AccesSejourService acces, PretsSejourService pretsSejour,
                             CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
-                            RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope, RepasSejourService repas) {
+                            RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope, RepasSejourService repas,
+                            JourneesSejourService journees) {
+        this.journees = journees;
         this.trombinoscope = trombinoscope;
         this.repas = repas;
         this.service = service;
@@ -421,6 +425,58 @@ public class SejourController {
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         service.supprimerEvenement(id, evenementId);
         return service.lire(id, moi);
+    }
+
+    // ------------------------------------------------------------------
+    //  Présentation des journées : titre, trajet, photos des lieux (JourneesSejourService).
+    // ------------------------------------------------------------------
+
+    @PutMapping("/{id}/journees/{jour}")
+    @PreAuthorize(GERE)
+    public SejourVue definirJournee(@PathVariable Long id, @PathVariable LocalDate jour,
+                                    @Valid @RequestBody JourneesSejourService.DemandeJournee d,
+                                    @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        journees.definir(id, jour, d);
+        return service.lire(id, moi);
+    }
+
+    @DeleteMapping("/{id}/journees/{jour}")
+    @PreAuthorize(GERE)
+    public SejourVue supprimerJournee(@PathVariable Long id, @PathVariable LocalDate jour,
+                                      @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        journees.supprimer(id, jour);
+        return service.lire(id, moi);
+    }
+
+    /** Une photo du lieu (JPEG ou PNG, réduite par le téléphone avant l'envoi). */
+    @PostMapping(value = "/{id}/journees/{jour}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize(GERE)
+    public SejourVue ajouterPhotoJournee(@PathVariable Long id, @PathVariable LocalDate jour,
+                                         @RequestParam("fichier") MultipartFile fichier,
+                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        journees.ajouterPhoto(id, jour, octets(fichier), fichier.getContentType());
+        return service.lire(id, moi);
+    }
+
+    @DeleteMapping("/{id}/journees/{jour}/photos/{photoId}")
+    @PreAuthorize(GERE)
+    public SejourVue supprimerPhotoJournee(@PathVariable Long id, @PathVariable LocalDate jour,
+                                           @PathVariable Long photoId,
+                                           @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        journees.supprimerPhoto(id, jour, photoId);
+        return service.lire(id, moi);
+    }
+
+    /** Lisible par tous ceux qui lisent le séjour : encadrants et participants. */
+    @GetMapping("/{id}/journees/{jour}/photos/{photoId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> photoJournee(@PathVariable Long id, @PathVariable LocalDate jour,
+                                               @PathVariable Long photoId,
+                                               @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        if (!SejourService.encadrant(moi) && frais.acteur(id, moi).participantId() == null) {
+            throw new AccessDeniedException("Ce séjour n'est ouvert qu'à ses participants et aux encadrants.");
+        }
+        return image(journees.photo(id, jour, photoId));
     }
 
     // ------------------------------------------------------------------

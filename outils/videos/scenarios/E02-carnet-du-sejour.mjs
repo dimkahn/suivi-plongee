@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-23, 30e série, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-25, 31e série, les journées du programme présentées comme un carnet de voyage, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme, les affaires à prévoir, ses frais et le trombinoscope du séjour, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
+  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme (chaque journée présentée comme un carnet de voyage), les affaires à prévoir, ses frais et le trombinoscope du séjour, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
@@ -68,8 +68,8 @@ export default {
     await legende("« Modifier mes informations » : son vol aller, le jour et l'heure de son départ, le jour, l'heure et la gare ou l'aéroport d'arrivée du retour, le terminal, son numéro de dossier et le lien d'enregistrement du mail de la compagnie, ses repas, la personne à prévenir.", 0);
     await toucher(page.getByRole('button', { name: 'Modifier mes informations' }), { apres: 3500 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
-    await legende('Puis le programme, jour par jour.', 0);
-    await defiler(600, 2000);
+    await legende('Puis le programme, jour par jour. Une journée présentée par l\'organisatrice se lit comme un carnet de voyage : le titre, le trajet, les photos des lieux, ce qu\'on y découvre, un conseil et où l\'on dort.', 0);
+    await defiler(600, 5000);
     await legende('« Pratique » : ce qu\'il faut emporter, et les infos pratiques.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
     await enHaut();

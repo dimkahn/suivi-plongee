@@ -246,6 +246,28 @@ export interface EvenementVue {
 
 export type DemandeEvenement = Omit<EvenementVue, 'id'>;
 
+/**
+ * La présentation d'une journée du programme, comme un carnet de voyage
+ * (demande du club, 2026) : « Jour 1 — Cabo Ledo », le trajet, ce qu'on y
+ * verra, un conseil, l'hébergement, et jusqu'à 4 photos des lieux (leurs ids).
+ */
+export interface JourneeVue {
+  jour: string;
+  titre: string | null;
+  trajet: string | null;
+  descriptif: string | null;
+  conseil: string | null;
+  hebergement: string | null;
+  photos: number[];
+}
+
+export type DemandeJournee = Omit<JourneeVue, 'jour' | 'photos'>;
+
+export const PHOTOS_MAX_PAR_JOURNEE = 4;
+
+/** Lit une photo d'une journée : par l'appli (compte connecté) ou par la page du lien (jeton). */
+export type LecturePhotoJournee = (jour: string, photoId: number) => Observable<Blob>;
+
 export type CategorieDepense = 'HEBERGEMENT' | 'TRANSPORT' | 'REPAS' | 'PLONGEE' | 'AUTRE';
 
 export const CATEGORIES_DEPENSE: { code: CategorieDepense; libelle: string }[] = [
@@ -545,6 +567,8 @@ export interface SejourVue {
   logements: LogementVue[];
   affaires: AffaireVue[];
   evenements: EvenementVue[];
+  /** La présentation des journées (titre, trajet, photos…) ; absente d'un séjour gardé par une version plus ancienne. */
+  journees?: JourneeVue[];
   frais: FraisVue;
   avertissements: string[];
   groupesProposes: GroupeProposeVue[];
@@ -748,6 +772,29 @@ export class SejourApi {
 
   supprimerEvenement(id: number, evenementId: number): Observable<SejourVue> {
     return this.http.delete<SejourVue>(`/api/sejours/${id}/evenements/${evenementId}`);
+  }
+
+  /** Crée ou remplace la présentation du jour ; ses photos restent. */
+  definirJournee(id: number, jour: string, d: DemandeJournee): Observable<SejourVue> {
+    return this.http.put<SejourVue>(`/api/sejours/${id}/journees/${jour}`, d);
+  }
+
+  /** La présentation du jour et ses photos ; les rendez-vous restent. */
+  supprimerJournee(id: number, jour: string): Observable<SejourVue> {
+    return this.http.delete<SejourVue>(`/api/sejours/${id}/journees/${jour}`);
+  }
+
+  ajouterPhotoJournee(id: number, jour: string, fichier: File): Observable<SejourVue> {
+    return this.http.post<SejourVue>(`/api/sejours/${id}/journees/${jour}/photos`, formulairePhoto(fichier));
+  }
+
+  supprimerPhotoJournee(id: number, jour: string, photoId: number): Observable<SejourVue> {
+    return this.http.delete<SejourVue>(`/api/sejours/${id}/journees/${jour}/photos/${photoId}`);
+  }
+
+  lecturePhotoJournee(id: number): LecturePhotoJournee {
+    return (jour, photoId) => this.http.get(`/api/sejours/${id}/journees/${jour}/photos/${photoId}`,
+      { responseType: 'blob' });
   }
 
   /** Les frais du séjour pour un compte connecté ; {@code maj} reçoit le séjour à jour après chaque écriture. */

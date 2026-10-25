@@ -14,7 +14,7 @@ import { CarnetSejourComponent } from './carnet-sejour.component';
 import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
-  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
+  AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, JourneeVue, LecturePhotoJournee, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
   PortAttestationAssurance, PortCartesEmbarquement, PortFrais, RegleLecture,
   PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto, remboursementsDe
 } from './sejour-api';
@@ -46,7 +46,8 @@ interface MesInformationsVue {
   sejour: EnteteVue;
   moi: ParticipantVue;
   /** Pour l'encart « Aujourd'hui ». */
-  programme: { evenements: EvenementVue[]; plongees: SeanceSortieVue[]; affaires: AffaireVue[]; palanquees: PalanqueeVue[] };
+  programme: { evenements: EvenementVue[]; plongees: SeanceSortieVue[]; affaires: AffaireVue[]; palanquees: PalanqueeVue[];
+               journees?: JourneeVue[] };
 }
 
 /** Le jeton du lien, gardé sur l'appareil (IndexedDB, comme le reste : pas de localStorage). */
@@ -105,7 +106,7 @@ interface CopieLien {
         @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
         @if (onglet() === 'carnet') {
           @if (carnet(); as c) {
-            <app-carnet-sejour [sejour]="c" [prets]="prets" [cartes]="portCartes"
+            <app-carnet-sejour [sejour]="c" [prets]="prets" [cartes]="portCartes" [lirePhoto]="lirePhotoJournee"
                                [attestations]="portAttestations" (ouvrirOnglet)="ouvrirDepuisCarnet($event)" />
             <p class="version-imprimable">
               <button type="button" class="bouton-discret" (click)="ouvrirImprimable()">Version imprimable</button>
@@ -212,7 +213,7 @@ export class EspaceParticipantComponent {
   private contenu = signal<MesInformationsVue['programme'] | null>(null);
   readonly programme = computed(() => {
     const c = this.contenu();
-    return c ? programmeParJour(c.evenements, c.plongees, c.palanquees) : [];
+    return c ? programmeParJour(c.evenements, c.plongees, c.palanquees, c.journees ?? []) : [];
   });
   readonly affaires = computed(() => this.contenu()?.affaires ?? []);
   /** « vous devez 25,00 € à Inès Roux », rappelé la veille du retour. */
@@ -300,6 +301,10 @@ export class EspaceParticipantComponent {
     lire: (_p, sens) => this.http.get(`${this.base}/cartes-embarquement/${sens}`,
       { headers: this.entetes(), responseType: 'blob' })
   };
+
+  /** Les photos des lieux des journées du programme, avec le jeton du lien. */
+  readonly lirePhotoJournee: LecturePhotoJournee = (jour, photoId) =>
+    this.http.get(`${this.base}/journees/${jour}/photos/${photoId}`, { headers: this.entetes(), responseType: 'blob' });
 
   /** Son attestation d'assurance, avec le jeton du lien : chaque écriture renvoie le carnet à jour. */
   readonly portAttestations: PortAttestationAssurance = {

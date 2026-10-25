@@ -213,6 +213,15 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Quel séjour** : celui en cours ou le prochain de cet e-mail, sinon le dernier fini (tant que le jeton y est encore possible, 60 jours) ; seulement ceux dont la demande d'informations est partie (adresse tirée) et pas pour un encadrant, qui passe par « Séjours ». Plusieurs séjours : les autres par le lien de leur e-mail.
 - **L'adresse secrète du séjour n'est rendue qu'après le bon code**, avec le jeton : la réponse à la demande de code reste la même (204) que l'e-mail soit connu ou non, et tout code refusé reçoit le même message (« Code incorrect ou expiré »), sans l'indice « vérifiez les 6 chiffres » de la page du lien. *Pourquoi :* ici un e-mail suffit, sans le secret de l'adresse. Choix du séjour départagé par l'id de la sortie, pour que demande et connexion tombent sur le même. *Reste à décider avec le club :* aucune limite par adresse IP ; quelqu'un qui connaît un e-mail peut faire envoyer un code par minute et épuiser les 5 essais. *Écarté :* rediriger vers la page du lien dès l'e-mail tapé, qui aurait livré l'adresse du séjour à quiconque connaît un e-mail de participant. La page de connexion pose le jeton (`cleJetonLienSejour`) et ouvre `/sejour/{code}`, déjà connectée. Tests : `EntreeSejourSansLienTest`.
 
+## Présenter les journées du programme comme un carnet de voyage (2026-10-25)
+
+- **Demande du club**, d'après le carnet « Angola Tour » : une page par jour, avec la date, le titre du jour, le trajet, deux photos des lieux, l'itinéraire, ce qu'on y voit, un conseil et l'hébergement.
+- **Une présentation par jour** (`sejour_journee`, V99_10, unique par sortie et jour), à côté des rendez-vous (`sejour_evenement`) qui restent l'itinéraire : un jour présenté sans rendez-vous paraît quand même. Même fenêtre de jours que les rendez-vous (7 jours autour de la sortie). `JourneesSejourService`, routes `PUT/DELETE /api/sejours/{id}/journees/{jour}` et `…/photos` (organisateurs), photos lues par les participants (`GET …/photos/{photoId}`, et `/api/public/sejour/{code}/journees/{jour}/photos/{photoId}` avec le jeton).
+- **4 photos de lieux au plus par jour** (`sejour_journee_photo`), JPEG ou PNG vérifiés comme les notes de frais, réduites par le téléphone ; une photo pour un jour pas encore présenté le crée. **Aucune personne reconnaissable** : rappel dans la fenêtre ; le droit à l'image passe par le trombinoscope. *Pourquoi :* les participants les voient tous, dont des mineurs et des invités.
+- **Réseau obligatoire** pour écrire (pas dans la file hors ligne : les photos ne s'y prêtent pas) ; un séjour gardé sur le téléphone sans `journees` s'affiche comme avant.
+- **E-mail et version imprimable : les textes seulement**, sans photo (poids du courriel, encre).
+- Affichage commun à l'onglet Programme et au carnet du lien : `JourneeProgrammeComponent` ; photos par `PhotoJourneeComponent`. Tests : `JourneesSejourTest`, `FraisParticipantsTest` (page du lien, e-mail), `programme-du-jour.spec.ts`.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
@@ -225,3 +234,4 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V130 : le bateau du samedi avancé par le club (240 €, partagé entre les plongeurs).
 - V132 : deux repas au restaurant (dîner du samedi 5, déjeuner du dimanche 6 juin).
 - V133 : le menu de La Trinquette pour le dîner du samedi 5 juin, où Camille a déjà choisi.
+- V134 : les deux premières journées présentées (titre, trajet, à découvrir, conseil, hébergement), sans photo.

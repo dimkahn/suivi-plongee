@@ -1,5 +1,5 @@
 import { SeanceSortieVue } from '../../core/modeles';
-import { EvenementVue, MoyenTransport, PalanqueeVue, ParticipantVue, TRANSPORTS, Trajet, heure, jourLong, nomComplet } from './sejour-api';
+import { EvenementVue, JourneeVue, MoyenTransport, PalanqueeVue, ParticipantVue, TRANSPORTS, Trajet, heure, jourLong, nomComplet } from './sejour-api';
 
 // ----------------------------------------------------------------
 //  L'encart « Aujourd'hui » du séjour : le séjour commence dès le voyage
@@ -33,11 +33,21 @@ export interface LigneProgramme {
   palanquees: PalanqueeVue[];
 }
 
-/** Les jours du programme (et ceux des rendez-vous hors des dates de la sortie), rendez-vous puis plongées. */
+/** Un jour du programme : sa présentation (titre, trajet, photos…) s'il en a une, puis ses lignes. */
+export interface JourProgramme {
+  jour: string;
+  journee: JourneeVue | null;
+  lignes: LigneProgramme[];
+}
+
+/**
+ * Les jours du programme (et ceux des rendez-vous hors des dates de la sortie), rendez-vous puis plongées ;
+ * un jour présenté sans rendez-vous compte aussi.
+ */
 export function programmeParJour(evenements: EvenementVue[], plongees: SeanceSortieVue[],
-                                  palanquees: PalanqueeVue[] = [])
-  : { jour: string; lignes: LigneProgramme[] }[] {
-  const jours = new Map<string, LigneProgramme[]>();
+                                  palanquees: PalanqueeVue[] = [], journees: JourneeVue[] = [])
+  : JourProgramme[] {
+  const jours = new Map<string, LigneProgramme[]>(journees.map(j => [j.jour, []]));
   const ajouter = (jour: string, l: LigneProgramme) => jours.set(jour, [...(jours.get(jour) ?? []), l]);
   for (const e of evenements) {
     ajouter(e.jour, {
@@ -52,7 +62,8 @@ export function programmeParJour(evenements: EvenementVue[], plongees: SeanceSor
       palanquees: palanquees.filter(p => p.seanceId === se.id)
     });
   }
-  return [...jours.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([jour, lignes]) => ({ jour, lignes }));
+  return [...jours.entries()].sort(([a], [b]) => a.localeCompare(b))
+    .map(([jour, lignes]) => ({ jour, journee: journees.find(j => j.jour === jour) ?? null, lignes }));
 }
 
 export interface VoyageDuJour {

@@ -4,7 +4,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, from, map, mergeMap, of, throwError } from 'rxjs';
+import { Observable, firstValueFrom, from, map, mergeMap, of, throwError } from 'rxjs';
+import { reduirePhoto } from '../../core/reduire-photo';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
 import { AuthService } from '../../core/auth.service';
@@ -19,7 +20,7 @@ import { dateDuJour, periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
-  FraisVue, PortFrais, PortPrets, SejourApi, SejourVue,
+  DemandeJournee, FraisVue, PHOTOS_MAX_PAR_JOURNEE, PortFrais, PortPrets, SejourApi, SejourVue,
   CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, euros, heure, jourLong, nomComplet,
   remboursementsDe, texteTrajet, trajetSaisi
 } from './sejour-api';
@@ -28,7 +29,8 @@ import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
 import { AttestationAssuranceComponent } from './attestation-assurance.component';
 import { programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
-import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
+import { JourneeProgrammeComponent } from './journee-programme.component';
+import { PhotoJourneeComponent } from './photo-journee.component';
 import { SejourFraisComponent } from './sejour-frais.component';
 import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
@@ -56,6 +58,10 @@ interface GroupeTrajet {
   /** Le trajet commun et ceux qui le prennent, pour y ajouter d'autres participants. */
   trajet: Trajet;
   ids: number[];
+}
+
+function journeeVide(jour: string): DemandeJournee & { jour: string } {
+  return { jour, titre: null, trajet: null, descriptif: null, conseil: null, hebergement: null };
 }
 
 function trajetVide(): Trajet {
@@ -91,7 +97,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
+  imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, JourneeProgrammeComponent, PhotoJourneeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
             TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent],
   template: `
@@ -248,38 +254,23 @@ function participantVide(): BrouillonParticipant {
           <div class="titre-section">
             <h2>Programme</h2>
             @if (s.gere) {
-              <button type="button" class="bouton-principal sans-impression" (click)="ouvrirEvenement(null)">
-                Ajouter un rendez-vous
-              </button>
+              <span class="boutons-titre sans-impression">
+                <button type="button" class="bouton-discret" (click)="ouvrirJournee(null)">
+                  Présenter une journée
+                </button>
+                <button type="button" class="bouton-principal" (click)="ouvrirEvenement(null)">
+                  Ajouter un rendez-vous
+                </button>
+              </span>
             }
           </div>
           @if (programme().length === 0) {
             <p class="vide">Rien au programme pour l'instant.</p>
           }
           @for (j of programme(); track j.jour) {
-            <div class="carte jour" [class.aujourdhui]="j.jour === aujourdhui()">
-              <h3>{{ jourLong(j.jour) }}@if (j.jour === aujourdhui()) { · aujourd'hui}</h3>
-              <ul class="lignes">
-                @for (l of j.lignes; track $index) {
-                  <li>
-                    <span class="heure">{{ l.heure }}</span>
-                    <span class="quoi">
-                      <strong>{{ l.titre }}</strong>@if (l.lieu) { <span class="secondaire"> — {{ l.lieu }}</span>}
-                      @if (l.details) { <span class="texte-libre secondaire">{{ l.details }}</span> }
-                      @if (l.palanquees.length > 0) {
-                        <app-palanquees-plongee [palanquees]="l.palanquees" [encadrant]="s.encadrant" />
-                      }
-                    </span>
-                    @if (s.gere && l.evenement; as e) {
-                      <span class="sans-impression boutons-ligne">
-                        <button type="button" class="bouton-discret" (click)="ouvrirEvenement(e)"
-                                [attr.aria-label]="'Modifier ' + e.titre">Modifier</button>
-                      </span>
-                    }
-                  </li>
-                }
-              </ul>
-            </div>
+            <app-journee-programme [jour]="j" [lirePhoto]="lirePhotoJournee" [aujourdhui]="j.jour === aujourdhui()"
+                                   [encadrant]="s.encadrant" [gere]="s.gere"
+                                   (presenter)="ouvrirJournee($event)" (modifierEvenement)="ouvrirEvenement($event)" />
           }
         </section>
       }
@@ -1052,6 +1043,62 @@ function participantVide(): BrouillonParticipant {
       </div>
     </app-dialogue>
 
+    <!-- La présentation d'une journée, comme un carnet de voyage (demande du club, 2026). Réseau nécessaire. -->
+    <app-dialogue [ouvert]="journeeOuverte()" [large]="true" [erreur]="erreur()"
+                  [titre]="journeeExistante() ? 'Présentation du ' + jourLong(journee.jour).toLowerCase() : 'Présenter une journée'"
+                  (fermer)="journeeOuverte.set(false)">
+      @if (!journeeExistante()) {
+        <label for="j-jour">Jour *</label>
+        <input id="j-jour" type="date" [(ngModel)]="journee.jour" (ngModelChange)="choisirJourJournee($event)">
+      }
+      <label for="j-titre">Titre du jour</label>
+      <input id="j-titre" [(ngModel)]="journee.titre" maxlength="160" placeholder="Jour 1 — Port-Cros, la Gabinière">
+      <label for="j-trajet">Trajet</label>
+      <input id="j-trajet" [(ngModel)]="journee.trajet" maxlength="300" placeholder="Hyères → Port-Cros · 40 min de bateau">
+
+      <fieldset class="sans-cadre">
+        <legend>Photos des lieux ({{ photosJournee().length }}/{{ photosMax }})</legend>
+        <p class="aide">Des paysages et des lieux, sans personne reconnaissable. Deux photos côte à côte rendent le mieux.</p>
+        @if (photosJournee().length > 0) {
+          <ul class="photos-journee">
+            @for (id of photosJournee(); track id) {
+              <li>
+                <app-photo-journee [jour]="journee.jour" [photoId]="id" [lire]="lirePhotoJournee" />
+                <button type="button" class="bouton-discret danger" (click)="retirerPhotoJournee(id)" [disabled]="envoi()">
+                  Retirer
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        @if (photosJournee().length < photosMax && journee.jour) {
+          <label class="bouton-discret choisir-photos" for="j-photos">🖼️ Ajouter des photos</label>
+          <input id="j-photos" class="cache" type="file" accept="image/*" multiple [disabled]="envoi()"
+                 (change)="ajouterPhotosJournee($event)">
+        }
+      </fieldset>
+
+      <label for="j-descriptif">À découvrir</label>
+      <textarea id="j-descriptif" rows="4" [(ngModel)]="journee.descriptif" maxlength="4000"
+                placeholder="Les sites, les paysages, ce qui fait l'intérêt de la journée"></textarea>
+      <label for="j-conseil">Conseil pratique</label>
+      <textarea id="j-conseil" rows="2" [(ngModel)]="journee.conseil" maxlength="2000"
+                placeholder="Partir tôt, prévoir de l'eau…"></textarea>
+      <label for="j-hebergement">Hébergement</label>
+      <input id="j-hebergement" [(ngModel)]="journee.hebergement" maxlength="300"
+             placeholder="Gîte des Salins — 3 chambres, 1 nuit">
+      <p class="aide">Les rendez-vous et plongées du jour s'ajoutent à part (« Ajouter un rendez-vous »).</p>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="enregistrerJournee()" [disabled]="envoi()">Enregistrer</button>
+        @if (journeeExistante()) {
+          <button type="button" class="bouton-discret danger" (click)="supprimerJournee()" [disabled]="envoi()">
+            Retirer la présentation
+          </button>
+        }
+        <button type="button" class="bouton-discret" (click)="journeeOuverte.set(false)">Fermer</button>
+      </div>
+    </app-dialogue>
+
     <app-dialogue [ouvert]="infosOuvertes()" [large]="true" [erreur]="erreur()" titre="Infos pratiques"
                   (fermer)="infosOuvertes.set(false)">
       <label for="i-texte">Numéros utiles, rendez-vous, centre de plongée, caisson le plus proche…</label>
@@ -1167,14 +1214,15 @@ function participantVide(): BrouillonParticipant {
     .pastille.accompagnant { background: #F1F5F9; color: var(--craie); }
     .pastille.plein { background: var(--en-cours-clair); color: var(--en-cours); }
     .texte-libre { white-space: pre-line; display: block; }
-    .jour { padding: var(--pas-2); margin-bottom: var(--pas-2); }
-    .jour.aujourdhui { border-left: 6px solid var(--profond); }
-    .jour h3 { margin-top: 0; }
-    .lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
-    .lignes li { display: flex; gap: var(--pas-2); align-items: flex-start; }
-    .heure { flex: none; width: 6.5rem; font-weight: 700; color: var(--profond-fonce); }
-    .quoi { flex: 1; }
-    .boutons-ligne { flex: none; }
+    .boutons-titre { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    .photos-journee { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--pas);
+                      list-style: none; margin: 0 0 var(--pas); padding: 0; }
+    .photos-journee app-photo-journee { aspect-ratio: 4 / 3; }
+    .photos-journee button { width: 100%; margin-top: 4px; }
+    .sans-cadre { border: none; margin: var(--pas-2) 0 0; padding: 0; }
+    .sans-cadre legend { font-weight: 700; padding: 0; }
+    .choisir-photos { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; }
+    .cache { position: absolute; width: 1px; height: 1px; opacity: 0; }
     .deux-colonnes { display: grid; gap: var(--pas-2); grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     .logement { padding: var(--pas-2); margin-bottom: var(--pas-2); }
     .logement h3 { margin: 0; }
@@ -1200,7 +1248,6 @@ function participantVide(): BrouillonParticipant {
     .edition-affaires input, .edition-affaires select { margin: 0; }
     @media (max-width: 640px) {
       .edition-affaires li { grid-template-columns: 1fr auto; }
-      .heure { width: 4.5rem; }
     }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
     .bandeau-hors-ligne { padding: var(--pas-2); margin: var(--pas-2) 0; background: var(--en-cours-clair); }
@@ -1301,8 +1348,9 @@ export class SejourComponent {
   /** Les jours du séjour (et ceux des rendez-vous hors de ses dates), avec rendez-vous puis plongées. */
   readonly programme = computed(() => {
     const s = this.sejour();
-    return s ? programmeParJour(s.evenements, s.sortie.seances, s.palanquees) : [];
+    return s ? programmeParJour(s.evenements, s.sortie.seances, s.palanquees, s.journees ?? []) : [];
   });
+  readonly lirePhotoJournee = this.api.lecturePhotoJournee(this.id);
 
   /** La date de l'appareil : le jour du programme est marqué « aujourd'hui ». */
   readonly aujourdhui = signal(dateDuJour());
@@ -1351,6 +1399,15 @@ export class SejourComponent {
   evenementOuvert = signal(false);
   evenementId: number | null = null;
   evenement: DemandeEvenement = { jour: '', heureDebut: null, heureFin: null, titre: '', lieu: null, details: null };
+
+  journeeOuverte = signal(false);
+  /** Le jour choisi a déjà une présentation (on la modifie). */
+  journeeExistante = signal(false);
+  private jourJournee = signal('');
+  journee: DemandeJournee & { jour: string } = journeeVide('');
+  readonly photosMax = PHOTOS_MAX_PAR_JOURNEE;
+  readonly photosJournee = computed(() =>
+    this.sejour()?.journees?.find(j => j.jour === this.jourJournee())?.photos ?? []);
 
   infosOuvertes = signal(false);
   infos = '';
@@ -1923,6 +1980,69 @@ export class SejourComponent {
 
   // ---------------- Programme ----------------
 
+  /** La présentation d'un jour ; sans jour, celui du début de la sortie, à changer. */
+  ouvrirJournee(jour: string | null): void {
+    this.erreur.set(null);
+    this.journee = journeeVide('');
+    this.choisirJourJournee(jour ?? this.sejour()?.sortie.dateDebut ?? '');
+    this.journeeOuverte.set(true);
+  }
+
+  /** Changer de jour reprend sa présentation s'il en a une ; sinon ce qui est déjà tapé reste. */
+  choisirJourJournee(jour: string): void {
+    const j = this.sejour()?.journees?.find(x => x.jour === jour);
+    this.journee = j
+      ? { jour, titre: j.titre, trajet: j.trajet, descriptif: j.descriptif, conseil: j.conseil, hebergement: j.hebergement }
+      : { ...this.journee, jour };
+    this.jourJournee.set(jour);
+    this.journeeExistante.set(!!j);
+  }
+
+  enregistrerJournee(): void {
+    if (!this.journee.jour) {
+      this.erreur.set('Choisissez le jour.');
+      return;
+    }
+    const { jour, ...d } = this.journee;
+    this.ecrire(this.api.definirJournee(this.id, jour, d), () => this.journeeOuverte.set(false));
+  }
+
+  supprimerJournee(): void {
+    if (!confirm('Retirer la présentation de ce jour et ses photos ? Les rendez-vous restent.')) return;
+    this.ecrire(this.api.supprimerJournee(this.id, this.journee.jour), () => this.journeeOuverte.set(false));
+  }
+
+  /** Chaque photo, réduite sur le téléphone, part tout de suite ; la présentation se crée avec la première. */
+  async ajouterPhotosJournee(evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichiers = Array.from(champ.files ?? []);
+    champ.value = '';
+    const jour = this.journee.jour;
+    this.envoi.set(true);
+    this.erreur.set(null);
+    try {
+      for (const fichier of fichiers.slice(0, this.photosMax - this.photosJournee().length)) {
+        let reduit: File;
+        try {
+          reduit = await reduirePhoto(fichier);
+        } catch {
+          this.erreur.set('Cette image n’a pas pu être lue : choisissez une photo JPEG ou PNG.');
+          continue;
+        }
+        this.maj(await firstValueFrom(this.api.ajouterPhotoJournee(this.id, jour, reduit)));
+        this.journeeExistante.set(true);
+      }
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? "La photo n'a pas pu être envoyée (réseau nécessaire).");
+    } finally {
+      this.envoi.set(false);
+    }
+  }
+
+  retirerPhotoJournee(photoId: number): void {
+    this.ecrire(this.api.supprimerPhotoJournee(this.id, this.journee.jour, photoId));
+  }
+
   ouvrirEvenement(e: EvenementVue | null): void {
     this.erreur.set(null);
     this.evenementId = e?.id ?? null;
@@ -2064,7 +2184,7 @@ export class SejourComponent {
   private fenetreOuverte(): boolean {
     return this.participantOuvert() || this.voitureOuverte() || this.logementOuvert() || this.mesInfosOuvertes()
       || this.volOuvert() || this.affairesOuvertes() || this.evenementOuvert() || this.infosOuvertes()
-      || this.conseilOuvert() || this.organisateursOuverts();
+      || this.conseilOuvert() || this.organisateursOuverts() || this.journeeOuverte();
   }
 
   /**

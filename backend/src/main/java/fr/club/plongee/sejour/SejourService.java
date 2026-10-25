@@ -219,7 +219,8 @@ public class SejourService {
     public record SejourVue(SortieVue sortie, boolean gere, boolean encadrant, String infosPratiques,
                             List<ParticipantVue> participants, List<VoitureVue> voitures,
                             List<LogementVue> logements, List<AffaireVue> affaires,
-                            List<EvenementVue> evenements, FraisService.FraisVue frais, List<String> avertissements,
+                            List<EvenementVue> evenements, List<JourneesSejourService.JourneeVue> journees,
+                            FraisService.FraisVue frais, List<String> avertissements,
                             List<GroupeProposeVue> groupesProposes, List<OrganisateurVue> organisateurs,
                             boolean peutDesigner, List<PalanqueesSejourService.PalanqueeVue> palanquees,
                             String conseilAssurance) {}
@@ -233,14 +234,16 @@ public class SejourService {
     private final FraisService frais;
     private final DroitsSejour droits;
     private final PalanqueesSejourService palanquees;
+    private final JourneesSejourService journees;
 
     public SejourService(NamedParameterJdbcTemplate jdbc, SortieService sorties, FraisService frais,
-                         DroitsSejour droits, PalanqueesSejourService palanquees) {
+                         DroitsSejour droits, PalanqueesSejourService palanquees, JourneesSejourService journees) {
         this.jdbc = jdbc;
         this.sorties = sorties;
         this.frais = frais;
         this.droits = droits;
         this.palanquees = palanquees;
+        this.journees = journees;
     }
 
     // ------------------------------------------------------------------
@@ -386,7 +389,7 @@ public class SejourService {
         Long monId = participants.stream().filter(ParticipantVue::moi).map(ParticipantVue::id).findFirst().orElse(null);
 
         return new SejourVue(sortie, gere, encadrant, infos.isEmpty() ? null : infos.getFirst(), participants,
-                voitures, logements, affaires, evenements, frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
+                voitures, logements, affaires, evenements, journees.journees(sortieId), frais.lire(sortieId, FraisService.ActeurFrais.LECTURE),
                 avertissements(participants, voitures, logements), groupes, organisateurs(sortieId), false,
                 palanquees.palanquees(sortieId, monId, encadrant), conseil.isEmpty() ? null : conseil.getFirst());
     }
@@ -490,12 +493,13 @@ public class SejourService {
      * « Aujourd'hui ». Rien de personnel, hormis sa palanquée.
      */
     public record ProgrammeVue(List<EvenementVue> evenements, List<SortieService.SeanceSortieVue> plongees,
-                               List<AffaireVue> affaires, List<PalanqueesSejourService.PalanqueeVue> palanquees) {}
+                               List<AffaireVue> affaires, List<PalanqueesSejourService.PalanqueeVue> palanquees,
+                               List<JourneesSejourService.JourneeVue> journees) {}
 
     @Transactional(readOnly = true)
     public ProgrammeVue programme(Long sortieId, Long participantId) {
         return new ProgrammeVue(evenements(sortieId), sorties.lire(sortieId).seances(), affaires(sortieId),
-                palanquees.palanquees(sortieId, participantId, false));
+                palanquees.palanquees(sortieId, participantId, false), journees.journees(sortieId));
     }
 
     private List<AffaireVue> affaires(Long sortieId) {
@@ -532,7 +536,7 @@ public class SejourService {
                         p.membreGroupeId(), p.groupe(), p.attestationAssurance()))
                 .toList();
         return carnet(new SejourVue(complet.sortie(), false, false, complet.infosPratiques(), participants,
-                complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(),
+                complet.voitures(), complet.logements(), complet.affaires(), complet.evenements(), complet.journees(),
                 frais.lire(sortieId, frais.acteurParticipant(participantId)), List.of(), List.of(),
                 complet.organisateurs(), false, palanquees.palanquees(sortieId, participantId, false),
                 complet.conseilAssurance()));
@@ -541,13 +545,13 @@ public class SejourService {
     /** Le même séjour, avec les frais vus par celui qui agit (ce qu'il peut saisir, modifier). */
     private static SejourVue avecFrais(SejourVue s, FraisService.FraisVue f) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), f, s.avertissements(), s.groupesProposes(),
+                s.logements(), s.affaires(), s.evenements(), s.journees(),f, s.avertissements(), s.groupesProposes(),
                 s.organisateurs(), s.peutDesigner(), s.palanquees(), s.conseilAssurance());
     }
 
     private static SejourVue avecDesignation(SejourVue s, boolean peutDesigner) {
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), s.participants(), s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
+                s.logements(), s.affaires(), s.evenements(), s.journees(),s.frais(), s.avertissements(), s.groupesProposes(),
                 s.organisateurs(), peutDesigner, s.palanquees(), s.conseilAssurance());
     }
 
@@ -559,7 +563,7 @@ public class SejourService {
                         sansReservation(p.depart()), null, false, null, null, null))
                 .toList();
         return new SejourVue(s.sortie(), false, false, s.infosPratiques(), participants, s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), s.frais(), List.of(), List.of(),
+                s.logements(), s.affaires(), s.evenements(), s.journees(),s.frais(), List.of(), List.of(),
                 s.organisateurs(), false, s.palanquees(), s.conseilAssurance());
     }
 
@@ -575,7 +579,7 @@ public class SejourService {
                         sansReservation(p.depart()), p.remarques(), false, p.membreGroupeId(), p.groupe(), null))
                 .toList();
         return new SejourVue(s.sortie(), s.gere(), s.encadrant(), s.infosPratiques(), participants, s.voitures(),
-                s.logements(), s.affaires(), s.evenements(), s.frais(), s.avertissements(), s.groupesProposes(),
+                s.logements(), s.affaires(), s.evenements(), s.journees(),s.frais(), s.avertissements(), s.groupesProposes(),
                 s.organisateurs(), s.peutDesigner(), s.palanquees(), s.conseilAssurance());
     }
 

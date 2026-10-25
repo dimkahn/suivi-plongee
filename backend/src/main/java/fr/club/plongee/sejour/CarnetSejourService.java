@@ -133,10 +133,27 @@ public class CarnetSejourService {
             programme.computeIfAbsent(se.date(), k -> new ArrayList<>())
                     .add("Plongée" + (se.ordre() == null ? "" : " " + se.ordre()) + (lieu.isEmpty() ? "" : " — " + lieu));
         }
+        // La présentation du jour (titre, trajet, descriptif…) ; les photos restent dans l'appli.
+        Map<LocalDate, JourneesSejourService.JourneeVue> journees = new HashMap<>();
+        for (JourneesSejourService.JourneeVue j : s.journees()) {
+            journees.put(j.jour(), j);
+            programme.computeIfAbsent(j.jour(), k -> new ArrayList<>());
+        }
         if (!programme.isEmpty()) {
             t.append("\nPROGRAMME\n");
             programme.forEach((jour, lignes) -> {
-                t.append("  ").append(jour(jour)).append("\n");
+                JourneesSejourService.JourneeVue j = journees.get(jour);
+                t.append("  ").append(jour(jour));
+                if (j != null && j.titre() != null) t.append(" — ").append(j.titre());
+                t.append("\n");
+                if (j != null) {
+                    if (j.trajet() != null) t.append("    ").append(j.trajet()).append("\n");
+                    if (j.descriptif() != null) t.append("    ").append(j.descriptif().replace("\n", "\n    ")).append("\n");
+                    if (j.conseil() != null) {
+                        t.append("    Conseil : ").append(j.conseil().replace("\n", "\n    ")).append("\n");
+                    }
+                    if (j.hebergement() != null) t.append("    Hébergement : ").append(j.hebergement()).append("\n");
+                }
                 lignes.forEach(l -> t.append("    ").append(l).append("\n"));
             });
         }

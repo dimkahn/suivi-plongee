@@ -98,7 +98,19 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
             <table>
               <tbody>
                 @for (j of programme(); track j.jour) {
-                  <tr class="jour"><th colspan="3">{{ jourLong(j.jour) }}</th></tr>
+                  <tr class="jour"><th colspan="3">{{ jourLong(j.jour) }}@if (j.journee?.titre) { — {{ j.journee!.titre }}}</th></tr>
+                  @if (j.journee; as p) {
+                    @if (p.trajet || p.descriptif || p.conseil || p.hebergement) {
+                      <tr>
+                        <td colspan="3" class="presentation">
+                          @if (p.trajet) { <span class="libre"><em>{{ p.trajet }}</em></span> }
+                          @if (p.descriptif) { <span class="libre">{{ p.descriptif }}</span> }
+                          @if (p.conseil) { <span class="libre"><strong>Conseil :</strong> {{ p.conseil }}</span> }
+                          @if (p.hebergement) { <span class="libre"><strong>Hébergement :</strong> {{ p.hebergement }}</span> }
+                        </td>
+                      </tr>
+                    }
+                  }
                   @for (l of j.lignes; track $index) {
                     <tr>
                       <td class="heure">{{ l.heure }}</td>
@@ -312,6 +324,7 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
     td.lieu { width: 30%; color: #4B5563; }
     td.montant, th.montant { text-align: right; white-space: nowrap; }
     .libre { white-space: pre-line; display: block; }
+    td.presentation .libre + .libre { margin-top: 2px; }
     .palanquee { display: block; margin-top: 2px; font-size: .875rem; }
     .moi { font-weight: 700; }
     tr.moi td { background: #F0F9FF; }
@@ -368,7 +381,7 @@ export class CarnetImprimableComponent implements OnInit {
 
   readonly programme = computed(() => {
     const s = this.vue();
-    return s ? programmeParJour(s.evenements, s.sortie.seances, s.palanquees) : [];
+    return s ? programmeParJour(s.evenements, s.sortie.seances, s.palanquees, s.journees ?? []) : [];
   });
 
   /** Les voyages regroupés : même sens, jour, moyen, numéro et heure. */
