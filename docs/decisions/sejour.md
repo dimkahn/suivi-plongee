@@ -182,6 +182,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Qui lit quoi** : menus lus par les encadrants et les participants du séjour (403 pour un élève qui n'y est pas) ; chacun ne reçoit que son choix (`monChoix`) ; **la commande complète** (`commande` : nombre par plat, choix et total de chacun, qui n'a pas choisi, total) **seulement pour le créateur et les organisateurs, filtrée par le serveur** (null pour les autres, même un ADMIN ; masquée aussi en « Voir comme un participant »). « Copier la commande » la met en texte pour le restaurant, **en prénom et initiale du nom seulement, sans la liste de ceux qui n'ont pas choisi** : ce texte sort du club et des mineurs sont suivis (relecture « données personnelles »).
 - **Écarté** (24 octobre, revu le 25 : voir ci-dessous) : relier les prix aux frais du séjour ; clore les choix à une date (l'organisateur commande quand il veut ; à revoir si le club le demande) ; lire la photo du menu dans l'appli par une IA (coût, et le prompt suffit).
 
+## Modifier le menu du restaurant à la main
+
+- **Date** : 2026-10-25, demande du club (« une interface de modification du menu du restaurant »).
+- **Décision** : « Modifier » (fenêtre large, créateur et organisateurs) : nom du restaurant et plats (catégorie, nom, description, prix en euros lu par `prixEnCentimes`), monter, descendre, retirer, ajouter. `PUT /api/sejours/{id}/menus/{menuId}` reçoit **le menu entier, dans l'ordre** : un plat avec son `id` est mis à jour et **garde ses choix**, sans `id` il est créé, absent il est retiré avec ses choix (la fenêtre dit combien). Mêmes tailles que `LecteurMenu` (300 plats), un nom par plat, prix ≥ 0 (422 lisibles), plat d'un autre menu : 422.
+- **Plus rien ne change une fois l'addition payée** (422, bouton caché) : les dépenses des frais ont été faites aux prix du moment. *Pourquoi :* une correction de prix ensuite ne suivrait pas dans les frais ; on corrige la dépense dans « Frais ».
+- **Écarté** : modifier dans un écran à part (le menu tient dans une fenêtre) ; glisser-déposer pour l'ordre (« Monter / Descendre », plus sûr au doigt mouillé).
+
 ## L'addition du restaurant dans les frais
 
 - **Date** : 2026-10-25, demande du club (« quand tout le monde a fait son choix, l'organisateur voit le montant de chacun et le global ; il peut choisir de payer et d'entrer les frais de chacun »).

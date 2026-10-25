@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MenuVue, parCategorie, texteDeLaCommande, totalDuChoix } from './menus-restaurant';
+import { MenuVue, parCategorie, prixEnCentimes, prixEnTexte, texteDeLaCommande, totalDuChoix } from './menus-restaurant';
 
 const menu: MenuVue = {
   id: 1, jour: '2027-06-05', repas: 'DINER', restaurant: 'Le Sémaphore',
@@ -22,6 +22,27 @@ const menu: MenuVue = {
     totalCentimes: 5150
   }
 };
+
+describe('Prix saisi dans le menu modifié', () => {
+  it('lit les euros avec virgule, point ou symbole, et rien pour « sans prix »', () => {
+    expect(prixEnCentimes('12,50')).toBe(1250);
+    expect(prixEnCentimes(' 12.5 € ')).toBe(1250);
+    expect(prixEnCentimes('9')).toBe(900);
+    expect(prixEnCentimes('')).toBeNull();
+  });
+
+  it('refuse ce qui n’est pas un prix', () => {
+    expect(prixEnCentimes('douze')).toBeUndefined();
+    expect(prixEnCentimes('12,555')).toBeUndefined();
+    expect(prixEnCentimes('-3')).toBeUndefined();
+  });
+
+  it('réécrit un prix en euros pour le modifier', () => {
+    expect(prixEnTexte(1250)).toBe('12,50');
+    expect(prixEnTexte(900)).toBe('9,00');
+    expect(prixEnTexte(null)).toBe('');
+  });
+});
 
 describe('Menus des restaurants du séjour', () => {
   it('range les plats par catégorie, dans l’ordre de leur première apparition, sans catégorie à la fin', () => {

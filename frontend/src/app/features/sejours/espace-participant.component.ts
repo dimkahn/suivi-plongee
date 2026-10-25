@@ -277,6 +277,7 @@ export class EspaceParticipantComponent {
     importer: () => throwError(() => new Error('Réservé aux organisateurs')),
     supprimer: () => throwError(() => new Error('Réservé aux organisateurs')),
     regler: () => throwError(() => new Error('Réservé aux organisateurs')),
+    modifier: () => throwError(() => new Error('Réservé aux organisateurs')),
     choisir: (menuId, _p, platIds) =>
       this.http.put<MenusVue>(`${this.base}/menus/${menuId}/choix`, { platIds }, this.options())
   };

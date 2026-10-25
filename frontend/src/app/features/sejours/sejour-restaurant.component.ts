@@ -6,7 +6,8 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { REPAS, Repas, joursDuSejour } from './liste-courses';
 import { euros, jourLong } from './sejour-api';
 import {
-  CommandeVue, MenuVue, MenusVue, PROMPT_MENU, PortMenus, parCategorie, repasDuJour, texteDeLaCommande, totalDuChoix
+  CommandeVue, DemandeMenu, MenuVue, MenusVue, PROMPT_MENU, PortMenus, parCategorie, prixEnCentimes, prixEnTexte,
+  repasDuJour, texteDeLaCommande, totalDuChoix
 } from './menus-restaurant';
 
 /** Pour qui on choisit dans la fenêtre : soi-même ou, pour un organisateur, un autre participant. */
@@ -15,6 +16,15 @@ interface ChoixEnCours {
   participantId: number;
   /** Null : soi-même. */
   pour: string | null;
+}
+
+/** Un plat dans la fenêtre « Modifier le menu » ; {@code id} null : ajouté. */
+interface LignePlat {
+  id: number | null;
+  categorie: string;
+  nom: string;
+  description: string;
+  prix: string;
 }
 
 /**
@@ -54,6 +64,9 @@ interface ChoixEnCours {
             <h3>{{ titre(m) }}</h3>
             @if (gere()) {
               <div class="actions">
+                @if (!m.reglement) {
+                  <button type="button" class="bouton-discret modifier-menu" (click)="ouvrirModification(m)">Modifier</button>
+                }
                 <button type="button" class="bouton-discret" (click)="ouvrirImport(m)">Remplacer</button>
                 <button type="button" class="bouton-discret" (click)="aSupprimer.set(m)">Supprimer</button>
               </div>
@@ -227,6 +240,56 @@ interface ChoixEnCours {
       }
     </app-dialogue>
 
+    <!-- Modifier le menu à la main (organisateurs, tant que l'addition n'est pas payée) -->
+    <app-dialogue [ouvert]="aModifier() !== null" [large]="true" [erreur]="erreur()" titre="Modifier le menu"
+                  (fermer)="aModifier.set(null)">
+      @if (aModifier(); as m) {
+        <form class="dialogue-formulaire" (ngSubmit)="enregistrerMenu(m)">
+          <p class="secondaire">{{ repasDuJour(m) }}. Corrigez ce que l'IA a mal lu, ajoutez le plat du jour… Un plat
+            gardé garde les choix déjà faits, à son nouveau prix.</p>
+          <label for="modif-restaurant">Restaurant</label>
+          <input id="modif-restaurant" name="restaurant" [(ngModel)]="restaurantModifie" maxlength="200"
+                 placeholder="Le nom du restaurant">
+          @for (p of lignes(); track p; let i = $index; let premier = $first; let dernier = $last) {
+            <fieldset class="ligne-plat">
+              <legend>Plat {{ i + 1 }}@if (p.id !== null && nombre(m, p.id) > 0) {
+                <span class="secondaire"> — choisi {{ nombre(m, p.id) }} fois</span>}</legend>
+              <div class="champs-plat">
+                <label>Catégorie
+                  <input [ngModelOptions]="{ standalone: true }" [(ngModel)]="p.categorie" maxlength="100" placeholder="Entrée, Plat…">
+                </label>
+                <label class="nom-plat">Plat
+                  <input [ngModelOptions]="{ standalone: true }" [(ngModel)]="p.nom" maxlength="300" required>
+                </label>
+                <label class="prix-plat">Prix (€)
+                  <input [ngModelOptions]="{ standalone: true }" [(ngModel)]="p.prix" inputmode="decimal" placeholder="12,50">
+                </label>
+              </div>
+              <label>Description
+                <input [ngModelOptions]="{ standalone: true }" [(ngModel)]="p.description" maxlength="1000">
+              </label>
+              <div class="actions">
+                <button type="button" class="bouton-discret" [disabled]="premier" (click)="deplacer(i, -1)"
+                        [attr.aria-label]="'Monter ' + (p.nom || 'ce plat')">↑ Monter</button>
+                <button type="button" class="bouton-discret" [disabled]="dernier" (click)="deplacer(i, 1)"
+                        [attr.aria-label]="'Descendre ' + (p.nom || 'ce plat')">↓ Descendre</button>
+                <button type="button" class="bouton-discret retirer-plat" (click)="retirer(i)"
+                        [attr.aria-label]="'Retirer ' + (p.nom || 'ce plat')">Retirer</button>
+              </div>
+            </fieldset>
+          }
+          <button type="button" class="bouton-discret ajouter-plat" (click)="ajouterPlat()">+ Ajouter un plat</button>
+          @if (choixPerdus(m); as n) {
+            <p class="alerte">Les plats retirés étaient choisis {{ n }} fois : ces choix seront effacés.</p>
+          }
+          <div class="actions-dialogue">
+            <button type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Enregistrer' }}</button>
+            <button type="button" class="bouton-discret" (click)="aModifier.set(null)">Annuler</button>
+          </div>
+        </form>
+      }
+    </app-dialogue>
+
     <!-- Payer l'addition (organisateurs, quand tout le monde a choisi) -->
     <app-dialogue [ouvert]="aRegler() !== null" [erreur]="erreur()" titre="Payer l'addition"
                   (fermer)="aRegler.set(null)">
@@ -299,6 +362,14 @@ interface ChoixEnCours {
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; min-width: 24px; min-height: 24px; }
     .ligne-addition > span { flex: 1; }
+    .ligne-plat { border: 1px solid var(--trait); border-radius: 8px; padding: var(--pas); }
+    .ligne-plat legend { padding: 0 calc(var(--pas) / 2); margin: 0; }
+    .ligne-plat label { display: flex; flex-direction: column; gap: 2px; font-weight: 400; margin: 0 0 var(--pas); }
+    .champs-plat { display: flex; gap: var(--pas); flex-wrap: wrap; }
+    .champs-plat label { flex: 1 1 8rem; }
+    .champs-plat .nom-plat { flex: 3 1 12rem; }
+    .champs-plat .prix-plat { flex: 0 1 7rem; }
+    .ajouter-plat { margin-bottom: var(--pas-2); }
     .prompt textarea { width: 100%; font-size: .875rem; }
     .prompt { margin-bottom: var(--pas-2); }
   `],
@@ -318,6 +389,7 @@ export class SejourRestaurantComponent implements OnInit {
   readonly jourLong = jourLong;
   readonly euros = euros;
   readonly parCategorie = parCategorie;
+  readonly repasDuJour = repasDuJour;
   readonly totalDuChoix = totalDuChoix;
 
   vue = signal<MenusVue | null>(null);
@@ -331,6 +403,10 @@ export class SejourRestaurantComponent implements OnInit {
   importOuvert = signal(false);
   aSupprimer = signal<MenuVue | null>(null);
   aRegler = signal<MenuVue | null>(null);
+  aModifier = signal<MenuVue | null>(null);
+  /** Les plats du menu en cours de modification, prix en texte (« 12,50 »). */
+  lignes = signal<LignePlat[]>([]);
+  restaurantModifie = '';
   /** Qui paie l'addition : un participant, ou null pour le club. */
   payeur: number | null = null;
   /** Ceux qui paient leur part eux-mêmes : pas de dépense pour eux dans les frais. */
@@ -435,6 +511,56 @@ export class SejourRestaurantComponent implements OnInit {
     this.envoyer(this.port().supprimer(m.id), () => {
       this.aSupprimer.set(null);
       this.message.set('Le menu est supprimé.');
+    });
+  }
+
+  // -- Modifier le menu (organisateurs) ------------------------------
+
+  ouvrirModification(m: MenuVue): void {
+    this.erreur.set(null);
+    this.restaurantModifie = m.restaurant ?? '';
+    this.lignes.set(m.plats.map(p => ({
+      id: p.id, categorie: p.categorie ?? '', nom: p.nom, description: p.description ?? '', prix: prixEnTexte(p.prixCentimes)
+    })));
+    this.aModifier.set(m);
+  }
+
+  ajouterPlat(): void {
+    const l = this.lignes();
+    // Le nouveau plat reprend la catégorie du dernier : on ajoute souvent plusieurs desserts à la suite.
+    this.lignes.set([...l, { id: null, categorie: l.at(-1)?.categorie ?? '', nom: '', description: '', prix: '' }]);
+  }
+
+  retirer(i: number): void {
+    this.lignes.set(this.lignes().filter((_, j) => j !== i));
+  }
+
+  deplacer(i: number, sens: -1 | 1): void {
+    const l = [...this.lignes()];
+    [l[i], l[i + sens]] = [l[i + sens], l[i]];
+    this.lignes.set(l);
+  }
+
+  /** Combien de choix partiraient avec les plats retirés. */
+  choixPerdus(m: MenuVue): number {
+    const gardes = new Set(this.lignes().map(l => l.id));
+    return (m.commande?.plats ?? []).filter(l => !gardes.has(l.platId)).reduce((t, l) => t + l.nombre, 0);
+  }
+
+  enregistrerMenu(m: MenuVue): void {
+    const plats: DemandeMenu['plats'] = [];
+    for (const l of this.lignes()) {
+      const prix = prixEnCentimes(l.prix);
+      if (prix === undefined) {
+        this.erreur.set(`Le prix de « ${l.nom.trim() || 'ce plat'} » n'est pas lisible : écrivez par exemple 12,50.`);
+        return;
+      }
+      plats.push({ id: l.id, categorie: l.categorie.trim() || null, nom: l.nom.trim(),
+        description: l.description.trim() || null, prixCentimes: prix });
+    }
+    this.envoyer(this.port().modifier(m.id, { restaurant: this.restaurantModifie.trim() || null, plats }), () => {
+      this.aModifier.set(null);
+      this.message.set('Le menu est modifié.');
     });
   }
 

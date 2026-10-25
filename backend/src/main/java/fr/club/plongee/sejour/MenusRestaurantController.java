@@ -2,6 +2,7 @@ package fr.club.plongee.sejour;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.sejour.MenusRestaurantService.DemandeChoix;
+import fr.club.plongee.sejour.MenusRestaurantService.DemandeMenu;
 import fr.club.plongee.sejour.MenusRestaurantService.DemandeReglement;
 import fr.club.plongee.sejour.MenusRestaurantService.MenusVue;
 import fr.club.plongee.securite.UtilisateurPrincipal;
@@ -56,6 +57,14 @@ public class MenusRestaurantController {
             throw new RegleMetierException("Le fichier du menu n'a pas pu être lu.");
         }
         return menus.importer(id, jour, repas, restaurant, contenu, moi);
+    }
+
+    /** Le menu corrigé à la main : restaurant et plats, dans l'ordre. */
+    @PutMapping("/{menuId}")
+    @PreAuthorize(GERE)
+    public MenusVue modifier(@PathVariable Long id, @PathVariable Long menuId, @RequestBody DemandeMenu d,
+                             @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return menus.modifier(id, menuId, d, moi);
     }
 
     @DeleteMapping("/{menuId}")

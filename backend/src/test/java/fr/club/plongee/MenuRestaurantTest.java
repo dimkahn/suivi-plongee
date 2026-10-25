@@ -306,6 +306,66 @@ class MenuRestaurantTest {
     }
 
     @Test
+    @DisplayName("L'organisateur modifie le menu : nom, prix, plat ajouté ou retiré ; les choix des plats gardés restent")
+    void modifierLeMenu() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu14@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        long soupe = plat(menu, "Soupe de poissons"), daurade = plat(menu, "Daurade grillée");
+        String url = base + "/menus/" + menu.get("id").asLong();
+
+        // Risotto et tarte retirés, daurade renommée et plus chère, un dessert ajouté.
+        JsonNode lu = envoyer("PUT", url, dt, """
+                {"restaurant":"Chez Marius","plats":[
+                  {"id":%d,"categorie":"Entrée","nom":"Soupe de poissons","description":"Rouille","prixCentimes":950},
+                  {"id":%d,"categorie":"Plat","nom":"Daurade royale","description":null,"prixCentimes":2300},
+                  {"id":null,"categorie":"Dessert","nom":"Île flottante","description":"","prixCentimes":null}]}"""
+                .formatted(soupe, daurade), 200).get("menus").get(0);
+        assertThat(lu.get("restaurant").asText()).isEqualTo("Chez Marius");
+        assertThat(noms(lu.get("plats"))).containsExactly("Soupe de poissons", "Daurade royale", "Île flottante");
+        assertThat(plat(lu, "Daurade royale")).isEqualTo(daurade);
+        assertThat(lu.get("plats").get(2).get("description").isNull()).isTrue();
+
+        JsonNode commande = lu.get("commande");
+        // Camille garde soupe et daurade (au nouveau prix) ; Léo, qui avait le risotto, est à refaire.
+        assertThat(commande.get("participants")).hasSize(1);
+        assertThat(commande.get("participants").get(0).get("totalCentimes").asInt()).isEqualTo(950 + 2300);
+        assertThat(commande.get("sansChoix").get(0).get("prenom").asText()).isEqualTo("Léo");
+    }
+
+    @Test
+    @DisplayName("Un menu modifié garde au moins un plat, chacun avec un nom et un prix positif, et seulement ses plats")
+    void modifierLeMenuRefus() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu15@exemple.fr");
+        JsonNode menu = importer(base, dt, "menu.xlsx", menuXlsx(), "2031-08-02", "DINER", 200).get("menus").get(0);
+        JsonNode autre = importer(base, dt, "menu.xlsx", menuXlsx(), "2031-08-03", "DINER", 200).get("menus").get(1);
+        String url = base + "/menus/" + menu.get("id").asLong();
+        assertThat(envoyer("PUT", url, dt, "{\"restaurant\":null,\"plats\":[]}", 422).get("detail").asText())
+                .isEqualTo("Le menu doit garder au moins un plat.");
+        assertThat(envoyer("PUT", url, dt, "{\"plats\":[{\"nom\":\"  \"}]}", 422).get("detail").asText())
+                .isEqualTo("Chaque plat doit avoir un nom.");
+        assertThat(envoyer("PUT", url, dt, "{\"plats\":[{\"nom\":\"Pain\",\"prixCentimes\":-100}]}", 422)
+                .get("detail").asText()).isEqualTo("Le prix de « Pain » ne peut pas être négatif.");
+        assertThat(envoyer("PUT", url, dt, "{\"plats\":[{\"id\":%d,\"nom\":\"Volé\"}]}"
+                .formatted(plat(autre, "Tarte au citron")), 422).get("detail").asText())
+                .isEqualTo("Ce plat n'est pas dans ce menu.");
+        envoyer("PUT", url, jeton("e1@club.fr"), "{\"plats\":[{\"nom\":\"Pain\"}]}", 403);
+    }
+
+    @Test
+    @DisplayName("Une fois l'addition payée, le menu ne se modifie plus")
+    void modifierApresAddition() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu16@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        String url = base + "/menus/" + menu.get("id").asLong();
+        envoyer("POST", url + "/reglement", dt, "{\"payeurId\":null}", 200);
+        assertThat(envoyer("PUT", url, dt, "{\"plats\":[{\"nom\":\"Pain\"}]}", 422).get("detail").asText())
+                .isEqualTo("L'addition de ce repas est payée : le menu ne change plus.");
+    }
+
+    @Test
     @DisplayName("Qui paie de son côté n'est pas mis dans les frais, et la commande le dit")
     void payerDeSonCote() throws Exception {
         String dt = jeton("e3@club.fr");

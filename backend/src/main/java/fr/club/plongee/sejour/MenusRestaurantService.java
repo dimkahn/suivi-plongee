@@ -62,6 +62,12 @@ public class MenusRestaurantService {
 
     public record DemandeChoix(@NotNull List<@NotNull Long> platIds) {}
 
+    /** Un plat du menu modifié : {@code id} null pour un plat ajouté. */
+    public record PlatModifie(Long id, String categorie, String nom, String description, Integer prixCentimes) {}
+
+    /** Le menu tel qu'il doit être, dans l'ordre : un plat absent est retiré, avec ses choix. */
+    public record DemandeMenu(String restaurant, List<PlatModifie> plats) {}
+
     /**
      * {@code payeurId} : le participant qui paie l'addition, null pour le club ;
      * {@code deLeurCote} : ceux qui paient eux-mêmes leur part, sans dépense dans les frais.
@@ -145,6 +151,63 @@ public class MenusRestaurantService {
                     repasDuJour);
         }
         return lire(sortieId, moi);
+    }
+
+    /**
+     * Le menu corrigé à la main (une erreur de l'IA, un plat du jour) : nom du
+     * restaurant et plats, dans l'ordre donné. Un plat gardé garde ses choix
+     * (au nouveau prix) ; un plat retiré emporte les siens. Plus rien ne
+     * change une fois l'addition payée : les frais suivent les prix.
+     */
+    @Transactional
+    public MenusVue modifier(Long sortieId, Long menuId, DemandeMenu d, UtilisateurPrincipal moi) {
+        verifierMenu(sortieId, menuId);
+        if (paye(menuId)) throw new RegleMetierException("L'addition de ce repas est payée : le menu ne change plus.");
+        List<PlatModifie> plats = d.plats() == null ? List.of() : d.plats().stream().filter(Objects::nonNull).toList();
+        if (plats.isEmpty()) throw new RegleMetierException("Le menu doit garder au moins un plat.");
+        if (plats.size() > LecteurMenu.PLATS_MAX) {
+            throw new RegleMetierException("Pas plus de " + LecteurMenu.PLATS_MAX + " plats dans un menu.");
+        }
+        var menu = new MapSqlParameterSource("menu", menuId);
+        List<Long> duMenu = jdbc.queryForList("SELECT id FROM sejour_menu_plat WHERE menu_id = :menu", menu, Long.class);
+        for (PlatModifie p : plats) {
+            if (p.nom() == null || p.nom().isBlank()) throw new RegleMetierException("Chaque plat doit avoir un nom.");
+            if (p.id() != null && !duMenu.contains(p.id())) throw new RegleMetierException("Ce plat n'est pas dans ce menu.");
+            if (p.prixCentimes() != null && p.prixCentimes() < 0) {
+                throw new RegleMetierException("Le prix de « " + p.nom().strip() + " » ne peut pas être négatif.");
+            }
+            if (p.prixCentimes() != null && p.prixCentimes() > FraisService.MONTANT_MAX_CENTIMES) {
+                throw new RegleMetierException("Le prix de « " + p.nom().strip() + " » est trop élevé : vérifiez la saisie.");
+            }
+        }
+        List<Long> gardes = plats.stream().map(PlatModifie::id).filter(Objects::nonNull).toList();
+        for (Long retire : duMenu) {
+            if (!gardes.contains(retire)) {
+                jdbc.update("DELETE FROM sejour_menu_plat WHERE id = :p", new MapSqlParameterSource("p", retire));
+            }
+        }
+        jdbc.update("UPDATE sejour_menu SET restaurant = :restaurant WHERE id = :menu",
+                menu.addValue("restaurant", texte(d.restaurant(), 200)));
+        for (int i = 0; i < plats.size(); i++) {
+            PlatModifie p = plats.get(i);
+            var valeurs = new MapSqlParameterSource("menu", menuId).addValue("rang", i).addValue("id", p.id())
+                    .addValue("categorie", texte(p.categorie(), 100)).addValue("nom", texte(p.nom(), 300))
+                    .addValue("description", texte(p.description(), 1000)).addValue("prix", p.prixCentimes());
+            jdbc.update(p.id() == null ? """
+                    INSERT INTO sejour_menu_plat (menu_id, rang, categorie, nom, description, prix_centimes)
+                    VALUES (:menu, :rang, :categorie, :nom, :description, :prix)""" : """
+                    UPDATE sejour_menu_plat SET rang = :rang, categorie = :categorie, nom = :nom,
+                           description = :description, prix_centimes = :prix WHERE id = :id AND menu_id = :menu""",
+                    valeurs);
+        }
+        return lire(sortieId, moi);
+    }
+
+    /** Sans espaces autour, null si vide, coupé à la taille de la colonne (comme {@link LecteurMenu}). */
+    private static String texte(String t, int longueurMax) {
+        if (t == null || t.isBlank()) return null;
+        String s = t.strip();
+        return s.length() > longueurMax ? s.substring(0, longueurMax) : s;
     }
 
     @Transactional

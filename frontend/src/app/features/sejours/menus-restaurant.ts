@@ -40,6 +40,11 @@ export interface MenuVue {
   reglement: { payeurId: number | null; nom: string | null; prenom: string | null } | null;
 }
 
+export interface DemandeMenu {
+  restaurant: string | null;
+  plats: { id: number | null; categorie: string | null; nom: string; description: string | null; prixCentimes: number | null }[];
+}
+
 export interface MenusVue {
   menus: MenuVue[];
   /** Le participant de celui qui lit ; null s'il n'est pas inscrit (un encadrant qui n'y va pas). */
@@ -52,6 +57,8 @@ export interface PortMenus {
   lire(): Observable<MenusVue>;
   importer(jour: string, repas: Repas, restaurant: string, fichier: File): Observable<MenusVue>;
   supprimer(menuId: number): Observable<MenusVue>;
+  /** Le menu corrigé à la main : les plats dans l'ordre (id null : ajouté) ; un plat absent est retiré. */
+  modifier(menuId: number, demande: DemandeMenu): Observable<MenusVue>;
   /**
    * L'addition payée par {@code payeurId} (null : le club) : une dépense par personne dans les frais,
    * sauf pour {@code deLeurCote}, qui paient eux-mêmes leur part.
@@ -91,6 +98,23 @@ export function parCategorie(plats: PlatVue[]): { categorie: string; plats: Plat
   const autres = plats.filter(x => !x.categorie);
   if (autres.length > 0) groupes.set('Autres', [...(groupes.get('Autres') ?? []), ...autres]);
   return [...groupes].map(([categorie, liste]) => ({ categorie, plats: liste }));
+}
+
+/**
+ * Le prix saisi dans le menu modifié, en centimes : « 12,50 », « 12.5 € » ou « 9 ».
+ * Null : sans prix (case vide) ; undefined : ce n'est pas un prix.
+ */
+export function prixEnCentimes(texte: string): number | null | undefined {
+  const t = texte.replace('€', '').trim();
+  if (t === '') return null;
+  const m = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(t);
+  if (!m) return undefined;
+  return Number(m[1]) * 100 + Number((m[2] ?? '').padEnd(2, '0'));
+}
+
+/** « 12,50 » : le prix à modifier ; vide sans prix. */
+export function prixEnTexte(centimes: number | null): string {
+  return centimes === null ? '' : `${Math.floor(centimes / 100)},${String(centimes % 100).padStart(2, '0')}`;
 }
 
 /** Le prix des plats choisis ; un plat sans prix compte pour rien. */
