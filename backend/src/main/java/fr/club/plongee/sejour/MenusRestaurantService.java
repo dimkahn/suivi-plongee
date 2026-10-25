@@ -40,7 +40,9 @@ public class MenusRestaurantService {
     /** Combien de fois ce plat est commandé. */
     public record LignePlat(long platId, int nombre) {}
 
-    public record ChoixParticipant(long participantId, String nom, String prenom, List<Long> platIds, int totalCentimes) {}
+    /** {@code payeDeSonCote} : l'addition est payée et il n'y a pas été mis (il règle lui-même sa part au restaurant). */
+    public record ChoixParticipant(long participantId, String nom, String prenom, List<Long> platIds, int totalCentimes,
+                                   boolean payeDeSonCote) {}
 
     public record SansChoix(long participantId, String nom, String prenom) {}
 
@@ -60,8 +62,11 @@ public class MenusRestaurantService {
 
     public record DemandeChoix(@NotNull List<@NotNull Long> platIds) {}
 
-    /** {@code payeurId} : le participant qui paie l'addition, null pour le club. */
-    public record DemandeReglement(Long payeurId) {}
+    /**
+     * {@code payeurId} : le participant qui paie l'addition, null pour le club ;
+     * {@code deLeurCote} : ceux qui paient eux-mêmes leur part, sans dépense dans les frais.
+     */
+    public record DemandeReglement(Long payeurId, List<Long> deLeurCote) {}
 
     private final NamedParameterJdbcTemplate jdbc;
     private final SortieService sorties;
@@ -198,11 +203,13 @@ public class MenusRestaurantService {
      * L'addition payée, une fois que tout le monde a choisi : une dépense par
      * personne dans les frais du séjour, à son montant, payée par
      * {@code payeurId} (le club si null). Les plats sans prix comptent pour 0 ;
-     * qui n'a rien à payer n'a pas de dépense. Ces dépenses se corrigent
-     * ensuite dans l'onglet « Frais », comme les autres.
+     * qui n'a rien à payer, ou paie de son côté ({@code deLeurCote}), n'a pas
+     * de dépense. Ces dépenses se corrigent ensuite dans l'onglet « Frais »,
+     * comme les autres.
      */
     @Transactional
-    public MenusVue regler(Long sortieId, Long menuId, Long payeurId, UtilisateurPrincipal moi) {
+    public MenusVue regler(Long sortieId, Long menuId, Long payeurId, List<Long> deLeurCote, UtilisateurPrincipal moi) {
+        var aPart = deLeurCote == null ? java.util.Set.<Long>of() : java.util.Set.copyOf(deLeurCote);
         verifierMenu(sortieId, menuId);
         if (paye(menuId)) {
             throw new RegleMetierException("L'addition de ce repas est déjà payée : ses frais sont dans l'onglet « Frais ».");
@@ -216,11 +223,15 @@ public class MenusRestaurantService {
         if (c.totalCentimes() == 0) {
             throw new RegleMetierException("Aucun plat choisi n'a de prix : saisissez l'addition dans l'onglet « Frais ».");
         }
+        List<ChoixParticipant> dansLesFrais = c.participants().stream()
+                .filter(p -> p.totalCentimes() > 0 && !aPart.contains(p.participantId())).toList();
+        if (dansLesFrais.isEmpty()) {
+            throw new RegleMetierException("Tout le monde paie de son côté : il n'y a rien à mettre dans les frais.");
+        }
         String libelle = (menu.restaurant() == null ? "Restaurant" : "Restaurant " + menu.restaurant()) + ", "
                 + nomDuRepas(menu.repas()) + " du " + DateTimeFormatter.ofPattern("dd/MM").format(menu.jour()) + " : ";
         var acteur = frais.acteur(sortieId, moi);
-        for (ChoixParticipant p : c.participants()) {
-            if (p.totalCentimes() == 0) continue;
+        for (ChoixParticipant p : dansLesFrais) {
             String qui = court(p.prenom(), p.nom());
             String ligne = libelle.length() + qui.length() > 160 ? libelle.substring(0, 160 - qui.length()) + qui : libelle + qui;
             long depense = frais.creerDepense(sortieId, new FraisService.DemandeDepense(ligne, FraisSejour.CategorieDepense.REPAS,
@@ -293,6 +304,13 @@ public class MenusRestaurantService {
             reglements.putIfAbsent(rs.getLong("menu_id"), new ReglementVue(rs.getObject("payeur_id", Long.class),
                     rs.getString("nom"), rs.getString("prenom")));
         });
+        // Qui a sa part de l'addition dans les frais, menu par menu.
+        Map<Long, List<Long>> dansLesFrais = new LinkedHashMap<>();
+        if (gere) jdbc.query("""
+                SELECT d.menu_id, dp.participant_id FROM sejour_depense d JOIN sejour_depense_part dp ON dp.depense_id = d.id
+                 WHERE d.sortie_id = :sortie AND d.menu_id IS NOT NULL""", sortie, rs -> {
+            dansLesFrais.computeIfAbsent(rs.getLong("menu_id"), k -> new ArrayList<>()).add(rs.getLong("participant_id"));
+        });
         List<MenuVue> menus = jdbc.query("""
                 SELECT id, jour, repas, restaurant FROM sejour_menu WHERE sortie_id = :sortie ORDER BY jour, id""", sortie,
                 (rs, i) -> {
@@ -302,7 +320,8 @@ public class MenusRestaurantService {
                     List<Long> mien = participantId == null ? List.of()
                             : duMenu.stream().filter(c -> c.participantId() == participantId).map(Choix::platId).toList();
                     return new MenuVue(id, rs.getObject("jour", LocalDate.class), RepasSejour.valueOf(rs.getString("repas")),
-                            rs.getString("restaurant"), plats, mien, gere ? commande(plats, duMenu, inscrits) : null,
+                            rs.getString("restaurant"), plats, mien, gere ? commande(plats, duMenu, inscrits, reglements.containsKey(id) ? dansLesFrais.getOrDefault(id, List.of()) : null)
+                                    : null,
                             reglements.get(id));
                 });
         menus = menus.stream()
@@ -311,7 +330,9 @@ public class MenusRestaurantService {
         return new MenusVue(menus, participantId, gere);
     }
 
-    private static CommandeVue commande(List<PlatVue> plats, List<Choix> choix, List<Inscrit> inscrits) {
+    /** {@code dansLesFrais} : ceux qui ont leur part de l'addition dans les frais ; null tant qu'elle n'est pas payée. */
+    private static CommandeVue commande(List<PlatVue> plats, List<Choix> choix, List<Inscrit> inscrits,
+                                        List<Long> dansLesFrais) {
         Map<Long, Integer> prix = new LinkedHashMap<>();
         plats.forEach(p -> prix.put(p.id(), p.prixCentimes() == null ? 0 : p.prixCentimes()));
         List<LignePlat> lignes = plats.stream()
@@ -329,7 +350,8 @@ public class MenusRestaurantService {
             }
             int sien = siens.stream().mapToInt(prix::get).sum();
             total += sien;
-            participants.add(new ChoixParticipant(i.id(), i.nom(), i.prenom(), siens, sien));
+            participants.add(new ChoixParticipant(i.id(), i.nom(), i.prenom(), siens, sien,
+                    dansLesFrais != null && sien > 0 && !dansLesFrais.contains(i.id())));
         }
         return new CommandeVue(lignes, participants, sansChoix, total);
     }

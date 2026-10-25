@@ -718,7 +718,8 @@ export class SejourApi {
         return this.http.post<MenusVue>(base, f);
       },
       supprimer: menuId => this.http.delete<MenusVue>(`${base}/${menuId}`),
-      regler: (menuId, payeurId) => this.http.post<MenusVue>(`${base}/${menuId}/reglement`, { payeurId }),
+      regler: (menuId, payeurId, deLeurCote) =>
+        this.http.post<MenusVue>(`${base}/${menuId}/reglement`, { payeurId, deLeurCote }),
       choisir: (menuId, participantId, platIds) =>
         this.http.put<MenusVue>(`${base}/${menuId}/choix/${participantId}`, { platIds })
     };

@@ -70,7 +70,7 @@ public class MenusRestaurantController {
     @PreAuthorize(GERE)
     public MenusVue regler(@PathVariable Long id, @PathVariable Long menuId, @RequestBody DemandeReglement d,
                            @AuthenticationPrincipal UtilisateurPrincipal moi) {
-        return menus.regler(id, menuId, d.payeurId(), moi);
+        return menus.regler(id, menuId, d.payeurId(), d.deLeurCote(), moi);
     }
 
     /** Le choix d'un participant : le sien, ou celui de tout participant pour un organisateur (vérifié par le service). */

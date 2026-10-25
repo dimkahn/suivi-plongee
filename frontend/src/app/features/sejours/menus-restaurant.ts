@@ -18,7 +18,10 @@ export interface PlatVue {
 
 export interface CommandeVue {
   plats: { platId: number; nombre: number }[];
-  participants: { participantId: number; nom: string; prenom: string; platIds: number[]; totalCentimes: number }[];
+  /** {@code payeDeSonCote} : l'addition est payée sans lui dans les frais (il règle sa part lui-même). */
+  participants: {
+    participantId: number; nom: string; prenom: string; platIds: number[]; totalCentimes: number; payeDeSonCote: boolean
+  }[];
   sansChoix: { participantId: number; nom: string; prenom: string }[];
   totalCentimes: number;
 }
@@ -49,8 +52,11 @@ export interface PortMenus {
   lire(): Observable<MenusVue>;
   importer(jour: string, repas: Repas, restaurant: string, fichier: File): Observable<MenusVue>;
   supprimer(menuId: number): Observable<MenusVue>;
-  /** L'addition payée par {@code payeurId} (null : le club) : une dépense par personne dans les frais. */
-  regler(menuId: number, payeurId: number | null): Observable<MenusVue>;
+  /**
+   * L'addition payée par {@code payeurId} (null : le club) : une dépense par personne dans les frais,
+   * sauf pour {@code deLeurCote}, qui paient eux-mêmes leur part.
+   */
+  regler(menuId: number, payeurId: number | null, deLeurCote: number[]): Observable<MenusVue>;
   /** {@code participantId} : soi-même, ou un autre participant pour un organisateur (ignoré par la page du lien). */
   choisir(menuId: number, participantId: number, platIds: number[]): Observable<MenusVue>;
 }

@@ -6,7 +6,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { REPAS, Repas, joursDuSejour } from './liste-courses';
 import { euros, jourLong } from './sejour-api';
 import {
-  MenuVue, MenusVue, PROMPT_MENU, PortMenus, parCategorie, repasDuJour, texteDeLaCommande, totalDuChoix
+  CommandeVue, MenuVue, MenusVue, PROMPT_MENU, PortMenus, parCategorie, repasDuJour, texteDeLaCommande, totalDuChoix
 } from './menus-restaurant';
 
 /** Pour qui on choisit dans la fenêtre : soi-même ou, pour un organisateur, un autre participant. */
@@ -113,7 +113,8 @@ interface ChoixEnCours {
                 @for (p of c.participants; track p.participantId) {
                   <li>
                     <span><strong>{{ p.prenom }} {{ p.nom }}</strong> : {{ noms(m, p.platIds) }}@if (p.totalCentimes > 0) {
-                      ({{ euros(p.totalCentimes) }})}</span>
+                      ({{ euros(p.totalCentimes) }})}@if (p.payeDeSonCote) {
+                      <span class="etiquette-etat neutre">Paie de son côté</span>}</span>
                     @if (!m.reglement) {
                       <button type="button" class="bouton-discret" (click)="ouvrirChoix(m, p.participantId, p.prenom + ' ' + p.nom)">
                         Modifier</button>
@@ -232,13 +233,25 @@ interface ChoixEnCours {
       @if (aRegler(); as m) {
         @if (m.commande; as c) {
           <form class="dialogue-formulaire" (ngSubmit)="regler(m)">
-            <p class="secondaire">{{ titre(m) }}. Chacun sera noté dans les frais du séjour pour ce qu'il a choisi :</p>
-            <ul class="personnes">
+            <p class="secondaire">{{ titre(m) }}. Chaque personne cochée sera notée dans les frais du séjour pour ce
+              qu'elle a choisi ; décochez celles qui paient leur part elles-mêmes, de leur côté.</p>
+            <fieldset>
+              <legend>Dans les frais du séjour</legend>
               @for (p of c.participants; track p.participantId) {
-                <li><span>{{ p.prenom }} {{ p.nom }}</span> <strong>{{ euros(p.totalCentimes) }}</strong></li>
+                <label class="case ligne-addition">
+                  <input type="checkbox" [checked]="!deLeurCote().has(p.participantId)"
+                         (change)="basculerDeSonCote(p.participantId)">
+                  <span>{{ p.prenom }} {{ p.nom }}@if (deLeurCote().has(p.participantId)) {
+                    <span class="secondaire"> — paie de son côté</span>}</span>
+                  <strong>{{ euros(p.totalCentimes) }}</strong>
+                </label>
               }
-              <li><strong>Total</strong> <strong>{{ euros(c.totalCentimes) }}</strong></li>
-            </ul>
+            </fieldset>
+            <p><strong>Dans les frais : {{ euros(dansLesFrais(c)) }}</strong>
+              @if (dansLesFrais(c) !== c.totalCentimes) {
+                <span class="secondaire"> (de leur côté : {{ euros(c.totalCentimes - dansLesFrais(c)) }} ;
+                  total de l'addition {{ euros(c.totalCentimes) }})</span>
+              }</p>
             <label for="addition-payeur">Qui paie l'addition ?</label>
             <select id="addition-payeur" name="payeur" [(ngModel)]="payeur">
               @for (p of c.participants; track p.participantId) {
@@ -248,7 +261,7 @@ interface ChoixEnCours {
             </select>
             <p class="secondaire">Ensuite, les choix ne changent plus ; les frais se corrigent dans l'onglet « Frais ».</p>
             <div class="actions-dialogue">
-              <button type="submit" class="bouton-principal" [disabled]="envoi()">
+              <button type="submit" class="bouton-principal" [disabled]="envoi() || dansLesFrais(c) === 0">
                 {{ envoi() ? 'Envoi…' : 'Enregistrer les frais' }}</button>
               <button type="button" class="bouton-discret" (click)="aRegler.set(null)">Annuler</button>
             </div>
@@ -285,6 +298,7 @@ interface ChoixEnCours {
     legend { font-weight: 700; margin-bottom: var(--pas); }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; min-width: 24px; min-height: 24px; }
+    .ligne-addition > span { flex: 1; }
     .prompt textarea { width: 100%; font-size: .875rem; }
     .prompt { margin-bottom: var(--pas-2); }
   `],
@@ -319,6 +333,8 @@ export class SejourRestaurantComponent implements OnInit {
   aRegler = signal<MenuVue | null>(null);
   /** Qui paie l'addition : un participant, ou null pour le club. */
   payeur: number | null = null;
+  /** Ceux qui paient leur part eux-mêmes : pas de dépense pour eux dans les frais. */
+  deLeurCote = signal<Set<number>>(new Set());
   promptCopie = signal(false);
   jour = '';
   repas: Repas = 'DINER';
@@ -429,11 +445,23 @@ export class SejourRestaurantComponent implements OnInit {
     const moi = this.vue()?.participantId ?? null;
     this.erreur.set(null);
     this.payeur = m.commande?.participants.some(p => p.participantId === moi) ? moi : null;
+    this.deLeurCote.set(new Set());
     this.aRegler.set(m);
   }
 
+  basculerDeSonCote(participantId: number): void {
+    const s = new Set(this.deLeurCote());
+    if (s.has(participantId)) s.delete(participantId); else s.add(participantId);
+    this.deLeurCote.set(s);
+  }
+
+  /** Ce qui sera mis dans les frais : la part de ceux qui ne paient pas de leur côté. */
+  dansLesFrais(c: CommandeVue): number {
+    return c.participants.filter(p => !this.deLeurCote().has(p.participantId)).reduce((t, p) => t + p.totalCentimes, 0);
+  }
+
   regler(m: MenuVue): void {
-    this.envoyer(this.port().regler(m.id, this.payeur), () => {
+    this.envoyer(this.port().regler(m.id, this.payeur, [...this.deLeurCote()]), () => {
       this.aRegler.set(null);
       this.fraisAjoutes.emit();
       this.message.set('L’addition est payée : la part de chacun est dans l’onglet « Frais ».');

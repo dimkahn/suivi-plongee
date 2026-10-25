@@ -15,8 +15,8 @@ const menu: MenuVue = {
   commande: {
     plats: [{ platId: 10, nombre: 1 }, { platId: 11, nombre: 2 }],
     participants: [
-      { participantId: 1, nom: 'Berthier', prenom: 'Camille', platIds: [10, 11], totalCentimes: 3050 },
-      { participantId: 2, nom: 'Durand', prenom: 'Léo', platIds: [11], totalCentimes: 2100 }
+      { participantId: 1, nom: 'Berthier', prenom: 'Camille', platIds: [10, 11], totalCentimes: 3050, payeDeSonCote: false },
+      { participantId: 2, nom: 'Durand', prenom: 'Léo', platIds: [11], totalCentimes: 2100, payeDeSonCote: false }
     ],
     sansChoix: [{ participantId: 3, nom: 'Roux', prenom: 'Inès' }],
     totalCentimes: 5150

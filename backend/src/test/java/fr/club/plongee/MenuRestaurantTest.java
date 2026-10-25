@@ -306,6 +306,39 @@ class MenuRestaurantTest {
     }
 
     @Test
+    @DisplayName("Qui paie de son côté n'est pas mis dans les frais, et la commande le dit")
+    void payerDeSonCote() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu12@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        long leo = participant(envoyer("GET", base, dt, null, 200), "Léo").get("id").asLong();
+
+        JsonNode vue = envoyer("POST", base + "/menus/" + menu.get("id").asLong() + "/reglement", dt,
+                "{\"payeurId\":null,\"deLeurCote\":[%d]}".formatted(leo), 200);
+        JsonNode depenses = envoyer("GET", base, dt, null, 200).get("frais").get("depenses");
+        assertThat(depenses).hasSize(1);
+        assertThat(depenses.get(0).get("libelle").asText()).endsWith("Camille B.");
+        List<String> deSonCote = new ArrayList<>();
+        for (JsonNode p : vue.get("menus").get(0).get("commande").get("participants")) {
+            if (p.get("payeDeSonCote").asBoolean()) deSonCote.add(p.get("prenom").asText());
+        }
+        assertThat(deSonCote).containsExactly("Léo");
+    }
+
+    @Test
+    @DisplayName("L'addition n'est pas payée si tout le monde paie de son côté")
+    void toutLeMondeDeSonCote() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu13@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        JsonNode sejour = envoyer("GET", base, dt, null, 200);
+        assertThat(envoyer("POST", base + "/menus/" + menu.get("id").asLong() + "/reglement", dt,
+                "{\"payeurId\":null,\"deLeurCote\":[%d,%d]}".formatted(participant(sejour, "Léo").get("id").asLong(),
+                        participant(sejour, "Camille").get("id").asLong()), 422).get("detail").asText())
+                .isEqualTo("Tout le monde paie de son côté : il n'y a rien à mettre dans les frais.");
+    }
+
+    @Test
     @DisplayName("Dans les frais, un participant ne voit de l'addition que sa part : le montant des autres dirait ce qu'ils ont choisi")
     void partDesAutresMasquee() throws Exception {
         String dt = jeton("e3@club.fr"), camille = jeton("eleve@club.fr");
