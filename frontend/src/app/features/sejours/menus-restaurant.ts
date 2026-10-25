@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import type { OptionCombobox } from '../../core/combobox.component';
 import { REPAS, Repas } from './liste-courses';
 import { euros, jourLong } from './sejour-api';
 
@@ -98,6 +99,21 @@ export function parCategorie(plats: PlatVue[]): { categorie: string; plats: Plat
   const autres = plats.filter(x => !x.categorie);
   if (autres.length > 0) groupes.set('Autres', [...(groupes.get('Autres') ?? []), ...autres]);
   return [...groupes].map(([categorie, liste]) => ({ categorie, plats: liste }));
+}
+
+/** Dans la liste « Qui paie l'addition ? », le club (aucun participant n'a l'id 0). */
+export const PAYEUR_CLUB = 0;
+
+/** Qui peut payer l'addition : tout participant du séjour, qu'il ait choisi ou non (par nom), puis le club. */
+export function payeursPossibles(c: CommandeVue): OptionCombobox[] {
+  const tous = [
+    ...c.participants.map(p => ({ ...p, detail: null })),
+    ...c.sansChoix.map(p => ({ ...p, detail: 'n’a pas choisi' }))
+  ].sort((a, b) => a.nom.localeCompare(b.nom, 'fr') || a.prenom.localeCompare(b.prenom, 'fr'));
+  return [
+    ...tous.map(p => ({ id: p.participantId, libelle: `${p.prenom} ${p.nom}`, detail: p.detail })),
+    { id: PAYEUR_CLUB, libelle: 'Le club', detail: 'le club a avancé l’addition' }
+  ];
 }
 
 /**

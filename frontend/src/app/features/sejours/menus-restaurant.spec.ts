@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MenuVue, parCategorie, prixEnCentimes, prixEnTexte, texteDeLaCommande, totalDuChoix } from './menus-restaurant';
+import { MenuVue, PAYEUR_CLUB, parCategorie, payeursPossibles, prixEnCentimes, prixEnTexte, texteDeLaCommande, totalDuChoix } from './menus-restaurant';
 
 const menu: MenuVue = {
   id: 1, jour: '2027-06-05', repas: 'DINER', restaurant: 'Le Sémaphore',
@@ -22,6 +22,16 @@ const menu: MenuVue = {
     totalCentimes: 5150
   }
 };
+
+describe('Qui peut payer l’addition', () => {
+  it('tous les participants, même sans choix, par ordre alphabétique, puis le club', () => {
+    const payeurs = payeursPossibles(menu.commande!);
+    expect(payeurs.map(p => p.libelle)).toEqual(['Camille Berthier', 'Léo Durand', 'Inès Roux', 'Le club']);
+    expect(payeurs.find(p => p.libelle === 'Inès Roux')?.detail).toBe('n’a pas choisi');
+    expect(payeurs.at(-1)?.id).toBe(PAYEUR_CLUB);
+    expect(payeurs.find(p => p.libelle === 'Léo Durand')?.detail).toBeNull();
+  });
+});
 
 describe('Prix saisi dans le menu modifié', () => {
   it('lit les euros avec virgule, point ou symbole, et rien pour « sans prix »', () => {

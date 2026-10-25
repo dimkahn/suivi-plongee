@@ -433,6 +433,24 @@ class MenuRestaurantTest {
     }
 
     @Test
+    @DisplayName("N'importe quel participant du séjour paie l'addition, même sans avoir choisi ; pas quelqu'un d'un autre séjour")
+    void payeurQuelconque() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu18@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, false);
+        String reglement = base + "/menus/" + menu.get("id").asLong() + "/reglement";
+        long autreSejour = participant(envoyer("GET", sejour(dt, "leo.menu19@exemple.fr"), dt, null, 200), "Léo")
+                .get("id").asLong();
+        envoyer("POST", reglement, dt, "{\"payeurId\":%d}".formatted(autreSejour), 404);
+
+        long leo = participant(envoyer("GET", base, dt, null, 200), "Léo").get("id").asLong();
+        envoyer("POST", reglement, dt, "{\"payeurId\":%d}".formatted(leo), 200);
+        JsonNode depense = envoyer("GET", base, dt, null, 200).get("frais").get("depenses").get(0);
+        assertThat(depense.get("payeurId").asLong()).isEqualTo(leo);
+        assertThat(depense.get("libelle").asText()).endsWith("Camille B.");
+    }
+
+    @Test
     @DisplayName("Sans aucun choix, il n'y a pas d'addition à payer")
     void reglerSansAucunChoix() throws Exception {
         String dt = jeton("e3@club.fr");

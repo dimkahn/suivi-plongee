@@ -2,12 +2,13 @@ import { Component, ChangeDetectionStrategy, OnInit, computed, input, output, si
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { ComboboxComponent } from '../../core/combobox.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { REPAS, Repas, joursDuSejour } from './liste-courses';
 import { euros, jourLong } from './sejour-api';
 import {
-  CommandeVue, DemandeMenu, MenuVue, MenusVue, PROMPT_MENU, PortMenus, parCategorie, prixEnCentimes, prixEnTexte,
-  repasDuJour, texteDeLaCommande, totalDuChoix
+  CommandeVue, DemandeMenu, MenuVue, MenusVue, PAYEUR_CLUB, PROMPT_MENU, PortMenus, parCategorie, payeursPossibles,
+  prixEnCentimes, prixEnTexte, repasDuJour, texteDeLaCommande, totalDuChoix
 } from './menus-restaurant';
 
 /** Pour qui on choisit dans la fenêtre : soi-même ou, pour un organisateur, un autre participant. */
@@ -37,7 +38,7 @@ interface LignePlat {
  */
 @Component({
   selector: 'app-sejour-restaurant',
-  imports: [FormsModule, DialogueComponent],
+  imports: [FormsModule, DialogueComponent, ComboboxComponent],
   template: `
     <div class="titre-section">
       <h2>Restaurant</h2>
@@ -318,15 +319,11 @@ interface LignePlat {
                   total de l'addition {{ euros(c.totalCentimes) }})</span>
               }</p>
             <label for="addition-payeur">Qui paie l'addition ?</label>
-            <select id="addition-payeur" name="payeur" [(ngModel)]="payeur">
-              @for (p of c.participants; track p.participantId) {
-                <option [ngValue]="p.participantId">{{ p.prenom }} {{ p.nom }}</option>
-              }
-              <option [ngValue]="null">Le club</option>
-            </select>
+            <app-combobox idChamp="addition-payeur" [options]="payeursPossibles(c)" [(valeur)]="payeur"
+                          aide="Rechercher un participant, ou « Le club »…" texteVide="Personne ne correspond." />
             <p class="secondaire">Ensuite, les choix ne changent plus ; les frais se corrigent dans l'onglet « Frais ».</p>
             <div class="actions-dialogue">
-              <button type="submit" class="bouton-principal" [disabled]="envoi() || dansLesFrais(c) === 0">
+              <button type="submit" class="bouton-principal" [disabled]="envoi() || dansLesFrais(c) === 0 || payeur() === null">
                 {{ envoi() ? 'Envoi…' : 'Enregistrer les frais' }}</button>
               <button type="button" class="bouton-discret" (click)="aRegler.set(null)">Annuler</button>
             </div>
@@ -392,6 +389,7 @@ export class SejourRestaurantComponent implements OnInit {
   readonly euros = euros;
   readonly parCategorie = parCategorie;
   readonly repasDuJour = repasDuJour;
+  readonly payeursPossibles = payeursPossibles;
   readonly totalDuChoix = totalDuChoix;
 
   vue = signal<MenusVue | null>(null);
@@ -410,7 +408,7 @@ export class SejourRestaurantComponent implements OnInit {
   lignes = signal<LignePlat[]>([]);
   restaurantModifie = '';
   /** Qui paie l'addition : un participant, ou null pour le club. */
-  payeur: number | null = null;
+  payeur = signal<number | null>(PAYEUR_CLUB);
   /** Ceux qui paient leur part eux-mêmes : pas de dépense pour eux dans les frais. */
   deLeurCote = signal<Set<number>>(new Set());
   promptCopie = signal(false);
@@ -568,11 +566,11 @@ export class SejourRestaurantComponent implements OnInit {
 
   // -- Addition (organisateurs) --------------------------------------
 
-  /** Par défaut, c'est l'organisateur qui paie s'il est du séjour, sinon le club. */
+  /** Par défaut, c'est l'organisateur qui paie s'il est du séjour, sinon le club ; tout participant peut être choisi. */
   ouvrirReglement(m: MenuVue): void {
     const moi = this.vue()?.participantId ?? null;
     this.erreur.set(null);
-    this.payeur = m.commande?.participants.some(p => p.participantId === moi) ? moi : null;
+    this.payeur.set(moi ?? PAYEUR_CLUB);
     this.deLeurCote.set(new Set());
     this.aRegler.set(m);
   }
@@ -593,7 +591,12 @@ export class SejourRestaurantComponent implements OnInit {
   }
 
   regler(m: MenuVue): void {
-    this.envoyer(this.port().regler(m.id, this.payeur, [...this.deLeurCote()]), () => {
+    const payeur = this.payeur();
+    if (payeur === null) {
+      this.erreur.set('Choisissez qui paie l’addition.');
+      return;
+    }
+    this.envoyer(this.port().regler(m.id, payeur === PAYEUR_CLUB ? null : payeur, [...this.deLeurCote()]), () => {
       this.aRegler.set(null);
       this.fraisAjoutes.emit();
       this.message.set('L’addition est payée : la part de chacun est dans l’onglet « Frais ».');
