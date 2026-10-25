@@ -53,6 +53,9 @@ public class SecurityConfig {
                         // Le séjour pour un participant qui n'est pas encadrant : contrôlé par le code
                         // de l'adresse et le jeton reçu après le code par e-mail (AccesSejourController).
                         .requestMatchers("/api/public/sejour/**").permitAll()
+                        // Le même code par e-mail, depuis la page de connexion, sans le lien (EntreeSejourController).
+                        .requestMatchers(HttpMethod.POST, "/api/public/sejours/code", "/api/public/sejours/connexion")
+                        .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/referentiels/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

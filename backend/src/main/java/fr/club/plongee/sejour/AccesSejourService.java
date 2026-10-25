@@ -260,6 +260,37 @@ public class AccesSejourService {
         return new Connexion(jeton, participant, (String) nom.get("prenom"), (String) nom.get("nom"));
     }
 
+    /** L'entrée depuis la page de connexion : le séjour ouvert et son adresse, que la page n'avait pas. */
+    public record ConnexionSansLien(String sejour, String jeton, Long participantId, String prenom, String nom) {}
+
+    /**
+     * Sans le lien, depuis la page de connexion : le code part pour le séjour
+     * le plus proche de cet e-mail ({@link #sejourPourEmail}) ; sinon rien,
+     * sans le dire, comme {@link #demanderCode}.
+     */
+    @Transactional
+    public void demanderCodeSansLien(String email) {
+        sejourPourEmail(email).ifPresent(code -> demanderCode(code, email));
+    }
+
+    /**
+     * Le bon code ouvre le même séjour que celui du code envoyé, et donne son
+     * adresse. Tout refus a le même message : sans le secret de l'adresse,
+     * un e-mail suffit, et la réponse ne doit pas dire s'il participe.
+     */
+    @Transactional(noRollbackFor = RegleMetierException.class)
+    public ConnexionSansLien connecterSansLien(String email, String saisie) {
+        String refus = "Code incorrect ou expiré : demandez-en un nouveau.";
+        String code = sejourPourEmail(email).orElseThrow(() -> new RegleMetierException(refus));
+        Connexion c;
+        try {
+            c = connecter(code, email, saisie);
+        } catch (RegleMetierException e) {
+            throw new RegleMetierException(refus);
+        }
+        return new ConnexionSansLien(code, c.jeton(), c.participantId(), c.prenom(), c.nom());
+    }
+
     @Transactional
     public void deconnecter(String jeton) {
         if (jeton == null) return;
@@ -331,6 +362,34 @@ public class AccesSejourService {
                 new MapSqlParameterSource("code", code).addValue("email", email.trim().toLowerCase(Locale.ROOT)),
                 Long.class);
         return ids.isEmpty() ? Optional.empty() : Optional.of(ids.getFirst());
+    }
+
+    /**
+     * L'adresse du séjour où cet e-mail entre sans le lien : parmi ceux où il
+     * pourrait entrer par le lien (demande d'informations envoyée, jeton encore
+     * possible), le séjour en cours ou le prochain, sinon le dernier fini.
+     */
+    private Optional<String> sejourPourEmail(String email) {
+        if (email == null || email.isBlank()) return Optional.empty();
+        LocalDate aujourdhui = maintenant().toLocalDate();
+        record Candidat(String code, LocalDate debut, LocalDate fin, long sortieId) {}
+        List<Candidat> candidats = jdbc.query("""
+                SELECT s.code_frais, so.date_debut, COALESCE(so.date_fin, so.date_debut), so.id FROM sejour_participant p
+                  JOIN sejour s ON s.sortie_id = p.sortie_id
+                  JOIN sortie so ON so.id = s.sortie_id
+                  LEFT JOIN eleve e ON e.id = p.eleve_id
+                 WHERE s.code_frais IS NOT NULL AND LOWER(p.email) = :email AND NOT %s
+                   AND COALESCE(so.date_fin, so.date_debut) >= :limite""".formatted(EST_ENCADRANT),
+                new MapSqlParameterSource("email", email.trim().toLowerCase(Locale.ROOT))
+                        .addValue("limite", aujourdhui.minusDays(JOURS_APRES_LE_SEJOUR)),
+                (rs, i) -> new Candidat(rs.getString(1), rs.getObject(2, LocalDate.class), rs.getObject(3, LocalDate.class),
+                        rs.getLong(4)));
+        Comparator<Candidat> aVenirDabord = Comparator.comparing((Candidat c) -> c.fin().isBefore(aujourdhui));
+        // Départage stable : la demande de code et la connexion doivent choisir le même séjour.
+        return candidats.stream()
+                .min(aVenirDabord.thenComparing(c -> c.fin().isBefore(aujourdhui)
+                        ? -c.fin().toEpochDay() : c.debut().toEpochDay()).thenComparing(Candidat::sortieId))
+                .map(Candidat::code);
     }
 
     private String aleatoire(int octets) {

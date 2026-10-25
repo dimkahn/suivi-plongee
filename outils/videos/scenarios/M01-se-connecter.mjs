@@ -1,12 +1,12 @@
 // M1 — Se connecter et s'y retrouver.
-// Tournage du 2026-10-14, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-25, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M1',
   titre: 'Se connecter et s\'y retrouver',
   public: 'Moniteur',
-  resume: 'Se connecter depuis son téléphone ou son ordinateur, trouver les écrans dans le menu, récupérer un mot de passe oublié.',
+  resume: 'Se connecter depuis son téléphone ou son ordinateur, trouver les écrans dans le menu, récupérer un mot de passe oublié, entrer dans un séjour sans compte.',
   compte: 'e2@club.fr',
   connecte: false,
 
@@ -66,6 +66,13 @@ export default {
     await saisir('#email-oubli', 'e2@club.fr');
     await toucher(page.getByRole('button', { name: 'Envoyer le lien' }), { apres: 1200 });
     await legende('Un lien de réinitialisation part par e-mail. Il suffit de le suivre.', 4000);
+    await toucher(page.getByRole('button', { name: 'Retour à la connexion' }), { apres: 800 });
+
+    await legende('Élève, parent ou invité d\'un séjour, sans compte ? « Participant à un séjour ? » tout en bas.', 0);
+    await toucher(page.getByRole('button', { name: /Participant à un séjour/ }), { apres: 1000 });
+    await legende('Son adresse e-mail, puis « Recevoir le code » : le code à 6 chiffres ouvre son séjour. '
+      + 'Voir « Mon séjour, par le lien reçu par e-mail ».', 5000);
+    await toucher(page.getByRole('button', { name: 'Retour à la connexion' }), { apres: 600 });
     await legende(null, 0);
     await pause(600);
   }

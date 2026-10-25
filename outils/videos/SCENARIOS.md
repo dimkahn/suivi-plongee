@@ -32,9 +32,9 @@ Compte : `e3@club.fr` · formats téléphone et ordinateur · 70 s
 
 ### M1 — Se connecter et s'y retrouver
 
-Se connecter depuis son téléphone ou son ordinateur, trouver les écrans dans le menu, récupérer un mot de passe oublié.
+Se connecter depuis son téléphone ou son ordinateur, trouver les écrans dans le menu, récupérer un mot de passe oublié, entrer dans un séjour sans compte.
 
-Compte : `e2@club.fr` · formats téléphone et ordinateur · 62 s
+Compte : `e2@club.fr` · formats téléphone et ordinateur · 70 s
 
 1. Sur votre téléphone, ouvrez l'adresse de l'appli du club.
 2. Votre adresse e-mail…
@@ -52,6 +52,8 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 62 s
 14. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
 15. Mot de passe oublié ? Déconnectons-nous pour voir : votre nom, puis « Se déconnecter » tout en bas.
 16. Un lien de réinitialisation part par e-mail. Il suffit de le suivre.
+17. Élève, parent ou invité d'un séjour, sans compte ? « Participant à un séjour ? » tout en bas.
+18. Son adresse e-mail, puis « Recevoir le code » : le code à 6 chiffres ouvre son séjour. Voir « Mon séjour, par le lien reçu par e-mail ».
 
 ### M2 — Mon compte
 

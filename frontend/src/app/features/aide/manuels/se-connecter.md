@@ -4,10 +4,11 @@ rubrique: Découverte
 pour: sans-compte
 videos: M1
 ecran: /connexion
-mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent, ordinateur, téléphone, format, version, aide pour, droits, je ne trouve pas, manuel absent
+mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent, ordinateur, téléphone, format, version, aide pour, droits, je ne trouve pas, manuel absent, séjour, participant, élève, invité, parent, code, code reçu par e-mail, sans compte, sans mot de passe, lien perdu
 questions:
 - Comment me connecter ?
 - J'ai oublié mon mot de passe
+- Je participe à un séjour sans compte : comment entrer ?
 - Où sont les écrans ?
 - Comment me déconnecter ?
 - Où est passé le menu ?
@@ -49,6 +50,15 @@ En haut de chaque écran, la même barre :
 1. Sur l'écran de connexion, touchez « Mot de passe oublié ? ».
 2. Indiquez votre e-mail : un lien de réinitialisation vous est envoyé.
 3. Suivez le lien et choisissez un nouveau mot de passe.
+
+## Participant à un séjour, sans compte
+
+Élève, parent ou invité d'un séjour du club, vous n'avez pas de mot de passe : vous entrez avec un code reçu par e-mail, même sans retrouver le lien de l'organisateur.
+
+1. Sur l'écran de connexion, touchez « **Participant à un séjour ? Entrer avec un code reçu par e-mail** », tout en bas.
+2. Donnez l'adresse e-mail que vous avez donnée à l'organisateur, puis « Recevoir le code ».
+3. Entrez le code à 6 chiffres reçu par e-mail, puis « Entrer » : la page de votre séjour s'ouvre (voir « Mon séjour, par le lien reçu par e-mail »).
+4. Inscrit à plusieurs séjours ? C'est le séjour en cours ou le prochain qui s'ouvre ; pour un autre, prenez le lien de son e-mail.
 
 ## Bon à savoir
 

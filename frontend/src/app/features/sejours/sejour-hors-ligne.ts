@@ -178,6 +178,11 @@ export function cleLienSejour(code: string): string {
   return `lien-sejour:${code}`;
 }
 
+/** Le jeton du lien, posé par la page du lien ou par l'entrée sans lien de la page de connexion. */
+export function cleJetonLienSejour(code: string): string {
+  return `jeton-sejour:${code}`;
+}
+
 /**
  * Un participant ajouté sans réseau a reçu son vrai id : les modifications
  * qui le citent encore par l'id provisoire (voiture, chambre, dépense,

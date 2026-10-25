@@ -1,8 +1,11 @@
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { MAGASIN_CACHE, ecrire } from '../../core/base-locale';
+import { cleJetonLienSejour } from '../sejours/sejour-hors-ligne';
 import { IdentiteService } from '../../core/identite.service';
 
 @Component({
@@ -24,7 +27,40 @@ import { IdentiteService } from '../../core/identite.service';
           </p>
         }
 
-        @if (!oubli()) {
+        @if (sejour()) {
+          @if (erreur()) { <div class="alerte" role="alert">{{ erreur() }}</div> }
+          @if (etapeSejour() === 'email') {
+            <p class="secondaire">
+              Élève, parent ou invité d'un séjour du club : donnez l'adresse e-mail que vous avez
+              donnée à l'organisateur, vous recevrez un code à 6 chiffres. Pas de compte ni de mot de passe.
+            </p>
+            <label for="email-sejour">Adresse e-mail</label>
+            <input id="email-sejour" type="email" name="email-sejour" autocomplete="email"
+                   [(ngModel)]="email" (keyup.enter)="demanderCodeSejour()">
+            <button type="button" class="bouton-principal" (click)="demanderCodeSejour()" [disabled]="envoi()">
+              {{ envoi() ? 'Envoi…' : 'Recevoir le code' }}
+            </button>
+          } @else {
+            <p class="secondaire">
+              Si cette adresse est celle d'un participant, un code vient d'y partir (pensez aux
+              indésirables). Il est valable 10 minutes.
+            </p>
+            <label for="code-sejour">Code reçu par e-mail</label>
+            <input id="code-sejour" name="code-sejour" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                   [(ngModel)]="codeSejour" (keyup.enter)="entrerSejour()">
+            <button type="button" class="bouton-principal" (click)="entrerSejour()" [disabled]="envoi()">
+              {{ envoi() ? 'Entrée…' : 'Entrer' }}
+            </button>
+            <button type="button" class="lien-oubli" (click)="etapeSejour.set('email')">
+              Changer d'adresse ou renvoyer
+            </button>
+          }
+
+          <button type="button" class="lien-oubli" (click)="basculerSejour()">
+            Retour à la connexion
+          </button>
+
+        } @else if (!oubli()) {
           @if (erreur()) { <div class="alerte">{{ erreur() }}</div> }
 
           <label for="email">Adresse e-mail</label>
@@ -49,6 +85,10 @@ import { IdentiteService } from '../../core/identite.service';
 
           <button type="button" class="lien-oubli" (click)="basculerOubli()">
             Mot de passe oublié ?
+          </button>
+
+          <button type="button" class="lien-oubli lien-sejour" (click)="basculerSejour()">
+            Participant à un séjour ? Entrer avec un code reçu par e-mail
           </button>
 
         } @else {
@@ -94,7 +134,7 @@ import { IdentiteService } from '../../core/identite.service';
     .aide { margin: 0; color: var(--craie); font-size: .8125rem; }
     .bouton-principal { width: 100%; margin-top: var(--pas-3); }
     .lien-oubli {
-      display: block; width: 100%; margin-top: var(--pas-2); padding: 0; min-height: auto;
+      display: block; width: 100%; margin-top: var(--pas-2); padding: 0; min-height: 44px;
       background: none; border: none; color: var(--profond); font-size: .875rem;
       text-decoration: underline; text-align: center;
     }
@@ -105,6 +145,7 @@ import { IdentiteService } from '../../core/identite.service';
 })
 export class ConnexionComponent {
   private auth = inject(AuthService);
+  private http = inject(HttpClient);
   identite = inject(IdentiteService);
   /** Texte du logo d'origine, tant qu'aucun nom de structure n'est réglé. */
   readonly altOrigine = "Club de plongée de la Police et de la Justice du Val-d'Oise";
@@ -120,6 +161,11 @@ export class ConnexionComponent {
 
   oubli = signal(false);
   confirmationOubli = signal(false);
+
+  /** L'entrée d'un participant de séjour sans compte (élève, invité) : e-mail, puis code reçu. */
+  sejour = signal(false);
+  etapeSejour = signal<'email' | 'code'>('email');
+  codeSejour = '';
 
   connecter(): void {
     if (!this.email || !this.motDePasse) {
@@ -139,6 +185,47 @@ export class ConnexionComponent {
         this.erreur.set(e.status === 422 && e.error?.detail ? e.error.detail : 'E-mail ou mot de passe incorrect.');
       }
     });
+  }
+
+  basculerSejour(): void {
+    this.sejour.set(!this.sejour());
+    this.etapeSejour.set('email');
+    this.erreur.set(null);
+  }
+
+  /** Toujours la même réponse du serveur : la page ne dit pas qui participe à un séjour. */
+  async demanderCodeSejour(): Promise<void> {
+    if (!this.email.trim()) {
+      this.erreur.set('Indiquez votre adresse e-mail.');
+      return;
+    }
+    this.envoi.set(true);
+    this.erreur.set(null);
+    try {
+      await firstValueFrom(this.http.post('/api/public/sejours/code', { email: this.email.trim() }));
+      this.codeSejour = '';
+      this.etapeSejour.set('code');
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? "Le code n'a pas pu être envoyé (réseau nécessaire).");
+    } finally {
+      this.envoi.set(false);
+    }
+  }
+
+  /** Le bon code donne l'adresse du séjour et son jeton : la page du séjour s'ouvre déjà connectée. */
+  async entrerSejour(): Promise<void> {
+    this.envoi.set(true);
+    this.erreur.set(null);
+    try {
+      const c = await firstValueFrom(this.http.post<{ sejour: string; jeton: string }>('/api/public/sejours/connexion',
+        { email: this.email.trim(), code: this.codeSejour.trim() }));
+      await ecrire(MAGASIN_CACHE, { cle: cleJetonLienSejour(c.sejour), valeur: c.jeton });
+      await this.router.navigate(['/sejour', c.sejour]);
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'entrée n'a pas abouti (réseau nécessaire).");
+    } finally {
+      this.envoi.set(false);
+    }
   }
 
   basculerOubli(): void {

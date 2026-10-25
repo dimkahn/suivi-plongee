@@ -20,7 +20,7 @@ import {
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
-import { cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
+import { cleJetonLienSejour, cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
@@ -188,7 +188,7 @@ export class EspaceParticipantComponent {
   private route = inject(ActivatedRoute);
   private readonly code = this.route.snapshot.paramMap.get('code') ?? '';
   private readonly base = `/api/public/sejour/${encodeURIComponent(this.code)}`;
-  private readonly cle = `jeton-sejour:${this.code}`;
+  private readonly cle = cleJetonLienSejour(this.code);
   private jeton: string | null = null;
 
   readonly periode = periode;
