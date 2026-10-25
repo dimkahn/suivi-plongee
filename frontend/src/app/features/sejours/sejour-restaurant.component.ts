@@ -149,13 +149,11 @@ interface LignePlat {
                   <p><span class="etiquette-etat ok">Addition payée</span>
                     par {{ r.payeurId === null ? 'le club' : r.prenom + ' ' + r.nom }} : les frais de chacun sont dans
                     l'onglet « Frais », où ils se corrigent.</p>
-                } @else if (c.sansChoix.length === 0 && c.totalCentimes > 0) {
-                  <p>Tout le monde a choisi : {{ euros(c.totalCentimes) }} en tout.</p>
+                } @else if (c.participants.length > 0 && c.totalCentimes > 0) {
+                  <p>{{ c.sansChoix.length === 0 ? 'Tout le monde a choisi' : c.participants.length + ' sur '
+                    + (c.participants.length + c.sansChoix.length) + ' ont choisi' }} : {{ euros(c.totalCentimes) }} en tout.</p>
                   <button type="button" class="bouton-principal payer-addition" (click)="ouvrirReglement(m)">
                     Payer l'addition</button>
-                } @else if (c.sansChoix.length > 0) {
-                  <p class="secondaire">« Payer l'addition » sera proposé quand tout le monde aura choisi
-                    (encore {{ c.sansChoix.length }}).</p>
                 }
               </div>
             </div>
@@ -290,7 +288,7 @@ interface LignePlat {
       }
     </app-dialogue>
 
-    <!-- Payer l'addition (organisateurs, quand tout le monde a choisi) -->
+    <!-- Payer l'addition (organisateurs, dès qu'au moins un participant a choisi) -->
     <app-dialogue [ouvert]="aRegler() !== null" [erreur]="erreur()" titre="Payer l'addition"
                   (fermer)="aRegler.set(null)">
       @if (aRegler(); as m) {
@@ -310,6 +308,10 @@ interface LignePlat {
                 </label>
               }
             </fieldset>
+            @if (c.sansChoix.length > 0) {
+              <p class="alerte pas-choisi">Pas de choix pour {{ nomsSansChoix(c) }} : rien dans les frais pour
+                {{ c.sansChoix.length > 1 ? 'eux' : 'cette personne' }}, et les choix ne pourront plus se faire ensuite.</p>
+            }
             <p><strong>Dans les frais : {{ euros(dansLesFrais(c)) }}</strong>
               @if (dansLesFrais(c) !== c.totalCentimes) {
                 <span class="secondaire"> (de leur côté : {{ euros(c.totalCentimes - dansLesFrais(c)) }} ;
@@ -579,6 +581,10 @@ export class SejourRestaurantComponent implements OnInit {
     const s = new Set(this.deLeurCote());
     if (s.has(participantId)) s.delete(participantId); else s.add(participantId);
     this.deLeurCote.set(s);
+  }
+
+  nomsSansChoix(c: CommandeVue): string {
+    return c.sansChoix.map(p => `${p.prenom} ${p.nom}`).join(', ');
   }
 
   /** Ce qui sera mis dans les frais : la part de ceux qui ne paient pas de leur côté. */

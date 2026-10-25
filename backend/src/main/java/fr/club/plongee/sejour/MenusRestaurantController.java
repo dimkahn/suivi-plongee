@@ -74,7 +74,7 @@ public class MenusRestaurantController {
         return menus.supprimer(id, menuId, moi);
     }
 
-    /** L'addition payée une fois que tout le monde a choisi : une dépense par personne dans les frais. */
+    /** L'addition payée : une dépense par personne qui a choisi, dans les frais. */
     @PostMapping("/{menuId}/reglement")
     @PreAuthorize(GERE)
     public MenusVue regler(@PathVariable Long id, @PathVariable Long menuId, @RequestBody DemandeReglement d,

@@ -414,15 +414,33 @@ class MenuRestaurantTest {
     }
 
     @Test
-    @DisplayName("L'addition ne se paie pas tant que quelqu'un n'a pas choisi")
+    @DisplayName("L'addition se paie même si quelqu'un n'a pas choisi : il n'a rien dans les frais et ne choisit plus")
     void reglerAvantQueToutLeMondeAitChoisi() throws Exception {
         String dt = jeton("e3@club.fr");
         String base = sejour(dt, "leo.menu9@exemple.fr");
         JsonNode menu = menuChoisi(dt, base, false);
+        String url = base + "/menus/" + menu.get("id").asLong();
+        JsonNode commande = envoyer("POST", url + "/reglement", dt, "{\"payeurId\":null}", 200)
+                .get("menus").get(0).get("commande");
+        assertThat(commande.get("sansChoix").get(0).get("prenom").asText()).isEqualTo("Léo");
+        JsonNode depenses = envoyer("GET", base, dt, null, 200).get("frais").get("depenses");
+        assertThat(depenses).hasSize(1);
+        assertThat(depenses.get(0).get("libelle").asText()).endsWith("Camille B.");
+
+        long leo = participant(envoyer("GET", base, dt, null, 200), "Léo").get("id").asLong();
+        assertThat(envoyer("PUT", url + "/choix/" + leo, dt, "{\"platIds\":[%d]}".formatted(plat(menu, "Tarte au citron")),
+                422).get("detail").asText()).isEqualTo("L'addition de ce repas est payée : les choix ne changent plus.");
+    }
+
+    @Test
+    @DisplayName("Sans aucun choix, il n'y a pas d'addition à payer")
+    void reglerSansAucunChoix() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu17@exemple.fr");
+        JsonNode menu = importer(base, dt, "menu.xlsx", menuXlsx(), "2031-08-02", "DINER", 200).get("menus").get(0);
         assertThat(envoyer("POST", base + "/menus/" + menu.get("id").asLong() + "/reglement", dt,
                 "{\"payeurId\":null}", 422).get("detail").asText())
-                .isEqualTo("Tout le monde n'a pas encore choisi : Léo D.");
-        assertThat(envoyer("GET", base, dt, null, 200).get("frais").get("depenses")).isEmpty();
+                .isEqualTo("Personne n'a encore choisi : il n'y a pas d'addition à payer.");
     }
 
     @Test

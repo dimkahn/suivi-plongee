@@ -263,7 +263,8 @@ public class MenusRestaurantService {
     // ------------------------------------------------------------------
 
     /**
-     * L'addition payée, une fois que tout le monde a choisi : une dépense par
+     * L'addition payée, même si certains n'ont pas choisi (ils n'ont rien dans
+     * les frais, et ne choisissent plus ensuite) : une dépense par
      * personne dans les frais du séjour, à son montant, payée par
      * {@code payeurId} (le club si null). Les plats sans prix comptent pour 0 ;
      * qui n'a rien à payer, ou paie de son côté ({@code deLeurCote}), n'a pas
@@ -279,9 +280,8 @@ public class MenusRestaurantService {
         }
         MenuVue menu = vue(sortieId, null, true).menus().stream().filter(m -> m.id() == menuId).findFirst().orElseThrow();
         CommandeVue c = menu.commande();
-        if (!c.sansChoix().isEmpty()) {
-            throw new RegleMetierException("Tout le monde n'a pas encore choisi : " + String.join(", ",
-                    c.sansChoix().stream().map(s -> court(s.prenom(), s.nom())).toList()));
+        if (c.participants().isEmpty()) {
+            throw new RegleMetierException("Personne n'a encore choisi : il n'y a pas d'addition à payer.");
         }
         if (c.totalCentimes() == 0) {
             throw new RegleMetierException("Aucun plat choisi n'a de prix : saisissez l'addition dans l'onglet « Frais ».");
