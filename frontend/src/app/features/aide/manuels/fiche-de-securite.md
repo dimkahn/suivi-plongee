@@ -52,6 +52,7 @@ questions:
 - Comment imprimer les deux plongées d'une journée sur une seule feuille ?
 - Que veut dire « 1-2 » dans la case d'un plongeur ?
 - Comment imprimer une feuille par plongée, sans regrouper les deux plongées du jour ?
+- Où trouver les fiches de sécurité d'un séjour ?
 ---
 Menu, « Fiches de sécurité » : choisissez la séance, vérifiez son site, choisissez le directeur de plongée, les conditions, puis composez les palanquées. Au retour, on complète les heures, profondeurs et paliers réalisés.
 
@@ -64,7 +65,7 @@ Menu, « Fiches de sécurité » : choisissez la séance, vérifiez son site, ch
 ## Avant la mise à l'eau
 
 1. Menu, « Fiches de sécurité » : les séances en milieu naturel ou à plus de 6 m.
-2. Retrouvez la séance par sa date. Le lien « ← Fiches de sécurité » d'une fiche ramène à la liste de ce même jour.
+2. Retrouvez la séance par sa date. Le lien « ← Fiches de sécurité » d'une fiche ramène à la liste de ce même jour. Pour une sortie avec séjour, l'onglet **Fiches de sécurité** de la page du séjour donne aussi les fiches de ses plongées, jour par jour (voir « Organiser un séjour ») : ouverte de là, la fiche a pour retour « ← Séjour ».
 3. Vérifiez le **site de plongée** (le point précis du lieu : « La Gabinière », « Grand bassin »…), en tête de l'encadré « Directeur de plongée et conditions ». Changé de site au dernier moment ? Corrigez-le ici : les sites déjà donnés à ce lieu sont proposés en tapant. Il change pour **toute la séance** (titre de la fiche, liste des séances, fiche imprimée) en enregistrant la fiche, même sans réseau. Mêmes droits que pour établir la fiche ; une fiche signée ne le change plus.
 4. Choisissez le directeur de plongée : seuls les E3 et E4 sont proposés.
 5. Renseignez les conditions du jour.

@@ -7,6 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, from, map, mergeMap, of, throwError } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ReseauService } from '../../core/reseau.service';
+import { AuthService } from '../../core/auth.service';
 import { PlurielPipe } from '../../core/pluriel';
 import { FileSejourService } from './file-sejour.service';
 import { ModificationSejour, appliquerEnAttente, cleSejour } from './sejour-hors-ligne';
@@ -36,9 +37,13 @@ import { CibleMonSejour, MonSejourComponent } from './mon-sejour.component';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { SejourCoursesComponent } from './sejour-courses.component';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
+import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
 
 type Onglet = 'programme' | 'participants' | 'transports' | 'hebergement' | 'frais' | 'materiel' | 'courses' | 'restaurant'
-  | 'pratique';
+  | 'fiches' | 'pratique';
+
+const ONGLETS: Onglet[] = ['programme', 'participants', 'transports', 'hebergement', 'frais', 'materiel', 'courses',
+  'restaurant', 'fiches', 'pratique'];
 
 /** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
 interface GroupeTrajet {
@@ -88,7 +93,7 @@ function participantVide(): BrouillonParticipant {
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, PalanqueesPlongeeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
-            TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent],
+            TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -545,6 +550,18 @@ function participantVide(): BrouillonParticipant {
                 }
               </ul>
             </div>
+          }
+        </section>
+      }
+
+      <!-- Fiches de sécurité des plongées du séjour : encadrants, réseau obligatoire (demande du club, 2026) -->
+      @if (s.encadrant && litLesFiches() && voir('fiches')) {
+        <section id="fiches-securite-sejour">
+          @if (copieDu()) {
+            <p class="vide">Les fiches de sécurité demandent le réseau.</p>
+          } @else {
+            <app-sejour-fiches-securite [port]="portFiches" [sejourId]="s.sortie.id" [dateDebut]="s.sortie.dateDebut"
+                                        [dateFin]="s.sortie.dateFin" [lieu]="s.sortie.lieu" />
           }
         </section>
       }
@@ -1201,6 +1218,9 @@ export class SejourComponent {
   private api = inject(SejourApi);
   private apiClub = inject(ApiService);
   private route = inject(ActivatedRoute);
+  private auth = inject(AuthService);
+  /** Les fiches de sécurité se lisent par les moniteurs et les administrateurs, pas par un directeur technique seul. */
+  readonly litLesFiches = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
 
   readonly periode = periode;
   readonly euros = euros;
@@ -1233,7 +1253,8 @@ export class SejourComponent {
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
   envoi = signal(false);
-  onglet = signal<Onglet>('programme');
+  /** « ?onglet=fiches » : le retour d'une fiche de sécurité rouvre son onglet. */
+  onglet = signal<Onglet>(ONGLETS.find(o => o === this.route.snapshot.queryParamMap.get('onglet')) ?? 'programme');
   /** La fenêtre « Trombinoscope » du bandeau Organisation (tous les participants, réseau obligatoire). */
   trombinoscopeOuvert = signal(false);
 
@@ -1260,9 +1281,13 @@ export class SejourComponent {
       { valeur: 'materiel', libelle: 'Matériel' },
       { valeur: 'courses', libelle: 'Courses' },
       { valeur: 'restaurant', libelle: 'Restaurant' },
+      { valeur: 'fiches', libelle: 'Fiches de sécurité' },
       { valeur: 'pratique', libelle: 'Pratique' }
     ];
-    return s?.encadrant ? liste : liste.filter(o => o.valeur !== 'participants' && o.valeur !== 'courses');
+    if (!s?.encadrant) {
+      return liste.filter(o => o.valeur !== 'participants' && o.valeur !== 'courses' && o.valeur !== 'fiches');
+    }
+    return this.litLesFiches() ? liste : liste.filter(o => o.valeur !== 'fiches');
   });
 
   /** Ceux qui ont tout renseigné (arrivée, départ, personne à prévenir), pour l'onglet Participants. */
@@ -1589,6 +1614,9 @@ export class SejourComponent {
 
   /** Les menus des restaurants, pour l'onglet « Restaurant ». */
   readonly portMenus = this.api.portMenus(this.id);
+
+  /** Les fiches de sécurité des plongées, pour l'onglet « Fiches de sécurité ». */
+  readonly portFiches = this.api.portFichesSecurite(this.id);
 
   /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour » ; lu sans réseau sur la copie. */
   readonly prets = new PretsDuSejour(this.portPretsAvecCopie(this.api.portPrets(this.id)));
@@ -2001,7 +2029,9 @@ export class SejourComponent {
     this.commeParticipant.update(v => !v);
     this.message.set(null);
     this.erreur.set(null);
-    if (this.commeParticipant() && this.onglet() === 'participants') this.onglet.set('programme');
+    if (this.commeParticipant() && (this.onglet() === 'participants' || this.onglet() === 'fiches')) {
+      this.onglet.set('programme');
+    }
     void this.charger();
   }
 

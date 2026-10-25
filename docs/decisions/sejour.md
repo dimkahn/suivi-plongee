@@ -182,6 +182,14 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Qui lit quoi** : menus lus par les encadrants et les participants du séjour (403 pour un élève qui n'y est pas) ; chacun ne reçoit que son choix (`monChoix`) ; **la commande complète** (`commande` : nombre par plat, choix et total de chacun, qui n'a pas choisi, total) **seulement pour le créateur et les organisateurs, filtrée par le serveur** (null pour les autres, même un ADMIN ; masquée aussi en « Voir comme un participant »). « Copier la commande » la met en texte pour le restaurant, **en prénom et initiale du nom seulement, sans la liste de ceux qui n'ont pas choisi** : ce texte sort du club et des mineurs sont suivis (relecture « données personnelles »).
 - **Écarté** : relier les prix aux frais du séjour (l'addition réelle se saisit dans « Frais ») ; clore les choix à une date (l'organisateur commande quand il veut ; à revoir si le club le demande) ; lire la photo du menu dans l'appli par une IA (coût, et le prompt suffit).
 
+## Fiches de sécurité du séjour (octobre 2026)
+
+- **Demande du club** : gérer les fiches de sécurité d'un séjour depuis sa page. Onglet « Fiches de sécurité » (`SejourFichesSecuriteComponent`), encadrants qui lisent les fiches (`GET /api/sejours/{id}/fiches-securite`, MONITEUR ou ADMIN, comme la fiche elle-même : un directeur technique seul ne voit pas l'onglet), réseau obligatoire, caché en « Voir comme un participant ».
+- **Une ligne par plongée de la sortie** et l'état de sa fiche (à établir, établie, complétée au retour, signée), lus en SQL (`FichesSecuriteSejourService`). Établir, compléter, signer et imprimer passent par les écrans et les droits habituels de la fiche, sans les recopier : `?sejour=` dans l'adresse fait revenir leur « ← Séjour » à l'onglet (`navigation.ts`, `?onglet=fiches`).
+- **Ajouter une plongée** (`POST …/plongees`) : une séance dans les dates du séjour, rattachée à la sortie ; n° de plongée suivant du jour par défaut. **La supprimer** (`DELETE …/plongees/{seanceId}`) : la séance elle-même, refusé (422) dès qu'elle a une fiche, une présence ou une évaluation ; 404 pour une plongée d'une autre sortie. Les deux : **créateur et organisateurs du séjour** (`@droitsSejour.organise`), comme le reste du séjour, alors que rattacher des séances à une sortie reste à l'ADMIN et au DT (`/admin/sorties`).
+- **Supprimer une fiche reste réservé à l'ADMIN** (règle existante, test `FicheSecuriteTest`) : le bouton n'apparaît que pour lui. Tests : `FichesSecuriteSejourTest`.
+- **Écarté pour l'instant** : modifier une plongée depuis l'onglet (date, site, profondeur), qui se fait dans l'administration des séances.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.

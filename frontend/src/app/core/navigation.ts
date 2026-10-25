@@ -100,6 +100,10 @@ export class NavigationService {
       case 'exercices':
         return { libelle: 'Parcours de formation', lien: '/parcours' };
       case 'fiches-securite':
+        // Ouverte depuis l'onglet « Fiches de sécurité » d'un séjour : on y revient.
+        if (s.length >= 2 && /^\d+$/.test(String(q['sejour'] ?? ''))) {
+          return { libelle: 'Séjour', lien: `/sejours/${q['sejour']}`, parametres: { onglet: 'fiches' } };
+        }
         if (s.length === 2) return { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
         // La page de signature s'ouvre depuis la liste : on y revient.
         if (s.length === 3 && s[2] === 'signature') return { libelle: 'Fiches de sécurité', lien: '/fiches-securite' };
