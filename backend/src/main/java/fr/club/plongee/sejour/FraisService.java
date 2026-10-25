@@ -146,15 +146,19 @@ public class FraisService {
                   JOIN sejour_depense d ON d.id = ph.depense_id
                  WHERE d.sortie_id = :id ORDER BY ph.id""", id,
                 rs -> { photos.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>()).add(rs.getLong(2)); });
+        Set<Long> addition = new HashSet<>();
         List<FraisSejour.Depense> depenses = jdbc.query("""
                 SELECT * FROM sejour_depense WHERE sortie_id = :id ORDER BY jour, id""", id,
-                (rs, i) -> new FraisSejour.Depense(rs.getLong("id"), rs.getString("libelle"),
+                (rs, i) -> {
+                    if (rs.getObject("menu_id") != null) addition.add(rs.getLong("id"));
+                    return new FraisSejour.Depense(rs.getLong("id"), rs.getString("libelle"),
                         FraisSejour.CategorieDepense.valueOf(rs.getString("categorie")),
                         rs.getLong("montant_centimes"), rs.getObject("payeur_id", Long.class),
                         rs.getObject("jour", LocalDate.class), parts.getOrDefault(rs.getLong("id"), List.of()),
                         photos.getOrDefault(rs.getLong("id"), List.of()),
                         rs.getObject("saisie_par_utilisateur_id", Long.class),
-                        rs.getObject("saisie_par_participant_id", Long.class)));
+                        rs.getObject("saisie_par_participant_id", Long.class));
+                });
         List<FraisSejour.Versement> versements = jdbc.query("""
                 SELECT * FROM sejour_versement WHERE sortie_id = :id ORDER BY jour, id""", id,
                 (rs, i) -> new FraisSejour.Versement(rs.getLong("id"),
@@ -162,13 +166,20 @@ public class FraisService {
                         rs.getLong("montant_centimes"), rs.getObject("jour", LocalDate.class),
                         rs.getObject("saisie_par_utilisateur_id", Long.class),
                         rs.getObject("saisie_par_participant_id", Long.class)));
+        FraisSejour.Comptes comptes = FraisSejour.calculer(participants, depenses, versements);
+        // L'addition d'un restaurant (une dépense par personne, à son montant) dirait ce que chacun a choisi :
+        // hors organisateurs, on n'en voit que sa ligne, ou toutes si on l'a payée. Les comptes la gardent entière.
+        depenses = depenses.stream().filter(d -> !addition.contains(d.id()) || acteur.gestionnaire()
+                || (acteur.participantId() != null && (acteur.participantId().equals(d.payeurId())
+                        || d.parts().stream().anyMatch(p -> acteur.participantId().equals(p.participantId())))))
+                .toList();
         DroitsFrais droits = new DroitsFrais(acteur.participantId(), acteur.peutAjouter(), acteur.pourLesAutres(),
                 depenses.stream().filter(d -> auteur(acteur, d.saisieParUtilisateurId(), d.saisieParParticipantId()))
                         .map(FraisSejour.Depense::id).toList(),
                 versements.stream().filter(v -> auteur(acteur, v.saisieParUtilisateurId(), v.saisieParParticipantId()))
                         .map(FraisSejour.Versement::id).toList(),
                 acteur.peutAjouter() && lecteurNote.actif());
-        return new FraisVue(depenses, versements, FraisSejour.calculer(participants, depenses, versements), droits);
+        return new FraisVue(depenses, versements, comptes, droits);
     }
 
     /** L'organisateur, ou celui qui a saisi la ligne. */

@@ -637,7 +637,7 @@ function participantVide(): BrouillonParticipant {
             <p class="vide">Les menus du restaurant demandent le réseau.</p>
           } @else {
             <app-sejour-restaurant [port]="portMenus" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
-                                   [vueParticipant]="commeParticipant()" />
+                                   [vueParticipant]="commeParticipant()" (fraisAjoutes)="relireFrais()" />
           }
         </section>
       }
@@ -2143,6 +2143,11 @@ export class SejourComponent {
       return;
     }
     this.api.lire(this.id, true).subscribe({ next: v => this.base.set(v), error: () => this.base.set(s) });
+  }
+
+  /** L'addition d'un restaurant payée : le séjour relu, pour que l'onglet « Frais » montre la part de chacun. */
+  relireFrais(): void {
+    this.api.lire(this.id, this.commeParticipant()).subscribe({ next: v => this.base.set(v) });
   }
 
   private async charger(): Promise<void> {

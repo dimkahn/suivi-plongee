@@ -2,6 +2,7 @@ package fr.club.plongee.sejour;
 
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.sejour.MenusRestaurantService.DemandeChoix;
+import fr.club.plongee.sejour.MenusRestaurantService.DemandeReglement;
 import fr.club.plongee.sejour.MenusRestaurantService.MenusVue;
 import fr.club.plongee.securite.UtilisateurPrincipal;
 import jakarta.validation.Valid;
@@ -62,6 +63,14 @@ public class MenusRestaurantController {
     public MenusVue supprimer(@PathVariable Long id, @PathVariable Long menuId,
                               @AuthenticationPrincipal UtilisateurPrincipal moi) {
         return menus.supprimer(id, menuId, moi);
+    }
+
+    /** L'addition payée une fois que tout le monde a choisi : une dépense par personne dans les frais. */
+    @PostMapping("/{menuId}/reglement")
+    @PreAuthorize(GERE)
+    public MenusVue regler(@PathVariable Long id, @PathVariable Long menuId, @RequestBody DemandeReglement d,
+                           @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return menus.regler(id, menuId, d.payeurId(), moi);
     }
 
     /** Le choix d'un participant : le sien, ou celui de tout participant pour un organisateur (vérifié par le service). */

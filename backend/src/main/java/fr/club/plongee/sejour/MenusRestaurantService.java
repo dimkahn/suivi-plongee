@@ -48,14 +48,20 @@ public class MenusRestaurantService {
     public record CommandeVue(List<LignePlat> plats, List<ChoixParticipant> participants, List<SansChoix> sansChoix,
                               int totalCentimes) {}
 
-    /** {@code commande} : null pour qui n'organise pas le séjour. */
+    /** L'addition payée : {@code payeurId} null (et nom, prénom) quand c'est le club qui l'a avancée. */
+    public record ReglementVue(Long payeurId, String nom, String prenom) {}
+
+    /** {@code commande} : null pour qui n'organise pas le séjour ; {@code reglement} : null tant que l'addition n'est pas payée. */
     public record MenuVue(long id, LocalDate jour, RepasSejour repas, String restaurant, List<PlatVue> plats,
-                          List<Long> monChoix, CommandeVue commande) {}
+                          List<Long> monChoix, CommandeVue commande, ReglementVue reglement) {}
 
     /** {@code participantId} : le participant de celui qui lit, null s'il n'est pas inscrit. */
     public record MenusVue(List<MenuVue> menus, Long participantId, boolean gere) {}
 
     public record DemandeChoix(@NotNull List<@NotNull Long> platIds) {}
+
+    /** {@code payeurId} : le participant qui paie l'addition, null pour le club. */
+    public record DemandeReglement(Long payeurId) {}
 
     private final NamedParameterJdbcTemplate jdbc;
     private final SortieService sorties;
@@ -167,6 +173,7 @@ public class MenusRestaurantService {
 
     private void enregistrerChoix(Long sortieId, Long menuId, Long participantId, List<Long> platIds) {
         verifierMenu(sortieId, menuId);
+        if (paye(menuId)) throw new RegleMetierException("L'addition de ce repas est payée : les choix ne changent plus.");
         Integer inscrit = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM sejour_participant WHERE id = :p AND sortie_id = :sortie",
                 new MapSqlParameterSource("p", participantId).addValue("sortie", sortieId), Integer.class);
@@ -181,6 +188,66 @@ public class MenusRestaurantService {
             jdbc.update("INSERT INTO sejour_menu_choix (plat_id, participant_id) VALUES (:plat, :p)",
                     new MapSqlParameterSource("plat", plat).addValue("p", participantId));
         }
+    }
+
+    // ------------------------------------------------------------------
+    //  Addition (organisateurs)
+    // ------------------------------------------------------------------
+
+    /**
+     * L'addition payée, une fois que tout le monde a choisi : une dépense par
+     * personne dans les frais du séjour, à son montant, payée par
+     * {@code payeurId} (le club si null). Les plats sans prix comptent pour 0 ;
+     * qui n'a rien à payer n'a pas de dépense. Ces dépenses se corrigent
+     * ensuite dans l'onglet « Frais », comme les autres.
+     */
+    @Transactional
+    public MenusVue regler(Long sortieId, Long menuId, Long payeurId, UtilisateurPrincipal moi) {
+        verifierMenu(sortieId, menuId);
+        if (paye(menuId)) {
+            throw new RegleMetierException("L'addition de ce repas est déjà payée : ses frais sont dans l'onglet « Frais ».");
+        }
+        MenuVue menu = vue(sortieId, null, true).menus().stream().filter(m -> m.id() == menuId).findFirst().orElseThrow();
+        CommandeVue c = menu.commande();
+        if (!c.sansChoix().isEmpty()) {
+            throw new RegleMetierException("Tout le monde n'a pas encore choisi : " + String.join(", ",
+                    c.sansChoix().stream().map(s -> court(s.prenom(), s.nom())).toList()));
+        }
+        if (c.totalCentimes() == 0) {
+            throw new RegleMetierException("Aucun plat choisi n'a de prix : saisissez l'addition dans l'onglet « Frais ».");
+        }
+        String libelle = (menu.restaurant() == null ? "Restaurant" : "Restaurant " + menu.restaurant()) + ", "
+                + nomDuRepas(menu.repas()) + " du " + DateTimeFormatter.ofPattern("dd/MM").format(menu.jour()) + " : ";
+        var acteur = frais.acteur(sortieId, moi);
+        for (ChoixParticipant p : c.participants()) {
+            if (p.totalCentimes() == 0) continue;
+            String qui = court(p.prenom(), p.nom());
+            String ligne = libelle.length() + qui.length() > 160 ? libelle.substring(0, 160 - qui.length()) + qui : libelle + qui;
+            long depense = frais.creerDepense(sortieId, new FraisService.DemandeDepense(ligne, FraisSejour.CategorieDepense.REPAS,
+                    (long) p.totalCentimes(), payeurId, menu.jour(), List.of(new FraisSejour.Part(p.participantId(), 1))), acteur);
+            jdbc.update("UPDATE sejour_depense SET menu_id = :menu WHERE id = :d",
+                    new MapSqlParameterSource("menu", menuId).addValue("d", depense));
+        }
+        return lire(sortieId, moi);
+    }
+
+    private boolean paye(Long menuId) {
+        Integer n = jdbc.queryForObject("SELECT COUNT(*) FROM sejour_depense WHERE menu_id = :menu",
+                new MapSqlParameterSource("menu", menuId), Integer.class);
+        return n != null && n > 0;
+    }
+
+    /** « Léo D. » : prénom et initiale du nom, comme la commande copiée pour le restaurant. */
+    private static String court(String prenom, String nom) {
+        return nom == null || nom.isBlank() ? prenom : prenom + " " + Character.toUpperCase(nom.strip().charAt(0)) + ".";
+    }
+
+    private static String nomDuRepas(RepasSejour repas) {
+        return switch (repas) {
+            case PETIT_DEJEUNER -> "petit-déjeuner";
+            case DEJEUNER -> "déjeuner";
+            case DINER -> "dîner";
+        };
     }
 
     private void verifierMenu(Long sortieId, Long menuId) {
@@ -218,6 +285,14 @@ public class MenusRestaurantService {
                 SELECT id, nom, prenom FROM sejour_participant WHERE sortie_id = :sortie
                  ORDER BY LOWER(nom), LOWER(prenom), id""", sortie,
                 (rs, i) -> new Inscrit(rs.getLong("id"), rs.getString("nom"), rs.getString("prenom"))) : List.of();
+        Map<Long, ReglementVue> reglements = new LinkedHashMap<>();
+        jdbc.query("""
+                SELECT d.menu_id, d.payeur_id, p.nom, p.prenom FROM sejour_depense d
+                  LEFT JOIN sejour_participant p ON p.id = d.payeur_id
+                 WHERE d.sortie_id = :sortie AND d.menu_id IS NOT NULL ORDER BY d.id""", sortie, rs -> {
+            reglements.putIfAbsent(rs.getLong("menu_id"), new ReglementVue(rs.getObject("payeur_id", Long.class),
+                    rs.getString("nom"), rs.getString("prenom")));
+        });
         List<MenuVue> menus = jdbc.query("""
                 SELECT id, jour, repas, restaurant FROM sejour_menu WHERE sortie_id = :sortie ORDER BY jour, id""", sortie,
                 (rs, i) -> {
@@ -227,7 +302,8 @@ public class MenusRestaurantService {
                     List<Long> mien = participantId == null ? List.of()
                             : duMenu.stream().filter(c -> c.participantId() == participantId).map(Choix::platId).toList();
                     return new MenuVue(id, rs.getObject("jour", LocalDate.class), RepasSejour.valueOf(rs.getString("repas")),
-                            rs.getString("restaurant"), plats, mien, gere ? commande(plats, duMenu, inscrits) : null);
+                            rs.getString("restaurant"), plats, mien, gere ? commande(plats, duMenu, inscrits) : null,
+                            reglements.get(id));
                 });
         menus = menus.stream()
                 .sorted((a, b) -> a.jour().equals(b.jour()) ? a.repas().compareTo(b.repas()) : a.jour().compareTo(b.jour()))

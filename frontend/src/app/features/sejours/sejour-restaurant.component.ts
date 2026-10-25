@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, computed, input, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, input, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -68,9 +68,13 @@ interface ChoixEnCours {
                 <p><strong>Mon choix :</strong> {{ noms(m, m.monChoix) }}@if (totalDuChoix(m.plats, m.monChoix) > 0) {
                   ({{ euros(totalDuChoix(m.plats, m.monChoix)) }})}</p>
               }
-              <button type="button" class="bouton-principal choisir-plats" (click)="ouvrirChoix(m, v.participantId, null)">
-                {{ m.monChoix.length === 0 ? 'Choisir mes plats' : 'Modifier mon choix' }}
-              </button>
+              @if (m.reglement) {
+                <span class="etiquette-etat ok">Addition payée</span>
+              } @else {
+                <button type="button" class="bouton-principal choisir-plats" (click)="ouvrirChoix(m, v.participantId, null)">
+                  {{ m.monChoix.length === 0 ? 'Choisir mes plats' : 'Modifier mon choix' }}
+                </button>
+              }
             </div>
           } @else {
             <details>
@@ -110,18 +114,36 @@ interface ChoixEnCours {
                   <li>
                     <span><strong>{{ p.prenom }} {{ p.nom }}</strong> : {{ noms(m, p.platIds) }}@if (p.totalCentimes > 0) {
                       ({{ euros(p.totalCentimes) }})}</span>
-                    <button type="button" class="bouton-discret" (click)="ouvrirChoix(m, p.participantId, p.prenom + ' ' + p.nom)">
-                      Modifier</button>
+                    @if (!m.reglement) {
+                      <button type="button" class="bouton-discret" (click)="ouvrirChoix(m, p.participantId, p.prenom + ' ' + p.nom)">
+                        Modifier</button>
+                    }
                   </li>
                 }
                 @for (p of c.sansChoix; track p.participantId) {
                   <li>
                     <span><strong>{{ p.prenom }} {{ p.nom }}</strong> : <span class="secondaire">pas encore choisi</span></span>
-                    <button type="button" class="bouton-discret" (click)="ouvrirChoix(m, p.participantId, p.prenom + ' ' + p.nom)">
-                      Choisir pour {{ p.prenom }}</button>
+                    @if (!m.reglement) {
+                      <button type="button" class="bouton-discret" (click)="ouvrirChoix(m, p.participantId, p.prenom + ' ' + p.nom)">
+                        Choisir pour {{ p.prenom }}</button>
+                    }
                   </li>
                 }
               </ul>
+              <div class="addition">
+                @if (m.reglement; as r) {
+                  <p><span class="etiquette-etat ok">Addition payée</span>
+                    par {{ r.payeurId === null ? 'le club' : r.prenom + ' ' + r.nom }} : les frais de chacun sont dans
+                    l'onglet « Frais », où ils se corrigent.</p>
+                } @else if (c.sansChoix.length === 0 && c.totalCentimes > 0) {
+                  <p>Tout le monde a choisi : {{ euros(c.totalCentimes) }} en tout.</p>
+                  <button type="button" class="bouton-principal payer-addition" (click)="ouvrirReglement(m)">
+                    Payer l'addition</button>
+                } @else if (c.sansChoix.length > 0) {
+                  <p class="secondaire">« Payer l'addition » sera proposé quand tout le monde aura choisi
+                    (encore {{ c.sansChoix.length }}).</p>
+                }
+              </div>
             </div>
           }
         </section>
@@ -135,7 +157,7 @@ interface ChoixEnCours {
                   [titre]="choix()?.pour ? 'Choix de ' + choix()!.pour : 'Mon choix'" (fermer)="choix.set(null)">
       @if (choix(); as c) {
         <p class="secondaire">{{ titre(c.menu) }}. Cochez ce que vous voulez ; vous pourrez changer d'avis tant que
-          l'organisateur n'a pas passé la commande.</p>
+          l'addition n'est pas payée.</p>
         @for (g of parCategorie(c.menu.plats); track g.categorie) {
           <fieldset>
             <legend>{{ g.categorie }}</legend>
@@ -204,6 +226,37 @@ interface ChoixEnCours {
       }
     </app-dialogue>
 
+    <!-- Payer l'addition (organisateurs, quand tout le monde a choisi) -->
+    <app-dialogue [ouvert]="aRegler() !== null" [erreur]="erreur()" titre="Payer l'addition"
+                  (fermer)="aRegler.set(null)">
+      @if (aRegler(); as m) {
+        @if (m.commande; as c) {
+          <form class="dialogue-formulaire" (ngSubmit)="regler(m)">
+            <p class="secondaire">{{ titre(m) }}. Chacun sera noté dans les frais du séjour pour ce qu'il a choisi :</p>
+            <ul class="personnes">
+              @for (p of c.participants; track p.participantId) {
+                <li><span>{{ p.prenom }} {{ p.nom }}</span> <strong>{{ euros(p.totalCentimes) }}</strong></li>
+              }
+              <li><strong>Total</strong> <strong>{{ euros(c.totalCentimes) }}</strong></li>
+            </ul>
+            <label for="addition-payeur">Qui paie l'addition ?</label>
+            <select id="addition-payeur" name="payeur" [(ngModel)]="payeur">
+              @for (p of c.participants; track p.participantId) {
+                <option [ngValue]="p.participantId">{{ p.prenom }} {{ p.nom }}</option>
+              }
+              <option [ngValue]="null">Le club</option>
+            </select>
+            <p class="secondaire">Ensuite, les choix ne changent plus ; les frais se corrigent dans l'onglet « Frais ».</p>
+            <div class="actions-dialogue">
+              <button type="submit" class="bouton-principal" [disabled]="envoi()">
+                {{ envoi() ? 'Envoi…' : 'Enregistrer les frais' }}</button>
+              <button type="button" class="bouton-discret" (click)="aRegler.set(null)">Annuler</button>
+            </div>
+          </form>
+        }
+      }
+    </app-dialogue>
+
     <app-dialogue [ouvert]="aSupprimer() !== null" [erreur]="erreur()" titre="Supprimer le menu ?"
                   (fermer)="aSupprimer.set(null)">
       @if (aSupprimer(); as m) {
@@ -225,6 +278,7 @@ interface ChoixEnCours {
     .commande { border-top: 1px solid var(--trait); margin-top: var(--pas-2); padding-top: var(--pas); }
     .plats, .personnes { list-style: none; margin: 0; padding: 0; }
     .plats li { padding: calc(var(--pas) / 2) 0; }
+    .addition { margin-top: var(--pas-2); }
     .personnes li { display: flex; justify-content: space-between; align-items: center; gap: var(--pas);
                     flex-wrap: wrap; min-height: 44px; border-bottom: 1px solid var(--trait); }
     fieldset { border: none; padding: 0; margin: 0 0 var(--pas-2); }
@@ -242,6 +296,8 @@ export class SejourRestaurantComponent implements OnInit {
   dateFin = input.required<string>();
   /** « Voir comme un participant » : sans import ni commande complète, même pour un organisateur. */
   vueParticipant = input(false);
+  /** L'addition payée : des dépenses ont été ajoutées aux frais du séjour. */
+  fraisAjoutes = output<void>();
 
   readonly REPAS = REPAS;
   readonly PROMPT_MENU = PROMPT_MENU;
@@ -260,6 +316,9 @@ export class SejourRestaurantComponent implements OnInit {
 
   importOuvert = signal(false);
   aSupprimer = signal<MenuVue | null>(null);
+  aRegler = signal<MenuVue | null>(null);
+  /** Qui paie l'addition : un participant, ou null pour le club. */
+  payeur: number | null = null;
   promptCopie = signal(false);
   jour = '';
   repas: Repas = 'DINER';
@@ -360,6 +419,24 @@ export class SejourRestaurantComponent implements OnInit {
     this.envoyer(this.port().supprimer(m.id), () => {
       this.aSupprimer.set(null);
       this.message.set('Le menu est supprimé.');
+    });
+  }
+
+  // -- Addition (organisateurs) --------------------------------------
+
+  /** Par défaut, c'est l'organisateur qui paie s'il est du séjour, sinon le club. */
+  ouvrirReglement(m: MenuVue): void {
+    const moi = this.vue()?.participantId ?? null;
+    this.erreur.set(null);
+    this.payeur = m.commande?.participants.some(p => p.participantId === moi) ? moi : null;
+    this.aRegler.set(m);
+  }
+
+  regler(m: MenuVue): void {
+    this.envoyer(this.port().regler(m.id, this.payeur), () => {
+      this.aRegler.set(null);
+      this.fraisAjoutes.emit();
+      this.message.set('L’addition est payée : la part de chacun est dans l’onglet « Frais ».');
     });
   }
 

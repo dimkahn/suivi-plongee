@@ -262,6 +262,101 @@ class MenuRestaurantTest {
         assertThat(menu.get("commande").get("sansChoix")).hasSize(2);
     }
 
+    /** Le menu du dîner du 2 août, avec le choix de Camille (soupe et daurade, 30,50 €) et, si demandé, de Léo (risotto, 17 €). */
+    private JsonNode menuChoisi(String dt, String base, boolean leoChoisit) throws Exception {
+        JsonNode menu = importer(base, dt, "menu.xlsx", menuXlsx(), "2031-08-02", "DINER", 200).get("menus").get(0);
+        String choix = base + "/menus/" + menu.get("id").asLong() + "/choix/";
+        JsonNode sejour = envoyer("GET", base, dt, null, 200);
+        envoyer("PUT", choix + participant(sejour, "Camille").get("id").asLong(), dt, """
+                {"platIds":[%d,%d]}""".formatted(plat(menu, "Soupe de poissons"), plat(menu, "Daurade grillée")), 200);
+        if (leoChoisit) {
+            envoyer("PUT", choix + participant(sejour, "Léo").get("id").asLong(), dt,
+                    "{\"platIds\":[%d]}".formatted(plat(menu, "Risotto aux champignons")), 200);
+        }
+        return menu;
+    }
+
+    @Test
+    @DisplayName("Quand tout le monde a choisi, l'organisateur paie l'addition : une dépense par personne, à son montant")
+    void reglerLAddition() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu8@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        long leo = participant(envoyer("GET", base, dt, null, 200), "Léo").get("id").asLong();
+
+        // Léo paie l'addition pour tout le monde.
+        JsonNode vue = envoyer("POST", base + "/menus/" + menu.get("id").asLong() + "/reglement", dt,
+                "{\"payeurId\":%d}".formatted(leo), 200);
+        JsonNode reglement = vue.get("menus").get(0).get("reglement");
+        assertThat(reglement.get("payeurId").asLong()).isEqualTo(leo);
+        assertThat(reglement.get("prenom").asText()).isEqualTo("Léo");
+
+        JsonNode frais = envoyer("GET", base, dt, null, 200).get("frais");
+        List<String> lignes = new ArrayList<>();
+        for (JsonNode d : frais.get("depenses")) {
+            assertThat(d.get("payeurId").asLong()).isEqualTo(leo);
+            assertThat(d.get("categorie").asText()).isEqualTo("REPAS");
+            assertThat(d.get("jour").asText()).isEqualTo("2031-08-02");
+            assertThat(d.get("parts")).hasSize(1);
+            lignes.add(d.get("libelle").asText() + " = " + d.get("montantCentimes").asLong());
+        }
+        assertThat(lignes).containsExactlyInAnyOrder(
+                "Restaurant Le Sémaphore, dîner du 02/08 : Camille B. = 3050",
+                "Restaurant Le Sémaphore, dîner du 02/08 : Léo D. = 1700");
+    }
+
+    @Test
+    @DisplayName("Dans les frais, un participant ne voit de l'addition que sa part : le montant des autres dirait ce qu'ils ont choisi")
+    void partDesAutresMasquee() throws Exception {
+        String dt = jeton("e3@club.fr"), camille = jeton("eleve@club.fr");
+        String base = sejour(dt, "leo.menu11@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        envoyer("POST", base + "/menus/" + menu.get("id").asLong() + "/reglement", dt, "{\"payeurId\":null}", 200);
+
+        JsonNode frais = envoyer("GET", base, camille, null, 200).get("frais");
+        assertThat(frais.get("depenses")).hasSize(1);
+        assertThat(frais.get("depenses").get(0).get("libelle").asText()).endsWith("Camille B.");
+        // Les comptes restent faits sur toute l'addition : chacun doit sa part au club.
+        assertThat(frais.get("comptes").toString()).contains("1700");
+    }
+
+    @Test
+    @DisplayName("L'addition ne se paie pas tant que quelqu'un n'a pas choisi")
+    void reglerAvantQueToutLeMondeAitChoisi() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, "leo.menu9@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, false);
+        assertThat(envoyer("POST", base + "/menus/" + menu.get("id").asLong() + "/reglement", dt,
+                "{\"payeurId\":null}", 422).get("detail").asText())
+                .isEqualTo("Tout le monde n'a pas encore choisi : Léo D.");
+        assertThat(envoyer("GET", base, dt, null, 200).get("frais").get("depenses")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Seul un organisateur paie l'addition, une seule fois, et les choix ne changent plus ensuite")
+    void reglementReserveEtDefinitif() throws Exception {
+        String dt = jeton("e3@club.fr"), e1 = jeton("e1@club.fr"), camille = jeton("eleve@club.fr");
+        String base = sejour(dt, "leo.menu10@exemple.fr");
+        JsonNode menu = menuChoisi(dt, base, true);
+        String reglement = base + "/menus/" + menu.get("id").asLong() + "/reglement";
+        envoyer("POST", reglement, e1, "{\"payeurId\":null}", 403);
+        envoyer("POST", reglement, camille, "{\"payeurId\":null}", 403);
+
+        // Payée par le club : chacun lui doit sa part.
+        JsonNode vue = envoyer("POST", reglement, dt, "{\"payeurId\":null}", 200);
+        assertThat(vue.get("menus").get(0).get("reglement").get("payeurId").isNull()).isTrue();
+        assertThat(envoyer("GET", base, dt, null, 200).get("frais").get("depenses")).hasSize(2);
+
+        assertThat(envoyer("POST", reglement, dt, "{\"payeurId\":null}", 422).get("detail").asText())
+                .isEqualTo("L'addition de ce repas est déjà payée : ses frais sont dans l'onglet « Frais ».");
+        long pCamille = participant(envoyer("GET", base, dt, null, 200), "Camille").get("id").asLong();
+        JsonNode lue = envoyer("GET", base + "/menus", camille, null, 200).get("menus").get(0);
+        assertThat(lue.get("reglement").isNull()).isFalse();
+        assertThat(envoyer("PUT", base + "/menus/" + menu.get("id").asLong() + "/choix/" + pCamille, camille,
+                "{\"platIds\":[%d]}".formatted(plat(menu, "Tarte au citron")), 422).get("detail").asText())
+                .isEqualTo("L'addition de ce repas est payée : les choix ne changent plus.");
+    }
+
     @Test
     @DisplayName("Un élève qui ne participe pas au séjour ne lit pas ses menus")
     void eleveNonParticipant() throws Exception {

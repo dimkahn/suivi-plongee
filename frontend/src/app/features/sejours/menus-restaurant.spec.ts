@@ -11,6 +11,7 @@ const menu: MenuVue = {
     { id: 14, categorie: 'Entrée', nom: 'Salade', description: null, prixCentimes: 800 }
   ],
   monChoix: [],
+  reglement: null,
   commande: {
     plats: [{ platId: 10, nombre: 1 }, { platId: 11, nombre: 2 }],
     participants: [
