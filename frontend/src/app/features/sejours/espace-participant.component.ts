@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, Injector, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Observable, firstValueFrom, map, tap, throwError } from 'rxjs';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from '../../core/base-locale';
@@ -21,6 +21,7 @@ import {
 import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
 import { cleJetonLienSejour, cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
+import { oublierSejour, retenirSejour, sejourRetenu, ticketQrCode } from './sejour-courant';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
@@ -72,7 +73,8 @@ interface CopieLien {
  * trombinoscope (les seules photos rendues visibles aux participants). Pendant le séjour, l'encart
  * « Aujourd'hui » : son voyage du jour, le programme, le rappel de la veille. Sans connexion à l'appli ; le
  * jeton reste sur l'appareil jusqu'à « Se déconnecter » ou 60 jours après
- * le séjour.
+ * le séjour. Le QR code montré par l'organisateur (`#qr=…`, une minute)
+ * connecte sans e-mail ni code, jusqu'à un mois après le séjour.
  */
 @Component({
   selector: 'app-espace-participant',
@@ -187,6 +189,7 @@ interface CopieLien {
 export class EspaceParticipantComponent {
   private http = inject(HttpClient);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private readonly code = this.route.snapshot.paramMap.get('code') ?? '';
   private readonly base = `/api/public/sejour/${encodeURIComponent(this.code)}`;
   private readonly cle = cleJetonLienSejour(this.code);
@@ -406,10 +409,9 @@ export class EspaceParticipantComponent {
     this.envoi.set(true);
     this.erreur.set(null);
     try {
-      const c = await firstValueFrom(this.http.post<{ jeton: string }>(`${this.base}/connexion`,
+      const c = await firstValueFrom(this.http.post<{ jeton: string; expireLe: string }>(`${this.base}/connexion`,
         { email: this.email.trim(), code: this.codeSaisi.trim() }));
-      this.jeton = c.jeton;
-      await ecrire<JetonGarde>(MAGASIN_CACHE, { cle: this.cle, valeur: c.jeton });
+      await this.garderJeton(c.jeton, c.expireLe);
       await this.charger();
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'entrée n'a pas abouti (réseau nécessaire).");
@@ -440,13 +442,47 @@ export class EspaceParticipantComponent {
       this.chargement.set(false);
       return;
     }
+    const ticket = ticketQrCode(this.route.snapshot.fragment);
+    if (ticket) {
+      // Le ticket ne sert qu'une fois : il quitte l'adresse, qu'on ne le rejoue pas en rechargeant la page.
+      await this.router.navigate([], { fragment: undefined, replaceUrl: true });
+      if (await this.entrerParQrCode(ticket)) {
+        this.chargement.set(false);
+        return;
+      }
+    }
     try {
       this.jeton = (await lire<JetonGarde>(MAGASIN_CACHE, this.cle))?.valeur ?? null;
     } catch { this.jeton = null; }
     if (this.jeton) {
-      try { await this.charger(); } catch { /* jeton expiré : on redemande le code */ }
+      try {
+        await this.charger();
+        // Entré avant que le téléphone ne retienne son séjour : l'appli y revient désormais.
+        if (!await sejourRetenu()) await retenirSejour(this.code, null);
+      } catch { /* jeton expiré : on redemande le code */ }
     }
     this.chargement.set(false);
+  }
+
+  /** Le QR code montré par l'organisateur : connecté sans e-mail ni code ; faux si refusé. */
+  private async entrerParQrCode(ticket: string): Promise<boolean> {
+    try {
+      const c = await firstValueFrom(this.http.post<{ jeton: string; expireLe: string }>(
+        `${this.base}/connexion-qr-code`, { ticket }));
+      await this.garderJeton(c.jeton, c.expireLe);
+      await this.charger();
+      return true;
+    } catch (e) {
+      this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'entrée par QR code n'a pas abouti (réseau nécessaire).");
+      return false;
+    }
+  }
+
+  /** Le jeton sur ce téléphone, et son séjour, que l'appli installée rouvre au démarrage. */
+  private async garderJeton(jeton: string, expireLe: string | null): Promise<void> {
+    this.jeton = jeton;
+    await ecrire<JetonGarde>(MAGASIN_CACHE, { cle: this.cle, valeur: jeton });
+    await retenirSejour(this.code, expireLe);
   }
 
   /** Les frais et ses informations, ensemble ; un jeton refusé ramène à l'entrée. */
@@ -503,6 +539,7 @@ export class EspaceParticipantComponent {
     this.carnet.set(null);
     this.etape.set('email');
     try { await supprimer(MAGASIN_CACHE, this.cle); } catch { /* rien à effacer */ }
+    await oublierSejour(this.code);
   }
 
   private suivre(o: Observable<FraisPublicVue>): Observable<FraisVue> {

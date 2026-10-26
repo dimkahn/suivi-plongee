@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { EtiquetteMateriel } from '../../core/modeles';
-import { QrCodeComponent } from './qr-code.component';
+import { QrCodeComponent } from '../../core/qr-code.component';
 
 type Format = 'petit' | 'grand';
 

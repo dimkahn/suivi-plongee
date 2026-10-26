@@ -4,6 +4,7 @@ import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.identite.IdentiteStructureService;
+import fr.club.plongee.materiel.service.QrCodeMaterielService;
 import fr.club.plongee.notification.service.ServiceNotification;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -55,11 +56,14 @@ public class AccesSejourService {
     static final int ESSAIS_MAX = 5;
     static final int SECONDES_ENTRE_DEUX_ENVOIS = 60;
     static final int JOURS_APRES_LE_SEJOUR = 60;
+    static final int SECONDES_VALIDITE_QR_CODE = 60;
+    static final int MOIS_APRES_LE_SEJOUR_QR_CODE = 1;
 
     /** L'en-tête de la page publique : de quel séjour il s'agit. */
     public record EnteteVue(String nom, String lieu, LocalDate dateDebut, LocalDate dateFin) {}
 
-    public record Connexion(String jeton, Long participantId, String prenom, String nom) {}
+    /** {@code expireLe} : la fin de la connexion, pour que le téléphone l'oublie ensuite. */
+    public record Connexion(String jeton, Long participantId, String prenom, String nom, LocalDateTime expireLe) {}
 
     public record ParticipantCourtVue(Long id, String prenom, String nom) {}
 
@@ -249,19 +253,112 @@ public class AccesSejourService {
                     ? " : demandez-en un nouveau." : " : vérifiez les 6 chiffres reçus par e-mail."));
         }
         jdbc.update("DELETE FROM sejour_code_acces WHERE participant_id = :p", p);
-        String jeton = aleatoire(32);
         LocalDateTime fin = sejour.dateFin().plusDays(JOURS_APRES_LE_SEJOUR).atTime(23, 59);
         if (fin.isBefore(maintenant().plusDays(1))) fin = maintenant().plusDays(1);
+        return ouvrirJeton(participant, fin);
+    }
+
+    /** Un jeton pour ce participant, jusqu'à {@code fin} ; en base, son empreinte seulement. */
+    private Connexion ouvrirJeton(Long participant, LocalDateTime fin) {
+        var p = new MapSqlParameterSource("p", participant);
+        String jeton = aleatoire(32);
         jdbc.update("""
                 INSERT INTO sejour_jeton_acces (participant_id, empreinte, expire_le, cree_le)
                 VALUES (:p, :empreinte, :expire, :maintenant)""",
                 p.addValue("empreinte", empreinte(jeton)).addValue("expire", fin).addValue("maintenant", maintenant()));
         Map<String, Object> nom = jdbc.queryForMap("SELECT prenom, nom FROM sejour_participant WHERE id = :p", p);
-        return new Connexion(jeton, participant, (String) nom.get("prenom"), (String) nom.get("nom"));
+        return new Connexion(jeton, participant, (String) nom.get("prenom"), (String) nom.get("nom"), fin);
+    }
+
+    // ------------------------------------------------------------------
+    //  Connexion par QR code
+    // ------------------------------------------------------------------
+
+    /**
+     * Le QR code que l'organisateur montre au participant choisi : l'adresse
+     * du séjour et un ticket d'une minute, à usage unique ; {@code modules},
+     * lignes de « 0 » et « 1 », dessinées par l'écran.
+     */
+    public record QrCodeConnexionVue(String adresse, List<String> modules, LocalDateTime expireLe) {}
+
+    /**
+     * Fabrique le QR code qui connecte ce participant, s'il entre par le lien
+     * (pas un encadrant) et tant que le séjour n'est pas fini depuis plus d'un
+     * mois. Un nouveau QR code remplace le précédent.
+     */
+    @Transactional
+    public QrCodeConnexionVue qrCodeConnexion(Long sortieId, Long participantId) {
+        String code = codeFrais(sortieId);
+        List<Map<String, Object>> lignes = jdbc.queryForList("""
+                SELECT p.prenom, p.nom, CASE WHEN %s THEN 1 ELSE 0 END AS encadrant
+                  FROM sejour_participant p LEFT JOIN eleve e ON e.id = p.eleve_id
+                 WHERE p.id = :p AND p.sortie_id = :sortie""".formatted(EST_ENCADRANT),
+                new MapSqlParameterSource("p", participantId).addValue("sortie", sortieId));
+        if (lignes.isEmpty()) throw new RessourceIntrouvableException("Participant introuvable dans ce séjour");
+        Map<String, Object> ligne = lignes.getFirst();
+        if (((Number) ligne.get("encadrant")).intValue() == 1) {
+            throw new RegleMetierException(ligne.get("prenom") + " " + ligne.get("nom")
+                    + " est encadrant : la connexion se fait dans l'appli, avec son compte.");
+        }
+        if (finConnexionQrCode(entete(code)).isBefore(maintenant())) {
+            throw new RegleMetierException("Le séjour est fini depuis plus d'un mois : plus de connexion par QR code.");
+        }
+        var p = new MapSqlParameterSource("p", participantId);
+        effacerTicketsPerimes();
+        jdbc.update("DELETE FROM sejour_ticket_qr WHERE participant_id = :p", p);
+        // Un QR code refait : l'ancien a peut-être été scanné par un autre ; ses appareils sont déconnectés.
+        jdbc.update("DELETE FROM sejour_jeton_acces WHERE participant_id = :p", p);
+        String ticket = aleatoire(24);
+        LocalDateTime expire = maintenant().plusSeconds(SECONDES_VALIDITE_QR_CODE);
+        jdbc.update("""
+                INSERT INTO sejour_ticket_qr (participant_id, empreinte, expire_le, cree_le)
+                VALUES (:p, :empreinte, :expire, :maintenant)""",
+                p.addValue("empreinte", empreinte(ticket)).addValue("expire", expire).addValue("maintenant", maintenant()));
+        // Le ticket dans le fragment : ni envoyé au serveur web (journaux), ni dans le Referer.
+        String adresse = urlFrontend + "/sejour/" + code + "#qr=" + ticket;
+        return new QrCodeConnexionVue(adresse, QrCodeMaterielService.modules(adresse), expire);
+    }
+
+    /**
+     * Le QR code scanné : un ticket valable pour cette adresse ouvre un jeton
+     * jusqu'à un mois après la fin du séjour ; il ne sert qu'une fois.
+     */
+    @Transactional(noRollbackFor = RegleMetierException.class)
+    public Connexion connecterParQrCode(String code, String ticket) {
+        EnteteVue sejour = entete(code);
+        String refus = "QR code expiré ou déjà utilisé : demandez-en un nouveau à l'organisateur.";
+        effacerTicketsPerimes();
+        if (ticket == null || ticket.isBlank()) throw new RegleMetierException(refus);
+        record TicketEnBase(long id, long participantId, LocalDateTime expire) {}
+        List<TicketEnBase> tickets = jdbc.query("""
+                SELECT t.id, t.participant_id, t.expire_le FROM sejour_ticket_qr t
+                  JOIN sejour_participant p ON p.id = t.participant_id
+                  JOIN sejour s ON s.sortie_id = p.sortie_id
+                 WHERE t.empreinte = :e AND s.code_frais = :code""",
+                new MapSqlParameterSource("e", empreinte(ticket.trim())).addValue("code", code),
+                (rs, i) -> new TicketEnBase(rs.getLong(1), rs.getLong(2), rs.getObject(3, LocalDateTime.class)));
+        if (tickets.isEmpty()) throw new RegleMetierException(refus);
+        TicketEnBase t = tickets.getFirst();
+        jdbc.update("DELETE FROM sejour_ticket_qr WHERE id = :id", new MapSqlParameterSource("id", t.id()));
+        if (t.expire().isBefore(maintenant())) throw new RegleMetierException(refus);
+        return ouvrirJeton(t.participantId(), finConnexionQrCode(sejour));
+    }
+
+    /** Un QR code montré mais jamais scanné ne reste pas en base. */
+    private void effacerTicketsPerimes() {
+        jdbc.update("DELETE FROM sejour_ticket_qr WHERE expire_le < :maintenant",
+                new MapSqlParameterSource("maintenant", maintenant()));
+    }
+
+    /** La connexion par QR code dure jusqu'à un mois après la fin du séjour. */
+    private static LocalDateTime finConnexionQrCode(EnteteVue sejour) {
+        LocalDate fin = sejour.dateFin() == null ? sejour.dateDebut() : sejour.dateFin();
+        return fin.plusMonths(MOIS_APRES_LE_SEJOUR_QR_CODE).atTime(23, 59);
     }
 
     /** L'entrée depuis la page de connexion : le séjour ouvert et son adresse, que la page n'avait pas. */
-    public record ConnexionSansLien(String sejour, String jeton, Long participantId, String prenom, String nom) {}
+    public record ConnexionSansLien(String sejour, String jeton, Long participantId, String prenom, String nom,
+                                    LocalDateTime expireLe) {}
 
     /**
      * Sans le lien, depuis la page de connexion : le code part pour le séjour
@@ -288,7 +385,7 @@ public class AccesSejourService {
         } catch (RegleMetierException e) {
             throw new RegleMetierException(refus);
         }
-        return new ConnexionSansLien(code, c.jeton(), c.participantId(), c.prenom(), c.nom());
+        return new ConnexionSansLien(code, c.jeton(), c.participantId(), c.prenom(), c.nom(), c.expireLe());
     }
 
     @Transactional

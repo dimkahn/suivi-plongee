@@ -472,6 +472,13 @@ export interface BilanEnvoiAcces {
   echecs: string[];
 }
 
+/** Le QR code de connexion d'un participant : son adresse, ses carrés (« 1 » = noir), sa fin (une minute). */
+export interface QrCodeConnexionVue {
+  adresse: string;
+  modules: string[];
+  expireLe: string;
+}
+
 /** « 1 234,50 € ». */
 export function euros(centimes: number): string {
   return (centimes / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
@@ -882,6 +889,11 @@ export class SejourApi {
    */
   envoyerInvitations(id: number, participantIds: number[] | null): Observable<BilanEnvoiAcces> {
     return this.http.post<BilanEnvoiAcces>(`/api/sejours/${id}/invitations`, { participantIds });
+  }
+
+  /** Le QR code, valable une minute, qui connecte ce participant au séjour sur son téléphone. */
+  qrCodeConnexion(id: number, participantId: number): Observable<QrCodeConnexionVue> {
+    return this.http.post<QrCodeConnexionVue>(`/api/sejours/${id}/participants/${participantId}/qr-code`, {});
   }
 
   /** Le participant connecté complète ses propres informations. */

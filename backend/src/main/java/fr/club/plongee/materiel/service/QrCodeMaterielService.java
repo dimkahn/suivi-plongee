@@ -147,8 +147,11 @@ public class QrCodeMaterielService {
                 "Aucun QR code lisible sur la photo. Rapprochez-vous de l'étiquette, bien à plat et nette.");
     }
 
-    /** Correction d'erreur moyenne (15 %) : une étiquette un peu rayée ou mouillée reste lisible. */
-    static List<String> modules(String texte) {
+    /**
+     * Correction d'erreur moyenne (15 %) : une étiquette un peu rayée ou mouillée reste lisible.
+     * Sert aussi au QR code de connexion d'un participant de séjour.
+     */
+    public static List<String> modules(String texte) {
         QRCode qr;
         try {
             qr = Encoder.encode(texte, ErrorCorrectionLevel.M, Map.of(EncodeHintType.CHARACTER_SET, "UTF-8"));

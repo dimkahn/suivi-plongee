@@ -4,11 +4,12 @@ rubrique: Découverte
 pour: sans-compte
 videos: M1
 ecran: /connexion
-mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent, ordinateur, téléphone, format, version, aide pour, droits, je ne trouve pas, manuel absent, séjour, participant, élève, invité, parent, code, code reçu par e-mail, sans compte, sans mot de passe, lien perdu
+mots: connexion, identifiant, login, mot de passe oublié, réinitialiser, écran d'accueil, installer, application, menu, plus, barre du bas, onglets, vidéos d'aide, comment faire, retour, revenir, flèche, précédent, ordinateur, téléphone, format, version, aide pour, droits, je ne trouve pas, manuel absent, séjour, participant, élève, invité, parent, code, code reçu par e-mail, sans compte, sans mot de passe, lien perdu, qr code, qrcode, scanner, ouvre mon séjour
 questions:
 - Comment me connecter ?
 - J'ai oublié mon mot de passe
 - Je participe à un séjour sans compte : comment entrer ?
+- Pourquoi l'appli m'emmène-t-elle directement à mon séjour ?
 - Où sont les écrans ?
 - Comment me déconnecter ?
 - Où est passé le menu ?
@@ -59,6 +60,8 @@ En haut de chaque écran, la même barre :
 2. Donnez l'adresse e-mail que vous avez donnée à l'organisateur, puis « Recevoir le code ».
 3. Entrez le code à 6 chiffres reçu par e-mail, puis « Entrer » : la page de votre séjour s'ouvre (voir « Mon séjour, par le lien reçu par e-mail »).
 4. Inscrit à plusieurs séjours ? C'est le séjour en cours ou le prochain qui s'ouvre ; pour un autre, prenez le lien de son e-mail.
+
+Ou, plus simple : demandez à l'organisateur le **QR code de connexion** et scannez-le avec l'appareil photo de votre téléphone. Ensuite, tant que votre téléphone est connecté à votre séjour, la page de connexion (et l'appli installée sur l'écran d'accueil) vous emmène directement à votre séjour. Pour retrouver la page de connexion (appareil partagé, moniteur), touchez « Se déconnecter » en haut du séjour.
 
 ## Bon à savoir
 

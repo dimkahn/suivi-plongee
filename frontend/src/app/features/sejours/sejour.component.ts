@@ -1,5 +1,5 @@
 import {
-  Component, ChangeDetectionStrategy, Injector, afterNextRender, computed, effect, inject, signal, untracked, viewChild
+  Component, ChangeDetectionStrategy, DestroyRef, Injector, afterNextRender, computed, effect, inject, signal, untracked, viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -20,7 +20,7 @@ import { dateDuJour, periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
-  DemandeJournee, FraisVue, PHOTOS_MAX_PAR_JOURNEE, PortFrais, PortPrets, SejourApi, SejourVue,
+  DemandeJournee, FraisVue, PHOTOS_MAX_PAR_JOURNEE, PortFrais, PortPrets, QrCodeConnexionVue, SejourApi, SejourVue,
   CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, heure, jourLong, nomComplet,
   remboursementsDe, texteTrajet, trajetSaisi
 } from './sejour-api';
@@ -41,6 +41,10 @@ import { SejourCoursesComponent } from './sejour-courses.component';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
 import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee } from './onglets-sejour';
+import { QrCodeComponent } from '../../core/qr-code.component';
+
+/** Durée du QR code de connexion d'un participant, comme le serveur. */
+const VALIDITE_QR_CODE_SECONDES = 60;
 
 /** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
 interface GroupeTrajet {
@@ -98,7 +102,8 @@ function participantVide(): BrouillonParticipant {
   selector: 'app-sejour',
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, JourneeProgrammeComponent, PhotoJourneeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
-            TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent],
+            TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent,
+            QrCodeComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -364,6 +369,10 @@ function participantVide(): BrouillonParticipant {
                   <app-attestation-assurance [type]="p.attestationAssurance" [port]="portAttestations" [participantId]="p.id" />
                   <div class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirParticipant(p)">Modifier</button>
+                    <button type="button" class="bouton-discret bouton-qr-connexion" (click)="montrerQrCode(p)"
+                            title="Un QR code d'une minute à scanner avec son téléphone : il entre dans le séjour sans e-mail ni code">
+                      QR code de connexion
+                    </button>
                     @if (p.email) {
                       <button type="button" class="bouton-discret" (click)="envoyerInvitations(p)" [disabled]="envoi()"
                               title="Un e-mail pour qu'il renseigne lui-même son voyage, ses repas, la personne à prévenir et ses frais">
@@ -895,6 +904,33 @@ function participantVide(): BrouillonParticipant {
       </div>
     </app-dialogue>
 
+    <!-- Le QR code qui connecte un participant sur son téléphone, une minute (demande du club, 2026). -->
+    <app-dialogue [ouvert]="!!qrPour()" [erreur]="erreurQr()"
+                  [titre]="'Connecter ' + (qrPour() ? nomComplet(qrPour()!) : '')"
+                  (fermer)="fermerQrCode()">
+      @if (qrCode(); as qr) {
+        @if (secondesQr() > 0) {
+          <p>Faites scanner ce QR code avec l'appareil photo de son téléphone : le séjour s'ouvre, déjà connecté,
+            jusqu'à un mois après la fin du séjour.</p>
+          <div class="qr-connexion">
+            <app-qr-code [modules]="qr.modules" [libelle]="'QR code de connexion de ' + nomComplet(qrPour()!)" />
+          </div>
+          <p class="secondaire centre" aria-live="polite">Valable encore {{ secondesQr() }} s, une seule fois.</p>
+        } @else {
+          <p class="alerte" role="status">Ce QR code a expiré. Un nouveau déconnecte les téléphones déjà entrés pour
+            {{ qrPour() ? nomComplet(qrPour()!) : '' }} : à refaire s'il a été scanné par quelqu'un d'autre.</p>
+        }
+      } @else if (!erreurQr()) {
+        <p class="vide">Fabrication du QR code…</p>
+      }
+      <div class="actions-dialogue">
+        @if (qrCode() && secondesQr() === 0) {
+          <button type="button" class="bouton-principal" (click)="montrerQrCode(qrPour()!)">Nouveau QR code</button>
+        }
+        <button type="button" class="bouton-discret" (click)="fermerQrCode()">Fermer</button>
+      </div>
+    </app-dialogue>
+
     <!-- Choisir à qui envoyer un e-mail du séjour : relancer ceux qui ne l'ont pas reçu sans l'envoyer à tous (demande du club, 2026). -->
     <app-dialogue [ouvert]="destinatairesOuverts()" [large]="true" [erreur]="erreur()"
                   [titre]="envoiChoisi === 'carnet' ? 'Envoyer le carnet par e-mail' : 'Demander leurs informations'"
@@ -1180,6 +1216,8 @@ function participantVide(): BrouillonParticipant {
     .liste-participants > li { padding: 0 var(--pas-2); }
     .liste-participants details[open] { padding-bottom: var(--pas-2); }
     .liste-participants p { margin: var(--pas) 0 0; }
+    .qr-connexion { width: min(100%, 18rem); margin: var(--pas-2) auto; }
+    .centre { text-align: center; }
     .etat-infos { margin-left: auto; font-size: .8125rem; color: var(--en-cours); }
     .etat-infos.complet { color: #047857; }
     .lignes-repas { margin: 0; padding-left: 1.25rem; display: grid; gap: 4px; }
@@ -1718,6 +1756,51 @@ export class SejourComponent {
   envoyerInvitations(p: ParticipantVue): void {
     if (!confirm(`Envoyer à ${nomComplet(p)} un e-mail pour qu'il renseigne ses informations pour le séjour ?`)) return;
     this.envoyerEmails('invitations', [p.id]);
+  }
+
+  /** Le participant dont le QR code de connexion est montré. */
+  qrPour = signal<ParticipantVue | null>(null);
+  qrCode = signal<QrCodeConnexionVue | null>(null);
+  erreurQr = signal<string | null>(null);
+  secondesQr = signal(0);
+  private minuterieQr: ReturnType<typeof setInterval> | null = null;
+  private readonly arretMinuterieQr = inject(DestroyRef).onDestroy(() => this.arreterMinuterieQr());
+
+  /**
+   * Un QR code d'une minute pour ce participant, compté par l'horloge du
+   * téléphone (pas celle du serveur, qui peut différer de quelques secondes).
+   */
+  montrerQrCode(p: ParticipantVue): void {
+    this.arreterMinuterieQr();
+    this.qrPour.set(p);
+    this.qrCode.set(null);
+    this.erreurQr.set(null);
+    this.api.qrCodeConnexion(this.id, p.id).subscribe({
+      next: qr => {
+        const fin = Date.now() + VALIDITE_QR_CODE_SECONDES * 1000;
+        const compter = () => {
+          const reste = Math.max(0, Math.ceil((fin - Date.now()) / 1000));
+          this.secondesQr.set(reste);
+          if (reste === 0) this.arreterMinuterieQr();
+        };
+        this.qrCode.set(qr);
+        compter();
+        this.minuterieQr = setInterval(compter, 1000);
+      },
+      error: (e: HttpErrorResponse) =>
+        this.erreurQr.set(e.error?.detail ?? "Le QR code n'a pas pu être fabriqué (réseau nécessaire).")
+    });
+  }
+
+  fermerQrCode(): void {
+    this.arreterMinuterieQr();
+    this.qrPour.set(null);
+    this.qrCode.set(null);
+  }
+
+  private arreterMinuterieQr(): void {
+    if (this.minuterieQr !== null) clearInterval(this.minuterieQr);
+    this.minuterieQr = null;
   }
 
   destinatairesOuverts = signal(false);

@@ -4,11 +4,13 @@ rubrique: Découverte
 pour: sans-compte
 videos: A17
 ecran: /aide
-mots: séjour, lien, lien perdu, carnet de voyage, trajet du jour, photos des lieux, hébergement du jour, page de connexion, entrer avec un code, rembourser le club, dû au club, payé par le club, avez-vous emprunté du matériel, rien emprunté, code, e-mail, otp, invité, sans compte, élève, élève ajoute une dépense, ajouter des frais, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, vol long, lendemain, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, billet, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, pdf du billet, capture d'écran, assurance, attestation d'assurance, responsabilité civile, assurance plongée, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire, hors ligne, sans réseau, pas de réseau, trombinoscope, trombi, photos, visages, qui est qui, groupe de plongeurs, restaurant, menu, menu du restaurant, choisir mon plat, choisir mes plats, entrée, plat, dessert, boisson, commande, changer d'avis
+mots: séjour, lien, lien perdu, qr code, qrcode, scanner, flasher, appareil photo, connexion par qr code, appli installée, écran d'accueil, carnet de voyage, trajet du jour, photos des lieux, hébergement du jour, page de connexion, entrer avec un code, rembourser le club, dû au club, payé par le club, avez-vous emprunté du matériel, rien emprunté, code, e-mail, otp, invité, sans compte, élève, élève ajoute une dépense, ajouter des frais, parent, accompagnant, carnet, voiture, chambre, logement, affaires, infos pratiques, vol, train, arrivée, départ, régime, repas, urgence, téléphone, frais, dépense, note, ticket, photo, galerie, montant total, date de l'achat, catégorie, lire le ticket, appareil photo, rembourser, matériel, emprunt, gilet, détendeur, imprimer, version imprimable, papier, pdf, aujourd'hui, programme du jour, palanquée, avec qui je plonge, guide de palanquée, fonction, rappel, à quelle heure, aéroport, heure de départ, heure d'arrivée, jour de départ, jour d'arrivée, lieu d'arrivée, vol long, lendemain, terminal, enregistrement, enregistrement en ligne, check-in, numéro de dossier, réservation, billet, s'enregistrer, carte d'embarquement, boarding pass, ajouter la carte, montrer la carte, pdf du billet, capture d'écran, assurance, attestation d'assurance, responsabilité civile, assurance plongée, ajouter l'attestation, joindre l'assurance, assurance complémentaire, loisir 1, lafont, numéro de licencié, souscrire, hors ligne, sans réseau, pas de réseau, trombinoscope, trombi, photos, visages, qui est qui, groupe de plongeurs, restaurant, menu, menu du restaurant, choisir mon plat, choisir mes plats, entrée, plat, dessert, boisson, commande, changer d'avis
 questions:
 - À quelle heure dois-je être à l'aéroport pour le séjour ?
 - J'ai reçu un e-mail pour le séjour : comment entrer ?
 - J'ai perdu le lien du séjour : comment entrer ?
+- L'organisateur me montre un QR code : comment entrer ?
+- J'ai installé l'appli : pourquoi s'ouvre-t-elle sur mon séjour ?
 - Où voir le programme, ma voiture et ma chambre pour le séjour ?
 - Avec qui je plonge, dans quelle palanquée ?
 - Comment donner mon numéro de vol et mes horaires d'arrivée ?
@@ -28,6 +30,8 @@ questions:
 ---
 L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donnez votre adresse e-mail et entrez le code à 6 chiffres reçu : vous lisez le carnet du séjour, toujours à jour, vous renseignez vos informations (voyage, repas, personne à prévenir), vous voyez les frais partagés et vous déclarez le matériel du club que vous avez emprunté.
 
+Plus simple encore : l'organisateur peut vous montrer sur son téléphone un **QR code de connexion** fait pour vous. Scannez-le avec l'appareil photo de votre téléphone : votre séjour s'ouvre, déjà connecté, sans e-mail ni code (étapes 1 à 3 inutiles). Le QR code ne vaut qu'une minute et une seule fois ; votre téléphone reste ensuite connecté jusqu'à un mois après la fin du séjour.
+
 ## Pas à pas
 
 1. Ouvrez le lien de l'e-mail « Vos informations pour le séjour ».
@@ -44,7 +48,9 @@ L'organisateur du séjour vous a envoyé un e-mail avec un lien. Ouvrez-le, donn
 
 ## Bon à savoir
 
-- Pas de compte ni de mot de passe : le code vaut 10 minutes, puis votre téléphone reste connecté jusqu'à 60 jours après le séjour. « Se déconnecter » sur un appareil partagé.
+- Pas de compte ni de mot de passe : le code vaut 10 minutes, puis votre téléphone reste connecté jusqu'à 60 jours après le séjour (un mois après le séjour si vous êtes entré par le QR code). « Se déconnecter » sur un appareil partagé.
+- **Appli installée sur l'écran d'accueil** : tant que votre téléphone est connecté à votre séjour, l'appli s'ouvre directement sur votre séjour, sans passer par la page de connexion. Sur iPhone, l'appli installée ne partage pas la connexion de Safari : si elle s'ouvre sur la page de connexion, entrez-y avec « Participant à un séjour ? Entrer avec un code reçu par e-mail » ; elle s'ouvrira ensuite sur votre séjour.
+- QR code refusé (« QR code expiré ou déjà utilisé ») : demandez-en un nouveau à l'organisateur. Un nouveau QR code déconnecte vos autres téléphones : rescannez-le, ou entrez par le code e-mail.
 - Pas de code ? Regardez dans les indésirables, vérifiez l'adresse (celle donnée à l'organisateur), et redemandez-en un au bout d'une minute.
 - Revenez quand vous voulez compléter ou corriger (un vol changé, par exemple) : l'organisateur voit tout de suite la mise à jour.
 - **Pas d'information médicale** (allergie, traitement) dans l'appli : voyez-la directement avec l'organisateur.

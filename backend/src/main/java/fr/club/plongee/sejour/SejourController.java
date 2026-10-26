@@ -638,6 +638,17 @@ public class SejourController {
         return acces.envoyerInvitations(id, choisis);
     }
 
+    /**
+     * Le QR code, valable une minute, que l'organisateur montre au participant
+     * choisi pour le connecter au séjour sur son téléphone (pas un encadrant).
+     */
+    @PostMapping("/{id}/participants/{participantId}/qr-code")
+    @PreAuthorize(GERE)
+    public AccesSejourService.QrCodeConnexionVue qrCodeConnexion(@PathVariable Long id,
+                                                                 @PathVariable Long participantId) {
+        return acces.qrCodeConnexion(id, participantId);
+    }
+
     /** Le participant connecté complète ses propres informations (voyage, repas, personne à prévenir). */
     @PutMapping("/{id}/mes-informations")
     @PreAuthorize("isAuthenticated()")

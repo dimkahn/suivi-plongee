@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { MAGASIN_CACHE, ecrire } from '../../core/base-locale';
 import { cleJetonLienSejour } from '../sejours/sejour-hors-ligne';
+import { retenirSejour, sejourRetenu } from '../sejours/sejour-courant';
 import { IdentiteService } from '../../core/identite.service';
 
 @Component({
@@ -167,6 +168,20 @@ export class ConnexionComponent {
   etapeSejour = signal<'email' | 'code'>('email');
   codeSejour = '';
 
+  constructor() {
+    void this.rouvrirSejour();
+  }
+
+  /**
+   * Un participant connecté à son séjour sur ce téléphone (QR code de
+   * l'organisateur, lien ou code) : l'appli installée s'ouvre sur cette page,
+   * on le renvoie à son séjour sans rien lui demander.
+   */
+  private async rouvrirSejour(): Promise<void> {
+    const code = await sejourRetenu();
+    if (code) await this.router.navigate(['/sejour', code], { replaceUrl: true });
+  }
+
   connecter(): void {
     if (!this.email || !this.motDePasse) {
       this.erreur.set('Renseignez votre e-mail et votre mot de passe.');
@@ -217,9 +232,10 @@ export class ConnexionComponent {
     this.envoi.set(true);
     this.erreur.set(null);
     try {
-      const c = await firstValueFrom(this.http.post<{ sejour: string; jeton: string }>('/api/public/sejours/connexion',
-        { email: this.email.trim(), code: this.codeSejour.trim() }));
+      const c = await firstValueFrom(this.http.post<{ sejour: string; jeton: string; expireLe: string }>(
+        '/api/public/sejours/connexion', { email: this.email.trim(), code: this.codeSejour.trim() }));
       await ecrire(MAGASIN_CACHE, { cle: cleJetonLienSejour(c.sejour), valeur: c.jeton });
+      await retenirSejour(c.sejour, c.expireLe);
       await this.router.navigate(['/sejour', c.sejour]);
     } catch (e) {
       this.erreur.set((e as HttpErrorResponse).error?.detail ?? "L'entrée n'a pas abouti (réseau nécessaire).");

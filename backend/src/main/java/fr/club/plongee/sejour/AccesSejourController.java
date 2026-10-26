@@ -34,6 +34,9 @@ public class AccesSejourController {
 
     public record DemandeConnexion(@NotBlank String email, @NotBlank String code) {}
 
+    /** Le ticket lu dans le QR code (paramètre {@code qr} de l'adresse). */
+    public record DemandeConnexionQrCode(@NotBlank String ticket) {}
+
     public record DepenseCreeePublique(long depenseId, FraisPublicVue vue) {}
 
     private final AccesSejourService acces;
@@ -174,6 +177,12 @@ public class AccesSejourController {
     @PostMapping("/connexion")
     public Connexion connecter(@PathVariable String code, @Valid @RequestBody DemandeConnexion d) {
         return acces.connecter(code, d.email(), d.code());
+    }
+
+    /** Le QR code montré par l'organisateur, scanné par le participant : ni e-mail ni code. */
+    @PostMapping("/connexion-qr-code")
+    public Connexion connecterParQrCode(@PathVariable String code, @Valid @RequestBody DemandeConnexionQrCode d) {
+        return acces.connecterParQrCode(code, d.ticket());
     }
 
     @PostMapping("/deconnexion")
