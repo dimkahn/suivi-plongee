@@ -1,5 +1,5 @@
 // M11 — Compléter la fiche après la plongée.
-// Tournage du 2026-10-24, 18e série, dépassement du prévu en rouge, signature du DP annoncée à la fin, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-26, 18e série, recherche d'une palanquée toujours affichée,dépassement du prévu en rouge, signature du DP annoncée à la fin, un bouton à la fois, annuler, bilan en haut, durée calculée, palanquées au nom de leur encadrant, encadré « Imprimer ou archiver » et barre d'enregistrement (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {

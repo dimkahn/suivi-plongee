@@ -79,14 +79,12 @@ import { telechargerFichier } from '../../core/telecharger';
       }
 
       <div class="ligne-outils">
-        <!-- La recherche ne sert qu'avec beaucoup de palanquées. -->
-        @if (palanquees().length > 4) {
-          <div>
-            <label for="rechercheRealise">Retrouver une palanquée par un de ses plongeurs</label>
-            <input id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
-                   [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
-          </div>
-        }
+        <!-- Toujours affichée, quel que soit le nombre de palanquées (demande du club). -->
+        <div>
+          <label for="rechercheRealise">Retrouver une palanquée par un de ses plongeurs</label>
+          <input id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
+                 [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
+        </div>
         <details class="reglage-alerte">
           <summary>Alerte {{ seuilAlerteMinutes() }} min avant la sortie prévue</summary>
           <label for="seuilAlerte">Alerter (min) avant l'heure de sortie prévue</label>
