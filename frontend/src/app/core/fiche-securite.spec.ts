@@ -3,7 +3,7 @@ import {
   aDesDetails, deplacerPlongeur, empreinteFiche, erreurProfilPrevu, estEncadrantPossible, libelleMembre, ligneVide, nomPalanquee,
   alerteMod, fractionOxygene, libelleGaz, profondeurMaximaleUtilisation, palanqueesAEnregistrer,
   profondeurPermise, questionsAjout, refusAjout, reprendrePalanquees, resumePalanquee,
-  peutSignerFiche, peutSignerDepuisLaListe, libelleSignature, alerteIntegrite
+  peutSignerFiche, peutSignerDepuisLaListe, signatureAVenir, libelleSignature, alerteIntegrite
 } from './fiche-securite';
 
 function plongeur(champs: Partial<PlongeurVue> = {}): PlongeurVue {
@@ -403,5 +403,13 @@ describe('La fiche dans la liste des fiches de sécurité', () => {
   it('Ni sans fiche enregistrée, ni sur une fiche déjà signée', () => {
     expect(peutSignerDepuisLaListe({ ...seance, ficheSecurite: false }, 12, '2026-06-08')).toBe(false);
     expect(peutSignerDepuisLaListe({ ...seance, ficheSignee: true }, 12, '2026-06-08')).toBe(false);
+  });
+
+  it('Avant la plongée, son DP est prévenu qu\'il signera la fiche à partir du jour de la plongée', () => {
+    expect(signatureAVenir(seance, 12, '2026-06-07')).toBe(true);
+    expect(signatureAVenir(seance, 12, '2026-06-08')).toBe(false);
+    expect(signatureAVenir(seance, 7, '2026-06-07')).toBe(false);
+    expect(signatureAVenir({ ...seance, ficheSecurite: false }, 12, '2026-06-07')).toBe(false);
+    expect(signatureAVenir({ ...seance, ficheSignee: true }, 12, '2026-06-07')).toBe(false);
   });
 });

@@ -23,6 +23,16 @@ export function peutSignerDepuisLaListe(s: Pick<SeanceVue, 'date' | 'ficheSecuri
     { id: 0, dpId: s.ficheDpId ?? null }, utilisateurId, s.date, aujourdhui);
 }
 
+/**
+ * Pas encore le lien « Signer la fiche » : la fiche de son DP, pas signée,
+ * d'une plongée à venir. L'écran le lui dit, plutôt que de taire le lien.
+ */
+export function signatureAVenir(s: Pick<SeanceVue, 'date' | 'ficheSecurite' | 'ficheSignee' | 'ficheDpId'>,
+                                utilisateurId: number | undefined, aujourdhui: string): boolean {
+  return s.ficheSecurite && !s.ficheSignee && utilisateurId !== undefined && s.ficheDpId === utilisateurId
+    && s.date > aujourdhui;
+}
+
 /** « Signée par Gwendoline Marchand le 08/06/2026 à 18:30 », à l'heure de l'appareil. */
 export function libelleSignature(s: SignatureFicheVue): string {
   const d = new Date(s.signeeLe);

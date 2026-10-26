@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { dateDuJour } from '../../core/date-fr';
-import { peutSignerDepuisLaListe } from '../../core/fiche-securite';
+import { peutSignerDepuisLaListe, signatureAVenir } from '../../core/fiche-securite';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { joursDuSejour } from './liste-courses';
 import { jourLong } from './sejour-api';
@@ -85,6 +85,8 @@ import {
                       @if (peutSigner(p)) {
                         <a [routerLink]="['/fiches-securite', p.seanceId, 'signature']" [queryParams]="retour()"
                            class="bouton-principal lien-signer">✍ Signer la fiche</a>
+                      } @else if (signatureAVenir(p)) {
+                        <span class="secondaire signature-a-venir">✍ Vous la signerez comme DP à partir du {{ jourLong(p.date) }}</span>
                       }
                       @if (v.peutEtablir) {
                         <a [routerLink]="['/fiches-securite', p.seanceId]" [queryParams]="retour()" class="bouton-discret etablir-fiche">
@@ -197,6 +199,7 @@ import {
     .actions { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .actions a, .actions button { min-height: 44px; display: inline-flex; align-items: center; }
     .lien-signer { width: auto; margin: 0; }
+    .signature-a-venir { margin: 0; flex-basis: 100%; }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; min-width: 24px; min-height: 24px; }
@@ -248,6 +251,12 @@ export class SejourFichesSecuriteComponent implements OnInit {
   /** Le lien « Signer la fiche » : pour son DP, une fois la plongée passée (le serveur revérifie). */
   peutSigner(p: PlongeeSejourVue): boolean {
     return peutSignerDepuisLaListe({ date: p.date, ficheSecurite: p.fiche, ficheSignee: p.signee, ficheDpId: p.dpId },
+      this.auth.session()?.id, dateDuJour());
+  }
+
+  /** Pas encore de lien pour son DP, la plongée à venir : l'écran dit à partir de quand. */
+  signatureAVenir(p: PlongeeSejourVue): boolean {
+    return signatureAVenir({ date: p.date, ficheSecurite: p.fiche, ficheSignee: p.signee, ficheDpId: p.dpId },
       this.auth.session()?.id, dateDuJour());
   }
 
