@@ -1,5 +1,5 @@
-// A17 — Organiser un séjour : les dix onglets (programme, participants et repas, transports, hébergement, frais, matériel, courses, restaurant, fiches de sécurité, pratique).
-// Tournage du 2026-10-25, 45e série, la présentation d'une journée du programme (titre, trajet, photos des lieux, à découvrir, conseil, hébergement), « Payer l'addition » sans attendre tout le monde (fenêtre ouverte, payeur cherché parmi tous les participants), « Modifier » le menu du restaurant à la main, « Payer l'addition » du restaurant (la part de chacun dans les frais, sauf qui paie de son côté), l'onglet « Fiches de sécurité » (état de chaque fiche, ajouter une plongée, tout imprimer), le menu du restaurant (import Excel, choix de chacun, commande complète), la liste de courses et les repas au restaurant, le trombinoscope du séjour exporté en image et le niveau des encadrants sous leur photo, la photo d'un invité et « Montrer aux participants » dans une fenêtre, le trombinoscope dans le bandeau et ouvert aux participants, la photo d'un invité, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
+// A17 — Organiser un séjour : les cinq onglets (programme et fiches de sécurité ; qui et où : participants, transports, logements ; repas : régimes, courses, restaurant ; frais ; pratique : affaires, infos, matériel).
+// Tournage du 2026-10-26, 46e série, cinq onglets au lieu de dix avec un sommaire par onglet, « Partager et organiser… » dans le bandeau, l'encart des frais retiré, la présentation d'une journée du programme (titre, trajet, photos des lieux, à découvrir, conseil, hébergement), « Payer l'addition » sans attendre tout le monde (fenêtre ouverte, payeur cherché parmi tous les participants), « Modifier » le menu du restaurant à la main, « Payer l'addition » du restaurant (la part de chacun dans les frais, sauf qui paie de son côté), l'onglet « Fiches de sécurité » (état de chaque fiche, ajouter une plongée, tout imprimer), le menu du restaurant (import Excel, choix de chacun, commande complète), la liste de courses et les repas au restaurant, le trombinoscope du séjour exporté en image et le niveau des encadrants sous leur photo, la photo d'un invité et « Montrer aux participants » dans une fenêtre, le trombinoscope dans le bandeau et ouvert aux participants, la photo d'un invité, le trombinoscope par groupe de plongeurs, les frais avancés par le club, le séjour sans réseau (copie du téléphone, rendez-vous ajouté hors ligne), attestations d'assurance des participants, « Voir comme un participant », carte d'embarquement d'un passager, voitures séparées des vols, une carte par vol dans « Transports » avec ses passagers, terminal, enregistrement et dossier du vol commun, « Modifier » de l'hébergement, une combinaison déclarée (le gilet est déjà prêté), qui n'a rien emprunté (changer cette date dans tous les scénarios les fait tous retourner).
 // Tourné avec Gwendoline (e3@club.fr), créatrice du séjour de démonstration (V120) : un ADMIN n'y a que la lecture.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A17',
   titre: 'Organiser un séjour',
   public: 'Administrateur',
-  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; l\'encart des frais en haut de la page, puis les dix onglets du séjour : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs, ouvert aux participants avec les seules photos qu\'on leur montre, le niveau des encadrants, exporté en image, et la photo d\'un invité, ajoutée dans une fenêtre), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme (chaque journée présentée comme un carnet de voyage : titre, trajet, photos des lieux, à découvrir, conseil, hébergement), le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant), la liste de courses (repas au restaurant choisis jour par jour, quantités selon les présents et les régimes), le menu du restaurant (importé d\'un fichier Excel fabriqué par une IA, corrigé à la main, le choix de chacun, la commande complète, l\'addition payée et la part de chacun mise dans les frais), les fiches de sécurité des plongées (leur état jour par jour, une plongée ajoutée, toutes les fiches imprimées d\'un coup) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
+  resume: 'Seuls le créateur du séjour et les organisateurs qu\'il désigne le modifient, et ils peuvent le voir comme un participant ; « Partager et organiser… » rassemble les gestes du bandeau, puis les cinq onglets du séjour, chacun avec son sommaire : les participants (un plongeur inscrit avec son groupe y reste lié, qui a joint son attestation d\'assurance, le conseil d\'assurance à leur montrer, le trombinoscope par groupe de plongeurs, ouvert aux participants avec les seules photos qu\'on leur montre, le niveau des encadrants, exporté en image, et la photo d\'un invité, ajoutée dans une fenêtre), demander à chacun ses informations (et lui ouvrir le carnet tenu à jour par le lien), puis les vols, une carte par avion avec ses passagers (jour et heure de départ de l\'aller, jour, heure et lieu d\'arrivée du retour, terminal, ouverture de l\'enregistrement, numéro de dossier, carte d\'embarquement jointe) et les voitures, les chambres, les régimes, le programme (chaque journée présentée comme un carnet de voyage : titre, trajet, photos des lieux, à découvrir, conseil, hébergement), le partage des frais (dont ceux avancés par le club), le matériel du club emprunté (déclaré pour un participant), la liste de courses (repas au restaurant choisis jour par jour, quantités selon les présents et les régimes), le menu du restaurant (importé d\'un fichier Excel fabriqué par une IA, corrigé à la main, le choix de chacun, la commande complète, l\'addition payée et la part de chacun mise dans les frais), les fiches de sécurité des plongées (leur état jour par jour, une plongée ajoutée, toutes les fiches imprimées d\'un coup) et les affaires, l\'envoi du carnet par e-mail aux seules personnes choisies, la version imprimable du carnet ; sans réseau, le séjour lu sur le téléphone et modifié, envoyé au retour du réseau ; pendant le séjour, l\'encart « Aujourd\'hui ».',
   compte: 'e3@club.fr',
   format: 'ordinateur',
 
@@ -19,19 +19,23 @@ export default {
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('Gwendoline a créé la sortie : elle est la créatrice du séjour, et seule à pouvoir le modifier.', 4500);
     await legende('Sous le titre, le bandeau « Organisation » : qui organise, et « Vous pouvez modifier » ou « Lecture seule ».', 4500);
+    await legende('À côté de « Version imprimable », « Partager et organiser… » rassemble les autres gestes, pour garder le bandeau sur une ligne.', 0);
+    await toucher(page.locator('.ouvrir-actions'), { apres: 2500 });
     await legende('« Choisir les organisateurs » : elle coche les moniteurs qui l\'aident. Les autres le lisent seulement.', 0);
     await toucher(page.getByRole('button', { name: 'Choisir les organisateurs' }), { apres: 4000 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Les participants, eux, le lisent par le lien et le code reçus par e-mail.', 4000);
     await legende('« Voir comme un participant » : le séjour tel qu\'ils le voient, sans les téléphones, les régimes ni les dossiers des autres, et sans rien à modifier.', 0);
+    await toucher(page.locator('.ouvrir-actions'), { apres: 1200 });
     await toucher(page.getByRole('button', { name: /Voir comme un participant/ }), { apres: 4000 });
-    await legende('« Revenir à l\'organisation » lui rend la main.', 0);
+    await legende('« Revenir à l\'organisation », dans le bandeau, lui rend la main.', 0);
     await toucher(page.getByRole('button', { name: /Revenir à l'organisation/ }), { apres: 2500 });
-    await legende('Tout en haut, l\'encart « Frais du séjour » : le total dépensé, et « Gérer les frais » pour les ouvrir.', 4500);
-    await legende('Puis dix onglets, « Frais » en premier. Un rond orange signale ce qui reste à régler : ici, dans « Hébergement ».', 4500);
+    await legende('Puis cinq onglets, qui tiennent sur l\'écran du téléphone : Programme, Qui et où, Repas, Frais, Pratique.', 4500);
+    await legende('Un rond orange signale ce qui reste à régler : ici, dans « Qui et où ».', 4000);
 
-    await legende('« Participants » : une ligne par personne, avec ce qu\'elle n\'a pas encore donné.', 0);
-    await toucher(page.getByRole('tab', { name: 'Participants' }), { apres: 2500 });
+    await legende('« Qui et où » : en haut, les participants, une ligne par personne, avec ce qu\'elle n\'a pas encore donné.', 0);
+    await toucher(page.getByRole('tab', { name: 'Qui et où' }), { apres: 2500 });
+    await legende('Les boutons du haut descendent directement aux participants, aux arrivées et départs, aux voitures ou aux logements.', 4000);
     await legende('On touche un nom pour voir sa fiche : vol, repas, personne à prévenir.', 0);
     await toucher(page.locator('.liste-participants summary').first(), { apres: 3000 });
     await legende('Un plongeur inscrit avec son groupe de plongeurs y reste lié : nom, prénom et e-mail suivent d\'un côté à l\'autre.', 4500);
@@ -41,7 +45,8 @@ export default {
     await toucher(page.locator('.conseil-assurance').getByRole('button', { name: 'Modifier' }), { apres: 4000 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await enHaut();
-    await legende('Dans le bandeau, « Trombinoscope » : les visages des participants, pour mettre un nom sur chacun dès le premier jour.', 0);
+    await legende('Dans « Partager et organiser… », « Trombinoscope » : les visages des participants, pour mettre un nom sur chacun dès le premier jour.', 0);
+    await toucher(page.locator('.ouvrir-actions'), { apres: 1200 });
     await toucher(page.locator('.ouvrir-trombinoscope'), { apres: 3000 });
     await legende('Un bouton par groupe de plongeurs : on ne garde que ceux du groupe. Sous un encadrant, son niveau d\'encadrement, et son niveau de plongeur s\'il est E1. Pas de photo sans le droit à l\'image : les initiales à la place.', 0);
     await legende('Tous les participants le voient aussi, mais sans les photos : sous chacune, « Montrer aux participants », avec l\'accord de la personne ou de ses parents.', 5500);
@@ -54,15 +59,12 @@ export default {
     await toucher(page.getByRole('button', { name: /Ajouter une photo de Jules/ }), { apres: 4500 });
     await toucher(page.locator('.ajout-photo').getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await toucher(page.getByRole('button', { name: 'Fermer' }).first(), { apres: 800 });
-    await legende('Pas besoin de tout saisir : « Demander les informations… », en haut de la page, leur envoie un e-mail.', 4500);
+    await legende('Pas besoin de tout saisir : « Demander les informations… », en haut de la liste des participants, leur envoie un e-mail.', 4500);
     await legende('Les moniteurs complètent dans l\'appli ; les autres par un lien et un code, sans mot de passe.', 4500);
     await legende('Par ce lien, ils lisent aussi le carnet du séjour, toujours à jour : programme, voitures, chambres, affaires.', 4500);
-    await legende('En bas, les repas : le nombre de couverts et les régimes, pour la cuisine.', 0);
-    await defiler(900, 3000);
-    await enHaut();
 
-    await legende('« Transports » : les arrivées et les départs, regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
-    await toucher(page.getByRole('tab', { name: 'Transports' }), { apres: 2500 });
+    await legende('Dessous, les arrivées et les départs, regroupés par vol ou par train, pour savoir qui aller chercher.', 0);
+    await toucher(page.locator('.sommaire-onglet').getByRole('button', { name: 'Arrivées et départs' }), { apres: 2500 });
     await legende('Chaque vol a sa carte : heures de départ et d\'arrivée, terminal, compagnie, ouverture de l\'enregistrement. Dessous, qui est dans l\'avion, avec son numéro de dossier.', 6000);
     await page.locator('.carte-passager').first().scrollIntoViewIfNeeded();
     await legende('Flora a joint sa carte d\'embarquement à son vol : le bouton « Carte d\'embarquement », à côté de son nom, l\'ouvre. Seuls elle et les organisateurs la voient.', 5500);
@@ -82,16 +84,17 @@ export default {
     await pause(3500);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Dessous, les voitures : le conducteur, ses passagers et les places qui restent.', 0);
-    await defiler(700, 3500);
+    await page.locator('#voitures-sejour').scrollIntoViewIfNeeded();
+    await pause(3500);
     await legende('Chacun n\'est que dans une seule voiture : celui qui conduit ou qui a déjà une place ailleurs est grisé.', 0);
     await toucher(page.locator('li.carte').filter({ hasText: 'Voiture de Gwendoline' })
       .getByRole('button', { name: 'Modifier' }), { apres: 4000 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await enHaut();
 
-    await legende('« Hébergement » : le gîte, ses chambres et leurs occupants. En haut, Mateo n\'a pas encore de chambre.', 0);
-    await toucher(page.getByRole('tab', { name: 'Hébergement' }), { apres: 3000 });
-    await toucher(page.getByRole('button', { name: 'Modifier', exact: true }).first(), { apres: 1000 });
+    await legende('Puis les logements : le gîte, ses chambres et leurs occupants. Au-dessus, en orange : Mateo n\'a pas encore de chambre.', 0);
+    await toucher(page.locator('.sommaire-onglet').getByRole('button', { name: 'Logements' }), { apres: 3000 });
+    await toucher(page.locator('#logements-sejour').getByRole('button', { name: 'Modifier', exact: true }).first(), { apres: 1000 });
     await legende('Mateo prend la chambre 3.', 0);
     const chambre3 = page.locator('fieldset').filter({ hasText: 'Chambre 3' });
     await chambre3.scrollIntoViewIfNeeded();
@@ -99,8 +102,9 @@ export default {
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 1800 });
     await vignette();
 
-    await legende('« Matériel » : le matériel du club emprunté pour le séjour. Chacun déclare le sien, comme ses frais.', 0);
-    await toucher(page.getByRole('tab', { name: 'Matériel' }), { apres: 2500 });
+    await legende('« Pratique », tout en bas : le matériel du club emprunté pour le séjour. Chacun déclare le sien, comme ses frais.', 0);
+    await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 1200 });
+    await toucher(page.locator('.sommaire-onglet').getByRole('button', { name: 'Matériel emprunté' }), { apres: 2500 });
     await legende('Sous les emprunts : qui a répondu n\'avoir rien emprunté, et qui n\'a pas encore répondu, à relancer.', 0);
     await page.locator('app-sejour-materiel .reponses').scrollIntoViewIfNeeded();
     await pause(4000);
@@ -112,8 +116,10 @@ export default {
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
     await legende('C\'est un vrai prêt : le directeur technique le retrouve dans ses prêts, et note le retour.', 4500);
 
-    await legende('« Courses » : les repas du séjour, jour par jour, et combien sont à table, selon les arrivées et les départs.', 0);
-    await toucher(page.getByRole('tab', { name: 'Courses' }), { apres: 3500 });
+    await legende('« Repas » : en haut, le nombre de couverts et les régimes, pour la cuisine.', 0);
+    await toucher(page.getByRole('tab', { name: 'Repas' }), { apres: 3500 });
+    await legende('Dessous, les courses : les repas du séjour, jour par jour, et combien sont à table, selon les arrivées et les départs.', 0);
+    await toucher(page.locator('.sommaire-onglet').getByRole('button', { name: 'Courses' }), { apres: 3500 });
     await legende('« Choisir les repas au restaurant » : on coche ceux que l\'on ne prépare pas. Ici, en plus, le dîner du dimanche.', 0);
     await toucher(page.locator('.choisir-restaurant'), { apres: 1500 });
     await toucher(page.locator('dialog[open]').getByLabel('Dîner du Dimanche 06/06/2027 au restaurant'), { apres: 1500 });
@@ -124,8 +130,8 @@ export default {
     await legende('Dans le magasin, on coche ce qui est dans le chariot. « Copier la liste » la met dans un message au groupe.', 4500);
     await enHaut();
 
-    await legende('« Restaurant » : le menu du restaurant du samedi soir. Chacun y choisit son plat, dans l\'appli ou par le lien.', 0);
-    await toucher(page.getByRole('tab', { name: 'Restaurant' }), { apres: 3000 });
+    await legende('Puis le restaurant : le menu du samedi soir. Chacun y choisit son plat, dans l\'appli ou par le lien.', 0);
+    await toucher(page.locator('.sommaire-onglet').getByRole('button', { name: 'Restaurant' }), { apres: 3000 });
     await legende('« Choisir mes plats » : on coche ce qu\'on veut, avec le prix, puis « Enregistrer ».', 0);
     await toucher(page.locator('.choisir-plats').first(), { apres: 1500 });
     const choix = page.locator('dialog[open]');
@@ -156,8 +162,9 @@ export default {
     await pause(3500);
     await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Annuler' }), { apres: 800 });
 
-    await legende('« Fiches de sécurité » : les plongées du séjour, jour par jour, et où en est la fiche de chacune.', 0);
-    await toucher(page.getByRole('tab', { name: 'Fiches de sécurité' }), { apres: 3500 });
+    await legende('Sous le programme, les fiches de sécurité : les plongées du séjour, jour par jour, et où en est la fiche de chacune.', 0);
+    await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1200 });
+    await toucher(page.locator('.sommaire-onglet').getByRole('button', { name: 'Fiches de sécurité' }), { apres: 3500 });
     await legende('« Établir la fiche » ou « Modifier la fiche » ouvre la fiche habituelle ; son retour ramène ici. « Compléter au retour » après la plongée.', 5500);
     await legende('« Imprimer toutes les fiches » : celles du séjour dans un seul PDF, deux plongées du même jour par feuille.', 4500);
     await legende('Une plongée manque ? « Ajouter une plongée » : le jour, le site, la profondeur. Elle paraît aussitôt au programme.', 0);
@@ -168,7 +175,7 @@ export default {
     await legende('Tant qu\'elle n\'a pas de fiche, « Supprimer la plongée » la retire.', 3500);
     await enHaut();
 
-    await legende('« Pratique » : les affaires à prévoir, et les infos pratiques. « Partir de la liste type » remplit la liste d\'un coup.', 0);
+    await legende('« Pratique », en haut : les affaires à prévoir, et les infos pratiques. « Partir de la liste type » remplit la liste d\'un coup.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
 
     await legende('« Programme » : les rendez-vous, les plongées de la sortie, et la présentation de chaque journée.', 0);
@@ -210,8 +217,8 @@ export default {
     await pause(5000);
     await enHaut();
 
-    await legende('« Gérer les frais » : qui a avancé quoi, pour qui. L\'appli calcule qui doit combien à qui.', 0);
-    await toucher(page.getByRole('button', { name: 'Gérer les frais' }), { apres: 3500 });
+    await legende('« Frais » : qui a avancé quoi, pour qui. L\'appli calcule qui doit combien à qui.', 0);
+    await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3500 });
     await legende('Mateo rembourse Gwendoline : « C\'est remboursé », et les comptes se mettent à jour.', 0);
     const remboursement = page.locator('.remboursement').filter({ hasText: 'Mateo' }).filter({ hasText: 'Gwendoline' }).first();
     await toucher(remboursement.getByRole('button', { name: 'C\'est remboursé' }), { apres: 1000 });
@@ -224,12 +231,13 @@ export default {
     await legende('Le compte de chacun est replié en bas, dans « Détail des comptes ».', 3500);
     await legende('Les participants notent aussi leurs frais, dans l\'appli ou par le lien reçu par e-mail.', 4500);
     await enHaut();
-    await legende('« Envoyer le carnet… » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 0);
+    await legende('« Partager et organiser… », « Envoyer le carnet… » : chacun reçoit son vol, sa voiture, sa chambre, le programme, les affaires et ses frais.', 0);
+    await toucher(page.locator('.ouvrir-actions'), { apres: 1200 });
     await toucher(page.getByRole('button', { name: 'Envoyer le carnet…' }), { apres: 2500 });
     await legende('On choisit à qui l\'envoyer : quelqu\'un ne l\'a pas reçu ? « Personne », puis on coche lui seul.', 0);
     await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Personne', exact: true }), { apres: 1200 });
     await toucher(page.locator('.liste-vol input[type=checkbox]:not([disabled])').first(), { apres: 2500 });
-    await legende('Même choix pour « Demander les informations… ». Ici, on n\'envoie rien.', 0);
+    await legende('Même choix pour « Demander les informations… », en haut de la liste des participants. Ici, on n\'envoie rien.', 0);
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 1500 });
     await legende('« Version imprimable » : le carnet mis en page pour le papier, en tableaux.', 0);
     await toucher(page.getByRole('link', { name: 'Version imprimable' }), { apres: 2500 });

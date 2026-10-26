@@ -1,12 +1,12 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-10-25, 31e série, les journées du programme présentées comme un carnet de voyage, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-10-26, 32e série, cinq onglets (la chambre dans « Qui et où », les frais par la case « Mes comptes »), les journées du programme présentées comme un carnet de voyage, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'E2',
   titre: 'Le carnet du séjour',
   public: 'Élève',
-  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, le programme (chaque journée présentée comme un carnet de voyage), les affaires à prévoir, ses frais et le trombinoscope du séjour, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
+  resume: 'La veille du départ, le rappel de son vol, en carte avec sa carte d\'embarquement, et de l\'heure à laquelle être à l\'aéroport ; pendant le séjour, le programme du jour et sa palanquée, avec la fonction de chacun. Puis la carte « Mon séjour » : ses vols en carte (heures, terminal, ouverture de l\'enregistrement, numéro de dossier et lien pour s\'enregistrer, sa carte d\'embarquement à joindre et à montrer), son attestation d\'assurance à joindre, avec le conseil d\'assurance de l\'organisatrice, une case par sujet (voiture, chambre, comptes, matériel, informations) qui ouvre son détail, les cinq onglets, le programme (chaque journée présentée comme un carnet de voyage), les affaires à prévoir, ses frais (par la case « Mes comptes ») et le trombinoscope du séjour, sur son téléphone ; elle y complète ses informations (dont le jour et l\'heure d\'arrivée de son vol retour) et, à la question « Avez-vous emprunté du matériel du club ? », déclare la combinaison qu\'elle a empruntée.',
   compte: 'eleve@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, defiler, enHaut, vignette, selon }) {
@@ -62,19 +62,20 @@ export default {
     await legende('Un détendeur se déclare de même : sa désinfection se fait à son retour, attestée par le directeur technique.', 4000);
     await enHaut();
     await legende('La question a disparu : sa combinaison est dans la case « Matériel emprunté », avec le jour où le rendre. Rien emprunté ? « Non, je n\'ai rien emprunté », et la question ne revient plus.', 5500);
-    await legende('Toucher une case ouvre le détail : ici sa chambre, dans l\'onglet Hébergement.', 0);
+    await legende('Toucher une case ouvre le détail : ici sa chambre, dans l\'onglet « Qui et où ».', 0);
     await toucher(page.locator('app-mon-sejour .tuile').filter({ hasText: 'Chambre' }), { apres: 3500 });
     await enHaut();
     await legende("« Modifier mes informations » : son vol aller, le jour et l'heure de son départ, le jour, l'heure et la gare ou l'aéroport d'arrivée du retour, le terminal, son numéro de dossier et le lien d'enregistrement du mail de la compagnie, ses repas, la personne à prévenir.", 0);
     await toucher(page.getByRole('button', { name: 'Modifier mes informations' }), { apres: 3500 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Puis le programme, jour par jour. Une journée présentée par l\'organisatrice se lit comme un carnet de voyage : le titre, le trajet, les photos des lieux, ce qu\'on y découvre, un conseil et où l\'on dort.', 0);
+    await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 800 });
     await defiler(600, 5000);
-    await legende('« Pratique » : ce qu\'il faut emporter, et les infos pratiques.', 0);
+    await legende('Cinq onglets en tout. « Pratique » : ce qu\'il faut emporter, les infos pratiques et son matériel emprunté.', 0);
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3500 });
     await enHaut();
-    await legende('Les frais sont en haut de la page : « Voir les frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
-    await toucher(page.getByRole('button', { name: 'Voir les frais' }), { apres: 3500 });
+    await legende('Ses frais : la case « Mes comptes » de « Mon séjour » ouvre l\'onglet « Frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
+    await toucher(page.locator('app-mon-sejour .tuile').filter({ hasText: 'Mes comptes' }), { apres: 3500 });
     await legende('Elle a payé quelque chose ? Elle donne la note à un moniteur du séjour, qui la saisit pour elle.', 4000);
     await enHaut();
     await legende('En haut de la page, « Trombinoscope » : les participants, par groupe de plongeurs. Une photo n\'y paraît qu\'avec l\'accord de la personne ; sinon, ses initiales.', 0);

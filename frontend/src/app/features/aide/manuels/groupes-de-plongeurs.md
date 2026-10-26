@@ -68,7 +68,7 @@ Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, sit
 
 ## Le groupe et le séjour
 
-Inscrit à un séjour (onglet « Participants », « Inscrire un groupe de plongeurs… »), chaque plongeur du groupe devient un participant **lié** à sa ligne du groupe. Ce sont deux fiches : le groupe garde les niveaux (plongeur, encadrement, préparé), le séjour le voyage, les repas et la personne à prévenir. Mais le **nom**, le **prénom** et l'**e-mail** suivent : corrigés dans le groupe (« Modifier »), ils le sont dans le séjour, et inversement. Un e-mail laissé vide d'un côté ne vide pas l'autre.
+Inscrit à un séjour (onglet « Qui et où », « Inscrire un groupe de plongeurs… »), chaque plongeur du groupe devient un participant **lié** à sa ligne du groupe. Ce sont deux fiches : le groupe garde les niveaux (plongeur, encadrement, préparé), le séjour le voyage, les repas et la personne à prévenir. Mais le **nom**, le **prénom** et l'**e-mail** suivent : corrigés dans le groupe (« Modifier »), ils le sont dans le séjour, et inversement. Un e-mail laissé vide d'un côté ne vide pas l'autre.
 
 - Quelqu'un déjà inscrit au séjour sous un autre nom ou avec un autre e-mail n'est pas lié tout seul : liez-le depuis sa fiche dans le séjour (« Plongeur du groupe »), après avoir choisi la bonne valeur.
 - Pour un plongeur du club, l'e-mail de son dossier n'est pas recopié dans le groupe : le groupe suit le dossier.

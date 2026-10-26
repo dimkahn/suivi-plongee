@@ -222,6 +222,15 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **E-mail et version imprimable : les textes seulement**, sans photo (poids du courriel, encre).
 - Affichage commun à l'onglet Programme et au carnet du lien : `JourneeProgrammeComponent` ; photos par `PhotoJourneeComponent`. Tests : `JourneesSejourTest`, `FraisParticipantsTest` (page du lien, e-mail), `programme-du-jour.spec.ts`.
 
+## Page du séjour allégée : cinq onglets (2026-10-26)
+
+- **Demande du club** : « la page séjour est très compliquée ». Avant les onglets, il fallait passer le bandeau (jusqu'à six boutons), « Aujourd'hui », l'encart des frais et « Mon séjour » ; puis dix onglets qui défilaient de côté sur le téléphone.
+- **Cinq onglets** (`onglets-sejour.ts`) : Programme (et fiches de sécurité), Qui et où (participants, arrivées et départs, voitures, logements), Repas (régimes, courses, restaurant), Frais, Pratique (affaires, infos pratiques, matériel emprunté). Les mêmes pour tous : un participant n'y voit simplement pas les sections réservées aux encadrants. Un **sommaire** de boutons en haut d'un onglet de plusieurs sections y descend.
+- **Anciens noms d'onglet acceptés** (`?onglet=fiches` du retour d'une fiche de sécurité, tuiles de « Mon séjour ») : ils ouvrent l'onglet qui les contient, à leur section (`ouvertureDemandee`, testé).
+- **Doublons retirés** : l'encart « Frais du séjour » (la case « Mes comptes » de « Mon séjour » et l'onglet Frais le disent déjà) ; « Demander les informations… » ne reste qu'en haut de la liste des participants.
+- **Bandeau sur une ligne** : « Version imprimable » ; pour un encadrant, « Partager et organiser… » ouvre une fenêtre de choix (voir comme un participant, trombinoscope, envoyer le carnet, choisir les organisateurs). « Revenir à l'organisation » reste dans le bandeau ; un participant garde « Trombinoscope » à côté de « Version imprimable ».
+- Étapes suivantes envisagées (page selon le moment du séjour, liste « À faire » de l'organisateur) : `docs/specs/2026-10-26-ergonomie-sejour/suite.md`.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.
