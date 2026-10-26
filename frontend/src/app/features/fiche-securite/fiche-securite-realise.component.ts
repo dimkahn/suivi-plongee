@@ -82,8 +82,14 @@ import { telechargerFichier } from '../../core/telecharger';
         <!-- Toujours affichée, quel que soit le nombre de palanquées (demande du club). -->
         <div>
           <label for="rechercheRealise">Retrouver une palanquée par un de ses plongeurs</label>
-          <input id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
-                 [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
+          <div class="champ-recherche">
+            <input #champRecherche id="rechercheRealise" type="text" placeholder="Nom ou prénom…"
+                   [ngModel]="rechercheRealise()" (ngModelChange)="rechercheRealise.set($event)">
+            @if (rechercheRealise()) {
+              <button type="button" class="bouton-discret vider-recherche" aria-label="Vider la recherche"
+                      title="Vider la recherche" (click)="rechercheRealise.set(''); champRecherche.focus()">✕</button>
+            }
+          </div>
         </div>
         <details class="reglage-alerte">
           <summary>Alerte {{ seuilAlerteMinutes() }} min avant la sortie prévue</summary>
@@ -298,7 +304,9 @@ import { telechargerFichier } from '../../core/telecharger';
     .etat-enregistrement.a-enregistrer { color: #8a5a00; font-weight: 700; }
 
     .ligne-outils { display: flex; gap: var(--pas-3); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--pas-2); }
+    .champ-recherche { display: flex; gap: var(--pas); align-items: center; }
     #rechercheRealise { max-width: 320px; }
+    .vider-recherche { min-width: 44px; min-height: 44px; }
     .champ-seuil { max-width: 80px; }
 
     .palanquee-attention { border: 2px solid #B98A00; background: #FFF8E5; }
