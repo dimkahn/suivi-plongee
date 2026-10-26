@@ -47,7 +47,7 @@ import java.util.*;
 public class AccesSejourService {
 
     /** Ces comptes sont dans l'appli : ils n'entrent pas par le lien. */
-    private static final String EST_ENCADRANT = """
+    static final String EST_ENCADRANT = """
             EXISTS (SELECT 1 FROM utilisateur_role r
                      WHERE r.role IN ('MONITEUR', 'ADMIN', 'DIRECTEUR_TECHNIQUE')
                        AND (r.utilisateur_id = p.utilisateur_id OR r.utilisateur_id = e.utilisateur_id))""";
@@ -308,6 +308,7 @@ public class AccesSejourService {
         jdbc.update("DELETE FROM sejour_ticket_qr WHERE participant_id = :p", p);
         // Un QR code refait : l'ancien a peut-être été scanné par un autre ; ses appareils sont déconnectés.
         jdbc.update("DELETE FROM sejour_jeton_acces WHERE participant_id = :p", p);
+        couperNotificationsDuLien(participantId);
         String ticket = aleatoire(24);
         LocalDateTime expire = maintenant().plusSeconds(SECONDES_VALIDITE_QR_CODE);
         jdbc.update("""
@@ -388,11 +389,23 @@ public class AccesSejourService {
         return new ConnexionSansLien(code, c.jeton(), c.participantId(), c.prenom(), c.nom(), c.expireLe());
     }
 
+    /** Le jeton est effacé, et les notifications des téléphones entrés par le lien coupées. */
     @Transactional
     public void deconnecter(String jeton) {
         if (jeton == null) return;
-        jdbc.update("DELETE FROM sejour_jeton_acces WHERE empreinte = :e",
-                new MapSqlParameterSource("e", empreinte(jeton)));
+        var e = new MapSqlParameterSource("e", empreinte(jeton));
+        jdbc.queryForList("SELECT participant_id FROM sejour_jeton_acces WHERE empreinte = :e", e, Long.class)
+                .forEach(this::couperNotificationsDuLien);
+        jdbc.update("DELETE FROM sejour_jeton_acces WHERE empreinte = :e", e);
+    }
+
+    /**
+     * Les téléphones entrés par le lien ne sont plus prévenus (« Se déconnecter »,
+     * appareils déconnectés par un nouveau QR code) ; ceux de l'appli restent.
+     */
+    private void couperNotificationsDuLien(Long participantId) {
+        jdbc.update("DELETE FROM sejour_abonnement_push WHERE participant_id = :p AND depuis_appli = FALSE",
+                new MapSqlParameterSource("p", participantId));
     }
 
     /** Le séjour et le participant d'un jeton valable pour cette adresse ; refus sinon. */

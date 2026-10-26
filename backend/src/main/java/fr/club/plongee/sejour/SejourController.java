@@ -1,6 +1,7 @@
 package fr.club.plongee.sejour;
 
 import fr.club.plongee.commun.RegleMetierException;
+import fr.club.plongee.notification.push.AbonnementPush;
 import fr.club.plongee.sejour.CarnetSejourService.BilanEnvoiCarnet;
 import fr.club.plongee.sejour.PretsSejourService.DemandeDeclarationPret;
 import fr.club.plongee.sejour.PretsSejourService.DemandeRienEmprunte;
@@ -47,6 +48,9 @@ public class SejourController {
     /** À qui envoyer un e-mail du séjour : {@code participantIds} absent = à tous les participants. */
     public record DemandeDestinataires(List<@NotNull Long> participantIds) {}
 
+    /** {@code message} : facultatif ; {@code emailSinon} : un e-mail à qui n'a pas activé les notifications. */
+    public record DemandeNotification(String message, boolean emailSinon) {}
+
     /** Le créateur du séjour et les organisateurs qu'il a désignés (DroitsSejour), quel que soit leur rôle. */
     private static final String GERE = "@droitsSejour.organise(#id, authentication)";
 
@@ -67,12 +71,14 @@ public class SejourController {
     private final TrombinoscopeSejourService trombinoscope;
     private final RepasSejourService repas;
     private final JourneesSejourService journees;
+    private final NotificationsSejourService notifications;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             AccesSejourService acces, PretsSejourService pretsSejour,
                             CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
                             RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope, RepasSejourService repas,
-                            JourneesSejourService journees) {
+                            JourneesSejourService journees, NotificationsSejourService notifications) {
+        this.notifications = notifications;
         this.journees = journees;
         this.trombinoscope = trombinoscope;
         this.repas = repas;
@@ -647,6 +653,44 @@ public class SejourController {
     public AccesSejourService.QrCodeConnexionVue qrCodeConnexion(@PathVariable Long id,
                                                                  @PathVariable Long participantId) {
         return acces.qrCodeConnexion(id, participantId);
+    }
+
+    /** Qui recevra une notification du séjour sur son téléphone, et qui ne l'a pas activée. */
+    @GetMapping("/{id}/notifications")
+    @PreAuthorize(GERE)
+    public NotificationsSejourService.EtatNotificationsVue etatNotifications(@PathVariable Long id) {
+        return notifications.etat(id);
+    }
+
+    /** Prévient chaque participant qu'il y a du nouveau : notification, sinon e-mail si {@code emailSinon}. */
+    @PostMapping("/{id}/notifications")
+    @PreAuthorize(GERE)
+    public NotificationsSejourService.BilanNotification prevenir(@PathVariable Long id,
+                                                                 @RequestBody DemandeNotification d) {
+        return notifications.prevenir(id, d.message(), d.emailSinon());
+    }
+
+    /** Le participant connecté (moniteur) reçoit les notifications du séjour sur ce téléphone. */
+    @PutMapping("/{id}/notifications/abonnement")
+    @PreAuthorize("isAuthenticated()")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void activerNotifications(@PathVariable Long id, @RequestBody AbonnementPush abonnement,
+                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        notifications.abonner(participantConnecte(id, moi), abonnement, true);
+    }
+
+    @DeleteMapping("/{id}/notifications/abonnement")
+    @PreAuthorize("isAuthenticated()")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void couperNotifications(@PathVariable Long id, @RequestBody AccesSejourController.DemandeDesabonnement d,
+                                    @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        notifications.desabonner(participantConnecte(id, moi), d.endpoint());
+    }
+
+    private Long participantConnecte(Long id, UtilisateurPrincipal moi) {
+        Long participant = frais.acteur(id, moi).participantId();
+        if (participant == null) throw new RegleMetierException("Vous n'êtes pas inscrit à ce séjour.");
+        return participant;
     }
 
     /** Le participant connecté complète ses propres informations (voyage, repas, personne à prévenir). */

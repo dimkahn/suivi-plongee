@@ -56,6 +56,8 @@ public class SecurityConfig {
                         // Le même code par e-mail, depuis la page de connexion, sans le lien (EntreeSejourController).
                         .requestMatchers(HttpMethod.POST, "/api/public/sejours/code", "/api/public/sejours/connexion")
                         .permitAll()
+                        // La clé publique des notifications sur le téléphone : rien de secret (ClePushController).
+                        .requestMatchers(HttpMethod.GET, "/api/public/notifications/cle").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/referentiels/**").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())

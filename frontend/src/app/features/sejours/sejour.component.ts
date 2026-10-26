@@ -20,7 +20,7 @@ import { dateDuJour, periode } from '../../core/date-fr';
 import {
   AFFAIRES_TYPE, BilanEnvoiCarnet, CATEGORIES, CategorieAffaire, DemandeAffaire, DemandeEvenement, DemandeLogement, DemandeParticipant,
   DemandeMesInformations, DemandeVoiture, EvenementVue, GroupeProposeVue, LogementVue, ParticipantVue, REGIMES, RegimeAlimentaire,
-  DemandeJournee, FraisVue, PHOTOS_MAX_PAR_JOURNEE, PortFrais, PortPrets, QrCodeConnexionVue, SejourApi, SejourVue,
+  DemandeJournee, FraisVue, PHOTOS_MAX_PAR_JOURNEE, PortFrais, PortPrets, QrCodeConnexionVue, EtatNotificationsVue, SejourApi, SejourVue,
   CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, autreJour, copieTrajet, heure, jourLong, nomComplet,
   remboursementsDe, texteTrajet, trajetSaisi
 } from './sejour-api';
@@ -42,6 +42,10 @@ import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
 import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee } from './onglets-sejour';
 import { QrCodeComponent } from '../../core/qr-code.component';
+import { HttpClient } from '@angular/common/http';
+import { SwPush } from '@angular/service-worker';
+import { NotificationsDuSejour } from './notifications-du-sejour';
+import { NotificationsSejourComponent } from './notifications-sejour.component';
 
 /** Durée du QR code de connexion d'un participant, comme le serveur. */
 const VALIDITE_QR_CODE_SECONDES = 60;
@@ -103,7 +107,7 @@ function participantVide(): BrouillonParticipant {
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, JourneeProgrammeComponent, PhotoJourneeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
             TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent,
-            QrCodeComponent],
+            QrCodeComponent, NotificationsSejourComponent],
   template: `
     @if (sejour(); as s) {
       <header class="entete">
@@ -202,6 +206,12 @@ function participantVide(): BrouillonParticipant {
                 <span aria-hidden="true">✉</span> Envoyer le carnet…
               </button>
             </li>
+            <li>
+              <button type="button" class="bouton-discret prevenir-participants" (click)="agir('prevenir')"
+                      [disabled]="envoi()">
+                <span aria-hidden="true">🔔</span> Prévenir les participants…
+              </button>
+            </li>
           }
           @if (s.peutDesigner) {
             <li>
@@ -233,6 +243,7 @@ function participantVide(): BrouillonParticipant {
       @if (moi(); as m) {
         <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes"
                         [attestations]="portAttestations" (ouvrir)="ouvrirDepuisMonSejour($event)" />
+        <app-notifications-sejour class="sans-impression" [notifications]="notifications" />
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
                       (fermer)="mesInfosOuvertes.set(false)">
           @if (mesInfosOuvertes()) {
@@ -904,6 +915,34 @@ function participantVide(): BrouillonParticipant {
       </div>
     </app-dialogue>
 
+    <!-- Prévenir tout le monde qu'il y a du nouveau : notification sur le téléphone, sinon e-mail (demande du club, 2026). -->
+    <app-dialogue [ouvert]="prevenirOuvert()" [large]="true" [erreur]="erreur()" titre="Prévenir les participants"
+                  (fermer)="prevenirOuvert.set(false)">
+      <p>Chaque participant qui a activé les notifications du séjour sur son téléphone reçoit un message : il y a
+        de nouvelles informations, ouvrez l'appli pour les voir. En le touchant, il arrive sur le séjour.</p>
+      <label for="message-notification">Message (facultatif)</label>
+      <textarea id="message-notification" name="message-notification" rows="3" maxlength="300"
+                placeholder="Ex. : le rendez-vous de samedi passe à 8 h" [(ngModel)]="messageNotification"></textarea>
+      <p class="secondaire">Rien de personnel (santé, téléphone, nom d'un enfant) : le message s'affiche sur l'écran
+        verrouillé du téléphone.</p>
+      <label class="case"><input type="checkbox" name="email-sinon" [(ngModel)]="emailSinon">
+        Prévenir par e-mail ceux qui n'ont pas activé les notifications</label>
+      @if (etatNotifications(); as e) {
+        <p class="secondaire">
+          Notifications activées : {{ e.avecNotification.length ? e.avecNotification.join(', ') : 'personne pour l\\'instant' }}.
+          @if (e.sansNotification.length) { <br>Pas encore : {{ e.sansNotification.join(', ') }}. }
+        </p>
+      } @else if (!erreur()) {
+        <p class="vide">Chargement…</p>
+      }
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal envoyer-notification" (click)="prevenir()" [disabled]="envoi()">
+          {{ envoi() ? 'Envoi…' : 'Prévenir' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="prevenirOuvert.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
+
     <!-- Le QR code qui connecte un participant sur son téléphone, une minute (demande du club, 2026). -->
     <app-dialogue [ouvert]="!!qrPour()" [erreur]="erreurQr()"
                   [titre]="'Connecter ' + (qrPour() ? nomComplet(qrPour()!) : '')"
@@ -1504,13 +1543,62 @@ export class SejourComponent {
   }
 
   /** Un geste de la fenêtre « Partager et organiser… » : la fenêtre se ferme, le geste se fait. */
-  agir(geste: 'participant' | 'trombinoscope' | 'carnet' | 'organisateurs'): void {
+  agir(geste: 'participant' | 'trombinoscope' | 'carnet' | 'prevenir' | 'organisateurs'): void {
     this.actionsOuvertes.set(false);
     if (geste === 'participant') this.basculerMode();
     else if (geste === 'trombinoscope') this.trombinoscopeOuvert.set(true);
     else if (geste === 'carnet') this.choisirDestinataires('carnet');
+    else if (geste === 'prevenir') this.ouvrirPrevenir();
     else this.ouvrirOrganisateurs();
   }
+
+  // ---------------- Notifications sur le téléphone ----------------
+
+  prevenirOuvert = signal(false);
+  /** Qui a activé les notifications sur son téléphone, et qui non. */
+  etatNotifications = signal<EtatNotificationsVue | null>(null);
+  messageNotification = '';
+  emailSinon = true;
+
+  ouvrirPrevenir(): void {
+    this.erreur.set(null);
+    this.etatNotifications.set(null);
+    this.messageNotification = '';
+    this.emailSinon = true;
+    this.prevenirOuvert.set(true);
+    this.api.etatNotifications(this.id).subscribe({
+      next: e => this.etatNotifications.set(e),
+      error: (e: HttpErrorResponse) => this.erreur.set(e.error?.detail ?? 'Réseau nécessaire pour prévenir les participants.')
+    });
+  }
+
+  /** Une notification à chaque téléphone abonné ; un e-mail aux autres si coché. */
+  prevenir(): void {
+    this.envoi.set(true);
+    this.erreur.set(null);
+    this.api.prevenir(this.id, this.messageNotification.trim() || null, this.emailSinon).subscribe({
+      next: b => {
+        this.envoi.set(false);
+        this.prevenirOuvert.set(false);
+        this.message.set([
+          b.notifies.length ? `Notification envoyée à : ${b.notifies.join(', ')}.` : 'Aucune notification envoyée.',
+          b.parEmail.length ? `Prévenus par e-mail : ${b.parEmail.join(', ')}.` : '',
+          b.sansMoyen.length ? `Pas prévenus (ni notifications, ni e-mail) : ${b.sansMoyen.join(', ')}.` : '',
+          b.echecs.length ? `Échec pour : ${b.echecs.join(', ')}.` : ''
+        ].filter(Boolean).join(' '));
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.erreur.set(e.error?.detail ?? "Les participants n'ont pas pu être prévenus (réseau nécessaire).");
+      }
+    });
+  }
+
+  /** Les notifications du séjour sur ce téléphone, pour un moniteur inscrit au séjour. */
+  readonly notifications = new NotificationsDuSejour(inject(SwPush), inject(HttpClient), {
+    activer: a => this.api.activerNotifications(this.id, a),
+    couper: endpoint => this.api.couperNotifications(this.id, endpoint)
+  }, String(this.id));
 
   /** Ce qu'un participant n'a pas encore renseigné ; vide s'il a tout donné. */
   manque(p: ParticipantVue): string[] {

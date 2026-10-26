@@ -1,5 +1,6 @@
 package fr.club.plongee.sejour;
 
+import fr.club.plongee.notification.push.AbonnementPush;
 import fr.club.plongee.sejour.AccesSejourService.*;
 import fr.club.plongee.sejour.PretsSejourService.DemandeDeclarationPret;
 import fr.club.plongee.sejour.PretsSejourService.DemandeRienEmprunte;
@@ -39,7 +40,11 @@ public class AccesSejourController {
 
     public record DepenseCreeePublique(long depenseId, FraisPublicVue vue) {}
 
+    /** L'abonnement du navigateur à ne plus notifier. */
+    public record DemandeDesabonnement(String endpoint) {}
+
     private final AccesSejourService acces;
+    private final NotificationsSejourService notifications;
     private final FraisService frais;
     private final PretsSejourService pretsSejour;
     private final CartesEmbarquementService cartes;
@@ -51,7 +56,8 @@ public class AccesSejourController {
     public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
                                  CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
                                  TrombinoscopeSejourService trombinoscope, MenusRestaurantService menus,
-                                 JourneesSejourService journees) {
+                                 JourneesSejourService journees, NotificationsSejourService notifications) {
+        this.notifications = notifications;
         this.journees = journees;
         this.trombinoscope = trombinoscope;
         this.menus = menus;
@@ -183,6 +189,21 @@ public class AccesSejourController {
     @PostMapping("/connexion-qr-code")
     public Connexion connecterParQrCode(@PathVariable String code, @Valid @RequestBody DemandeConnexionQrCode d) {
         return acces.connecterParQrCode(code, d.ticket());
+    }
+
+    /** Ce téléphone reçoit les notifications du séjour (abonnement du navigateur). */
+    @PutMapping("/notifications")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void activerNotifications(@PathVariable String code, @RequestBody AbonnementPush abonnement,
+                                     @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        notifications.abonner(acces.acces(code, jeton).participantId(), abonnement, false);
+    }
+
+    @DeleteMapping("/notifications")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void couperNotifications(@PathVariable String code, @RequestBody DemandeDesabonnement d,
+                                    @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        notifications.desabonner(acces.acces(code, jeton).participantId(), d.endpoint());
     }
 
     @PostMapping("/deconnexion")

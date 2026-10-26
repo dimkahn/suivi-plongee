@@ -22,6 +22,9 @@ import { SejourMaterielComponent } from './sejour-materiel.component';
 import { PretsDuSejour } from './materiel-sejour';
 import { cleJetonLienSejour, cleLienSejour, lectureEchouee } from './sejour-hors-ligne';
 import { oublierSejour, retenirSejour, sejourRetenu, ticketQrCode } from './sejour-courant';
+import { SwPush } from '@angular/service-worker';
+import { NotificationsDuSejour } from './notifications-du-sejour';
+import { NotificationsSejourComponent } from './notifications-sejour.component';
 import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
@@ -79,7 +82,8 @@ interface CopieLien {
 @Component({
   selector: 'app-espace-participant',
   imports: [FormsModule, OngletsComponent, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
-            CarnetSejourComponent, CarnetImprimableComponent, TrombinoscopeSejourComponent, SejourRestaurantComponent],
+            CarnetSejourComponent, CarnetImprimableComponent, TrombinoscopeSejourComponent, SejourRestaurantComponent,
+            NotificationsSejourComponent],
   template: `
     @if (imprimable() && carnet(); as c) {
       <app-carnet-imprimable [sejour]="c" (fermer)="imprimable.set(false)" />
@@ -93,6 +97,7 @@ interface CopieLien {
           <span>Vous êtes <strong>{{ v.moi.prenom }} {{ v.moi.nom }}</strong>.</span>
           <button type="button" class="bouton-discret" (click)="deconnecter()">Se déconnecter</button>
         </div>
+        <app-notifications-sejour [notifications]="notifications" />
         @if (voyageur(); as p) {
           <app-journee-sejour [participants]="[p]" [moiId]="p.id" [dateDebut]="e.dateDebut" [dateFin]="e.dateFin"
                               [programme]="programme()" [affaires]="affaires()" [comptes]="mesComptes()"
@@ -318,6 +323,12 @@ export class EspaceParticipantComponent {
     lire: () => this.http.get(`${this.base}/attestation-assurance`, { headers: this.entetes(), responseType: 'blob' })
   };
 
+  /** Les notifications du séjour sur ce téléphone, avec le jeton du lien. */
+  readonly notifications = new NotificationsDuSejour(inject(SwPush), this.http, {
+    activer: a => this.http.put<void>(`${this.base}/notifications`, a, this.options()),
+    couper: endpoint => this.http.delete<void>(`${this.base}/notifications`, { ...this.options(), body: { endpoint } })
+  }, this.code);
+
   /** Le matériel emprunté, partagé par la carte « Mon séjour » du carnet et l'onglet « Matériel ». */
   readonly prets = new PretsDuSejour(this.portPrets);
   private readonly materiel = viewChild(SejourMaterielComponent);
@@ -421,6 +432,8 @@ export class EspaceParticipantComponent {
   }
 
   async deconnecter(): Promise<void> {
+    // Un téléphone prêté ou partagé ne reçoit plus les nouvelles du séjour (le serveur les coupe aussi).
+    if (this.notifications.etat() === 'activees') await this.notifications.couper();
     try { await firstValueFrom(this.http.post(`${this.base}/deconnexion`, {}, this.options())); } catch { /* déjà expiré */ }
     await this.oublierJeton();
   }

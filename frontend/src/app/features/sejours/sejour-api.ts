@@ -6,6 +6,7 @@ import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sej
 import type { RepasDuJour } from './liste-courses';
 import type { MenusVue, PortMenus } from './menus-restaurant';
 import type { FichesSecuriteSejourVue, PortFichesSecurite } from './fiches-securite-sejour';
+import type { AbonnementServeur } from './notifications-telephone';
 
 /** Les repas du séjour pris au restaurant (RepasSejourService). */
 interface RepasSejourVue {
@@ -472,6 +473,19 @@ export interface BilanEnvoiAcces {
   echecs: string[];
 }
 
+export interface EtatNotificationsVue {
+  avecNotification: string[];
+  sansNotification: string[];
+}
+
+/** sansMoyen : ni notification activée, ni e-mail envoyé. */
+export interface BilanNotification {
+  notifies: string[];
+  parEmail: string[];
+  sansMoyen: string[];
+  echecs: string[];
+}
+
 /** Le QR code de connexion d'un participant : son adresse, ses carrés (« 1 » = noir), sa fin (une minute). */
 export interface QrCodeConnexionVue {
   adresse: string;
@@ -894,6 +908,25 @@ export class SejourApi {
   /** Le QR code, valable une minute, qui connecte ce participant au séjour sur son téléphone. */
   qrCodeConnexion(id: number, participantId: number): Observable<QrCodeConnexionVue> {
     return this.http.post<QrCodeConnexionVue>(`/api/sejours/${id}/participants/${participantId}/qr-code`, {});
+  }
+
+  /** Qui a activé les notifications du séjour sur son téléphone (organisateurs). */
+  etatNotifications(id: number): Observable<EtatNotificationsVue> {
+    return this.http.get<EtatNotificationsVue>(`/api/sejours/${id}/notifications`);
+  }
+
+  /** Prévient chaque participant qu'il y a du nouveau ; emailSinon : un e-mail à ceux sans notifications. */
+  prevenir(id: number, message: string | null, emailSinon: boolean): Observable<BilanNotification> {
+    return this.http.post<BilanNotification>(`/api/sejours/${id}/notifications`, { message, emailSinon });
+  }
+
+  /** Ce téléphone reçoit les notifications du séjour (participant connecté à l'appli). */
+  activerNotifications(id: number, a: AbonnementServeur): Observable<void> {
+    return this.http.put<void>(`/api/sejours/${id}/notifications/abonnement`, a);
+  }
+
+  couperNotifications(id: number, endpoint: string): Observable<void> {
+    return this.http.delete<void>(`/api/sejours/${id}/notifications/abonnement`, { body: { endpoint } });
   }
 
   /** Le participant connecté complète ses propres informations. */
