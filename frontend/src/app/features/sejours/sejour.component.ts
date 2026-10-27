@@ -14,7 +14,8 @@ import { FileSejourService } from './file-sejour.service';
 import { ModificationSejour, appliquerEnAttente, cleSejour } from './sejour-hors-ligne';
 import { MoniteurOptionVue, PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
-import { OngletsComponent } from '../../core/onglets.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
+import { FiltreParticipants, filtrerParticipants, manqueDe } from './recherche-participants';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { dateDuJour, periode } from '../../core/date-fr';
 import {
@@ -344,8 +345,26 @@ function participantVide(): BrouillonParticipant {
               }
             </div>
           }
+          @if (s.participants.length > 0) {
+            <!-- Retrouver vite quelqu'un et ce qui reste à faire (demande du club, 2026). -->
+            <div class="recherche-participants sans-impression">
+              <input id="recherche-participant" type="search" aria-label="Chercher un participant" [ngModel]="rechercheParticipant()"
+                     (ngModelChange)="rechercheParticipant.set($event)" placeholder="Chercher : nom, groupe, téléphone…"
+                     autocomplete="off">
+              @if (rechercheParticipant()) {
+                <button type="button" class="bouton-discret vider-recherche" (click)="rechercheParticipant.set('')"
+                        aria-label="Vider la recherche">✕</button>
+              }
+            </div>
+            <app-onglets class="filtres-participants sans-impression" [boutons]="true" libelle="Montrer"
+                         [options]="filtresParticipants()" [choisi]="filtreParticipants()"
+                         (choisir)="filtreParticipants.set($event)" />
+            @if (participantsAffiches().length === 0) {
+              <p class="vide">Personne ne correspond.</p>
+            }
+          }
           <ul class="liste-participants">
-            @for (p of s.participants; track p.id) {
+            @for (p of participantsAffiches(); track p.id) {
               <li class="carte">
                 <details>
                   <summary>
@@ -379,21 +398,33 @@ function participantVide(): BrouillonParticipant {
                 @if (s.gere) {
                   <app-attestation-assurance [type]="p.attestationAssurance" [port]="portAttestations" [participantId]="p.id" />
                   <div class="actions sans-impression">
-                    <button type="button" class="bouton-discret" (click)="ouvrirParticipant(p)">Modifier</button>
-                    <button type="button" class="bouton-discret bouton-qr-connexion" (click)="montrerQrCode(p)"
-                            title="Un QR code d'une minute à scanner avec son téléphone : il entre dans le séjour sans e-mail ni code">
-                      QR code de connexion
-                    </button>
-                    @if (p.email) {
-                      <button type="button" class="bouton-discret" (click)="envoyerInvitations(p)" [disabled]="envoi()"
-                              title="Un e-mail pour qu'il renseigne lui-même son voyage, ses repas, la personne à prévenir et ses frais">
-                        Lui demander ses informations
-                      </button>
-                    }
                     <button type="button" class="bouton-discret danger" (click)="supprimerParticipant(p)">Retirer</button>
                   </div>
                 }
                 </details>
+                <!-- Les gestes courants sans ouvrir la fiche ; « Retirer » reste dedans, à l'abri d'un geste malheureux. -->
+                @if (p.telephone || s.gere) {
+                  <div class="actions actions-rapides sans-impression">
+                    @if (p.telephone) {
+                      <a class="bouton-discret action-rapide" [href]="'tel:' + p.telephone"
+                         [attr.aria-label]="'Appeler ' + nomComplet(p)"><span aria-hidden="true">📞</span> Appeler</a>
+                    }
+                    @if (s.gere) {
+                      <button type="button" class="bouton-discret action-rapide" (click)="ouvrirParticipant(p)"
+                              [attr.aria-label]="'Modifier ' + nomComplet(p)"><span aria-hidden="true">✏️</span> Modifier</button>
+                      <button type="button" class="bouton-discret action-rapide bouton-qr-connexion" (click)="montrerQrCode(p)"
+                              title="Un QR code d'une minute à scanner avec son téléphone : il entre dans le séjour sans e-mail ni code">
+                        <span aria-hidden="true">▦</span> QR code de connexion
+                      </button>
+                      @if (p.email) {
+                        <button type="button" class="bouton-discret action-rapide" (click)="envoyerInvitations(p)" [disabled]="envoi()"
+                                title="Un e-mail pour qu'il renseigne lui-même son voyage, ses repas, la personne à prévenir et ses frais">
+                          <span aria-hidden="true">✉️</span> Lui demander ses informations
+                        </button>
+                      }
+                    }
+                  </div>
+                }
               </li>
             }
           </ul>
@@ -1255,6 +1286,12 @@ function participantVide(): BrouillonParticipant {
     .liste-participants > li { padding: 0 var(--pas-2); }
     .liste-participants details[open] { padding-bottom: var(--pas-2); }
     .liste-participants p { margin: var(--pas) 0 0; }
+    .recherche-participants { position: relative; margin-top: var(--pas-2); }
+    .recherche-participants input { width: 100%; min-height: 44px; padding-right: 48px; }
+    .vider-recherche { position: absolute; right: 0; top: 0; min-width: 44px; min-height: 44px; border: 0; }
+    .filtres-participants { margin: var(--pas) 0; }
+    .actions-rapides { padding-bottom: var(--pas-2); }
+    .action-rapide { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     .qr-connexion { width: min(100%, 18rem); margin: var(--pas-2) auto; }
     .centre { text-align: center; }
     .etat-infos { margin-left: auto; font-size: .8125rem; color: var(--en-cours); }
@@ -1419,6 +1456,22 @@ export class SejourComponent {
   readonly complets = computed(() => (this.sejour()?.participants ?? []).filter(p => this.manque(p).length === 0).length);
   /** Qui a joint son attestation d'assurance : le serveur ne le dit qu'aux organisateurs. */
   readonly assures = computed(() => (this.sejour()?.participants ?? []).filter(p => !!p.attestationAssurance).length);
+  /** La recherche et le filtre de la liste des participants. */
+  readonly rechercheParticipant = signal('');
+  readonly filtreParticipants = signal<FiltreParticipants>('tous');
+  readonly participantsAffiches = computed(() =>
+    filtrerParticipants(this.sejour()?.participants ?? [], this.rechercheParticipant(), this.filtreParticipants()));
+  /** « Sans attestation » pour les seuls organisateurs, qui voient les attestations. */
+  readonly filtresParticipants = computed((): OptionOnglet<FiltreParticipants>[] => {
+    const s = this.sejour();
+    const tous = s?.participants ?? [];
+    const options: OptionOnglet<FiltreParticipants>[] = [
+      { valeur: 'tous', libelle: `Tous (${tous.length})` },
+      { valeur: 'a-completer', libelle: `À compléter (${tous.length - this.complets()})` }
+    ];
+    if (s?.gere) options.push({ valeur: 'sans-attestation', libelle: `Sans attestation (${tous.length - this.assures()})` });
+    return options;
+  });
 
   readonly moi = computed(() => this.sejour()?.participants.find(p => p.moi) ?? null);
   private readonly parId = computed(() => new Map((this.sejour()?.participants ?? []).map(p => [p.id, p])));
@@ -1602,12 +1655,7 @@ export class SejourComponent {
 
   /** Ce qu'un participant n'a pas encore renseigné ; vide s'il a tout donné. */
   manque(p: ParticipantVue): string[] {
-    const rien = (t: Trajet | null) => !t?.date && !t?.heure;
-    return [
-      rien(p.arrivee) ? 'arrivée' : null,
-      rien(p.depart) ? 'départ' : null,
-      !p.urgenceNom && !p.urgenceTelephone ? 'personne à prévenir' : null
-    ].filter((x): x is string => x !== null);
+    return manqueDe(p);
   }
 
   majuscule(t: string): string {
