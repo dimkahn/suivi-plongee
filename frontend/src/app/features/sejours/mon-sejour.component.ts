@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, computed, input, output, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, input, model, output, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { dateFr } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
@@ -46,6 +46,11 @@ interface Tuile {
       <div class="tete">
         <h2 id="titre-mon-sejour">Mon séjour</h2>
         <span class="pastille">{{ moi().plongeur ? 'Plongeur' : 'Accompagnant' }}</span>
+        <!-- Replié : au téléphone, sur la ligne du titre ; « Modifier mes informations » dessous. -->
+        @if (repliable()) {
+          <button type="button" class="bouton-discret replier sans-impression" [attr.aria-expanded]="!replie()"
+                  (click)="replie.set(!replie())">{{ replie() ? 'Déplier' : 'Replier' }}</button>
+        }
         <button type="button" class="bouton-principal sans-impression" (click)="ouvrir.emit('infos')">
           Modifier mes informations
         </button>
@@ -73,7 +78,7 @@ interface Tuile {
                                    titre="Mon attestation d'assurance" [monSejour]="true"
                                    [conseil]="sejour().conseilAssurance" />
       }
-      @if (voyages().length > 0) {
+      @if (voyages().length > 0 && !replie()) {
         <div class="voyages">
           @for (v of voyages(); track v.etiquette) {
             <app-carte-voyage [trajet]="v.trajet" [aller]="v.aller" [etiquette]="v.etiquette"
@@ -81,21 +86,23 @@ interface Tuile {
           }
         </div>
       }
-      <ul class="tuiles">
-        @for (t of tuiles(); track t.etiquette) {
-          <li>
-            <button type="button" class="tuile" [class.manquant]="t.aCompleter" (click)="ouvrir.emit(t.cible)">
-              <span class="etiquette">{{ t.etiquette }}</span>
-              @if (t.principal) {
-                <strong class="principal">{{ t.principal }}</strong>
-              } @else {
-                <span class="principal vide">{{ t.vide }}</span>
-              }
-              @for (d of t.details; track $index) { <span class="detail">{{ d }}</span> }
-            </button>
-          </li>
-        }
-      </ul>
+      @if (!replie()) {
+        <ul class="tuiles">
+          @for (t of tuiles(); track t.etiquette) {
+            <li>
+              <button type="button" class="tuile" [class.manquant]="t.aCompleter" (click)="ouvrir.emit(t.cible)">
+                <span class="etiquette">{{ t.etiquette }}</span>
+                @if (t.principal) {
+                  <strong class="principal">{{ t.principal }}</strong>
+                } @else {
+                  <span class="principal vide">{{ t.vide }}</span>
+                }
+                @for (d of t.details; track $index) { <span class="detail">{{ d }}</span> }
+              </button>
+            </li>
+          }
+        </ul>
+      }
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -103,7 +110,8 @@ interface Tuile {
     .mon-sejour { margin: var(--pas-2) 0; padding: var(--pas-2); border-left: 6px solid var(--profond); }
     .tete { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .tete h2 { margin: 0; }
-    .tete .bouton-principal { margin-left: auto; }
+    .tete .bouton-principal, .tete .replier { margin-left: auto; }
+    .tete .replier + .bouton-principal { margin-left: 0; }
     .pastille { padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
                 background: #E0F2FE; color: var(--profond-fonce); }
     .a-completer { margin: var(--pas) 0 0; padding: var(--pas) var(--pas-2); border-radius: var(--r-s);
@@ -151,6 +159,12 @@ export class MonSejourComponent implements OnInit {
   cartes = input<PortCartesEmbarquement | null>(null);
   /** Son attestation d'assurance, à ajouter, ouvrir, remplacer ou retirer ; sans lui, pas d'encart. */
   attestations = input<PortAttestationAssurance | null>(null);
+  /**
+   * Un bouton « Replier » (page du séjour de l'appli) : ses voyages et ses
+   * cases cachés ; ce qui reste à faire (à compléter, matériel, attestation) reste.
+   */
+  repliable = input(false);
+  replie = model(false);
   ouvrir = output<CibleMonSejour>();
 
   envoi = signal(false);

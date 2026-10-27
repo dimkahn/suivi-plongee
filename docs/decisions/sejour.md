@@ -238,6 +238,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Bandeau sur une ligne** : « Version imprimable » ; pour un encadrant, « Partager et organiser… » ouvre une fenêtre de choix (voir comme un participant, trombinoscope, envoyer le carnet, choisir les organisateurs). « Revenir à l'organisation » reste dans le bandeau ; un participant garde « Trombinoscope » à côté de « Version imprimable ».
 - Étapes suivantes envisagées (page selon le moment du séjour, liste « À faire » de l'organisateur) : `docs/specs/2026-10-26-ergonomie-sejour/suite.md`.
 
+## Sous-onglets et haut de page repliable (2026-10-28)
+
+- **Demande du club** : un sous-menu pour rendre la page plus lisible. Le sommaire de 2026-10-26 ne faisait que descendre dans des sections toujours empilées : « Qui et où » restait très long au téléphone.
+- **Sous-onglets** (`rubriquesSejour`, `rubriqueChoisie`, testés) : la rangée de l'onglet ouvert, **une seule rubrique montrée à la fois**, la première à l'ouverture d'un onglet ; affichée à partir de deux rubriques. Un participant n'a pas celles des encadrants. Anciens liens et tuiles de « Mon séjour » ouvrent l'onglet à la bonne rubrique.
+- **Points à vérifier sur la rubrique qui les règle** : voitures (trop pleine, sans conducteur, plusieurs voitures) en haut de « Voitures » au lieu des arrivées et départs ; chambres dans « Logements ». Le rond orange de « Qui et où » reste.
+- **Replier « Aujourd'hui » et « Mon séjour »** (bouton « Replier », page du séjour de l'appli seulement) : « Aujourd'hui » garde son titre ; « Mon séjour » garde ce qui reste à faire (« À compléter », question du matériel, attestation d'assurance) et cache voyages et cases. Choix gardé sur l'appareil pour tous les séjours (`ReplisSejourService`, IndexedDB). *Pourquoi pas sur la page du lien :* un participant y a déjà des onglets séparés (Carnet, Mes informations, Frais).
+
 ## Connexion d'un participant par QR code (2026-10-26)
 
 - **Demande du club** : l'organisateur fabrique un QR code valable une minute qui connecte le participant choisi ; la connexion dure le séjour et jusqu'à un mois après ; l'appli installée, qui s'ouvre sur la page de connexion, renvoie le participant connecté à son séjour.

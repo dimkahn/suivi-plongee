@@ -2,7 +2,8 @@ import { OptionOnglet } from '../../core/onglets.component';
 
 /**
  * Les cinq onglets du séjour (demande du club, 2026 : dix onglets, c'était
- * trop). Chacun regroupe des sections, chacune avec son ancre :
+ * trop). Chacun regroupe des sections, montrées une à une par ses
+ * sous-onglets (`rubriquesSejour`), chacune avec son ancre :
  * - Programme : le programme, puis les fiches de sécurité (encadrants) ;
  * - Qui et où : participants (encadrants), arrivées et départs, voitures, logements ;
  * - Repas : régimes et courses (encadrants), restaurant ;
@@ -42,6 +43,41 @@ export function ongletsSejour(alertes: { transports: number; hebergement: number
     libelle: LIBELLES[valeur],
     ...(valeur === 'personnes' ? { alertes: alertes.transports + alertes.hebergement } : {})
   }));
+}
+
+/** Ce qui décide des rubriques montrées : encadrant ou non, fiches lues, points à vérifier. */
+export interface ContexteRubriques {
+  encadrant: boolean;
+  fiches: boolean;
+  alertes: { voitures: number; logements: number };
+}
+
+/**
+ * Les rubriques d'un onglet, en sous-onglets : une seule montrée à la fois
+ * (demande du club, 2026 : les sections empilées restaient trop longues au
+ * téléphone). La valeur est l'ancre de la section ; un participant n'a pas
+ * celles des encadrants ; les points à vérifier sur la rubrique qui les règle.
+ */
+export function rubriquesSejour(onglet: OngletSejour, c: ContexteRubriques): OptionOnglet<string>[] {
+  const r = (valeur: string, libelle: string, montree = true, alertes = 0): OptionOnglet<string>[] =>
+    montree ? [{ valeur, libelle, ...(alertes ? { alertes } : {}) }] : [];
+  switch (onglet) {
+    case 'programme': return [...r('programme-sejour', 'Programme'),
+      ...r('fiches-securite-sejour', 'Fiches de sécurité', c.encadrant && c.fiches)];
+    case 'personnes': return [...r('participants-sejour', 'Participants', c.encadrant),
+      ...r('trajets-sejour', 'Arrivées et départs'), ...r('voitures-sejour', 'Voitures', true, c.alertes.voitures),
+      ...r('logements-sejour', 'Logements', true, c.alertes.logements)];
+    case 'repas': return [...r('regimes-sejour', 'Régimes', c.encadrant),
+      ...r('courses-sejour', 'Courses', c.encadrant), ...r('restaurant-sejour', 'Restaurant')];
+    case 'frais': return r('frais-sejour', 'Frais');
+    case 'pratique': return [...r('affaires-sejour', 'Affaires à prévoir'),
+      ...r('infos-sejour', 'Infos pratiques'), ...r('materiel-sejour', 'Matériel emprunté')];
+  }
+}
+
+/** La rubrique montrée : la demandée si l'onglet l'a, sinon la première. */
+export function rubriqueChoisie(rubriques: readonly OptionOnglet<string>[], demandee: string | null): string | null {
+  return rubriques.find(r => r.valeur === demandee)?.valeur ?? rubriques[0]?.valeur ?? null;
 }
 
 /** L'onglet demandé, ancien nom compris ; inconnu ou absent : le programme. */

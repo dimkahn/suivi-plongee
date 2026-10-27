@@ -41,7 +41,8 @@ import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { SejourCoursesComponent } from './sejour-courses.component';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
-import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee } from './onglets-sejour';
+import { ReplisSejourService } from './replis-sejour';
+import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee, rubriqueChoisie, rubriquesSejour } from './onglets-sejour';
 import { QrCodeComponent } from '../../core/qr-code.component';
 import { texteBilanParametres } from './envoi-parametres';
 import { HttpClient } from '@angular/common/http';
@@ -251,10 +252,12 @@ function participantVide(): BrouillonParticipant {
       <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant" [encadrant]="s.encadrant"
                           [moiId]="moi()?.id ?? null" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
                           [programme]="programme()" [affaires]="s.affaires" [comptes]="mesComptes()"
-                          [cartes]="portCartes" />
+                          [cartes]="portCartes" [repliable]="true" [replie]="replis.replie('aujourdhui')"
+                          (replieChange)="replis.choisir('aujourdhui', $event)" />
 
       @if (moi(); as m) {
-        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes"
+        <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes" [repliable]="true"
+                        [replie]="replis.replie('mon-sejour')" (replieChange)="replis.choisir('mon-sejour', $event)"
                         [attestations]="portAttestations" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-notifications-sejour class="sans-impression" [notifications]="notifications" />
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
@@ -267,21 +270,16 @@ function participantVide(): BrouillonParticipant {
       }
 
       <app-onglets class="sans-impression" id="onglets-sejour" [options]="onglets()" [choisi]="onglet()"
-                   (choisir)="onglet.set($event)" />
+                   (choisir)="choisirOnglet($event)" />
 
-      <!-- Un onglet de plusieurs sections : un sommaire pour y descendre sans faire défiler. -->
-      @if (sommaire().length > 1) {
-        <nav class="sommaire-onglet sans-impression" aria-label="Dans cet onglet">
-          @for (e of sommaire(); track e.ancre) {
-            <button type="button" class="bouton-discret" (click)="ouvrirSection({ onglet: onglet(), ancre: e.ancre })">
-              {{ e.libelle }}
-            </button>
-          }
-        </nav>
+      <!-- Un onglet de plusieurs rubriques : des sous-onglets, une rubrique à la fois (demande du club, 2026). -->
+      @if (rubriques().length > 1) {
+        <app-onglets class="sous-onglets sans-impression" libelle="Rubriques de l'onglet" [options]="rubriques()"
+                     [choisi]="rubrique()" (choisir)="rubriqueDemandee.set($event)" />
       }
 
       <!-- Programme -->
-      @if (voir('programme')) {
+      @if (montrer('programme-sejour')) {
         <section id="programme-sejour">
           <div class="titre-section">
             <h2>Programme</h2>
@@ -308,7 +306,7 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Qui et où : participants (encadrants), arrivées et départs, voitures, logements -->
-      @if (s.encadrant && voir('personnes')) {
+      @if (montrer('participants-sejour')) {
         <section id="participants-sejour">
           <div class="titre-section">
             <h2>Participants</h2>
@@ -443,13 +441,8 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      @if (voir('personnes')) {
+      @if (montrer('trajets-sejour')) {
         <section id="trajets-sejour">
-          @if (avertissementsDe().transports.length > 0) {
-            <ul class="avertissements sans-impression" aria-label="À vérifier">
-              @for (a of avertissementsDe().transports; track a) { <li>{{ a }}</li> }
-            </ul>
-          }
           <div class="titre-section">
             <h2>Arrivées et départs</h2>
             @if (s.gere) {
@@ -515,8 +508,13 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      @if (voir('personnes')) {
-        <section class="section-separee" id="voitures-sejour">
+      @if (montrer('voitures-sejour')) {
+        <section id="voitures-sejour">
+          @if (avertissementsDe().voitures.length > 0) {
+            <ul class="avertissements sans-impression" aria-label="À vérifier">
+              @for (a of avertissementsDe().voitures; track a) { <li>{{ a }}</li> }
+            </ul>
+          }
           <div class="titre-section">
             <h2>Voitures</h2>
             @if (s.gere) {
@@ -549,8 +547,8 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Logements et chambres -->
-      @if (voir('personnes')) {
-        <section class="section-separee" id="logements-sejour">
+      @if (montrer('logements-sejour')) {
+        <section id="logements-sejour">
           @if (avertissementsDe().hebergement.length > 0) {
             <ul class="avertissements sans-impression" aria-label="À vérifier">
               @for (a of avertissementsDe().hebergement; track a) { <li>{{ a }}</li> }
@@ -598,8 +596,8 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Fiches de sécurité des plongées du séjour : encadrants, réseau obligatoire (demande du club, 2026) -->
-      @if (s.encadrant && litLesFiches() && voir('programme')) {
-        <section id="fiches-securite-sejour" class="section-separee">
+      @if (montrer('fiches-securite-sejour')) {
+        <section id="fiches-securite-sejour">
           @if (copieDu()) {
             <p class="vide">Les fiches de sécurité demandent le réseau.</p>
           } @else {
@@ -610,7 +608,7 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Pratique : affaires à prévoir, infos pratiques, matériel emprunté -->
-      @if (voir('pratique')) {
+      @if (montrer('affaires-sejour')) {
         <section id="affaires-sejour">
           <div class="titre-section">
             <h2>Affaires à prévoir</h2>
@@ -638,7 +636,7 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Frais partagés -->
-      @if (voir('frais')) {
+      @if (montrer('frais-sejour')) {
         <section id="frais-sejour">
           <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" />
           @if (s.gere) {
@@ -651,7 +649,7 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Repas : régimes et liste de courses (encadrants, qui voient les régimes), restaurant -->
-      @if (s.encadrant && voir('repas')) {
+      @if (montrer('regimes-sejour')) {
         <section id="regimes-sejour">
           <h2>Régimes</h2>
           <p>{{ s.participants.length }} couverts, dont {{ sansRegime().length }} sans régime particulier.</p>
@@ -666,7 +664,9 @@ function participantVide(): BrouillonParticipant {
             </ul>
           }
         </section>
-        <section id="courses-sejour" class="section-separee">
+      }
+      @if (montrer('courses-sejour')) {
+        <section id="courses-sejour">
           @if (copieDu()) {
             <p class="vide">La liste de courses demande le réseau.</p>
           } @else {
@@ -676,8 +676,8 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Menus des restaurants : chacun choisit, les organisateurs importent et lisent la commande ; réseau obligatoire -->
-      @if (voir('repas')) {
-        <section id="restaurant-sejour" [class.section-separee]="s.encadrant">
+      @if (montrer('restaurant-sejour')) {
+        <section id="restaurant-sejour">
           @if (copieDu()) {
             <p class="vide">Les menus du restaurant demandent le réseau.</p>
           } @else {
@@ -687,8 +687,8 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      @if (voir('pratique')) {
-        <section id="infos-sejour" class="section-separee">
+      @if (montrer('infos-sejour')) {
+        <section id="infos-sejour">
           <div class="titre-section">
             <h2>Infos pratiques</h2>
             @if (s.gere) {
@@ -701,9 +701,11 @@ function participantVide(): BrouillonParticipant {
             <p class="vide">Numéros d'urgence, centre de plongée, rendez-vous… à compléter.</p>
           }
         </section>
+      }
 
-        <!-- Matériel du club emprunté : chargé à l'ouverture de l'onglet -->
-        <section id="materiel-sejour" class="section-separee">
+      <!-- Matériel du club emprunté : chargé à l'ouverture de l'onglet -->
+      @if (montrer('materiel-sejour')) {
+        <section id="materiel-sejour">
           <app-sejour-materiel [prets]="prets" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
@@ -1314,10 +1316,9 @@ function participantVide(): BrouillonParticipant {
               grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .cartes > li { padding: var(--pas-2); }
     .cartes > li.vol { padding: 0; break-inside: avoid; }
-    /* Les sections d'un même onglet bien séparées les unes des autres. */
-    .section-separee { margin-top: calc(var(--pas-2) * 2); padding-top: var(--pas-2); border-top: 2px solid var(--trait); }
-    .sommaire-onglet { display: flex; flex-wrap: wrap; gap: var(--pas); margin: 0 0 var(--pas-2); }
-    .sommaire-onglet button { min-height: 44px; font-size: .9375rem; }
+    /* Les sous-onglets, plus discrets que les onglets, soulignés jusqu'à la rubrique montrée. */
+    .sous-onglets { margin: calc(var(--pas) * -1) 0 var(--pas-2); padding-bottom: var(--pas);
+                    border-bottom: 2px solid var(--trait); font-size: .9375rem; }
     .liste-actions { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
     .liste-actions button { width: 100%; min-height: 48px; display: flex; align-items: center; gap: var(--pas);
                             justify-content: flex-start; text-align: left; }
@@ -1406,6 +1407,8 @@ export class SejourComponent {
 
   private readonly id = Number(this.route.snapshot.paramMap.get('id'));
   readonly fileSejour = inject(FileSejourService);
+  /** « Aujourd'hui » et « Mon séjour » repliés ou non, gardés sur l'appareil. */
+  readonly replis = inject(ReplisSejourService);
   readonly reseau = inject(ReseauService);
   /** Le séjour tel que le serveur (ou la copie du téléphone) le connaît. */
   private base = signal<SejourVue | null>(null);
@@ -1426,6 +1429,8 @@ export class SejourComponent {
   /** « ?onglet=fiches » : le retour d'une fiche de sécurité rouvre l'onglet, à la section des fiches. */
   private readonly ouvertureInitiale = ouvertureDemandee(this.route.snapshot.queryParamMap.get('onglet'));
   onglet = signal<OngletSejour>(this.ouvertureInitiale.onglet);
+  /** La rubrique demandée dans l'onglet (sous-onglet, ancien lien) ; absente de l'onglet : sa première. */
+  rubriqueDemandee = signal<string | null>(this.ouvertureInitiale.ancre);
   /** La fenêtre « Trombinoscope » (tous les participants, réseau obligatoire). */
   trombinoscopeOuvert = signal(false);
   /** La fenêtre « Partager et organiser… » du bandeau Organisation (encadrants). */
@@ -1433,37 +1438,30 @@ export class SejourComponent {
 
   /**
    * Les avertissements du serveur (SejourService.avertissements), rangés
-   * au-dessus de la section qui permet de les régler : chambres sur les
-   * logements, voitures sur les arrivées et départs (onglet « Qui et où »).
+   * au-dessus de la rubrique qui permet de les régler : chambres sur les
+   * logements, le reste sur les voitures (onglet « Qui et où »).
    */
   readonly avertissementsDe = computed(() => {
     const liste = this.sejour()?.avertissements ?? [];
     const chambre = (a: string) => a.startsWith('Chambre ') || a.startsWith('Sans chambre');
-    return { hebergement: liste.filter(chambre), transports: liste.filter(a => !chambre(a)) };
+    return { hebergement: liste.filter(chambre), voitures: liste.filter(a => !chambre(a)) };
   });
 
   readonly onglets = computed(() => {
     const a = this.avertissementsDe();
-    return ongletsSejour({ transports: a.transports.length, hebergement: a.hebergement.length });
+    return ongletsSejour({ transports: a.voitures.length, hebergement: a.hebergement.length });
   });
 
-  /** Les sections de l'onglet ouvert, pour son sommaire (affiché à partir de deux). */
-  readonly sommaire = computed(() => {
-    const encadrant = !!this.sejour()?.encadrant;
-    const section = (ancre: string, libelle: string, montree = true) => montree ? [{ ancre, libelle }] : [];
-    switch (this.onglet()) {
-      case 'programme': return [...section('programme-sejour', 'Programme'),
-        ...section('fiches-securite-sejour', 'Fiches de sécurité', encadrant && this.litLesFiches())];
-      case 'personnes': return [...section('participants-sejour', 'Participants', encadrant),
-        ...section('trajets-sejour', 'Arrivées et départs'), ...section('voitures-sejour', 'Voitures'),
-        ...section('logements-sejour', 'Logements')];
-      case 'repas': return [...section('regimes-sejour', 'Régimes', encadrant),
-        ...section('courses-sejour', 'Courses', encadrant), ...section('restaurant-sejour', 'Restaurant')];
-      case 'pratique': return [...section('affaires-sejour', 'Affaires à prévoir'),
-        ...section('infos-sejour', 'Infos pratiques'), ...section('materiel-sejour', 'Matériel emprunté')];
-      default: return [];
-    }
+  /** Les rubriques de l'onglet ouvert, en sous-onglets (affichés à partir de deux). */
+  readonly rubriques = computed(() => {
+    const a = this.avertissementsDe();
+    return rubriquesSejour(this.onglet(), {
+      encadrant: !!this.sejour()?.encadrant, fiches: this.litLesFiches(),
+      alertes: { voitures: a.voitures.length, logements: a.hebergement.length }
+    });
   });
+  /** La rubrique montrée, seule, sous les sous-onglets. */
+  readonly rubrique = computed(() => rubriqueChoisie(this.rubriques(), this.rubriqueDemandee()));
 
   /** Ceux qui ont tout renseigné (arrivée, départ, personne à prévenir), pour l'onglet Participants. */
   readonly complets = computed(() => (this.sejour()?.participants ?? []).filter(p => this.manque(p).length === 0).length);
@@ -1597,15 +1595,22 @@ export class SejourComponent {
     });
   }
 
-  voir(o: OngletSejour): boolean {
-    return this.onglet() === o;
+  /** La section n'est montrée que si c'est la rubrique choisie de l'onglet ouvert. */
+  montrer(ancre: string): boolean {
+    return this.rubrique() === ancre;
   }
 
-  /** Ouvre un onglet et descend à sa section (sommaire, tuile de « Mon séjour », ancien lien). */
+  /** Un autre onglet s'ouvre sur sa première rubrique. */
+  choisirOnglet(o: OngletSejour): void {
+    this.onglet.set(o);
+    this.rubriqueDemandee.set(null);
+  }
+
+  /** Ouvre un onglet à sa rubrique et y descend (tuile de « Mon séjour », ancien lien). */
   ouvrirSection(o: OuvertureSejour): void {
     this.onglet.set(o.onglet);
-    const cible = o.ancre ?? 'onglets-sejour';
-    setTimeout(() => document.getElementById(cible)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    this.rubriqueDemandee.set(o.ancre);
+    setTimeout(() => document.getElementById('onglets-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   /** Un geste de la fenêtre « Partager et organiser… » : la fenêtre se ferme, le geste se fait. */

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, input, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, model, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { PalanqueesPlongeeComponent } from './palanquees-plongee.component';
 import { CarteVoyageComponent } from './carte-voyage.component';
@@ -26,8 +26,15 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
   template: `
     @if (journee(); as a) {
       <section class="carte encart-jour" aria-label="Aujourd'hui">
+        <!-- Replié : le titre seul, pour atteindre plus vite les onglets du séjour (demande du club, 2026). -->
+        @if (repliable()) {
+          <button type="button" class="bouton-discret replier sans-impression" [attr.aria-expanded]="!replie()"
+                  (click)="replie.set(!replie())">{{ replie() ? 'Déplier' : 'Replier' }}</button>
+        }
         @if (a.enCours) {
           <h2>Aujourd'hui <span class="date-jour">{{ jourLong(a.jour) }}</span></h2>
+        }
+        @if (a.enCours && !replie()) {
           @for (v of a.voyages; track $index) {
             <ng-container [ngTemplateOutlet]="voyage" [ngTemplateOutletContext]="{ $implicit: v }" />
           }
@@ -50,17 +57,20 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
             <p class="vide">Rien au programme aujourd'hui.</p>
           }
         }
-        @if (a.rappel; as r) {
+        @if (a.rappel && !(replie() && a.enCours)) {
+          @let r = a.rappel;
           <div class="rappel" [class.seul]="!a.enCours">
             <h3>Rappel pour demain <span class="date-jour">{{ jourLong(r.jour) }}</span></h3>
-            @for (v of r.voyages; track $index) {
-              <ng-container [ngTemplateOutlet]="voyage" [ngTemplateOutletContext]="{ $implicit: v }" />
-            }
-            @if (r.affaires.length > 0) {
-              <p><strong>À ne pas oublier :</strong> {{ r.affaires.join(', ') }}.</p>
-            }
-            @for (c of r.comptes; track $index) {
-              <p><strong>Avant de partir :</strong> {{ c }}.</p>
+            @if (!replie()) {
+              @for (v of r.voyages; track $index) {
+                <ng-container [ngTemplateOutlet]="voyage" [ngTemplateOutletContext]="{ $implicit: v }" />
+              }
+              @if (r.affaires.length > 0) {
+                <p><strong>À ne pas oublier :</strong> {{ r.affaires.join(', ') }}.</p>
+              }
+              @for (c of r.comptes; track $index) {
+                <p><strong>Avant de partir :</strong> {{ c }}.</p>
+              }
             }
           </div>
         }
@@ -93,6 +103,7 @@ import { LigneProgramme, VoyageDuJour, decalerJour, jourDuDepart, joursDuVoyage,
   styles: [`
     .encart-jour { margin: var(--pas-2) 0; padding: var(--pas-2); border-left: 6px solid var(--profond); }
     h2 { margin: 0 0 var(--pas); }
+    .replier { float: right; margin: 0 0 var(--pas) var(--pas); }
     h3 { margin: 0 0 var(--pas); font-size: 1rem; }
     .date-jour { font-size: .9375rem; font-weight: 400; color: var(--craie); }
     .lignes { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: var(--pas); }
@@ -130,6 +141,9 @@ export class JourneeSejourComponent {
   cartes = input<PortCartesEmbarquement | null>(null);
   /** Où l'on complète son voyage : « Modifier mes informations », « Mes informations ». */
   ouCompleter = input('Modifier mes informations');
+  /** Un bouton « Replier » : l'encart réduit à son titre (page du séjour de l'appli). */
+  repliable = input(false);
+  replie = model(false);
 
   readonly jourLong = jourLong;
   readonly aujourdhui = signal(dateDuJour());
