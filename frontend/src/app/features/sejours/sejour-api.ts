@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
-import { FonctionPalanquee, SortieVue } from '../../core/modeles';
+import { BilanEnvoiParametres, FonctionPalanquee, SortieVue } from '../../core/modeles';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 import type { RepasDuJour } from './liste-courses';
 import type { MenusVue, PortMenus } from './menus-restaurant';
@@ -937,6 +937,11 @@ export class SejourApi {
   /** Le carnet par e-mail ; participantIds : à eux seuls (null : à tous). */
   envoyerCarnet(id: number, participantIds: number[] | null): Observable<BilanEnvoiCarnet> {
     return this.http.post<BilanEnvoiCarnet>(`/api/sejours/${id}/envoi-carnet`, { participantIds });
+  }
+
+  /** Aux participants choisis, les paramètres de leurs plongées lus sur les fiches de sécurité. */
+  envoyerParametres(id: number, participantIds: number[]): Observable<BilanEnvoiParametres> {
+    return this.http.post<BilanEnvoiParametres>(`/api/sejours/${id}/envoi-parametres`, { participantIds });
   }
 }
 

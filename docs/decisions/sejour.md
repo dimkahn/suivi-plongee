@@ -64,6 +64,13 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Date** : 2026, demande du club.
 - **Décision** : palanquées lues sur les fiches de sécurité des plongées de la sortie ; un participant ne voit que la sienne. Démo V121.
 
+## Paramètres de plongée envoyés aux participants cochés
+
+- **Date** : octobre 2026, demande du club (« envoyer les paramètres de plongée à un ou plusieurs participants »).
+- **Décision** : « Envoyer les paramètres de plongée… » dans « Partager et organiser… » (`POST /api/sejours/{id}/envoi-parametres`, créateur et organisateurs seulement), aux seuls participants cochés, plongeurs avec e-mail cochés d'avance. Même courriel que l'envoi depuis un groupe de plongeurs (`EnvoiParametresSejourService`, généralisé à un `Destinataire`) : chacun ses seules plongées, retrouvé dans les palanquées par dossier élève, compte, sinon nom et prénom. Rien n'est mémorisé de l'envoi. Sans fiche de sécurité : 422 ; participant d'un autre séjour : 404.
+- **Pourquoi** : l'envoi existant passait par un groupe de plongeurs et partait à tout le groupe ; un séjour peut avoir des plongeurs inscrits seuls, et l'organisateur veut renvoyer à une seule personne.
+- **À reporter à la main** dans `.claude/rules/sejour.md` (Carnet) et `encadrants-fiche-securite.md` (fichiers protégés pour l'IA).
+
 ## Champ médical écarté
 
 - **Date** : 2026.

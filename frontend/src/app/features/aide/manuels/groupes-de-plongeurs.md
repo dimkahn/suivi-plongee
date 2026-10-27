@@ -66,6 +66,8 @@ Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, sit
 2. Sur le groupe, « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».
 3. Le bilan indique qui l'a reçu, et qui n'a rien reçu faute d'e-mail ou parce qu'il n'était dans aucune palanquée de la sortie.
 
+L'organisateur d'un séjour peut aussi l'envoyer à un ou plusieurs participants cochés, sans passer par un groupe : « Partager et organiser… », « Envoyer les paramètres de plongée… » (voir « Organiser un séjour »).
+
 ## Le groupe et le séjour
 
 Inscrit à un séjour (onglet « Qui et où », « Inscrire un groupe de plongeurs… »), chaque plongeur du groupe devient un participant **lié** à sa ligne du groupe. Ce sont deux fiches : le groupe garde les niveaux (plongeur, encadrement, préparé), le séjour le voyage, les repas et la personne à prévenir. Mais le **nom**, le **prénom** et l'**e-mail** suivent : corrigés dans le groupe (« Modifier »), ils le sont dans le séjour, et inversement. Un e-mail laissé vide d'un côté ne vide pas l'autre.

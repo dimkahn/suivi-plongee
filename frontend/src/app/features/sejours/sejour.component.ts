@@ -43,10 +43,14 @@ import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
 import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee } from './onglets-sejour';
 import { QrCodeComponent } from '../../core/qr-code.component';
+import { texteBilanParametres } from './envoi-parametres';
 import { HttpClient } from '@angular/common/http';
 import { SwPush } from '@angular/service-worker';
 import { NotificationsDuSejour } from './notifications-du-sejour';
 import { NotificationsSejourComponent } from './notifications-sejour.component';
+
+/** Les e-mails que l'organisateur envoie aux participants qu'il coche. */
+type EnvoiSejour = 'invitations' | 'carnet' | 'parametres';
 
 /** Durée du QR code de connexion d'un participant, comme le serveur. */
 const VALIDITE_QR_CODE_SECONDES = 60;
@@ -207,6 +211,14 @@ function participantVide(): BrouillonParticipant {
                 <span aria-hidden="true">✉</span> Envoyer le carnet…
               </button>
             </li>
+            @if (s.palanquees.length > 0) {
+              <li>
+                <button type="button" class="bouton-discret envoyer-parametres" (click)="agir('parametres')" [disabled]="envoi()"
+                        title="Profondeur, durée, heures, paliers et palanquée de chaque plongée, lus sur les fiches de sécurité">
+                  <span aria-hidden="true">🤿</span> Envoyer les paramètres de plongée…
+                </button>
+              </li>
+            }
             <li>
               <button type="button" class="bouton-discret prevenir-participants" (click)="agir('prevenir')"
                       [disabled]="envoi()">
@@ -1003,12 +1015,10 @@ function participantVide(): BrouillonParticipant {
 
     <!-- Choisir à qui envoyer un e-mail du séjour : relancer ceux qui ne l'ont pas reçu sans l'envoyer à tous (demande du club, 2026). -->
     <app-dialogue [ouvert]="destinatairesOuverts()" [large]="true" [erreur]="erreur()"
-                  [titre]="envoiChoisi === 'carnet' ? 'Envoyer le carnet par e-mail' : 'Demander leurs informations'"
+                  [titre]="TITRES_ENVOI[envoiChoisi]"
                   (fermer)="destinatairesOuverts.set(false)">
       <p>
-        {{ envoiChoisi === 'carnet'
-          ? 'Chaque personne cochée reçoit son carnet du séjour à jour.'
-          : 'Chaque personne cochée reçoit un e-mail pour renseigner son voyage, ses repas, la personne à prévenir et ses frais.' }}
+        {{ EXPLICATIONS_ENVOI[envoiChoisi] }}
         Les autres ne reçoivent rien.
       </p>
       <fieldset>
@@ -1017,6 +1027,9 @@ function participantVide(): BrouillonParticipant {
           <button type="button" class="bouton-discret" (click)="cocherDestinataires('tous')">Tout le monde</button>
           @if (envoiChoisi === 'invitations') {
             <button type="button" class="bouton-discret" (click)="cocherDestinataires('incomplets')">Ceux à qui il manque des infos</button>
+          }
+          @if (envoiChoisi === 'parametres') {
+            <button type="button" class="bouton-discret" (click)="cocherDestinataires('plongeurs')">Les plongeurs</button>
           }
           <button type="button" class="bouton-discret" (click)="cocherDestinataires('personne')">Personne</button>
         </div>
@@ -1596,11 +1609,11 @@ export class SejourComponent {
   }
 
   /** Un geste de la fenêtre « Partager et organiser… » : la fenêtre se ferme, le geste se fait. */
-  agir(geste: 'participant' | 'trombinoscope' | 'carnet' | 'prevenir' | 'organisateurs'): void {
+  agir(geste: 'participant' | 'trombinoscope' | 'carnet' | 'parametres' | 'prevenir' | 'organisateurs'): void {
     this.actionsOuvertes.set(false);
     if (geste === 'participant') this.basculerMode();
     else if (geste === 'trombinoscope') this.trombinoscopeOuvert.set(true);
-    else if (geste === 'carnet') this.choisirDestinataires('carnet');
+    else if (geste === 'carnet' || geste === 'parametres') this.choisirDestinataires(geste);
     else if (geste === 'prevenir') this.ouvrirPrevenir();
     else this.ouvrirOrganisateurs();
   }
@@ -1940,20 +1953,36 @@ export class SejourComponent {
   }
 
   destinatairesOuverts = signal(false);
-  envoiChoisi: 'invitations' | 'carnet' = 'carnet';
+  envoiChoisi: EnvoiSejour = 'carnet';
   destinataires: number[] = [];
+  protected readonly TITRES_ENVOI: Record<EnvoiSejour, string> = {
+    carnet: 'Envoyer le carnet par e-mail',
+    invitations: 'Demander leurs informations',
+    parametres: 'Envoyer les paramètres de plongée'
+  };
+  protected readonly EXPLICATIONS_ENVOI: Record<EnvoiSejour, string> = {
+    carnet: 'Chaque personne cochée reçoit son carnet du séjour à jour.',
+    invitations: 'Chaque personne cochée reçoit un e-mail pour renseigner son voyage, ses repas, la personne à prévenir et ses frais.',
+    parametres: 'Chaque personne cochée reçoit, pour son carnet de plongée, les paramètres des seules plongées où elle figure '
+      + 'sur les fiches de sécurité : site, profondeur, durée, heures, paliers et sa palanquée (le prévu tant que le réalisé '
+      + "n'est pas saisi)."
+  };
 
-  /** La fenêtre « À qui envoyer » : tous ceux qui ont un e-mail cochés, à décocher au besoin. */
-  choisirDestinataires(envoi: 'invitations' | 'carnet'): void {
+  /**
+   * La fenêtre « À qui envoyer » : tous ceux qui ont un e-mail cochés (les seuls plongeurs pour les
+   * paramètres), à décocher au besoin.
+   */
+  choisirDestinataires(envoi: EnvoiSejour): void {
     this.erreur.set(null);
     this.envoiChoisi = envoi;
-    this.cocherDestinataires('tous');
+    this.cocherDestinataires(envoi === 'parametres' ? 'plongeurs' : 'tous');
     this.destinatairesOuverts.set(true);
   }
 
-  cocherDestinataires(qui: 'tous' | 'incomplets' | 'personne'): void {
+  cocherDestinataires(qui: 'tous' | 'incomplets' | 'plongeurs' | 'personne'): void {
     this.destinataires = (this.sejour()?.participants ?? [])
-      .filter(p => p.email && (qui === 'tous' || (qui === 'incomplets' && this.manque(p).length > 0)))
+      .filter(p => p.email && (qui === 'tous' || (qui === 'incomplets' && this.manque(p).length > 0)
+        || (qui === 'plongeurs' && p.plongeur)))
       .map(p => p.id);
   }
 
@@ -1965,23 +1994,25 @@ export class SejourComponent {
     this.envoyerEmails(this.envoiChoisi, [...this.destinataires], () => this.destinatairesOuverts.set(false));
   }
 
-  private envoyerEmails(envoi: 'invitations' | 'carnet', ids: number[], ensuite?: () => void): void {
+  private envoyerEmails(envoi: EnvoiSejour, ids: number[], ensuite?: () => void): void {
     this.envoi.set(true);
     this.message.set(null);
     this.erreur.set(null);
-    const requete: Observable<BilanEnvoiCarnet> = envoi === 'carnet'
-      ? this.api.envoyerCarnet(this.id, ids) : this.api.envoyerInvitations(this.id, ids);
-    requete.subscribe({
-      next: b => {
-        this.envoi.set(false);
-        ensuite?.();
-        this.message.set([
+    const requete: Observable<string> = envoi === 'parametres'
+      ? this.api.envoyerParametres(this.id, ids).pipe(map(texteBilanParametres))
+      : (envoi === 'carnet' ? this.api.envoyerCarnet(this.id, ids) : this.api.envoyerInvitations(this.id, ids)).pipe(
+        map((b: BilanEnvoiCarnet) => [
           b.envoyes.length
             ? `${envoi === 'carnet' ? 'Carnet envoyé' : 'Demande envoyée'} à : ${b.envoyes.join(', ')}.`
             : 'Aucun e-mail envoyé.',
           b.sansEmail.length ? `Sans e-mail : ${b.sansEmail.join(', ')}.` : '',
           b.echecs.length ? `Échec de l'envoi pour : ${b.echecs.join(', ')}.` : ''
-        ].filter(Boolean).join(' '));
+        ].filter(Boolean).join(' ')));
+    requete.subscribe({
+      next: texte => {
+        this.envoi.set(false);
+        ensuite?.();
+        this.message.set(texte);
       },
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);

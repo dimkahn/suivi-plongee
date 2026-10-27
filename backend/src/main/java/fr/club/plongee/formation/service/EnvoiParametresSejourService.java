@@ -9,6 +9,7 @@ import fr.club.plongee.formation.repository.GroupePlongeursRepository;
 import fr.club.plongee.formation.repository.SortieRepository;
 import fr.club.plongee.notification.service.ServiceNotification;
 import fr.club.plongee.identite.IdentiteStructureService;
+import fr.club.plongee.securite.domain.Utilisateur;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +20,14 @@ import java.time.format.TextStyle;
 import java.util.*;
 
 /**
- * En fin de séjour, envoie à chaque plongeur d'un {@link GroupePlongeurs}
- * les paramètres des plongées de la sortie où il figure, et seulement
+ * En fin de séjour, envoie à chaque plongeur d'un {@link GroupePlongeurs},
+ * ou aux participants du séjour cochés par l'organisateur, les paramètres
+ * des plongées de la sortie où il figure, et seulement
  * celles-là : date, site, profondeur, durée, heures, paliers et les autres
  * membres de sa palanquée, lus sur les fiches de sécurité.
  *
- * <p>Un plongeur du groupe est retrouvé dans une palanquée par son dossier
- * (élève ou encadrant), sinon par ses nom et prénom (invité saisi à la main).
+ * <p>Un plongeur est retrouvé dans une palanquée par son dossier élève,
+ * sinon son compte, sinon ses nom et prénom (invité saisi à la main).
  * Rien n'est mémorisé de l'envoi : le refaire renvoie les mêmes courriels.
  */
 @Service
@@ -38,6 +40,18 @@ public class EnvoiParametresSejourService {
                              List<String> sansPlongee, List<String> echecs) {}
 
     public record DestinataireVue(String nom, String email, int nombrePlongees) {}
+
+    /**
+     * À qui envoyer : un membre d'un groupe ou un participant du séjour ;
+     * {@code compteId} : son compte, sinon celui de son dossier élève.
+     */
+    public record Destinataire(String prenom, String nom, Long eleveId, Long compteId, String email) {
+
+        static Destinataire de(MembreGroupePlongeurs m) {
+            return new Destinataire(m.getPrenom(), m.getNom(), m.getEleve() == null ? null : m.getEleve().getId(),
+                    compte(m.getUtilisateur(), m.getEleve()), m.emailEffectif());
+        }
+    }
 
     /** Un courriel prêt à partir. */
     public record Courriel(String adresse, String sujet, String corps) {}
@@ -62,6 +76,12 @@ public class EnvoiParametresSejourService {
     public BilanEnvoi envoyer(Long groupeId, Long sortieId) {
         GroupePlongeurs groupe = groupes.findById(groupeId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Groupe de plongeurs introuvable"));
+        return envoyer(sortieId, groupe.getMembres().stream().map(Destinataire::de).toList());
+    }
+
+    /** À chaque destinataire, les seules plongées de la sortie où il figure. */
+    @Transactional(readOnly = true)
+    public BilanEnvoi envoyer(Long sortieId, List<Destinataire> destinataires) {
         Sortie sortie = sorties.findById(sortieId)
                 .orElseThrow(() -> new RessourceIntrouvableException("Sortie introuvable"));
 
@@ -80,14 +100,14 @@ public class EnvoiParametresSejourService {
         List<String> sansEmail = new ArrayList<>();
         List<String> sansPlongee = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
-        for (MembreGroupePlongeurs membre : groupe.getMembres()) {
-            String nom = membre.getPrenom() + " " + membre.getNom();
+        for (Destinataire membre : destinataires) {
+            String nom = membre.prenom() + " " + membre.nom();
             Optional<Courriel> courriel = composer(membre, sortie, fichesSortie);
             if (courriel.isEmpty()) {
                 sansPlongee.add(nom);
                 continue;
             }
-            String adresse = membre.emailEffectif();
+            String adresse = membre.email() == null || membre.email().isBlank() ? null : membre.email().trim();
             if (adresse == null) {
                 sansEmail.add(nom);
                 continue;
@@ -104,6 +124,10 @@ public class EnvoiParametresSejourService {
 
     /** Le courriel d'un plongeur, vide s'il ne figure dans aucune palanquée de la sortie. */
     public Optional<Courriel> composer(MembreGroupePlongeurs membre, Sortie sortie, List<FicheSecurite> fichesSortie) {
+        return composer(Destinataire.de(membre), sortie, fichesSortie);
+    }
+
+    Optional<Courriel> composer(Destinataire membre, Sortie sortie, List<FicheSecurite> fichesSortie) {
         StringBuilder corps = new StringBuilder();
         int nombre = 0;
         for (FicheSecurite fiche : fichesSortie) {
@@ -115,16 +139,16 @@ public class EnvoiParametresSejourService {
         }
         if (nombre == 0) return Optional.empty();
 
-        String entete = "Bonjour " + membre.getPrenom() + ",\n\n"
+        String entete = "Bonjour " + membre.prenom() + ",\n\n"
                 + "Voici les paramètres de vos plongées lors de « " + sortie.getNom() + " »"
                 + (sortie.getLieu() == null ? "" : " (" + sortie.getLieu() + ")")
                 + ", relevés sur les fiches de sécurité, pour votre carnet de plongée.\n";
         String pied = "\nBonnes bulles,\n" + identite.nom() + "\n";
-        return Optional.of(new Courriel(membre.emailEffectif(),
+        return Optional.of(new Courriel(membre.email(),
                 "Vos plongées — " + sortie.getNom(), entete + corps + pied));
     }
 
-    private int nombrePlongees(MembreGroupePlongeurs membre, List<FicheSecurite> fichesSortie) {
+    private int nombrePlongees(Destinataire membre, List<FicheSecurite> fichesSortie) {
         int n = 0;
         for (FicheSecurite f : fichesSortie) {
             for (Palanquee p : f.getPalanquees()) {
@@ -138,7 +162,7 @@ public class EnvoiParametresSejourService {
         return fiche.getPalanquees().stream().sorted(Comparator.comparingInt(Palanquee::getNumero)).toList();
     }
 
-    private String plongee(Seance s, Palanquee p, MembreGroupePlongeurs membre) {
+    private String plongee(Seance s, Palanquee p, Destinataire membre) {
         StringBuilder texte = new StringBuilder();
         String jour = s.getDateSeance().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.FRENCH);
         texte.append("— ").append(majuscule(jour)).append(" ").append(s.getDateSeance().format(Calendrier.DATE_FR));
@@ -182,14 +206,21 @@ public class EnvoiParametresSejourService {
         return precisions.isEmpty() ? nom : nom + " (" + String.join(", ", precisions) + ")";
     }
 
-    /** Même dossier (élève ou encadrant), sinon mêmes nom et prénom, sans tenir compte des accents ni de la casse. */
-    static boolean correspond(MembreGroupePlongeurs g, MembrePalanquee m) {
-        if (g.getEleve() != null && m.getEleve() != null) return g.getEleve().getId().equals(m.getEleve().getId());
-        if (g.getUtilisateur() != null && m.getUtilisateur() != null) {
-            return g.getUtilisateur().getId().equals(m.getUtilisateur().getId());
-        }
-        return normaliser(g.getNom()).equals(normaliser(m.getNom()))
-                && normaliser(g.getPrenom()).equals(normaliser(m.getPrenom()));
+    /**
+     * Même dossier élève, sinon même compte (le sien ou celui de son dossier), sinon mêmes nom et prénom,
+     * sans tenir compte des accents ni de la casse.
+     */
+    static boolean correspond(Destinataire g, MembrePalanquee m) {
+        if (g.eleveId() != null && m.getEleve() != null) return g.eleveId().equals(m.getEleve().getId());
+        Long compte = compte(m.getUtilisateur(), m.getEleve());
+        if (g.compteId() != null && compte != null) return g.compteId().equals(compte);
+        return normaliser(g.nom()).equals(normaliser(m.getNom()))
+                && normaliser(g.prenom()).equals(normaliser(m.getPrenom()));
+    }
+
+    private static Long compte(Utilisateur utilisateur, Eleve eleve) {
+        if (utilisateur != null) return utilisateur.getId();
+        return eleve == null || eleve.getUtilisateur() == null ? null : eleve.getUtilisateur().getId();
     }
 
     private static String normaliser(String texte) {
