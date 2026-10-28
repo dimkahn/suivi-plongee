@@ -41,6 +41,7 @@ import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { SejourCoursesComponent } from './sejour-courses.component';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
+import { ActionsSejourComponent } from './actions-sejour.component';
 import { ReplisSejourService } from './replis-sejour';
 import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee, rubriqueChoisie, rubriquesSejour } from './onglets-sejour';
 import { QrCodeComponent } from '../../core/qr-code.component';
@@ -113,6 +114,7 @@ function participantVide(): BrouillonParticipant {
   imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, JourneeProgrammeComponent, PhotoJourneeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
             TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent,
+            ActionsSejourComponent,
             QrCodeComponent, NotificationsSejourComponent],
   template: `
     @if (sejour(); as s) {
@@ -247,6 +249,12 @@ function participantVide(): BrouillonParticipant {
       </app-dialogue>
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
+
+      <!-- Ce que l'encadrant a à faire sur les fiches de sécurité du séjour, réseau obligatoire (demande du club, 2026). -->
+      @if (s.encadrant && litLesFiches() && !commeParticipant() && !copieDu()) {
+        <app-actions-sejour class="sans-impression" [port]="portFiches" [sejourId]="s.sortie.id"
+                            (voirFiches)="ouvrirSection({ onglet: 'programme', ancre: 'fiches-securite-sejour' })" />
+      }
 
       <!-- Le programme du jour, du voyage aller au voyage retour ; la veille, un rappel (demande du club, 2026). -->
       <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant" [encadrant]="s.encadrant"
