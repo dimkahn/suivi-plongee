@@ -346,6 +346,10 @@ function participantVide(): BrouillonParticipant {
               la personne à prévenir. Touchez un nom pour voir sa fiche.</p>
             @if (s.gere) {
               <p class="secondaire">{{ assures() }} sur {{ s.participants.length }} ont joint leur attestation d'assurance.</p>
+              @if (notificationsActivees()) {
+                <p class="secondaire compte-notifications">{{ avecNotifications() }} sur {{ s.participants.length }} ont activé
+                  les notifications du séjour sur leur téléphone.</p>
+              }
             }
           }
           @if (s.gere) {
@@ -394,6 +398,13 @@ function participantVide(): BrouillonParticipant {
                         <span class="etat-infos complet">✓ Infos données</span>
                       } @else {
                         <span class="etat-infos">À compléter : {{ m.join(', ') }}</span>
+                      }
+                    }
+                    @if (s.gere && notificationsActivees(); as n) {
+                      @if (n.has(p.id)) {
+                        <span class="etiquette-etat ok etat-notifications">🔔 Notifications activées</span>
+                      } @else {
+                        <span class="etiquette-etat neutre etat-notifications">🔕 Pas de notifications</span>
                       }
                     }
                   </summary>
@@ -1475,6 +1486,8 @@ export class SejourComponent {
   readonly complets = computed(() => (this.sejour()?.participants ?? []).filter(p => this.manque(p).length === 0).length);
   /** Qui a joint son attestation d'assurance : le serveur ne le dit qu'aux organisateurs. */
   readonly assures = computed(() => (this.sejour()?.participants ?? []).filter(p => !!p.attestationAssurance).length);
+  readonly avecNotifications = computed(() =>
+    (this.sejour()?.participants ?? []).filter(p => this.notificationsActivees()?.has(p.id)).length);
   /** La recherche et le filtre de la liste des participants. */
   readonly rechercheParticipant = signal('');
   readonly filtreParticipants = signal<FiltreParticipants>('tous');
@@ -1638,6 +1651,16 @@ export class SejourComponent {
   etatNotifications = signal<EtatNotificationsVue | null>(null);
   messageNotification = '';
   emailSinon = true;
+  /** Les participants dont un téléphone reçoit les notifications ; null tant que non lu (hors ligne, pas organisateur). */
+  notificationsActivees = signal<Set<number> | null>(null);
+
+  /** Pour l'indiquer sous chaque nom ; sans réseau, rien n'est indiqué plutôt qu'une erreur. */
+  private lireNotificationsActivees(): void {
+    this.api.etatNotifications(this.id).subscribe({
+      next: e => this.notificationsActivees.set(new Set(e.participantIdsAvecNotification)),
+      error: () => this.notificationsActivees.set(null)
+    });
+  }
 
   ouvrirPrevenir(): void {
     this.erreur.set(null);
@@ -1646,7 +1669,10 @@ export class SejourComponent {
     this.emailSinon = true;
     this.prevenirOuvert.set(true);
     this.api.etatNotifications(this.id).subscribe({
-      next: e => this.etatNotifications.set(e),
+      next: e => {
+        this.etatNotifications.set(e);
+        this.notificationsActivees.set(new Set(e.participantIdsAvecNotification));
+      },
       error: (e: HttpErrorResponse) => this.erreur.set(e.error?.detail ?? 'Réseau nécessaire pour prévenir les participants.')
     });
   }
@@ -2548,6 +2574,8 @@ export class SejourComponent {
       const lu = await this.fileSejour.lireAvecCopie(cleSejour(this.id, cp), () => this.api.lire(this.id, cp));
       this.base.set(lu.valeur);
       this.copieDu.set(lu.copieDu);
+      if (lu.valeur.gere && lu.copieDu === null) this.lireNotificationsActivees();
+      else this.notificationsActivees.set(null);
     } catch (e) {
       const statut = (e as HttpErrorResponse).status;
       this.base.set(null);

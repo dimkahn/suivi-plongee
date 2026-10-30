@@ -42,7 +42,9 @@ public class NotificationsSejourService {
     static final int JOURS_APRES_LE_SEJOUR = 60;
     static final int TELEPHONES_MAX = 5;
 
-    public record EtatNotificationsVue(List<String> avecNotification, List<String> sansNotification) {}
+    /** {@code participantIdsAvecNotification} : pour l'indiquer sous chaque nom de la liste des participants. */
+    public record EtatNotificationsVue(List<String> avecNotification, List<String> sansNotification,
+                                       List<Long> participantIdsAvecNotification) {}
 
     /** {@code sansMoyen} : ni notification activée, ni e-mail envoyé. */
     public record BilanNotification(List<String> notifies, List<String> parEmail, List<String> sansMoyen,
@@ -106,10 +108,12 @@ public class NotificationsSejourService {
     @Transactional(readOnly = true)
     public EtatNotificationsVue etat(Long sortieId) {
         List<String> avec = new ArrayList<>(), sans = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
         for (Destinataire d : destinataires(sortieId)) {
             (d.abonnements().isEmpty() ? sans : avec).add(d.nom());
+            if (!d.abonnements().isEmpty()) ids.add(d.id());
         }
-        return new EtatNotificationsVue(avec, sans);
+        return new EtatNotificationsVue(avec, sans, ids);
     }
 
     /** Prévient chaque participant qu'il y a du nouveau : notification, sinon e-mail si {@code emailSinon}. */

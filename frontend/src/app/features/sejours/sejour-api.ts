@@ -476,6 +476,7 @@ export interface BilanEnvoiAcces {
 export interface EtatNotificationsVue {
   avecNotification: string[];
   sansNotification: string[];
+  participantIdsAvecNotification: number[];
 }
 
 /** sansMoyen : ni notification activée, ni e-mail envoyé. */

@@ -348,6 +348,26 @@ class NotificationsSejourTest {
     }
 
     @Test
+    @DisplayName("L'organisateur sait, participant par participant, qui a activé les notifications")
+    void etatParParticipant() throws Exception {
+        String dt = jeton("e3@club.fr");
+        long sortie = sejour(dt, "Séjour des notifications par participant", 235);
+        long ines = invite(dt, sortie, "Inès", null);
+        long jules = invite(dt, sortie, "Jules", null);
+        String[] entree = entrer(dt, sortie, ines);
+        envoyer("PUT", "/api/public/sejour/" + entree[0] + "/notifications", entree[1],
+                abonnement("https://fcm.googleapis.com/fcm/send/ines-" + sortie), 204);
+
+        JsonNode ids = envoyer("GET", "/api/sejours/" + sortie + "/notifications", dt, null, 200)
+                .get("participantIdsAvecNotification");
+
+        assertThat(ids).hasSize(1);
+        assertThat(ids.get(0).asLong()).isEqualTo(ines);
+        assertThat(ids.toString()).doesNotContain(String.valueOf(jules));
+        envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
+    }
+
+    @Test
     @DisplayName("Seuls le créateur et les organisateurs du séjour envoient une notification")
     void reserveAuxOrganisateurs() throws Exception {
         String dt = jeton("e3@club.fr");
