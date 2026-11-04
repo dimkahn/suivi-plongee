@@ -21,7 +21,9 @@ import {
   BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, journeeAEmporter, resumePreparationSurface, seancesAEmbarquer,
   sejoursAEmporter
 } from './preparation-hors-ligne';
-import { cleListeSejours, cleSejour } from '../features/sejours/sejour-hors-ligne';
+import {
+  cleFicheSecurite, cleFichesSejour, cleListeSejours, cleSejour, lectureEchouee
+} from '../features/sejours/sejour-hors-ligne';
 
 interface Entree<T> { cle: string; valeur: T; majLe: number; }
 
@@ -189,9 +191,13 @@ export class ApiService {
     // proches : celles qu'on rattrape, et celles préparées d'avance.
     if (veut('presences')) bilan.feuilles = 0;
     if (veut('fiches')) bilan.fiches = 0;
+    const fichesEmportees = new Set<number>();
     for (const s of seancesAEmbarquer(seances, choix.periode)) {
       if (veut('presences') && await this.tenter(() => this.feuillePresence(s.id))) bilan.feuilles!++;
-      if (veut('fiches') && await this.tenter(() => this.ficheSecurite(s.id))) bilan.fiches!++;
+      if (veut('fiches') && await this.tenter(() => this.ficheSecurite(s.id))) {
+        bilan.fiches!++;
+        fichesEmportees.add(s.id);
+      }
     }
 
     // Trombinoscopes et photos. Une photo dont le consentement a été retiré
@@ -215,12 +221,32 @@ export class ApiService {
       const sejours = await this.tenter(() => this.lireEtGarder(cleListeSejours(false),
         () => this.http.get<{ sortieId: number; dateDebut: string; dateFin: string }[]>('/api/sejours',
           { params: { toutes: false } }))) ?? [];
-      for (const s of sejoursAEmporter(sejours)) {
+      const aEmporter = sejoursAEmporter(sejours);
+      // De quoi établir leurs fiches sur place, même sans la case « Fiches de sécurité ».
+      if (aEmporter.length > 0 && !veut('fiches')) {
+        await this.tenter(() => this.moniteursActifs());
+        await this.tenter(() => this.plongeursConnus());
+        const ouverte = saisons?.find(s => s.ouverte);
+        if (ouverte) await this.tenter(() => this.groupesPlongeurs(ouverte.id));
+      }
+      for (const s of aEmporter) {
         if (await this.tenter(() => this.lireEtGarder(cleSejour(s.sortieId), () => this.http.get(`/api/sejours/${s.sortieId}`)))) {
           bilan.sejours++;
         }
         await this.tenter(() => this.lireEtGarder(`prets-sejour:${s.sortieId}`,
           () => this.http.get(`/api/sejours/${s.sortieId}/prets`)));
+        // Sans le droit de lire les fiches, le serveur refuse : rien n'est gardé, et l'ancienne copie s'efface.
+        const fiches = await this.tenter(() => this.lireEtGarder(cleFichesSejour(s.sortieId),
+          () => this.http.get<{ plongees: { seanceId: number }[] }>(`/api/sejours/${s.sortieId}/fiches-securite`))
+          .catch(async (e: HttpErrorResponse) => {
+            if (lectureEchouee(e.status ?? 0) === 'effacer') await supprimer(MAGASIN_CACHE, cleFichesSejour(s.sortieId));
+            throw e;
+          }));
+        for (const { seanceId } of fiches?.plongees ?? []) {
+          if (fichesEmportees.has(seanceId) || !await this.tenter(() => this.ficheSecurite(seanceId))) continue;
+          fichesEmportees.add(seanceId);
+          bilan.fiches = (bilan.fiches ?? 0) + 1;
+        }
       }
     }
 
@@ -432,7 +458,7 @@ export class ApiService {
    * par FileEcrituresService, qui les garde hors ligne.
    */
   ficheSecurite(seanceId: number): Promise<FicheSecuriteVue> {
-    return this.lireOuRetomber(`fiche:${seanceId}`,
+    return this.lireOuRetomber(cleFicheSecurite(seanceId),
       () => this.http.get<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`));
   }
 

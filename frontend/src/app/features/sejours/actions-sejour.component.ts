@@ -1,8 +1,14 @@
 import { Component, ChangeDetectionStrategy, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { dateDuJour } from '../../core/date-fr';
-import { ActionFiche, FichesSecuriteSejourVue, PortFichesSecurite, actionsAFaire } from './fiches-securite-sejour';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
+import {
+  ActionFiche, FichesSecuriteSejourVue, PortFichesSecurite, actionsAFaire, avecEcrituresEnAttente
+} from './fiches-securite-sejour';
+import { relireSelonLeReseau } from './relire-fiches-sejour';
+import { lectureEchouee } from './sejour-hors-ligne';
 import { jourLong } from './sejour-api';
 
 const GESTES: Record<ActionFiche['action'], { libelle: string; lien: string; chemin: string[] }> = {
@@ -16,7 +22,8 @@ const GESTES: Record<ActionFiche['action'], { libelle: string; lien: string; che
  * l'encadrant, les fiches de sécurité du séjour qui l'attendent (établir,
  * compléter au retour, signer comme DP), chacune avec son lien, et un lien
  * vers les fiches de sécurité du séjour. Rien à faire : pas d'encart.
- * Jamais replié : ce qui reste à faire reste visible.
+ * Jamais replié : ce qui reste à faire reste visible. Sans réseau, lu sur la
+ * copie du téléphone, sans ce qui demande le réseau (`actionsAFaire`).
  */
 @Component({
   selector: 'app-actions-sejour',
@@ -79,6 +86,7 @@ export class ActionsSejourComponent implements OnInit {
   voirFiches = output<void>();
 
   private auth = inject(AuthService);
+  private file = inject(FileEcrituresService);
 
   readonly jourLong = jourLong;
   readonly gestes = GESTES;
@@ -86,13 +94,26 @@ export class ActionsSejourComponent implements OnInit {
   private vue = signal<FichesSecuriteSejourVue | null>(null);
   readonly aFaire = computed(() => {
     const v = this.vue();
-    return v ? actionsAFaire(v, this.auth.session()?.id, dateDuJour()) : null;
+    if (!v) return null;
+    return actionsAFaire(avecEcrituresEnAttente(v, this.file.enAttente().map(e => e.ecriture)),
+      this.auth.session()?.id, dateDuJour());
   });
   /** Suivi par les écrans de la fiche : leur retour ramène au séjour. */
   readonly retour = computed(() => ({ sejour: this.sejourId() }));
 
+  constructor() {
+    relireSelonLeReseau(() => this.charger());
+  }
+
   ngOnInit(): void {
+    this.charger();
+  }
+
+  private charger(): void {
     // Sans réponse, pas d'encart : l'onglet des fiches dit lui-même ce qui ne va pas.
-    this.port().lire().subscribe({ next: v => this.vue.set(v), error: () => {} });
+    this.port().lire().subscribe({
+      next: v => this.vue.set(v),
+      error: (e: HttpErrorResponse) => { if (lectureEchouee(e.status ?? 0) === 'effacer') this.vue.set(null); }
+    });
   }
 }

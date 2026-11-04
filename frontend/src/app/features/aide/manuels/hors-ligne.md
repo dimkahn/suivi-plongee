@@ -2,7 +2,7 @@
 titre: Travailler sans réseau au bord du bassin
 rubrique: Découverte
 videos: M9
-mots: hors ligne, réseau, internet, wifi, 4G, connexion, synchronisation, attente d'envoi, préparer, piscine, déconnexion, se déconnecter, fiche de sécurité du jour, séance du jour, sur mesure, photos, choisir, emporter, rapide, sécurité surface, bateau, veille, séjour, séjour hors ligne, frais sans réseau, gîte, île
+mots: hors ligne, réseau, internet, wifi, 4G, connexion, synchronisation, attente d'envoi, préparer, piscine, déconnexion, se déconnecter, fiche de sécurité du jour, séance du jour, sur mesure, photos, choisir, emporter, rapide, sécurité surface, bateau, veille, séjour, séjour hors ligne, fiche de sécurité du séjour, frais sans réseau, gîte, île
 questions:
 - Pas de réseau à la piscine, comment faire ?
 - Que veut dire « En attente d'envoi » ?
@@ -12,6 +12,7 @@ questions:
 - Peut-on choisir ce qui est disponible hors ligne ?
 - Sécurité surface : comment compléter la fiche sans réseau sur le bateau ?
 - Peut-on consulter et gérer un séjour sans réseau ?
+- Peut-on établir une fiche de sécurité d'un séjour sans réseau ?
 ---
 Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer hors ligne », puis choisissez ce que vous emportez (tout, la séance du jour ou la seule fiche de sécurité du jour). Au bassin, l'appli s'ouvre et note sans réseau ; tout part seul au retour du réseau.
 
@@ -38,11 +39,12 @@ Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer
 
 - Ce que vous n'avez pas emporté ne s'ouvre pas sans réseau : l'écran le dit et propose « Préparer hors ligne ». Ce qui a été copié lors d'une préparation précédente reste disponible.
 - **Sécurité surface** : « Plus », puis « Préparer hors ligne », sans fenêtre de choix. L'appli copie juste ce qu'il faut pour la journée : la liste de vos séances et les fiches de sécurité établies de votre journée de plongée (aujourd'hui, ou la prochaine si vous préparez la veille). Le bandeau dit combien de fiches sont copiées ; si le directeur de plongée n'a pas encore établi la fiche, recommencez plus tard.
-- **Séjours** : chaque séjour ouvert avec du réseau reste lisible sans réseau sur ce téléphone (« Préparer hors ligne », case « Séjours », emporte d'un coup ceux en cours ou à 30 jours). Ce que vous y modifiez sans réseau (voiture, chambre, programme, mes informations, dépense, remboursement…) est gardé sur le téléphone et part tout seul au retour du réseau. Détail dans « Organiser un séjour ».
+- **Séjours** : chaque séjour ouvert avec du réseau reste lisible sans réseau sur ce téléphone (« Préparer hors ligne », case « Séjours », emporte d'un coup ceux en cours ou à 30 jours). Ce que vous y modifiez sans réseau (voiture, chambre, programme, mes informations, dépense, remboursement…) est gardé sur le téléphone et part tout seul au retour du réseau. Les fiches de sécurité de ses plongées aussi : la case « Séjours » les emporte, et elles s'établissent et se complètent depuis le séjour. Détail dans « Organiser un séjour ».
 - Une photo dont le droit à l'image a été retiré est effacée du téléphone à chaque préparation, même si vous n'emportez pas les photos.
 
 - Si le serveur refuse une saisie (règle du MFT, par exemple), un bandeau le dit : **rien ne se perd en silence**.
 - Rejouer une saisie ne la double jamais.
+- Ce qui a été emporté (fiches, plongeurs, groupes…) **reste sur le téléphone après « Se déconnecter »**, même si l'appli ne le montre plus : évitez de préparer sur un téléphone prêté ou partagé.
 - « Se déconnecter » (dans « Mon compte », en touchant votre nom) alors que des saisies attendent : une fenêtre le rappelle. « Rester connecté » les laisse partir au retour du réseau ; « Se déconnecter quand même » les garde sur le téléphone jusqu'à la prochaine connexion.
 - Le référentiel MFT et la base d'exercices sont toujours relus sur le serveur quand il y a du réseau ; la copie du téléphone ne sert que sans réseau (ou si le serveur tarde plus de 3 secondes).
 - Demandent le réseau : la notation groupée (« Noter les présents »), la réponse de présence au planning, le PDF de la fiche de suivi, le matériel et l'administration ; dans un séjour, les e-mails, les cartes d'embarquement, les attestations d'assurance, les photos des notes, la déclaration du matériel emprunté et « Inscrire un groupe ».

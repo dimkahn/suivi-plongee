@@ -6,7 +6,7 @@ import {
 } from '../../core/base-locale';
 import { SejourVue } from './sejour-api';
 import {
-  ModificationEnAttente, ModificationRefusee, NouvelleModification, cleSejour, issueEchec, lectureEchouee, ranger,
+  ModificationEnAttente, ModificationRefusee, NouvelleModification, cleFicheSecurite, cleSejour, issueEchec, lectureEchouee, ranger,
   remplacerParticipant, requete
 } from './sejour-hors-ligne';
 
@@ -115,6 +115,12 @@ export class FileSejourService {
       }
       throw e;
     }
+  }
+
+  /** Parmi ces séances, celles dont la fiche de sécurité est copiée sur le téléphone. */
+  async fichesEmportees(seanceIds: number[]): Promise<number[]> {
+    const copies = await Promise.all(seanceIds.map(id => lire(MAGASIN_CACHE, cleFicheSecurite(id))));
+    return seanceIds.filter((_, i) => copies[i] !== undefined);
   }
 
   /** Efface la copie d'une lecture (déconnexion du lien d'un séjour). */

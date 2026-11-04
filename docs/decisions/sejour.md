@@ -264,6 +264,14 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **iPhone** : notifications seulement dans l'appli installée sur l'écran d'accueil (iOS 16.4 et plus) : l'encart le dit dans Safari. Un téléphone en a un seul abonnement, partagé par les séjours : « Couper » le retire du seul séjour.
 - Tests : `NotificationsSejourTest`, `ChiffrementPushTest`, `notifications-telephone.spec.ts`.
 
+## Fiches de sécurité du séjour sans réseau (2026-11-04)
+
+- **Demande du club** : établir une fiche de sécurité depuis le séjour, sur le bateau. La fiche marchait déjà sans réseau, mais par la liste « Fiches de sécurité » du menu ; le séjour disait « demandent le réseau ».
+- **Décision** : la liste des plongées du séjour est copiée à chaque lecture et par « Préparer hors ligne », case « Séjours », qui emporte aussi leurs fiches, même à établir, moniteurs, plongeurs et groupes. Aucune écriture nouvelle : la fiche passe par la file d'écritures habituelle. La liste affiche la file par-dessus sa copie, à l'écran seulement.
+- **Une fiche pas emportée le dit dans sa ligne**, plutôt qu'un lien qui échouerait à l'ouverture.
+- **Restent en ligne** : ajouter ou supprimer une plongée, signer, imprimer, supprimer une fiche.
+- **Écarté** : emporter les fiches à chaque lecture de la liste (plusieurs requêtes à chaque ouverture du séjour, pour ce que « Préparer hors ligne » fait d'un geste).
+
 ## Export Excel des frais (2026-11-04)
 
 - **Demande du club** : exporter les frais au format de son classeur « soldes participants » (onglets Soldes, Dépenses, Remboursements).

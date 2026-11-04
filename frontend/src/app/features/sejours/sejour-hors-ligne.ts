@@ -170,6 +170,16 @@ export function cleSejour(id: number, commeParticipant = false): string {
   return `sejour:${id}${commeParticipant ? ':participant' : ''}`;
 }
 
+/** La liste des plongées du séjour et l'état de leurs fiches. */
+export function cleFichesSejour(id: number): string {
+  return `fiches-sejour:${id}`;
+}
+
+/** La fiche d'une séance, celle que lit son écran hors ligne. */
+export function cleFicheSecurite(seanceId: number): string {
+  return `fiche:${seanceId}`;
+}
+
 export function cleListeSejours(toutes: boolean): string {
   return `sejours:${toutes ? 'tous' : 'a-venir'}`;
 }

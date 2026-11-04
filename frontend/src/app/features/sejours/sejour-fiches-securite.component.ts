@@ -1,4 +1,5 @@
 import { Component, ChangeDetectionStrategy, OnInit, computed, inject, input, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -6,14 +7,17 @@ import { Observable } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { dateDuJour } from '../../core/date-fr';
+import { FileEcrituresService } from '../../core/file-ecritures.service';
 import { peutSignerDepuisLaListe, signatureAVenir } from '../../core/fiche-securite';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { joursDuSejour } from './liste-courses';
 import { jourLong } from './sejour-api';
 import {
-  DemandePlongee, FichesSecuriteSejourVue, PlongeeSejourVue, PortFichesSecurite, etatFiche, nouvellePlongee,
-  plongeesParJour
+  DemandePlongee, FichesSecuriteSejourVue, PlongeeSejourVue, PortFichesSecurite, avecEcrituresEnAttente, etatFiche,
+  ficheEmportee, nouvellePlongee, plongeesParJour
 } from './fiches-securite-sejour';
+import { relireSelonLeReseau } from './relire-fiches-sejour';
+import { lectureEchouee } from './sejour-hors-ligne';
 
 /**
  * L'onglet « Fiches de sécurité » du séjour (demande du club, 2026) : les
@@ -22,28 +26,36 @@ import {
  * signer), dont le retour ramène ici ; elle s'imprime seule ou avec toutes
  * celles du séjour. Les organisateurs ajoutent une plongée et suppriment
  * celle qui n'a pas encore de fiche ; un administrateur supprime une fiche.
- * Encadrants seulement, réseau obligatoire.
+ * Encadrants seulement. Sans réseau, la liste se lit sur sa copie et les
+ * fiches emportées s'établissent et se complètent (file d'écritures habituelle) ;
+ * ajouter, supprimer, signer et imprimer demandent le réseau.
  */
 @Component({
   selector: 'app-sejour-fiches-securite',
-  imports: [FormsModule, RouterLink, DialogueComponent],
+  imports: [DatePipe, FormsModule, RouterLink, DialogueComponent],
   template: `
     <div class="titre-section">
       <h2>Fiches de sécurité</h2>
-      @if (vue()?.peutAjouter) {
+      @if (vue()?.peutAjouter && !vue()?.copie) {
         <button type="button" class="bouton-principal ajouter-plongee" (click)="ouvrirAjout()">Ajouter une plongée</button>
       }
     </div>
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (vue(); as v) {
+      @if (v.copie; as c) {
+        <div class="alerte copie-fiches" role="status">
+          Hors ligne. Les fiches telles qu'elles étaient le {{ c.du | date:'d/MM à HH:mm' }}. Celles emportées s'établissent et se
+          complètent : elles partiront au retour du réseau. Ajouter une plongée, signer et imprimer demandent le réseau.
+        </div>
+      }
       @if (v.plongees.length === 0) {
         <p class="vide">
           Aucune plongée dans ce séjour pour l'instant.
-          @if (v.peutAjouter) { « Ajouter une plongée » pour en établir la fiche. }
+          @if (v.peutAjouter && !v.copie) { « Ajouter une plongée » pour en établir la fiche. }
         </p>
       } @else {
-        @if (fiches() > 0) {
+        @if (fiches() > 0 && !v.copie) {
           <div class="impression carte">
             <button type="button" class="bouton-discret imprimer-toutes" (click)="imprimerTout()" [disabled]="impression() !== null">
               {{ impression() === 0 ? 'Génération…' : 'Imprimer toutes les fiches (PDF)' }}
@@ -66,23 +78,28 @@ import {
                     <span class="nom">
                       Plongée n° {{ p.ordre }}@if (p.lieu) { — {{ p.lieu }}}
                       <span class="etiquette-etat" [class]="etatFiche(p).ton">{{ etatFiche(p).libelle }}</span>
+                      @if (p.enAttente) { <span class="etiquette-etat attention en-attente">Sur ce téléphone, en attente du réseau</span> }
                     </span>
                     @if (p.site) { <span><span class="etiquette-champ">Site :</span> {{ p.site }}</span> }
                     <span class="secondaire">
                       {{ p.milieu === 'NATUREL' ? 'Milieu naturel' : 'Milieu artificiel' }}{{ p.profondeurMax ? ' · ' + p.profondeurMax + ' m' : '' }}
                       @if (p.fiche) {
-                        · DP {{ p.dp }} · {{ p.palanquees }} palanquée{{ p.palanquees > 1 ? 's' : '' }},
+                        @if (p.dp) { · DP {{ p.dp }} } · {{ p.palanquees }} palanquée{{ p.palanquees > 1 ? 's' : '' }},
                         {{ p.plongeurs }} plongeur{{ p.plongeurs > 1 ? 's' : '' }}
                       }
                     </span>
                     @if (p.commentaire) { <span class="info">{{ p.commentaire }}</span> }
                   </div>
                   <div class="actions">
-                    @if (p.signee) {
+                    @if (!ficheEmportee(v, p.seanceId)) {
+                      <span class="secondaire non-emportee">Fiche pas emportée sur ce téléphone : « Préparer hors ligne », avec du réseau.</span>
+                    } @else if (p.signee && v.copie) {
+                      <a [routerLink]="['/fiches-securite', p.seanceId]" [queryParams]="retour()" class="bouton-discret">Voir la fiche</a>
+                    } @else if (p.signee) {
                       <a [routerLink]="['/fiches-securite', p.seanceId, 'signature']" [queryParams]="retour()"
                          class="bouton-discret">Voir la fiche signée</a>
                     } @else {
-                      @if (peutSigner(p)) {
+                      @if (peutSigner(p) && !v.copie) {
                         <a [routerLink]="['/fiches-securite', p.seanceId, 'signature']" [queryParams]="retour()"
                            class="bouton-principal lien-signer">✍ Signer la fiche</a>
                       } @else if (signatureAVenir(p)) {
@@ -101,16 +118,16 @@ import {
                         </a>
                       }
                     }
-                    @if (p.fiche) {
+                    @if (p.fiche && !p.enAttente && !v.copie) {
                       <button type="button" class="bouton-discret" (click)="imprimer(p)" [disabled]="impression() !== null"
                               [attr.aria-label]="'Imprimer la fiche de la plongée n° ' + p.ordre + ' du ' + jourLong(p.date)">
                         {{ impression() === p.seanceId ? 'Génération…' : 'Imprimer (PDF)' }}
                       </button>
                     }
-                    @if (p.fiche && !p.signee && v.peutSupprimerFiche) {
+                    @if (p.fiche && !p.signee && v.peutSupprimerFiche && !p.enAttente && !v.copie) {
                       <button type="button" class="bouton-discret danger" (click)="ficheASupprimer.set(p)">Supprimer la fiche</button>
                     }
-                    @if (v.peutAjouter && p.supprimable) {
+                    @if (v.peutAjouter && p.supprimable && !v.copie) {
                       <button type="button" class="bouton-discret danger supprimer-plongee" (click)="plongeeASupprimer.set(p)">
                         Supprimer la plongée
                       </button>
@@ -199,7 +216,7 @@ import {
     .actions { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .actions a, .actions button { min-height: 44px; display: inline-flex; align-items: center; }
     .lien-signer { width: auto; margin: 0; }
-    .signature-a-venir { margin: 0; flex-basis: 100%; }
+    .signature-a-venir, .non-emportee { margin: 0; flex-basis: 100%; }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
     .case { display: flex; align-items: center; gap: var(--pas); font-weight: 400; min-height: 44px; margin: 0; }
     .case input { width: auto; flex: none; min-width: 24px; min-height: 24px; }
@@ -214,11 +231,18 @@ export class SejourFichesSecuriteComponent implements OnInit {
   lieu = input<string | null>(null);
 
   private auth = inject(AuthService);
+  private file = inject(FileEcrituresService);
 
   readonly jourLong = jourLong;
   readonly etatFiche = etatFiche;
+  readonly ficheEmportee = ficheEmportee;
 
-  vue = signal<FichesSecuriteSejourVue | null>(null);
+  private lue = signal<FichesSecuriteSejourVue | null>(null);
+  /** Telle que lue, plus ce qui attend le réseau sur ce téléphone. */
+  readonly vue = computed(() => {
+    const v = this.lue();
+    return v ? avecEcrituresEnAttente(v, this.file.enAttente().map(e => e.ecriture)) : null;
+  });
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
   envoi = signal(false);
@@ -237,14 +261,27 @@ export class SejourFichesSecuriteComponent implements OnInit {
   /** Suivi par les écrans de la fiche : leur retour ramène à cet onglet. */
   readonly retour = computed(() => ({ sejour: this.sejourId() }));
 
+  constructor() {
+    relireSelonLeReseau(() => this.charger());
+  }
+
   ngOnInit(): void {
     this.charger();
   }
 
   private charger(): void {
     this.port().lire().subscribe({
-      next: v => this.vue.set(v),
-      error: () => this.message.set('Les fiches de sécurité du séjour n’ont pas pu être lues. Vérifiez le réseau.')
+      next: v => {
+        this.lue.set(v);
+        this.message.set(null);
+      },
+      error: (e: HttpErrorResponse) => {
+        // Faute de réseau, la liste déjà là reste ; plus le droit de la lire, elle disparaît.
+        if (lectureEchouee(e.status ?? 0) === 'effacer') this.lue.set(null);
+        else if (this.lue()) return;
+        this.message.set('Les fiches de sécurité du séjour n’ont pas pu être lues. Sans réseau, elles ne se lisent '
+          + 'qu’une fois emportées : « Préparer hors ligne », case « Séjours », avec du réseau.');
+      }
     });
   }
 
@@ -327,7 +364,7 @@ export class SejourFichesSecuriteComponent implements OnInit {
     appel.subscribe({
       next: v => {
         this.envoi.set(false);
-        this.vue.set(v);
+        this.lue.set(v);
         ensuite();
       },
       error: (e: HttpErrorResponse) => {

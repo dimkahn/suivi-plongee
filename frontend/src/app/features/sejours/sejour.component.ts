@@ -11,7 +11,8 @@ import { ReseauService } from '../../core/reseau.service';
 import { AuthService } from '../../core/auth.service';
 import { PlurielPipe } from '../../core/pluriel';
 import { FileSejourService } from './file-sejour.service';
-import { ModificationSejour, appliquerEnAttente, cleSejour } from './sejour-hors-ligne';
+import { FichesSecuriteSejourVue, PortFichesSecurite } from './fiches-securite-sejour';
+import { ModificationSejour, appliquerEnAttente, cleFichesSejour, cleSejour } from './sejour-hors-ligne';
 import { MoniteurOptionVue, PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
@@ -250,8 +251,8 @@ function participantVide(): BrouillonParticipant {
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
-      <!-- Ce que l'encadrant a à faire sur les fiches de sécurité du séjour, réseau obligatoire (demande du club, 2026). -->
-      @if (s.encadrant && litLesFiches() && !commeParticipant() && !copieDu()) {
+      <!-- Ce que l'encadrant a à faire sur les fiches de sécurité du séjour (demande du club, 2026). -->
+      @if (s.encadrant && litLesFiches() && !commeParticipant()) {
         <app-actions-sejour class="sans-impression" [port]="portFiches" [sejourId]="s.sortie.id"
                             (voirFiches)="ouvrirSection({ onglet: 'programme', ancre: 'fiches-securite-sejour' })" />
       }
@@ -614,15 +615,11 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      <!-- Fiches de sécurité des plongées du séjour : encadrants, réseau obligatoire (demande du club, 2026) -->
+      <!-- Fiches de sécurité des plongées du séjour : encadrants (demande du club, 2026) -->
       @if (montrer('fiches-securite-sejour')) {
         <section id="fiches-securite-sejour">
-          @if (copieDu()) {
-            <p class="vide">Les fiches de sécurité demandent le réseau.</p>
-          } @else {
-            <app-sejour-fiches-securite [port]="portFiches" [sejourId]="s.sortie.id" [dateDebut]="s.sortie.dateDebut"
-                                        [dateFin]="s.sortie.dateFin" [lieu]="s.sortie.lieu" />
-          }
+          <app-sejour-fiches-securite [port]="portFiches" [sejourId]="s.sortie.id" [dateDebut]="s.sortie.dateDebut"
+                                      [dateFin]="s.sortie.dateFin" [lieu]="s.sortie.lieu" />
         </section>
       }
 
@@ -1912,7 +1909,7 @@ export class SejourComponent {
   readonly portMenus = this.api.portMenus(this.id);
 
   /** Les fiches de sécurité des plongées, pour l'onglet « Fiches de sécurité ». */
-  readonly portFiches = this.api.portFichesSecurite(this.id);
+  readonly portFiches = this.portFichesHorsLigne(this.api.portFichesSecurite(this.id));
 
   /** Le matériel emprunté, pour l'onglet « Matériel » et la carte « Mon séjour » ; lu sans réseau sur la copie. */
   readonly prets = new PretsDuSejour(this.portPretsAvecCopie(this.api.portPrets(this.id)));
@@ -2486,6 +2483,17 @@ export class SejourComponent {
       || this.conseilOuvert() || this.organisateursOuverts() || this.journeeOuverte();
   }
 
+  /** Sans réseau, la liste se lit sur sa copie, avec les fiches emportées sur le téléphone. */
+  private portFichesHorsLigne(enLigne: PortFichesSecurite): PortFichesSecurite {
+    const lire = async (): Promise<FichesSecuriteSejourVue> => {
+      const lu = await this.fileSejour.lireAvecCopie(cleFichesSejour(this.id), () => enLigne.lire());
+      if (lu.copieDu === null) return lu.valeur;
+      const fichesEmportees = await this.fileSejour.fichesEmportees(lu.valeur.plongees.map(p => p.seanceId));
+      return { ...lu.valeur, copie: { du: lu.copieDu, fichesEmportees } };
+    };
+    return { ...enLigne, lire: () => from(lire()) };
+  }
+
   /**
    * Les frais par la file du téléphone : la dépense ou le remboursement
    * partent tout de suite avec du réseau, sinon attendent et se montrent
@@ -2580,6 +2588,8 @@ export class SejourComponent {
     } catch (e) {
       const statut = (e as HttpErrorResponse).status;
       this.base.set(null);
+      // Plus le droit, ou séjour supprimé : sa liste de fiches ne reste pas sur le téléphone.
+      if (statut === 403 || statut === 404) void this.fileSejour.oublierCopie(cleFichesSejour(this.id));
       this.message.set(statut === 403 ? "Ce séjour n'est ouvert qu'à ses participants et aux encadrants."
         : statut === 404 ? 'Séjour introuvable.'
         : 'Impossible de charger le séjour : pas de réseau, et il n’a pas encore été ouvert sur ce téléphone.');

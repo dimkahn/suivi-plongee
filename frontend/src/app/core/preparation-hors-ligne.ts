@@ -20,7 +20,7 @@ export const LIBELLES_CONTENUS: Record<ContenuHorsLigne, { titre: string; detail
   planning: { titre: 'Planning du bassin', detail: 'qui encadre quel groupe' },
   eleves: { titre: 'Infos élèves et trombinoscopes', detail: 'listes, sans les photos' },
   photos: { titre: 'Photos', detail: 'élèves et moniteurs ; le plus long à copier' },
-  sejours: { titre: 'Séjours', detail: 'en cours ou dans les 30 jours : programme, voitures, chambres, frais' }
+  sejours: { titre: 'Séjours', detail: 'en cours ou dans les 30 jours : programme, voitures, chambres, frais, fiches de sécurité avec moniteurs, plongeurs et groupes' }
 };
 
 /** Séances dont on embarque présences et fiches : celles du jour, ou celles à ±30 jours. */

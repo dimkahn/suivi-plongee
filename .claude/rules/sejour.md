@@ -89,6 +89,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 ## Fiches de sécurité du séjour
 - `FichesSecuriteSejourService`, onglet Programme : une ligne par plongée de la sortie et l'état de sa fiche (MONITEUR ou ADMIN). Établir, compléter, signer passent par les écrans et droits habituels (`?sejour=` pour le retour).
 - Ajouter une plongée, ou supprimer celle qui n'a ni fiche, ni présence, ni évaluation (422) : organisateurs. Réseau obligatoire.
+- **Sans réseau** : liste copiée (`cleFichesSejour`, `FichesSecuriteSejourVue.copie`), avec la file du téléphone par-dessus (`avecEcrituresEnAttente`) ; seules les fiches emportées s'ouvrent (`ficheEmportee`). « Préparer hors ligne », case « Séjours », emporte fiches, moniteurs, plongeurs et groupes. Signer, imprimer, ajouter ou supprimer demandent le réseau. Relu quand le réseau part ou revient (`relireSelonLeReseau`).
 
 ## Partage des frais
 - Dépenses avancées par un participant (`sejour_depense`, **centimes**), réparties entre cochés selon leurs parts (`sejour_depense_part`, 2 pour un couple) ; remboursements dans `sejour_versement`. Onglet « Frais », `SejourFraisComponent`.

@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import type { Ecriture } from '../../core/file-ecritures.service';
 import { peutSignerDepuisLaListe, signatureAVenir } from '../../core/fiche-securite';
 
 // ----------------------------------------------------------------
@@ -24,6 +25,8 @@ export interface PlongeeSejourVue {
   plongeurs: number;
   realise: boolean;
   supprimable: boolean;
+  /** Une version de sa fiche attend le réseau sur ce téléphone. */
+  enAttente?: boolean;
 }
 
 /** Les droits guident l'écran : ajouter (organisateurs), établir les fiches, supprimer une fiche (ADMIN). */
@@ -32,6 +35,8 @@ export interface FichesSecuriteSejourVue {
   peutEtablir: boolean;
   peutSupprimerFiche: boolean;
   plongees: PlongeeSejourVue[];
+  /** Lue sur le téléphone, faute de réseau : quand, et les fiches qu'on y a emportées. */
+  copie?: { du: number; fichesEmportees: number[] };
 }
 
 /** {@code ordre} null : la plongée suivante de ce jour-là. */
@@ -90,22 +95,53 @@ const ORDRE_ACTIONS: ActionFiche['action'][] = ['etablir', 'completer', 'signer'
  * établir pour qui peut les établir ; pour le DP, ses fiches de plongées
  * passées à compléter au retour et à signer (mêmes règles que les liens de
  * l'onglet). Ses fiches de plongées à venir sont seulement annoncées.
- * Simple confort : le serveur revérifie tout.
+ * Sans réseau, ni la signature ni une fiche restée au serveur. Simple confort : le serveur revérifie tout.
  */
 export function actionsAFaire(vue: FichesSecuriteSejourVue, moiId: number | undefined, aujourdhui: string):
   { actions: ActionFiche[]; signaturesAVenir: PlongeeSejourVue[] } {
   const plongees = plongeesParJour(vue.plongees).flatMap(j => j.plongees);
   const actions = plongees.flatMap((p): ActionFiche[] => {
+    if (!ficheEmportee(vue, p.seanceId)) return [];
     if (!p.fiche) return vue.peutEtablir ? [{ action: 'etablir', plongee: p }] : [];
     const aSigner = { date: p.date, ficheSecurite: p.fiche, ficheSignee: p.signee, ficheDpId: p.dpId };
     if (!peutSignerDepuisLaListe(aSigner, moiId, aujourdhui)) return [];
-    return [...(p.realise ? [] : [{ action: 'completer' as const, plongee: p }]), { action: 'signer', plongee: p }];
+    return [...(p.realise ? [] : [{ action: 'completer' as const, plongee: p }]),
+      ...(vue.copie ? [] : [{ action: 'signer' as const, plongee: p }])];
   });
   return {
     actions: actions.sort((a, b) => ORDRE_ACTIONS.indexOf(a.action) - ORDRE_ACTIONS.indexOf(b.action)),
     signaturesAVenir: plongees.filter(p =>
       signatureAVenir({ date: p.date, ficheSecurite: p.fiche, ficheSignee: p.signee, ficheDpId: p.dpId }, moiId, aujourdhui))
   };
+}
+
+/**
+ * La liste telle qu'elle sera une fois partie la file du téléphone : une fiche gardée sans réseau y paraît
+ * établie, comme dans ses écrans (`FileEcrituresService.ficheAJour`). Un DP changé n'a pas de nom ici.
+ */
+export function avecEcrituresEnAttente(vue: FichesSecuriteSejourVue, ecritures: Ecriture[]): FichesSecuriteSejourVue {
+  const parSeance = (seanceId: number) => ecritures.filter(e => e.seanceId === seanceId);
+  return {
+    ...vue,
+    plongees: vue.plongees.map(p => parSeance(p.seanceId).reduce((plongee, e): PlongeeSejourVue => {
+      if (e.type === 'realise') return { ...plongee, realise: true, enAttente: true };
+      if (e.type !== 'fiche') return plongee;
+      const d = e.demande;
+      return {
+        ...plongee, fiche: true, enAttente: true, supprimable: false, dpId: d.dpId,
+        dp: d.dpId === plongee.dpId ? plongee.dp : null,
+        // Comme le serveur : null laisse le site, vide l'efface.
+        site: d.site === undefined || d.site === null ? plongee.site : d.site || null,
+        palanquees: d.palanquees.length,
+        plongeurs: d.palanquees.reduce((somme, x) => somme + x.membres.length, 0)
+      };
+    }, p))
+  };
+}
+
+/** Avec du réseau, toute fiche s'ouvre ; sans réseau, celles copiées sur le téléphone. */
+export function ficheEmportee(vue: FichesSecuriteSejourVue, seanceId: number): boolean {
+  return !vue.copie || vue.copie.fichesEmportees.includes(seanceId);
 }
 
 /** Le brouillon de « Ajouter une plongée » : le premier jour du séjour, à son lieu, en milieu naturel. */
