@@ -56,14 +56,19 @@ paths:
 - **Grille : exercice exigé pour toute note d'un critère qui en a**, sauf critère déjà acquis (`refusSansExercice`). *Pourquoi :* choix du club, 2026 : lire la phase de chaque note.
 - **Sans exercice possibles** : notation groupée, notes anciennes (marquées « sans exercice » dans la vue globale), critère sans exercice de maîtrise (N1 : « Départ plage », « Ventilation sur tuba », bloc transverse).
 
+## Exercice hors liste noté
+- « Autre exercice (hors liste) » dans le choix de la grille : intitulé et phase saisis sur place, copiés dans la note comme un exercice libre. Même règle des phases ; ne remplace pas les obligatoires. *Demande d'un moniteur, 2026-10-19.*
+
 ## Exercice libre noté
-- **Un exercice libre avec phase et critères sert à noter ces critères** : `Notation.exerciceLibre` (intitulé), retrouvé par `EvaluationService.exerciceLibre` dans le programme de la séance ; refus s'il n'y est plus, ne travaille pas le critère ou n'a pas de phase.
+- **Un exercice libre avec phase et critères sert à noter ces critères** : `Notation.exerciceLibre` (intitulé), retrouvé par `EvaluationService.exerciceLibre` dans le programme de la séance ; refus s'il ne travaille pas le critère ou n'a pas de phase ; retiré du programme après une note prise hors ligne, il n'est plus refusé : la note garde sa phase.
 - **La note copie intitulé et phase, sans lien** (programme remplacé d'un bloc) : `evaluation.exercice_libre`, `evaluation.phase_exercice` (V57).
 - **Toujours la règle des phases** (seule la maîtrise acquise rend le critère acquis), même si le critère n'a pas d'exercice de maîtrise dans la base.
 - **Vues : `ExerciceNoteVue` sans id ni numéro** (`CelluleVue.exerciceLibre` / `phaseExercice` dans la vue globale).
 
 ## Validation d'une compétence
-- **Un bloc avec exercices de maîtrise actifs ne se valide que si l'élève en a acquis au moins un** (base ou libre de maîtrise, hors entraînement) : `EvaluationService.maitriseManquante`, `EvaluationRepository.maitriseAcquiseDansLeBloc` ; la grille le rappelle à la place du bouton (`BlocVue.maitriseAttendue`). *Pourquoi :* choix du club, 2026.
+- **Exercices de maîtrise obligatoires** (`exercice_competence.obligatoire`, V93, case de `/admin/exercices`) : la compétence ne se valide qu'avec tous ses obligatoires actifs acquis, hors entraînement (`EvaluationService.exigenceMaitrise`, `BlocVue.maitriseAttendue`, `maitriseObligatoire`). Sans obligatoire : une maîtrise acquise suffit (base ou libre, `EvaluationRepository.maitriseAcquiseDansLeBloc`). *Pourquoi :* le MFT veut chaque critère validé, choix du club, 2026-10-19.
+- `/admin/exercices` signale un critère non couvert (`core/exercices-obligatoires.ts`) ; `ProgressionVue.obligatoiresManquants` signale un obligatoire prévu dans aucune période, ou (N2/N3 par mois) seulement hors milieu naturel. Contenu installé vérifié par `ExercicesObligatoiresMftTest`.
+- Le vote entre encadrants : `evaluation.md`.
 
 ## Lecture : grille, historique, vue globale
 - **Pastille I/P/M** sous chaque critère de la grille, dans l'historique et chaque case de la vue globale.

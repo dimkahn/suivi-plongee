@@ -21,12 +21,17 @@ Paquet `fr.club.plongee.materiel`. Écrans : `/materiel` (inventaire), `/materie
 - Un seul `Equipement` pour bloc, détendeur, gilet, combinaison : colonnes propres à un type nulles pour les autres, comme `bloc_competence`.
 - Détendeurs, gilets, combinaisons prêtés = EPI d'occasion (position FFESSM 2018).
 - **Fiche de gestion = champs de `equipement` + journal `intervention_equipement` en ajout seul** (jamais d'UPDATE/DELETE), comme `evaluation`. *Pourquoi :* Code du sport A322-177, contenu de l'annexe III-27, conservée trois ans après rebut.
-- **Détendeur désinfecté à chaque changement d'utilisateur** : prêt refusé sans cette confirmation, inscrite au journal. *Pourquoi :* A322-81.
+- **Détendeur désinfecté à chaque changement d'utilisateur** : prêt refusé sans cette confirmation, inscrite au journal. *Pourquoi :* A322-81. Exception : déclaré depuis un séjour par son emprunteur, voir « Prêts déclarés depuis un séjour ».
+- **L'ancien numéro suit le matériel partout** : « B-12 (ancien n° 12) » (`core/nom-equipement.ts`, `Equipement.designation()`), trouvé par chaque recherche. Au scanner, la référence actuelle prime ; un ancien numéro porté par plusieurs équipements est refusé en les citant.
 - Blocs : inspection TIV ≤ 12 mois ; requalification 6 ans sous régime TIV, 2 ans sinon (`regime_tiv` par bloc). *Pourquoi :* arrêté du 20 novembre 2017.
 - **Échéances calculées par le serveur** (`EcheancesEquipement`). Bloquent un prêt : rebut, hors service, dernier contrôle non conforme, date de rebut prévue atteinte, TIV ou requalification d'un bloc dépassée ou inconnue **jusqu'au retour prévu**.
 - Révision fabricant en retard = simple avertissement. *Pourquoi :* échéance de notice, pas de texte.
 - Un prêt garde `emprunteur_nom` : supprimer un élève retire le lien, pas la trace.
 - Pas de mode hors ligne.
+
+## Prêts déclarés depuis un séjour
+- Chacun déclare son emprunt dans le séjour ou par le lien (`PretsSejourService`, `sejour.md`) : un vrai prêt (`PretService.declarer`), rattaché à la sortie, mêmes contrôles ; `sejour_pret` (V84) garde le participant et qui a déclaré.
+- Détendeur déclaré par l'emprunteur : `desinfection_au_retour` (V99_6), rien au journal à la remise ; au retour, celui qui reçoit le matériel coche la désinfection, inscrite à cette date (422 sinon). Déclaré par un organisateur ou un moniteur pour un autre : attestée à la remise. *Choix du club, 2026-10-23.*
 
 ## Photos avant/après prêt
 - Table séparée `photo_pret` (V30, `PhotoPretService`), comme `photo_eleve` ; rattachée au prêt, éventuellement à un équipement.

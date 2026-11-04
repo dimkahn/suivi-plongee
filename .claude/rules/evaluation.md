@@ -17,6 +17,12 @@ paths:
 ## Droits
 - **Seule exception à « l'auteur vient du SecurityContext »** (choix du club, 2026) : un référent du groupe d'entraînement de l'élève peut noter au nom d'un autre encadrant qui ne l'a pas fait (`pourMoniteurId`, contrôlé par `EvaluationService.moniteurRemplace` : référent du groupe de l'élève dans la saison du cursus, encadrant actif et habilité au niveau). La note porte le nom de cet encadrant (`moniteur_id`), le référent est gardé dans `evaluation.saisi_par_id` (V63, null si on note soi-même), montré « saisi par » dans l'historique. Grille seulement (et sa file hors ligne) : ni notation groupée ni validation d'un bloc.
 
+## Validation d'une compétence ou d'un critère : par accord
+- **Votants = encadrants attitrés du groupe de l'élève, actifs, habilités au niveau** (`ValidationParAccordService`). Validé quand **la moitié arrondie au-dessus** a donné son accord ; **un référent valide seul**. Élève sans groupe, ou groupe sans votant : un encadrant habilité suffit. Encadrant hors du groupe : 422. *Choix du club, 2026-10-19.*
+- `POST /api/cursus/{id}/competences/{blocId}/validation` : revérifie les règles à chaque appel, enregistre l'accord (`accord_validation`, V93, ajout seul), renvoie `EtatValidation`. Ni refus ni retrait d'accord.
+- **Un critère se valide aussi seul, par le même vote** (`POST …/criteres/{critereId}/validation`, V94, `validation_critere`, `accord_validation_critere`) ; indépendant de la validation de la compétence.
+- Un moniteur qui a donné un accord ne se supprime plus : on désactive son compte.
+
 ## Table `evaluation`
 - **Ajout seul, ni UPDATE ni DELETE** : une correction crée une ligne ; état courant d'un critère = dernière saisie (plus grand `id`). *Pourquoi :* garder l'historique de progression et qui a noté quoi.
 

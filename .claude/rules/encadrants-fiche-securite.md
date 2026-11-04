@@ -31,8 +31,26 @@ paths:
 - **DP E3 minimum, quel que soit le milieu** : `FicheSecuriteService.NIVEAU_DP_MINIMUM`. *Pourquoi :* choix du club, 2026 ; règle de sécurité générale, pas du MFT, donc pas une colonne du référentiel.
 - **Établir/modifier une fiche (y compris proposer les palanquées, lier les séances) : E3/E4, ADMIN, ou rôle `FICHE_SECURITE`** (V71, donné dans l'écran Moniteurs ; ne fait pas d'un moniteur un DP). `HabilitationService.peutEtablirFicheSecurite`, refus 422 lisible ; les autres voient l'écran en lecture seule. *Pourquoi :* choix du club, 2026.
 - **Compléter au retour : tous les moniteurs et le rôle `SECURITE_SURFACE`** (`PUT …/fiche-securite/realise`).
-- **Compte `SECURITE_SURFACE` = non moniteur** (sécurité surface d'une sortie) : créé en bas de l'écran Moniteurs (`AdminSecuriteSurfaceController`), ne voit que la liste des fiches et l'écran de complément (`gardeFichesSecurite`).
-- Démo : `e2@club.fr` a `FICHE_SECURITE`, `surface@club.fr` est sécurité surface (V116).
+- **Compte `SECURITE_SURFACE` = non moniteur, prêté pour des séances choisies** (V97) : écran `/admin/securite-surface` (`AdminSecuriteSurfaceController`, ADMIN). Séances (`securite_surface_seance`) et dernier jour d'accès inclus (`utilisateur.acces_jusqu_au`) obligatoires ; passé ce jour, `Utilisateur.estActifLe` est faux. Hors de ses séances : 422 (`HabilitationService.verifierAccesSeance`). Hors ligne : seulement ses séances et les fiches de sa journée (`journeeAEmporter`).
+- Démo : `e2@club.fr` a `FICHE_SECURITE` (V116) ; `surface@club.fr` et `surface-rentree@club.fr`, accès terminé (V127).
+
+## Signature par le DP
+- `POST …/fiche-securite/signature` : le DP de la fiche seulement, le jour de la plongée ou après (V95). **Fiche signée : toute écriture refusée en 422**, suppression par un ADMIN comprise ; lier et délier restent permis. Pas de dé-signature.
+- Une signature par plongée : un DP ne signe pas la plongée d'un autre, même regroupée à l'impression.
+- **Empreinte HMAC-SHA256** du contenu (`EmpreinteFicheSecurite`), clé hors base (`SIGNATURE_FICHES_CLE`, sinon `JWT_SECRET`) ; recalculée à la lecture et à l'impression (« ⚠ modifiée après sa signature »). Changer la clé fait paraître toutes les fiches modifiées. Lien plongeur → dossier hors empreinte, noms dedans. Pas de donnée de démo signée.
+- Page `/fiches-securite/:id/signature` : la feuille en image (`GET …/apercu.png`, PDFBox), pas de PDF en `<iframe>` (Android le télécharge).
+
+## Composer les palanquées (navigateur, `core/fiche-securite.ts`)
+- Fiche neuve sans palanquée ; toute palanquée naît avec son profil prévu (`questionsAjout`).
+- Palanquée toujours compacte, une ligne par plongeur ; toucher la ligne ouvre sa fenêtre.
+- **Ajout au-delà de l'aptitude refusé à l'ajout** (`refusAjout`), pas par le serveur à l'enregistrement : une aptitude non reconnue passe, une profondeur changée après coup reste un avertissement.
+- « Reprendre » une palanquée d'une autre séance (`reprendrePalanquees`) : copie à l'écran, sans endpoint, sans réalisé. « Dupliquer et lier » (`POST …/duplication`) : **déplace** des palanquées vers une nouvelle séance du même jour, réseau obligatoire.
+- MOD d'un mélange (`profondeurMaximaleUtilisation`) : calcul d'écran, ni stocké ni imprimé ; seule la ppO2 max l'est (`membre_palanquee.ppo2_max`, V92 : 1,4, 1,5 ou 1,6). Dépasser la MOD avertit sans bloquer.
+- Site de la séance changé depuis la fiche (`site` du `PUT …/fiche-securite`) : mêmes droits que la fiche, gardé hors ligne ; `null` le laisse, vide l'efface.
+
+## Compléter au retour (navigateur, `core/fiche-securite-realise.ts`)
+- Un seul bouton par palanquée (`etatPalanquee`), « Annuler » pendant 10 s ; la sortie calcule la durée si elle est vide ; dépassements en tête (`trierParUrgence`).
+- Dépassement (réalisé > prévu, `depassements`) en rouge à l'écran, dans l'Excel, donc dans le PDF.
 
 ## Proposition automatique des palanquées
 - **Milieu naturel seulement, réseau obligatoire** : bouton de la fiche, `POST /api/seances/{id}/fiche-securite/proposition`. *Pourquoi :* choix du club, 2026.
@@ -48,7 +66,8 @@ paths:
 - **Les autres encadrants lisent les groupes**, les reprennent dans une fiche et envoient les paramètres.
 - **Report nom/e-mail depuis un séjour lié : ouvert aux organisateurs du séjour.**
 - **E-mail facultatif par membre** (V44) : vide = celui du dossier.
-- **Fin de séjour : `EnvoiParametresSejourService` envoie à chacun les seules plongées de la sortie où il figure**, lues sur les fiches de sécurité.
+- **Trois niveaux par plongeur** (V90), en texte libre : `aptitude`, `niveau_encadrement`, `qualification_preparee` ; `core/niveaux-plongeur.ts` les réunit à la reprise dans une fiche et les sépare au retour.
+- **Fin de séjour : `EnvoiParametresSejourService` envoie à chacun les seules plongées de la sortie où il figure**, lues sur les fiches de sécurité, depuis un groupe ou aux participants cochés d'un séjour (`sejour.md`).
 - **Écran** : une ligne par membre, ajout en tête depuis les plongeurs connus.
 
 ## Fiche imprimée (PDF et Excel)

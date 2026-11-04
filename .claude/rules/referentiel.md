@@ -10,7 +10,7 @@ paths:
 # Référentiel MFT et règles fédérales
 
 - **Référentiel MFT en base, pas en dur** : un `Referentiel` = un niveau + une version datée du MFT.
-- **Un cursus est figé sur son référentiel à l'inscription** : `Cursus` porte la copie des valeurs lues par `EvaluationService`/`RegleDelivranceService` au moment de l'inscription.
+- **Un cursus est lié à sa version du référentiel à l'inscription** (`Cursus.referentiel`) : `EvaluationService` et `RegleDelivranceService` lisent les valeurs de cette version, pas une copie. Une nouvelle révision ne change donc pas les cursus en cours ; une correction par l'écran d'admin, si.
 - **Nouvelle révision fédérale : `outils/generer_referentiel.py`** : un tuple par bloc dans `REFERENTIELS`, un `INSERT` par version, dans une migration Flyway dédiée. V7 : N1 PE20 (décembre 2025), désactive les anciennes versions. V8 : N2 PA20|PE40 (mai 2026), N3 PA40|PE60 (décembre 2025). PA60 hors périmètre (pas dans le brevet N3).
 - **Corrections manuelles par l'écran `/admin/referentiel`** (`ReferentielController`, `hasRole('ADMIN')`) : référentiel, blocs, critères, y compris ceux de cursus en cours. La non-rétroactivité n'est donc plus automatique : à l'admin de ne pas toucher un référentiel figé sur des cursus en cours si elle n'est pas voulue.
 - **Suppression bloquée** si la ligne est référencée par un cursus, si un critère porte une évaluation ou si un bloc porte une validation.

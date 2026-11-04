@@ -69,7 +69,6 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Date** : octobre 2026, demande du club (« envoyer les paramètres de plongée à un ou plusieurs participants »).
 - **Décision** : « Envoyer les paramètres de plongée… » dans « Partager et organiser… » (`POST /api/sejours/{id}/envoi-parametres`, créateur et organisateurs seulement), aux seuls participants cochés, plongeurs avec e-mail cochés d'avance. Même courriel que l'envoi depuis un groupe de plongeurs (`EnvoiParametresSejourService`, généralisé à un `Destinataire`) : chacun ses seules plongées, retrouvé dans les palanquées par dossier élève, compte, sinon nom et prénom. Rien n'est mémorisé de l'envoi. Sans fiche de sécurité : 422 ; participant d'un autre séjour : 404.
 - **Pourquoi** : l'envoi existant passait par un groupe de plongeurs et partait à tout le groupe ; un séjour peut avoir des plongeurs inscrits seuls, et l'organisateur veut renvoyer à une seule personne.
-- **À reporter à la main** dans `.claude/rules/sejour.md` (Carnet) et `encadrants-fiche-securite.md` (fichiers protégés pour l'IA).
 
 ## Champ médical écarté
 
@@ -125,7 +124,7 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Contexte** : les vols n'étaient qu'une ligne de texte ; chacun cherchait dans ses mails le terminal, le jour où s'enregistrer et son numéro de dossier.
 - **Décision** : chaque voyage porte un terminal de départ, l'ouverture de l'enregistrement en ligne, un numéro de dossier et un lien d'enregistrement (V96, http(s) seulement). Dans « Mon séjour », un voyage en avion, train, bateau ou car devient une carte (`CarteVoyageComponent`, calculs testés dans `voyage.ts`) : heures face à face, « +1 jour », terminal, compagnie reconnue au code IATA, « L'enregistrement ouvre le … » puis « Enregistrement ouvert », dossier à copier et bouton « S'enregistrer » (le lien collé, sinon le site de la compagnie). **Dossier et lien ne sont lus que par le voyageur et les organisateurs** (`Trajet.sansReservation`, filtré par le serveur), jamais imprimés, dans l'e-mail du seul voyageur : ils permettent de modifier ou d'annuler le billet. « Un même vol pour plusieurs » pose terminal et ouverture ; dossier et lien laissés vides gardent ceux de chacun.
 - **Écarté pour l'instant** : lire en direct chez la compagnie le terminal, les retards et l'ouverture de l'enregistrement. Les compagnies n'ont pas d'interface publique ; il faudrait un service de données de vol (AeroDataBox, Aviationstack…), payant, avec une clé par installation. Le lien direct pré-rempli avec le dossier n'est pas fabriqué non plus : l'adresse de chaque compagnie change ; on colle celle du mail de réservation.
-- **Révision (octobre 2026, demande du club)** : en avion, le conseil passe de 2 h à **3 h avant l'embarquement** (`MoyenTransport.AVION`, `AVANCES_TRANSPORT`), partout où il paraît (« Aujourd'hui », cartes de vol, carnet par e-mail). Le résumé `.claude/rules/sejour.md` dit encore 2 h : à corriger à la main (fichier protégé pour l'IA).
+- **Révision (octobre 2026, demande du club)** : en avion, le conseil passe de 2 h à **3 h avant l'embarquement** (`MoyenTransport.AVION`, `AVANCES_TRANSPORT`), partout où il paraît (« Aujourd'hui », cartes de vol, carnet par e-mail).
 
 ## Carte d'embarquement jointe au voyage
 
@@ -264,6 +263,15 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Données** (`sejour_abonnement_push`, V99_12) : adresse du service de notification et clés du navigateur, rattachées au participant (effacées avec lui), oubliées si le service les dit expirées (404/410), si le participant coupe ou se déconnecte, si un nouveau QR code déconnecte ses appareils (celles de la page du lien seulement), et chaque nuit 60 jours après le séjour (`PurgeAbonnementsPush`, 3 h). **5 téléphones au plus par participant** (le plus ancien laisse sa place). **Seuls les services des navigateurs sont acceptés** (Google, Apple, Mozilla, Microsoft) : le serveur ne poste rien ailleurs. Clé du téléphone vérifiée sur la courbe P-256. Journal d'échec : code HTTP seulement, jamais l'adresse. Le message passe chiffré par le service de notification ; il ne doit rien contenir de personnel (rappel dans le manuel).
 - **iPhone** : notifications seulement dans l'appli installée sur l'écran d'accueil (iOS 16.4 et plus) : l'encart le dit dans Safari. Un téléphone en a un seul abonnement, partagé par les séjours : « Couper » le retire du seul séjour.
 - Tests : `NotificationsSejourTest`, `ChiffrementPushTest`, `notifications-telephone.spec.ts`.
+
+## Export Excel des frais (2026-11-04)
+
+- **Demande du club** : exporter les frais au format de son classeur « soldes participants » (onglets Soldes, Dépenses, Remboursements).
+- **Décision** : `GET /api/sejours/{id}/frais.xlsx` (`FraisExcelService`, POI), « Exporter en Excel » dans l'onglet Frais. « A payé » et les remboursements restent des formules, chaque formule porte aussi sa valeur pour les aperçus qui ne recalculent pas ; « Sa part » est un nombre calculé par `FraisSejour`. Formules retrouvant chacun par son nom : un nom unique par ligne (« Jean Paul / Martin » et « Jean / Paul Martin » passent le contrôle des doublons du séjour).
+- **Organisateurs seulement** (`DroitsFrais.exporter`, `@droitsSejour.organise`). *Pourquoi :* les formules additionnent toutes les lignes, dont celles des additions de restaurant masquées aux autres participants.
+- **Le fichier sort de l'appli** (relecture « données personnelles ») : il porte les noms, parfois de mineurs, et le libellé d'une addition de restaurant nomme la personne à côté du prix de son repas. Rien de plus que ce que l'organisateur lit à l'écran ; le manuel demande de ne le donner qu'au trésorier et de le supprimer du téléphone.
+- **Écarts au modèle** : zéro d'un solde « 0,00 € » (le modèle avait un format abîmé, « 000 € ») ; soldes, total et contrôle arrondis au centime, pour éviter un faux écart de virgule flottante.
+- **Écarté** : un import retour dans l'appli ; une colonne de date dans « Dépenses », absente du modèle.
 
 ## Démonstrations
 
