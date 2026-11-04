@@ -155,8 +155,9 @@ public class FraisExcelService {
 
     private static void ecrireDepenses(XSSFSheet feuille, FraisService.FraisVue vue, Map<Long, String> noms,
                                        int totalSoldes, Styles s) {
-        largeurs(feuille, 6, 30, 30, 14, 13);
-        entete(feuille, s, "N°", "Dépense", "Payé par", "Montant", "Justificatif");
+        // « Partagé entre » à droite : les formules de « Soldes » lisent les colonnes C et D.
+        largeurs(feuille, 6, 30, 30, 14, 13, 50);
+        entete(feuille, s, "N°", "Dépense", "Payé par", "Montant", "Justificatif", "Partagé entre");
         feuille.createFreezePane(0, 1);
 
         List<FraisSejour.Depense> depenses = vue.depenses();
@@ -171,6 +172,7 @@ public class FraisExcelService {
             texte(ligne, 2, noms.get(d.payeurId()), alterne ? s.saisieAlterne : s.saisie);
             nombre(ligne, 3, d.montantCentimes(), alterne ? s.argentBleuAlterne : s.argentBleu);
             texte(ligne, 4, d.photos().isEmpty() ? "" : JUSTIFICATIF, alterne ? s.justificatifAlterne : s.justificatif);
+            texte(ligne, 5, partage(d, noms), alterne ? s.partageAlterne : s.partage);
         }
 
         // Sans dépense, une ligne vide : les plages des formules ne remontent pas sur l'en-tête.
@@ -186,12 +188,26 @@ public class FraisExcelService {
         nombreDepenses.setCellStyle(s.totalTexte);
         formule(total, 3, "SUM(D2:D%d)".formatted(derniere), montantTotal, s.totalArgent);
         texte(total, 4, "", s.totalVide);
+        texte(total, 5, "", s.totalVide);
 
         Row controle = feuille.createRow(derniere + 2);
         texte(controle, 1, "Contrôle : écart avec le total « A payé » de l'onglet Soldes", s.note);
         formule(controle, 3, "ROUND(D%d-Soldes!B%d,2)".formatted(derniere + 1, totalSoldes), 0, s.controle);
         note(feuille, derniere + 3, 1, JUSTIFICATIF + " = justificatif joint. Le « Payé par » doit être écrit exactement "
-                + "comme dans l'onglet Soldes.", s);
+                + "comme dans l'onglet Soldes. "
+                + "« × 2 » = deux parts. « Partagé entre » est indicatif : le changer ne recalcule pas « Sa part ».", s);
+    }
+
+    /** « Tout le monde » si chacun des participants a une part, sinon les noms ; « × 2 » pour des parts inégales. */
+    private static String partage(FraisSejour.Depense d, Map<Long, String> noms) {
+        int participants = noms.size() - 1;
+        if (participants > 1 && d.parts().size() == participants
+                && d.parts().stream().allMatch(p -> p.parts() == 1)) {
+            return "Tout le monde";
+        }
+        return d.parts().stream()
+                .map(p -> noms.get(p.participantId()) + (p.parts() > 1 ? " × " + p.parts() : ""))
+                .collect(Collectors.joining(", "));
     }
 
     private static void ecrireRemboursements(XSSFSheet feuille, FraisService.FraisVue vue, Map<Long, String> noms, Styles s) {
@@ -266,7 +282,7 @@ public class FraisExcelService {
         final XSSFWorkbook classeur;
         final XSSFCellStyle entete, nom, argent, argentVert, argentBleu, argentBleuAlterne, argentSigne,
                 totalTexte, totalArgent, totalSolde, totalVide, note, controle, numero, numeroAlterne,
-                saisie, saisieAlterne, justificatif, justificatifAlterne, date;
+                saisie, saisieAlterne, justificatif, justificatifAlterne, partage, partageAlterne, date;
 
         Styles(XSSFWorkbook classeur) {
             this.classeur = classeur;
@@ -294,6 +310,10 @@ public class FraisExcelService {
             saisieAlterne = style(bleue, FOND_ALTERNE, null, null);
             justificatif = style(parDefaut, null, HorizontalAlignment.CENTER, null);
             justificatifAlterne = style(parDefaut, FOND_ALTERNE, HorizontalAlignment.CENTER, null);
+            partage = style(normale, null, null, null);
+            partage.setWrapText(true);
+            partageAlterne = style(normale, FOND_ALTERNE, null, null);
+            partageAlterne.setWrapText(true);
             date = style(bleue, null, null, DATE);
         }
 

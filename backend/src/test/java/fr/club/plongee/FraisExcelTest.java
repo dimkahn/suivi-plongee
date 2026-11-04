@@ -142,7 +142,7 @@ class FraisExcelTest {
             assertThat(soldes.getRow(1).getCell(2).getCellType()).isEqualTo(CellType.NUMERIC);
 
             Sheet depenses = classeur.getSheet("Dépenses");
-            assertThat(ligneTexte(depenses, 0)).containsExactly("N°", "Dépense", "Payé par", "Montant", "Justificatif");
+            assertThat(ligneTexte(depenses, 0)).containsExactly("N°", "Dépense", "Payé par", "Montant", "Justificatif", "Partagé entre");
             Row premiere = depenses.getRow(1);
             assertThat(premiere.getCell(0).getNumericCellValue()).isEqualTo(1);
             assertThat(premiere.getCell(1).getStringCellValue()).isEqualTo("Gîte");
@@ -165,6 +165,36 @@ class FraisExcelTest {
             assertThat(r.getCell(1).getStringCellValue()).isEqualTo("Le club");
             assertThat(r.getCell(2).getNumericCellValue()).isEqualTo(30);
             assertThat(r.getCell(3).getLocalDateTimeCellValue().toLocalDate()).isEqualTo(LocalDate.of(2027, 3, 15));
+        }
+    }
+
+    @Test
+    @DisplayName("Chaque dépense dit par qui elle est partagée : tout le monde, ou les noms, avec les parts inégales")
+    void partageDesDepenses() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String base = sejour(dt, 305);
+        long anne = participant(base, dt, "Anne", "Arnaud");
+        long basile = participant(base, dt, "Basile", "Bernard");
+        long chloe = participant(base, dt, "Chloé", "Colin");
+        depense(base, dt, "Gîte", 9000, anne, anne, basile, chloe);
+        depense(base, dt, "Bateau", 4000, anne, anne, chloe);
+        poster(base + "/depenses", dt, """
+                {"libelle":"Chambre","categorie":"AUTRE","montantCentimes":3000,"payeurId":%d,
+                 "parts":[{"participantId":%d,"parts":2},{"participantId":%d,"parts":1}]}""".formatted(anne, basile, chloe));
+        poster(base + "/depenses", dt, """
+                {"libelle":"Tout le monde, en parts inégales","categorie":"AUTRE","montantCentimes":4000,"payeurId":%d,
+                 "parts":[{"participantId":%d,"parts":2},{"participantId":%d,"parts":1},{"participantId":%d,"parts":1}]}"""
+                .formatted(anne, anne, basile, chloe));
+
+        try (XSSFWorkbook classeur = exporter(base, dt)) {
+            Sheet depenses = classeur.getSheet("Dépenses");
+            assertThat(depenses.getRow(1).getCell(5).getStringCellValue()).isEqualTo("Tout le monde");
+            assertThat(depenses.getRow(2).getCell(5).getStringCellValue()).isEqualTo("Anne Arnaud, Chloé Colin");
+            assertThat(depenses.getRow(3).getCell(5).getStringCellValue()).isEqualTo("Basile Bernard × 2, Chloé Colin");
+            assertThat(depenses.getRow(4).getCell(5).getStringCellValue())
+                    .isEqualTo("Anne Arnaud × 2, Basile Bernard, Chloé Colin");
+            // Colonne ajoutée à droite : celles que lisent les formules ne bougent pas.
+            assertThat(classeur.getSheet("Soldes").getRow(1).getCell(1).getNumericCellValue()).isEqualTo(200);
         }
     }
 

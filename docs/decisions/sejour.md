@@ -280,6 +280,8 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Le fichier sort de l'appli** (relecture « données personnelles ») : il porte les noms, parfois de mineurs, et le libellé d'une addition de restaurant nomme la personne à côté du prix de son repas. Rien de plus que ce que l'organisateur lit à l'écran ; le manuel demande de ne le donner qu'au trésorier et de le supprimer du téléphone.
 - **Écarts au modèle** : zéro d'un solde « 0,00 € » (le modèle avait un format abîmé, « 000 € ») ; soldes, total et contrôle arrondis au centime, pour éviter un faux écart de virgule flottante.
 - **Écarté** : un import retour dans l'appli ; une colonne de date dans « Dépenses », absente du modèle.
+- **Une ligne par personne pour une addition de restaurant** (choix de l'organisateur du club, 2026-11-04) : le trésorier contrôle tout ; regrouper par repas a été proposé et écarté.
+- **« Partagé entre »** (demande du club, même jour) : colonne ajoutée à droite du modèle, pour ne pas déplacer celles que lisent les formules. « Tout le monde » quand chaque participant a une part, sinon les noms, « × 2 » pour des parts inégales. Indicative : « Sa part » reste le nombre calculé par `FraisSejour`.
 
 ## Démonstrations
 
