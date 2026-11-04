@@ -63,11 +63,12 @@ public class FraisService {
 
     /**
      * Ce que l'acteur peut faire, pour que l'écran ne propose que le possible (le serveur revérifie).
-     * {@code lireNotes} : montant et date lus sur la photo de la note ({@link LecteurNote}).
+     * {@code lireNotes} : montant et date lus sur la photo de la note ({@link LecteurNote}) ;
+     * {@code exporter} : le classeur Excel des frais ({@link FraisExcelService}), aux organisateurs.
      */
     public record DroitsFrais(Long moiId, boolean peutAjouter, boolean pourLesAutres,
                               List<Long> depensesModifiables, List<Long> versementsSupprimables,
-                              boolean lireNotes) {}
+                              boolean lireNotes, boolean exporter) {}
 
     public record FraisVue(List<FraisSejour.Depense> depenses, List<FraisSejour.Versement> versements,
                            FraisSejour.Comptes comptes, DroitsFrais droits) {}
@@ -178,7 +179,7 @@ public class FraisService {
                         .map(FraisSejour.Depense::id).toList(),
                 versements.stream().filter(v -> auteur(acteur, v.saisieParUtilisateurId(), v.saisieParParticipantId()))
                         .map(FraisSejour.Versement::id).toList(),
-                acteur.peutAjouter() && lecteurNote.actif());
+                acteur.peutAjouter() && lecteurNote.actif(), acteur.gestionnaire());
         return new FraisVue(depenses, versements, comptes, droits);
     }
 

@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { jourDuDepart, voyagesDuJour } from './programme-du-jour';
 import {
-  ParticipantVue, completerAvecNote, copieTrajet, euros, nomPayeur, remboursementsDe, texteTrajet, trajetSaisi
+  ParticipantVue, completerAvecNote, copieTrajet, euros, nomFichierSoldes, nomPayeur, remboursementsDe, texteTrajet,
+  trajetSaisi
 } from './sejour-api';
+
+describe('Le fichier Excel des frais', () => {
+  it('porte le nom du séjour, sans ce qu’un nom de fichier ne supporte pas', () => {
+    expect(nomFichierSoldes('Séjour à Port-Cros / juin')).toBe('soldes-participants-Séjour-à-Port-Cros-juin.xlsx');
+  });
+
+  it('garde un nom simple sans nom de séjour', () => {
+    expect(nomFichierSoldes('')).toBe('soldes-participants.xlsx');
+  });
+});
 
 describe('Ce que doit un participant, ou ce qu’on lui doit', () => {
   const nom = (id: number) => ({ 1: 'Inès Roux', 2: 'Léo Durand' } as Record<number, string>)[id];

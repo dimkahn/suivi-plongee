@@ -4,10 +4,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { dateFr } from '../../core/date-fr';
+import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { reduirePhoto } from '../../core/reduire-photo';
 import {
   CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, RegleLecture,
-  Remboursement, completerAvecNote, enCentimes, euros, majuscule, nomComplet, nomPayeur, remboursementsDe
+  Remboursement, completerAvecNote, enCentimes, euros, majuscule, nomComplet, nomFichierSoldes, nomPayeur,
+  remboursementsDe
 } from './sejour-api';
 import { leconDuTicket } from './lecture-ticket';
 
@@ -59,6 +61,10 @@ interface PhotoAEnvoyer {
         @if (d.pourLesAutres) {
           <button type="button" class="bouton-discret" (click)="ouvrirVersement(null)"
                   [disabled]="participants().length === 0">Noter un remboursement</button>
+        }
+        @if (d.exporter && port().exporter) {
+          <button type="button" class="bouton-discret" (click)="exporterExcel()"
+                  [disabled]="envoi()">Exporter en Excel</button>
         }
       </div>
     </div>
@@ -385,6 +391,8 @@ export class SejourFraisComponent {
   port = input.required<PortFrais>();
   /** Tout déplié (impression du carnet). */
   deplie = input(false);
+  /** Pour nommer le classeur exporté. */
+  nomSejour = input('');
   /** Les frais à jour après chaque écriture. */
   maj = output<FraisVue>();
 
@@ -727,6 +735,21 @@ export class SejourFraisComponent {
   supprimerVersement(id: number): void {
     if (!confirm('Annuler ce remboursement ? Les comptes seront recalculés.')) return;
     this.ecrire(this.port().supprimerVersement(id));
+  }
+
+  exporterExcel(): void {
+    this.envoi.set(true);
+    this.message.set(null);
+    this.port().exporter?.().subscribe({
+      next: blob => {
+        this.envoi.set(false);
+        telechargerFichier(blob, nomFichierSoldes(this.nomSejour()));
+      },
+      error: async (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(await detailErreurFichier(e) ?? "L'export n'a pas abouti (réseau nécessaire).");
+      }
+    });
   }
 
   private ecrire(appel: Observable<FraisVue>, ensuite?: () => void): void {

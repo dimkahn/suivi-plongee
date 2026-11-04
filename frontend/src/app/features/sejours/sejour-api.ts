@@ -323,6 +323,8 @@ export interface DroitsFrais {
    * la note est lue sur le téléphone (`ocr-ticket.ts`).
    */
   lireNotes: boolean;
+  /** Le classeur Excel des frais : organisateurs du séjour. */
+  exporter: boolean;
 }
 
 /** Solde positif : on lui doit de l'argent ; négatif : il en doit. {@code participantId} null : le club. */
@@ -350,6 +352,12 @@ export interface Remboursement {
   deId: number | null;
   aId: number | null;
   montantCentimes: number;
+}
+
+/** Le nom du classeur Excel des frais : le nom du séjour, en lettres et chiffres seulement. */
+export function nomFichierSoldes(nomSejour: string): string {
+  const nom = nomSejour.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
+  return nom ? `soldes-participants-${nom}.xlsx` : 'soldes-participants.xlsx';
 }
 
 /** Celui qui a payé une dépense : un participant, ou le club (null). */
@@ -393,6 +401,8 @@ export interface PortFrais {
   ajouterPhoto(depenseId: number, fichier: File): Observable<FraisVue>;
   supprimerPhoto(depenseId: number, photoId: number): Observable<FraisVue>;
   lirePhoto(depenseId: number, photoId: number): Observable<Blob>;
+  /** Le classeur Excel des frais ; absent de la page du lien, réservé aux organisateurs. */
+  exporter?(): Observable<Blob>;
   /** Montant total et date lus sur une photo pas encore enregistrée ; rien n'est gardé. */
   lireNote(fichier: File): Observable<NoteLue>;
   /** Les règles apprises des corrections du club, pour la lecture sur le téléphone. */
@@ -836,6 +846,7 @@ export class SejourApi {
       lirePhoto: (depenseId, photoId) => this.http.get(`${base}/depenses/${depenseId}/photos/${photoId}`,
         { responseType: 'blob' }),
       lireNote: fichier => this.http.post<NoteLue>(`${base}/depenses/lecture-note`, formulairePhoto(fichier)),
+      exporter: () => this.http.get(`${base}/frais.xlsx`, { responseType: 'blob' }),
       reglesLecture: () => this.http.get<RegleLecture[]>(`${base}/lecture-notes/regles`),
       apprendreLecture: lecon => this.http.post<void>(`${base}/lecture-notes/apprentissage`, lecon),
       ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),

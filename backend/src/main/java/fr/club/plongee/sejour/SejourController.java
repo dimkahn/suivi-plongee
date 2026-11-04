@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -63,6 +64,7 @@ public class SejourController {
     private final SejourService service;
     private final CarnetSejourService carnets;
     private final FraisService frais;
+    private final FraisExcelService fraisExcel;
     private final AccesSejourService acces;
     private final PretsSejourService pretsSejour;
     private final CartesEmbarquementService cartes;
@@ -74,7 +76,7 @@ public class SejourController {
     private final NotificationsSejourService notifications;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
-                            AccesSejourService acces, PretsSejourService pretsSejour,
+                            FraisExcelService fraisExcel, AccesSejourService acces, PretsSejourService pretsSejour,
                             CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
                             RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope, RepasSejourService repas,
                             JourneesSejourService journees, NotificationsSejourService notifications) {
@@ -85,6 +87,7 @@ public class SejourController {
         this.service = service;
         this.carnets = carnets;
         this.frais = frais;
+        this.fraisExcel = fraisExcel;
         this.acces = acces;
         this.pretsSejour = pretsSejour;
         this.cartes = cartes;
@@ -488,6 +491,16 @@ public class SejourController {
     // ------------------------------------------------------------------
     //  Frais : les droits dépendent de qui agit (FraisService), pas seulement du rôle.
     // ------------------------------------------------------------------
+
+    /** Le classeur du club, aux organisateurs : un participant ne lit pas toutes les additions de restaurant. */
+    @GetMapping(value = "/{id}/frais.xlsx",
+            produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    @PreAuthorize(GERE)
+    public ResponseEntity<byte[]> fraisExcel(@PathVariable Long id, @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"soldes-participants.xlsx\"")
+                .body(fraisExcel.generer(id, frais.acteur(id, moi)));
+    }
 
     @PostMapping("/{id}/depenses")
     @PreAuthorize("isAuthenticated()")

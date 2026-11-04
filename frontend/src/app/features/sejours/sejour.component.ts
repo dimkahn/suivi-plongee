@@ -657,7 +657,8 @@ function participantVide(): BrouillonParticipant {
       <!-- Frais partagés -->
       @if (montrer('frais-sejour')) {
         <section id="frais-sejour">
-          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais" />
+          <app-sejour-frais [frais]="s.frais" [participants]="s.participants" [port]="portFrais"
+                            [nomSejour]="s.sortie.nom" />
           @if (s.gere) {
             <p class="secondaire sans-impression acces-frais">
               Les participants qui ne sont pas moniteurs voient et saisissent leurs frais par le lien reçu avec
