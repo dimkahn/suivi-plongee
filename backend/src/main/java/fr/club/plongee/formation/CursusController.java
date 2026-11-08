@@ -110,10 +110,11 @@ public class CursusController {
         Cursus c = cursus.chargerComplet(id)
                 .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
         if (demande.niveau() != null) changements.changerNiveau(c, demande.niveau());
-        boolean devientDelivre = demande.statut() == Cursus.Statut.DELIVRE && c.getStatut() != Cursus.Statut.DELIVRE;
+        boolean devientDelivre = (demande.statut() == Cursus.Statut.DELIVRE || demande.statut() == Cursus.Statut.OBTENU_AILLEURS)
+                && c.getStatut() != demande.statut();
         c.setStatut(demande.statut());
         cursus.save(c);
-        // Passage manuel à « brevet délivré » : la fiche élève prend ce niveau.
+        // Passage manuel à « brevet délivré » ou « obtenu ailleurs » : la fiche élève prend ce niveau.
         // Pas de retour en arrière si le statut est ensuite corrigé : l'ancien
         // niveau reste lisible dans l'historique Envers de l'élève.
         if (devientDelivre) {

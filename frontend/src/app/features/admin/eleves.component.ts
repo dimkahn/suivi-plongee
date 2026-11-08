@@ -12,8 +12,8 @@ import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { NgTemplateOutlet } from '@angular/common';
+import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
 
-const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
 
 interface FormulaireEleve {
   nom: string;
@@ -237,7 +237,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                 (ngModelChange)="filtreStatut.set($event)">
           <option value="TOUS">Tous</option>
           <option value="NON_INSCRIT">Sans rattachement à la saison</option>
-          @for (s of statuts; track s) { <option [value]="s">{{ s }}</option> }
+          @for (s of statuts; track s) { <option [value]="s">{{ libelleStatutCursus(s) }}</option> }
         </select>
       </div>
       <div>
@@ -499,7 +499,8 @@ export class ElevesComponent {
    */
   private retour: string | null = null;
 
-  readonly statuts = STATUTS;
+  readonly statuts = STATUTS_CURSUS;
+  readonly libelleStatutCursus = libelleStatutCursus;
   readonly taillesGilet = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
 
   recadrage = signal<{ eleve: EleveVue; fichier: File } | null>(null);

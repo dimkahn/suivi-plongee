@@ -74,7 +74,12 @@ public class RosterController {
 
         LocalDate aujourdhui = Calendrier.aujourdhui();
 
-        List<LigneEleve> lignes = cursus.parSaison(saison).stream().map(c -> {
+        Set<Long> seancesDuJour = seances.findBySaisonIdOrderByDateSeanceAscOrdreAsc(saison).stream()
+                .filter(s -> aujourdhui.equals(s.getDateSeance())).map(Seance::getId).collect(Collectors.toSet());
+        // Brevet obtenu ailleurs : il ne prépare plus ce niveau, il sort de la liste,
+        // sauf s'il est noté présent aujourd'hui (téléphone et personne à prévenir au bord du bassin).
+        List<LigneEleve> lignes = cursus.parSaison(saison).stream()
+                .filter(c -> c.getStatut() != Cursus.Statut.OBTENU_AILLEURS || presentA(c, seancesDuJour)).map(c -> {
             Map<Long, String> presences = participations.findByCursusId(c.getId()).stream()
                     .collect(Collectors.toMap(
                             p -> p.getSeance().getId(),
@@ -98,6 +103,12 @@ public class RosterController {
                 .toList();
 
         return new RosterVue(entetes, lignes);
+    }
+
+    /** Noté présent à l'une de ces séances. */
+    private boolean presentA(Cursus c, Set<Long> seanceIds) {
+        return participations.findByCursusId(c.getId()).stream()
+                .anyMatch(p -> p.getStatut() == Participation.Statut.PRESENT && seanceIds.contains(p.getSeance().getId()));
     }
 
     /**

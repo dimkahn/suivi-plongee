@@ -6,12 +6,8 @@ import { ApiService } from '../../core/api.service';
 import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
 import { normaliser } from '../../core/seance-lieu';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
 
-const STATUTS = ['EN_COURS', 'VALIDE', 'DELIVRE', 'SUSPENDU', 'ABANDON'] as const;
-const LIBELLES_STATUT: Record<string, string> = {
-  EN_COURS: 'En cours', VALIDE: 'Validé', DELIVRE: 'Brevet délivré',
-  SUSPENDU: 'Suspendu', ABANDON: 'Abandon'
-};
 
 @Component({
   selector: 'app-cursus-admin',
@@ -205,6 +201,12 @@ const LIBELLES_STATUT: Record<string, string> = {
             <select id="statut-edition" name="statut" [(ngModel)]="f.statut">
               @for (s of statuts; track s) { <option [value]="s">{{ libelleStatut(s) }}</option> }
             </select>
+            @if (f.statut === 'OBTENU_AILLEURS' && c.statut !== 'OBTENU_AILLEURS') {
+              <p class="secondaire">
+                Brevet passé dans une autre structure : la fiche de l'élève prendra le niveau {{ f.niveau }},
+                et il ne figurera plus parmi les P{{ f.niveau }} (Infos élèves, feuilles de présence).
+              </p>
+            }
           }
           <div class="actions-dialogue">
             <button type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
@@ -306,7 +308,7 @@ const LIBELLES_STATUT: Record<string, string> = {
 export class CursusAdminComponent {
   private api = inject(ApiService);
 
-  readonly statuts = STATUTS;
+  readonly statuts = STATUTS_CURSUS;
 
   liste = signal<CursusVue[]>([]);
   saisons = signal<SaisonVue[]>([]);
@@ -508,7 +510,7 @@ export class CursusAdminComponent {
   }
 
   libelleStatut(statut: string): string {
-    return LIBELLES_STATUT[statut] ?? statut;
+    return libelleStatutCursus(statut);
   }
 
   ouvrirCreation(): void {

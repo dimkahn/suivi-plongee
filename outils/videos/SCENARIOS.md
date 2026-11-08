@@ -709,7 +709,7 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 31 s
 1. Sonia a réussi son N3.
 2. La formation est close : sa grille passe en lecture seule, telle qu'elle a été validée.
 3. Son dossier prend le niveau N3 : il sera proposé à sa prochaine inscription.
-4. Autres statuts : suspendu (reprise la saison suivante), abandon.
+4. Autres statuts : brevet obtenu ailleurs (passé dans un autre club), suspendu (reprise la saison suivante), abandon.
 
 ### A10 — Composer les groupes d'entraînement
 

@@ -241,7 +241,7 @@ export class SyntheseGroupeComponent {
 
   libelleStatut(statut: string): string {
     const libelles: Record<string, string> = {
-      VALIDE: 'Formation validée', DELIVRE: 'Brevet délivré', SUSPENDU: 'Suspendu', ABANDON: 'Abandon'
+      VALIDE: 'Formation validée', DELIVRE: 'Brevet délivré', SUSPENDU: 'Suspendu', ABANDON: 'Abandon', OBTENU_AILLEURS: 'Brevet obtenu ailleurs'
     };
     return libelles[statut] ?? statut;
   }

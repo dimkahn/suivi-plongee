@@ -317,7 +317,7 @@ public class SeanceController {
 
     /**
      * Feuille de presence d'une seance : tous les eleves inscrits sur sa saison,
-     * avec ce qui a deja ete saisi. Un cursus abandonne n'apparait que s'il
+     * avec ce qui a deja ete saisi. Un cursus abandonne (ou brevet obtenu ailleurs) n'apparait que s'il
      * porte deja une presence pour cette seance.
      */
     @GetMapping("/{seanceId}/presences")
@@ -330,7 +330,7 @@ public class SeanceController {
         Map<Long, Long> notes = evaluations.compterParCursusPourSeance(seanceId).stream()
                 .collect(Collectors.toMap(l -> (Long) l[0], l -> (Long) l[1]));
         List<LignePresence> lignes = cursus.parSaison(seance.getSaison().getId()).stream()
-                .filter(c -> c.getStatut() != Cursus.Statut.ABANDON || saisies.containsKey(c.getId()))
+                .filter(c -> !c.horsFormation() || saisies.containsKey(c.getId()))
                 .map(c -> {
                     Participation p = saisies.get(c.getId());
                     Eleve e = c.getEleve();

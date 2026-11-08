@@ -294,7 +294,7 @@ public class ProgrammeSeanceService {
         Map<Long, FormationVue> parRef = new LinkedHashMap<>();
         Map<Long, Integer> eleves = new LinkedHashMap<>();
         for (Cursus c : cursus.parSaison(seance.getSaison().getId())) {
-            if (c.getStatut() == Cursus.Statut.ABANDON) continue;
+            if (c.horsFormation()) continue;
             Referentiel r = c.getReferentiel();
             eleves.merge(r.getId(), 1, Integer::sum);
             parRef.putIfAbsent(r.getId(), new FormationVue(r.getId(), r.getNiveau().name(), r.getVersionMft(), 0));

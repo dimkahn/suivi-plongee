@@ -11,7 +11,8 @@ import java.time.LocalDate;
 @Audited
 public class Cursus {
 
-    public enum Statut { EN_COURS, VALIDE, DELIVRE, SUSPENDU, ABANDON }
+    /** {@code OBTENU_AILLEURS} : brevet passé dans une autre structure, la formation se clôt ici. */
+    public enum Statut { EN_COURS, VALIDE, DELIVRE, SUSPENDU, ABANDON, OBTENU_AILLEURS }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +39,11 @@ public class Cursus {
 
     @Column(nullable = false)
     private LocalDate ouvertLe = LocalDate.now();
+
+    /** L'élève ne suit plus cette formation : abandon, ou brevet obtenu ailleurs. */
+    public boolean horsFormation() {
+        return statut == Statut.ABANDON || statut == Statut.OBTENU_AILLEURS;
+    }
 
     public boolean modifiable() {
         return statut == Statut.EN_COURS && saison.isOuverte();

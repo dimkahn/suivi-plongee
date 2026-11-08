@@ -28,6 +28,7 @@ import { periodeDeLaPlongee, periodeDuMois, plagePeriode } from '../../core/prog
 import { AvatarComponent } from '../../core/avatar.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { EtatAccords, modeValidation } from '../../core/validation-competence';
+import { libelleStatutCursus } from '../../core/statuts-cursus';
 
 /** Un suivi affiché (milieu naturel ou entraînement), augmenté de l'information « pas encore envoyé ». */
 interface SuiviAffiche {
@@ -279,7 +280,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
       @if (!peutSaisir()) {
         <div class="alerte">
           @if (g.statut !== 'EN_COURS') {
-            Ce cursus n'est plus en cours ({{ g.statut === 'DELIVRE' ? 'brevet délivré' : g.statut }}) :
+            Ce cursus n'est plus en cours ({{ libelleStatutCursus(g.statut).toLowerCase() }}) :
             la grille est en lecture seule, aucune saisie n'est plus possible.
           } @else {
             La saisie des compétences {{ g.niveau }} est réservée aux encadrants
@@ -1263,6 +1264,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
   `]
 })
 export class GrilleComponent implements OnDestroy {
+  readonly libelleStatutCursus = libelleStatutCursus;
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private file = inject(FileAttenteService);
