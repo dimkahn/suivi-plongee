@@ -3,7 +3,7 @@ titre: Valider une compétence
 rubrique: Moniteur
 videos: M6
 ecran: /eleves
-mots: valider, validation, compétence, bloc, critère, critère technique, technique, valider le critère, refus, refusé, MFT, milieu naturel, règle, exercice de maîtrise, maîtrise, obligatoire, exercices obligatoires, accord, accepter, proposer, vote, moitié, 50 %, groupe, référent, encadrants du groupe
+mots: valider, validation, compétence, bloc, critère, critère technique, technique, valider le critère, refus, refusé, MFT, milieu naturel, règle, exercice de maîtrise, maîtrise, obligatoire, exercices obligatoires, accord, accepter, proposer, vote, moitié, 50 %, groupe, référent, encadrants du groupe, fin de formation, en dernier, intervenir, assistance, relais
 questions:
 - Comment valider une compétence ?
 - Pourquoi le bouton « Valider la compétence » n'apparaît pas ?
@@ -13,6 +13,7 @@ questions:
 - Pourquoi je vois « Proposer la validation » ou « Accepter la validation » ?
 - Qui peut valider une compétence seul ?
 - Comment valider un seul critère technique d'une compétence ?
+- Pourquoi la compétence « Intervenir » ne peut pas encore être validée ?
 - Combien d'accords faut-il pour valider une compétence ?
 ---
 Quand tous les critères d'une compétence sont acquis, **et que l'élève a acquis tous ses exercices de maîtrise obligatoires**, la validation devient possible sous son titre. Si l'élève est dans un groupe d'entraînement, elle se décide entre les encadrants du groupe, comme un vote : **il faut l'accord de la moitié d'entre eux**. Un **référent du groupe** la valide seul. Le serveur vérifie les règles du MFT avant d'accepter.
@@ -55,7 +56,7 @@ Le message dit pourquoi. Les causes les plus courantes :
 - vous avez déjà donné votre accord : il faut attendre ceux des autres encadrants du groupe ;
 - au N2 et au N3, tout se valide **en milieu naturel** : les critères notés en piscine ou en fosse forment un suivi d'entraînement à part, qui ne compte pas ;
 - vous n'encadrez pas ce niveau (E1 → N1, E2 → jusqu'au N2, E3 → jusqu'au N3) ;
-- une règle d'ordre du MFT (par exemple, une compétence qui se valide en dernier).
+- une règle d'ordre du MFT : les compétences d'intervention (N2 « Intervenir et porter assistance » et « Intervenir en relais », N3 « Intervenir et porter assistance ») se valident **en fin de formation**, après toutes les autres ; au N2, ces deux-là se valident dans l'ordre que vous voulez.
 
 ## Bon à savoir
 

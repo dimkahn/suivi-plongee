@@ -83,6 +83,72 @@ class ExercicesObligatoiresMftTest {
         assertThat(nonCouverts).isEmpty();
     }
 
+    private JsonNode referentiel(String niveau, String admin) throws Exception {
+        for (JsonNode r : lire("/api/referentiels", admin)) {
+            if (niveau.equals(r.get("niveau").asText()) && r.get("actif").asBoolean()) return r;
+        }
+        throw new AssertionError("référentiel " + niveau + " introuvable");
+    }
+
+    private JsonNode exercice(String niveau, String numero, String admin) throws Exception {
+        long id = referentiel(niveau, admin).get("id").asLong();
+        for (JsonNode e : lire("/api/referentiels/" + id + "/exercices", admin)) {
+            if (numero.equals(e.get("numero").asText())) return e;
+        }
+        throw new AssertionError("exercice " + niveau + " " + numero + " introuvable");
+    }
+
+    @Test
+    @DisplayName("N3 : « Intervenir et porter assistance » se valide en fin de formation (MFT)")
+    void n3AssistanceValideeEnDernier() throws Exception {
+        String admin = jeton();
+        long id = referentiel("N3", admin).get("id").asLong();
+        JsonNode assistance = null;
+        for (JsonNode b : lire("/api/referentiels/" + id, admin).get("blocs")) {
+            if (b.get("intitule").asText().startsWith("Intervenir et porter assistance")) assistance = b;
+        }
+        assertThat(assistance).isNotNull();
+        assertThat(assistance.get("validerEnDernier").asBoolean()).isTrue();
+    }
+
+    @Test
+    @DisplayName("N2 : aucun exercice obligatoire n'exige 40 m ni un E3, la validation se fait entre 0 et 20 m par un E2 (MFT)")
+    void n2ObligatoiresDansLEspaceDeValidation() throws Exception {
+        String admin = jeton();
+        long id = referentiel("N2", admin).get("id").asLong();
+        List<String> horsEspace = new ArrayList<>();
+        for (JsonNode e : lire("/api/referentiels/" + id + "/exercices", admin)) {
+            if (!e.get("actif").asBoolean() || !e.get("obligatoire").asBoolean()) continue;
+            String texte = e.get("intitule").asText() + " " + e.get("deroulement").asText();
+            if (texte.contains("40 m") || texte.contains("E3")) horsEspace.add(e.get("numero").asText());
+        }
+        assertThat(horsEspace).isEmpty();
+    }
+
+    @Test
+    @DisplayName("N3 : la nage capelée de 300 m, critère d'évaluation de la condition physique, est obligatoire (MFT)")
+    void n3NageCapeleeObligatoire() throws Exception {
+        JsonNode nage = exercice("N3", "3.9", jeton());
+        assertThat(nage.get("intitule").asText()).contains("300 m");
+        assertThat(nage.get("obligatoire").asBoolean()).isTrue();
+    }
+
+    @Test
+    @DisplayName("N2 : le problème de table, exigé pour « Évoluer en autonomie », est un exercice de maîtrise obligatoire (MFT)")
+    void n2ProblemeDeTableObligatoire() throws Exception {
+        String admin = jeton();
+        long blocAutonomie = exercice("N2", "5.6", admin).get("blocId").asLong();
+        long id = referentiel("N2", admin).get("id").asLong();
+        List<String> obligatoiresAvecTable = new ArrayList<>();
+        for (JsonNode e : lire("/api/referentiels/" + id + "/exercices", admin)) {
+            if (e.get("blocId").asLong() == blocAutonomie && e.get("actif").asBoolean()
+                    && e.get("obligatoire").asBoolean() && e.get("deroulement").asText().contains("problème de table")) {
+                obligatoiresAvecTable.add(e.get("numero").asText());
+            }
+        }
+        assertThat(obligatoiresAvecTable).isNotEmpty();
+    }
+
     @Test
     @DisplayName("La progression type du club prévoit chaque exercice obligatoire, en milieu naturel au N2 et au N3")
     void progressionsDuClubPrevoientLesObligatoires() throws Exception {

@@ -430,6 +430,31 @@ class EvaluationServiceTest {
     }
 
     @Test
+    @DisplayName("Deux compétences à valider en fin de formation ne s'attendent pas l'une l'autre (N2 : C7 et C11)")
+    void validerBloc_deuxCompetencesEnDernierNeSeBloquentPas() {
+        Referentiel ref = referentiel(false, 40);
+        BlocCompetence c7 = bloc(ref, false, true);
+        c7.setId(7L);
+        BlocCompetence c11 = bloc(ref, false, true);
+        c11.setId(11L);
+        BlocCompetence autre = bloc(ref, false, false);
+        autre.setId(1L);
+        ref.setBlocs(List.of(autre, c7, c11));
+        Cursus c = cursus(ref, saison(1L), Cursus.Statut.EN_COURS);
+        ValidationCompetence autreValidee = new ValidationCompetence();
+        autreValidee.setBloc(autre);
+
+        when(cursusRepository.chargerComplet(100L)).thenReturn(Optional.of(c));
+        when(habilitation.peutValiderBloc(moniteurPrincipal, c7)).thenReturn(true);
+        when(validations.existsByCursusIdAndBlocId(100L, 7L)).thenReturn(false);
+        when(criteres.compterParBloc(7L)).thenReturn(3L);
+        when(evaluations.compterAcquisDuBloc(100L, 7L)).thenReturn(3L);
+        when(validations.findByCursusId(100L)).thenReturn(List.of(autreValidee)); // C11 pas encore validée
+
+        assertThat(service.verifierValidable(100L, 7L, moniteurPrincipal).bloc()).isSameAs(c7);
+    }
+
+    @Test
     @DisplayName("Une competence avec exercices de maitrise ne se valide pas sans l'un d'eux acquis")
     void validerBloc_sansExerciceDeMaitriseAcquis() {
         Referentiel ref = referentiel(false, 40);

@@ -416,9 +416,11 @@ public class EvaluationService {
         }
         verifierMaitriseAcquise(cursusId, bloc);
 
-        // Bloc marque valider_en_dernier : validee en fin de formation, apres tous les autres blocs.
+        // Bloc marque valider_en_dernier : validee en fin de formation, apres tous les autres blocs,
+        // sauf ceux aussi a valider en fin de formation (N2 : C7 et C11), sans quoi ils s'attendraient.
         if (bloc.isValiderEnDernier()) {
             List<Long> autres = cursus.getReferentiel().getBlocs().stream()
+                    .filter(b -> !b.isValiderEnDernier())
                     .map(BlocCompetence::getId)
                     .filter(id -> !id.equals(blocId))
                     .toList();

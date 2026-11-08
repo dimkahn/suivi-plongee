@@ -67,6 +67,7 @@ paths:
 
 ## Validation d'une compétence
 - **Exercices de maîtrise obligatoires** (`exercice_competence.obligatoire`, V93, case de `/admin/exercices`) : la compétence ne se valide qu'avec tous ses obligatoires actifs acquis, hors entraînement (`EvaluationService.exigenceMaitrise`, `BlocVue.maitriseAttendue`, `maitriseObligatoire`). Sans obligatoire : une maîtrise acquise suffit (base ou libre, `EvaluationRepository.maitriseAcquiseDansLeBloc`). *Pourquoi :* le MFT veut chaque critère validé, choix du club, 2026-10-19.
+- **Relecture contre les MFT (V99_14)** : validation N2 dans 0-20 m par un E2, donc aucun obligatoire N2 à 40 m ni sous un E3 (8.8 ramené à 20 m, 9.8 obligatoire au lieu de 9.7) ; problème de table exigé par le MFT dans N2 5.9 (maîtrise, milieu naturel), devenu obligatoire ; 5.6 reste l'entraînement au sec (règles de `BaseExercicesTest` : 3 maîtrises par compétence, un exercice dans une seule période) ; N3 3.9 « Nage capelée de 300 m » obligatoire. Vérifié par `ExercicesObligatoiresMftTest`.
 - `/admin/exercices` signale un critère non couvert (`core/exercices-obligatoires.ts`) ; `ProgressionVue.obligatoiresManquants` signale un obligatoire prévu dans aucune période, ou (N2/N3 par mois) seulement hors milieu naturel. Contenu installé vérifié par `ExercicesObligatoiresMftTest`.
 - Le vote entre encadrants : `evaluation.md`.
 
