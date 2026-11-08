@@ -93,7 +93,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 
 ## Partage des frais
 - Dépenses avancées par un participant (`sejour_depense`, **centimes**), réparties entre cochés selon leurs parts (`sejour_depense_part`, 2 pour un couple) ; remboursements dans `sejour_versement`. Onglet « Frais », `SejourFraisComponent`.
-- **Soldes et remboursements à faire calculés, jamais stockés** (`FraisSejour`, calcul pur testé à part) : prorata arrondi au centime inférieur, reste aux premiers ids ; plus gros débiteur vers plus gros créancier.
+- **Soldes et remboursements à faire calculés, jamais stockés** (`FraisSejour`, calcul pur testé à part) : part de chacun = somme **exacte** de ses fractions sur toutes les dépenses, arrondie une seule fois (centime inférieur, puis plus forts restes, à égalité premiers ids), jamais dépense par dépense (2026-11-08) ; plus gros débiteur vers plus gros créancier.
 - **Le club peut avancer une dépense** (V99_3) : `payeur_id` null ; `de_id` ou `a_id` null dans un remboursement, jamais les deux. Il a son solde, sans jamais prendre de part. **Un id null signifie « le club » dans `FraisVue`** : comparer par `moi.equals(id)`.
 - Lus par les participants, carnet et e-mail compris.
 - **Droits selon qui agit, jamais le seul rôle** (`FraisService`, `ActeurFrais`). *Choix du club, 2026 (V77).*

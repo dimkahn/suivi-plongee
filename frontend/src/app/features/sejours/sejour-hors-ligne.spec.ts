@@ -167,6 +167,27 @@ describe('Les comptes des frais calculés sur le téléphone, comme le serveur',
     expect([...repartir(900, [{ participantId: 1, parts: 2 }, { participantId: 2, parts: 1 }])]).toEqual([[1, 600], [2, 300]]);
   });
 
+  it("les centimes d'arrondi ne s'accumulent pas sur les premiers d'une dépense à l'autre", () => {
+    const depense = (id: number, montant: number, payeurId: number, ids: number[]) => ({
+      id, libelle: '', categorie: 'AUTRE' as const, montantCentimes: montant, payeurId, jour: null,
+      parts: ids.map(participantId => ({ participantId, parts: 1 })),
+      photos: [], saisieParUtilisateurId: null, saisieParParticipantId: null
+    });
+    // Trois repas de 10 € pour trois : chacun doit exactement 10 €.
+    const repas = [1, 2, 3].map(i => depense(i, 1000, 4, [1, 2, 3]));
+    expect(comptesFrais([1, 2, 3, 4], { depenses: repas, versements: [] }).soldes.map(s => s.duCentimes))
+      .toEqual([1000, 1000, 1000, 0]);
+
+    // Sur beaucoup de dépenses, l'écart entre deux personnes aux mêmes parts reste d'un centime au plus.
+    const ids = [1, 2, 3, 4, 5, 6, 7];
+    const depenses = Array.from({ length: 40 }, (_, i) => depense(i + 1, 1003 + 10 * (i + 1), 1, ids));
+    const comptes = comptesFrais(ids, { depenses, versements: [] });
+    const dus = comptes.soldes.map(s => s.duCentimes);
+    expect(Math.max(...dus) - Math.min(...dus)).toBeLessThanOrEqual(1);
+    expect(dus.reduce((a, b) => a + b, 0)).toBe(comptes.totalCentimes);
+    expect(comptes.soldes.reduce((a, s) => a + s.soldeCentimes, 0)).toBe(0);
+  });
+
   it('soldes et remboursements à faire, remboursements déjà faits compris', () => {
     const tous = [{ participantId: 1, parts: 1 }, { participantId: 2, parts: 1 }, { participantId: 3, parts: 1 }];
     const depense = (id: number, montant: number, payeurId: number) => ({

@@ -314,22 +314,52 @@ function supprimer(s: SejourVue, objet: ObjetSupprimable, id: number): SejourVue
   }
 }
 
+type PartDepense = { participantId: number; parts: number };
+
 /** La part de chacun dans une dépense, au centime près : comme `FraisSejour.repartir` côté serveur. */
-export function repartir(montant: number, parts: { participantId: number; parts: number }[]): Map<number, number> {
-  const triees = [...parts].sort((a, b) => a.participantId - b.participantId);
-  const total = triees.reduce((t, p) => t + p.parts, 0);
+export function repartir(montant: number, parts: PartDepense[]): Map<number, number> {
+  return arrondir([{ montant, parts }]);
+}
+
+/**
+ * La part de chacun dans un ensemble de dépenses, comme `FraisSejour.arrondir` :
+ * la somme exacte de ses fractions, arrondie une seule fois au centime ; les
+ * centimes restants aux plus forts restes, à égalité aux premiers ids.
+ * Arrondir chaque dépense donnait les centimes restants toujours aux mêmes.
+ */
+function arrondir(partages: { montant: number; parts: PartDepense[] }[]): Map<number, number> {
+  const pgcd = (a: bigint, b: bigint): bigint => b === 0n ? a : pgcd(b, a % b);
+  const totalDe = (parts: PartDepense[]) => BigInt(parts.reduce((t, p) => t + p.parts, 0));
+  // Dénominateur commun : le PPCM des totaux de parts, pour additionner les fractions sans perte.
+  let commun = 1n;
+  for (const d of partages) {
+    const total = totalDe(d.parts);
+    if (total > 0n) commun = commun / pgcd(commun, total) * total;
+  }
+  const exact = new Map<number, bigint>();
+  let somme = 0n;
+  for (const d of partages) {
+    const total = totalDe(d.parts);
+    if (total === 0n) continue;
+    const facteur = commun / total;
+    for (const p of d.parts) {
+      exact.set(p.participantId, (exact.get(p.participantId) ?? 0n) + BigInt(d.montant) * BigInt(p.parts) * facteur);
+    }
+    somme += BigInt(d.montant);
+  }
+  const ids = [...exact.keys()].sort((a, b) => a - b);
   const resultat = new Map<number, number>();
-  if (total === 0) return resultat;
-  let reparti = 0;
-  for (const p of triees) {
-    const part = Math.floor(montant * p.parts / total);
-    resultat.set(p.participantId, part);
+  let reparti = 0n;
+  for (const id of ids) {
+    const part = exact.get(id)! / commun;
+    resultat.set(id, Number(part));
     reparti += part;
   }
-  const ids = [...resultat.keys()];
-  for (let reste = montant - reparti, i = 0; reste > 0; reste--, i++) {
-    const cleId = ids[i % ids.length];
-    resultat.set(cleId, resultat.get(cleId)! + 1);
+  const reste = (id: number) => exact.get(id)! % commun;
+  const ordre = [...ids].sort((a, b) => reste(a) === reste(b) ? a - b : reste(a) > reste(b) ? -1 : 1);
+  for (let i = 0; i < Number(somme - reparti); i++) {
+    const id = ordre[i % ordre.length];
+    resultat.set(id, resultat.get(id)! + 1);
   }
   return resultat;
 }
@@ -350,8 +380,9 @@ export function comptesFrais(participants: number[], frais: Pick<FraisVue, 'depe
   for (const d of frais.depenses) {
     total += d.montantCentimes;
     de(d.payeurId)[0] += d.montantCentimes;
-    repartir(d.montantCentimes, d.parts).forEach((part, p) => de(p)[1] += part);
   }
+  arrondir(frais.depenses.map(d => ({ montant: d.montantCentimes, parts: d.parts })))
+    .forEach((part, p) => de(p)[1] += part);
   for (const v of frais.versements) {
     de(v.deId)[2] += v.montantCentimes;
     de(v.aId)[3] += v.montantCentimes;

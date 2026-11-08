@@ -29,6 +29,33 @@ class FraisSejourTest {
     }
 
     @Test
+    @DisplayName("Les centimes d'arrondi ne s'accumulent pas sur les premiers d'une dépense à l'autre")
+    void arrondiSurLeTotalDeChacun() {
+        // Trois repas de 10 € pour trois : chacun doit exactement 10 €, pas 10,02 € pour l'un et 9,99 € pour les autres.
+        List<Depense> depenses = new java.util.ArrayList<>();
+        for (long i = 1; i <= 3; i++) {
+            depenses.add(new Depense(i, "Repas " + i, CategorieDepense.REPAS, 1000, 4L, null,
+                    List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null));
+        }
+        Comptes c = FraisSejour.calculer(List.of(1L, 2L, 3L, 4L), depenses, List.of());
+        assertThat(c.soldes()).extracting(Solde::duCentimes).containsExactly(1000L, 1000L, 1000L, 0L);
+
+        // Sur beaucoup de dépenses, l'écart entre deux personnes aux mêmes parts reste d'un centime au plus.
+        depenses.clear();
+        for (long i = 1; i <= 40; i++) {
+            depenses.add(new Depense(i, "Dépense " + i, CategorieDepense.AUTRE, 1003 + 10 * i, 1L, null,
+                    List.of(part(1, 1), part(2, 1), part(3, 1), part(4, 1), part(5, 1), part(6, 1), part(7, 1)),
+                    List.of(), null, null));
+        }
+        c = FraisSejour.calculer(List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L), depenses, List.of());
+        long plusGrand = c.soldes().stream().mapToLong(Solde::duCentimes).max().orElseThrow();
+        long plusPetit = c.soldes().stream().mapToLong(Solde::duCentimes).min().orElseThrow();
+        assertThat(plusGrand - plusPetit).isLessThanOrEqualTo(1);
+        assertThat(c.soldes().stream().mapToLong(Solde::duCentimes).sum()).isEqualTo(c.totalCentimes());
+        assertThat(c.soldes().stream().mapToLong(Solde::soldeCentimes).sum()).isZero();
+    }
+
+    @Test
     @DisplayName("Soldes et remboursements à faire, remboursements déjà faits compris")
     void soldesEtRemboursements() {
         // Anne paie le gîte 300 € pour trois, Bruno les courses 60 € pour trois.

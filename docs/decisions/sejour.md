@@ -283,6 +283,12 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - **Une ligne par personne pour une addition de restaurant** (choix de l'organisateur du club, 2026-11-04) : le trésorier contrôle tout ; regrouper par repas a été proposé et écarté.
 - **« Partagé entre »** (demande du club, même jour) : colonne ajoutée à droite du modèle, pour ne pas déplacer celles que lisent les formules. « Tout le monde » quand chaque participant a une part, sinon les noms, « × 2 » pour des parts inégales. Indicative : « Sa part » reste le nombre calculé par `FraisSejour`.
 
+## Arrondi des parts sur l'ensemble des dépenses (2026-11-08)
+
+- **Constat** : chaque dépense était arrondie à part, ses centimes restants donnés aux premiers ids. Sur un séjour de plusieurs dizaines de dépenses, les mêmes personnes récupéraient toujours ces centimes : 1 066,49 € à 1 066,67 € pour des participants aux mêmes parts (jusqu'à plusieurs dizaines de centimes d'écart).
+- **Décision** : la part de chacun est la somme exacte de ses fractions (dénominateur commun : PPCM des totaux de parts, en `BigInteger` / `bigint`), arrondie **une seule fois** au centime : centime inférieur, puis les centimes restants aux plus forts restes, à égalité aux premiers ids. Chacun est à moins d'un centime de sa part exacte ; la somme des parts reste le total partagé, la somme des soldes zéro.
+- `FraisSejour.repartir` (une dépense) suit la même règle ; le téléphone (`sejour-hors-ligne.ts`) la refait à l'identique. Rien n'étant stocké, les soldes de tous les séjours, passés compris, sont recalculés ainsi ; les remboursements déjà notés restent, et peuvent laisser un solde de quelques centimes.
+
 ## Démonstrations
 
 - V117 : séjour à Port-Cros, juin 2027, Camille y participe.

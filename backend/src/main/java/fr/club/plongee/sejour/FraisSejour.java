@@ -1,5 +1,6 @@
 package fr.club.plongee.sejour;
 
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -8,10 +9,14 @@ import java.util.*;
  * chacun dans chaque dépense, son solde, et les remboursements qui
  * remettent les comptes à zéro. Tous les montants sont en centimes.
  * <p>
- * Répartition d'une dépense : au prorata des parts, arrondie au centime
- * inférieur ; les centimes restants vont un par un aux premiers
- * participants (par id), pour que la somme des parts fasse exactement le
- * montant. Solde = payé − dû + remboursé − reçu : positif, on lui doit de
+ * Part de chacun : au prorata des parts, additionnée <b>exactement</b>
+ * (en fractions) sur toutes les dépenses, puis arrondie une seule fois au
+ * centime : au centime inférieur, et les centimes restants à ceux dont la
+ * partie arrondie était la plus grande (à égalité, les premiers ids), pour
+ * que la somme des parts fasse exactement le total partagé. Arrondir chaque
+ * dépense donnait les centimes restants toujours aux mêmes : jusqu'à
+ * plusieurs dizaines de centimes d'écart entre deux personnes aux mêmes parts.
+ * Solde = payé − dû + remboursé − reçu : positif, on lui doit de
  * l'argent ; négatif, il en doit. Les remboursements proposés associent le
  * plus gros débiteur au plus gros créancier, jusqu'à épuisement : au plus
  * un virement de moins que de personnes concernées.
@@ -46,21 +51,52 @@ public final class FraisSejour {
 
     /** La part de chaque participant dans une dépense, au centime près. */
     public static Map<Long, Long> repartir(long montant, List<Part> parts) {
-        List<Part> triees = parts.stream().sorted(Comparator.comparing(Part::participantId)).toList();
-        long total = triees.stream().mapToLong(Part::parts).sum();
+        return arrondir(List.of(new Partage(montant, parts)));
+    }
+
+    private record Partage(long montant, List<Part> parts) {}
+
+    /**
+     * La part de chacun dans un ensemble de dépenses : la somme exacte de ses
+     * fractions, arrondie une seule fois (méthode du plus fort reste).
+     */
+    private static Map<Long, Long> arrondir(List<Partage> partages) {
+        // Dénominateur commun : le PPCM des totaux de parts, pour additionner les fractions sans perte.
+        BigInteger commun = BigInteger.ONE;
+        for (Partage d : partages) {
+            long total = d.parts().stream().mapToLong(Part::parts).sum();
+            if (total == 0) continue;
+            BigInteger t = BigInteger.valueOf(total);
+            commun = commun.divide(commun.gcd(t)).multiply(t);
+        }
+        Map<Long, BigInteger> exact = new TreeMap<>(); // part × commun, par id croissant
+        BigInteger somme = BigInteger.ZERO;
+        for (Partage d : partages) {
+            long total = d.parts().stream().mapToLong(Part::parts).sum();
+            if (total == 0) continue;
+            BigInteger facteur = commun.divide(BigInteger.valueOf(total));
+            for (Part p : d.parts()) {
+                exact.merge(p.participantId(),
+                        BigInteger.valueOf(d.montant()).multiply(BigInteger.valueOf(p.parts())).multiply(facteur),
+                        BigInteger::add);
+            }
+            somme = somme.add(BigInteger.valueOf(d.montant()));
+        }
         Map<Long, Long> resultat = new LinkedHashMap<>();
-        if (total == 0) return resultat;
+        Map<Long, BigInteger> restes = new HashMap<>();
         long reparti = 0;
-        for (Part p : triees) {
-            long part = montant * p.parts() / total;
-            resultat.put(p.participantId(), part);
-            reparti += part;
+        for (Map.Entry<Long, BigInteger> e : exact.entrySet()) {
+            BigInteger[] qr = e.getValue().divideAndRemainder(commun);
+            resultat.put(e.getKey(), qr[0].longValueExact());
+            restes.put(e.getKey(), qr[1]);
+            reparti += qr[0].longValueExact();
         }
-        Iterator<Long> ids = resultat.keySet().iterator();
-        for (long reste = montant - reparti; reste > 0; reste--) {
-            if (!ids.hasNext()) ids = resultat.keySet().iterator();
-            resultat.merge(ids.next(), 1L, Long::sum);
-        }
+        // Les centimes restants, un chacun, aux plus forts restes ; à égalité, aux premiers ids.
+        List<Long> ordre = new ArrayList<>(resultat.keySet());
+        ordre.sort(Comparator.comparing((Long id) -> restes.get(id)).reversed()
+                .thenComparing(Comparator.naturalOrder()));
+        long reste = somme.longValueExact() - reparti;
+        for (int i = 0; i < reste; i++) resultat.merge(ordre.get(i % ordre.size()), 1L, Long::sum);
         return resultat;
     }
 
@@ -72,9 +108,9 @@ public final class FraisSejour {
         for (Depense d : depenses) {
             total += d.montantCentimes();
             comptes.computeIfAbsent(d.payeurId(), k -> new long[4])[0] += d.montantCentimes();
-            repartir(d.montantCentimes(), d.parts())
-                    .forEach((p, part) -> comptes.computeIfAbsent(p, k -> new long[4])[1] += part);
         }
+        arrondir(depenses.stream().map(d -> new Partage(d.montantCentimes(), d.parts())).toList())
+                .forEach((p, part) -> comptes.computeIfAbsent(p, k -> new long[4])[1] += part);
         for (Versement v : versements) {
             comptes.computeIfAbsent(v.deId(), k -> new long[4])[2] += v.montantCentimes();
             comptes.computeIfAbsent(v.aId(), k -> new long[4])[3] += v.montantCentimes();
