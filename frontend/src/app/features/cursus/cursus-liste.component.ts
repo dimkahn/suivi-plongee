@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { CursusVue } from '../../core/modeles';
+import { uneInscriptionParEleve } from '../../core/inscription-retenue';
 
 @Component({
   selector: 'app-cursus-liste',
@@ -61,7 +62,9 @@ export class CursusListeComponent {
     // Le service retombe sur le cache local si le réseau manque : la liste
     // reste consultable au bord du bassin.
     this.api.cursus()
-      .then(c => this.liste.set(c))
+      // Encadrant : une ligne par élève, au niveau qu'il prépare (brevet délivré en cours
+      // de saison puis niveau suivant). L'élève connecté garde toutes ses formations.
+      .then(c => this.liste.set(this.auth.estMoniteur() ? uneInscriptionParEleve(c) : c))
       .catch(() => this.liste.set([]))
       .finally(() => this.chargement.set(false));
   }

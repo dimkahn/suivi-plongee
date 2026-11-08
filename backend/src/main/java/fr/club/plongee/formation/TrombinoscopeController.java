@@ -43,7 +43,11 @@ public class TrombinoscopeController {
                     .orElseThrow(() -> new RessourceIntrouvableException("Aucune saison ouverte"))
                     .getId();
 
-        return cursus.parSaison(saison).stream()
+        // Une ligne par élève (InscriptionRetenue) ; abandon et brevet obtenu ailleurs
+        // ne sont plus des formations du club.
+        List<Cursus> retenues = InscriptionRetenue.uneParEleve(cursus.parSaison(saison).stream()
+                .filter(c -> !c.horsFormation()).toList());
+        return retenues.stream()
                 .filter(c -> niveau == null || c.getReferentiel().getNiveau() == niveau)
                 .map(c -> {
                     Eleve e = c.getEleve();

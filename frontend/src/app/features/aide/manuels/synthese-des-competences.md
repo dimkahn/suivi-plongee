@@ -56,3 +56,4 @@ Depuis « Infos élèves », le lien « Synthèse des compétences du groupe » 
 - La photo n'apparaît que si le droit à l'image de l'élève est accordé ; sinon, ses initiales.
 - La synthèse du groupe se lit avec du réseau ; celle d'un élève se lit aussi hors ligne si sa grille a été préparée. Aucune ne modifie rien.
 - Un élève voit aussi la fiche de synthèse de sa propre formation.
+- **Un élève promu en cours de saison** (brevet délivré, puis niveau suivant) n'apparaît que dans le tableau du niveau qu'il prépare.

@@ -814,6 +814,11 @@ export class ApiService {
     return this.http.put<CursusVue>(`/api/cursus/${id}`, demande);
   }
 
+  /** Inscription faite par erreur ; refusé s'il y a des notes ou des présences. */
+  supprimerCursus(cursusId: number): Observable<unknown> {
+    return this.http.delete(`/api/cursus/${cursusId}`);
+  }
+
   /** La formation devient une adhésion sans formation (maintien) ; refusé s'il y a des notes ou des présences. */
   passerEnMaintien(cursusId: number): Observable<unknown> {
     return this.http.post(`/api/cursus/${cursusId}/maintien`, {});

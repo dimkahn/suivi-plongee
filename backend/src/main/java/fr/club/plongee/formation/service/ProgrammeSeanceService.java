@@ -3,6 +3,7 @@ package fr.club.plongee.formation.service;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.Cursus;
+import fr.club.plongee.formation.domain.InscriptionRetenue;
 import fr.club.plongee.formation.domain.ExerciceSeance;
 import fr.club.plongee.formation.domain.Seance;
 import fr.club.plongee.formation.repository.CursusRepository;
@@ -293,8 +294,9 @@ public class ProgrammeSeanceService {
     private List<FormationVue> formations(Seance seance) {
         Map<Long, FormationVue> parRef = new LinkedHashMap<>();
         Map<Long, Integer> eleves = new LinkedHashMap<>();
-        for (Cursus c : cursus.parSaison(seance.getSaison().getId())) {
-            if (c.horsFormation()) continue;
+        // Un élève compte une fois, au niveau qu'il prépare (InscriptionRetenue).
+        for (Cursus c : InscriptionRetenue.uneParEleve(cursus.parSaison(seance.getSaison().getId()).stream()
+                .filter(c -> !c.horsFormation()).toList())) {
             Referentiel r = c.getReferentiel();
             eleves.merge(r.getId(), 1, Integer::sum);
             parRef.putIfAbsent(r.getId(), new FormationVue(r.getId(), r.getNiveau().name(), r.getVersionMft(), 0));

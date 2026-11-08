@@ -25,6 +25,8 @@ Menu, « Trombinoscope » : les élèves de la saison rangés par groupe d'entra
 
 ## Bon à savoir
 
+- **Une seule carte par personne** : un élève breveté en cours de saison puis inscrit au niveau suivant figure au niveau qu'il prépare ; une formation abandonnée ou un brevet obtenu ailleurs n'a pas de carte.
+
 - **Sur l'image exportée, une photo masquée et une absence de photo donnent la même icône** : on ne peut pas deviner qui a été masqué. L'image est fabriquée sur votre appareil, rien n'est enregistré sur le serveur.
 
 - **Pas de photo sans droit à l'image** : c'est un accord distinct de l'autorisation de plonger, recueilli par un administrateur dans le dossier de l'élève.

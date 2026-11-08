@@ -48,6 +48,8 @@ Touchez la case CACI d'un élève : une fenêtre donne la date de l'examen, la f
 
 ## Bon à savoir
 
+- **Une seule ligne par élève** : un élève breveté en cours de saison puis inscrit au niveau suivant figure au niveau qu'il prépare, avec les présences de ses deux inscriptions. Même règle dans « Formations en cours ».
+
 - Si la case « limites et préconisations » est cochée, un encadré le signale : lisez le certificat papier, le détail n'est pas dans l'appli.
 - Aucune donnée de santé n'est enregistrée : seules les dates, le médecin et les cases, jamais le texte écrit par le médecin.
 - Les cases se saisissent dans le dossier de l'élève, par un administrateur.

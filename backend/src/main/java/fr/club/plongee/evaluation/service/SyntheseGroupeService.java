@@ -2,6 +2,7 @@ package fr.club.plongee.evaluation.service;
 
 import fr.club.plongee.commun.RessourceIntrouvableException;
 import fr.club.plongee.formation.domain.Cursus;
+import fr.club.plongee.formation.domain.InscriptionRetenue;
 import fr.club.plongee.formation.domain.Eleve;
 import fr.club.plongee.formation.repository.CursusRepository;
 import fr.club.plongee.planning.domain.GroupeEntrainement;
@@ -71,9 +72,11 @@ public class SyntheseGroupeService {
         Set<Long> eleveIds = groupe.getEleves().stream().map(Eleve::getId).collect(Collectors.toSet());
 
         // Les grilles de chaque élève, rangées par version du MFT (référentiel).
-        List<Cursus> duGroupe = cursus.parSaison(groupe.getSaison().getId()).stream()
+        // Une inscription par élève (InscriptionRetenue) : un élève promu en cours de saison
+        // n'apparaît que dans le tableau du niveau qu'il prépare.
+        List<Cursus> duGroupe = InscriptionRetenue.uneParEleve(cursus.parSaison(groupe.getSaison().getId()).stream()
                 .filter(c -> eleveIds.contains(c.getEleve().getId()))
-                .toList();
+                .toList());
         Map<Long, List<GrilleService.GrilleVue>> parReferentiel = new LinkedHashMap<>();
         for (Cursus c : duGroupe) {
             parReferentiel.computeIfAbsent(c.getReferentiel().getId(), k -> new ArrayList<>())

@@ -688,6 +688,8 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 33 s
 2. Le groupe du niveau préparé est proposé d'office ; ses référents suivront l'élève.
 3. Le référentiel MFT actif est figé : une révision fédérale en cours d'année ne le change pas.
 4. « Modifier » change le statut ou le niveau, tant qu'aucune compétence n'est notée.
+5. Une inscription faite par erreur se supprime en bas de cette fenêtre, tant que rien n'y est noté.
+6. Un élève breveté puis inscrit au niveau suivant n'apparaît qu'une fois dans les listes : on garde ses deux inscriptions.
 
 ### A8 — Garder un plongeur breveté sans formation
 

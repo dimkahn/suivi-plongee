@@ -59,6 +59,10 @@ Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme 
 - « Au programme » rappelle ce que la progression du club prévoit ce mois-ci, et « Exercices de la séance » ce que chaque groupe a préparé.
 - Une fois la séance commencée, « Synthèse des notes » réunit tout ce qui a été noté pour un niveau (voir « La synthèse des notes d'une séance »).
 
+## Un élève inscrit à deux niveaux
+
+Un élève breveté en cours de saison puis inscrit au niveau suivant n'a qu'une ligne, au niveau qu'il prépare. S'il était déjà noté présent à cette séance sur son ancien niveau, c'est cette ligne-là qui reste.
+
 ## Les exercices de la séance
 
 - « Exercices de la séance » s'ouvre **replié**, pour laisser la place à la liste des élèves ; le nombre d'exercices est entre parenthèses. Touchez le titre pour l'ouvrir, de nouveau pour le replier.

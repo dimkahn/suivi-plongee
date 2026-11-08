@@ -31,5 +31,5 @@ Un élève en formation obtient son niveau dans un autre club : passez son inscr
 
 - Son dossier prend le niveau ; ce n'est pas une délivrance du club.
 - Il sort d'« Infos élèves », des feuilles de présence et du programme d'exercices de ce niveau. Noté présent le jour même, il reste dans « Infos élèves » jusqu'au soir (téléphone, personne à prévenir) et sur la feuille de cette séance. Sa grille reste lisible, en lecture seule.
-- S'il continue au club, inscrivez-le au niveau suivant.
+- S'il continue au club, inscrivez-le au niveau suivant. Il n'apparaît alors qu'une fois (trombinoscope, feuille de présence, Infos élèves, synthèses), au niveau qu'il prépare ; sa grille du niveau obtenu reste lisible dans l'historique de sa nouvelle grille.
 - Le serveur vérifie les règles du MFT avant la délivrance (âge, prérequis, compétences validées…).

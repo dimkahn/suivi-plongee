@@ -28,10 +28,12 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -329,8 +331,18 @@ public class SeanceController {
                 .collect(Collectors.toMap(p -> p.getCursus().getId(), Function.identity(), (a, b) -> a));
         Map<Long, Long> notes = evaluations.compterParCursusPourSeance(seanceId).stream()
                 .collect(Collectors.toMap(l -> (Long) l[0], l -> (Long) l[1]));
-        List<LignePresence> lignes = cursus.parSaison(seance.getSaison().getId()).stream()
+        List<Cursus> proposes = cursus.parSaison(seance.getSaison().getId()).stream()
                 .filter(c -> !c.horsFormation() || saisies.containsKey(c.getId()))
+                .toList();
+        // Une ligne par élève (deux inscriptions la même saison : brevet délivré puis niveau suivant) :
+        // celle déjà saisie pour cette séance, sinon celle que retient InscriptionRetenue.
+        Set<Long> elevesSaisis = proposes.stream().filter(c -> saisies.containsKey(c.getId()))
+                .map(c -> c.getEleve().getId()).collect(Collectors.toSet());
+        List<Cursus> retenus = new ArrayList<>(proposes.stream().filter(c -> saisies.containsKey(c.getId())).toList());
+        retenus.addAll(InscriptionRetenue.uneParEleve(proposes.stream()
+                .filter(c -> !elevesSaisis.contains(c.getEleve().getId())).toList()));
+        retenus.sort(Comparator.comparingInt(proposes::indexOf));
+        List<LignePresence> lignes = retenus.stream()
                 .map(c -> {
                     Participation p = saisies.get(c.getId());
                     Eleve e = c.getEleve();

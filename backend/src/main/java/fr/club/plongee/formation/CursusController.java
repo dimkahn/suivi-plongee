@@ -125,6 +125,17 @@ public class CursusController {
     }
 
     /**
+     * Inscription faite par erreur : supprimée tant qu'aucune note, validation,
+     * délivrance ni présence n'y est rattachée (422 sinon).
+     */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
+    public void supprimer(@PathVariable Long id) {
+        changements.supprimer(id);
+    }
+
+    /**
      * L'élève ne prépare finalement aucun niveau : le cursus devient une
      * adhésion sans formation. Refusé dès qu'il y a des notes ou des présences.
      */

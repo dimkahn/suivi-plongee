@@ -78,21 +78,30 @@ public class RosterController {
                 .filter(s -> aujourdhui.equals(s.getDateSeance())).map(Seance::getId).collect(Collectors.toSet());
         // Brevet obtenu ailleurs : il ne prépare plus ce niveau, il sort de la liste,
         // sauf s'il est noté présent aujourd'hui (téléphone et personne à prévenir au bord du bassin).
-        List<LigneEleve> lignes = cursus.parSaison(saison).stream()
-                .filter(c -> c.getStatut() != Cursus.Statut.OBTENU_AILLEURS || presentA(c, seancesDuJour)).map(c -> {
-            Map<Long, String> presences = participations.findByCursusId(c.getId()).stream()
+        List<Cursus> proposes = cursus.parSaison(saison).stream()
+                .filter(c -> c.getStatut() != Cursus.Statut.OBTENU_AILLEURS || presentA(c, seancesDuJour)).toList();
+        // Une ligne par élève (InscriptionRetenue), avec les présences de toutes ses inscriptions
+        // de la saison : un brevet délivré puis le niveau suivant ne font qu'une personne.
+        Map<Long, List<Long>> inscriptionsDeLEleve = proposes.stream().collect(Collectors.groupingBy(
+                c -> c.getEleve().getId(), Collectors.mapping(Cursus::getId, Collectors.toList())));
+        List<LigneEleve> lignes = InscriptionRetenue.uneParEleve(proposes).stream().map(c -> {
+            List<Long> siennes = inscriptionsDeLEleve.get(c.getEleve().getId());
+            Map<Long, String> presences = siennes.stream()
+                    .flatMap(id -> participations.findByCursusId(id).stream())
                     .collect(Collectors.toMap(
                             p -> p.getSeance().getId(),
                             this::libelle,
                             (a, b) -> a));
+            long bloc = siennes.stream().mapToLong(id -> participations.compterAtelier(id, Participation.Atelier.BLOC)).sum();
+            long nage = siennes.stream().mapToLong(id -> participations.compterAtelier(id, Participation.Atelier.NAGE)).sum();
             Eleve e = c.getEleve();
             return new LigneEleve(c.getId(), e.getId(), e.nomComplet(),
                     c.getReferentiel().getNiveau().name(),
                     c.getEleve().certificatValideAu(aujourdhui),
                     e.getCertificatValideJusquAu(),
                     e.getCaciDateExamen(), e.getCaciMedecin(), e.getCaciActivites(),
-                    participations.compterAtelier(c.getId(), Participation.Atelier.BLOC),
-                    participations.compterAtelier(c.getId(), Participation.Atelier.NAGE),
+                    bloc,
+                    nage,
                     presences,
                     e.isAutorisationImage() && photos.existsById(e.getId()),
                     avancements.de(c.getId()));

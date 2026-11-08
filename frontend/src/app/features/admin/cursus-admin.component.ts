@@ -214,6 +214,11 @@ import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
             </button>
             <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
           </div>
+          <p class="secondaire">
+            Inscription faite par erreur ? Elle se supprime tant qu'aucune compétence ni présence n'y est notée.
+          </p>
+          <button type="button" class="bouton-discret danger supprimer-inscription" (click)="supprimer(c)"
+                  [disabled]="envoi()">Supprimer l'inscription</button>
         }
       }
     </app-dialogue>
@@ -593,6 +598,26 @@ export class CursusAdminComponent {
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);
         this.message.set(e.error?.detail ?? "Le passage en maintien n'a pas pu être enregistré.");
+      }
+    });
+  }
+
+  /** Inscription faite par erreur ; seule formation de la saison : l'élève reste en maintien. */
+  supprimer(c: CursusVue): void {
+    if (!confirm(`Supprimer l'inscription de ${c.eleve} en ${c.niveau} (${c.saison}) ?`)) return;
+    this.envoi.set(true);
+    this.message.set(null);
+    this.api.supprimerCursus(c.id).subscribe({
+      next: () => {
+        this.envoi.set(false);
+        this.liste.set(this.liste().filter(x => x.id !== c.id));
+        this.annulerEdition();
+        this.chargerAdhesions();
+        this.message.set(`L'inscription de ${c.eleve} en ${c.niveau} est supprimée.`);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "L'inscription n'a pas pu être supprimée.");
       }
     });
   }

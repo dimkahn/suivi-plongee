@@ -71,21 +71,43 @@ public class ChangementFormationService {
      */
     @Transactional
     public AdhesionSaison passerEnMaintien(Long cursusId) {
-        Cursus c = cursus.chargerComplet(cursusId)
-                .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
-        verifierSansNotation(c, "passer en maintien");
-        if (participations.existsByCursusId(cursusId)) {
-            throw new RegleMetierException("Des présences sont déjà notées pour cette formation : "
-                    + "la passer en maintien les effacerait. Passez-la plutôt en « Abandon ».");
-        }
-        Long eleveId = c.getEleve().getId();
-        Long saisonId = c.getSaison().getId();
-        cursus.delete(c);
-        cursus.flush();
-        if (cursus.existsByEleveIdAndSaisonId(eleveId, saisonId)) {
+        Cursus c = retirer(cursusId, "passer en maintien", "la passer en maintien");
+        if (cursus.existsByEleveIdAndSaisonId(c.getEleve().getId(), c.getSaison().getId())) {
             throw new RegleMetierException("Cet élève suit une autre formation cette saison : "
                     + "passez plutôt celle-ci en « Abandon ».");
         }
+        return adhesion(c);
+    }
+
+    /**
+     * Inscription faite par erreur (demande du club, 2026-11-08) : supprimée
+     * tant que rien n'y est rattaché. Si c'était la seule formation de
+     * l'élève dans la saison, il y reste adhérent sans formation, comme en
+     * maintien (son groupe d'entraînement ne change pas).
+     */
+    @Transactional
+    public void supprimer(Long cursusId) {
+        Cursus c = retirer(cursusId, "la supprimer", "la supprimer");
+        if (!cursus.existsByEleveIdAndSaisonId(c.getEleve().getId(), c.getSaison().getId())) adhesion(c);
+    }
+
+    /** Supprime le cursus après les contrôles communs ; renvoie le cursus supprimé (élève et saison lisibles). */
+    private Cursus retirer(Long cursusId, String quoi, String effet) {
+        Cursus c = cursus.chargerComplet(cursusId)
+                .orElseThrow(() -> new RessourceIntrouvableException("Cursus introuvable"));
+        verifierSansNotation(c, quoi);
+        if (participations.existsByCursusId(cursusId)) {
+            throw new RegleMetierException("Des présences sont déjà notées pour cette formation : "
+                    + effet + " les effacerait. Passez-la plutôt en « Abandon ».");
+        }
+        cursus.delete(c);
+        cursus.flush();
+        return c;
+    }
+
+    private AdhesionSaison adhesion(Cursus c) {
+        Long eleveId = c.getEleve().getId();
+        Long saisonId = c.getSaison().getId();
         return adhesions.parSaison(saisonId).stream().filter(a -> a.getEleve().getId().equals(eleveId)).findFirst()
                 .orElseGet(() -> {
                     AdhesionSaison a = new AdhesionSaison();

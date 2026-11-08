@@ -1,5 +1,5 @@
 // A7 — Inscrire un élève en formation.
-// Tournage du 2026-10-19, 13e série, retourné après l'échec du 12 octobre (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-08 : bouton « Supprimer l'inscription » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -25,6 +25,10 @@ export default {
     await toucher(page.getByRole('button', { name: 'Inscrire' }), { apres: 2000 });
     await legende('Le référentiel MFT actif est figé : une révision fédérale en cours d\'année ne le change pas.', 4500);
     await legende('« Modifier » change le statut ou le niveau, tant qu\'aucune compétence n\'est notée.', 4000);
+    await toucher(page.locator('li.carte').filter({ hasText: 'Nathan' }).getByRole('button', { name: 'Modifier' }).first(), { apres: 900 });
+    await legende('Une inscription faite par erreur se supprime en bas de cette fenêtre, tant que rien n\'y est noté.', 4500);
+    await legende('Un élève breveté puis inscrit au niveau suivant n\'apparaît qu\'une fois dans les listes : on garde ses deux inscriptions.', 5000);
+    await toucher(page.getByRole('dialog').locator('.actions-dialogue').getByRole('button', { name: 'Annuler' }), { apres: 900 });
     await legende(null, 0);
     await pause(500);
   }
