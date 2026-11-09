@@ -52,11 +52,14 @@ public class AccesSejourController {
     private final TrombinoscopeSejourService trombinoscope;
     private final MenusRestaurantService menus;
     private final JourneesSejourService journees;
+    private final PreuvesVirementService preuves;
 
     public AccesSejourController(AccesSejourService acces, FraisService frais, PretsSejourService pretsSejour,
                                  CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
                                  TrombinoscopeSejourService trombinoscope, MenusRestaurantService menus,
-                                 JourneesSejourService journees, NotificationsSejourService notifications) {
+                                 JourneesSejourService journees, NotificationsSejourService notifications,
+                                 PreuvesVirementService preuves) {
+        this.preuves = preuves;
         this.notifications = notifications;
         this.journees = journees;
         this.trombinoscope = trombinoscope;
@@ -310,6 +313,44 @@ public class AccesSejourController {
                                          @Valid @RequestBody FraisService.DemandeVersement d) {
         Acces a = acces.acces(code, jeton);
         frais.creerVersement(a.sortieId(), d, frais.acteurParticipant(a.participantId()));
+        return acces.vue(code, a);
+    }
+
+    /** La preuve de son virement (PDF ou photo) ; {@code aId} absent : au club. */
+    @PostMapping(value = "/preuves-virement", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public FraisPublicVue envoyerPreuve(@PathVariable String code,
+                                        @RequestHeader(value = EN_TETE_JETON, required = false) String jeton,
+                                        @RequestParam("fichier") MultipartFile fichier,
+                                        @RequestParam(required = false) Long aId, @RequestParam Long montantCentimes,
+                                        @RequestParam(required = false) LocalDate jour) {
+        Acces a = acces.acces(code, jeton);
+        preuves.envoyer(a.sortieId(), aId, montantCentimes, jour, SejourController.octets(fichier),
+                fichier.getContentType(), frais.acteurParticipant(a.participantId()));
+        return acces.vue(code, a);
+    }
+
+    @GetMapping("/preuves-virement/{preuveId}")
+    public ResponseEntity<byte[]> preuve(@PathVariable String code, @PathVariable Long preuveId,
+                                         @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        return SejourController.document(preuves.fichier(a.sortieId(), preuveId,
+                frais.acteurParticipant(a.participantId())), "preuve-virement");
+    }
+
+    /** Le bénéficiaire confirme le virement reçu : le remboursement est noté. */
+    @PostMapping("/preuves-virement/{preuveId}/confirmation")
+    public FraisPublicVue confirmerPreuve(@PathVariable String code, @PathVariable Long preuveId,
+                                          @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        preuves.confirmer(a.sortieId(), preuveId, frais.acteurParticipant(a.participantId()));
+        return acces.vue(code, a);
+    }
+
+    @DeleteMapping("/preuves-virement/{preuveId}")
+    public FraisPublicVue retirerPreuve(@PathVariable String code, @PathVariable Long preuveId,
+                                        @RequestHeader(value = EN_TETE_JETON, required = false) String jeton) {
+        Acces a = acces.acces(code, jeton);
+        preuves.retirer(a.sortieId(), preuveId, frais.acteurParticipant(a.participantId()));
         return acces.vue(code, a);
     }
 

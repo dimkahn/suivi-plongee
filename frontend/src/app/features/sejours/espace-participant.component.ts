@@ -15,7 +15,7 @@ import { CarnetImprimableComponent } from './carnet-imprimable.component';
 import { programmeParJour } from './programme-du-jour';
 import {
   AffaireVue, DemandeMesInformations, EvenementVue, FraisVue, JourneeVue, LecturePhotoJournee, NoteLue, PalanqueeVue, ParticipantFrais, ParticipantVue,
-  PortAttestationAssurance, PortCartesEmbarquement, PortFrais, RegleLecture,
+  PortAttestationAssurance, PortCartesEmbarquement, PortFrais, formulairePreuve, RegleLecture,
   PortPrets, PretsSejourVue, SejourVue, euros, formulairePhoto, remboursementsDe
 } from './sejour-api';
 import { SejourMaterielComponent } from './sejour-materiel.component';
@@ -271,7 +271,15 @@ export class EspaceParticipantComponent {
     apprendreLecture: lecon => this.http.post<void>(`${this.base}/lecture-notes/apprentissage`, lecon, this.options()),
     ajouterVersement: d => this.suivre(this.http.post<FraisPublicVue>(`${this.base}/versements`, d, this.options())),
     supprimerVersement: versementId => this.suivre(
-      this.http.delete<FraisPublicVue>(`${this.base}/versements/${versementId}`, this.options()))
+      this.http.delete<FraisPublicVue>(`${this.base}/versements/${versementId}`, this.options())),
+    envoyerPreuve: (aId, montant, jour, fichier) => this.suivre(this.http.post<FraisPublicVue>(
+      `${this.base}/preuves-virement`, formulairePreuve(aId, montant, jour, fichier), this.options())),
+    lirePreuve: preuveId => this.http.get(`${this.base}/preuves-virement/${preuveId}`,
+      { headers: this.entetes(), responseType: 'blob' }),
+    confirmerPreuve: preuveId => this.suivre(this.http.post<FraisPublicVue>(
+      `${this.base}/preuves-virement/${preuveId}/confirmation`, null, this.options())),
+    retirerPreuve: preuveId => this.suivre(
+      this.http.delete<FraisPublicVue>(`${this.base}/preuves-virement/${preuveId}`, this.options()))
   };
 
   /** Le trombinoscope, avec le jeton du lien : les seules photos rendues visibles aux participants. */

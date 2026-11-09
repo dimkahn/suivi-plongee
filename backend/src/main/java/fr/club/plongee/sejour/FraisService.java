@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -64,14 +65,24 @@ public class FraisService {
     /**
      * Ce que l'acteur peut faire, pour que l'écran ne propose que le possible (le serveur revérifie).
      * {@code lireNotes} : montant et date lus sur la photo de la note ({@link LecteurNote}) ;
-     * {@code exporter} : le classeur Excel des frais ({@link FraisExcelService}), aux organisateurs.
+     * {@code exporter} : le classeur Excel des frais ({@link FraisExcelService}), aux organisateurs ;
+     * {@code clore} : clore ou rouvrir les frais, envoyer le décompte (organisateurs).
+     * Frais clos : ni ajout ni dépense modifiable, pour personne.
+     * {@code preuvesConfirmables} : les preuves de virement à confirmer ou refuser ;
+     * {@code preuvesRetirables} : celles qu'on peut retirer (les siennes, en attente, comprises).
      */
     public record DroitsFrais(Long moiId, boolean peutAjouter, boolean pourLesAutres,
                               List<Long> depensesModifiables, List<Long> versementsSupprimables,
-                              boolean lireNotes, boolean exporter) {}
+                              boolean lireNotes, boolean exporter, boolean clore,
+                              List<Long> preuvesConfirmables, List<Long> preuvesRetirables) {}
 
+    /**
+     * {@code closLe} : quand les organisateurs ont clos les frais ; null, ouverts.
+     * {@code preuves} : les preuves de virement que l'acteur peut voir ({@link PreuvesVirementService}).
+     */
     public record FraisVue(List<FraisSejour.Depense> depenses, List<FraisSejour.Versement> versements,
-                           FraisSejour.Comptes comptes, DroitsFrais droits) {}
+                           FraisSejour.Comptes comptes, LocalDateTime closLe,
+                           List<PreuvesVirementService.PreuveVue> preuves, DroitsFrais droits) {}
 
     /**
      * {@code parts} : les participants qui partagent la dépense, chacun avec son poids ;
@@ -92,9 +103,12 @@ public class FraisService {
     private final DroitsSejour droits;
     private final LecteurNote lecteurNote;
     private final ReglesLectureService reglesLecture;
+    private final PreuvesVirementService preuves;
 
     public FraisService(NamedParameterJdbcTemplate jdbc, SortieService sorties, DroitsSejour droits,
-                        LecteurNote lecteurNote, ReglesLectureService reglesLecture) {
+                        LecteurNote lecteurNote, ReglesLectureService reglesLecture,
+                        PreuvesVirementService preuves) {
+        this.preuves = preuves;
         this.jdbc = jdbc;
         this.sorties = sorties;
         this.droits = droits;
@@ -174,13 +188,21 @@ public class FraisService {
                 || (acteur.participantId() != null && (acteur.participantId().equals(d.payeurId())
                         || d.parts().stream().anyMatch(p -> acteur.participantId().equals(p.participantId())))))
                 .toList();
-        DroitsFrais droits = new DroitsFrais(acteur.participantId(), acteur.peutAjouter(), acteur.pourLesAutres(),
-                depenses.stream().filter(d -> auteur(acteur, d.saisieParUtilisateurId(), d.saisieParParticipantId()))
+        LocalDateTime closLe = closLe(sortieId);
+        boolean ouverts = closLe == null;
+        List<PreuvesVirementService.PreuveVue> preuvesVues = preuves.visibles(sortieId, acteur);
+        DroitsFrais droits = new DroitsFrais(acteur.participantId(), ouverts && acteur.peutAjouter(),
+                acteur.pourLesAutres(),
+                depenses.stream().filter(d -> ouverts && auteur(acteur, d.saisieParUtilisateurId(), d.saisieParParticipantId()))
                         .map(FraisSejour.Depense::id).toList(),
                 versements.stream().filter(v -> auteur(acteur, v.saisieParUtilisateurId(), v.saisieParParticipantId()))
                         .map(FraisSejour.Versement::id).toList(),
-                acteur.peutAjouter() && lecteurNote.actif(), acteur.gestionnaire());
-        return new FraisVue(depenses, versements, comptes, droits);
+                ouverts && acteur.peutAjouter() && lecteurNote.actif(), acteur.gestionnaire(), acteur.gestionnaire(),
+                preuvesVues.stream().filter(p -> PreuvesVirementService.peutConfirmer(p, acteur))
+                        .map(PreuvesVirementService.PreuveVue::id).toList(),
+                preuvesVues.stream().filter(p -> PreuvesVirementService.peutRetirer(p, acteur))
+                        .map(PreuvesVirementService.PreuveVue::id).toList());
+        return new FraisVue(depenses, versements, comptes, closLe, preuvesVues, droits);
     }
 
     /** L'organisateur, ou celui qui a saisi la ligne. */
@@ -188,6 +210,38 @@ public class FraisService {
         if (a.gestionnaire()) return true;
         return (a.utilisateurId() != null && a.utilisateurId().equals(parUtilisateur))
                 || (a.participantId() != null && a.participantId().equals(parParticipant));
+    }
+
+    // ------------------------------------------------------------------
+    //  Clôture
+    // ------------------------------------------------------------------
+
+    /** Quand les frais ont été clos ; null : ouverts. */
+    LocalDateTime closLe(Long sortieId) {
+        List<LocalDateTime> lignes = jdbc.queryForList("SELECT frais_clos_le FROM sejour WHERE sortie_id = :id",
+                new MapSqlParameterSource("id", sortieId), LocalDateTime.class);
+        return lignes.isEmpty() ? null : lignes.getFirst();
+    }
+
+    /**
+     * Clore les frais (le droit d'organiser est vérifié par le contrôleur) : plus aucune dépense ne change,
+     * pour personne, jusqu'à leur réouverture ; les remboursements restent possibles. Reclore garde la date.
+     */
+    @Transactional
+    public void clore(Long sortieId, boolean clos) {
+        sorties.sortie(sortieId);
+        var p = new MapSqlParameterSource("id", sortieId).addValue("maintenant", clos ? LocalDateTime.now() : null);
+        String valeur = clos ? "COALESCE(frais_clos_le, :maintenant)" : "NULL";
+        if (jdbc.update("UPDATE sejour SET frais_clos_le = " + valeur + " WHERE sortie_id = :id", p) == 0 && clos) {
+            jdbc.update("INSERT INTO sejour (sortie_id, frais_clos_le) VALUES (:id, :maintenant)", p);
+        }
+    }
+
+    private void verifierOuverts(Long sortieId) {
+        if (closLe(sortieId) != null) {
+            throw new RegleMetierException("Les frais du séjour sont clos : plus aucune dépense ne s'ajoute ni ne "
+                    + "change. Demandez à un organisateur de les rouvrir.");
+        }
     }
 
     // ------------------------------------------------------------------
@@ -199,6 +253,7 @@ public class FraisService {
     public long creerDepense(Long sortieId, DemandeDepense d, ActeurFrais acteur) {
         sorties.sortie(sortieId);
         verifierPeutAjouter(acteur);
+        verifierOuverts(sortieId);
         List<FraisSejour.Part> parts = verifier(sortieId, d, acteur);
         KeyHolder cle = new GeneratedKeyHolder();
         jdbc.update("""
@@ -219,6 +274,7 @@ public class FraisService {
     public LecteurNote.NoteLue lireNote(Long sortieId, byte[] contenu, String type, ActeurFrais acteur) {
         sorties.sortie(sortieId);
         verifierPeutAjouter(acteur);
+        verifierOuverts(sortieId);
         if (!lecteurNote.actif()) {
             throw new RegleMetierException("La lecture automatique des notes n'est pas activée pour ce club : "
                     + "saisissez le montant et la date.");
@@ -299,6 +355,7 @@ public class FraisService {
                   FROM sejour_depense WHERE id = :d AND sortie_id = :sortie""",
                 new MapSqlParameterSource("d", depenseId).addValue("sortie", sortieId));
         if (lignes.isEmpty()) throw new RessourceIntrouvableException("Dépense introuvable");
+        verifierOuverts(sortieId);
         if (!auteur(acteur, enLong(lignes.getFirst().get("u")), enLong(lignes.getFirst().get("p")))) {
             throw new RegleMetierException("Seul celui qui a saisi cette dépense, ou l'organisateur, la modifie.");
         }

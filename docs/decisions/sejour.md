@@ -302,3 +302,11 @@ Historique des choix. Les règles en vigueur sont dans `.claude/rules/sejour.md`
 - V132 : deux repas au restaurant (dîner du samedi 5, déjeuner du dimanche 6 juin).
 - V133 : le menu de La Trinquette pour le dîner du samedi 5 juin, où Camille a déjà choisi.
 - V134 : les deux premières journées présentées (titre, trajet, à découvrir, conseil, hébergement), sans photo.
+
+## Fin des comptes : clôture, décompte, preuve de virement (2026-11-09)
+
+- **Demande du club** : « un organisateur peut fermer l'ajout de frais, ce qui permet de fermer la comptabilité du séjour ; envoyer le montant dû avec un tableau explicatif ; que les personnes puissent envoyer la preuve de virement pour dire que c'est remboursé ».
+- **Clôture** (V99_15, `sejour.frais_clos_le`, `PUT …/frais/cloture`, organisateurs) : figée **pour tous, organisateurs compris** (choix du club parmi : figée sauf organisateurs) ; corriger demande de rouvrir. *Pourquoi :* un décompte envoyé ne doit pas devenir faux sans que personne le sache. Les remboursements restent possibles ; « Payer l'addition » d'un restaurant est refusé comme toute dépense.
+- **Décompte** (`DecompteFraisService`, `POST …/envoi-decompte`) : e-mail texte, comme le carnet (choix du club, PDF joint écarté : dépendance de plus), seulement frais clos. Une ligne par dépense (montant total, sa part), son compte, à qui verser combien, l'adresse des frais. La part d'une dépense y est arrondie à part ; si leur somme diffère de la part totale (arrondie une seule fois, 2026-11-08), une phrase dit que le total fait foi.
+- **Preuve de virement** (`sejour_preuve_virement`, `PreuvesVirementService`) : envoyée par le débiteur, confirmée par le bénéficiaire ou un organisateur (au club : un organisateur), ce qui crée le remboursement ; refusée, effacée. **Gardée avec le séjour** (choix du club ; « effacée à la confirmation » proposé et écarté). Lue seulement par l'expéditeur, le bénéficiaire et les organisateurs ; **404 pour les autres** (pas 403 : on ne dit pas qu'elle existe), ni ADMIN ni moniteur du séjour. Le manuel invite à masquer solde et numéro de compte.
+- **Écarté** : confirmer par un moniteur du séjour (il note les remboursements, mais ne lit pas les relevés des autres) ; une preuve envoyée par le club (il n'envoie rien).

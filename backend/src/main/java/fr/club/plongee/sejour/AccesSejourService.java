@@ -159,7 +159,7 @@ public class AccesSejourService {
         return new BilanEnvoiAcces(envoyes, sansEmail, echecs);
     }
 
-    private static String periode(EnteteVue s) {
+    static String periode(EnteteVue s) {
         return s.dateFin() == null || s.dateFin().equals(s.dateDebut())
                 ? "le " + s.dateDebut().format(Calendrier.DATE_FR)
                 : "du " + s.dateDebut().format(Calendrier.DATE_FR) + " au " + s.dateFin().format(Calendrier.DATE_FR);

@@ -325,6 +325,12 @@ export interface DroitsFrais {
   lireNotes: boolean;
   /** Le classeur Excel des frais : organisateurs du séjour. */
   exporter: boolean;
+  /** Clore ou rouvrir les frais, envoyer le décompte : organisateurs du séjour. */
+  clore: boolean;
+  /** Les preuves de virement que celui qui regarde peut confirmer ou refuser (bénéficiaire, organisateurs). */
+  preuvesConfirmables: number[];
+  /** Celles qu'il peut retirer (aussi les siennes, tant qu'elles attendent). */
+  preuvesRetirables: number[];
 }
 
 /** Solde positif : on lui doit de l'argent ; négatif : il en doit. {@code participantId} null : le club. */
@@ -335,9 +341,36 @@ export interface SoldeVue {
   soldeCentimes: number;
 }
 
+/**
+ * La preuve d'un virement (PDF ou photo), envoyée par celui qui rembourse ; {@code aId} null : au club.
+ * {@code versementId} : le remboursement noté à la confirmation ; null, elle attend.
+ * Lue seulement par celui qui l'envoie, le bénéficiaire et les organisateurs (filtré par le serveur).
+ */
+export interface PreuveVirementVue {
+  id: number;
+  deId: number;
+  aId: number | null;
+  montantCentimes: number;
+  jour: string | null;
+  envoyeeLe: string;
+  typeContenu: string;
+  versementId: number | null;
+}
+
+/** Ce que le serveur a fait de l'envoi du décompte ; {@code sansFrais} : rien payé, rien dû. */
+export interface BilanDecompte {
+  envoyes: string[];
+  sansEmail: string[];
+  echecs: string[];
+  sansFrais: string[];
+}
+
 export interface FraisVue {
   depenses: DepenseVue[];
   versements: VersementVue[];
+  /** Quand les organisateurs ont clos les frais ; null : ouverts. */
+  closLe: string | null;
+  preuves: PreuveVirementVue[];
   comptes: {
     totalCentimes: number;
     soldes: SoldeVue[];
@@ -411,6 +444,26 @@ export interface PortFrais {
   apprendreLecture(lecon: LeconLecture): Observable<void>;
   ajouterVersement(d: DemandeVersement): Observable<FraisVue>;
   supprimerVersement(versementId: number): Observable<FraisVue>;
+  /** La preuve de son virement ; {@code aId} null : au club. */
+  envoyerPreuve(aId: number | null, montantCentimes: number, jour: string | null, fichier: File): Observable<FraisVue>;
+  lirePreuve(preuveId: number): Observable<Blob>;
+  confirmerPreuve(preuveId: number): Observable<FraisVue>;
+  /** Refusée (bénéficiaire, organisateur) ou retirée (celui qui l'a envoyée). */
+  retirerPreuve(preuveId: number): Observable<FraisVue>;
+  /** Clore (vrai) ou rouvrir les frais ; absent de la page du lien, réservé aux organisateurs. */
+  clore?(clos: boolean): Observable<FraisVue>;
+  /** Le décompte de chacun par e-mail, frais clos ; absent de la page du lien. */
+  envoyerDecompte?(): Observable<BilanDecompte>;
+}
+
+/** Le fichier et les champs de la preuve d'un virement. */
+export function formulairePreuve(aId: number | null, montantCentimes: number, jour: string | null, fichier: File): FormData {
+  const f = new FormData();
+  f.append('fichier', fichier, fichier.name);
+  f.append('montantCentimes', String(montantCentimes));
+  if (aId !== null) f.append('aId', String(aId));
+  if (jour) f.append('jour', jour);
+  return f;
 }
 
 export type TypeEquipement = 'BLOC' | 'DETENDEUR' | 'GILET' | 'COMBINAISON';
@@ -850,7 +903,15 @@ export class SejourApi {
       reglesLecture: () => this.http.get<RegleLecture[]>(`${base}/lecture-notes/regles`),
       apprendreLecture: lecon => this.http.post<void>(`${base}/lecture-notes/apprentissage`, lecon),
       ajouterVersement: d => suivre(this.http.post<SejourVue>(`${base}/versements`, d)),
-      supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`))
+      supprimerVersement: versementId => suivre(this.http.delete<SejourVue>(`${base}/versements/${versementId}`)),
+      envoyerPreuve: (aId, montant, jour, fichier) => suivre(
+        this.http.post<SejourVue>(`${base}/preuves-virement`, formulairePreuve(aId, montant, jour, fichier))),
+      lirePreuve: preuveId => this.http.get(`${base}/preuves-virement/${preuveId}`, { responseType: 'blob' }),
+      confirmerPreuve: preuveId => suivre(
+        this.http.post<SejourVue>(`${base}/preuves-virement/${preuveId}/confirmation`, null)),
+      retirerPreuve: preuveId => suivre(this.http.delete<SejourVue>(`${base}/preuves-virement/${preuveId}`)),
+      clore: clos => suivre(this.http.put<SejourVue>(`${base}/frais/cloture`, { clos })),
+      envoyerDecompte: () => this.http.post<BilanDecompte>(`${base}/envoi-decompte`, {})
     };
   }
 

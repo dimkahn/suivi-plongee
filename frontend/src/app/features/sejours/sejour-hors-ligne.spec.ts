@@ -24,9 +24,9 @@ function sejour(): SejourVue {
     affaires: [], evenements: [],
     frais: {
       depenses: [], versements: [],
-      comptes: { totalCentimes: 0, soldes: [], remboursements: [] },
+      comptes: { totalCentimes: 0, soldes: [], remboursements: [] }, closLe: null, preuves: [],
       droits: { moiId: 1, peutAjouter: true, pourLesAutres: true, depensesModifiables: [], versementsSupprimables: [],
-                lireNotes: false, exporter: false }
+                lireNotes: false, exporter: false, clore: false, preuvesConfirmables: [], preuvesRetirables: [] }
     },
     avertissements: [], groupesProposes: [], palanquees: []
   };

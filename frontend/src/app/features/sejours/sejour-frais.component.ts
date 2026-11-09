@@ -7,11 +7,14 @@ import { dateFr } from '../../core/date-fr';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { reduirePhoto } from '../../core/reduire-photo';
 import {
-  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, RegleLecture,
+  CATEGORIES_DEPENSE, CategorieDepense, DepenseVue, FraisVue, NoteLue, ParticipantFrais, PortFrais, PreuveVirementVue,
+  RegleLecture,
   Remboursement, completerAvecNote, enCentimes, euros, majuscule, nomComplet, nomFichierSoldes, nomPayeur,
   remboursementsDe
 } from './sejour-api';
 import { leconDuTicket } from './lecture-ticket';
+import { montrerCarte } from './carte-voyage.component';
+import { preuveEnAttente, preuvesAConfirmer, texteBilanDecompte } from './fin-des-comptes';
 
 /** Dans les listes « Payé par », « Qui a remboursé », « À qui » : le club (null pour le serveur). */
 const CLUB = 'club';
@@ -66,9 +69,50 @@ interface PhotoAEnvoyer {
           <button type="button" class="bouton-discret" (click)="exporterExcel()"
                   [disabled]="envoi()">Exporter en Excel</button>
         }
+        @if (d.clore && port().clore) {
+          @if (f.closLe === null) {
+            <button type="button" class="bouton-discret clore-frais" (click)="clore(true)"
+                    [disabled]="envoi()">Clore les frais</button>
+          } @else {
+            @if (port().envoyerDecompte) {
+              <button type="button" class="bouton-principal envoyer-decompte" (click)="envoyerDecompte()"
+                      [disabled]="envoi()">Envoyer le décompte à chacun</button>
+            }
+            <button type="button" class="bouton-discret rouvrir-frais" (click)="clore(false)"
+                    [disabled]="envoi()">Rouvrir les frais</button>
+          }
+        }
       </div>
     </div>
+    @if (f.closLe; as clos) {
+      <div class="carte frais-clos" role="status">
+        <strong>Frais clos le {{ dateFr(clos.slice(0, 10)) }}.</strong>
+        Plus aucune dépense ne s'ajoute ni ne change : il reste à faire les remboursements.
+        @if (d.moiId !== null) { Après votre virement, touchez « J'ai payé » pour en envoyer la preuve. }
+      </div>
+    }
     @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
+
+    @if (aConfirmer().length > 0) {
+      <h3>Virements à confirmer</h3>
+      <ul class="lignes-cartes preuves-a-confirmer">
+        @for (p of aConfirmer(); track p.id) {
+          <li class="carte remboursement">
+            <span><strong>{{ majuscule(nomDe(p.deId)) }}</strong> dit avoir versé
+              <strong>{{ euros(p.montantCentimes) }}</strong>
+              @if (p.aId === null) { au <strong>club</strong> } @else { à <strong>{{ nomDe(p.aId) }}</strong> }
+              @if (p.jour) { le {{ dateFr(p.jour) }} }</span>
+            <span class="actions sans-impression">
+              <button type="button" class="bouton-discret" (click)="voirPreuve(p.id)">Voir la preuve</button>
+              <button type="button" class="bouton-principal" (click)="confirmerPreuve(p)"
+                      [disabled]="envoi()">Confirmer</button>
+              <button type="button" class="bouton-discret danger" (click)="refuserPreuve(p)"
+                      [disabled]="envoi()">Refuser</button>
+            </span>
+          </li>
+        }
+      </ul>
+    }
 
     @if (f.depenses.length === 0) {
       <p class="vide">Aucune dépense pour l'instant. Gîte, location de voiture, courses, plongées : chacun note
@@ -95,7 +139,20 @@ interface PhotoAEnvoyer {
             <li class="carte remboursement" [class.moi]="d.moiId !== null && (r.deId === d.moiId || r.aId === d.moiId)">
               <span><strong>{{ majuscule(nomDe(r.deId)) }}</strong> doit <strong>{{ euros(r.montantCentimes) }}</strong>
                 @if (r.aId === null) { au <strong>club</strong> } @else { à <strong>{{ nomDe(r.aId) }}</strong> }</span>
-              @if (d.pourLesAutres || (d.peutAjouter && r.aId === d.moiId)) {
+              @if (d.moiId !== null && r.deId === d.moiId) {
+                @if (preuveEnAttente(f, r); as p) {
+                  <span class="actions sans-impression">
+                    <span class="etiquette-etat attention">Preuve envoyée, à confirmer</span>
+                    <button type="button" class="bouton-discret" (click)="voirPreuve(p.id)">Voir</button>
+                    @if (d.preuvesRetirables.includes(p.id)) {
+                      <button type="button" class="bouton-discret danger" (click)="retirerPreuve(p)">Retirer</button>
+                    }
+                  </span>
+                } @else {
+                  <button type="button" class="bouton-principal sans-impression j-ai-paye"
+                          (click)="ouvrirPreuve(r)">J'ai payé</button>
+                }
+              } @else if (d.pourLesAutres || (d.moiId !== null && r.aId === d.moiId)) {
                 <button type="button" class="bouton-discret sans-impression"
                         (click)="ouvrirVersement(r)">C'est remboursé</button>
               }
@@ -174,6 +231,9 @@ interface PhotoAEnvoyer {
             @for (v of f.versements; track v.id) {
               <li>
                 <span>{{ majuscule(nomDe(v.deId)) }} → {{ majuscule(nomDe(v.aId)) }} : {{ euros(v.montantCentimes) }}@if (v.jour) {, le {{ dateFr(v.jour) }}}</span>
+                @if (preuveDu(v.id); as p) {
+                  <button type="button" class="bouton-discret sans-impression" (click)="voirPreuve(p.id)">Voir la preuve</button>
+                }
                 @if (d.versementsSupprimables.includes(v.id)) {
                   <button type="button" class="bouton-discret danger sans-impression"
                           (click)="supprimerVersement(v.id)">Annuler</button>
@@ -297,6 +357,32 @@ interface PhotoAEnvoyer {
       </div>
     </app-dialogue>
 
+    <app-dialogue [ouvert]="preuveOuverte()" [erreur]="erreur()" titre="J'ai payé : envoyer la preuve"
+                  (fermer)="preuveOuverte.set(false)">
+      <p>Virement {{ preuve.aId === null ? 'au club' : 'à ' + nomDe(preuve.aId) }}. Joignez la capture ou le PDF
+        de votre virement : {{ preuve.aId === null ? 'un organisateur' : nomDe(preuve.aId) + ' ou un organisateur' }}
+        le confirmera.</p>
+      <div class="grille">
+        <div><label for="p-montant">Montant versé (€) *</label>
+          <input id="p-montant" inputmode="decimal" [(ngModel)]="preuve.montant"></div>
+        <div><label for="p-jour">Jour du virement</label><input id="p-jour" type="date" [(ngModel)]="preuve.jour"></div>
+      </div>
+      <div class="actions">
+        <label class="bouton-discret choisir-photo" for="p-fichier">📎 Choisir la preuve (photo ou PDF)</label>
+        @if (preuve.fichier) { <span>{{ preuve.fichier.name }}</span> }
+      </div>
+      <input id="p-fichier" class="cache" type="file" accept="image/jpeg,image/png,application/pdf"
+             (change)="choisirPreuve($event)">
+      <p class="secondaire">Seuls vous, le bénéficiaire et les organisateurs la verront. Masquez si vous le
+        souhaitez votre solde et votre numéro de compte : seuls le montant, la date et le bénéficiaire comptent.</p>
+      <div class="actions-dialogue">
+        <button type="button" class="bouton-principal" (click)="envoyerPreuve()" [disabled]="envoi()">
+          {{ envoi() ? 'Envoi…' : 'Envoyer la preuve' }}
+        </button>
+        <button type="button" class="bouton-discret" (click)="preuveOuverte.set(false)">Annuler</button>
+      </div>
+    </app-dialogue>
+
     <app-dialogue [ouvert]="versementOuvert()" [erreur]="erreur()" titre="Noter un remboursement"
                   (fermer)="versementOuvert.set(false)">
       <div class="grille">
@@ -381,6 +467,7 @@ interface PhotoAEnvoyer {
     .cache { position: absolute; width: 1px; height: 1px; opacity: 0; }
     .grande { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; }
     .danger { color: #B91C1C; border-color: #FCA5A5; }
+    .frais-clos { padding: var(--pas-2); margin: var(--pas-2) 0; border-left: 6px solid var(--profond-fonce); }
     .lecture-note { margin: var(--pas) 0 0; padding: var(--pas); border-radius: var(--r-s); background: #E0F2FE;
                     font-weight: 700; }
   `]
@@ -402,6 +489,13 @@ export class SejourFraisComponent {
   readonly majuscule = majuscule;
   readonly categories = CATEGORIES_DEPENSE;
   readonly CLUB = CLUB;
+  readonly preuveEnAttente = preuveEnAttente;
+
+  /** Les virements dont celui qui regarde peut confirmer la preuve (bénéficiaire, organisateurs). */
+  readonly aConfirmer = computed(() => preuvesAConfirmer(this.frais()));
+
+  preuveOuverte = signal(false);
+  preuve = { aId: null as number | null, montant: '', jour: null as string | null, fichier: null as File | null };
 
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
@@ -737,6 +831,95 @@ export class SejourFraisComponent {
     this.ecrire(this.port().supprimerVersement(id));
   }
 
+  // ---------------- Fin des comptes ----------------
+
+  /** La preuve confirmée d'un remboursement fait, si celui qui regarde peut la voir. */
+  preuveDu(versementId: number): PreuveVirementVue | undefined {
+    return this.frais().preuves.find(p => p.versementId === versementId);
+  }
+
+  clore(clos: boolean): void {
+    const question = clos
+      ? 'Clore les frais ? Plus personne (organisateurs compris) ne pourra ajouter, modifier ni supprimer une '
+        + 'dépense ; les remboursements restent possibles. Vous pourrez les rouvrir.'
+      : 'Rouvrir les frais ? Chacun pourra de nouveau ajouter et modifier ses dépenses : un décompte déjà envoyé '
+        + 'pourrait ne plus être juste.';
+    const cloture = this.port().clore;
+    if (!cloture || !confirm(question)) return;
+    this.ecrire(cloture(clos));
+  }
+
+  envoyerDecompte(): void {
+    if (!confirm('Envoyer à chaque participant, par e-mail, ses dépenses, sa part et à qui verser combien ?')) return;
+    this.envoi.set(true);
+    this.message.set(null);
+    this.port().envoyerDecompte?.().subscribe({
+      next: b => {
+        this.envoi.set(false);
+        this.message.set(texteBilanDecompte(b));
+      },
+      error: (e: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.message.set(e.error?.detail ?? "L'envoi n'a pas abouti (réseau nécessaire).");
+      }
+    });
+  }
+
+  ouvrirPreuve(r: Remboursement): void {
+    this.erreur.set(null);
+    this.preuve = {
+      aId: r.aId, montant: (r.montantCentimes / 100).toFixed(2).replace('.', ','),
+      jour: new Date().toLocaleDateString('sv-SE'), fichier: null
+    };
+    this.preuveOuverte.set(true);
+  }
+
+  /** Une photo est réduite par le téléphone ; un PDF part tel quel. */
+  async choisirPreuve(evenement: Event): Promise<void> {
+    const champ = evenement.target as HTMLInputElement;
+    const fichier = champ.files?.[0];
+    champ.value = '';
+    if (!fichier) return;
+    try {
+      this.preuve.fichier = fichier.type === 'application/pdf' ? fichier : await reduirePhoto(fichier);
+    } catch {
+      this.erreur.set('Ce fichier n’a pas pu être lu : choisissez une photo JPEG, PNG ou un PDF.');
+    }
+  }
+
+  envoyerPreuve(): void {
+    const p = this.preuve;
+    const montant = enCentimes(p.montant);
+    if (!montant || montant <= 0 || !p.fichier) {
+      this.erreur.set('Indiquez le montant versé et joignez la preuve du virement.');
+      return;
+    }
+    this.ecrire(this.port().envoyerPreuve(p.aId, montant, p.jour || null, p.fichier),
+      () => this.preuveOuverte.set(false));
+  }
+
+  voirPreuve(preuveId: number): void {
+    montrerCarte(this.port().lirePreuve(preuveId),
+      () => this.message.set("La preuve n'a pas pu être ouverte (réseau nécessaire)."));
+  }
+
+  confirmerPreuve(p: PreuveVirementVue): void {
+    const vers = p.aId === null ? 'au club' : 'à ' + this.nomDe(p.aId);
+    if (!confirm(`Confirmer que ${this.nomDe(p.deId)} a bien versé ${euros(p.montantCentimes)} ${vers} ? `
+      + 'Le remboursement sera noté.')) return;
+    this.ecrire(this.port().confirmerPreuve(p.id));
+  }
+
+  refuserPreuve(p: PreuveVirementVue): void {
+    if (!confirm(`Refuser cette preuve ? Elle sera effacée ; ${this.nomDe(p.deId)} pourra en envoyer une autre.`)) return;
+    this.ecrire(this.port().retirerPreuve(p.id));
+  }
+
+  retirerPreuve(p: PreuveVirementVue): void {
+    if (!confirm('Retirer cette preuve ? Elle sera effacée.')) return;
+    this.ecrire(this.port().retirerPreuve(p.id));
+  }
+
   exporterExcel(): void {
     this.envoi.set(true);
     this.message.set(null);
@@ -766,7 +949,7 @@ export class SejourFraisComponent {
         this.envoi.set(false);
         const texte = e.error?.detail ?? "L'enregistrement n'a pas abouti (réseau nécessaire).";
         this.erreur.set(texte);
-        if (!this.depenseOuverte() && !this.versementOuvert()) this.message.set(texte);
+        if (!this.depenseOuverte() && !this.versementOuvert() && !this.preuveOuverte()) this.message.set(texte);
       }
     });
   }

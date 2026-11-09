@@ -58,6 +58,9 @@ public class SejourController {
     /** Les organisateurs désignés par le créateur (lui-même l'est toujours). */
     public record DemandeOrganisateurs(@NotNull List<@NotNull Long> utilisateurIds) {}
 
+    /** {@code clos} : vrai pour clore les frais, faux pour les rouvrir. */
+    public record DemandeCloture(boolean clos) {}
+
     /** La dépense créée (pour y joindre la photo de la note) et le séjour à jour. */
     public record DepenseCreee(long depenseId, SejourVue sejour) {}
 
@@ -74,12 +77,17 @@ public class SejourController {
     private final RepasSejourService repas;
     private final JourneesSejourService journees;
     private final NotificationsSejourService notifications;
+    private final PreuvesVirementService preuves;
+    private final DecompteFraisService decomptes;
 
     public SejourController(SejourService service, CarnetSejourService carnets, FraisService frais,
                             FraisExcelService fraisExcel, AccesSejourService acces, PretsSejourService pretsSejour,
                             CartesEmbarquementService cartes, AttestationsAssuranceService attestations,
                             RejeuSejour rejeu, TrombinoscopeSejourService trombinoscope, RepasSejourService repas,
-                            JourneesSejourService journees, NotificationsSejourService notifications) {
+                            JourneesSejourService journees, NotificationsSejourService notifications,
+                            PreuvesVirementService preuves, DecompteFraisService decomptes) {
+        this.preuves = preuves;
+        this.decomptes = decomptes;
         this.notifications = notifications;
         this.journees = journees;
         this.trombinoscope = trombinoscope;
@@ -502,6 +510,26 @@ public class SejourController {
                 .body(fraisExcel.generer(id, frais.acteur(id, moi)));
     }
 
+    /** Clore les frais (plus aucune dépense ne change, pour personne) ou les rouvrir : organisateurs. */
+    @PutMapping("/{id}/frais/cloture")
+    @PreAuthorize(GERE)
+    public SejourVue clore(@PathVariable Long id, @RequestBody DemandeCloture d,
+                           @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        frais.clore(id, d.clos());
+        return service.lire(id, moi);
+    }
+
+    /**
+     * Frais clos, chacun reçoit son décompte par e-mail (ses dépenses, sa part, à qui verser combien) ;
+     * {@code participantIds} dans le corps : les seuls participants choisis.
+     */
+    @PostMapping("/{id}/envoi-decompte")
+    @PreAuthorize(GERE)
+    public DecompteFraisService.BilanDecompte envoyerDecompte(@PathVariable Long id,
+                                                              @RequestBody(required = false) DemandeDestinataires d) {
+        return decomptes.envoyer(id, d == null ? null : d.participantIds());
+    }
+
     @PostMapping("/{id}/depenses")
     @PreAuthorize("isAuthenticated()")
     public DepenseCreee creerDepense(@PathVariable Long id, @Valid @RequestBody FraisService.DemandeDepense d,
@@ -598,6 +626,45 @@ public class SejourController {
     public SejourVue supprimerVersement(@PathVariable Long id, @PathVariable Long versementId,
                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
         frais.supprimerVersement(id, versementId, frais.acteur(id, moi));
+        return service.lire(id, moi);
+    }
+
+    /**
+     * La preuve de son virement (PDF ou photo) : {@code aId} absent, au club. À confirmer par le
+     * bénéficiaire ou un organisateur ({@link PreuvesVirementService}).
+     */
+    @PostMapping(value = "/{id}/preuves-virement", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue envoyerPreuve(@PathVariable Long id, @RequestParam("fichier") MultipartFile fichier,
+                                   @RequestParam(required = false) Long aId, @RequestParam Long montantCentimes,
+                                   @RequestParam(required = false) LocalDate jour,
+                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        preuves.envoyer(id, aId, montantCentimes, jour, octets(fichier), fichier.getContentType(), frais.acteur(id, moi));
+        return service.lire(id, moi);
+    }
+
+    /** Lue par celui qui l'a envoyée, le bénéficiaire et les organisateurs ; pour les autres, 404. */
+    @GetMapping("/{id}/preuves-virement/{preuveId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> preuve(@PathVariable Long id, @PathVariable Long preuveId,
+                                         @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        return document(preuves.fichier(id, preuveId, frais.acteur(id, moi)), "preuve-virement");
+    }
+
+    @PostMapping("/{id}/preuves-virement/{preuveId}/confirmation")
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue confirmerPreuve(@PathVariable Long id, @PathVariable Long preuveId,
+                                     @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        preuves.confirmer(id, preuveId, frais.acteur(id, moi));
+        return service.lire(id, moi);
+    }
+
+    /** Refusée (bénéficiaire, organisateur) ou retirée (celui qui l'a envoyée) : effacée. */
+    @DeleteMapping("/{id}/preuves-virement/{preuveId}")
+    @PreAuthorize("isAuthenticated()")
+    public SejourVue retirerPreuve(@PathVariable Long id, @PathVariable Long preuveId,
+                                   @AuthenticationPrincipal UtilisateurPrincipal moi) {
+        preuves.retirer(id, preuveId, frais.acteur(id, moi));
         return service.lire(id, moi);
     }
 

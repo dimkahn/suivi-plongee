@@ -899,10 +899,12 @@ public class SejourService {
         int frais = compter("""
                 SELECT (SELECT COUNT(*) FROM sejour_depense WHERE payeur_id = :x)
                      + (SELECT COUNT(*) FROM sejour_depense_part WHERE participant_id = :x)
-                     + (SELECT COUNT(*) FROM sejour_versement WHERE de_id = :x OR a_id = :x)""", participantId);
+                     + (SELECT COUNT(*) FROM sejour_versement WHERE de_id = :x OR a_id = :x)
+                     + (SELECT COUNT(*) FROM sejour_preuve_virement WHERE de_id = :x OR a_id = :x)""", participantId);
         if (frais > 0) {
             throw new RegleMetierException(nomDe(participantId) + " figure dans le partage des frais : "
-                    + "retirez-le d'abord des dépenses et des remboursements, sinon les comptes seraient faux.");
+                    + "retirez-le d'abord des dépenses, des remboursements et des preuves de virement, sinon les "
+                    + "comptes seraient faux.");
         }
         jdbc.update("DELETE FROM sejour_participant WHERE id = :pid", new MapSqlParameterSource("pid", participantId));
     }
