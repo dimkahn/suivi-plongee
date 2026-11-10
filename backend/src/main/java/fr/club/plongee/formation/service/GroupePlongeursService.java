@@ -125,7 +125,7 @@ public class GroupePlongeursService {
             List<Long> encadrants = jdbc.queryForList("""
                     SELECT DISTINCT u.id FROM utilisateur u JOIN utilisateur_role r ON r.utilisateur_id = u.id
                      WHERE u.id IN (:ids) AND u.actif = TRUE
-                       AND r.role IN ('MONITEUR', 'ADMIN', 'DIRECTEUR_TECHNIQUE')""",
+                       AND r.role IN ('MONITEUR', 'ADMIN')""",
                     new MapSqlParameterSource("ids", choisis), Long.class);
             if (encadrants.size() != choisis.size()) {
                 throw new RegleMetierException("Seul un encadrant qui a un compte actif peut organiser le groupe.");

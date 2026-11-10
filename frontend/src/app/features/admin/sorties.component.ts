@@ -78,7 +78,7 @@ function sortieVide(): DemandeSortie {
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>{{ recentes() ? 'Aucune sortie à venir.' : 'Aucune sortie enregistrée.' }}</p></div>
     } @else {
-      @if (aDesPlongees()) {
+      @if (aDesPlongees() && encadre()) {
         <label class="case">
           <input type="checkbox" id="regrouper-sorties" [checked]="regrouper()" (change)="regrouper.set(!regrouper())">
           Imprimer les fiches de sécurité en regroupant les 2 plongées du jour sur une feuille
@@ -107,11 +107,13 @@ function sortieVide(): DemandeSortie {
 
                 <div class="actions">
                   <button type="button" class="bouton-principal" (click)="ouvrirChoix(s)">Choisir les plongées</button>
-                  <a class="bouton-discret" [routerLink]="['/sejours', s.id]"
-                     title="Participants, arrivées et départs, voitures, chambres, repas, affaires, programme">
-                    Gérer le séjour
-                  </a>
-                  @if (s.nombrePlongees > 0) {
+                  @if (encadre()) {
+                    <a class="bouton-discret" [routerLink]="['/sejours', s.id]"
+                       title="Participants, arrivées et départs, voitures, chambres, repas, affaires, programme">
+                      Gérer le séjour
+                    </a>
+                  }
+                  @if (s.nombrePlongees > 0 && encadre()) {
                     <button type="button" class="bouton-discret" (click)="imprimerFiches(s)"
                             [disabled]="impression() === s.id">
                       {{ impression() === s.id ? 'Génération…' : 'Imprimer les fiches de sécurité' }}
@@ -164,7 +166,7 @@ function sortieVide(): DemandeSortie {
                     de la sortie ; une séance déjà prise par une autre sortie n'est pas proposée.
                   </p>
                   @if (possibles().length === 0) {
-                    <p class="vide">Aucune séance ces jours-là : créez les plongées ci-dessous.</p>
+                    <p class="vide">Aucune séance ces jours-là{{ encadre() ? ' : créez les plongées ci-dessous' : '' }}.</p>
                   } @else {
                     <div class="actions">
                       <button type="button" class="bouton-discret" (click)="toutCocher(true)">Tout cocher</button>
@@ -187,6 +189,7 @@ function sortieVide(): DemandeSortie {
                     </ul>
                   }
 
+                  @if (encadre()) {
                   <details class="creation-plongees" [open]="possibles().length === 0">
                     <summary>Créer les plongées de la sortie</summary>
                     <p class="secondaire">
@@ -211,6 +214,9 @@ function sortieVide(): DemandeSortie {
                       Créer les plongées
                     </button>
                   </details>
+                  } @else if (possibles().length === 0) {
+                    <p class="secondaire">Les plongées de la sortie se créent par un moniteur ou l'administrateur.</p>
+                  }
 
                   <div class="actions-dialogue">
                     <button type="button" class="bouton-principal" (click)="enregistrerSeances(s)" [disabled]="envoi()">
@@ -254,6 +260,11 @@ function sortieVide(): DemandeSortie {
 export class SortiesComponent {
   private api = inject(ApiService);
   auth = inject(AuthService);
+  /**
+   * Moniteur ou administrateur : crée les plongées, gère le séjour, imprime les fiches de sécurité.
+   * Un directeur technique qui n'est pas moniteur ne fait que rattacher les plongées existantes.
+   */
+  encadre = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
 
   readonly periode = periode;
 

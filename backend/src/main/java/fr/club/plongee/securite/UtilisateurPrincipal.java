@@ -34,6 +34,14 @@ public record UtilisateurPrincipal(Long id, String email, String motDePasse,
         return aLeRole(RoleNom.SECURITE_SURFACE) && !aLeRole(RoleNom.MONITEUR) && !aLeRole(RoleNom.ADMIN);
     }
 
+    /**
+     * Moniteur ou administrateur : encadre les séjours et les groupes de
+     * plongeurs. Un directeur technique qui n'est pas moniteur n'en est pas.
+     */
+    public boolean estEncadrant() {
+        return aLeRole(RoleNom.MONITEUR) || aLeRole(RoleNom.ADMIN);
+    }
+
     private boolean aLeRole(RoleNom role) {
         return autorisations.stream().anyMatch(a -> a.getAuthority().equals("ROLE_" + role.name()));
     }

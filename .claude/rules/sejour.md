@@ -115,7 +115,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 ## Demande d'informations et accès par lien
 - « Demander à chacun ses informations » (`POST /api/sejours/{id}/invitations`, `AccesSejourService.envoyerInvitations`) : à chaque participant avec e-mail (ou aux cochés, `participantIds`), de quoi renseigner téléphone, arrivée/départ, régimes, personne à prévenir, remarques, et voir/saisir les frais. *Choix du club, 2026.*
 - **Un participant ne modifie jamais son nom, son e-mail ni son rôle** (`SejourService.DemandeMesInformations`).
-- Encadrant (MONITEUR, ADMIN ou DT, compte propre ou via dossier élève) : reçoit le lien de l'appli, complète par « Modifier mes informations » (`PUT /api/sejours/{id}/mes-informations`, ouvert à tout participant connecté).
+- Encadrant (MONITEUR ou ADMIN ; un DT non moniteur est un participant comme un autre, compte propre ou via dossier élève) : reçoit le lien de l'appli, complète par « Modifier mes informations » (`PUT /api/sejours/{id}/mes-informations`, ouvert à tout participant connecté).
 - Tous les autres (élèves avec ou sans compte, invités) : page publique `/sejour/{code}` (`EspaceParticipantComponent`, `AccesSejourController`, `/api/public/sejour/**` ouvert dans SecurityConfig). `/frais/{code}` (ancienne adresse) ouvre les frais.
 - `sejour.code_frais` est secret.
 - Code à 6 chiffres par e-mail : **seule l'empreinte SHA-256 en base**, 10 min, 5 essais, un envoi par minute, même réponse si e-mail inconnu ou d'encadrant.

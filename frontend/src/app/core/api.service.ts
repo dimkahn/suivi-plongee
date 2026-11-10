@@ -5,7 +5,7 @@ import {
   AdhesionVue, InscriptionClubVue, CandidatInscription, CursusVue, DemandeBlocReferentiel, DemandeCritereReferentiel, DemandeReferentiel, Eligibilite,
   DemandePropositionPalanquees, PropositionPalanqueesVue,
   DemandeDuplicationSeance, EleveVue, EvaluationVue, FicheSecuriteVue, SeanceDupliqueeVue, GrilleVue, GroupePlongeursVue, LigneTrombinoscope, LigneTrombinoscopeMoniteur, MatriceVue,
-  CompteSurfaceVue, DemandeCompteSurface, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RelanceCaciVue, RosterVue,
+  CompteMaterielVue, CompteSurfaceVue, DemandeCompteMateriel, DemandeCompteSurface, MembreGroupeVue, MoniteurOptionVue, MoniteurVue, PlongeurConnuVue, PlongeurVue, ReferentielVue, RelanceCaciVue, RosterVue,
   SaisonVue, SeanceVue, Statut, FeuillePresence, DemandeGenerationSaison, GenerationSaisonVue,
   DemandeProgression, ProgressionResume, ProgressionVue, ResultatModeleCentreMer,
   DemandeEspaceBassin, DemandeGroupeEntrainement, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue,
@@ -643,6 +643,26 @@ export class ApiService {
 
   supprimerCompteSurface(id: number): Observable<unknown> {
     return this.http.delete(`/api/admin/securite-surface/${id}`);
+  }
+
+  comptesMateriel(): Observable<CompteMaterielVue[]> {
+    return this.http.get<CompteMaterielVue[]>('/api/admin/comptes-materiel');
+  }
+
+  creerCompteMateriel(demande: DemandeCompteMateriel): Observable<CompteMaterielVue> {
+    return this.http.post<CompteMaterielVue>('/api/admin/comptes-materiel', demande);
+  }
+
+  modifierCompteMateriel(id: number, demande: DemandeCompteMateriel): Observable<CompteMaterielVue> {
+    return this.http.put<CompteMaterielVue>(`/api/admin/comptes-materiel/${id}`, demande);
+  }
+
+  changerActivationCompteMateriel(id: number, actif: boolean): Observable<CompteMaterielVue> {
+    return this.http.put<CompteMaterielVue>(`/api/admin/comptes-materiel/${id}/activation`, { actif });
+  }
+
+  envoyerLienReinitialisationCompteMateriel(id: number): Observable<unknown> {
+    return this.http.post(`/api/admin/comptes-materiel/${id}/lien-reinitialisation`, {});
   }
 
   changerActivationMoniteur(id: number, actif: boolean): Observable<MoniteurVue> {

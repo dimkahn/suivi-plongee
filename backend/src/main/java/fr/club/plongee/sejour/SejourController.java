@@ -406,7 +406,7 @@ public class SejourController {
 
     /** Les repas pris au restaurant, pour la liste de courses : lue par les encadrants, qui voient les régimes. */
     @GetMapping("/{id}/repas")
-    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN','DIRECTEUR_TECHNIQUE')")
+    @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public RepasSejourService.RepasSejourVue repas(@PathVariable Long id) {
         return repas.lire(id);
     }

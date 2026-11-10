@@ -577,6 +577,24 @@ export interface CompteSurfaceVue {
   seances: SeanceConfieeVue[];
 }
 
+/**
+ * Directeur technique qui n'est pas moniteur du club : ne gère que le
+ * matériel, les prêts et les sorties (rôle DIRECTEUR_TECHNIQUE seul).
+ */
+export interface CompteMaterielVue {
+  id: number;
+  email: string;
+  nom: string;
+  prenom: string;
+  actif: boolean;
+}
+
+export interface DemandeCompteMateriel {
+  email: string;
+  nom: string;
+  prenom: string;
+}
+
 export interface DemandeCompteSurface {
   email: string;
   nom: string;

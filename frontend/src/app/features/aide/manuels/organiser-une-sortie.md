@@ -4,7 +4,7 @@ rubrique: Administrateur
 pour: materiel
 videos: A15, D8
 ecran: /admin/sorties
-mots: sortie, week-end, séjour, mer, milieu naturel, plongées, lieu, dates, carrière, gravière
+mots: sortie, non moniteur, week-end, séjour, mer, milieu naturel, plongées, lieu, dates, carrière, gravière
 questions:
 - Comment organiser un week-end en mer ?
 - Comment créer les plongées d'un séjour ?
@@ -28,3 +28,4 @@ Administration, « Sorties » : nom, lieu, dates, puis les plongées de la sorti
 - Un prêt de matériel rattaché à la sortie a pour retour prévu son dernier jour ; les échéances du matériel sont vérifiées jusque-là.
 - Une sortie qui porte des prêts ne se supprime plus. Supprimer une sortie supprime aussi son séjour.
 - Gérées par un administrateur ou le directeur technique, consultées par les moniteurs.
+- Un directeur technique qui n'est **pas moniteur** crée les sorties et y rattache les plongées existantes ; créer les plongées, gérer le séjour et imprimer les fiches de sécurité restent aux moniteurs et à l'administrateur.

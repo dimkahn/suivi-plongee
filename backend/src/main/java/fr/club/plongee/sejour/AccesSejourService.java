@@ -46,10 +46,14 @@ import java.util.*;
 @Service
 public class AccesSejourService {
 
-    /** Ces comptes sont dans l'appli : ils n'entrent pas par le lien. */
+    /**
+     * Ces comptes sont dans l'appli : ils n'entrent pas par le lien. Un
+     * directeur technique qui n'est pas moniteur est un participant comme
+     * un autre (choix du club, 2026-11-10).
+     */
     static final String EST_ENCADRANT = """
             EXISTS (SELECT 1 FROM utilisateur_role r
-                     WHERE r.role IN ('MONITEUR', 'ADMIN', 'DIRECTEUR_TECHNIQUE')
+                     WHERE r.role IN ('MONITEUR', 'ADMIN')
                        AND (r.utilisateur_id = p.utilisateur_id OR r.utilisateur_id = e.utilisateur_id))""";
 
     static final int MINUTES_VALIDITE_CODE = 10;

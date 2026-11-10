@@ -53,14 +53,16 @@ export const gardeAdmin: CanActivateFn = () => {
 /**
  * Encadrants au sens large : moniteurs et administrateurs. La sécurité
  * surface, qui n'a que les fiches de sécurité, y est renvoyée (c'est aussi
- * sa page d'accueil).
+ * sa page d'accueil) ; le directeur technique qui n'est pas moniteur, au
+ * matériel.
  */
 export const gardeEncadrant: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   return apresResolutionSession().pipe(
     map(() => auth.estMoniteur() || auth.estAdmin()
-      || router.createUrlTree([auth.estSecuriteSurface() ? '/fiches-securite' : '/cursus']))
+      || router.createUrlTree([auth.estSecuriteSurface() ? '/fiches-securite'
+        : auth.inspecteBlocs() ? '/materiel' : '/cursus']))
   );
 };
 

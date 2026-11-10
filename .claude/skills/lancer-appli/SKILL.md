@@ -42,6 +42,7 @@ Comptes de démonstration (mot de passe `plongee2026`, détail dans le README) :
 | `e2@club.fr` | E2, TIV, FICHE_SECURITE |
 | `e1@club.fr` | E1 : notation N1 seulement, refus attendus ailleurs |
 | `surface@club.fr` | sécurité surface : fiches de sécurité au retour seulement |
+| `materiel@club.fr` | directeur technique non moniteur : matériel, prêts, sorties seulement |
 | `eleve@club.fr` | élève (ouvert en dev seulement) |
 
 - **Écran :** ouvrir `http://localhost:4200$ARGUMENTS` dans le navigateur (outils

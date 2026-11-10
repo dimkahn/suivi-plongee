@@ -30,6 +30,9 @@ export class AuthService {
   readonly estDirecteurTechnique = computed(() => this.roles().includes('DIRECTEUR_TECHNIQUE'));
   /** Matériel et prêts : le directeur technique, ou un admin qui le supplée. */
   readonly gereMateriel = computed(() => this.estDirecteurTechnique() || this.estAdmin());
+  /** Directeur technique qui n'est pas moniteur : matériel, prêts et sorties seulement. */
+  readonly directeurTechniqueSeul = computed(() =>
+    this.estDirecteurTechnique() && !this.estMoniteur() && !this.estAdmin());
   readonly estTiv = computed(() => this.roles().includes('TIV'));
   /** Consulter le matériel et remplir les fiches d'inspection des blocs : en plus, le TIV. */
   readonly inspecteBlocs = computed(() => this.gereMateriel() || this.estTiv());

@@ -61,7 +61,8 @@ public class SortieController {
                            @AuthenticationPrincipal UtilisateurPrincipal moi) {
         SortieVue sortie = service.creer(demande);
         // Celui qui crée la sortie est le créateur de son séjour : lui seul (et ceux qu'il désigne) le modifie.
-        sejours.noterCreateur(sortie.id(), moi.id());
+        // Un directeur technique qui n'est pas moniteur n'encadre pas les séjours : l'administrateur désignera.
+        if (moi.estEncadrant()) sejours.noterCreateur(sortie.id(), moi.id());
         return sortie;
     }
 

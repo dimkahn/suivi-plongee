@@ -175,6 +175,12 @@ export const routes: Routes = [
       .then(m => m.ComptesSecuriteSurfaceComponent)
   },
   {
+    path: 'admin/directeurs-techniques',
+    canActivate: [gardeConnecte, gardeAdmin],
+    loadComponent: () => import('./features/admin/comptes-materiel.component')
+      .then(m => m.ComptesMaterielComponent)
+  },
+  {
     path: 'admin/eleves',
     canActivate: [gardeConnecte, gardeAdmin],
     loadComponent: () => import('./features/admin/eleves.component')

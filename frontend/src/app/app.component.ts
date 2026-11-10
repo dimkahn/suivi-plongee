@@ -23,6 +23,8 @@ interface Onglet {
   libelle: string;
   /** Tracé SVG (24 × 24, trait) de l'icône. */
   icone: string;
+  /** Actif seulement sur cette adresse exacte (Matériel, à côté de Prêts et Scanner). */
+  exact?: boolean;
 }
 
 const ICONES = {
@@ -32,6 +34,8 @@ const ICONES = {
   planning: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2',
   materiel: 'M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7',
   formation: 'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z',
+  prets: 'M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7',
+  scanner: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10',
   aide: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01'
 };
 
@@ -75,7 +79,7 @@ const ICONES = {
                 Parcours
               </a>
             }
-            @if (!auth.estSecuriteSurface() || auth.estMoniteur() || auth.estAdmin()) {
+            @if ((!auth.estSecuriteSurface() && !auth.directeurTechniqueSeul()) || auth.estMoniteur() || auth.estAdmin()) {
               <a routerLink="/sejours" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()"
                  title="Arrivées et départs, voitures, chambres, repas, affaires à prévoir et programme des séjours">
                 Séjours
@@ -88,8 +92,21 @@ const ICONES = {
             }
             <!-- L'administrateur trouve le matériel dans « Administration ». -->
             @if (auth.inspecteBlocs() && !auth.estAdmin()) {
-              <a routerLink="/materiel" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+              <a routerLink="/materiel" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: auth.directeurTechniqueSeul() }"
+                 class="bouton-discret" (click)="fermerMenu()">
                 Matériel
+              </a>
+            }
+            <!-- Directeur technique qui n'est pas moniteur : le matériel est tout son menu. -->
+            @if (auth.directeurTechniqueSeul()) {
+              <a routerLink="/materiel/prets" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Prêts
+              </a>
+              <a routerLink="/materiel/scanner" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Scanner
+              </a>
+              <a routerLink="/admin/sorties" routerLinkActive="actif" class="bouton-discret" (click)="fermerMenu()">
+                Sorties
               </a>
             }
             @if (auth.estAdmin()) {
@@ -126,7 +143,8 @@ const ICONES = {
         }
         <nav class="onglets" aria-label="Accès rapide">
           @for (o of onglets(); track o.lien) {
-            <a [routerLink]="o.lien" routerLinkActive="actif" class="onglet" (click)="fermerMenu()">
+            <a [routerLink]="o.lien" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: !!o.exact }"
+               class="onglet" (click)="fermerMenu()">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="o.icone" /></svg>
               <span>{{ o.libelle }}</span>
             </a>
@@ -275,6 +293,12 @@ export class AppComponent {
         { lien: '/eleves', libelle: 'Élèves', icone: ICONES.eleves },
         { lien: '/planning', libelle: 'Planning', icone: ICONES.planning }
       ];
+    }
+    if (this.auth.directeurTechniqueSeul()) {
+      return [{ lien: '/materiel', libelle: 'Matériel', icone: ICONES.materiel, exact: true },
+              { lien: '/materiel/prets', libelle: 'Prêts', icone: ICONES.prets },
+              { lien: '/materiel/scanner', libelle: 'Scanner', icone: ICONES.scanner },
+              { lien: '/aide', libelle: 'Aide', icone: ICONES.aide }];
     }
     if (this.auth.inspecteBlocs()) {
       return [{ lien: '/materiel', libelle: 'Matériel', icone: ICONES.materiel },

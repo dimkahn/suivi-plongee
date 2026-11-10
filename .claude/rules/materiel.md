@@ -12,6 +12,7 @@ Paquet `fr.club.plongee.materiel`. Écrans : `/materiel` (inventaire), `/materie
 
 ## Droits
 - **Domaine du directeur technique** : rôle `DIRECTEUR_TECHNIQUE` (V29), cumulé avec MONITEUR, donné par un ADMIN (écran Moniteurs). `/api/materiel/**` ouvert au DT et à l'ADMIN, qui le supplée.
+- **DT non moniteur** (choix du club, 2026-11-10) : rôle `DIRECTEUR_TECHNIQUE` seul, créé par un ADMIN dans `/admin/directeurs-techniques` (`AdminComptesMaterielController`, `/api/admin/comptes-materiel`), absent des listes de moniteurs et d'emprunteurs. Matériel, prêts, sorties ; rien qui demande MONITEUR. **Pas encadrant des séjours ni des groupes de plongeurs** (`UtilisateurPrincipal.estEncadrant()` = MONITEUR ou ADMIN) : la sortie qu'il crée n'a pas de créateur de séjour. Pas de suppression (journal et prêts le nomment), désactivation. Écran : `AuthService.directeurTechniqueSeul` (menu Matériel, Prêts, Scanner, Sorties ; accueil `/materiel`). Il lit les séances de la saison avec leur commentaire (`GET /api/seances`, pour rattacher les plongées à une sortie) : le commentaire d'une séance sert à l'organisation, jamais à parler d'un élève (*choix du club, 2026-11-10*). Démo `materiel@club.fr` (V136). Test : `ComptesMaterielTest`.
 - **Rôle `TIV`** (V35, cumulé avec MONITEUR, donné par un ADMIN) : remplit les fiches d'inspection, consulte inventaire et fiches, rien d'autre. `MaterielController.LECTURE_ET_INSPECTION` sur ces seules méthodes ; le reste DT/ADMIN. Étiquettes QR et scanner lui sont ouverts comme l'inventaire.
 - **Le TIV voit qu'un équipement est prêté, pas à qui, ni l'historique des prêts.** *Pourquoi :* emprunteurs parfois mineurs.
 - Écrans : `AuthService.inspecteBlocs`, `gardeInspectionBlocs`, boutons masqués si `!gereMateriel` ; confort seulement, le serveur décide.
@@ -45,7 +46,7 @@ Paquet `fr.club.plongee.materiel`. Écrans : `/materiel` (inventaire), `/materie
 - Une séance appartient au plus à une sortie (contrainte en base).
 - Gérées par ADMIN ou DT, consultées par les moniteurs ; écran dans l'administration mais ouvert au DT (`gardeSorties`).
 - Prêts rattachés à la sortie (`pret.sortie_id` ; `pret.seance_id` retiré par V31) ; retour prévu par défaut = dernier jour de la sortie.
-- L'écran peut créer les plongées d'une sortie via `POST /api/seances/serie`, ouvert aux MONITEUR (un DT est toujours moniteur).
+- L'écran peut créer les plongées d'une sortie via `POST /api/seances/serie`, ouvert aux MONITEUR ; un DT non moniteur ne fait que rattacher les plongées existantes (ni « Gérer le séjour », ni impression des fiches).
 - Une sortie qui porte des prêts ne se supprime pas.
 
 ## Import du classeur Excel « Historique Blocs »
