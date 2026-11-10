@@ -3,11 +3,12 @@ titre: Directeur technique qui n'est pas moniteur
 rubrique: Administrateur
 videos: A19
 ecran: /admin/directeurs-techniques
-mots: directeur technique, DT, pas moniteur, non moniteur, matériel, prêts, retours, sorties, compte, créer, désactiver, réactiver, lien, mot de passe, droits
+mots: directeur technique, DT, pas moniteur, non moniteur, matériel, prêts, retours, sorties, compte, créer, désactiver, réactiver, supprimer, suppression, effacer, lien, mot de passe, droits
 questions:
 - Comment créer un compte pour un directeur technique qui n'est pas moniteur ?
 - Que peut faire un directeur technique qui n'est pas moniteur ?
 - Comment désactiver le compte d'un directeur technique ?
+- Pourquoi je ne peux pas supprimer un directeur technique ?
 ---
 Administration, « Directeurs techniques non moniteurs » : un compte pour une personne qui gère le matériel du club sans être moniteur. Elle ne fait que le matériel, les prêts et les sorties.
 
@@ -17,6 +18,7 @@ Administration, « Directeurs techniques non moniteurs » : un compte pour une p
 2. « Nouveau directeur technique » : prénom, nom, e-mail, puis « Créer le compte ».
 3. La personne reçoit un e-mail pour choisir son mot de passe.
 4. « Désactiver » met fin à son accès ; « Réactiver » le lui rend.
+5. « Supprimer » efface un compte qui n'a rien enregistré (créé par erreur, jamais servi).
 
 ## Ce qu'il voit
 
@@ -29,5 +31,5 @@ Administration, « Directeurs techniques non moniteurs » : un compte pour une p
 - Il ne voit ni les élèves, ni la notation, ni les présences, ni le planning, ni les fiches de sécurité.
 - **Pas de séjour** : il n'en est pas organisateur, même d'une sortie qu'il a créée ; s'il part en séjour, il passe par le lien, comme les autres participants. Les prêts déclarés dans un séjour restent dans « Prêts ».
 - Il ne crée pas les plongées d'une sortie : un moniteur ou l'administrateur s'en charge.
-- Pas de suppression : ses écritures au journal du matériel et aux prêts font foi. On désactive.
+- **Supprimer, comme pour un moniteur** : refusé dès qu'il a écrit au journal du matériel (révision, contrôle, inspection TIV…), fait ou reçu un prêt, ou pris des photos de prêt. Ces écritures font foi (fiche de gestion des EPI, Code du sport) : désactivez son compte plutôt.
 - Un directeur technique qui est aussi moniteur se gère dans « Moniteurs ».

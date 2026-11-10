@@ -226,4 +226,40 @@ class ComptesMaterielTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"actif\":false}"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("Un directeur technique non moniteur qui n'a rien enregistré se supprime")
+    void suppressionSansHistorique() throws Exception {
+        String admin = admin();
+        long id = creerCompte(admin, nouvelEmail());
+
+        mvc.perform(delete("/api/admin/comptes-materiel/" + id).header("Authorization", admin))
+                .andExpect(status().isNoContent());
+        assertThat(utilisateurs.findById(id)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Un directeur technique non moniteur qui a écrit au journal du matériel ne se supprime pas : on le désactive")
+    void pasDeSuppressionAvecHistorique() throws Exception {
+        String admin = admin();
+        String email = nouvelEmail();
+        long id = creerCompte(admin, email);
+        String dt = jeton(email, MOT_DE_PASSE);
+        String equipement = mvc.perform(post("/api/materiel/equipements").header("Authorization", dt)
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"type":"GILET","reference":"G-%s","taille":"L"}
+                                """.formatted(UUID.randomUUID().toString().substring(0, 6))))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        mvc.perform(post("/api/materiel/equipements/" + json.readTree(equipement).get("id").asLong() + "/interventions")
+                        .header("Authorization", dt).contentType(MediaType.APPLICATION_JSON).content("""
+                                {"type":"CONTROLE","dateIntervention":"%s","resultat":"CONFORME"}
+                                """.formatted(fr.club.plongee.commun.Calendrier.aujourdhui())))
+                .andExpect(status().is2xxSuccessful());
+
+        mvc.perform(delete("/api/admin/comptes-materiel/" + id).header("Authorization", admin))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.detail")
+                        .value(org.hamcrest.Matchers.containsString("désactivez son compte")));
+        assertThat(utilisateurs.findById(id)).isPresent();
+    }
 }

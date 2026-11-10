@@ -10,8 +10,8 @@ import { CompteMaterielVue } from '../../core/modeles';
  * Directeurs techniques qui ne sont pas moniteurs du club (Administration ›
  * Personnes) : rôle DIRECTEUR_TECHNIQUE seul. Ils ne gèrent que le matériel,
  * les prêts et les sorties ; ni élèves, ni notation, ni séjours. Pas de
- * niveau, de CACI ni de photo. Pas de suppression : leurs écritures au
- * journal du matériel et aux prêts font foi, on désactive.
+ * niveau, de CACI ni de photo. Supprimé seulement s'il n'a rien enregistré,
+ * comme un moniteur ; sinon le serveur refuse (422) et on le désactive.
  */
 @Component({
   selector: 'app-comptes-materiel',
@@ -54,6 +54,7 @@ import { CompteMaterielVue } from '../../core/modeles';
               } @else {
                 <button type="button" class="bouton-discret" (click)="changerActivation(c, true)">Réactiver</button>
               }
+              <button type="button" class="bouton-discret danger" (click)="supprimer(c)">Supprimer</button>
             </div>
           </li>
         }
@@ -92,6 +93,7 @@ import { CompteMaterielVue } from '../../core/modeles';
     .identite { display: flex; flex-direction: column; gap: 2px; flex: 1 1 200px; min-width: 0; }
     .nom { font-weight: 700; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; flex-basis: 100%; }
+    .danger { color: #B3261E; border-color: #B3261E; }
   `]
 })
 export class ComptesMaterielComponent {
@@ -178,6 +180,19 @@ export class ComptesMaterielComponent {
     this.api.envoyerLienReinitialisationCompteMateriel(c.id).subscribe({
       next: () => this.message.set(`Lien envoyé à ${c.email} (valable une heure).`),
       error: (e: HttpErrorResponse) => this.message.set(e.error?.detail ?? "Le lien n'a pas pu être envoyé.")
+    });
+  }
+
+  /** Refusé par le serveur s'il a des écritures au journal du matériel ou des prêts : le message dit de désactiver. */
+  supprimer(c: CompteMaterielVue): void {
+    if (!confirm(`Supprimer définitivement le compte de ${c.prenom} ${c.nom} ?`)) return;
+    this.message.set(null);
+    this.api.supprimerCompteMateriel(c.id).subscribe({
+      next: () => {
+        this.comptes.set(this.comptes().filter(x => x.id !== c.id));
+        this.message.set(`Le compte de ${c.prenom} ${c.nom} a été supprimé.`);
+      },
+      error: (e: HttpErrorResponse) => this.message.set(e.error?.detail ?? "La suppression n'a pas pu être faite.")
     });
   }
 

@@ -665,6 +665,10 @@ export class ApiService {
     return this.http.post(`/api/admin/comptes-materiel/${id}/lien-reinitialisation`, {});
   }
 
+  supprimerCompteMateriel(id: number): Observable<unknown> {
+    return this.http.delete(`/api/admin/comptes-materiel/${id}`);
+  }
+
   changerActivationMoniteur(id: number, actif: boolean): Observable<MoniteurVue> {
     return this.http.put<MoniteurVue>(`/api/admin/moniteurs/${id}/activation`, { actif });
   }

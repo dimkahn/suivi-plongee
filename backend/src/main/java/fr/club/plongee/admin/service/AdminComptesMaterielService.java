@@ -7,6 +7,8 @@ import fr.club.plongee.securite.domain.Utilisateur;
 import fr.club.plongee.securite.repository.RefreshTokenRepository;
 import fr.club.plongee.securite.repository.UtilisateurRepository;
 import fr.club.plongee.securite.service.ReinitialisationMotDePasseService;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import java.util.List;
  * CACI, ni photo ; ils n'apparaissent dans aucune liste de moniteurs. Ils ne
  * gèrent que le matériel, les prêts et les sorties ; tout le reste demande
  * le rôle MONITEUR. Le mot de passe se définit par le lien d'invitation.
+ * Supprimé seulement s'il n'a rien enregistré, comme un moniteur.
  */
 @Service
 public class AdminComptesMaterielService {
@@ -32,14 +35,16 @@ public class AdminComptesMaterielService {
     private final PasswordEncoder encodeur;
     private final ReinitialisationMotDePasseService reinitialisations;
     private final RefreshTokenRepository refreshTokens;
+    private final NamedParameterJdbcTemplate jdbc;
 
     public AdminComptesMaterielService(UtilisateurRepository utilisateurs, PasswordEncoder encodeur,
                                        ReinitialisationMotDePasseService reinitialisations,
-                                       RefreshTokenRepository refreshTokens) {
+                                       RefreshTokenRepository refreshTokens, NamedParameterJdbcTemplate jdbc) {
         this.utilisateurs = utilisateurs;
         this.encodeur = encodeur;
         this.reinitialisations = reinitialisations;
         this.refreshTokens = refreshTokens;
+        this.jdbc = jdbc;
     }
 
     /** Un directeur technique moniteur se gère dans l'écran Moniteurs, pas ici. */
@@ -88,10 +93,6 @@ public class AdminComptesMaterielService {
         return u;
     }
 
-    /**
-     * Pas de suppression : ses écritures au journal du matériel et aux prêts
-     * font foi (Code du sport, A322-177) et le nomment. On désactive.
-     */
     @Transactional
     public Utilisateur changerActivation(Long id, boolean actif) {
         Utilisateur u = compte(id);
@@ -109,6 +110,30 @@ public class AdminComptesMaterielService {
                     "Ce compte est désactivé : réactivez-le avant d'envoyer un lien de réinitialisation.");
         }
         reinitialisations.demander(u);
+    }
+
+    /**
+     * Comme pour un moniteur : un compte qui n'a rien enregistré se supprime
+     * (créé par erreur, jamais servi) ; sinon on le désactive, pour que le
+     * journal du matériel (fiche de gestion, Code du sport A322-177, où
+     * entrent aussi les fiches d'inspection TIV) et les prêts gardent qui a
+     * fait quoi.
+     */
+    @Transactional
+    public void supprimer(Long id) {
+        Utilisateur u = compte(id);
+        Integer traces = jdbc.queryForObject("""
+                SELECT (SELECT COUNT(*) FROM intervention_equipement WHERE saisi_par_id = :id)
+                     + (SELECT COUNT(*) FROM pret WHERE prete_par_id = :id OR recu_par_id = :id OR utilisateur_id = :id)
+                     + (SELECT COUNT(*) FROM photo_pret WHERE prise_par_id = :id)
+                     + (SELECT COUNT(*) FROM sejour_pret WHERE declare_par_utilisateur_id = :id)""",
+                new MapSqlParameterSource("id", id), Integer.class);
+        if (traces != null && traces > 0) {
+            throw new RegleMetierException("Ce directeur technique a des écritures au journal du matériel ou des "
+                    + "prêts enregistrés : désactivez son compte plutôt que de le supprimer, pour garder l'historique.");
+        }
+        refreshTokens.revoquerTout(id);
+        utilisateurs.delete(u);
     }
 
     static boolean directeurTechniqueSeul(Utilisateur u) {

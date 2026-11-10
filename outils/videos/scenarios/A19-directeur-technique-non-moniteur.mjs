@@ -1,5 +1,5 @@
 // A19 — Directeur technique qui n'est pas moniteur : un compte limité au matériel, aux prêts et aux sorties.
-// Tournage du 2026-11-10, 1re série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-10, 2e série, suppression comme pour un moniteur (changer cette date dans tous les scénarios les fait tous retourner).
 // Démo V136 : Bastien Morvan (materiel@club.fr), directeur technique non moniteur.
 import { APPLI } from '../commun.mjs';
 
@@ -7,7 +7,7 @@ export default {
   id: 'A19',
   titre: 'Directeur technique qui n\'est pas moniteur',
   public: 'Administrateur',
-  resume: 'Un compte pour une personne qui gère le matériel sans être moniteur : matériel, prêts et sorties, rien d\'autre ; désactivation et lien de mot de passe.',
+  resume: 'Un compte pour une personne qui gère le matériel sans être moniteur : matériel, prêts et sorties, rien d\'autre ; désactivation, suppression et lien de mot de passe.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -25,7 +25,8 @@ export default {
     await vignette();
     await toucher(page.getByRole('button', { name: 'Créer le compte' }), { apres: 2000 });
     await legende('Inès reçoit un e-mail pour choisir son mot de passe.', 3500);
-    await legende('« Désactiver » met fin à son accès. Pas de suppression : ses écritures au journal du matériel et aux prêts font foi.', 5000);
+    await legende('« Désactiver » met fin à son accès.', 3000);
+    await legende('« Supprimer », comme pour un moniteur : seulement s\'il n\'a rien enregistré. Ses écritures au journal du matériel et aux prêts font foi.', 5000);
     await legende('Un directeur technique qui est aussi moniteur se gère dans « Moniteurs ».', 3500);
     await legende(null, 0);
     await pause(500);

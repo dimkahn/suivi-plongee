@@ -61,6 +61,12 @@ public class AdminComptesMaterielController {
         service.envoyerLienReinitialisation(id);
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimer(@PathVariable Long id) {
+        service.supprimer(id);
+    }
+
     private static CompteMaterielVue vue(Utilisateur u) {
         return new CompteMaterielVue(u.getId(), u.getEmail(), u.getNom(), u.getPrenom(), u.isActif());
     }

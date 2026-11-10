@@ -831,7 +831,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### A19 — Directeur technique qui n'est pas moniteur
 
-Un compte pour une personne qui gère le matériel sans être moniteur : matériel, prêts et sorties, rien d'autre ; désactivation et lien de mot de passe.
+Un compte pour une personne qui gère le matériel sans être moniteur : matériel, prêts et sorties, rien d'autre ; désactivation, suppression et lien de mot de passe.
 
 Compte : `presidente@club.fr` · formats téléphone et ordinateur
 
