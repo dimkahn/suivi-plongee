@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import {
-  EmprunteurVue, EquipementVue, PretVue, SortieVue, TYPES_EQUIPEMENT, TypeEquipement
+  DemandeRetour, EmprunteurVue, EquipementVue, PretVue, SortieVue, TYPES_EQUIPEMENT, TypeEquipement
 } from '../../core/modeles';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { DateFrPipe, dateDuJour, periode } from '../../core/date-fr';
@@ -13,6 +13,7 @@ import { normaliser } from '../../core/seance-lieu';
 import { descriptionEquipement } from './materiel';
 import { nomEquipement } from '../../core/nom-equipement';
 import { PhotosPretComponent } from './photos-pret.component';
+import { RetourPretComponent } from './retour-pret.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 
@@ -20,8 +21,6 @@ import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 function cleEmprunteur(e: EmprunteurVue): number {
   return e.type === 'ELEVE' ? e.id * 2 : e.id * 2 + 1;
 }
-
-interface LigneRetour { incident: string; horsService: boolean; }
 
 /**
  * Prêts de matériel pour les sorties : nouveau prêt, prêts en cours avec
@@ -31,7 +30,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
  */
 @Component({
   selector: 'app-prets',
-  imports: [FormsModule, RouterLink, DateFrPipe, OngletsComponent, ComboboxComponent, PhotosPretComponent, DialogueComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, OngletsComponent, ComboboxComponent, PhotosPretComponent, DialogueComponent, RetourPretComponent],
   template: `
     <div class="entete">
       <h1>Prêts de matériel</h1>
@@ -212,42 +211,8 @@ interface LigneRetour { incident: string; horsService: boolean; }
       }
     }
 
-    <app-dialogue [ouvert]="pretEnRetour() !== null" [erreur]="message()" (fermer)="retourOuvert.set(null)"
-                  [titre]="'Retour du matériel de ' + (pretEnRetour()?.emprunteur ?? '')">
-      @if (pretEnRetour(); as p) {
-                    <label [for]="'dateRetour-' + p.id">Date de retour</label>
-                    <input [id]="'dateRetour-' + p.id" type="date" [min]="p.datePret" [max]="aujourdhui"
-                           [(ngModel)]="dateRetour">
-                    @for (e of p.equipements; track e.id) {
-                      <div class="retour-equipement">
-                        <label [for]="'incident-' + e.id">{{ e.typeLibelle }} {{ nom(e) }} : incident éventuel</label>
-                        <input [id]="'incident-' + e.id" [(ngModel)]="lignesRetour[e.id].incident"
-                               placeholder="Rien à signaler">
-                        <label class="case">
-                          <input type="checkbox" [(ngModel)]="lignesRetour[e.id].horsService">
-                          Mettre hors service
-                        </label>
-                      </div>
-                    }
-                    @if (p.desinfectionAuRetour) {
-                      <label class="case desinfection">
-                        <input type="checkbox" [(ngModel)]="desinfecteAuRetour">
-                        Le détendeur a été désinfecté au retour (obligatoire : l'emprunteur l'a déclaré lui-même
-                        depuis le séjour ; inscrit à son journal).
-                      </label>
-                    }
-                    <h3 class="titre-photos">Photos de l'état au retour</h3>
-                    <app-photos-pret [pret]="p" (nombres)="majNombres(p.id, $event)" />
-                    <label [for]="'remarquesRetour-' + p.id">Remarques</label>
-                    <textarea [id]="'remarquesRetour-' + p.id" rows="2" [(ngModel)]="remarquesRetour"></textarea>
-                    <div class="actions-dialogue">
-                      <button type="button" class="bouton-principal" (click)="rendre(p)" [disabled]="envoi()">
-                        {{ envoi() ? 'Enregistrement…' : 'Valider le retour' }}
-                      </button>
-                      <button type="button" class="bouton-discret" (click)="retourOuvert.set(null)">Annuler</button>
-                    </div>
-      }
-    </app-dialogue>
+    <app-retour-pret [pret]="pretEnRetour()" [erreur]="message()" [envoi]="envoi()" (fermer)="retourOuvert.set(null)"
+                     (valider)="rendre($event)" (nombres)="majNombres($event.pretId, $event)" />
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
@@ -284,11 +249,8 @@ interface LigneRetour { incident: string; horsService: boolean; }
     .dates { margin: var(--pas) 0; }
     .materiel-prete { margin: 0; padding-left: 1.25rem; display: grid; gap: 2px; }
     .texte-libre { white-space: pre-line; margin: var(--pas) 0 0; }
-    .retour-equipement { border-top: 1px solid var(--trait); margin-top: var(--pas-2); }
-    .case.desinfection { font-weight: 700; border-top: 1px solid var(--trait); margin-top: var(--pas-2); }
     .bouton-photos { margin-top: var(--pas-2); }
     .galerie { margin-top: var(--pas); padding: var(--pas) var(--pas-2); background: var(--fond); border-radius: var(--r-s); }
-    .titre-photos { margin: var(--pas-2) 0 0; padding-top: var(--pas-2); border-top: 1px solid var(--trait); font-size: 1rem; }
   `]
 })
 export class PretsComponent {
@@ -298,7 +260,6 @@ export class PretsComponent {
   readonly types = TYPES_EQUIPEMENT;
   readonly description = descriptionEquipement;
   readonly nom = nomEquipement;
-  readonly aujourdhui = dateDuJour();
 
   onglet = signal<'EN_COURS' | 'RENDUS'>('EN_COURS');
   onglets = computed((): OptionOnglet<'EN_COURS' | 'RENDUS'>[] => [
@@ -330,10 +291,6 @@ export class PretsComponent {
   retourOuvert = signal<number | null>(null);
   pretEnRetour = computed(() => this.enCours().find(p => p.id === this.retourOuvert()) ?? null);
   photosOuvertes = signal<Set<number>>(new Set());
-  dateRetour = dateDuJour();
-  lignesRetour: Record<number, LigneRetour> = {};
-  remarquesRetour = '';
-  desinfecteAuRetour = false;
 
   optionsEmprunteurs = computed<OptionCombobox[]>(() => this.emprunteurs().map(e => ({
     id: cleEmprunteur(e),
@@ -454,27 +411,15 @@ export class PretsComponent {
 
   ouvrirRetour(p: PretVue): void {
     this.message.set(null);
-    this.dateRetour = this.aujourdhui;
-    this.remarquesRetour = '';
-    this.desinfecteAuRetour = false;
-    this.lignesRetour = {};
-    for (const e of p.equipements) this.lignesRetour[e.id] = { incident: '', horsService: false };
     this.retourOuvert.set(p.id);
   }
 
-  rendre(p: PretVue): void {
+  rendre(demande: DemandeRetour): void {
+    const id = this.retourOuvert();
+    if (id === null) return;
     this.envoi.set(true);
     this.message.set(null);
-    this.api.rendrePret(p.id, {
-      dateRetour: this.dateRetour,
-      equipements: p.equipements.map(e => ({
-        equipementId: e.id,
-        incident: this.lignesRetour[e.id]?.incident.trim() || null,
-        horsService: !!this.lignesRetour[e.id]?.horsService
-      })),
-      remarques: this.remarquesRetour.trim() || null,
-      detendeursDesinfectes: p.desinfectionAuRetour ? this.desinfecteAuRetour : undefined
-    }).subscribe({
+    this.api.rendrePret(id, demande).subscribe({
       next: rendu => {
         this.envoi.set(false);
         this.retourOuvert.set(null);

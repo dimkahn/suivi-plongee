@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -7,13 +7,15 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import {
-  DemandeEquipement, DemandeIntervention, EquipementVue, FicheEquipementVue, LIBELLES_STATUT_EQUIPEMENT,
+  DemandeEquipement, DemandeIntervention, DemandeRetour, EquipementVue, FicheEquipementVue, LIBELLES_STATUT_EQUIPEMENT,
   TYPES_EQUIPEMENT, TYPES_INTERVENTION, TypeEquipement
 } from '../../core/modeles';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { TON_STATUT_EQUIPEMENT, descriptionEquipement } from './materiel';
 import { nomEquipement } from '../../core/nom-equipement';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { adresseFicheEquipement, lecteurNfc, NFC_DISPONIBLE, programmerTag } from '../../core/tag-nfc';
+import { RetourPretComponent } from './retour-pret.component';
 
 function demandeVide(type: TypeEquipement): DemandeEquipement {
   return {
@@ -52,7 +54,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
  */
 @Component({
   selector: 'app-fiche-equipement',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent],
+  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, RetourPretComponent],
   template: `
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
@@ -284,14 +286,28 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
       @for (a of e.alertes; track a.message) {
         <div class="alerte" [class.bloquant]="a.gravite === 'BLOQUANT'" role="status">{{ a.message }}</div>
       }
+      @if (retourEnregistre(); as r) {
+        <div class="alerte succes pas-imprime" role="status">
+          Retour de {{ r }} enregistré. <a routerLink="/materiel/scanner">Scanner le matériel suivant</a>
+        </div>
+      }
       @if (e.pretEnCours; as p) {
         <p>
           Prêté à <strong>{{ p.emprunteur }}</strong>@if (p.dateRetourPrevue) {, retour prévu le {{ p.dateRetourPrevue | dateFr }}}.
           @if (gere()) { <a routerLink="/materiel/prets" class="pas-imprime">Voir les prêts</a> }
         </p>
       }
+      @if (ecritureNfc()) {
+        <div class="alerte pas-imprime" role="status">
+          Approchez le tag NFC du dos du téléphone et gardez-le immobile jusqu'au message de fin…
+          <button type="button" class="bouton-discret" (click)="annulerEcritureNfc()">Annuler</button>
+        </div>
+      }
 
       <div class="actions pas-imprime">
+        @if (pretARendre() && gere()) {
+          <button type="button" class="bouton-principal" (click)="ouvrirRetour()">Enregistrer le retour</button>
+        }
         @if (e.statut !== 'REBUTE' && gere()) {
           <button type="button" class="bouton-discret" (click)="commencerEdition()">Modifier</button>
         }
@@ -302,7 +318,21 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
         <a [routerLink]="['/materiel/etiquettes']" [queryParams]="{ ids: e.id }" class="bouton-discret">
           Étiquette QR code
         </a>
+        @if (nfcDisponible) {
+          <span class="programmer-nfc">
+            <button type="button" class="bouton-discret" (click)="programmerTagNfc()" [disabled]="ecritureNfc()">
+              Programmer un tag NFC
+            </button>
+            <label class="case-nfc">
+              <input type="checkbox" [(ngModel)]="verrouillerTag" [disabled]="ecritureNfc()">
+              Verrouiller le tag (définitif)
+            </label>
+          </span>
+        }
       </div>
+
+      <app-retour-pret [pret]="retourOuvert() ? pretARendre() : null" [erreur]="erreurRetour()" [envoi]="envoi()"
+                       (fermer)="retourOuvert.set(false)" (valider)="rendre($event)" />
 
       <section class="carte bloc-fiche">
         <h2>Échéances</h2>
@@ -492,8 +522,12 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
     h3 { margin: var(--pas-2) 0 4px; font-size: .9375rem; }
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
     .entete .etiquette-etat { padding: 4px 12px; font-size: .875rem; }
+    .alerte.succes { border-left-color: var(--acquis); background: var(--acquis-clair); }
     .alerte.bloquant { border-left-color: #B91C1C; background: #FEE2E2; }
 
+    .programmer-nfc { display: inline-flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
+    .case-nfc { display: flex; align-items: center; gap: var(--pas); min-height: 44px; margin: 0; font-weight: 400; }
+    .case-nfc input { width: auto; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin: var(--pas-2) 0; }
     .actions a { display: inline-flex; align-items: center; text-decoration: none; }
 
@@ -563,6 +597,17 @@ export class FicheEquipementComponent {
   message = signal<string | null>(null);
   envoi = signal(false);
   edition = signal(false);
+  readonly nfcDisponible = NFC_DISPONIBLE;
+  /** Le prêt en cours de l'équipement (DT et admin seulement : le TIV ne reçoit pas les prêts). */
+  pretARendre = computed(() => this.fiche()?.prets.find(p => !p.dateRetour) ?? null);
+  retourOuvert = signal(false);
+  erreurRetour = signal<string | null>(null);
+  /** Nom de l'emprunteur dont le retour vient d'être enregistré, pour enchaîner sur le suivant. */
+  retourEnregistre = signal<string | null>(null);
+  ecritureNfc = signal(false);
+  /** Coché par défaut : l'adresse porte l'id, elle n'a jamais à changer ; un tag verrouillé ne s'efface plus. */
+  verrouillerTag = true;
+  private arretEcritureNfc: AbortController | null = null;
   /** Le formulaire du journal reste replié tant qu'on ne le demande pas. */
   ajoutJournal = signal(false);
 
@@ -608,6 +653,7 @@ export class FicheEquipementComponent {
   });
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.annulerEcritureNfc());
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe(p => {
       const brut = p.get('id');
       const id = brut === 'nouveau' ? null : Number(brut);
@@ -615,6 +661,9 @@ export class FicheEquipementComponent {
       this.edition.set(false);
       this.ajoutJournal.set(false);
       this.message.set(null);
+      this.retourOuvert.set(false);
+      this.retourEnregistre.set(null);
+      this.annulerEcritureNfc();
       if (id === null) {
         const type = this.route.snapshot.queryParamMap.get('type') as TypeEquipement | null;
         this.f = demandeVide(type && TYPES_EQUIPEMENT.some(t => t.valeur === type) ? type : 'BLOC');
@@ -748,6 +797,63 @@ export class FicheEquipementComponent {
       next: () => void this.router.navigate(['/materiel']),
       error: (err: HttpErrorResponse) => this.message.set(err.error?.detail ?? "La suppression n'a pas pu être faite.")
     });
+  }
+
+  ouvrirRetour(): void {
+    this.erreurRetour.set(null);
+    this.retourEnregistre.set(null);
+    this.retourOuvert.set(true);
+  }
+
+  rendre(demande: DemandeRetour): void {
+    const p = this.pretARendre();
+    const id = this.id();
+    if (!p || id === null) return;
+    this.envoi.set(true);
+    this.erreurRetour.set(null);
+    this.api.rendrePret(p.id, demande).subscribe({
+      next: rendu => {
+        this.envoi.set(false);
+        this.retourOuvert.set(false);
+        this.retourEnregistre.set(rendu.emprunteur);
+        void this.charger(id);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.envoi.set(false);
+        this.erreurRetour.set(err.error?.detail ?? "Le retour n'a pas pu être enregistré.");
+      }
+    });
+  }
+
+  /** Écrit sur le tag l'adresse de la fiche, comme le QR code : tout téléphone qui le lit l'ouvre. */
+  async programmerTagNfc(): Promise<void> {
+    const e = this.fiche()?.equipement;
+    const lecteur = lecteurNfc();
+    if (!e || !lecteur) return;
+    this.message.set(null);
+    this.arretEcritureNfc = new AbortController();
+    this.ecritureNfc.set(true);
+    try {
+      const resultat = await programmerTag(lecteur, adresseFicheEquipement(location.origin, e.id),
+        this.verrouillerTag, this.arretEcritureNfc.signal);
+      this.message.set({
+        ECRIT: `Tag NFC programmé : il ouvre la fiche de ${this.nom(e)}.`,
+        VERROUILLE: `Tag NFC programmé et verrouillé : il ouvre la fiche de ${this.nom(e)}.`,
+        NON_VERROUILLE: `Tag NFC programmé, il ouvre la fiche de ${this.nom(e)}, mais il n'a pas pu être verrouillé `
+          + '(éloigné trop tôt, ou modèle qui ne se verrouille pas). Recommencez pour le verrouiller.'
+      }[resultat]);
+    } catch (err) {
+      if ((err as DOMException).name !== 'AbortError') {
+        this.message.set("Le tag NFC n'a pas pu être programmé (NFC désactivé, tag verrouillé ou éloigné trop tôt).");
+      }
+    } finally {
+      this.arretEcritureNfc = null;
+      this.ecritureNfc.set(false);
+    }
+  }
+
+  annulerEcritureNfc(): void {
+    this.arretEcritureNfc?.abort();
   }
 
   imprimer(): void {

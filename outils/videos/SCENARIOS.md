@@ -906,17 +906,22 @@ Compte : `e3@club.fr` · formats téléphone et ordinateur · 35 s
 
 ### D7 — Retour d'un prêt
 
-Enregistrer le retour, signaler un incident ou mettre un équipement hors service.
+Scanner le matériel rendu (QR code ou tag NFC), enregistrer le retour depuis sa fiche, signaler un incident ou mettre un équipement hors service.
 
-Compte : `e3@club.fr` · formats téléphone et ordinateur · 30 s
+Compte : `e3@club.fr` · formats téléphone et ordinateur · 50 s
 
-1. Camille rapporte le matériel de son week-end.
-2. Pour chaque équipement : un incident éventuel.
-3. Et si besoin, hors service : il ne sera plus proposé au prêt.
-4. Un détendeur déclaré depuis un séjour par son emprunteur porte « Désinfection au retour » : on le désinfecte, et on le coche ici.
-5. L'incident est inscrit au journal de l'équipement.
-6. Les prêts rendus restent consultables, avec leurs photos.
-7. « Annuler le prêt » sert seulement à défaire une erreur de saisie, avant tout retour.
+1. Camille rapporte le matériel de son week-end : on scanne le premier équipement.
+2. Visez le QR code de l'étiquette, ou approchez le dos du téléphone du tag NFC : la fiche s'ouvre toute seule.
+3. Étiquette illisible ? Sa référence suffit.
+4. La fiche montre à qui il est prêté : « Enregistrer le retour ».
+5. Le prêt se rend en entier : tout le matériel de Camille est dans la fenêtre.
+6. Pour chaque équipement : un incident éventuel.
+7. Et si besoin, hors service : il ne sera plus proposé au prêt.
+8. Un détendeur déclaré depuis un séjour par son emprunteur porte « Désinfection au retour » : on le désinfecte, et on le coche ici.
+9. L'incident est inscrit au journal de l'équipement. « Scanner le matériel suivant » enchaîne sur le prochain.
+10. Dans « Prêts », « Enregistrer le retour » fait la même chose, sans scanner.
+11. Les prêts rendus restent consultables, avec leurs photos.
+12. « Annuler le prêt » sert seulement à défaire une erreur de saisie, avant tout retour.
 
 ### D8 — Prêter pour une sortie
 

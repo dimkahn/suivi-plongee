@@ -81,6 +81,8 @@ V34, `InspectionTiv` / `InspectionTivService`.
 - Planche imprimable depuis les cases de l'inventaire (choix gardé aux changements de filtre) ou depuis la fiche.
 - Scanner : `BarcodeDetector` en direct (Chrome Android) ; sinon (iPhone) photo de l'étiquette lue par le serveur (`POST /api/materiel/qr-code/photo`).
 - Un QR code qui ne porte qu'une référence (« B-12 ») est reconnu aussi.
+- **Tags NFC** (`core/tag-nfc.ts`) : la fiche les programme (Web NFC, Chrome Android) avec **la même adresse que le QR code** ; aucune colonne en base, pas d'UID enregistré. Case « Verrouiller le tag (définitif) » cochée par défaut (`makeReadOnly`, `programmerTag`) : l'adresse n'a jamais à changer, et un tag verrouillé ne peut plus être effacé ni détourné ; un verrou raté est signalé, le tag reste utilisable. Le scanner les lit et passe par `POST /api/materiel/qr-code`. iPhone : lecture native du tag, sans l'appli. *Choix 2026-11-10.*
+- **Retour depuis la fiche** (DT/ADMIN, fenêtre `RetourPretComponent` partagée avec `/materiel/prets`) : le prêt se rend en entier, puis « Scanner le matériel suivant ».
 
 ## Suites possibles
 Masques et tubas (A322-81 cite les tubas), rappel des échéances par e-mail, export PDF de la fiche de gestion.
