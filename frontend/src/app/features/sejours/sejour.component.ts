@@ -29,7 +29,7 @@ import {
 import { enCarte, memeVoyageQue } from './voyage';
 import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
 import { AttestationAssuranceComponent } from './attestation-assurance.component';
-import { programmeParJour } from './programme-du-jour';
+import { boutonJour, jourOuvertParDefaut, programmeParJour } from './programme-du-jour';
 import { JourneeSejourComponent } from './journee-sejour.component';
 import { JourneeProgrammeComponent } from './journee-programme.component';
 import { PhotoJourneeComponent } from './photo-journee.component';
@@ -337,7 +337,24 @@ function participantVide(): BrouillonParticipant {
           @if (programme().length === 0) {
             <p class="vide">Rien au programme pour l'instant.</p>
           }
-          @for (j of programme(); track j.jour) {
+          <!-- Un jour à la fois, le jour même d'abord pendant le séjour, ou tous (demande du club, 2026). -->
+          @if (boutonsJours().length > 1) {
+            <div class="jours sans-impression" role="group" aria-label="Jours du programme">
+              <button type="button" class="jour tous" [class.actif]="jourMontre() === null"
+                      [attr.aria-pressed]="jourMontre() === null" (click)="jourChoisi.set(null)">
+                <span class="semaine">tous</span><span class="numero">les jours</span>
+              </button>
+              @for (b of boutonsJours(); track b.jour) {
+                <button type="button" class="jour" [class.actif]="jourMontre() === b.jour"
+                        [attr.aria-pressed]="jourMontre() === b.jour" [attr.aria-label]="b.complet"
+                        (click)="jourChoisi.set(b.jour)">
+                  <span class="semaine">{{ b.semaine }}</span><span class="numero">{{ b.numero }}</span>
+                  @if (b.aujourdhui) { <span class="point-aujourdhui" aria-hidden="true"></span> }
+                </button>
+              }
+            </div>
+          }
+          @for (j of joursMontres(); track j.jour) {
             <app-journee-programme [jour]="j" [lirePhoto]="lirePhotoJournee" [aujourdhui]="j.jour === aujourdhui()"
                                    [encadrant]="s.encadrant" [gere]="s.gere"
                                    (presenter)="ouvrirJournee($event)" (modifierEvenement)="ouvrirEvenement($event)" />
@@ -1393,6 +1410,17 @@ function participantVide(): BrouillonParticipant {
     .cartes > li { padding: var(--pas-2); }
     .cartes > li.vol { padding: 0; break-inside: avoid; }
     /* Les sous-onglets, plus discrets que les onglets, soulignés jusqu'à la rubrique montrée. */
+    .jours { display: flex; gap: var(--pas); overflow-x: auto; padding: 2px 2px var(--pas); margin-bottom: var(--pas); }
+    .jour { position: relative; flex: none; min-width: 56px; min-height: 56px; padding: 4px 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+            border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte); color: var(--craie);
+            font: inherit; font-size: .8125rem; cursor: pointer; }
+    .jour .numero { font-size: 1.125rem; font-weight: 700; color: var(--encre); line-height: 1.2; }
+    .jour.tous .numero { font-size: .8125rem; }
+    .jour.actif { background: var(--profond); border-color: var(--profond); color: #fff; }
+    .jour.actif .numero { color: #fff; }
+    .point-aujourdhui { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
+                        background: var(--accent); }
     .sous-onglets { margin: calc(var(--pas) * -1) 0 var(--pas-2); padding-bottom: var(--pas);
                     border-bottom: 2px solid var(--trait); font-size: .9375rem; }
     .liste-actions { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
@@ -1585,6 +1613,25 @@ export class SejourComponent {
 
   /** La date de l'appareil : le jour du programme est marqué « aujourd'hui ». */
   readonly aujourdhui = signal(dateDuJour());
+  /** Le jour touché (null : tous) ; tant que rien n'est touché, le jour même pendant le séjour. */
+  jourChoisi = signal<string | null | undefined>(undefined);
+  readonly jourMontre = computed(() => {
+    const choisi = this.jourChoisi();
+    const jours = this.programme().map(j => j.jour);
+    if (choisi === undefined || (choisi !== null && !jours.includes(choisi))) {
+      return jourOuvertParDefaut(jours, this.aujourdhui());
+    }
+    return choisi;
+  });
+  readonly joursMontres = computed(() => {
+    const jour = this.jourMontre();
+    return jour === null ? this.programme() : this.programme().filter(j => j.jour === jour);
+  });
+  readonly boutonsJours = computed(() => this.programme().map(j => {
+    const b = boutonJour(j.jour);
+    const aujourdhui = j.jour === this.aujourdhui();
+    return { jour: j.jour, ...b, aujourdhui, complet: b.complet + (aujourdhui ? ", aujourd'hui" : '') };
+  }));
 
   /** Les voyages de l'encart « Aujourd'hui » : un encadrant voit ceux de tous, un participant les siens. */
   readonly voyageurs = computed(() => {

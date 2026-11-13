@@ -175,3 +175,25 @@ export function joursDuVoyage(participants: ParticipantVue[], debut: string, fin
   }
   return { debut: premier, fin: dernier };
 }
+
+// ----------------------------------------------------------------
+//  Les boutons de jour de l'onglet Programme (demande du club, 2026) :
+//  un jour à la fois, ou tous.
+// ----------------------------------------------------------------
+
+/** Pendant le séjour, le jour même ; avant ou après, tous les jours (null). */
+export function jourOuvertParDefaut(jours: readonly string[], aujourdhui: string): string | null {
+  return jours.includes(aujourdhui) ? aujourdhui : null;
+}
+
+const SEMAINE_COURTE = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+const SEMAINE = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre',
+  'novembre', 'décembre'];
+
+/** « ven. » au-dessus de « 4 » sur le bouton ; « Vendredi 4 juin » pour le lecteur d'écran. */
+export function boutonJour(iso: string): { semaine: string; numero: string; complet: string } {
+  const [a, m, j] = iso.split('-').map(Number);
+  const jour = new Date(a, m - 1, j).getDay();
+  return { semaine: SEMAINE_COURTE[jour], numero: String(j), complet: `${SEMAINE[jour]} ${j} ${MOIS[m - 1]}` };
+}
