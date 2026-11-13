@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { dateFr } from '../../core/date-fr';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { reduirePhoto } from '../../core/reduire-photo';
@@ -34,6 +35,9 @@ interface BrouillonDepense {
   parts: Record<number, number>;
 }
 
+/** La vue montrée sous le solde : une à la fois (tout, à l'impression). */
+type VueFrais = 'depenses' | 'remboursements' | 'comptes';
+
 /** Une photo choisie, pas encore envoyée : le fichier et son aperçu. */
 interface PhotoAEnvoyer {
   fichier: File;
@@ -50,54 +54,76 @@ interface PhotoAEnvoyer {
  */
 @Component({
   selector: 'app-sejour-frais',
-  imports: [FormsModule, DialogueComponent],
+  imports: [FormsModule, DialogueComponent, OngletsComponent],
   template: `
     @let f = frais();
     @let d = f.droits;
+    <!-- En tête, ce qui concerne celui qui regarde ; puis une vue à la fois : dépenses, qui doit
+         quoi, comptes (demande du club, 2026 : la page empilait tout). -->
     <div class="titre-section">
       <h2>Frais partagés</h2>
       <div class="actions sans-impression">
-        @if (d.peutAjouter) {
-          <button type="button" class="bouton-principal" (click)="ouvrirDepense(null)"
-                  [disabled]="participants().length === 0">Ajouter une dépense</button>
+        @if (d.peutAjouter && !deplie()) {
+          <button type="button" class="bouton-principal ajouter-depense" (click)="ouvrirDepense(null)"
+                  [disabled]="participants().length === 0">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            <span class="libelle-ajouter">Ajouter une dépense</span>
+          </button>
         }
-        @if (d.pourLesAutres) {
-          <button type="button" class="bouton-discret" (click)="ouvrirVersement(null)"
-                  [disabled]="participants().length === 0">Noter un remboursement</button>
-        }
-        @if (d.exporter && port().exporter) {
-          <button type="button" class="bouton-discret" (click)="exporterExcel()"
-                  [disabled]="envoi()">Exporter en Excel</button>
-        }
-        @if (d.clore && port().clore) {
-          @if (f.closLe === null) {
-            <button type="button" class="bouton-discret clore-frais" (click)="clore(true)"
-                    [disabled]="envoi()">Clore les frais</button>
-          } @else {
-            @if (port().envoyerDecompte) {
-              <button type="button" class="bouton-principal envoyer-decompte" (click)="envoyerDecompte()"
-                      [disabled]="envoi()">Envoyer le décompte à chacun</button>
-            }
-            <button type="button" class="bouton-discret rouvrir-frais" (click)="clore(false)"
-                    [disabled]="envoi()">Rouvrir les frais</button>
-          }
+        @if (aDesGestes() && !deplie()) {
+          <button type="button" class="bouton-discret ouvrir-gestes-frais" (click)="gestesOuverts.set(true)">
+            <span aria-hidden="true">⋯</span> Plus
+          </button>
         }
       </div>
     </div>
     @if (f.closLe; as clos) {
       <div class="carte frais-clos" role="status">
-        <strong>Frais clos le {{ dateFr(clos.slice(0, 10)) }}.</strong>
-        Plus aucune dépense ne s'ajoute ni ne change : il reste à faire les remboursements.
-        @if (d.moiId !== null) { Après votre virement, touchez « J'ai payé » pour en envoyer la preuve. }
+        <p><strong>Frais clos le {{ dateFr(clos.slice(0, 10)) }}.</strong>
+          Plus aucune dépense ne s'ajoute ni ne change : il reste à faire les remboursements.
+          @if (d.moiId !== null) { Après votre virement, touchez « J'ai payé » pour en envoyer la preuve. }</p>
+        @if (d.clore && port().envoyerDecompte) {
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal envoyer-decompte sans-impression"
+                  (click)="envoyerDecompte()" [disabled]="envoi()">Envoyer le décompte à chacun</button>
+        }
       </div>
     }
     @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
+
+    @if (monSolde(); as m) {
+      @if (f.depenses.length > 0) {
+        <div class="carte mon-solde" [class.doit]="m.doit" [class.a-jour]="m.lignes.length === 0">
+          <span class="etiquette">Votre solde</span>
+          @if (m.lignes.length === 0) {
+            <strong>Vous êtes à jour.</strong>
+          } @else {
+            @for (l of m.lignes; track $index) { <strong>{{ l }}</strong> }
+          }
+          <!-- « J'ai payé » à côté de ce qu'on doit, en tête : le geste que la plupart viennent faire. -->
+          @for (r of mesDettes(); track r.deId + '-' + r.aId) {
+            <div class="ma-dette sans-impression">
+              @if (preuveEnAttente(f, r); as p) {
+                <span class="etiquette-etat attention">Preuve envoyée {{ r.aId === null ? 'au club' : 'à ' + nomDe(r.aId) }}, à confirmer</span>
+                <button type="button" class="bouton-discret" (click)="voirPreuve(p.id)">Voir</button>
+                @if (d.preuvesRetirables.includes(p.id)) {
+                  <button type="button" class="bouton-discret danger" (click)="retirerPreuve(p)">Retirer</button>
+                }
+              } @else {
+                <button type="button" class="bouton-principal j-ai-paye" (click)="ouvrirPreuve(r)">
+                  J'ai payé{{ mesDettes().length > 1 ? ' ' + (r.aId === null ? 'le club' : nomDe(r.aId)) : '' }} : envoyer la preuve
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
 
     @if (aConfirmer().length > 0) {
       <h3>Virements à confirmer</h3>
       <ul class="lignes-cartes preuves-a-confirmer">
         @for (p of aConfirmer(); track p.id) {
-          <li class="carte remboursement">
+          <li class="carte remboursement a-confirmer">
             <span><strong>{{ majuscule(nomDe(p.deId)) }}</strong> dit avoir versé
               <strong>{{ euros(p.montantCentimes) }}</strong>
               @if (p.aId === null) { au <strong>club</strong> } @else { à <strong>{{ nomDe(p.aId) }}</strong> }
@@ -119,91 +145,80 @@ interface PhotoAEnvoyer {
         ce qu'il a avancé, avec la photo de la note (ce que le club a avancé aussi) ; l'appli calcule qui doit
         combien à qui.</p>
     } @else {
-      @if (monSolde(); as m) {
-        <div class="carte mon-solde" [class.doit]="m.doit" [class.a-jour]="m.lignes.length === 0">
-          <span class="etiquette">Votre solde</span>
-          @if (m.lignes.length === 0) {
-            <strong>Vous êtes à jour.</strong>
-          } @else {
-            @for (l of m.lignes; track $index) { <strong>{{ l }}</strong> }
-          }
-        </div>
+      @if (!deplie()) {
+        <app-onglets class="vues-frais sans-impression" libelle="Frais" [options]="vues" [choisi]="vue()"
+                     (choisir)="vue.set($event)" />
       }
 
-      <h3>Qui doit combien à qui</h3>
-      @if (f.comptes.remboursements.length === 0) {
-        <p class="carte solde-ok">Les comptes sont soldés.</p>
-      } @else {
+      @if (deplie() || vue() === 'depenses') {
+        <div class="titre-depenses">
+          <h3>Dépenses</h3>
+          <span class="secondaire">{{ f.depenses.length }} · total <strong>{{ euros(f.comptes.totalCentimes) }}</strong></span>
+        </div>
         <ul class="lignes-cartes">
-          @for (r of f.comptes.remboursements; track r.deId + '-' + r.aId) {
-            <li class="carte remboursement" [class.moi]="d.moiId !== null && (r.deId === d.moiId || r.aId === d.moiId)">
-              <span><strong>{{ majuscule(nomDe(r.deId)) }}</strong> doit <strong>{{ euros(r.montantCentimes) }}</strong>
-                @if (r.aId === null) { au <strong>club</strong> } @else { à <strong>{{ nomDe(r.aId) }}</strong> }</span>
-              @if (d.moiId !== null && r.deId === d.moiId) {
-                @if (preuveEnAttente(f, r); as p) {
-                  <span class="actions sans-impression">
-                    <span class="etiquette-etat attention">Preuve envoyée, à confirmer</span>
-                    <button type="button" class="bouton-discret" (click)="voirPreuve(p.id)">Voir</button>
-                    @if (d.preuvesRetirables.includes(p.id)) {
-                      <button type="button" class="bouton-discret danger" (click)="retirerPreuve(p)">Retirer</button>
-                    }
+          @for (dep of f.depenses; track dep.id) {
+            <li class="carte depense">
+              <details [open]="deplie()">
+                <summary>
+                  <span class="quoi">
+                    <span class="nom">{{ dep.libelle }}</span>
+                    <span class="secondaire">payé par {{ nomDe(dep.payeurId) }}</span>
                   </span>
-                } @else {
-                  <button type="button" class="bouton-principal sans-impression j-ai-paye"
-                          (click)="ouvrirPreuve(r)">J'ai payé</button>
+                  @if (dep.photos.length > 0) { <span aria-label="avec la photo de la note" title="Photo de la note">📎</span> }
+                  <span class="montant">{{ euros(dep.montantCentimes) }}</span>
+                </summary>
+                <p class="secondaire">{{ libelleCategorie(dep.categorie) }}@if (dep.jour) { · {{ dateFr(dep.jour) }}}</p>
+                <p>Partagé entre {{ partage(dep) }}</p>
+                @if (dep.photos.length > 0) {
+                  <div class="vignettes">
+                    @for (ph of dep.photos; track ph) {
+                      <button type="button" class="vignette" (click)="agrandir(dep.id, ph)"
+                              [attr.aria-label]="'Voir la photo de la note : ' + dep.libelle">
+                        @if (urlPhoto(dep.id, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
+                      </button>
+                    }
+                  </div>
                 }
-              } @else if (d.pourLesAutres || (d.moiId !== null && r.aId === d.moiId)) {
-                <button type="button" class="bouton-discret sans-impression"
-                        (click)="ouvrirVersement(r)">C'est remboursé</button>
-              }
+                @if (d.depensesModifiables.includes(dep.id)) {
+                  <div class="actions sans-impression">
+                    <button type="button" class="bouton-discret" (click)="ouvrirDepense(dep)">Modifier</button>
+                    <button type="button" class="bouton-discret danger" (click)="supprimerDepense(dep)">Supprimer</button>
+                  </div>
+                }
+              </details>
             </li>
           }
         </ul>
       }
 
-      <div class="titre-depenses">
-        <h3>Dépenses</h3>
-        <span class="secondaire">{{ f.depenses.length }} · total <strong>{{ euros(f.comptes.totalCentimes) }}</strong></span>
-      </div>
-      <ul class="lignes-cartes">
-        @for (dep of f.depenses; track dep.id) {
-          <li class="carte depense">
-            <details [open]="deplie()">
-              <summary>
-                <span class="quoi">
-                  <span class="nom">{{ dep.libelle }}</span>
-                  <span class="secondaire">payé par {{ nomDe(dep.payeurId) }}</span>
-                </span>
-                @if (dep.photos.length > 0) { <span aria-label="avec la photo de la note" title="Photo de la note">📎</span> }
-                <span class="montant">{{ euros(dep.montantCentimes) }}</span>
-              </summary>
-              <p class="secondaire">{{ libelleCategorie(dep.categorie) }}@if (dep.jour) { · {{ dateFr(dep.jour) }}}</p>
-              <p>Partagé entre {{ partage(dep) }}</p>
-              @if (dep.photos.length > 0) {
-                <div class="vignettes">
-                  @for (ph of dep.photos; track ph) {
-                    <button type="button" class="vignette" (click)="agrandir(dep.id, ph)"
-                            [attr.aria-label]="'Voir la photo de la note : ' + dep.libelle">
-                      @if (urlPhoto(dep.id, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
-                    </button>
+      @if (deplie() || vue() === 'remboursements') {
+        <h3>Qui doit combien à qui</h3>
+        @if (f.comptes.remboursements.length === 0) {
+          <p class="carte solde-ok">Les comptes sont soldés.</p>
+        } @else {
+          <ul class="lignes-cartes">
+            @for (r of f.comptes.remboursements; track r.deId + '-' + r.aId) {
+              <li class="carte remboursement" [class.moi]="d.moiId !== null && (r.deId === d.moiId || r.aId === d.moiId)">
+                <span><strong>{{ majuscule(nomDe(r.deId)) }}</strong> doit <strong>{{ euros(r.montantCentimes) }}</strong>
+                  @if (r.aId === null) { au <strong>club</strong> } @else { à <strong>{{ nomDe(r.aId) }}</strong> }</span>
+                @if (d.moiId !== null && r.deId === d.moiId) {
+                  @if (preuveEnAttente(f, r)) {
+                    <span class="etiquette-etat attention sans-impression">Preuve envoyée, à confirmer</span>
                   }
-                </div>
-              }
-              @if (d.depensesModifiables.includes(dep.id)) {
-                <div class="actions sans-impression">
-                  <button type="button" class="bouton-discret" (click)="ouvrirDepense(dep)">Modifier</button>
-                  <button type="button" class="bouton-discret danger" (click)="supprimerDepense(dep)">Supprimer</button>
-                </div>
-              }
-            </details>
-          </li>
+                } @else if (d.pourLesAutres || (d.moiId !== null && r.aId === d.moiId)) {
+                  <button type="button" class="bouton-discret sans-impression"
+                          (click)="ouvrirVersement(r)">C'est remboursé</button>
+                }
+              </li>
+            }
+          </ul>
         }
-      </ul>
+      }
     }
 
-    @if (f.depenses.length > 0 || f.versements.length > 0) {
-      <details class="carte detail-comptes" [open]="deplie()">
-        <summary>Détail des comptes{{ f.versements.length ? ' et remboursements faits' : '' }}</summary>
+    @if ((deplie() || vue() === 'comptes') && (f.depenses.length > 0 || f.versements.length > 0)) {
+      <section class="detail-comptes">
+        <h3>Comptes de chacun</h3>
         <div class="defilement">
           <table class="soldes">
             <thead><tr><th scope="col">Participant</th><th scope="col">A payé</th><th scope="col">Sa part</th>
@@ -242,8 +257,31 @@ interface PhotoAEnvoyer {
             }
           </ul>
         }
-      </details>
+      </section>
     }
+
+    <!-- Les gestes moins fréquents, rangés pour alléger la page (demande du club, 2026). -->
+    <app-dialogue [ouvert]="gestesOuverts()" [choix]="true" titre="Frais : autres gestes" (fermer)="gestesOuverts.set(false)">
+      <ul class="liste-gestes">
+        @if (d.pourLesAutres) {
+          <li><button type="button" class="bouton-discret" (click)="gestesOuverts.set(false); ouvrirVersement(null)"
+                      [disabled]="participants().length === 0">Noter un remboursement</button></li>
+        }
+        @if (d.exporter && port().exporter) {
+          <li><button type="button" class="bouton-discret" (click)="gestesOuverts.set(false); exporterExcel()"
+                      [disabled]="envoi()">Exporter en Excel</button></li>
+        }
+        @if (d.clore && port().clore) {
+          @if (f.closLe === null) {
+            <li><button type="button" class="bouton-discret clore-frais" (click)="gestesOuverts.set(false); clore(true)"
+                        [disabled]="envoi()">Clore les frais</button></li>
+          } @else {
+            <li><button type="button" class="bouton-discret rouvrir-frais" (click)="gestesOuverts.set(false); clore(false)"
+                        [disabled]="envoi()">Rouvrir les frais</button></li>
+          }
+        }
+      </ul>
+    </app-dialogue>
 
     <app-dialogue [ouvert]="photoAgrandie() !== null" titre="Photo de la note" [large]="true"
                   (fermer)="photoAgrandie.set(null)">
@@ -420,6 +458,27 @@ interface PhotoAEnvoyer {
                  border-left: 6px solid #047857; font-size: 1.125rem; }
     .mon-solde.doit { border-left-color: var(--accent); }
     .mon-solde .etiquette { font-size: .8125rem; font-weight: 700; text-transform: uppercase; color: var(--craie); }
+    .ma-dette { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas); font-size: 1rem; }
+    .ma-dette .j-ai-paye { flex: 1 1 100%; min-height: 48px; }
+    .frais-clos p { margin: 0; }
+    .frais-clos .envoyer-decompte { margin-top: var(--pas-2); }
+    .vues-frais { margin: var(--pas-3) 0 var(--pas); }
+    .liste-gestes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
+    .liste-gestes button { width: 100%; min-height: 48px; justify-content: flex-start; text-align: left; }
+    .ajouter-depense { display: inline-flex; align-items: center; gap: 6px; }
+    .ajouter-depense svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
+    /* Sur téléphone, « Ajouter une dépense » devient un bouton rond au-dessus de la barre du bas, à portée du pouce. */
+    @media (max-width: 860px) {
+      /* La fin de la liste ne reste pas cachée sous le bouton rond. */
+      :host { display: block; padding-bottom: 72px; }
+      .ajouter-depense {
+        position: fixed; right: var(--pas-2); bottom: calc(var(--hauteur-onglets) + var(--pas-2)); z-index: 20;
+        width: 60px; height: 60px; padding: 0; border-radius: 50%; justify-content: center;
+        box-shadow: 0 6px 20px rgba(8, 145, 178, .4);
+      }
+      .ajouter-depense svg { width: 28px; height: 28px; }
+      .libelle-ajouter { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    }
     .lignes-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
     .lignes-cartes p { margin: var(--pas) 0 0; }
     .remboursement { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap;
@@ -433,9 +492,7 @@ interface PhotoAEnvoyer {
     summary { min-height: 44px; display: flex; align-items: center; gap: var(--pas); cursor: pointer; }
     .depense .quoi { flex: 1; display: flex; flex-direction: column; padding: 6px 0; }
     .depense .quoi .secondaire { font-size: .875rem; }
-    .detail-comptes { padding: 0 var(--pas-2); margin-top: var(--pas-2); }
-    .detail-comptes summary { font-weight: 700; }
-    .detail-comptes[open] { padding-bottom: var(--pas-2); }
+    .detail-comptes { margin-top: var(--pas-2); }
     .partage-simple { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .nom { font-weight: 700; }
     .montant { font-weight: 700; color: var(--profond-fonce); white-space: nowrap; }
@@ -490,6 +547,25 @@ export class SejourFraisComponent {
   readonly categories = CATEGORIES_DEPENSE;
   readonly CLUB = CLUB;
   readonly preuveEnAttente = preuveEnAttente;
+
+  readonly vues: OptionOnglet<VueFrais>[] = [
+    { valeur: 'depenses', libelle: 'Dépenses' },
+    { valeur: 'remboursements', libelle: 'Qui doit quoi' },
+    { valeur: 'comptes', libelle: 'Comptes' }
+  ];
+  vue = signal<VueFrais>('depenses');
+  /** La fenêtre des gestes moins fréquents (remboursement, export, clôture). */
+  gestesOuverts = signal(false);
+  readonly aDesGestes = computed(() => {
+    const d = this.frais().droits;
+    return d.pourLesAutres || (d.exporter && !!this.port().exporter) || (d.clore && !!this.port().clore);
+  });
+  /** Ce que doit celui qui regarde : « J'ai payé » en tête, dans son solde. */
+  readonly mesDettes = computed(() => {
+    const f = this.frais();
+    const moi = f.droits.moiId;
+    return moi === null ? [] : f.comptes.remboursements.filter(r => r.deId === moi);
+  });
 
   /** Les virements dont celui qui regarde peut confirmer la preuve (bénéficiaire, organisateurs). */
   readonly aConfirmer = computed(() => preuvesAConfirmer(this.frais()));

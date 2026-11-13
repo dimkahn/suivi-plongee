@@ -1,5 +1,5 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo de la note.
-// Tournage du 2026-10-26, 16e série, les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-13, 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -19,10 +19,16 @@ export default {
     await menu('Séjours');
     await toucher(page.locator('main a').filter({ hasText: 'Séjour à Port-Cros' }).first(), { apres: 1500 });
     await legende('Dans sa carte « Mon séjour », la case « Mes comptes » : ce qu\'elle a payé, et ce qu\'elle doit ou ce qu\'on lui doit.', 4000);
-    await legende('L\'onglet « Frais » : son solde, puis qui doit combien à qui, et les dépenses.', 0);
+    await legende(selon({
+      telephone: 'Dans la barre du séjour, en bas de l\'écran, « Frais » : son solde en tête, puis une vue à la fois : les dépenses, qui doit quoi, les comptes.',
+      ordinateur: 'L\'onglet « Frais » : son solde en tête, puis une vue à la fois : les dépenses, qui doit quoi, les comptes.'
+    }), 0);
     await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3000 });
 
-    await legende('Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle.', 0);
+    await legende(selon({
+      telephone: 'Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle : le bouton rond « + », en bas à droite.',
+      ordinateur: 'Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle : « Ajouter une dépense ».'
+    }), 0);
     await toucher(page.getByRole('button', { name: 'Ajouter une dépense' }), { apres: 900 });
     await saisir('#d-libelle', 'Glaces sur le port');
     await saisir('#d-montant', '18,00');
@@ -44,7 +50,8 @@ export default {
     await saisir('#d-montant', '36,00');
     await choisir('#d-payeur', 'Le club');
     await toucher(page.getByRole('button', { name: 'Enregistrer' }), { apres: 2500 });
-    await legende('Dans « Qui doit combien à qui » : « … doit … au club ». Un moniteur du séjour note le remboursement.', 4500);
+    await legende('Dans « Qui doit quoi » : « … doit … au club ». Un moniteur du séjour note le remboursement.', 0);
+    await toucher(page.getByRole('tab', { name: 'Qui doit quoi' }), { apres: 4000 });
     await legende('Tous les participants, élèves compris, notent aussi ce qu\'ils ont payé : par le lien et le code reçus par e-mail.', 4500);
     await legende(null, 0);
     await pause(500);

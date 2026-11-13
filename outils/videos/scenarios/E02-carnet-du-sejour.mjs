@@ -1,5 +1,5 @@
 // E2 — Compte élève : le carnet du séjour.
-// Tournage du 2026-11-09, 34e série, « J'ai payé » et la preuve de virement envoyée (« Preuve envoyée, à confirmer »), les sous-onglets (la chambre dans « Logements », « Matériel emprunté » de « Pratique ») et « Replier » « Aujourd'hui » et « Mon séjour », cinq onglets (la chambre dans « Qui et où », les frais par la case « Mes comptes »), les journées du programme présentées comme un carnet de voyage, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-13, 35e série, la barre du séjour en bas de l'écran du téléphone (ses cinq onglets à la place de celle de l'appli), « Aujourd'hui » et « Mon séjour » dans l'onglet Programme seulement, « ⋯ Partager » à droite du titre (version imprimable, trombinoscope), les frais en trois vues (Dépenses, Qui doit quoi, Comptes) et « J'ai payé » sous son solde, « J'ai payé » et la preuve de virement envoyée (« Preuve envoyée, à confirmer »), les sous-onglets (la chambre dans « Logements », « Matériel emprunté » de « Pratique ») et « Replier » « Aujourd'hui » et « Mon séjour », cinq onglets (la chambre dans « Qui et où », les frais par la case « Mes comptes »), les journées du programme présentées comme un carnet de voyage, un détendeur se déclare aussi, désinfecté à son retour, le trombinoscope du séjour, son vol du rappel de la veille dans la même carte que « Mon séjour », son attestation d'assurance jointe dans « Mon séjour », sa carte d'embarquement jointe à son vol, avion 3 h avant, ses vols en carte de même hauteur dans « Mon séjour » (terminal, enregistrement, dossier, « Copier le dossier » et « S'enregistrer » côte à côte), fenêtre de déclaration ouverte après le rendu, une combinaison (le gilet est déjà prêté), « Avez-vous emprunté du matériel ? » dans « Mon séjour » (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -64,6 +64,11 @@ export default {
     await legende('La question a disparu : sa combinaison est dans la case « Matériel emprunté », avec le jour où le rendre. Rien emprunté ? « Non, je n\'ai rien emprunté », et la question ne revient plus.', 5500);
     await legende('Toucher une case ouvre le détail : ici sa chambre, dans l\'onglet « Qui et où », sous-onglet « Logements ».', 0);
     await toucher(page.locator('app-mon-sejour .tuile').filter({ hasText: 'Chambre' }), { apres: 3500 });
+    await legende(selon({
+      telephone: 'Les cinq onglets du séjour sont dans la barre du bas, à portée du pouce. « Programme » ramène à l\'accueil du séjour.',
+      ordinateur: 'Les cinq onglets du séjour sont sous le titre. « Programme » ramène à l\'accueil du séjour.'
+    }), 0);
+    await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1500 });
     await enHaut();
     await legende("« Modifier mes informations » : son vol aller, le jour et l'heure de son départ, le jour, l'heure et la gare ou l'aéroport d'arrivée du retour, le terminal, son numéro de dossier et le lien d'enregistrement du mail de la compagnie, ses repas, la personne à prévenir.", 0);
     await toucher(page.getByRole('button', { name: 'Modifier mes informations' }), { apres: 3500 });
@@ -75,17 +80,20 @@ export default {
     await toucher(page.getByRole('tab', { name: 'Pratique' }), { apres: 3000 });
     await legende('Les infos pratiques et son matériel emprunté ont chacun leur sous-onglet.', 0);
     await toucher(page.locator('.sous-onglets').getByRole('tab', { name: 'Matériel emprunté' }), { apres: 3000 });
+    await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1000 });
     await enHaut();
-    await legende('Ses frais : la case « Mes comptes » de « Mon séjour » ouvre l\'onglet « Frais ». Ce qu\'elle doit et à qui, puis les dépenses.', 0);
+    await legende('Ses frais : la case « Mes comptes » de « Mon séjour » ouvre l\'onglet « Frais ». En tête, ce qu\'elle doit et à qui ; dessous, une vue à la fois : les dépenses, qui doit quoi, les comptes.', 0);
     await toucher(page.locator('app-mon-sejour .tuile').filter({ hasText: 'Mes comptes' }), { apres: 3500 });
     await legende('Elle a payé quelque chose ? Elle donne la note à un moniteur du séjour, qui la saisit pour elle.', 4000);
-    await legende('Après son virement, « J\'ai payé » : elle joint la capture du virement. La ligne dit « Preuve envoyée, à confirmer » jusqu\'à ce que la personne remboursée ou l\'organisatrice la confirme.', 5000);
+    await legende('Après son virement, « J\'ai payé », sous son solde : elle joint la capture du virement. Son solde dit « Preuve envoyée, à confirmer » jusqu\'à ce que la personne remboursée ou l\'organisatrice la confirme.', 5000);
     await enHaut();
-    await legende('En haut de la page, « Trombinoscope » : les participants, par groupe de plongeurs. Une photo n\'y paraît qu\'avec l\'accord de la personne ; sinon, ses initiales.', 0);
+    await legende('À droite du titre, « ⋯ Partager », puis « Trombinoscope » : les participants, par groupe de plongeurs. Une photo n\'y paraît qu\'avec l\'accord de la personne ; sinon, ses initiales.', 0);
+    await toucher(page.locator('.ouvrir-actions'), { apres: 1200 });
     await toucher(page.locator('.ouvrir-trombinoscope'), { apres: 4000 });
     await toucher(page.getByRole('button', { name: 'Fermer' }).first(), { apres: 800 });
-    await legende('En haut de la page, « Version imprimable » : le carnet mis en page pour le papier, à garder sans réseau.', 4000);
-    await legende('Pour arriver plus vite aux onglets : « Replier ». « Aujourd\'hui » ne garde que son titre, « Mon séjour » ce qui reste à faire.', 0);
+    await legende('Dans la même fenêtre, « Version imprimable » : le carnet mis en page pour le papier, à garder sans réseau.', 4000);
+    await toucher(page.getByRole('tab', { name: 'Programme' }), { apres: 1000 });
+    await legende('Pour arriver plus vite au programme : « Replier ». « Aujourd\'hui » ne garde que son titre, « Mon séjour » ce qui reste à faire.', 0);
     await toucher(page.locator('app-journee-sejour .replier'), { apres: 1000 });
     await toucher(page.locator('app-mon-sejour .replier'), { apres: 3500 });
     await legende('Son téléphone s\'en souvient. « Déplier » les rouvre.', 0);

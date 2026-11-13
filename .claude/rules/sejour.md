@@ -10,9 +10,11 @@ paths:
 Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « Gérer le séjour » de `/admin/sorties`). Migrations V75 (séjour), V76 (frais), V77 (saisie par les participants, photos, accès sans compte).
 
 ## Page du séjour
-- **Cinq onglets, les mêmes pour tous** (`onglets-sejour.ts`) : Programme (et fiches de sécurité), Qui et où (participants, arrivées et départs, voitures, logements), Repas (régimes, courses, restaurant), Frais, Pratique (affaires, infos pratiques, matériel emprunté). *Demande du club, 2026.*
+- **Cinq onglets, les mêmes pour tous** (`onglets-sejour.ts`) : Programme (jour par jour, fiches de sécurité), Qui et où (participants, arrivées et départs, voitures, logements), Repas (régimes, courses, restaurant), Frais, Pratique (affaires, infos pratiques, matériel emprunté). *Demande du club, 2026.*
 - **Sous-onglets** (`rubriquesSejour`, `rubriqueChoisie`) : une seule rubrique montrée à la fois ; un participant n'a pas celles des encadrants. Anciens noms d'onglet et tuiles de « Mon séjour » ouvrent la bonne rubrique (`ouvertureDemandee`).
 - Points à vérifier en haut de la rubrique qui les règle (« Voitures », « Logements ») ; rond orange sur « Qui et où ».
+- **Sous 860 px, les cinq onglets sont une barre en bas de l'écran**, à la place de celle de l'appli (`BarreDuBasService`, rendue à la fermeture) ; « ← Séjours » pour sortir. *Demande du club, 2026-11-13 (piste F).*
+- « Programme » est l'accueil : « À faire », « Aujourd'hui » et « Mon séjour » n'y sont qu'en tête.
 - Encart « À faire » (`ActionsSejourComponent`) : les fiches qui attendent l'encadrant (établir, compléter, signer comme DP). Jamais replié.
 - « Replier » réduit « Aujourd'hui » et « Mon séjour », dans l'appli seulement ; choix gardé sur l'appareil (`ReplisSejourService`, IndexedDB).
 
@@ -66,7 +68,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 - `CarnetSejourService` envoie à chacun son carnet par e-mail, ou aux seuls cochés (`participantIds`) pour relancer.
 - Version imprimable (`/sejours/:id/imprimer`, `CarnetImprimableComponent`, aussi dans la page du lien) : tableaux, rubriques à cocher.
 - **Téléphones, repas, personnes à prévenir imprimés seulement sur demande d'un encadrant.** *Pourquoi :* un carnet imprimé se distribue.
-- Bandeau « Organisation » : « Version imprimable » ; le reste dans la fenêtre « Partager et organiser… » (voir comme un participant, trombinoscope, carnet, paramètres de plongée, organisateurs, prévenir). « Demander les informations… » est en haut de la liste des participants.
+- Plus de bandeau « Organisation » (sauf « Vue d'un participant ») : le bouton « ⋯ Organiser » de l'en-tête (« ⋯ Partager » pour un participant) ouvre qui organise, la version imprimable et les gestes (voir comme un participant, trombinoscope, carnet, paramètres de plongée, organisateurs, prévenir). « Demander les informations… » est en haut de la liste des participants.
 - « Envoyer les paramètres de plongée… » (`POST …/envoi-parametres`, organisateurs, `ParametresPlongeeSejourService`) : aux cochés, chacun ses seules plongées, lues sur les fiches de sécurité.
 
 ## Voyages et documents
@@ -92,7 +94,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 - **Sans réseau** : liste copiée (`cleFichesSejour`, `FichesSecuriteSejourVue.copie`), avec la file du téléphone par-dessus (`avecEcrituresEnAttente`) ; seules les fiches emportées s'ouvrent (`ficheEmportee`). « Préparer hors ligne », case « Séjours », emporte fiches, moniteurs, plongeurs et groupes. Signer, imprimer, ajouter ou supprimer demandent le réseau. Relu quand le réseau part ou revient (`relireSelonLeReseau`).
 
 ## Partage des frais
-- Dépenses avancées par un participant (`sejour_depense`, **centimes**), réparties entre cochés selon leurs parts (`sejour_depense_part`, 2 pour un couple) ; remboursements dans `sejour_versement`. Onglet « Frais », `SejourFraisComponent`.
+- Dépenses avancées par un participant (`sejour_depense`, **centimes**), réparties entre cochés selon leurs parts (`sejour_depense_part`, 2 pour un couple) ; remboursements dans `sejour_versement`. Onglet « Frais », `SejourFraisComponent` : solde et « J'ai payé » en tête, puis une vue à la fois (Dépenses, Qui doit quoi, Comptes ; tout à l'impression), gestes rares dans « ⋯ Plus », « + » rond sur téléphone.
 - **Soldes et remboursements à faire calculés, jamais stockés** (`FraisSejour`, calcul pur testé à part) : part de chacun = somme **exacte** de ses fractions sur toutes les dépenses, arrondie une seule fois (centime inférieur, puis plus forts restes, à égalité premiers ids), jamais dépense par dépense (2026-11-08) ; plus gros débiteur vers plus gros créancier.
 - **Le club peut avancer une dépense** (V99_3) : `payeur_id` null ; `de_id` ou `a_id` null dans un remboursement, jamais les deux. Il a son solde, sans jamais prendre de part. **Un id null signifie « le club » dans `FraisVue`** : comparer par `moi.equals(id)`.
 - Lus par les participants, carnet et e-mail compris.

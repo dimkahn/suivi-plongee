@@ -44,6 +44,7 @@ import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { SejourFichesSecuriteComponent } from './sejour-fiches-securite.component';
 import { ActionsSejourComponent } from './actions-sejour.component';
 import { ReplisSejourService } from './replis-sejour';
+import { BarreDuBasService } from '../../core/barre-du-bas.service';
 import { OngletSejour, OuvertureSejour, ongletsSejour, ouvertureDemandee, rubriqueChoisie, rubriquesSejour } from './onglets-sejour';
 import { QrCodeComponent } from '../../core/qr-code.component';
 import { texteBilanParametres } from './envoi-parametres';
@@ -102,10 +103,12 @@ function participantVide(): BrouillonParticipant {
  * voitures, logements) ; repas (régimes, courses, restaurant) ; frais ;
  * pratique (affaires à prévoir, infos pratiques, matériel emprunté). Les
  * points à vérifier sont comptés sur « Qui et où » et listés au-dessus de
- * leur section. Pendant le séjour, l'encart « Aujourd'hui »
- * (JourneeSejourComponent) passe avant tout. Le bandeau Organisation ne
- * montre que « Version imprimable » ; les autres gestes sont dans la
- * fenêtre « Partager et organiser… ».
+ * leur section. Sous 860 px, les cinq onglets sont une barre en bas de
+ * l'écran, à la place de celle de l'appli (BarreDuBasService). « Programme »
+ * est l'accueil : « À faire », « Aujourd'hui » (JourneeSejourComponent) et
+ * « Mon séjour » n'y sont qu'en tête. Le bouton « Organiser » (« Partager »
+ * pour un participant) de l'en-tête ouvre la version imprimable, le
+ * trombinoscope et les gestes d'organisation.
  * Son créateur (qui a créé la sortie) et les organisateurs qu'il désigne le
  * remplissent (fenêtres de saisie) ; les autres encadrants le lisent ; un participant qui a un compte lit son carnet
  * (sans les coordonnées ni les régimes des autres). « Version imprimable »
@@ -120,12 +123,20 @@ function participantVide(): BrouillonParticipant {
             QrCodeComponent, NotificationsSejourComponent],
   template: `
     @if (sejour(); as s) {
+      <!-- Le titre, et un seul bouton pour le reste : version imprimable, trombinoscope, gestes
+           d'organisation (demande du club, 2026 : la navigation du séjour était trop chargée). -->
       <header class="entete">
-        <h1>{{ s.sortie.nom }}</h1>
-        <p class="secondaire">
-          {{ majuscule(periode(s.sortie.dateDebut, s.sortie.dateFin)) }}@if (s.sortie.lieu) { · {{ s.sortie.lieu }}}
-          · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
-        </p>
+        <div class="titre-entete">
+          <h1>{{ s.sortie.nom }}</h1>
+          <p class="secondaire">
+            {{ majuscule(periode(s.sortie.dateDebut, s.sortie.dateFin)) }}@if (s.sortie.lieu) { · {{ s.sortie.lieu }}}
+            · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
+          </p>
+        </div>
+        <button type="button" class="bouton-discret ouvrir-actions sans-impression" (click)="actionsOuvertes.set(true)"
+                [title]="organise() ? 'Version imprimable, trombinoscope, carnet, organisateurs…' : 'Version imprimable, trombinoscope'">
+          <span aria-hidden="true">⋯</span> {{ organise() ? 'Organiser' : 'Partager' }}
+        </button>
       </header>
 
       <!-- Sans réseau : la copie du téléphone, et ce qui attend d'être envoyé (demande du club, 2026). -->
@@ -151,8 +162,19 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
 
-      <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
-      <section class="carte bandeau-organisation" aria-label="Organisation du séjour">
+      @if (commeParticipant()) {
+        <section class="carte bandeau-organisation" aria-label="Vue d'un participant">
+          <span class="pastille vue-participant">Vue d'un participant</span>
+          <button type="button" class="bouton-discret action mode-participant" (click)="basculerMode()" aria-pressed="true">
+            <span aria-hidden="true">↩</span> Revenir à l'organisation
+          </button>
+        </section>
+      }
+
+      <!-- Les gestes d'organisation, rangés hors du bandeau pour l'alléger (demande du club, 2026). -->
+      <app-dialogue [ouvert]="actionsOuvertes()" [choix]="true" [titre]="organise() ? 'Partager et organiser' : 'Partager'"
+                    (fermer)="actionsOuvertes.set(false)">
+        <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
         <div class="organisateurs">
           <span class="etiquette">Organisation</span>
           @if (s.organisateurs.length) {
@@ -172,38 +194,20 @@ function participantVide(): BrouillonParticipant {
             <span class="pastille">Lecture seule</span>
           }
         </div>
-        <!-- Une seule ligne : la version imprimable, et les autres gestes dans une fenêtre (demande du club, 2026). -->
-        <div class="barre-actions" role="group" aria-label="Partager le carnet">
-          <a class="bouton-discret action" [routerLink]="['/sejours', s.sortie.id, 'imprimer']">
-            <span aria-hidden="true">🖨</span> Version imprimable
-          </a>
-          @if (commeParticipant()) {
-            <button type="button" class="bouton-discret action mode-participant" (click)="basculerMode()" aria-pressed="true">
-              <span aria-hidden="true">↩</span> Revenir à l'organisation
-            </button>
-          }
-          @if (s.encadrant && !commeParticipant()) {
-            <button type="button" class="bouton-discret action ouvrir-actions" (click)="actionsOuvertes.set(true)">
-              <span aria-hidden="true">⋯</span> Partager et organiser…
-            </button>
-          } @else if (s.participants.length > 0 && !copieDu()) {
-            <button type="button" class="bouton-discret action ouvrir-trombinoscope" (click)="trombinoscopeOuvert.set(true)">
-              <span aria-hidden="true">👥</span> Trombinoscope
-            </button>
-          }
-        </div>
-      </section>
-
-      <!-- Les gestes d'organisation, rangés hors du bandeau pour l'alléger (demande du club, 2026). -->
-      <app-dialogue [ouvert]="actionsOuvertes()" [choix]="true" titre="Partager et organiser"
-                    (fermer)="actionsOuvertes.set(false)">
         <ul class="liste-actions">
           <li>
-            <button type="button" class="bouton-discret mode-participant" (click)="agir('participant')"
-                    title="Le séjour tel que le voit un participant : son carnet, sans les coordonnées des autres">
-              <span aria-hidden="true">👁</span> Voir comme un participant
-            </button>
+            <a class="bouton-discret" [routerLink]="['/sejours', s.sortie.id, 'imprimer']" (click)="actionsOuvertes.set(false)">
+              <span aria-hidden="true">🖨</span> Version imprimable
+            </a>
           </li>
+          @if (organise()) {
+            <li>
+              <button type="button" class="bouton-discret mode-participant" (click)="agir('participant')"
+                      title="Le séjour tel que le voit un participant : son carnet, sans les coordonnées des autres">
+                <span aria-hidden="true">👁</span> Voir comme un participant
+              </button>
+            </li>
+          }
           @if (s.participants.length > 0 && !copieDu()) {
             <li>
               <button type="button" class="bouton-discret ouvrir-trombinoscope" (click)="agir('trombinoscope')">
@@ -211,7 +215,7 @@ function participantVide(): BrouillonParticipant {
               </button>
             </li>
           }
-          @if (s.gere) {
+          @if (s.gere && !commeParticipant()) {
             <li>
               <button type="button" class="bouton-discret" (click)="agir('carnet')" [disabled]="envoi()">
                 <span aria-hidden="true">✉</span> Envoyer le carnet…
@@ -232,7 +236,7 @@ function participantVide(): BrouillonParticipant {
               </button>
             </li>
           }
-          @if (s.peutDesigner) {
+          @if (s.peutDesigner && !commeParticipant()) {
             <li>
               <button type="button" class="bouton-discret" (click)="agir('organisateurs')">
                 <span aria-hidden="true">✓</span> Choisir les organisateurs
@@ -253,6 +257,9 @@ function participantVide(): BrouillonParticipant {
 
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
+      <!-- Les encarts du haut ne sont plus que dans « Programme », l'accueil du séjour : les autres
+           sections s'ouvrent sur leur contenu (demande du club, 2026). -->
+      @if (onglet() === 'programme') {
       <!-- Ce que l'encadrant a à faire sur les fiches de sécurité du séjour (demande du club, 2026). -->
       @if (s.encadrant && litLesFiches() && !commeParticipant()) {
         <app-actions-sejour class="sans-impression" [port]="portFiches" [sejourId]="s.sortie.id"
@@ -271,6 +278,10 @@ function participantVide(): BrouillonParticipant {
                         [replie]="replis.replie('mon-sejour')" (replieChange)="replis.choisir('mon-sejour', $event)"
                         [attestations]="portAttestations" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-notifications-sejour class="sans-impression" [notifications]="notifications" />
+      }
+      }
+
+      @if (moi(); as m) {
         <app-dialogue [ouvert]="mesInfosOuvertes()" [large]="true" [erreur]="erreur()" titre="Mes informations pour le séjour"
                       (fermer)="mesInfosOuvertes.set(false)">
           @if (mesInfosOuvertes()) {
@@ -280,8 +291,26 @@ function participantVide(): BrouillonParticipant {
         </app-dialogue>
       }
 
+      <span id="debut-onglet"></span>
       <app-onglets class="sans-impression" id="onglets-sejour" [options]="onglets()" [choisi]="onglet()"
                    (choisir)="choisirOnglet($event)" />
+
+      <!-- Sous 860 px, les cinq sections en bas de l'écran, à portée du pouce, à la place de la barre
+           de l'appli ; « ← Séjours » en haut pour en sortir (demande du club, 2026). -->
+      <nav class="barre-sejour sans-impression" aria-label="Sections du séjour">
+        <div role="tablist" aria-label="Sections du séjour">
+          @for (o of onglets(); track o.valeur) {
+            <button type="button" role="tab" class="section" [class.actif]="o.valeur === onglet()"
+                    [attr.aria-selected]="o.valeur === onglet()" (click)="choisirOnglet(o.valeur, true)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconesSections[o.valeur]" /></svg>
+              <span class="libelle-section">{{ o.libelle }}</span>
+              @if (o.alertes) {
+                <span class="point-alerte" aria-hidden="true"></span><span class="cache-ecran">, {{ o.alertes }} à vérifier</span>
+              }
+            </button>
+          }
+        </div>
+      </nav>
 
       <!-- Un onglet de plusieurs rubriques : des sous-onglets, une rubrique à la fois (demande du club, 2026). -->
       @if (rubriques().length > 1) {
@@ -1287,23 +1316,51 @@ function participantVide(): BrouillonParticipant {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas); }
     .entete h1 { margin-bottom: 4px; }
     .entete p { margin: 0 0 var(--pas-2); }
+    .ouvrir-actions { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+    .liste-actions a { width: 100%; min-height: 48px; display: flex; align-items: center; gap: var(--pas);
+                       box-sizing: border-box; text-decoration: none; color: var(--encre);
+                       border: 1px solid var(--trait); border-radius: var(--r-s); }
+    .cache-ecran { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    /* La barre du séjour n'existe que sur téléphone ; elle y remplace les onglets du haut. */
+    .barre-sejour { display: none; }
+    @media (max-width: 860px) {
+      #onglets-sejour { display: none; }
+      .barre-sejour {
+        display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 32;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        background: var(--carte); border-top: 1px solid var(--trait);
+        box-shadow: 0 -4px 12px rgba(15, 23, 42, .08);
+      }
+      .barre-sejour [role="tablist"] { display: flex; }
+      .section {
+        position: relative; flex: 1 1 0; min-width: 0; height: 64px; padding: 6px 2px 4px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+        border: none; border-top: 3px solid transparent; border-radius: 0; background: none; color: var(--craie);
+        font: inherit; font-size: .75rem; font-weight: 700;
+      }
+      .section .libelle-section { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .section svg {
+        width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+      }
+      .section.actif { color: var(--profond); border-top-color: var(--profond); }
+      .section.actif svg { stroke-width: 2.5; }
+      .point-alerte { position: absolute; top: 8px; left: calc(50% + 8px); width: 10px; height: 10px;
+                      border-radius: 50%; background: var(--accent); border: 2px solid var(--carte); }
+    }
     .bandeau-organisation { display: flex; justify-content: space-between; align-items: center; gap: var(--pas) var(--pas-2);
                             flex-wrap: wrap; padding: var(--pas) var(--pas-2); margin-bottom: var(--pas-2); }
-    .organisateurs { display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; min-height: 44px; }
+    .organisateurs { display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; min-height: 44px;
+                     margin-bottom: var(--pas-2); }
     .etiquette { font-size: .8125rem; text-transform: uppercase; letter-spacing: .04em; color: var(--craie); font-weight: 700; }
     .pastille.droit { background: var(--acquis-clair); color: var(--acquis); }
     .pastille.vue-participant { background: var(--en-cours-clair); color: var(--en-cours); }
     .mode-participant[aria-pressed="true"] { border-color: var(--en-cours); color: var(--en-cours); font-weight: 700; }
     @media print { .mode-participant { display: none; } }
-    .barre-actions { display: flex; gap: var(--pas); flex-wrap: wrap; }
-    .barre-actions .action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; text-decoration: none;
-                             border: 1px solid var(--trait); border-radius: var(--r-s); color: var(--encre); }
-    @media (max-width: 640px) {
-      .barre-actions { width: 100%; }
-      .barre-actions .action { flex: 1 1 100%; justify-content: center; }
-    }
+    .bandeau-organisation .action { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
     h2 { margin: var(--pas-3, 24px) 0 var(--pas); }
     h3 { margin: var(--pas) 0; font-size: 1rem; }
     label { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
@@ -1453,8 +1510,18 @@ export class SejourComponent {
   rubriqueDemandee = signal<string | null>(this.ouvertureInitiale.ancre);
   /** La fenêtre « Trombinoscope » (tous les participants, réseau obligatoire). */
   trombinoscopeOuvert = signal(false);
-  /** La fenêtre « Partager et organiser… » du bandeau Organisation (encadrants). */
+  /** La fenêtre « Organiser » (encadrants) ou « Partager » (participants) de l'en-tête. */
   actionsOuvertes = signal(false);
+  /** Un encadrant qui ne regarde pas comme un participant : « Organiser » plutôt que « Partager ». */
+  readonly organise = computed(() => !!this.sejour()?.encadrant && !this.commeParticipant());
+  /** Les icônes de la barre du séjour (tracés 24 × 24). */
+  readonly iconesSections: Record<OngletSejour, string> = {
+    programme: 'M3 4h18v17H3zM3 9h18M8 2v4M16 2v4',
+    personnes: 'M9 5a3 3 0 1 0 0 6a3 3 0 1 0 0-6M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M21 20c0-2-1-4-3-5',
+    repas: 'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10',
+    frais: 'M2 6h20v13H2zM2 10h20M6 15h4',
+    pratique: 'M4 7h16v13H4zM9 7V5a3 3 0 0 1 6 0v2'
+  };
 
   /**
    * Les avertissements du serveur (SejourService.avertissements), rangés
@@ -1585,6 +1652,8 @@ export class SejourComponent {
   organisateursChoisis = signal<Set<number>>(new Set());
 
   constructor() {
+    // Sous 860 px, la barre du séjour prend la place de celle de l'appli le temps que l'écran est ouvert.
+    inject(DestroyRef).onDestroy(inject(BarreDuBasService).prendre());
     // Un ancien onglet demandé (retour d'une fiche de sécurité) : on descend à sa section, une fois le séjour lu.
     void this.charger().then(() => {
       if (this.ouvertureInitiale.ancre) this.ouvrirSection(this.ouvertureInitiale);
@@ -1622,17 +1691,18 @@ export class SejourComponent {
     return this.rubrique() === ancre;
   }
 
-  /** Un autre onglet s'ouvre sur sa première rubrique. */
-  choisirOnglet(o: OngletSejour): void {
+  /** Un autre onglet s'ouvre sur sa première rubrique ; depuis la barre du bas, en haut de la page. */
+  choisirOnglet(o: OngletSejour, enHaut = false): void {
     this.onglet.set(o);
     this.rubriqueDemandee.set(null);
+    if (enHaut) window.scrollTo({ top: 0 });
   }
 
   /** Ouvre un onglet à sa rubrique et y descend (tuile de « Mon séjour », ancien lien). */
   ouvrirSection(o: OuvertureSejour): void {
     this.onglet.set(o.onglet);
     this.rubriqueDemandee.set(o.ancre);
-    setTimeout(() => document.getElementById('onglets-sejour')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    setTimeout(() => document.getElementById('debut-onglet')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   /** Un geste de la fenêtre « Partager et organiser… » : la fenêtre se ferme, le geste se fait. */

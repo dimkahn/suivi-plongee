@@ -10,6 +10,7 @@ import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.co
 import { BarrePageComponent } from './core/barre-page.component';
 import { PreparerHorsLigneComponent } from './features/synchronisation/preparer-hors-ligne.component';
 import { ChargementComponent } from './core/chargement.component';
+import { BarreDuBasService } from './core/barre-du-bas.service';
 
 /**
  * Tag déployé, fixé à la compilation (`ng build --define`, voir le
@@ -142,6 +143,8 @@ const ICONES = {
         @if (menuOuvert()) {
           <div class="voile" aria-hidden="true" (click)="fermerMenu()"></div>
         }
+        <!-- Un écran qui a sa propre barre du bas (le séjour) la prend le temps qu'il est ouvert. -->
+        @if (!barreDuBas.prise()) {
         <nav class="onglets" aria-label="Accès rapide">
           @for (o of onglets(); track o.lien) {
             <a [routerLink]="o.lien" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: !!o.exact }"
@@ -158,6 +161,7 @@ const ICONES = {
             <span>Plus</span>
           </button>
         </nav>
+        }
       }
 
       @if (miseAJour.disponible()) {
@@ -278,6 +282,7 @@ export class AppComponent {
   private ecritures = inject(FileEcrituresService);
   private fileSejour = inject(FileSejourService);
   miseAJour = inject(MiseAJourService);
+  barreDuBas = inject(BarreDuBasService);
   identite = inject(IdentiteService);
 
   @ViewChild(BandeauSyncComponent) bandeau?: BandeauSyncComponent;

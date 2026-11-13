@@ -4,7 +4,7 @@ import { OptionOnglet } from '../../core/onglets.component';
  * Les cinq onglets du séjour (demande du club, 2026 : dix onglets, c'était
  * trop). Chacun regroupe des sections, montrées une à une par ses
  * sous-onglets (`rubriquesSejour`), chacune avec son ancre :
- * - Programme : le programme, puis les fiches de sécurité (encadrants) ;
+ * - Programme : jour par jour, puis les fiches de sécurité (encadrants) ;
  * - Qui et où : participants (encadrants), arrivées et départs, voitures, logements ;
  * - Repas : régimes et courses (encadrants), restaurant ;
  * - Frais ;
@@ -62,7 +62,7 @@ export function rubriquesSejour(onglet: OngletSejour, c: ContexteRubriques): Opt
   const r = (valeur: string, libelle: string, montree = true, alertes = 0): OptionOnglet<string>[] =>
     montree ? [{ valeur, libelle, ...(alertes ? { alertes } : {}) }] : [];
   switch (onglet) {
-    case 'programme': return [...r('programme-sejour', 'Programme'),
+    case 'programme': return [...r('programme-sejour', 'Jour par jour'),
       ...r('fiches-securite-sejour', 'Fiches de sécurité', c.encadrant && c.fiches)];
     case 'personnes': return [...r('participants-sejour', 'Participants', c.encadrant),
       ...r('trajets-sejour', 'Arrivées et départs'), ...r('voitures-sejour', 'Voitures', true, c.alertes.voitures),

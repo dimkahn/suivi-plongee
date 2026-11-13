@@ -40,7 +40,7 @@ describe('Sous-onglets du séjour : une rubrique à la fois', () => {
   const libelles = (o: OngletSejour, c = encadrant) => rubriquesSejour(o, c).map(r => r.libelle);
 
   it('chaque onglet a ses rubriques, dans l\'ordre', () => {
-    expect(libelles('programme')).toEqual(['Programme', 'Fiches de sécurité']);
+    expect(libelles('programme')).toEqual(['Jour par jour', 'Fiches de sécurité']);
     expect(libelles('personnes')).toEqual(['Participants', 'Arrivées et départs', 'Voitures', 'Logements']);
     expect(libelles('repas')).toEqual(['Régimes', 'Courses', 'Restaurant']);
     expect(libelles('frais')).toEqual(['Frais']);
@@ -48,13 +48,13 @@ describe('Sous-onglets du séjour : une rubrique à la fois', () => {
   });
 
   it('un participant ne voit pas les rubriques des encadrants', () => {
-    expect(libelles('programme', participant)).toEqual(['Programme']);
+    expect(libelles('programme', participant)).toEqual(['Jour par jour']);
     expect(libelles('personnes', participant)).toEqual(['Arrivées et départs', 'Voitures', 'Logements']);
     expect(libelles('repas', participant)).toEqual(['Restaurant']);
   });
 
   it('un encadrant qui ne lit pas les fiches de sécurité n\'a pas leur rubrique', () => {
-    expect(libelles('programme', { ...encadrant, fiches: false })).toEqual(['Programme']);
+    expect(libelles('programme', { ...encadrant, fiches: false })).toEqual(['Jour par jour']);
   });
 
   it('les points à vérifier sont comptés sur la rubrique qui permet de les régler', () => {
