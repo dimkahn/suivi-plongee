@@ -2,11 +2,12 @@
 titre: L'appli en bref
 rubrique: Découverte
 videos: X1
-mots: présentation, tour, découverte, débuter, commencer, sommaire, tableur, classeur, comment faire, aide, retour
+mots: présentation, tour, découverte, débuter, commencer, sommaire, tableur, classeur, comment faire, aide, retour, chargement, cercle qui tourne, enregistrement, attendre, lent, bloqué
 questions:
 - À quoi sert l'appli ?
 - Par où commencer ?
 - Qu'est-ce que je trouve dans le menu ?
+- Un petit cercle tourne sur le bouton, que faire ?
 ---
 L'appli du club remplace le classeur partagé : elle se manie au téléphone, au bord du bassin, pour suivre les élèves séance par séance.
 
@@ -29,4 +30,5 @@ L'appli du club remplace le classeur partagé : elle se manie au téléphone, au
 - Pas de réseau à la piscine ? « Préparer hors ligne » avant de partir : tout part au retour du réseau.
 - Créer ou modifier quelque chose (une séance, un élève, un prêt…) ouvre une fenêtre devant la liste, en plein écran sur téléphone : « Enregistrer » en bas ; « Annuler », la croix ou la touche Échap la ferment sans rien changer.
 - Chaque écran a sa vidéo d'aide et son manuel : « Comment faire ? », en haut à droite de l'écran, les ouvre sans quitter la page. En haut à gauche, « ← … » remonte à l'écran d'où l'on vient (la fiche d'un bloc vers « Matériel », par exemple).
+- Un petit cercle qui tourne sur un bouton (« Enregistrement… », « Envoi… ») : l'appli enregistre. Le bouton reste désactivé jusqu'à la réponse, inutile de toucher deux fois. Des lignes grises sous « Chargement… » : l'écran arrive.
 - Les élèves et encadrants des vidéos sont fictifs.

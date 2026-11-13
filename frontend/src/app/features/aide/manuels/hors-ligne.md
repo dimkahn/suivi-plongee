@@ -2,10 +2,11 @@
 titre: Travailler sans réseau au bord du bassin
 rubrique: Découverte
 videos: M9
-mots: hors ligne, réseau, internet, wifi, 4G, connexion, synchronisation, attente d'envoi, préparer, piscine, déconnexion, se déconnecter, fiche de sécurité du jour, séance du jour, sur mesure, photos, choisir, emporter, rapide, sécurité surface, bateau, veille, séjour, séjour hors ligne, fiche de sécurité du séjour, frais sans réseau, gîte, île
+mots: hors ligne, réseau, internet, wifi, 4G, connexion, synchronisation, attente d'envoi, envoi en cours, pastille, préparer, piscine, déconnexion, se déconnecter, fiche de sécurité du jour, séance du jour, sur mesure, photos, choisir, emporter, rapide, sécurité surface, bateau, veille, séjour, séjour hors ligne, fiche de sécurité du séjour, frais sans réseau, gîte, île
 questions:
 - Pas de réseau à la piscine, comment faire ?
 - Que veut dire « En attente d'envoi » ?
+- Comment savoir que mes saisies sont en train de partir ?
 - Mes notes sont-elles perdues sans réseau ?
 - À quoi sert « Préparer hors ligne » ?
 - Je n'ai besoin que de la fiche de sécurité du jour, comment aller plus vite ?
@@ -32,7 +33,7 @@ Avant de partir, avec du réseau : « Plus » (en bas de l'écran), « Préparer
 3. « Préparer » : le bandeau en haut dit ce qui est copié (par exemple « Disponible hors ligne : 1 fiche de sécurité »). Le choix est reproposé la fois suivante.
 4. Au bassin, sans réseau : l'appli s'ouvre quand même. « Grille consultée hors ligne » rappelle qu'on voit la version embarquée.
 5. Notez et faites l'appel comme d'habitude : chaque saisie attend, « En attente d'envoi ».
-6. Le bandeau en haut compte les saisies qui attendent.
+6. Le bandeau en haut compte les saisies qui attendent. Pendant qu'elles partent, sa pastille pulse et il dit « Envoi en cours… ».
 7. Au retour du réseau, tout part tout seul : rien à faire.
 
 ## Bon à savoir

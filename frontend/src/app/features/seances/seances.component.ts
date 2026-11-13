@@ -10,6 +10,7 @@ import { lieuEtSite } from '../../core/seance-lieu';
 import { ProgrammeSeanceComponent } from '../../core/programme-seance.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -53,7 +54,7 @@ function formulaireVide(): FormulaireSeance {
 
 @Component({
   selector: 'app-seances',
-  imports: [FormsModule, RouterLink, DateFrPipe, OngletsComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent,
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, OngletsComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent,
             DialogueComponent],
   template: `
     <div class="entete">
@@ -106,7 +107,7 @@ function formulaireVide(): FormulaireSeance {
                   [(ngModel)]="f.commentaire" placeholder="Facultatif"></textarea>
 
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
             {{ envoi() ? 'Création…' : 'Créer la séance' }}
           </button>
           <button type="button" class="bouton-discret" (click)="panneauOuvert.set(null)">Annuler</button>
@@ -187,7 +188,7 @@ function formulaireVide(): FormulaireSeance {
         </p>
 
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="creerSejour()"
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="creerSejour()"
                   [disabled]="envoi() || a.total === 0">
             {{ envoi() ? 'Création…' : a.total > 0 ? 'Créer les ' + a.total + ' séances' : 'Créer les séances' }}
           </button>
@@ -223,7 +224,7 @@ function formulaireVide(): FormulaireSeance {
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (vue() === 'LISTE' && liste().length === 0) {
       <div class="carte vide"><p>Aucune séance sur cette saison.</p></div>
     } @else if (vue() === 'LISTE' && listeFiltree().length === 0) {
@@ -296,7 +297,7 @@ function formulaireVide(): FormulaireSeance {
           }
 
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrer(s)" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer(s)" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>

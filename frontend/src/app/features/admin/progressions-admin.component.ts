@@ -13,6 +13,7 @@ import { MOIS_SAISON, nomMois, plagePeriode } from '../../core/progression';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -47,7 +48,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
 
 @Component({
   selector: 'app-progressions-admin',
-  imports: [FormsModule, RouterLink, DialogueComponent, OngletsComponent, PastillePhaseComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DialogueComponent, OngletsComponent, PastillePhaseComponent],
   template: `
     <h1>Progressions types</h1>
     <p class="secondaire">
@@ -64,7 +65,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
                  libelle="Niveau" [boutons]="true" />
 
     @if (chargement()) {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     } @else {
       <div class="barre">
         @if (progressionsDuNiveau().length > 0) {
@@ -182,7 +183,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           Désactiver les exercices N1 pensés pour la piscine (réactivables depuis « Base d'exercices »)
         </label>
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="installerModele()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="installerModele()" [disabled]="envoi()">
             {{ envoi() ? 'Installation…' : 'Installer le modèle' }}
           </button>
           <button type="button" class="bouton-discret" (click)="modeleOuvert.set(false)">Annuler</button>
@@ -212,7 +213,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
             milieu naturel, et le retard se compte en plongées. Le découpage ne change plus ensuite.
           </p>
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
               {{ envoi() ? 'Création…' : 'Créer puis ajouter les périodes' }}
             </button>
             <button type="button" class="bouton-discret" (click)="creation.set(null)">Annuler</button>
@@ -341,7 +342,7 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
           </button>
 
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="edition.set(null)">Annuler</button>

@@ -251,9 +251,10 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 75 s
 10. … la note attend sur le téléphone : « En attente d'envoi ».
 11. Le bandeau en haut compte les saisies qui attendent.
 12. De retour au vestiaire, le réseau revient…
-13. … et tout part tout seul. Rien à faire.
-14. Si le serveur refuse une note (règle du MFT), un bandeau le dit : rien ne se perd en silence.
-15. Un compte de sécurité surface, lui, n'a rien à choisir : il emporte les fiches de sa journée de plongée.
+13. Pendant l'envoi, la pastille du bandeau pulse : « Envoi en cours… ».
+14. … et tout part tout seul. Rien à faire.
+15. Si le serveur refuse une note (règle du MFT), un bandeau le dit : rien ne se perd en silence.
+16. Un compte de sécurité surface, lui, n'a rien à choisir : il emporte les fiches de sa journée de plongée.
 
 ### M10 — Établir une fiche de sécurité
 

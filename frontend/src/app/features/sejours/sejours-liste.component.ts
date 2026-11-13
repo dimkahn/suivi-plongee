@@ -6,6 +6,7 @@ import { cleListeSejours } from './sejour-hors-ligne';
 import { periode } from '../../core/date-fr';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { SejourApi, SejourResumeVue } from './sejour-api';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Les séjours : pour les encadrants, toutes les sorties (à venir ou toutes) ;
@@ -13,7 +14,7 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
  */
 @Component({
   selector: 'app-sejours-liste',
-  imports: [RouterLink, OngletsComponent],
+  imports: [ChargementComponent, RouterLink, OngletsComponent],
   template: `
     <h1>Séjours</h1>
     <p class="secondaire">
@@ -45,7 +46,7 @@ import { SejourApi, SejourResumeVue } from './sejour-api';
       </p>
     }
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>{{ encadrant() ? 'Aucune sortie.' : 'Vous n’êtes inscrit à aucun séjour.' }}</p></div>
     } @else {

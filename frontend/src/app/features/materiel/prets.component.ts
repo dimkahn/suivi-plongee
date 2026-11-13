@@ -16,6 +16,7 @@ import { PhotosPretComponent } from './photos-pret.component';
 import { RetourPretComponent } from './retour-pret.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Élèves et encadrants partagent la même liste : ids pairs pour les élèves, impairs pour les encadrants. */
 function cleEmprunteur(e: EmprunteurVue): number {
@@ -30,7 +31,7 @@ function cleEmprunteur(e: EmprunteurVue): number {
  */
 @Component({
   selector: 'app-prets',
-  imports: [FormsModule, RouterLink, DateFrPipe, OngletsComponent, ComboboxComponent, PhotosPretComponent, DialogueComponent, RetourPretComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, OngletsComponent, ComboboxComponent, PhotosPretComponent, DialogueComponent, RetourPretComponent],
   template: `
     <div class="entete">
       <h1>Prêts de matériel</h1>
@@ -136,7 +137,7 @@ function cleEmprunteur(e: EmprunteurVue): number {
         <textarea id="remarquesPret" name="remarquesPret" rows="2" [(ngModel)]="remarques"></textarea>
 
         <div class="actions-dialogue">
-          <button type="submit" class="bouton-principal" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer le prêt' }}
           </button>
           <button type="button" class="bouton-discret" (click)="formulaireOuvert.set(false)">Annuler</button>
@@ -148,7 +149,7 @@ function cleEmprunteur(e: EmprunteurVue): number {
                  (choisir)="$event === 'RENDUS' ? afficherRendus() : onglet.set($event)" />
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else {
       @let liste = onglet() === 'EN_COURS' ? enCours() : rendus();
       @if (liste.length === 0) {

@@ -67,7 +67,7 @@ const INTERVALLE_ANALYSE_MS = 250;
           photo du téléphone, ou approcher le haut d'un iPhone du tag NFC : il propose d'ouvrir la fiche.
         </p>
       }
-      <label class="photo" [class.occupe]="recherche()" [class.bouton-discret]="lectureDirecte"
+      <label class="photo" [class.occupe]="recherche()" [attr.aria-busy]="recherche() || null" [class.bouton-discret]="lectureDirecte"
              [class.bouton-principal]="!lectureDirecte">
         {{ recherche() ? 'Lecture…' : "Prendre l'étiquette en photo" }}
         <input type="file" accept="image/*" capture="environment" [disabled]="recherche()" (change)="photo($event)">

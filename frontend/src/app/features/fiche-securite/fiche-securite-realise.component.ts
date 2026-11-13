@@ -13,6 +13,7 @@ import {
 } from '../../core/fiche-securite-realise';
 import { AvecModifications } from '../../core/gardes';
 import { telechargerFichier } from '../../core/telecharger';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Étape 2, à part de l'établissement (voir FicheSecuriteComponent) : le
@@ -24,7 +25,7 @@ import { telechargerFichier } from '../../core/telecharger';
  */
 @Component({
   selector: 'app-fiche-securite-realise',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe],
   template: `
     @if (seance(); as s) {
       <h1>Compléter la fiche — {{ s.date | dateFr }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</h1>
@@ -38,7 +39,7 @@ import { telechargerFichier } from '../../core/telecharger';
     @if ((chargement() || !ficheEtablie()) && message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (!ficheEtablie()) {
       <p class="vide">
         Cette séance n'a pas encore de fiche de sécurité établie.
@@ -201,14 +202,14 @@ import { telechargerFichier } from '../../core/telecharger';
           Regrouper les 2 plongées du jour sur une feuille
         </label>
         <div class="boutons-impression">
-          <button type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
+          <button [attr.aria-busy]="exportEnCours() || null" type="button" class="bouton-discret" (click)="telechargerPdf()" [disabled]="exportEnCours()">
             {{ exportEnCours() ? 'Génération…' : 'Télécharger le PDF' }}
           </button>
-          <button type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
+          <button [attr.aria-busy]="exportExcelEnCours() || null" type="button" class="bouton-discret" (click)="telechargerExcel()" [disabled]="exportExcelEnCours()">
             {{ exportExcelEnCours() ? 'Génération…' : "Télécharger l'Excel" }}
           </button>
           @if ((auth.estMoniteur() || auth.estAdmin()) && sortie(); as so) {
-            <button type="button" class="bouton-discret" (click)="telechargerPdfSortie(so.id)"
+            <button [attr.aria-busy]="exportSortieEnCours() || null" type="button" class="bouton-discret" (click)="telechargerPdfSortie(so.id)"
                     [disabled]="exportSortieEnCours()">
               {{ exportSortieEnCours() ? 'Génération…' : 'Toutes les fiches de « ' + so.nom + ' » (PDF)' }}
             </button>
@@ -226,7 +227,7 @@ import { telechargerFichier } from '../../core/telecharger';
           </div>
         }
         @if (!signature()) {
-          <button type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
+          <button [attr.aria-busy]="envoiRealise() || null" type="button" class="bouton-principal" (click)="enregistrerRealise()" [disabled]="envoiRealise()">
             {{ envoiRealise() ? 'Enregistrement…' : 'Enregistrer les paramètres réalisés' }}
           </button>
           <span class="etat-enregistrement" [class.a-enregistrer]="modificationsNonEnregistrees()" role="status">

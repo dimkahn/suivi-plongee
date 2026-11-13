@@ -9,6 +9,7 @@ import { PlurielPipe } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PHASES, PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const LIBELLES: Record<string, string> = {
   NON_ABORDE: 'NA', EN_COURS: 'ECA', ACQUIS: 'A'
@@ -16,10 +17,10 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-matrice',
-  imports: [FormsModule, DateFrPipe, PlurielPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
+  imports: [ChargementComponent, FormsModule, DateFrPipe, PlurielPipe, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (matrice(); as m) {

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { DemandeIdentite, IdentiteService, IdentiteVue } from '../../core/identite.service';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Couleurs d'origine (styles.css) : proposées dans le sélecteur tant qu'aucune n'est choisie. */
 const COULEURS_ORIGINE = { couleurPrincipale: '#0891B2', couleurFoncee: '#0C3547', couleurAccent: '#F97316' } as const;
@@ -16,7 +17,7 @@ type CleCouleur = keyof typeof COULEURS_ORIGINE;
  */
 @Component({
   selector: 'app-identite-admin',
-  imports: [FormsModule, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent],
   template: `
     <h1>Identité de la structure</h1>
     <p class="secondaire">
@@ -47,7 +48,7 @@ type CleCouleur = keyof typeof COULEURS_ORIGINE;
         </dl>
         <div class="actions">
           <button type="button" class="bouton-principal" (click)="ouvrir(i)">Modifier</button>
-          <label class="bouton-discret fichier">
+          <label class="bouton-discret fichier" [attr.aria-busy]="envoi() || null">
             {{ envoi() ? 'Envoi…' : 'Changer le logo' }}
             <input type="file" accept="image/png,image/jpeg" (change)="deposer($event)" [disabled]="envoi()">
           </label>
@@ -63,7 +64,7 @@ type CleCouleur = keyof typeof COULEURS_ORIGINE;
         </p>
       </section>
     } @else {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     }
 
     <app-dialogue [ouvert]="edition() !== null" titre="Modifier l'identité" [erreur]="erreur()"
@@ -99,7 +100,7 @@ type CleCouleur = keyof typeof COULEURS_ORIGINE;
           }
 
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="edition.set(null)">Annuler</button>

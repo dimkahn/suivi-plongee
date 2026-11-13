@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { PortRepas, SejourVue, jourLong, nomComplet } from './sejour-api';
 import { REPAS, Repas, RepasDuJour, joursDuSejour, listeDeCourses, presentsAuRepas, texteDeLaListe } from './liste-courses';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * L'onglet « Courses » du séjour (demande du club, 2026), pour les
@@ -14,7 +15,7 @@ import { REPAS, Repas, RepasDuJour, joursDuSejour, listeDeCourses, presentsAuRep
  */
 @Component({
   selector: 'app-sejour-courses',
-  imports: [DialogueComponent],
+  imports: [ChargementComponent, DialogueComponent],
   template: `
     <div class="titre-section">
       <h2>Liste de courses</h2>
@@ -81,7 +82,7 @@ import { REPAS, Repas, RepasDuJour, joursDuSejour, listeDeCourses, presentsAuRep
         }
       }
     } @else if (!message()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
 
     <app-dialogue [ouvert]="ouvert()" [large]="true" [erreur]="erreur()" titre="Repas au restaurant"
@@ -113,7 +114,7 @@ import { REPAS, Repas, RepasDuJour, joursDuSejour, listeDeCourses, presentsAuRep
           </table>
         </div>
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
             {{ envoi() ? 'Envoi…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="ouvert.set(false)">Annuler</button>

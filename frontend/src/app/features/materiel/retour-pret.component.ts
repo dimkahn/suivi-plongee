@@ -51,7 +51,7 @@ interface LigneRetour { incident: string; horsService: boolean; }
         <label [for]="'remarquesRetour-' + p.id">Remarques</label>
         <textarea [id]="'remarquesRetour-' + p.id" rows="2" [(ngModel)]="remarques"></textarea>
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="valider.emit(demande(p))" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="valider.emit(demande(p))" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Valider le retour' }}
           </button>
           <button type="button" class="bouton-discret" (click)="fermer.emit()">Annuler</button>

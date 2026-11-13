@@ -350,7 +350,7 @@ interface PhotoAEnvoyer {
         }
       </fieldset>
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="enregistrerDepense()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerDepense()" [disabled]="envoi()">
           {{ envoi() ? 'Envoi…' : 'Enregistrer' }}
         </button>
         <button type="button" class="bouton-discret" (click)="fermerDepense()">Annuler</button>
@@ -376,7 +376,7 @@ interface PhotoAEnvoyer {
       <p class="secondaire">Seuls vous, le bénéficiaire et les organisateurs la verront. Masquez si vous le
         souhaitez votre solde et votre numéro de compte : seuls le montant, la date et le bénéficiaire comptent.</p>
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="envoyerPreuve()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="envoyerPreuve()" [disabled]="envoi()">
           {{ envoi() ? 'Envoi…' : 'Envoyer la preuve' }}
         </button>
         <button type="button" class="bouton-discret" (click)="preuveOuverte.set(false)">Annuler</button>

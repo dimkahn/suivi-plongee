@@ -57,6 +57,7 @@ import { ChoixHorsLigne, resumePreparation } from '../../core/preparation-hors-l
     @if (nombreEnAttente() > 0) {
       <div class="bandeau attente" role="status">
         <span>
+          <span class="temoin" [class.actif]="enSynchronisation()" aria-hidden="true"></span>
           {{ nombreEnAttente() | pluriel:'saisie' }} en attente d'envoi.
           @if (enSynchronisation()) { Envoi en cours… }
           @else if (!reseau.enLigne()) { Elles partiront au retour du réseau. }

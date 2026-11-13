@@ -44,7 +44,7 @@ import { AuthService } from '../../core/auth.service';
           <input id="mdp2" type="password" name="mdp2" autocomplete="new-password"
                  [(ngModel)]="confirmation" (keyup.enter)="valider()">
 
-          <button type="button" class="bouton-principal" (click)="valider()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="valider()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer le mot de passe' }}
           </button>
         }

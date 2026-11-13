@@ -25,6 +25,7 @@ import { AuthService } from '../../core/auth.service';
 import { NotationGroupeeComponent } from './notation-groupee.component';
 import { PastillePhaseComponent, libellePhase } from '../../core/phase-exercice';
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Un bouton de la ligne : ce qu'a fait un élève présent. */
 interface Choix {
@@ -93,7 +94,7 @@ function normaliser(texte: string): string {
  */
 @Component({
   selector: 'app-presences',
-  imports: [FormsModule, RouterLink, AvatarComponent, DialogueComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
+  imports: [ChargementComponent, FormsModule, RouterLink, AvatarComponent, DialogueComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent, FiltreGroupeComponent,
             NotationGroupeeComponent, PastillePhaseComponent, SchemaExerciceComponent, PlurielPipe],
   template: `
     <!-- L'aide de l'écran est « Comment faire ? », dans la barre de page (manuel « Faire l'appel »). -->
@@ -253,7 +254,7 @@ function normaliser(texte: string): string {
       </div>
 
       @if (chargement()) {
-        <p class="vide">Chargement…</p>
+        <app-chargement />
       } @else if (lignes().length === 0) {
         <div class="carte vide"><p>Aucun élève inscrit sur la saison de cette séance.</p></div>
       } @else {
@@ -473,16 +474,6 @@ function normaliser(texte: string): string {
     .etat.differe, .etat-mini.differe { border: 1px dashed #fff; outline: 2px dashed var(--acquis); outline-offset: 1px; }
     .etat:disabled { opacity: .6; cursor: not-allowed; }
 
-    .enregistrement {
-      display: inline-flex; align-items: center; gap: 6px;
-      color: var(--profond); font-size: .875rem; font-weight: 700;
-    }
-    .chargeur {
-      display: inline-block; width: 1em; height: 1em;
-      border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
-      animation: tourner .8s linear infinite;
-    }
-    @keyframes tourner { to { transform: rotate(360deg); } }
 
     .barre-choix {
       /* Au-dessus de la barre d'onglets du téléphone, le temps du choix. */

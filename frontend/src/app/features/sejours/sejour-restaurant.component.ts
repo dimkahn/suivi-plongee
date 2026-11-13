@@ -10,6 +10,7 @@ import {
   CommandeVue, DemandeMenu, MenuVue, MenusVue, PAYEUR_CLUB, PROMPT_MENU, PortMenus, parCategorie, payeursPossibles,
   prixEnCentimes, prixEnTexte, repasDuJour, texteDeLaCommande, totalDuChoix
 } from './menus-restaurant';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Pour qui on choisit dans la fenêtre : soi-même ou, pour un organisateur, un autre participant. */
 interface ChoixEnCours {
@@ -38,7 +39,7 @@ interface LignePlat {
  */
 @Component({
   selector: 'app-sejour-restaurant',
-  imports: [FormsModule, DialogueComponent, ComboboxComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, ComboboxComponent],
   template: `
     <div class="titre-section">
       <h2>Restaurant</h2>
@@ -162,7 +163,7 @@ interface LignePlat {
         </section>
       }
     } @else if (!message()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
 
     <!-- Choisir ses plats (ou ceux d'un participant, pour un organisateur) -->
@@ -189,7 +190,7 @@ interface LignePlat {
           <p><strong>Total : {{ euros(totalDuChoix(c.menu.plats, [...coches()])) }}</strong></p>
         }
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="enregistrerChoix()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerChoix()" [disabled]="envoi()">
             {{ envoi() ? 'Envoi…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="choix.set(null)">Annuler</button>
@@ -232,7 +233,7 @@ interface LignePlat {
           }
           <p class="secondaire">Le repas comptera comme pris au restaurant dans la liste de courses.</p>
           <div class="actions-dialogue">
-            <button type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Importer' }}</button>
+            <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Importer' }}</button>
             <button type="button" class="bouton-discret" (click)="importOuvert.set(false)">Annuler</button>
           </div>
         </form>
@@ -282,7 +283,7 @@ interface LignePlat {
             <p class="alerte">Les plats retirés étaient choisis {{ n }} fois : ces choix seront effacés.</p>
           }
           <div class="actions-dialogue">
-            <button type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Enregistrer' }}</button>
+            <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Enregistrer' }}</button>
             <button type="button" class="bouton-discret" (click)="aModifier.set(null)">Annuler</button>
           </div>
         </form>
@@ -323,7 +324,7 @@ interface LignePlat {
                           aide="Rechercher un participant, ou « Le club »…" texteVide="Personne ne correspond." />
             <p class="secondaire">Ensuite, les choix ne changent plus ; les frais se corrigent dans l'onglet « Frais ».</p>
             <div class="actions-dialogue">
-              <button type="submit" class="bouton-principal" [disabled]="envoi() || dansLesFrais(c) === 0 || payeur() === null">
+              <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi() || dansLesFrais(c) === 0 || payeur() === null">
                 {{ envoi() ? 'Envoi…' : 'Enregistrer les frais' }}</button>
               <button type="button" class="bouton-discret" (click)="aRegler.set(null)">Annuler</button>
             </div>

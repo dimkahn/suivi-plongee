@@ -15,6 +15,7 @@ import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../co
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { ExportTrombinoscopeComponent, PersonneExport } from '../../core/export-trombinoscope.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 type Population = 'ELEVES' | 'MONITEURS';
 
@@ -29,7 +30,7 @@ function idCible(c: Cible): number {
 
 @Component({
   selector: 'app-trombinoscope',
-  imports: [RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, AvatarComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent,
+  imports: [ChargementComponent, RouterLink, FormsModule, NgTemplateOutlet, OngletsComponent, AvatarComponent, FiltreGroupeComponent, RecadragePhotoComponent, DialogueComponent,
             ExportTrombinoscopeComponent],
   template: `
     <h1>Trombinoscope</h1>
@@ -67,7 +68,7 @@ function idCible(c: Cible): number {
 
     @if (population() === 'MONITEURS') {
       @if (moniteurs() === null) {
-        <p class="vide">Chargement…</p>
+        <app-chargement />
       } @else if (erreurMoniteurs()) {
         <div class="carte vide"><p>{{ erreurMoniteurs() }}</p></div>
       } @else if (moniteursFiltres().length === 0) {
@@ -90,7 +91,7 @@ function idCible(c: Cible): number {
         </div>
       }
     } @else if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (lignesFiltrees().length === 0) {
@@ -168,7 +169,7 @@ function idCible(c: Cible): number {
                   Le moniteur a donné son accord pour paraître dans le trombinoscope
                 }
               </label>
-              <button type="button" class="bouton-discret" (click)="recueillirDroitImage(c)"
+              <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-discret" (click)="recueillirDroitImage(c)"
                       [disabled]="!consentementConfirme || envoi()">
                 {{ envoi() ? 'Enregistrement…' : "Enregistrer le droit à l'image" }}
               </button>

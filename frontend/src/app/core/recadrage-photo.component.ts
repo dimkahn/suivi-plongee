@@ -40,7 +40,7 @@ interface EtatRecadrage {
           <input id="zoomRecadrage" type="range" min="1" max="3" step="0.02" [ngModel]="r.zoom"
                  name="zoomRecadrage" (ngModelChange)="changerZoom($event)">
           <div class="actions">
-            <button type="button" class="bouton-principal" [disabled]="enCours() || preparation()"
+            <button [attr.aria-busy]="enCours() || preparation() || null" type="button" class="bouton-principal" [disabled]="enCours() || preparation()"
                     (click)="valider()">
               {{ enCours() || preparation() ? 'Enregistrement…' : 'Valider' }}
             </button>

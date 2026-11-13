@@ -13,6 +13,7 @@ import {
   majuscule, nomComplet, nomPayeur
 } from './sejour-api';
 import { programmeParJour } from './programme-du-jour';
+import { ChargementComponent } from '../../core/chargement.component';
 
 type Rubrique = 'programme' | 'participants' | 'transports' | 'hebergement' | 'affaires' | 'pratique' | 'frais';
 
@@ -43,7 +44,7 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
  */
 @Component({
   selector: 'app-carnet-imprimable',
-  imports: [FormsModule],
+  imports: [ChargementComponent, FormsModule],
   template: `
     @if (vue(); as s) {
       <div class="reglages pas-imprime">
@@ -290,7 +291,7 @@ const FONCTIONS: Record<FonctionPalanquee, string> = {
     } @else if (erreur(); as e) {
       <div class="alerte erreur">{{ e }}</div>
     } @else {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,

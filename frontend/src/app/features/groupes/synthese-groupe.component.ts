@@ -10,6 +10,7 @@ import {
 import { dateFr } from '../../core/date-fr';
 import { libellePreparation } from '../../core/niveaux';
 import { PhotoEleveComponent } from '../../core/photo-eleve.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Synthèse des compétences d'un groupe d'entraînement (choix du club, 2026) :
@@ -21,7 +22,7 @@ import { PhotoEleveComponent } from '../../core/photo-eleve.component';
  */
 @Component({
   selector: 'app-synthese-groupe',
-  imports: [RouterLink, PhotoEleveComponent],
+  imports: [ChargementComponent, RouterLink, PhotoEleveComponent],
   template: `
     <h1>Synthèse des compétences</h1>
     <p class="secondaire">
@@ -127,7 +128,7 @@ import { PhotoEleveComponent } from '../../core/photo-eleve.component';
         <p class="secondaire">Dans le groupe sans formation cette saison : {{ s.sansFormation.join(', ') }}.</p>
       }
     } @else if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
   `,
   styles: [`

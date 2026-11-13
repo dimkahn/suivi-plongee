@@ -205,6 +205,55 @@ input, select, textarea {
   .dialogue-formulaire .actions-dialogue > button { flex: 1 1 auto; }
 }
 
+/* ------------------------------------------------------------------
+   Tâche en cours. On anime pour dire qu'une tâche est en cours (ou
+   montrer où son résultat est arrivé), jamais pour décorer, et toujours
+   avec un mot (« Enregistrement… », « Envoi en cours… »). Sous
+   prefers-reduced-motion, plus rien ne bouge : le mot suffit.
+   ------------------------------------------------------------------ */
+
+/* Chargeur tournant : un cercle ouvert de la couleur du texte. */
+.chargeur {
+  display: inline-block; flex: none; width: 1em; height: 1em; vertical-align: -2px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: tourner .8s linear infinite;
+}
+@keyframes tourner { to { transform: rotate(360deg); } }
+
+/* « Enregistrement… » à l'endroit du geste (grille, présences). */
+.enregistrement {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--profond); font-size: .875rem; font-weight: 700;
+}
+
+/* Bouton pendant l'envoi ([attr.aria-busy]) : il reste à sa place, désactivé,
+   et montre le chargeur devant son libellé « Enregistrement… ». */
+button[aria-busy="true"], label[aria-busy="true"] {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--pas);
+  cursor: progress;
+}
+button[aria-busy="true"]::before, label[aria-busy="true"]::before {
+  content: ""; flex: none; width: 1em; height: 1em;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: tourner .8s linear infinite;
+}
+.bouton-principal[aria-busy="true"]:disabled {
+  background: linear-gradient(135deg, var(--profond-fonce), var(--profond)); opacity: .85; cursor: progress;
+}
+
+/* Témoin d'un bandeau : une pastille de la couleur du texte, qui pulse
+   (.actif) seulement pendant que la tâche se fait. */
+.temoin {
+  display: inline-block; flex: none; width: 10px; height: 10px; margin-right: var(--pas); border-radius: 50%;
+  background: currentColor; vertical-align: 1px;
+}
+.temoin.actif { animation: pulser 1.6s ease-out infinite; }
+@keyframes pulser {
+  0%   { box-shadow: 0 0 0 0 rgba(178, 107, 0, .55); }
+  70%  { box-shadow: 0 0 0 10px rgba(178, 107, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(178, 107, 0, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

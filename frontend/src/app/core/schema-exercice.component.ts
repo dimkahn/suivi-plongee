@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject, input, signal, untracked } from '@angular/core';
 import { ApiService } from './api.service';
+import { ChargementComponent } from './chargement.component';
 
 /**
  * Schéma d'un exercice : celui de la base (`exerciceId`) ou celui d'un
@@ -10,6 +11,7 @@ import { ApiService } from './api.service';
  */
 @Component({
   selector: 'app-schema-exercice',
+  imports: [ChargementComponent],
   standalone: true,
   template: `
     @if (url(); as u) {
@@ -17,7 +19,7 @@ import { ApiService } from './api.service';
     } @else if (erreur()) {
       <p class="secondaire">Schéma indisponible (hors ligne ?).</p>
     } @else {
-      <p class="secondaire">Chargement du schéma…</p>
+      <app-chargement enLigne libelle="Chargement du schéma…" />
     }
   `,
   styles: [`

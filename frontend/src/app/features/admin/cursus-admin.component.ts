@@ -7,11 +7,12 @@ import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, Sai
 import { normaliser } from '../../core/seance-lieu';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
+import { ChargementComponent } from '../../core/chargement.component';
 
 
 @Component({
   selector: 'app-cursus-admin',
-  imports: [FormsModule, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -137,7 +138,7 @@ import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
       }
 
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="inscrire()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="inscrire()" [disabled]="envoi()">
           {{ envoi() ? 'Inscription…' : 'Inscrire' }}
         </button>
         <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
@@ -153,7 +154,7 @@ import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
     </section>
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun cursus enregistré.</p></div>
     } @else if (listeFiltree().length === 0) {
@@ -209,7 +210,7 @@ import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
             }
           }
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer(c)" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>

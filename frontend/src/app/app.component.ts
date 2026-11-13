@@ -9,6 +9,7 @@ import { IdentiteService } from './core/identite.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
 import { BarrePageComponent } from './core/barre-page.component';
 import { PreparerHorsLigneComponent } from './features/synchronisation/preparer-hors-ligne.component';
+import { ChargementComponent } from './core/chargement.component';
 
 /**
  * Tag déployé, fixé à la compilation (`ng build --define`, voir le
@@ -41,7 +42,7 @@ const ICONES = {
 
 @Component({
   selector: 'app-racine',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, BarrePageComponent, PreparerHorsLigneComponent],
+  imports: [ChargementComponent, RouterOutlet, RouterLink, RouterLinkActive, BandeauSyncComponent, BarrePageComponent, PreparerHorsLigneComponent],
   host: { '(document:keydown.escape)': 'fermerMenu()' },
   template: `
     @if (pret()) {
@@ -172,7 +173,7 @@ const ICONES = {
       <main [class.avec-onglets]="auth.connecte()"><app-barre-page /><router-outlet /></main>
       <footer class="version" [class.avec-onglets]="auth.connecte()">Version {{ version }}</footer>
     } @else {
-      <p class="vide">Ouverture de la session…</p>
+      <app-chargement libelle="Ouverture de la session…" />
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,

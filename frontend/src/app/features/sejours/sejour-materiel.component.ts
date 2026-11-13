@@ -7,6 +7,7 @@ import { dateDuJour, dateFr } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
 import { PretsDuSejour, contientUnDetendeur, filtrerDisponibles } from './materiel-sejour';
 import { PretSejourVue, PretsSejourVue, TypeEquipement, nomComplet } from './sejour-api';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
   { code: null, libelle: 'Tout' },
@@ -28,7 +29,7 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
  */
 @Component({
   selector: 'app-sejour-materiel',
-  imports: [FormsModule, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent],
   template: `
     <div class="titre-section">
       <h2>Matériel emprunté</h2>
@@ -77,7 +78,7 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
         </div>
       }
     } @else if (!message()) {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     }
 
     <app-dialogue [ouvert]="ouvert()" titre="Déclarer un emprunt" [large]="true" [erreur]="erreur()"
@@ -142,7 +143,7 @@ const TYPES: { code: TypeEquipement | null; libelle: string }[] = [
           }
         }
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="declarer()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="declarer()" [disabled]="envoi()">
             {{ envoi() ? 'Envoi…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="ouvert.set(false)">Annuler</button>

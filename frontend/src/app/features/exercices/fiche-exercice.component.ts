@@ -10,6 +10,7 @@ import { PastillePhaseComponent, libellePhase } from '../../core/phase-exercice'
 import { SchemaExerciceComponent } from '../../core/schema-exercice.component';
 import { PhotoExerciceComponent } from '../../core/photo-exercice.component';
 import { plagePeriode } from '../../core/progression';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Une vidéo publiée par le club ou un fichier vidéo se lit dans la page ; le reste s'ouvre à part. */
 export function videoDansLaPage(v: VideoExerciceVue): boolean {
@@ -26,7 +27,7 @@ export function videoDansLaPage(v: VideoExerciceVue): boolean {
  */
 @Component({
   selector: 'app-fiche-exercice',
-  imports: [RouterLink, PastillePhaseComponent, SchemaExerciceComponent, PhotoExerciceComponent],
+  imports: [ChargementComponent, RouterLink, PastillePhaseComponent, SchemaExerciceComponent, PhotoExerciceComponent],
   template: `
     @if (erreur(); as e) {
       <div class="alerte" role="alert">{{ e }}</div>
@@ -145,7 +146,7 @@ export function videoDansLaPage(v: VideoExerciceVue): boolean {
         }
       </nav>
     } @else {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

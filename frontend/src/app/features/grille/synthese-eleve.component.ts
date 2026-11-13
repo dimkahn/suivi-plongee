@@ -4,6 +4,7 @@ import { BlocVue, CritereVue, EtatCompetence, GrilleVue } from '../../core/model
 import { dateFr } from '../../core/date-fr';
 import { libellePreparation } from '../../core/niveaux';
 import { PhotoEleveComponent } from '../../core/photo-eleve.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Les trois rubriques de la fiche, dans l'ordre de lecture. */
 const RUBRIQUES: { etat: EtatCompetence; titre: string; vide: string }[] = [
@@ -24,10 +25,10 @@ const LIBELLES_CRITERE: Record<string, string> = { NON_ABORDE: 'NA', EN_COURS: '
  */
 @Component({
   selector: 'app-synthese-eleve',
-  imports: [PhotoEleveComponent],
+  imports: [ChargementComponent, PhotoEleveComponent],
   template: `
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (grille(); as g) {

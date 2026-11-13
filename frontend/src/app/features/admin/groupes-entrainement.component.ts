@@ -9,6 +9,7 @@ import { normaliser } from '../../core/seance-lieu';
 import {
   DemandeEspaceBassin, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue, MoniteurOptionVue, SaisonVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Formulaire d'un groupe ; id null : nouveau groupe. */
 interface FormulaireGroupe {
@@ -34,7 +35,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
  */
 @Component({
   selector: 'app-groupes-entrainement',
-  imports: [FormsModule, ComboboxComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent],
   template: `
     <h1>Groupes d'entraînement</h1>
     <p class="secondaire">
@@ -53,7 +54,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
 
     <h2>Groupes</h2>
     @if (chargement()) {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     } @else {
       @if (groupes().length === 0) {
         <div class="carte vide"><p>Aucun groupe pour cette saison.</p></div>
@@ -260,7 +261,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
                         aide="Rechercher un moniteur…" texteVide="Aucun moniteur ne correspond." />
 
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="formulaire.set(null)">Annuler</button>
@@ -294,7 +295,7 @@ interface FormulaireEspace extends DemandeEspaceBassin {
             <input type="checkbox" [(ngModel)]="f.actif"> Proposé dans le planning
           </label>
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrerEspace()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerEspace()" [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="formulaireEspace.set(null)">Annuler</button>

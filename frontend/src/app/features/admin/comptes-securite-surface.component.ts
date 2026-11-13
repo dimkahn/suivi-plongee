@@ -7,6 +7,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { CompteSurfaceVue, SeanceConfieeVue, SortieVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { finAccesProposee, seancesProposees } from '../../core/acces-securite-surface';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Une séance que l'on peut confier : la liste de la saison, les sorties et les comptes y contribuent. */
 interface SeanceChoix extends SeanceConfieeVue {
@@ -25,7 +26,7 @@ type Mode = 'creation' | 'modification' | 'reactivation';
  */
 @Component({
   selector: 'app-comptes-securite-surface',
-  imports: [FormsModule, DialogueComponent, DateFrPipe],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, DateFrPipe],
   template: `
     <div class="entete">
       <div>
@@ -42,7 +43,7 @@ type Mode = 'creation' | 'modification' | 'reactivation';
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (comptes().length === 0) {
       <p class="vide">Aucun compte de sécurité surface.</p>
     } @else {
@@ -137,7 +138,7 @@ type Mode = 'creation' | 'modification' | 'reactivation';
       <p class="secondaire">Le compte se désactive tout seul le lendemain ; on peut le réactiver ensuite pour d'autres séances.</p>
 
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : libelleValider() }}
         </button>
         <button type="button" class="bouton-discret" (click)="dialogueOuvert.set(false)">Annuler</button>

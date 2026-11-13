@@ -96,7 +96,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
       <label for="licence">N° de licence</label>
       <input id="licence" type="text" name="licence" [(ngModel)]="numeroLicence" placeholder="Facultatif">
 
-      <button type="button" class="bouton-principal" (click)="enregistrerIdentite()" [disabled]="envoi() === 'identite'">
+      <button [attr.aria-busy]="(envoi() === 'identite') || null" type="button" class="bouton-principal" (click)="enregistrerIdentite()" [disabled]="envoi() === 'identite'">
         {{ envoi() === 'identite' ? 'Enregistrement…' : 'Enregistrer' }}
       </button>
     </section>
@@ -113,7 +113,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
       <input id="mdp-email" type="password" name="mdpEmail" autocomplete="current-password"
              [(ngModel)]="motDePasseEmail">
 
-      <button type="button" class="bouton-principal" (click)="changerEmail()" [disabled]="envoi() === 'email'">
+      <button [attr.aria-busy]="(envoi() === 'email') || null" type="button" class="bouton-principal" (click)="changerEmail()" [disabled]="envoi() === 'email'">
         {{ envoi() === 'email' ? 'Enregistrement…' : "Changer d'e-mail" }}
       </button>
     </section>
@@ -137,7 +137,7 @@ type Section = 'identite' | 'email' | 'motDePasse' | 'photo';
       <input id="mdp-confirmation" type="password" name="mdpConfirmation" autocomplete="new-password"
              [(ngModel)]="confirmation">
 
-      <button type="button" class="bouton-principal" (click)="changerMotDePasse()"
+      <button [attr.aria-busy]="(envoi() === 'motDePasse') || null" type="button" class="bouton-principal" (click)="changerMotDePasse()"
               [disabled]="envoi() === 'motDePasse'">
         {{ envoi() === 'motDePasse' ? 'Enregistrement…' : 'Changer le mot de passe' }}
       </button>

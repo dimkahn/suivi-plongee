@@ -7,6 +7,7 @@ import { FormatAideService, fichiersVideo } from '../../core/format-aide';
 import { droitsDe, manuelPermis, videoPermise } from '../aide/droits';
 import { manuelDeLaVideo } from '../aide/manuels';
 import { Catalogue, Video, chargerCatalogue, dureeVideo, urlVideo } from './catalogue';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Ce qu'on dit de chaque rubrique, sous son titre. */
 const PRESENTATION: Record<string, string> = {
@@ -25,7 +26,7 @@ const PRESENTATION: Record<string, string> = {
  */
 @Component({
   selector: 'app-videos',
-  imports: [RouterLink, ChoixFormatAideComponent],
+  imports: [ChargementComponent, RouterLink, ChoixFormatAideComponent],
   template: `
     <h1>Vidéos d'aide</h1>
     <p class="secondaire intro">
@@ -39,7 +40,7 @@ const PRESENTATION: Record<string, string> = {
     </p>
 
     @if (etat() === 'chargement') {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (etat() === 'absent') {
       <div class="carte vide"><p>Les vidéos ne sont pas encore publiées.</p></div>
     } @else {

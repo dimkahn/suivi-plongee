@@ -108,7 +108,7 @@ type Brouillon = DemandeMesInformations & { arrivee: Trajet; depart: Trajet };
       <textarea id="mi-remarques" name="remarques" rows="2" [(ngModel)]="b.remarques"></textarea>
 
       <div class="actions-dialogue">
-        <button type="submit" class="bouton-principal" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer mes informations' }}
         </button>
         @if (annulable()) {

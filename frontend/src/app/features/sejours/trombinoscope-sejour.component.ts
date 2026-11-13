@@ -9,6 +9,7 @@ import { ReseauService } from '../../core/reseau.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { ExportTrombinoscopeComponent, PersonneExport } from '../../core/export-trombinoscope.component';
 import { LigneTrombinoscopeSejour, PortTrombinoscope, duGroupe, filtresGroupes, sousTitre, titreImage } from './trombinoscope-sejour';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Ce que l'organisateur confirme : ajouter la photo d'un invité, ou montrer une photo aux participants. */
 type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
@@ -25,11 +26,11 @@ type Demande = { sorte: 'PHOTO' | 'VISIBLE'; ligne: LigneTrombinoscopeSejour };
  */
 @Component({
   selector: 'app-trombinoscope-sejour',
-  imports: [FormsModule, AvatarComponent, DialogueComponent, OngletsComponent, RecadragePhotoComponent,
+  imports: [ChargementComponent, FormsModule, AvatarComponent, DialogueComponent, OngletsComponent, RecadragePhotoComponent,
             ExportTrombinoscopeComponent],
   template: `
     @if (lignes() === null) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <p class="vide">{{ erreur() }}</p>
     } @else if (lignes()!.length === 0) {

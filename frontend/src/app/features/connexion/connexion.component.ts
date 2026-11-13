@@ -38,7 +38,7 @@ import { IdentiteService } from '../../core/identite.service';
             <label for="email-sejour">Adresse e-mail</label>
             <input id="email-sejour" type="email" name="email-sejour" autocomplete="email"
                    [(ngModel)]="email" (keyup.enter)="demanderCodeSejour()">
-            <button type="button" class="bouton-principal" (click)="demanderCodeSejour()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="demanderCodeSejour()" [disabled]="envoi()">
               {{ envoi() ? 'Envoi…' : 'Recevoir le code' }}
             </button>
           } @else {
@@ -49,7 +49,7 @@ import { IdentiteService } from '../../core/identite.service';
             <label for="code-sejour">Code reçu par e-mail</label>
             <input id="code-sejour" name="code-sejour" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
                    [(ngModel)]="codeSejour" (keyup.enter)="entrerSejour()">
-            <button type="button" class="bouton-principal" (click)="entrerSejour()" [disabled]="envoi()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="entrerSejour()" [disabled]="envoi()">
               {{ envoi() ? 'Entrée…' : 'Entrer' }}
             </button>
             <button type="button" class="lien-oubli" (click)="etapeSejour.set('email')">
@@ -80,7 +80,7 @@ import { IdentiteService } from '../../core/identite.service';
             Décochez sur un appareil partagé : la session s'arrêtera à la fermeture du navigateur.
           </p>
 
-          <button type="button" class="bouton-principal" (click)="connecter()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="connecter()" [disabled]="envoi()">
             {{ envoi() ? 'Connexion…' : 'Se connecter' }}
           </button>
 
@@ -107,7 +107,7 @@ import { IdentiteService } from '../../core/identite.service';
             <input id="email-oubli" type="email" name="email-oubli" autocomplete="username"
                    [(ngModel)]="email" (keyup.enter)="demanderReinitialisation()">
 
-            <button type="button" class="bouton-principal" (click)="demanderReinitialisation()"
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="demanderReinitialisation()"
                     [disabled]="envoi()">
               {{ envoi() ? 'Envoi…' : 'Envoyer le lien' }}
             </button>

@@ -11,6 +11,7 @@ import {
   CasePlanningVue, DemandeCasePlanning, GroupePlanningVue, MoniteurOptionVue, PlanningVue, ReponseDisponibilite,
   SaisonVue, SoireePlanningVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Périodes proposées pour ne pas afficher toute la saison d'un coup (mois 1-12). */
 const PERIODES = [
@@ -74,7 +75,7 @@ interface EditionSoiree {
  */
 @Component({
   selector: 'app-planning-admin',
-  imports: [FormsModule, RouterLink, ComboboxComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, ComboboxComponent],
   template: `
     <h1>Planning du bassin</h1>
     <p class="secondaire">
@@ -122,7 +123,7 @@ interface EditionSoiree {
     </div>
 
     @if (chargement()) {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     } @else if (planning(); as p) {
       @if (p.groupes.length === 0) {
         <div class="carte vide">
@@ -328,7 +329,7 @@ interface EditionSoiree {
           </label>
         </fieldset>
         <div class="actions">
-          <button type="button" class="bouton-principal" (click)="enregistrerCase()"
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerCase()"
                   [disabled]="envoi() || (e.choix === 'LIGNES' && e.lignes.length === 0)">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
@@ -349,7 +350,7 @@ interface EditionSoiree {
         <label for="note">Note</label>
         <input id="note" type="text" [(ngModel)]="e.note" maxlength="200" placeholder="ex. Baptêmes, piscine fermée à 21 h">
         <div class="actions">
-          <button type="button" class="bouton-principal" (click)="enregistrerSoiree()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerSoiree()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="fermer()">Annuler</button>

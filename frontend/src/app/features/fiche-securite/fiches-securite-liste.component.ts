@@ -12,12 +12,13 @@ import { correspondLieuSiteInfo } from '../../core/seance-lieu';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { peutSignerDepuisLaListe } from '../../core/fiche-securite';
+import { ChargementComponent } from '../../core/chargement.component';
 
 type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent],
   template: `
     <h1>Fiches de sécurité</h1>
     <p class="secondaire">
@@ -65,7 +66,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
     @if (filtreDate() && fichesDuJour() > 0 && (auth.estMoniteur() || auth.estAdmin())) {
       <div class="impression-jour">
-        <button type="button" class="bouton-principal" (click)="imprimerFichesDuJour()" [disabled]="impressionEnCours()">
+        <button [attr.aria-busy]="impressionEnCours() || null" type="button" class="bouton-principal" (click)="imprimerFichesDuJour()" [disabled]="impressionEnCours()">
           {{ impressionEnCours() ? 'Génération…' : 'Imprimer les fiches du ' + (filtreDate() | dateFr) + ' (PDF)' }}
         </button>
         <label class="case">
@@ -101,7 +102,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
     </app-dialogue>
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (toutes().length === 0) {
@@ -162,7 +163,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
                 }
                 }
                 @if (s.ficheSecurite) {
-                  <button type="button" class="bouton-discret" (click)="imprimerFiche(s)"
+                  <button [attr.aria-busy]="(impressionFiche() === s.id) || null" type="button" class="bouton-discret" (click)="imprimerFiche(s)"
                           [disabled]="impressionFiche() === s.id"
                           [attr.aria-label]="'Imprimer la fiche du ' + (s.date | dateFr) + ' (PDF)'">
                     {{ impressionFiche() === s.id ? 'Génération…' : 'Imprimer (PDF)' }}

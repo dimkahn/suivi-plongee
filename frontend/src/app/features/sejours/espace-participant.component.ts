@@ -29,6 +29,7 @@ import { TrombinoscopeSejourComponent } from './trombinoscope-sejour.component';
 import { LigneTrombinoscopeSejour, PortTrombinoscope } from './trombinoscope-sejour';
 import { SejourRestaurantComponent } from './sejour-restaurant.component';
 import { MenusVue, PortMenus } from './menus-restaurant';
+import { ChargementComponent } from '../../core/chargement.component';
 
 type Onglet = 'carnet' | 'infos' | 'frais' | 'materiel' | 'restaurant' | 'trombinoscope';
 
@@ -81,7 +82,7 @@ interface CopieLien {
  */
 @Component({
   selector: 'app-espace-participant',
-  imports: [FormsModule, OngletsComponent, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
+  imports: [ChargementComponent, FormsModule, OngletsComponent, SejourFraisComponent, SejourMaterielComponent, MesInformationsComponent, JourneeSejourComponent,
             CarnetSejourComponent, CarnetImprimableComponent, TrombinoscopeSejourComponent, SejourRestaurantComponent,
             NotificationsSejourComponent],
   template: `
@@ -119,7 +120,7 @@ interface CopieLien {
               <button type="button" class="bouton-discret" (click)="ouvrirImprimable()">Version imprimable</button>
             </p>
           } @else {
-            <p class="vide">Chargement…</p>
+            <app-chargement />
           }
         } @else if (onglet() === 'infos') {
           @if (moi(); as p) {
@@ -129,7 +130,7 @@ interface CopieLien {
             <app-mes-informations [participant]="p" [envoi]="envoi()" [annulable]="false"
                                   (enregistrer)="enregistrerInfos($event)" />
           } @else {
-            <p class="vide">Chargement…</p>
+            <app-chargement />
           }
         } @else if (onglet() === 'materiel') {
           <app-sejour-materiel [prets]="prets" />
@@ -176,7 +177,7 @@ interface CopieLien {
     } @else if (erreur(); as m) {
       <div class="alerte" role="alert">{{ m }}</div>
     } @else {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
     }
   `,

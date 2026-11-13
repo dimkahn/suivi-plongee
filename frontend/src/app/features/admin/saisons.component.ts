@@ -6,10 +6,11 @@ import { ApiService } from '../../core/api.service';
 import { ProgressionResume, ProgressionVue, SaisonVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 @Component({
   selector: 'app-saisons',
-  imports: [FormsModule, DateFrPipe, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DateFrPipe, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -24,7 +25,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucune saison enregistrée.</p></div>
     } @else {
@@ -81,7 +82,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
       <label for="fin">Fin</label>
       <input id="fin" type="date" name="fin" [(ngModel)]="dateFin">
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
           {{ envoi() ? 'Création…' : 'Créer la saison' }}
         </button>
         <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
@@ -97,7 +98,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
       <label for="fin-edition">Fin</label>
       <input id="fin-edition" type="date" [(ngModel)]="brouillon.dateFin">
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
         <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
@@ -117,7 +118,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
         <p class="secondaire">Aucune progression type : créez-en depuis « Progressions types ».</p>
       }
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="enregistrerProgressions()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerProgressions()" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
         <button type="button" class="bouton-discret" (click)="editionProgressions.set(null)">Annuler</button>

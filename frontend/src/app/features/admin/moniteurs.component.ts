@@ -11,6 +11,7 @@ import { AvatarComponent } from '../../core/avatar.component';
 import { CACI_LIMITES, EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
 import { DetailCaciComponent } from '../../core/detail-caci.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 type NiveauEncadrement = 'E1' | 'E2' | 'E3' | 'E4';
 
@@ -20,7 +21,7 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [FormsModule, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
+  imports: [ChargementComponent, FormsModule, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
   template: `
     <div class="entete">
       <div>
@@ -98,7 +99,7 @@ function aVerifier(m: MoniteurVue): boolean {
       </label>
 
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
+        <button [attr.aria-busy]="envoiCreation() || null" type="button" class="bouton-principal" (click)="creer()" [disabled]="envoiCreation()">
           {{ envoiCreation() ? 'Création…' : 'Ajouter le moniteur' }}
         </button>
         <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
@@ -127,7 +128,7 @@ function aVerifier(m: MoniteurVue): boolean {
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun moniteur enregistré.</p></div>
     } @else if (listeFiltree().length === 0) {
@@ -180,7 +181,7 @@ function aVerifier(m: MoniteurVue): boolean {
                       Changer le mot de passe
                     </button>
                     @if (m.actif) {
-                      <button type="button" role="menuitem" (click)="envoyerLienReinitialisation(m)"
+                      <button [attr.aria-busy]="(envoiLien() === m.id) || null" type="button" role="menuitem" (click)="envoyerLienReinitialisation(m)"
                               [disabled]="envoiLien() === m.id">
                         {{ envoiLien() === m.id ? 'Envoi…' : 'Envoyer un lien de réinitialisation' }}
                       </button>
@@ -284,7 +285,7 @@ function aVerifier(m: MoniteurVue): boolean {
         </p>
 
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="modifier(m)" [disabled]="envoiEdition()">
+          <button [attr.aria-busy]="envoiEdition() || null" type="button" class="bouton-principal" (click)="modifier(m)" [disabled]="envoiEdition()">
             {{ envoiEdition() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="moniteurEdite.set(null)">Annuler</button>
@@ -300,7 +301,7 @@ function aVerifier(m: MoniteurVue): boolean {
         <input id="nouveau-mot-de-passe" type="password" name="nouveauMotDePasse" autocomplete="new-password"
                [(ngModel)]="nouveauMotDePasse">
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="changerMotDePasse(m)"
+          <button [attr.aria-busy]="envoiMotDePasse() || null" type="button" class="bouton-principal" (click)="changerMotDePasse(m)"
                   [disabled]="envoiMotDePasse()">
             {{ envoiMotDePasse() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>

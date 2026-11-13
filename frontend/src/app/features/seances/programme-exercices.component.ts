@@ -18,6 +18,7 @@ import { lieuEtSite } from '../../core/seance-lieu';
 import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
 import { reduirePhoto } from '../../core/reduire-photo';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Un exercice en cours d'édition ; `cle` ne sert qu'au suivi de la liste à l'écran. */
 interface Brouillon {
@@ -88,7 +89,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
  */
 @Component({
   selector: 'app-programme-exercices',
-  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent],
   template: `
     <h1>Programme d'exercices</h1>
     @if (seances().length > 0) {
@@ -117,7 +118,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
     @if (message(); as m) { <div class="alerte succes" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (charge()) {
       @if (choixProgrammes().length > 1) {
         <h2 class="titre-choix">Programme du groupe</h2>
@@ -339,7 +340,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
                       </details>
                     }
                   } @else {
-                    <p class="secondaire">Chargement des critères…</p>
+                    <app-chargement enLigne libelle="Chargement des critères…" />
                   }
                 }
               </div>
@@ -376,7 +377,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
       </div>
 
       <div class="barre-enregistrement">
-        <button type="button" class="bouton-principal" (click)="enregistrer()"
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()"
                 [disabled]="envoi() || !reseau.enLigne() || !modifie()">
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer le programme' }}
         </button>
@@ -452,7 +453,7 @@ async function imageAEnvoyer(fichier: File): Promise<File> {
             }
           </ul>
         } @else if (baseReferentielId() != null) {
-          <p class="secondaire">Chargement de la base d'exercices…</p>
+          <app-chargement enLigne libelle="Chargement de la base d'exercices…" />
         }
         <div class="actions-dialogue">
           <button type="button" class="bouton-principal" [disabled]="baseCoches().size === 0" (click)="ajouterDepuisBase()">

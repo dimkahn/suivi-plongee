@@ -9,6 +9,7 @@ import { DemandeSortie, SeancePossibleVue, SeanceSortieVue, SortieVue } from '..
 import { DateFrPipe, dateFr, periode } from '../../core/date-fr';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const JOURS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
 
@@ -23,7 +24,7 @@ function sortieVide(): DemandeSortie {
  */
 @Component({
   selector: 'app-sorties',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, OngletsComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, DialogueComponent, OngletsComponent],
   template: `
     <div class="entete">
       <div>
@@ -63,7 +64,7 @@ function sortieVide(): DemandeSortie {
         <textarea id="remarques" name="remarques" rows="2" [(ngModel)]="nouvelle.remarques"
                   placeholder="Rendez-vous, hébergement…"></textarea>
         <div class="actions-dialogue">
-          <button type="submit" class="bouton-principal" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">
             {{ envoi() ? 'Création…' : 'Créer puis choisir les plongées' }}
           </button>
           <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
@@ -74,7 +75,7 @@ function sortieVide(): DemandeSortie {
     <app-onglets [options]="periodes" [choisi]="recentes()" (choisir)="changerFiltre($event)" />
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>{{ recentes() ? 'Aucune sortie à venir.' : 'Aucune sortie enregistrée.' }}</p></div>
     } @else {
@@ -114,7 +115,7 @@ function sortieVide(): DemandeSortie {
                     </a>
                   }
                   @if (s.nombrePlongees > 0 && encadre()) {
-                    <button type="button" class="bouton-discret" (click)="imprimerFiches(s)"
+                    <button [attr.aria-busy]="(impression() === s.id) || null" type="button" class="bouton-discret" (click)="imprimerFiches(s)"
                             [disabled]="impression() === s.id">
                       {{ impression() === s.id ? 'Génération…' : 'Imprimer les fiches de sécurité' }}
                     </button>
@@ -150,7 +151,7 @@ function sortieVide(): DemandeSortie {
       <label for="edition-remarques">Remarques</label>
       <textarea id="edition-remarques" rows="2" [(ngModel)]="brouillon.remarques"></textarea>
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
         </button>
         <button type="button" class="bouton-discret" (click)="edition.set(null)">Annuler</button>
@@ -219,7 +220,7 @@ function sortieVide(): DemandeSortie {
                   }
 
                   <div class="actions-dialogue">
-                    <button type="button" class="bouton-principal" (click)="enregistrerSeances(s)" [disabled]="envoi()">
+                    <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerSeances(s)" [disabled]="envoi()">
                       {{ envoi() ? 'Enregistrement…' : 'Enregistrer les plongées' }}
                     </button>
                     <button type="button" class="bouton-discret" (click)="choix.set(null)">Annuler</button>

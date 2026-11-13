@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { CompteMaterielVue } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Directeurs techniques qui ne sont pas moniteurs du club (Administration ›
@@ -15,7 +16,7 @@ import { CompteMaterielVue } from '../../core/modeles';
  */
 @Component({
   selector: 'app-comptes-materiel',
-  imports: [FormsModule, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent],
   template: `
     <div class="entete">
       <div>
@@ -32,7 +33,7 @@ import { CompteMaterielVue } from '../../core/modeles';
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (comptes().length === 0) {
       <p class="vide">Aucun directeur technique non moniteur.</p>
     } @else {
@@ -74,7 +75,7 @@ import { CompteMaterielVue } from '../../core/modeles';
       <input id="dt-email" type="email" name="dtEmail" [(ngModel)]="saisie.email">
 
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
           {{ envoi() ? 'Enregistrement…' : (enEdition() ? 'Enregistrer' : 'Créer le compte') }}
         </button>
         <button type="button" class="bouton-discret" (click)="dialogueOuvert.set(false)">Annuler</button>

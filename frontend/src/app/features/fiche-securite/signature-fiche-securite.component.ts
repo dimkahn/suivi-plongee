@@ -9,6 +9,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { lieuEtSite } from '../../core/seance-lieu';
 import { alerteIntegrite, libelleSignature, peutSignerFiche } from '../../core/fiche-securite';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * La page de signature d'une fiche de sécurité, ouverte depuis la liste :
@@ -18,7 +19,7 @@ import { detailErreurFichier, telechargerFichier } from '../../core/telecharger'
  */
 @Component({
   selector: 'app-signature-fiche-securite',
-  imports: [RouterLink, DateFrPipe, DialogueComponent],
+  imports: [ChargementComponent, RouterLink, DateFrPipe, DialogueComponent],
   template: `
     @if (seance(); as s) {
       <h1>Signer la fiche de sécurité — {{ s.date | dateFr }}{{ lieuEtSite(s) ? ' — ' + lieuEtSite(s) : '' }}</h1>
@@ -27,7 +28,7 @@ import { detailErreurFichier, telechargerFichier } from '../../core/telecharger'
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (fiche(); as f) {
@@ -62,7 +63,7 @@ import { detailErreurFichier, telechargerFichier } from '../../core/telecharger'
         } @else if (!f.signature) {
           <span class="secondaire raison">{{ raisonSansSignature() }}</span>
         }
-        <button type="button" class="bouton-discret" (click)="imprimer()" [disabled]="impression()">
+        <button [attr.aria-busy]="impression() || null" type="button" class="bouton-discret" (click)="imprimer()" [disabled]="impression()">
           {{ impression() ? 'Génération…' : 'Imprimer (PDF)' }}
         </button>
         <a class="bouton-discret" [routerLink]="['/fiches-securite', seanceId]">Voir la fiche</a>
@@ -78,7 +79,7 @@ import { detailErreurFichier, telechargerFichier } from '../../core/telecharger'
           Une fois signée, <strong>elle ne pourra plus être modifiée ni complétée</strong>, par personne.
         </p>
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="signer()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" [disabled]="envoi()" (click)="signer()">
             {{ envoi() ? 'Signature…' : 'Je signe la fiche' }}
           </button>
           <button type="button" class="bouton-discret" (click)="dialogueOuvert.set(false)">Annuler</button>

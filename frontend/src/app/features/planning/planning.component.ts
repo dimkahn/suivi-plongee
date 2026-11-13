@@ -8,6 +8,7 @@ import { JOURS, codeCase, jourDe } from '../../core/planning';
 import {
   CasePlanningVue, GroupePlanningVue, PlanningVue, ReponseDisponibilite, SoireePlanningVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Nombre de soirées à venir listées d'emblée ; le reste de la saison sur demande. */
 const SOIREES_A_VENIR = 8;
@@ -22,14 +23,14 @@ const SOIREES_A_VENIR = 8;
  */
 @Component({
   selector: 'app-planning',
-  imports: [RouterLink],
+  imports: [ChargementComponent, RouterLink],
   template: `
     <h1>Planning du bassin</h1>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="secondaire">Chargement…</p>
+      <app-chargement enLigne />
     } @else if (planning(); as p) {
       <p class="secondaire">
         Saison {{ p.saison }}

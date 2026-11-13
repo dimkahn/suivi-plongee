@@ -10,6 +10,7 @@ import {
   BlocReferentielVue, CritereReferentielVue, DemandeBlocReferentiel, DemandeCritereReferentiel,
   DemandeReferentiel, ReferentielVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -63,7 +64,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
 
 @Component({
   selector: 'app-referentiel-admin',
-  imports: [FormsModule, DateFrPipe, DialogueComponent, OngletsComponent],
+  imports: [ChargementComponent, FormsModule, DateFrPipe, DialogueComponent, OngletsComponent],
   template: `
     <h1>Référentiel MFT</h1>
 
@@ -74,7 +75,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                  libelle="Niveau" [boutons]="true" />
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else {
       <div class="barre-versions">
         <label for="version">Version</label>
@@ -259,7 +260,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                  [(ngModel)]="f.prerogativeProfondeur">
 
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" (click)="enregistrerReferentiel()"
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerReferentiel()"
                     [disabled]="envoi()">
               {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
@@ -307,7 +308,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                               [ngModel]="fb.modalitesEvaluation ?? ''"
                               (ngModelChange)="fb.modalitesEvaluation = $event || null"></textarea>
                     <div class="actions-dialogue">
-                      <button type="button" class="bouton-principal" (click)="enregistrerBloc(r, b.id!)"
+                      <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrerBloc(r, b.id!)"
                               [disabled]="envoi()">
                         {{ envoi() ? 'Enregistrement…' : (b.id === 'nouveau' ? 'Ajouter' : 'Enregistrer') }}
                       </button>
@@ -334,7 +335,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
               <label for="critere-ordre">Ordre</label>
               <input id="critere-ordre" type="number" name="ordre" [(ngModel)]="fc.ordre">
               <div class="actions-dialogue">
-                <button type="button" class="bouton-principal"
+                <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal"
                         (click)="enregistrerCritere(r, cible.bloc, cible.critereId)" [disabled]="envoi()">
                   {{ envoi() ? 'Enregistrement…' : (cible.critereId === null ? 'Ajouter' : 'Enregistrer') }}
                 </button>

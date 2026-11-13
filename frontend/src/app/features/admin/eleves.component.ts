@@ -13,6 +13,7 @@ import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { NgTemplateOutlet } from '@angular/common';
 import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
+import { ChargementComponent } from '../../core/chargement.component';
 
 
 interface FormulaireEleve {
@@ -61,7 +62,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
 @Component({
   selector: 'app-eleves',
-  imports: [FormsModule, NgTemplateOutlet, DateFrPipe, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent],
+  imports: [ChargementComponent, FormsModule, NgTemplateOutlet, DateFrPipe, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent],
   template: `
     <!-- Suggestions pour le gilet ; la taille reste libre. La combinaison n'en a pas : texte libre seulement. -->
     <datalist id="tailles-gilet">
@@ -188,7 +189,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         }
 
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="creer()" [disabled]="envoi()">
             {{ envoi() ? 'Création…' : "Ajouter l'élève" }}
           </button>
           <button type="button" class="bouton-discret" (click)="creationOuverte.set(false)">Annuler</button>
@@ -208,7 +209,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       @if (formulaireEdition(); as f) {
         <ng-container *ngTemplateOutlet="champsDossier; context: { $implicit: f, prefixe: 'edition-' }" />
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="enregistrer()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>
@@ -266,7 +267,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun élève enregistré.</p></div>
     } @else if (listeFiltree().length === 0) {
@@ -340,7 +341,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                             Retirer de la saison
                           </button>
                         } @else {
-                          <button type="button" role="menuitem" (click)="ajouterALaSaison(e)"
+                          <button [attr.aria-busy]="(envoiAdhesion() === e.id) || null" type="button" role="menuitem" (click)="ajouterALaSaison(e)"
                                   [disabled]="envoiAdhesion() === e.id">
                             {{ envoiAdhesion() === e.id ? 'Ajout…' : 'Ajouter à la saison (sans formation)' }}
                           </button>
@@ -364,7 +365,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
               @if (historiqueOuvert() === e.id) {
                 <div class="historique">
                   @if (chargementHistorique()) {
-                    <p class="secondaire">Chargement…</p>
+                    <app-chargement enLigne />
                   } @else if ((historique() ?? []).length === 0) {
                     <p class="secondaire">
                       Aucune adhésion sans formation enregistrée pour cet élève (une formation en cours
@@ -391,7 +392,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
 
       @if (archivesOuvertes()) {
         @if (archives() === null) {
-          <p class="secondaire">Chargement…</p>
+          <app-chargement enLigne />
         } @else if (archives()!.length === 0) {
           <div class="carte vide"><p>Aucun élève archivé.</p></div>
         } @else {
@@ -409,7 +410,7 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                 </span>
                 <div class="actions">
                   <button type="button" class="bouton-discret" (click)="desarchiver(e)">Désarchiver</button>
-                  <button type="button" class="bouton-discret danger" (click)="supprimer(e)"
+                  <button [attr.aria-busy]="(suppressionEnCours() === e.id) || null" type="button" class="bouton-discret danger" (click)="supprimer(e)"
                           [disabled]="suppressionEnCours() === e.id">
                     {{ suppressionEnCours() === e.id ? 'Suppression…' : 'Supprimer définitivement' }}
                   </button>

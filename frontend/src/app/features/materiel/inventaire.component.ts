@@ -11,6 +11,7 @@ import {
 import { DateFrPipe } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
 import { TON_STATUT_EQUIPEMENT, descriptionEquipement, prochaineEcheance } from './materiel';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Inventaire du matériel du club : état de chaque équipement, calculé par
@@ -18,7 +19,7 @@ import { TON_STATUT_EQUIPEMENT, descriptionEquipement, prochaineEcheance } from 
  */
 @Component({
   selector: 'app-inventaire',
-  imports: [FormsModule, RouterLink, DateFrPipe],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe],
   template: `
     <div class="entete">
       <div>
@@ -34,12 +35,12 @@ import { TON_STATUT_EQUIPEMENT, descriptionEquipement, prochaineEcheance } from 
         <a routerLink="/materiel/prets" class="bouton-principal">Prêts</a>
         <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
         <a routerLink="/materiel/nouveau" class="bouton-discret">Ajouter un équipement</a>
-        <label class="bouton-discret import" [class.occupe]="importEnCours()">
+        <label class="bouton-discret import" [class.occupe]="importEnCours()" [attr.aria-busy]="importEnCours() || null">
           {{ importEnCours() ? 'Import en cours…' : 'Importer le classeur Excel' }}
           <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                  [disabled]="importEnCours()" (change)="importer($event)">
         </label>
-        <button type="button" class="bouton-discret" [disabled]="exportEnCours()" (click)="exporter()"
+        <button [attr.aria-busy]="exportEnCours() || null" type="button" class="bouton-discret" [disabled]="exportEnCours()" (click)="exporter()"
                 title="Blocs et gilets, au même format que le classeur importé">
           {{ exportEnCours() ? 'Export en cours…' : 'Exporter le classeur Excel' }}
         </button>
@@ -79,7 +80,7 @@ import { TON_STATUT_EQUIPEMENT, descriptionEquipement, prochaineEcheance } from 
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else {
       <div class="compteurs">
         @for (c of compteurs(); track c.statut) {

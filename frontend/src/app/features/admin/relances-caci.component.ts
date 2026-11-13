@@ -7,6 +7,7 @@ import { RelanceCaciVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { filtrerTraceRelances } from '../../core/trace-relances-caci';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Historique des e-mails de relance CACI partis (spec
@@ -16,7 +17,7 @@ import { filtrerTraceRelances } from '../../core/trace-relances-caci';
  */
 @Component({
   selector: 'app-relances-caci',
-  imports: [FormsModule, RouterLink, DateFrPipe, PlurielPipe],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, PlurielPipe],
   template: `
     <h1>Relances CACI</h1>
     <p class="secondaire">
@@ -28,7 +29,7 @@ import { filtrerTraceRelances } from '../../core/trace-relances-caci';
     @if (message(); as m) { <div class="alerte" role="alert">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (trace().length === 0) {
       <div class="carte vide"><p>Aucune relance envoyée ces deux dernières années.</p></div>
     } @else {

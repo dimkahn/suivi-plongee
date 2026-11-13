@@ -11,6 +11,7 @@ import {
 import { dateDuJour } from '../../core/date-fr';
 import { descriptionEquipement } from './materiel';
 import { nomEquipement } from '../../core/nom-equipement';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Une ligne de la fiche en cours de saisie. */
 interface Ligne {
@@ -30,10 +31,10 @@ interface Ligne {
  */
 @Component({
   selector: 'app-saisie-inspection-tiv',
-  imports: [FormsModule, RouterLink],
+  imports: [ChargementComponent, FormsModule, RouterLink],
   template: `
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (modele(); as m) {
       <h1>Inspection visuelle du bloc {{ nom(m.bloc) }}</h1>
       @if (description(m.bloc); as d) { <p class="secondaire">{{ d }}</p> }
@@ -166,7 +167,7 @@ interface Ligne {
         @if (message(); as msg) { <div class="alerte" role="alert">{{ msg }}</div> }
 
         <div class="actions">
-          <button type="submit" class="bouton-principal" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
           </button>
           <a [routerLink]="['/materiel', equipementId]" class="bouton-discret">Annuler</a>

@@ -18,6 +18,7 @@ import {
 } from './fiches-securite-sejour';
 import { relireSelonLeReseau } from './relire-fiches-sejour';
 import { lectureEchouee } from './sejour-hors-ligne';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * L'onglet « Fiches de sécurité » du séjour (demande du club, 2026) : les
@@ -32,7 +33,7 @@ import { lectureEchouee } from './sejour-hors-ligne';
  */
 @Component({
   selector: 'app-sejour-fiches-securite',
-  imports: [DatePipe, FormsModule, RouterLink, DialogueComponent],
+  imports: [ChargementComponent, DatePipe, FormsModule, RouterLink, DialogueComponent],
   template: `
     <div class="titre-section">
       <h2>Fiches de sécurité</h2>
@@ -57,7 +58,7 @@ import { lectureEchouee } from './sejour-hors-ligne';
       } @else {
         @if (fiches() > 0 && !v.copie) {
           <div class="impression carte">
-            <button type="button" class="bouton-discret imprimer-toutes" (click)="imprimerTout()" [disabled]="impression() !== null">
+            <button [attr.aria-busy]="(impression() === 0) || null" type="button" class="bouton-discret imprimer-toutes" (click)="imprimerTout()" [disabled]="impression() !== null">
               {{ impression() === 0 ? 'Génération…' : 'Imprimer toutes les fiches (PDF)' }}
             </button>
             <label class="case">
@@ -119,7 +120,7 @@ import { lectureEchouee } from './sejour-hors-ligne';
                       }
                     }
                     @if (p.fiche && !p.enAttente && !v.copie) {
-                      <button type="button" class="bouton-discret" (click)="imprimer(p)" [disabled]="impression() !== null"
+                      <button [attr.aria-busy]="(impression() === p.seanceId) || null" type="button" class="bouton-discret" (click)="imprimer(p)" [disabled]="impression() !== null"
                               [attr.aria-label]="'Imprimer la fiche de la plongée n° ' + p.ordre + ' du ' + jourLong(p.date)">
                         {{ impression() === p.seanceId ? 'Génération…' : 'Imprimer (PDF)' }}
                       </button>
@@ -140,7 +141,7 @@ import { lectureEchouee } from './sejour-hors-ligne';
         }
       }
     } @else if (!message()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
 
     <!-- Ajouter une plongée (organisateurs) -->
@@ -171,7 +172,7 @@ import { lectureEchouee } from './sejour-hors-ligne';
                  placeholder="Bateau, groupe…">
           <p class="secondaire">La plongée paraît aussitôt au programme du séjour ; sa fiche s'établit ensuite.</p>
           <div class="actions-dialogue">
-            <button type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Ajouter' }}</button>
+            <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Ajouter' }}</button>
             <button type="button" class="bouton-discret" (click)="ajoutOuvert.set(false)">Annuler</button>
           </div>
         </form>

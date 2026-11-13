@@ -16,6 +16,7 @@ import { nomEquipement } from '../../core/nom-equipement';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { adresseFicheEquipement, lecteurNfc, NFC_DISPONIBLE, programmerTag } from '../../core/tag-nfc';
 import { RetourPretComponent } from './retour-pret.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 function demandeVide(type: TypeEquipement): DemandeEquipement {
   return {
@@ -54,12 +55,12 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
  */
 @Component({
   selector: 'app-fiche-equipement',
-  imports: [FormsModule, RouterLink, DateFrPipe, DialogueComponent, RetourPretComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, DialogueComponent, RetourPretComponent],
   template: `
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (creation() && !gere()) {
       <p class="vide">L'ajout d'équipements est réservé au directeur technique.</p>
     } @else if (creation() || edition()) {
@@ -266,7 +267,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
         </fieldset>
 
         <div class="actions">
-          <button type="submit" class="bouton-principal" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="annulerEdition()">Annuler</button>

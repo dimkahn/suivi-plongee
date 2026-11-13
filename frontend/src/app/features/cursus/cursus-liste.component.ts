@@ -4,16 +4,17 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { CursusVue } from '../../core/modeles';
 import { uneInscriptionParEleve } from '../../core/inscription-retenue';
+import { ChargementComponent } from '../../core/chargement.component';
 
 @Component({
   selector: 'app-cursus-liste',
-  imports: [RouterLink],
+  imports: [ChargementComponent, RouterLink],
   template: `
     <h1>Formations en cours</h1>
     <p class="secondaire">{{ sousTitre() }}</p>
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide">
         <p>Aucune formation ouverte sur cette saison.</p>

@@ -13,6 +13,7 @@ import { PlurielPipe } from '../../core/pluriel';
 import {
   GroupeEntrainementVue, LignePresence, PlanningVue, ReponseDisponibilite, SeanceVue, SoireePlanningVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Ce que la feuille de présence d'une séance dit des élèves de mes groupes. */
 interface BilanSeance {
@@ -31,7 +32,7 @@ interface BilanSeance {
  */
 @Component({
   selector: 'app-aujourdhui',
-  imports: [RouterLink, PlurielPipe],
+  imports: [ChargementComponent, RouterLink, PlurielPipe],
   template: `
     <h1>{{ titre() }}</h1>
     @if (jour(); as j) {
@@ -41,7 +42,7 @@ interface BilanSeance {
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (!jour()) {
       <div class="carte vide">
         <p>Aucune séance à venir sur la saison.</p>

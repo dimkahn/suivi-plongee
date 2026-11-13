@@ -51,6 +51,7 @@ import { HttpClient } from '@angular/common/http';
 import { SwPush } from '@angular/service-worker';
 import { NotificationsDuSejour } from './notifications-du-sejour';
 import { NotificationsSejourComponent } from './notifications-sejour.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Les e-mails que l'organisateur envoie aux participants qu'il coche. */
 type EnvoiSejour = 'invitations' | 'carnet' | 'parametres';
@@ -112,7 +113,7 @@ function participantVide(): BrouillonParticipant {
  */
 @Component({
   selector: 'app-sejour',
-  imports: [FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, JourneeProgrammeComponent, PhotoJourneeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
+  imports: [ChargementComponent, FormsModule, RouterLink, OngletsComponent, JourneeSejourComponent, JourneeProgrammeComponent, PhotoJourneeComponent, DialogueComponent, ComboboxComponent, SejourFraisComponent, SejourMaterielComponent,
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
             TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent,
             ActionsSejourComponent,
@@ -135,6 +136,7 @@ function participantVide(): BrouillonParticipant {
           }
           @if (enAttente().length > 0) {
             <p>
+              <span class="temoin" [class.actif]="fileSejour.synchronisation()" aria-hidden="true"></span>
               {{ enAttente().length | pluriel:'modification' }} gardée{{ enAttente().length > 1 ? 's' : '' }} sur ce
               téléphone, déjà visible{{ enAttente().length > 1 ? 's' : '' }} ici :
               {{ fileSejour.synchronisation() ? 'envoi en cours…' : reseau.enLigne() ? 'envoi au plus tôt.' : 'envoi au retour du réseau.' }}
@@ -732,7 +734,7 @@ function participantVide(): BrouillonParticipant {
         </section>
       }
     } @else if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (message(); as m) {
       <div class="alerte" role="alert">{{ m }}</div>
     }
@@ -995,10 +997,10 @@ function participantVide(): BrouillonParticipant {
           @if (e.sansNotification.length) { <br>Pas encore : {{ e.sansNotification.join(', ') }}. }
         </p>
       } @else if (!erreur()) {
-        <p class="vide">Chargement…</p>
+        <app-chargement />
       }
       <div class="actions-dialogue">
-        <button type="button" class="bouton-principal envoyer-notification" (click)="prevenir()" [disabled]="envoi()">
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal envoyer-notification" (click)="prevenir()" [disabled]="envoi()">
           {{ envoi() ? 'Envoi…' : 'Prévenir' }}
         </button>
         <button type="button" class="bouton-discret" (click)="prevenirOuvert.set(false)">Annuler</button>
@@ -1268,7 +1270,7 @@ function participantVide(): BrouillonParticipant {
         envois par e-mail. Les autres moniteurs le lisent avec leur compte, les participants par le lien reçu par e-mail.
       </p>
       @if (candidats().length === 0) {
-        <p class="secondaire">Chargement des moniteurs…</p>
+        <app-chargement enLigne libelle="Chargement des moniteurs…" />
       }
       @for (m of candidats(); track m.id) {
         <label class="case" [class.indisponible]="estCreateur(m.id)">
@@ -1394,6 +1396,7 @@ function participantVide(): BrouillonParticipant {
     .danger { color: #B91C1C; border-color: #FCA5A5; }
     .bandeau-hors-ligne { padding: var(--pas-2); margin: var(--pas-2) 0; background: var(--en-cours-clair); }
     .bandeau-hors-ligne p { margin: 0 0 var(--pas); }
+    .bandeau-hors-ligne .temoin { color: var(--en-cours); }
     .bandeau-hors-ligne .en-attente { margin: 0 0 var(--pas); padding-left: var(--pas-3); font-size: .9rem; }
     .envoyer-maintenant { min-height: 44px; }
     .acces-frais { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }

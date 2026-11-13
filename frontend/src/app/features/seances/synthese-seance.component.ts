@@ -12,6 +12,7 @@ import { PlurielPipe } from '../../core/pluriel';
 import { libellePreparation } from '../../core/niveaux';
 import { PhotoEleveComponent } from '../../core/photo-eleve.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 'théorie', PLONGEE: 'plongée' };
 
@@ -25,7 +26,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
  */
 @Component({
   selector: 'app-synthese-seance',
-  imports: [RouterLink, NgTemplateOutlet, OngletsComponent, PastillePhaseComponent, PhotoEleveComponent, PlurielPipe],
+  imports: [ChargementComponent, RouterLink, NgTemplateOutlet, OngletsComponent, PastillePhaseComponent, PhotoEleveComponent, PlurielPipe],
   template: `
     <h1>Synthèse des notes</h1>
 
@@ -165,7 +166,7 @@ const ATELIERS: Record<string, string> = { NAGE: 'nage', BLOC: 'bloc', THEORIE: 
         }
       }
     } @else if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
 
     <ng-template #detail let-n>

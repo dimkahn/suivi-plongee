@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, effect, inject, input, signal, untracked } from '@angular/core';
 import { ApiService } from './api.service';
+import { ChargementComponent } from './chargement.component';
 
 /**
  * Une photo d'un exercice de la base. Comme le schéma, elle demande le jeton
@@ -8,6 +9,7 @@ import { ApiService } from './api.service';
  */
 @Component({
   selector: 'app-photo-exercice',
+  imports: [ChargementComponent],
   standalone: true,
   template: `
     @if (url(); as u) {
@@ -15,7 +17,7 @@ import { ApiService } from './api.service';
     } @else if (erreur()) {
       <p class="secondaire">Photo indisponible (hors ligne ?).</p>
     } @else {
-      <p class="secondaire">Chargement de la photo…</p>
+      <app-chargement enLigne libelle="Chargement de la photo…" />
     }
   `,
   styles: [`

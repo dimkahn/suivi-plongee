@@ -107,7 +107,7 @@ const JOURS: { valeur: JourSemaine; libelle: string }[] = [
       </div>
     </section>
 
-    <button type="button" class="bouton-principal" (click)="previsualiser()" [disabled]="envoi()">
+    <button [attr.aria-busy]="(envoi() && !apercu()) || null" type="button" class="bouton-principal" (click)="previsualiser()" [disabled]="envoi()">
       {{ envoi() && !apercu() ? 'Calcul…' : 'Prévisualiser' }}
     </button>
 
@@ -161,7 +161,7 @@ const JOURS: { valeur: JourSemaine; libelle: string }[] = [
         @if (parametresModifies()) {
           <p class="alerte">Les paramètres ont changé depuis l'aperçu : prévisualisez à nouveau avant de créer.</p>
         }
-        <button type="button" class="bouton-principal" (click)="creer()"
+        <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" (click)="creer()"
                 [disabled]="envoi() || a.nbSeances === 0 || parametresModifies()">
           {{ envoi() ? 'Création…' : 'Créer les ' + a.nbSeances + ' séances' }}
         </button>

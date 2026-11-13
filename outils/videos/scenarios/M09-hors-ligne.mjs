@@ -1,5 +1,5 @@
 // M9 — Travailler sans réseau au bord du bassin.
-// Tournage du 2026-10-22, 14e série, « Tout » emporte aussi les séjours proches (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-13, 15e série, la pastille du bandeau pulse pendant l'envoi (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 import { critere, choisirExercice } from '../grille.mjs';
 
@@ -62,6 +62,7 @@ export default {
 
     await legende('De retour au vestiaire, le réseau revient…', 0);
     await reseau(true);
+    await legende('Pendant l\'envoi, la pastille du bandeau pulse : « Envoi en cours… ».', 0);
     await pause(4000);
     await ligne.scrollIntoViewIfNeeded();
     await legende('… et tout part tout seul. Rien à faire.', 4000);

@@ -10,6 +10,7 @@ import { dateDuJour } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Une ligne de la liste en cours de saisie : `cle` la suit à l'écran (ajouts en tête, retraits). */
 type LigneMembre = MembreGroupeVue & { cle: number };
@@ -45,7 +46,7 @@ const SEUIL_RECHERCHE = 6;
  */
 @Component({
   selector: 'app-groupes',
-  imports: [FormsModule, ComboboxComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent],
   template: `
     <h1>Groupes de plongeurs</h1>
     <p class="secondaire">
@@ -68,7 +69,7 @@ const SEUIL_RECHERCHE = 6;
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun groupe pour cette saison.</p></div>
     } @else {
@@ -210,7 +211,7 @@ const SEUIL_RECHERCHE = 6;
           @if (lectureSeule()) {
             <button type="button" class="bouton-discret" (click)="fermerEditeur()">Fermer</button>
           } @else {
-            <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer()">
               {{ envoi() ? 'Enregistrement…' : (editeurId() === null ? 'Créer le groupe' : 'Enregistrer') }}
             </button>
             <button type="button" class="bouton-discret" (click)="fermerEditeur()">Annuler</button>
@@ -226,7 +227,7 @@ const SEUIL_RECHERCHE = 6;
           Les organisateurs modifient « {{ g.nom }} » avec son créateur : nom, plongeurs, suppression.
           Les autres moniteurs la consultent et la reprennent dans leurs fiches de sécurité.
         </p>
-        @if (candidats().length === 0) { <p class="secondaire">Chargement des moniteurs…</p> }
+        @if (candidats().length === 0) { <app-chargement enLigne libelle="Chargement des moniteurs…" /> }
         @for (m of candidats(); track m.id) {
           <label class="case" [class.indisponible]="estCreateur(g, m.id)">
             <input type="checkbox" [checked]="estCreateur(g, m.id) || organisateursChoisis().has(m.id)"
@@ -276,7 +277,7 @@ const SEUIL_RECHERCHE = 6;
           </div>
         }
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" [disabled]="envoiEmails() || sortieChoisie === null"
+          <button [attr.aria-busy]="envoiEmails() || null" type="button" class="bouton-principal" [disabled]="envoiEmails() || sortieChoisie === null"
                   (click)="envoyerParametres(g)">
             {{ envoiEmails() ? 'Envoi…' : 'Envoyer les e-mails' }}
           </button>

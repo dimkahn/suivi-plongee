@@ -11,6 +11,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
 import { DateFrPipe } from '../../core/date-fr';
 import { AvatarComponent } from '../../core/avatar.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const LIBELLES: Record<string, string> = {
   NAGE: 'Nage', BLOC: 'Bloc', THEORIE: 'Théorie', PLONGEE: 'Plongée',
@@ -19,7 +20,7 @@ const LIBELLES: Record<string, string> = {
 
 @Component({
   selector: 'app-roster',
-  imports: [RouterLink, FormsModule, DateFrPipe, AvatarComponent, FiltreGroupeComponent, DialogueComponent, DetailCaciComponent],
+  imports: [ChargementComponent, RouterLink, FormsModule, DateFrPipe, AvatarComponent, FiltreGroupeComponent, DialogueComponent, DetailCaciComponent],
   template: `
     <h1>Infos élèves</h1>
     <p class="secondaire">Vue d'ensemble de la saison : présence par séance, CACI, volume de séances.</p>
@@ -38,7 +39,7 @@ const LIBELLES: Record<string, string> = {
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (erreur()) {
       <div class="carte vide"><p>{{ erreur() }}</p></div>
     } @else if (roster(); as r) {

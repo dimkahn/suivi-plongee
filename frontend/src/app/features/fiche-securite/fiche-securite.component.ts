@@ -26,6 +26,7 @@ import {
   DemandeDuplicationSeance, DemandePropositionPalanquees, FicheSecuriteVue, GroupePlongeursVue, PropositionPalanqueesVue, MembreGroupeVue, MoniteurOptionVue, PalanqueeVue, PlongeurConnuVue,
   PlongeurVue, SeanceLieeVue, SeanceVue, SignatureFicheVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 function plongeurVide(): PlongeurVue {
   return {
@@ -103,7 +104,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [FormsModule, RouterLink, DragDropModule, DateFrPipe, PlurielPipe, ComboboxComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DragDropModule, DateFrPipe, PlurielPipe, ComboboxComponent, DialogueComponent],
   template: `
     <datalist id="plongeurs-club">
       @for (c of plongeursConnus(); track libellePlongeurConnu(c)) {
@@ -123,7 +124,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
     @if (!entete() && message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (entete(); as f) {
       @if (signature(); as sig) {
         <div class="signature carte" [class.alteree]="!sig.integre" role="status">
@@ -349,7 +350,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
             </fieldset>
 
             <div class="actions-dialogue">
-              <button type="button" class="bouton-principal" [disabled]="envoiDuplication()" (click)="dupliquer()">
+              <button [attr.aria-busy]="envoiDuplication() || null" type="button" class="bouton-principal" [disabled]="envoiDuplication()" (click)="dupliquer()">
                 {{ envoiDuplication() ? 'Création…' : 'Créer la séance liée' }}
               </button>
               <button type="button" class="bouton-discret" (click)="duplication.set(null)">Annuler</button>
@@ -464,7 +465,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           }
 
           <div class="actions-dialogue">
-            <button type="button" class="bouton-principal" [disabled]="envoiProposition()" (click)="proposer()">
+            <button [attr.aria-busy]="envoiProposition() || null" type="button" class="bouton-principal" [disabled]="envoiProposition()" (click)="proposer()">
               {{ envoiProposition() ? 'Calcul…' : 'Proposer' }}
             </button>
             <button type="button" class="bouton-discret" (click)="propositionOuverte.set(false)">Annuler</button>
@@ -583,7 +584,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           <fieldset class="choix-palanquees-dup">
             <legend>Palanquées à reprendre</legend>
             @if (chargementReprise()) {
-              <p class="vide">Chargement de la fiche…</p>
+              <app-chargement libelle="Chargement de la fiche…" />
             } @else {
               @for (p of palanqueesAReprendre(); track p.numero) {
                 <label class="case">
@@ -811,7 +812,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           </div>
         }
         @if (modifiable()) {
-          <button type="button" class="bouton-principal action-ordinateur" (click)="enregistrer()" [disabled]="envoi()">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal action-ordinateur" (click)="enregistrer()" [disabled]="envoi()">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
           </button>
           <span class="etat-enregistrement" role="status">
@@ -825,7 +826,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           </span>
         }
         @if (ficheId() !== null) {
-          <button type="button" class="bouton-discret action-ordinateur" (click)="imprimer()" [disabled]="impressionEnCours()">
+          <button [attr.aria-busy]="impressionEnCours() || null" type="button" class="bouton-discret action-ordinateur" (click)="imprimer()" [disabled]="impressionEnCours()">
             {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
           </button>
         }
@@ -851,7 +852,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
           <div class="fond-menu-actions" (click)="menuActionsOuvert.set(false)"></div>
           <div class="menu-actions" id="menu-actions" role="menu" aria-label="Actions de la fiche">
             @if (modifiable()) {
-              <button type="button" role="menuitem" class="bouton-principal" [disabled]="envoi()"
+              <button [attr.aria-busy]="envoi() || null" type="button" role="menuitem" class="bouton-principal" [disabled]="envoi()"
                       (click)="menuActionsOuvert.set(false); enregistrer()">
                 {{ envoi() ? 'Enregistrement…' : 'Enregistrer la fiche' }}
               </button>
@@ -869,7 +870,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
               }
             }
             @if (ficheId() !== null) {
-              <button type="button" role="menuitem" class="bouton-discret" [disabled]="impressionEnCours()"
+              <button [attr.aria-busy]="impressionEnCours() || null" type="button" role="menuitem" class="bouton-discret" [disabled]="impressionEnCours()"
                       (click)="menuActionsOuvert.set(false); imprimer()">
                 {{ impressionEnCours() ? 'Génération…' : 'Imprimer (PDF)' }}
               </button>

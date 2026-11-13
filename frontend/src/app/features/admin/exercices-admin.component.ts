@@ -14,6 +14,7 @@ import {
   BlocReferentielVue, DemandeExerciceBase, ExerciceBaseVue, PhaseExercice, PhotoExerciceVue, ReferentielVue,
   VideoExerciceVue
 } from '../../core/modeles';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Exercice en cours de saisie dans le dialogue : `id` null pour une création. */
 interface Formulaire extends DemandeExerciceBase {
@@ -29,7 +30,7 @@ interface Formulaire extends DemandeExerciceBase {
  */
 @Component({
   selector: 'app-exercices-admin',
-  imports: [FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent,
+  imports: [ChargementComponent, FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent,
             PhotoExerciceComponent],
   template: `
     <h1>Base d'exercices</h1>
@@ -53,7 +54,7 @@ interface Formulaire extends DemandeExerciceBase {
     </select>
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (detail(); as ref) {
       <p class="secondaire compte">{{ exercices().length }} exercice(s) dans cette formation.</p>
       @for (bloc of ref.blocs; track bloc.id) {
@@ -232,13 +233,13 @@ interface Formulaire extends DemandeExerciceBase {
                 copiée dans l'appli.</p>
             }
           } @else {
-            <p class="secondaire">Chargement des photos et vidéos…</p>
+            <app-chargement enLigne libelle="Chargement des photos et vidéos…" />
           }
         } @else {
           <p class="secondaire">Le schéma, les photos et les vidéos s'ajoutent une fois l'exercice enregistré.</p>
         }
         <div class="actions-dialogue">
-          <button type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer(f)">
+          <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer(f)">
             {{ envoi() ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
           <button type="button" class="bouton-discret" (click)="formulaire.set(null)">Annuler</button>

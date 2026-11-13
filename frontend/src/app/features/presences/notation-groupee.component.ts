@@ -12,6 +12,7 @@ import { libellePreparation } from '../../core/niveaux';
 import { periodeDuMois } from '../../core/progression';
 import { PlurielPipe, pluriel } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Notation groupée depuis la feuille de présence : le moniteur coche des
@@ -26,7 +27,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
  */
 @Component({
   selector: 'app-notation-groupee',
-  imports: [FormsModule, PlurielPipe, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, PlurielPipe, DialogueComponent],
   template: `
     <button type="button" class="bouton-principal" (click)="ouvrir()">
       Noter les présents
@@ -59,7 +60,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
         }
 
         @if (chargement()) {
-          <p class="vide">Chargement…</p>
+          <app-chargement />
         } @else if (referentiel(); as ref) {
           @if (!auth.peutValider(ref.niveauEncadrantValidation)) {
             <div class="alerte" role="status">
@@ -134,7 +135,7 @@ import { DialogueComponent } from '../../core/dialogue.component';
           }
 
           <div class="actions">
-            <button type="button" class="bouton-principal" [disabled]="!peutEnvoyer()" (click)="envoyer()">
+            <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" [disabled]="!peutEnvoyer()" (click)="envoyer()">
               {{ envoi() ? 'Enregistrement…' : 'Valider la notation' }}
             </button>
             @if (commentairesManquants() > 0) {

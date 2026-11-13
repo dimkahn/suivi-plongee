@@ -51,7 +51,7 @@ export interface PersonneExport {
 
       <div class="actions-dialogue">
         <button type="button" class="bouton-discret" (click)="fermer.emit()">Annuler</button>
-        <button type="button" class="bouton-principal" (click)="exporter()" [disabled]="enCours()">
+        <button [attr.aria-busy]="enCours() || null" type="button" class="bouton-principal" (click)="exporter()" [disabled]="enCours()">
           {{ enCours() ? 'Préparation…' : "Télécharger l'image" }}
         </button>
       </div>

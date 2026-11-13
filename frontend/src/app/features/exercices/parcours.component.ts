@@ -12,6 +12,7 @@ import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
 import { periodeDuMois, plagePeriode } from '../../core/progression';
 import { dateDuJour } from '../../core/date-fr';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
+import { ChargementComponent } from '../../core/chargement.component';
 
 const NIVEAUX = ['N1', 'N2', 'N3'] as const;
 type Niveau = typeof NIVEAUX[number];
@@ -32,7 +33,7 @@ interface GroupeCompetence {
  */
 @Component({
   selector: 'app-parcours',
-  imports: [FormsModule, RouterLink, OngletsComponent, PastillePhaseComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, OngletsComponent, PastillePhaseComponent],
   template: `
     <h1>Parcours de formation</h1>
     <p class="secondaire">
@@ -57,7 +58,7 @@ interface GroupeCompetence {
     }
 
     @if (chargement()) {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     } @else if (progression(); as p) {
       <section class="carte entete">
         <h2>{{ p.nom }}</h2>

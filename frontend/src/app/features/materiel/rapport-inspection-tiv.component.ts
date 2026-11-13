@@ -7,6 +7,7 @@ import { NavigationService } from '../../core/navigation';
 import { InspectionTivVue } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { nomEquipement } from '../../core/nom-equipement';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /**
  * Le compte rendu d'une inspection TIV, à imprimer et à faire signer. Son
@@ -17,7 +18,7 @@ import { nomEquipement } from '../../core/nom-equipement';
  */
 @Component({
   selector: 'app-rapport-inspection-tiv',
-  imports: [DateFrPipe],
+  imports: [ChargementComponent, DateFrPipe],
   template: `
     @if (fiche(); as f) {
       <div class="actions pas-imprime">
@@ -122,7 +123,7 @@ import { nomEquipement } from '../../core/nom-equipement';
     } @else if (message(); as m) {
       <div class="alerte" role="alert">{{ m }}</div>
     } @else {
-      <p class="vide">Chargement…</p>
+      <app-chargement />
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,

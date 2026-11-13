@@ -29,6 +29,7 @@ import { AvatarComponent } from '../../core/avatar.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { EtatAccords, modeValidation } from '../../core/validation-competence';
 import { libelleStatutCursus } from '../../core/statuts-cursus';
+import { ChargementComponent } from '../../core/chargement.component';
 
 /** Un suivi affiché (milieu naturel ou entraînement), augmenté de l'information « pas encore envoyé ». */
 interface SuiviAffiche {
@@ -87,7 +88,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
 @Component({
   selector: 'app-grille',
   standalone: true,
-  imports: [
+  imports: [ChargementComponent, 
     NgTemplateOutlet, FormsModule, RouterLink, DateFrPipe, AvatarComponent, PlurielPipe, CalendrierSeancesComponent, DialogueComponent, PastillePhaseComponent,
     SchemaExerciceComponent
   ],
@@ -200,7 +201,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
             <app-dialogue [ouvert]="historiqueSaisonsOuvert()" [titre]="'Saisons précédentes de ' + g.eleve"
                           (fermer)="historiqueSaisonsOuvert.set(false)">
               @if (chargementHistoriqueSaisons()) {
-                <p class="secondaire">Chargement…</p>
+                <app-chargement enLigne />
               } @else {
                 @let autres = historiqueSaisons();
                 @if (autres.length === 0) {
@@ -265,7 +266,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 <input id="taille-combinaison" type="text" maxlength="20" placeholder="ex. T3, L" [(ngModel)]="t.tailleCombinaison">
                 @if (!reseau.enLigne()) { <p class="secondaire">Enregistrement possible au retour du réseau.</p> }
                 <div class="actions-dialogue">
-                  <button type="button" class="bouton-principal" (click)="enregistrerTailles(g.eleveId)"
+                  <button [attr.aria-busy]="enregistrementTailles() || null" type="button" class="bouton-principal" (click)="enregistrerTailles(g.eleveId)"
                           [disabled]="enregistrementTailles() || !reseau.enLigne()">
                     {{ enregistrementTailles() ? 'Enregistrement…' : 'Enregistrer' }}
                   </button>
@@ -860,7 +861,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
                 @if (historiqueOuverts().has(cleUi)) {
                   <div class="historique">
                     @if (chargementHistorique().has(critere.id)) {
-                      <p class="secondaire">Chargement…</p>
+                      <app-chargement enLigne />
                     } @else {
                       @let entrees = historiques()[critere.id] ?? [];
                       @if (entrees.length === 0) {
@@ -994,7 +995,7 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
         </p>
       </div>
     } @else {
-      <p class="vide">Chargement de la grille…</p>
+      <app-chargement libelle="Chargement de la grille…" />
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -1183,18 +1184,9 @@ const cle = (critereId: number, entrainement: boolean) => `${entrainement ? 'e' 
     .libelle { display: flex; flex-direction: column; gap: 2px; max-width: 62ch; }
     .trace { font-style: italic; }
     .attente { color: var(--en-cours); font-size: .875rem; font-weight: 700; }
-    .enregistrement {
-      display: inline-flex; align-items: center; gap: 6px;
-      color: var(--profond); font-size: .875rem; font-weight: 700;
-    }
-    .chargeur {
-      display: inline-block; flex: none; width: 1em; height: 1em; margin-right: 6px; vertical-align: -2px;
-      border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
-      animation: tourner .8s linear infinite;
-    }
+    /* .chargeur et .enregistrement : styles.css. */
+    .chargeur { margin-right: 6px; }
     .enregistrement .chargeur { margin-right: 0; }
-    @keyframes tourner { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .chargeur { animation-duration: 2.4s; } }
 
     .etats { display: flex; gap: 4px; flex: none; justify-content: flex-end; }
     .legende-etats {

@@ -67,7 +67,7 @@ import { nomEquipement } from '../../core/nom-equipement';
             <input #fichiers type="file" accept="image/*" multiple class="masque"
                    [id]="idChamp(m.valeur, 'fichiers')" (change)="deposer(m.valeur, $event)">
             <label [for]="idChamp(m.valeur, 'fichiers')" class="bouton-principal bouton-photo"
-                   [class.occupe]="envoi() !== null">
+                   [class.occupe]="envoi() !== null" [attr.aria-busy]="envoi()?.moment === m.valeur || null">
               {{ envoi()?.moment === m.valeur ? 'Envoi ' + envoi()!.fait + '/' + envoi()!.total + '…' : 'Prendre ou choisir des photos' }}
             </label>
           </div>
