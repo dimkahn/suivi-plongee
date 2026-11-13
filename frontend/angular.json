@@ -59,11 +59,7 @@
           },
           "configurations": {
             "production": {
-              "optimization": {
-                "scripts": true,
-                "styles": { "minify": true, "inlineCritical": true },
-                "fonts": false
-              },
+              "optimization": true,
               "outputHashing": "all"
             },
             "development": {

@@ -20,13 +20,13 @@
       }
     },
     {
+      "comment": "Poppins et Nunito, servies par l'appli : installées d'avance, pour un affichage juste hors ligne.",
       "name": "polices",
-      "installMode": "lazy",
+      "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
-        "urls": [
-          "https://fonts.googleapis.com/**",
-          "https://fonts.gstatic.com/**"
+        "files": [
+          "/polices/*.woff2"
         ]
       }
     }

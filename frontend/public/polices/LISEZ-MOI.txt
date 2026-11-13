@@ -1,0 +1,10 @@
+Polices de l'appli, servies par elle plutôt que par Google Fonts (aucun appel
+à Google depuis le téléphone des participants, affichage juste hors ligne,
+construction sans réseau). Déclarées dans src/styles.css.
+
+  poppins-<graisse>-latin.woff2, -latin-ext.woff2   titres (400 à 800)
+  nunito-latin.woff2, nunito-latin-ext.woff2        texte (police variable, 400 à 700)
+
+Téléchargées depuis fonts.googleapis.com le 2026-11-13 (sous-ensembles latin
+et latin étendu). Licence SIL Open Font License 1.1 : OFL-Poppins.txt,
+OFL-Nunito.txt.

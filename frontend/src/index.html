@@ -12,9 +12,9 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Les deux polices du texte, servies par l'appli (styles.css) : chargées tout de suite. -->
+  <link rel="preload" href="/polices/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/polices/poppins-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
   <app-racine></app-racine>
