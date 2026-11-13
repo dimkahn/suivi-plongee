@@ -94,6 +94,10 @@ imiter le fichier voisin le plus récent (`git log -- <dossier>`).
   (`features/<rubrique>/<nom>.ts`), avec son `<nom>.spec.ts` écrit **d'abord**
   (rouge pour la bonne raison, puis vert). Exemples : `caci.ts`,
   `progression.ts`, `fiche-securite.ts`.
+- Refactoriser = même comportement : sortir une logique d'un composant, c'est
+  écrire d'abord le `.spec.ts` de la fonction sur ce qu'elle fait aujourd'hui,
+  puis brancher le composant ; sélecteurs et libellés des vidéos gardés.
+  Détail : skill `refactoriser`.
 - On teste la logique et les services, pas la mise en page ; l'affichage se
   vérifie dans le navigateur (`lancer-appli`), en largeur téléphone.
 - Dates : `core/date-fr.ts` (`dateFr`, `dateDuJour`, `dateDansJours`,

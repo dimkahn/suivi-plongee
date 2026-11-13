@@ -55,6 +55,16 @@ Toute modification de comportement (règle métier, endpoint, droit, bogue) :
 2. **Vert** : le code le plus simple qui le fait passer.
 3. **Refactoriser** au vert, puis relancer la classe entière.
 
+**Refactoriser** (changer la forme, pas le comportement ; skill `refactoriser`) :
+- Toujours au vert : partir de tests verts ; rien ne protège le code ? d'abord
+  un test de caractérisation qui passe sur l'existant.
+- Petits pas, tests relancés à chaque pas ; un bogue trouvé en route se traite
+  à part (test rouge, commit séparé), jamais dans la refactorisation.
+- Rien ne bouge pour l'utilisateur ni pour les téléphones : API (JSON rejoué
+  hors ligne), base et migrations publiées, droits, IndexedDB, sélecteurs et
+  libellés des vidéos. Sinon, c'est un changement : rouge d'abord.
+- Commit à part, « Refactorisation : … », sans manuel ni vidéo.
+
 - Un bogue = d'abord un test qui le reproduit, et il reste.
 - Tester le comportement visible : backend par l'API (`@SpringBootTest` +
   `MockMvc`, profil `dev`, compte de démo, comme `AdhesionTest`), test

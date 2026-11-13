@@ -106,6 +106,10 @@ cas de doute, imiter `formation/SortieController.java` et
   422 avec son `detail` **en entier**.
 - Ordre TDD : rouge (pour la bonne raison) → vert → refactoriser, puis la
   classe entière.
+- Refactoriser = même comportement : tests MockMvc inchangés (mêmes URL, même
+  JSON, mêmes refus), annotations de droits qui suivent la méthode déplacée ;
+  sans test qui protège le code, un test de caractérisation d'abord. Détail :
+  skill `refactoriser`.
 
 ## 8. Avant de rendre la main
 
