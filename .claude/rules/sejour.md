@@ -105,7 +105,7 @@ Paquet `fr.club.plongee.sejour`. Écrans `/sejours`, `/sejours/:id` (bouton « G
 - Chacun modifie ce qu'il a saisi (`saisie_par_utilisateur_id` / `saisie_par_participant_id`).
 - Un remboursement se note par celui qui le reçoit, ou par un organisateur ou moniteur du séjour.
 - `FraisVue.droits` guide l'écran ; le serveur revérifie.
-- Photos des notes (`sejour_depense_photo`) : 6 max, JPEG/PNG vérifiés par `PhotoPretService.verifierImage`, réduites par le téléphone, lues par tous les participants.
+- Justificatifs des notes (`sejour_depense_photo`) : 6 max, photo JPEG/PNG réduite par le téléphone **ou PDF** (facture reçue par e-mail, V99_16, *demande du club, 2026-11-16*), 5 Mo, signature vérifiée (`CartesEmbarquementService.verifierFichier`), servis avec CSP `sandbox` (protège l'ouverture directe de l'adresse ; l'écran, lui, l'ouvre en `blob:` dans la visionneuse PDF du navigateur), lus par tous les participants. `DepenseVue.pdfs` : ceux qui sont des PDF (ouverts dans un onglet ; rien n'y est lu).
 - **Lignes d'une addition de restaurant masquées** : `FraisService.lire` ne les renvoie qu'aux organisateurs, à celui qui a payé, et à chacun la sienne (le montant dirait ce qu'il a choisi). Soldes et remboursements restent calculés sur toutes.
 - Lecture des notes : sur le téléphone, sans IA ni service extérieur (`ocr-ticket.ts`, règles `lecture-ticket.ts`). Claude seulement en option par installation (`LECTURE_NOTES_CLE_API`, `LecteurNoteClaude`), avec repli sur le téléphone. Rien n'est gardé de la photo lue.
 - Règles apprises des corrections (`regle_lecture_note`, V88, `ReglesLectureService`) : commerçant → catégorie, libellé → total, communes au club ; ni photo, ni texte du ticket, ni montant, ni auteur.

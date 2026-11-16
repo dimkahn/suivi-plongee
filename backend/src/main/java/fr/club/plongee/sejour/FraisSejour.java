@@ -31,9 +31,12 @@ public final class FraisSejour {
 
     public record Part(Long participantId, int parts) {}
 
-    /** {@code photos} : les ids des photos de la note ; {@code saisiePar…} : qui l'a saisie (compte ou participant). */
+    /**
+     * {@code photos} : les ids des justificatifs (photos de la note ou PDF) ; {@code pdfs} : ceux d'entre eux
+     * qui sont des PDF ; {@code saisiePar…} : qui l'a saisie (compte ou participant).
+     */
     public record Depense(Long id, String libelle, CategorieDepense categorie, long montantCentimes, Long payeurId,
-                          LocalDate jour, List<Part> parts, List<Long> photos, Long saisieParUtilisateurId,
+                          LocalDate jour, List<Part> parts, List<Long> photos, List<Long> pdfs, Long saisieParUtilisateurId,
                           Long saisieParParticipantId) {}
 
     public record Versement(Long id, Long deId, Long aId, long montantCentimes, LocalDate jour,

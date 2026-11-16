@@ -582,7 +582,7 @@ public class SejourController {
         return service.lire(id, moi);
     }
 
-    /** La photo de la note (JPEG ou PNG, réduite par le téléphone avant l'envoi). */
+    /** Le justificatif : photo de la note (JPEG ou PNG, réduite par le téléphone avant l'envoi) ou PDF. */
     @PostMapping(value = "/{id}/depenses/{depenseId}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public SejourVue ajouterPhoto(@PathVariable Long id, @PathVariable Long depenseId,
@@ -793,9 +793,11 @@ public class SejourController {
         }
     }
 
+    /** Photo ou PDF d'une note ; en bac à sable (CSP sandbox) : un PDF ne peut rien exécuter au nom de l'appli. */
     static ResponseEntity<byte[]> image(FraisService.ContenuPhoto p) {
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(p.type()))
                 .cacheControl(CacheControl.maxAge(Duration.ofDays(1)).cachePrivate())
+                .header("Content-Security-Policy", "sandbox")
                 .body(p.contenu());
     }
 

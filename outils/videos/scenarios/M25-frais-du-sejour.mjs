@@ -1,12 +1,12 @@
-// M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo de la note.
-// Tournage du 2026-11-13, 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
+// M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo ou le PDF de la note.
+// Tournage du 2026-11-16, la facture en PDF (« Joindre un PDF »), 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'M25',
   titre: 'Noter une dépense du séjour',
   public: 'Moniteur',
-  resume: 'Inscrit au séjour, le moniteur voit ses comptes dans sa carte « Mon séjour », ouvre l\'onglet « Frais » et note ce qu\'il a payé, ou ce qu\'un élève a payé, avec la photo de la note, ou ce que le club a avancé.',
+  resume: 'Inscrit au séjour, le moniteur voit ses comptes dans sa carte « Mon séjour », ouvre l\'onglet « Frais » et note ce qu\'il a payé, ou ce qu\'un élève a payé, avec la photo ou le PDF de la note, ou ce que le club a avancé.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, saisir, choisir, menu, vignette, selon }) {
@@ -34,10 +34,10 @@ export default {
     await saisir('#d-montant', '18,00');
     await choisir('#d-payeur', 'Camille Berthier');
     await legende(selon({
-      telephone: '« Prendre une photo » ouvre l\'appareil photo sur la note ; « Choisir dans mes photos », la galerie du téléphone.',
-      ordinateur: '« Choisir dans mes photos » prend une photo de la note déjà sur l\'ordinateur ; au téléphone, « Prendre une photo » ouvre l\'appareil photo.'
+      telephone: '« Prendre une photo » ouvre l\'appareil photo sur la note ; « Choisir dans mes photos », la galerie du téléphone ; « Joindre un PDF », une facture reçue par e-mail.',
+      ordinateur: '« Choisir dans mes photos » prend une photo de la note déjà sur l\'ordinateur ; « Joindre un PDF », une facture reçue par e-mail ; au téléphone, « Prendre une photo » ouvre l\'appareil photo.'
     }), 4500);
-    await legende('L\'appli lit sur la photo le montant total, la date et la catégorie, et remplit les cases vides : on vérifie.', 4500);
+    await legende('L\'appli lit sur la photo le montant total, la date et la catégorie, et remplit les cases vides : on vérifie. Sur un PDF, on les saisit.', 4500);
     await legende('Par défaut, partagée entre tout le monde. « Choisir qui partage » : seulement ceux qui en ont profité.', 0);
     await toucher(page.getByRole('button', { name: 'Choisir qui partage' }), { apres: 1200 });
     await toucher(page.getByRole('button', { name: 'Les plongeurs' }), { apres: 1500 });

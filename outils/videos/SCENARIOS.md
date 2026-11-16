@@ -556,7 +556,7 @@ _Pas encore tournée : le texte viendra au premier enregistrement._
 
 ### M25 — Noter une dépense du séjour
 
-Inscrit au séjour, le moniteur voit ses comptes dans sa carte « Mon séjour », ouvre l'onglet « Frais » et note ce qu'il a payé, ou ce qu'un élève a payé, avec la photo de la note, ou ce que le club a avancé.
+Inscrit au séjour, le moniteur voit ses comptes dans sa carte « Mon séjour », ouvre l'onglet « Frais » et note ce qu'il a payé, ou ce qu'un élève a payé, avec la photo ou le PDF de la note, ou ce que le club a avancé.
 
 Compte : `e2@club.fr` · formats téléphone et ordinateur
 

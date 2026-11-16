@@ -156,11 +156,17 @@ public class FraisService {
                 rs -> { parts.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>())
                         .add(new FraisSejour.Part(rs.getLong(2), rs.getInt(3))); });
         Map<Long, List<Long>> photos = new HashMap<>();
+        Map<Long, List<Long>> pdfs = new HashMap<>();
         jdbc.query("""
-                SELECT ph.depense_id, ph.id FROM sejour_depense_photo ph
+                SELECT ph.depense_id, ph.id, ph.type_contenu FROM sejour_depense_photo ph
                   JOIN sejour_depense d ON d.id = ph.depense_id
                  WHERE d.sortie_id = :id ORDER BY ph.id""", id,
-                rs -> { photos.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>()).add(rs.getLong(2)); });
+                rs -> {
+                    photos.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>()).add(rs.getLong(2));
+                    if ("application/pdf".equals(rs.getString(3))) {
+                        pdfs.computeIfAbsent(rs.getLong(1), k -> new ArrayList<>()).add(rs.getLong(2));
+                    }
+                });
         Set<Long> addition = new HashSet<>();
         List<FraisSejour.Depense> depenses = jdbc.query("""
                 SELECT * FROM sejour_depense WHERE sortie_id = :id ORDER BY jour, id""", id,
@@ -171,6 +177,7 @@ public class FraisService {
                         rs.getLong("montant_centimes"), rs.getObject("payeur_id", Long.class),
                         rs.getObject("jour", LocalDate.class), parts.getOrDefault(rs.getLong("id"), List.of()),
                         photos.getOrDefault(rs.getLong("id"), List.of()),
+                        pdfs.getOrDefault(rs.getLong("id"), List.of()),
                         rs.getObject("saisie_par_utilisateur_id", Long.class),
                         rs.getObject("saisie_par_participant_id", Long.class));
                 });
@@ -428,14 +435,15 @@ public class FraisService {
     @Transactional
     public void ajouterPhoto(Long sortieId, Long depenseId, byte[] contenu, String type, ActeurFrais acteur) {
         verifierAuteurDepense(sortieId, depenseId, acteur);
-        PhotoPretService.verifierImage(contenu, type);
+        String t = CartesEmbarquementService.verifierFichier(contenu, type, "La note");
         var d = new MapSqlParameterSource("d", depenseId);
         if (jdbc.queryForObject("SELECT COUNT(*) FROM sejour_depense_photo WHERE depense_id = :d", d, Integer.class)
                 >= PHOTOS_MAX_PAR_DEPENSE) {
-            throw new RegleMetierException("Pas plus de " + PHOTOS_MAX_PAR_DEPENSE + " photos par dépense.");
+            throw new RegleMetierException("Pas plus de " + PHOTOS_MAX_PAR_DEPENSE
+                    + " justificatifs (photos ou PDF) par dépense.");
         }
         jdbc.update("INSERT INTO sejour_depense_photo (depense_id, contenu, type_contenu) VALUES (:d, :contenu, :type)",
-                d.addValue("contenu", contenu).addValue("type", type));
+                d.addValue("contenu", contenu).addValue("type", t));
     }
 
     @Transactional

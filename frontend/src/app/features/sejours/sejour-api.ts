@@ -290,8 +290,10 @@ export interface DepenseVue {
   jour: string | null;
   /** Qui partage la dépense, et avec combien de parts (2 pour un couple…). */
   parts: { participantId: number; parts: number }[];
-  /** Les photos de la note (ids). */
+  /** Les justificatifs de la note, photos ou PDF (ids). */
   photos: number[];
+  /** Parmi eux, les PDF ; absent d'un séjour gardé par une version plus ancienne. */
+  pdfs?: number[];
   saisieParUtilisateurId: number | null;
   saisieParParticipantId: number | null;
 }

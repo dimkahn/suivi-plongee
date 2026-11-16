@@ -35,7 +35,7 @@ class FraisSejourTest {
         List<Depense> depenses = new java.util.ArrayList<>();
         for (long i = 1; i <= 3; i++) {
             depenses.add(new Depense(i, "Repas " + i, CategorieDepense.REPAS, 1000, 4L, null,
-                    List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null));
+                    List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), List.of(), null, null));
         }
         Comptes c = FraisSejour.calculer(List.of(1L, 2L, 3L, 4L), depenses, List.of());
         assertThat(c.soldes()).extracting(Solde::duCentimes).containsExactly(1000L, 1000L, 1000L, 0L);
@@ -45,7 +45,7 @@ class FraisSejourTest {
         for (long i = 1; i <= 40; i++) {
             depenses.add(new Depense(i, "Dépense " + i, CategorieDepense.AUTRE, 1003 + 10 * i, 1L, null,
                     List.of(part(1, 1), part(2, 1), part(3, 1), part(4, 1), part(5, 1), part(6, 1), part(7, 1)),
-                    List.of(), null, null));
+                    List.of(), List.of(), null, null));
         }
         c = FraisSejour.calculer(List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L), depenses, List.of());
         long plusGrand = c.soldes().stream().mapToLong(Solde::duCentimes).max().orElseThrow();
@@ -61,9 +61,9 @@ class FraisSejourTest {
         // Anne paie le gîte 300 € pour trois, Bruno les courses 60 € pour trois.
         List<Depense> depenses = List.of(
                 new Depense(1L, "Gîte", CategorieDepense.HEBERGEMENT, 30000, 1L, null,
-                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null),
+                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), List.of(), null, null),
                 new Depense(2L, "Courses", CategorieDepense.REPAS, 6000, 2L, null,
-                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null));
+                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), List.of(), null, null));
         Comptes c = FraisSejour.calculer(List.of(1L, 2L, 3L), depenses, List.of());
         assertThat(c.totalCentimes()).isEqualTo(36000);
         // Chacun doit 120 € : Anne +180, Bruno -60, Chloé -120.
@@ -84,9 +84,9 @@ class FraisSejourTest {
         // Le club avance le bateau 300 € pour trois ; Anne paie les courses 60 € pour trois.
         List<Depense> depenses = List.of(
                 new Depense(1L, "Bateau", CategorieDepense.PLONGEE, 30000, null, null,
-                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null),
+                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), List.of(), null, null),
                 new Depense(2L, "Courses", CategorieDepense.REPAS, 6000, 1L, null,
-                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), null, null));
+                        List.of(part(1, 1), part(2, 1), part(3, 1)), List.of(), List.of(), null, null));
         Comptes c = FraisSejour.calculer(List.of(1L, 2L, 3L), depenses, List.of());
         // Chacun doit 120 € : Anne -60, Bruno -120, Chloé -120 ; le club +300, après les participants.
         assertThat(c.soldes()).containsExactly(new Solde(1L, 6000, 12000, -6000), new Solde(2L, 0, 12000, -12000),

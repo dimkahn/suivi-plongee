@@ -15,6 +15,7 @@ import {
 } from './sejour-api';
 import { leconDuTicket } from './lecture-ticket';
 import { montrerCarte } from './carte-voyage.component';
+import { envoiCarte } from './voyage';
 import { preuveEnAttente, preuvesAConfirmer, texteBilanDecompte } from './fin-des-comptes';
 
 /** Dans les listes « Payé par », « Qui a remboursé », « À qui » : le club (null pour le serveur). */
@@ -38,10 +39,10 @@ interface BrouillonDepense {
 /** La vue montrée sous le solde : une à la fois (tout, à l'impression). */
 type VueFrais = 'depenses' | 'remboursements' | 'comptes';
 
-/** Une photo choisie, pas encore envoyée : le fichier et son aperçu. */
+/** Une photo ou un PDF choisi, pas encore envoyé : le fichier et l'aperçu d'une photo (null pour un PDF). */
 interface PhotoAEnvoyer {
   fichier: File;
-  apercu: string;
+  apercu: string | null;
 }
 
 /**
@@ -164,7 +165,7 @@ interface PhotoAEnvoyer {
                     <span class="nom">{{ dep.libelle }}</span>
                     <span class="secondaire">payé par {{ nomDe(dep.payeurId) }}</span>
                   </span>
-                  @if (dep.photos.length > 0) { <span aria-label="avec la photo de la note" title="Photo de la note">📎</span> }
+                  @if (dep.photos.length > 0) { <span aria-label="avec le justificatif" title="Photo ou PDF de la note">📎</span> }
                   <span class="montant">{{ euros(dep.montantCentimes) }}</span>
                 </summary>
                 <p class="secondaire">{{ libelleCategorie(dep.categorie) }}@if (dep.jour) { · {{ dateFr(dep.jour) }}}</p>
@@ -172,10 +173,15 @@ interface PhotoAEnvoyer {
                 @if (dep.photos.length > 0) {
                   <div class="vignettes">
                     @for (ph of dep.photos; track ph) {
-                      <button type="button" class="vignette" (click)="agrandir(dep.id, ph)"
-                              [attr.aria-label]="'Voir la photo de la note : ' + dep.libelle">
-                        @if (urlPhoto(dep.id, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
-                      </button>
+                      @if (estPdf(dep, ph)) {
+                        <button type="button" class="vignette pdf" (click)="agrandir(dep.id, ph, true)"
+                                [attr.aria-label]="'Voir le PDF de la note : ' + dep.libelle">📄<span>PDF</span></button>
+                      } @else {
+                        <button type="button" class="vignette" (click)="agrandir(dep.id, ph)"
+                                [attr.aria-label]="'Voir la photo de la note : ' + dep.libelle">
+                          @if (urlPhoto(dep.id, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
+                        </button>
+                      }
                     }
                   </div>
                 }
@@ -283,14 +289,16 @@ interface PhotoAEnvoyer {
       </ul>
     </app-dialogue>
 
-    <app-dialogue [ouvert]="photoAgrandie() !== null" titre="Photo de la note" [large]="true"
-                  (fermer)="photoAgrandie.set(null)">
+    <app-dialogue [ouvert]="photoAgrandie() !== null" [titre]="photoAgrandie()?.pdf ? 'PDF de la note' : 'Photo de la note'"
+                  [large]="true" (fermer)="photoAgrandie.set(null)">
       @if (photoAgrandie(); as p) {
-        @if (urlPhoto(p.depenseId, p.photoId); as url) { <img class="grande" [src]="url" alt="Photo de la note"> }
+        @if (p.pdf) {
+          <p><button type="button" class="bouton-principal" (click)="voirPdf(p.depenseId, p.photoId)">📄 Ouvrir le PDF</button></p>
+        } @else if (urlPhoto(p.depenseId, p.photoId); as url) { <img class="grande" [src]="url" alt="Photo de la note"> }
         <div class="actions-dialogue">
           @if (d.depensesModifiables.includes(p.depenseId)) {
-            <button type="button" class="bouton-discret danger" (click)="supprimerPhoto(p.depenseId, p.photoId)">
-              Supprimer cette photo
+            <button type="button" class="bouton-discret danger" (click)="supprimerPhoto(p.depenseId, p.photoId, p.pdf)">
+              {{ p.pdf ? 'Supprimer ce PDF' : 'Supprimer cette photo' }}
             </button>
           }
           <button type="button" class="bouton-discret" (click)="photoAgrandie.set(null)">Fermer</button>
@@ -320,34 +328,41 @@ interface PhotoAEnvoyer {
       </div>
 
       <fieldset>
-        <legend>Photo de la note</legend>
+        <legend>Photo ou PDF de la note</legend>
         <div class="vignettes">
           @for (ph of photosExistantes(); track ph) {
-            <span class="vignette">
-              @if (urlPhoto(depenseId!, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
+            <span class="vignette" [class.pdf]="pdfsExistants().includes(ph)">
+              @if (pdfsExistants().includes(ph)) { 📄<span>PDF</span> }
+              @else if (urlPhoto(depenseId!, ph); as url) { <img [src]="url" alt=""> } @else { <span>📎</span> }
             </span>
           }
-          @for (ph of aEnvoyer(); track ph.apercu; let i = $index) {
-            <span class="vignette nouvelle">
-              <img [src]="ph.apercu" alt="">
-              <button type="button" class="retirer" [attr.aria-label]="'Retirer la photo ' + (i + 1)"
+          @for (ph of aEnvoyer(); track ph.fichier; let i = $index) {
+            <span class="vignette nouvelle" [class.pdf]="!ph.apercu">
+              @if (ph.apercu) { <img [src]="ph.apercu" alt=""> } @else { 📄<span>PDF</span> }
+              <button type="button" class="retirer"
+                      [attr.aria-label]="(ph.apercu ? 'Retirer la photo ' : 'Retirer le PDF ') + (i + 1)"
                       (click)="retirerPhoto(i)">✕</button>
             </span>
           }
         </div>
-        <!-- Deux champs : « capture » ouvre directement l'appareil photo,
-             sans lui le téléphone propose la galerie. -->
+        <!-- Trois champs : « capture » ouvre directement l'appareil photo,
+             sans lui le téléphone propose la galerie ; le PDF ouvre les fichiers. -->
         <div class="actions">
           <label class="bouton-discret choisir-photo" for="d-photo-prendre">📷 Prendre une photo</label>
           <label class="bouton-discret choisir-photo" for="d-photo-choisir">🖼️ Choisir dans mes photos</label>
+          <label class="bouton-discret choisir-photo" for="d-pdf-choisir">📄 Joindre un PDF</label>
         </div>
         <input id="d-photo-prendre" class="cache" type="file" accept="image/*" capture="environment"
                (change)="choisirPhotos($event)">
         <input id="d-photo-choisir" class="cache" type="file" accept="image/*" multiple
                (change)="choisirPhotos($event)">
+        <input id="d-pdf-choisir" class="cache" type="file" accept="application/pdf" multiple
+               (change)="choisirPhotos($event)">
         @if (lectureNote(); as l) { <p class="lecture-note" role="status">{{ l }}</p> }
-        <p class="secondaire">Une photo lisible du ticket ou de la facture : chacun peut la voir.
-          Le montant total, la date et la catégorie y sont lus pour remplir les cases vides : vérifiez-les.</p>
+        <p class="secondaire">Une photo lisible du ticket, ou la facture en PDF (5 Mo au plus) : tous les participants
+          peuvent la voir, évitez une facture qui montre votre adresse ou votre numéro de carte.
+          Sur une photo, le montant total, la date et la catégorie sont lus pour remplir les cases vides : vérifiez-les.
+          Sur un PDF, saisissez-les.</p>
       </fieldset>
 
       <fieldset>
@@ -518,6 +533,9 @@ interface PhotoAEnvoyer {
                 align-items: center; justify-content: center; cursor: pointer; }
     .vignette img { width: 100%; height: 100%; object-fit: cover; }
     .vignette.nouvelle { border-color: var(--accent); }
+    .vignette.pdf { display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 1.4rem; line-height: 1; }
+    .vignette.pdf span { font-size: .7rem; font-weight: 700; margin-top: 2px; }
     .retirer { position: absolute; top: 0; right: 0; width: 28px; height: 28px; border: none; border-radius: 0 0 0 var(--r-s);
                background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
     .choisir-photo { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700; }
@@ -598,6 +616,8 @@ export class SejourFraisComponent {
   apercu = signal<Record<number, string>>({});
   aEnvoyer = signal<PhotoAEnvoyer[]>([]);
   photosExistantes = signal<number[]>([]);
+  /** Parmi les justificatifs déjà envoyés de la dépense ouverte, les PDF. */
+  pdfsExistants = signal<number[]>([]);
   /** Où en est la lecture du montant et de la date sur la photo choisie. */
   lectureNote = signal<string | null>(null);
   /** Une lecture qui revient après la fermeture de la fenêtre (ou une autre dépense ouverte) est ignorée. */
@@ -611,7 +631,7 @@ export class SejourFraisComponent {
     deId: null as number | typeof CLUB | null, aId: null as number | typeof CLUB | null, montant: '', jour: null as string | null
   };
 
-  photoAgrandie = signal<{ depenseId: number; photoId: number } | null>(null);
+  photoAgrandie = signal<{ depenseId: number; photoId: number; pdf: boolean } | null>(null);
   /** Photos lues (en blob, la lecture demande le jeton), gardées le temps de l'écran. */
   private photos = signal<Record<number, string>>({});
   private demandees = new Set<number>();
@@ -619,7 +639,7 @@ export class SejourFraisComponent {
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       Object.values(this.photos()).forEach(u => URL.revokeObjectURL(u));
-      this.aEnvoyer().forEach(p => URL.revokeObjectURL(p.apercu));
+      this.aEnvoyer().forEach(p => { if (p.apercu) URL.revokeObjectURL(p.apercu); });
     });
   }
 
@@ -654,8 +674,19 @@ export class SejourFraisComponent {
     return null;
   }
 
-  agrandir(depenseId: number, photoId: number): void {
-    this.photoAgrandie.set({ depenseId, photoId });
+  agrandir(depenseId: number, photoId: number, pdf = false): void {
+    this.photoAgrandie.set({ depenseId, photoId, pdf });
+  }
+
+  /** {@code pdfs} manque dans un séjour gardé par une version plus ancienne : rien n'y est un PDF. */
+  estPdf(dep: DepenseVue, photoId: number): boolean {
+    return (dep.pdfs ?? []).includes(photoId);
+  }
+
+  /** Le PDF s'ouvre dans un nouvel onglet, comme une carte d'embarquement. */
+  voirPdf(depenseId: number, photoId: number): void {
+    montrerCarte(this.port().lirePhoto(depenseId, photoId),
+      () => this.message.set("Le PDF n'a pas pu être ouvert (réseau nécessaire)."));
   }
 
   // ---------------- Dépenses ----------------
@@ -672,6 +703,7 @@ export class SejourFraisComponent {
     this.depenseId = d?.id ?? null;
     this.viderPhotosAEnvoyer();
     this.photosExistantes.set(d?.photos ?? []);
+    this.pdfsExistants.set(d?.pdfs ?? []);
     const participants = this.participants();
     this.depense = d
       ? {
@@ -743,6 +775,16 @@ export class SejourFraisComponent {
     const fichiers = Array.from(champ.files ?? []);
     champ.value = '';
     for (const fichier of fichiers) {
+      // Même règle que la carte d'embarquement : un PDF part tel quel (5 Mo au plus), une photo est réduite.
+      const envoi = envoiCarte(fichier.type, fichier.size);
+      if (envoi === 'refus') {
+        this.erreur.set(fichier.type === 'application/pdf' ? 'Ce PDF dépasse 5 Mo.' : 'Choisissez une photo ou un PDF.');
+        continue;
+      }
+      if (envoi === 'tel-quel') {
+        this.aEnvoyer.set([...this.aEnvoyer(), { fichier, apercu: null }]);
+        continue;
+      }
       try {
         const reduit = await reduirePhoto(fichier);
         this.aEnvoyer.set([...this.aEnvoyer(), { fichier: reduit, apercu: URL.createObjectURL(reduit) }]);
@@ -820,12 +862,12 @@ export class SejourFraisComponent {
   retirerPhoto(i: number): void {
     const liste = [...this.aEnvoyer()];
     const [retiree] = liste.splice(i, 1);
-    if (retiree) URL.revokeObjectURL(retiree.apercu);
+    if (retiree?.apercu) URL.revokeObjectURL(retiree.apercu);
     this.aEnvoyer.set(liste);
   }
 
   private viderPhotosAEnvoyer(): void {
-    this.aEnvoyer().forEach(p => URL.revokeObjectURL(p.apercu));
+    this.aEnvoyer().forEach(p => { if (p.apercu) URL.revokeObjectURL(p.apercu); });
     this.aEnvoyer.set([]);
   }
 
@@ -869,8 +911,8 @@ export class SejourFraisComponent {
     this.ecrire(this.port().supprimerDepense(d.id));
   }
 
-  supprimerPhoto(depenseId: number, photoId: number): void {
-    if (!confirm('Supprimer cette photo de la note ?')) return;
+  supprimerPhoto(depenseId: number, photoId: number, pdf = false): void {
+    if (!confirm(pdf ? 'Supprimer ce PDF de la note ?' : 'Supprimer cette photo de la note ?')) return;
     this.ecrire(this.port().supprimerPhoto(depenseId, photoId), () => this.photoAgrandie.set(null));
   }
 
