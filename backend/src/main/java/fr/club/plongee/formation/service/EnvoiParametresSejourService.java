@@ -12,8 +12,10 @@ import fr.club.plongee.identite.IdentiteStructureService;
 import fr.club.plongee.securite.domain.Utilisateur;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.text.Normalizer;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
@@ -34,6 +36,7 @@ import java.util.*;
 public class EnvoiParametresSejourService {
 
     private static final DateTimeFormatter HEURE = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter JOUR_MOIS = DateTimeFormatter.ofPattern("dd/MM");
 
     /** Ce qui est parti, et pour qui rien n'est parti (pour que le moniteur complète). */
     public record BilanEnvoi(List<DestinataireVue> envoyes, List<String> sansEmail,
@@ -53,8 +56,8 @@ public class EnvoiParametresSejourService {
         }
     }
 
-    /** Un courriel prêt à partir. */
-    public record Courriel(String adresse, String sujet, String corps) {}
+    /** Un courriel prêt à partir : texte brut et la même chose en tableau HTML. */
+    public record Courriel(String adresse, String sujet, String corps, String html) {}
 
     private final GroupePlongeursRepository groupes;
     private final SortieRepository sorties;
@@ -113,7 +116,7 @@ public class EnvoiParametresSejourService {
                 continue;
             }
             Courriel c = courriel.get();
-            if (notification.envoyerCourriel(adresse, c.sujet(), c.corps())) {
+            if (notification.envoyerCourriel(adresse, c.sujet(), c.corps(), c.html())) {
                 envoyes.add(new DestinataireVue(nom, adresse, nombrePlongees(membre, fichesSortie)));
             } else {
                 echecs.add(nom);
@@ -129,12 +132,16 @@ public class EnvoiParametresSejourService {
 
     Optional<Courriel> composer(Destinataire membre, Sortie sortie, List<FicheSecurite> fichesSortie) {
         StringBuilder corps = new StringBuilder();
+        StringBuilder lignes = new StringBuilder();
+        List<LocalDate> jours = new ArrayList<>();
         int nombre = 0;
         for (FicheSecurite fiche : fichesSortie) {
             for (Palanquee p : palanqueesTriees(fiche)) {
                 if (p.getMembres().stream().noneMatch(m -> correspond(membre, m))) continue;
                 nombre++;
+                jours.add(fiche.getSeance().getDateSeance());
                 corps.append("\n").append(plongee(fiche.getSeance(), p, membre));
+                lignes.append(ligneHtml(nombre, fiche.getSeance(), p, membre));
             }
         }
         if (nombre == 0) return Optional.empty();
@@ -144,8 +151,78 @@ public class EnvoiParametresSejourService {
                 + (sortie.getLieu() == null ? "" : " (" + sortie.getLieu() + ")")
                 + ", relevés sur les fiches de sécurité, pour votre carnet de plongée.\n";
         String pied = "\nBonnes bulles,\n" + identite.nom() + "\n";
-        return Optional.of(new Courriel(membre.email(),
-                "Vos plongées — " + sortie.getNom(), entete + corps + pied));
+        return Optional.of(new Courriel(membre.email(), "Vos plongées — " + sortie.getNom(),
+                entete + corps + pied, html(membre, sortie, jours, lignes)));
+    }
+
+    /**
+     * Même contenu que le texte, en tableau (une ligne par plongée, la palanquée dessous),
+     * styles en ligne pour les messageries. Tout texte saisi est échappé.
+     */
+    private String html(Destinataire membre, Sortie sortie, List<LocalDate> jours, CharSequence lignes) {
+        LocalDate premier = Collections.min(jours);
+        LocalDate dernier = Collections.max(jours);
+        String dates = premier.equals(dernier) ? premier.format(Calendrier.DATE_FR)
+                : premier.format(Calendrier.DATE_FR) + " au " + dernier.format(Calendrier.DATE_FR);
+        StringBuilder h = new StringBuilder();
+        h.append("<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"UTF-8\"></head>")
+                .append("<body style=\"margin:0;padding:8px;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#1d2b36;\">")
+                .append("<div style=\"max-width:720px;margin:0 auto;background:#ffffff;border-radius:8px;padding:14px;\">")
+                .append("<h1 style=\"margin:0 0 4px;font-size:22px;color:#0b4f6c;\">Vos plongées</h1>")
+                .append("<p style=\"margin:0 0 16px;font-size:15px;color:#4a5b68;\">").append(e(sortie.getNom())).append("</p>")
+                .append("<p>Bonjour ").append(e(membre.prenom())).append(",</p>")
+                .append("<p>Voici les paramètres de vos plongées, relevés sur les fiches de sécurité, pour votre carnet de plongée.</p>")
+                .append("<div style=\"background:#eef4f8;border-radius:6px;padding:10px 14px;margin:16px 0;font-size:14px;\">")
+                .append("<strong>Informations du séjour</strong><br>");
+        if (sortie.getLieu() != null && !sortie.getLieu().isBlank()) {
+            h.append("Lieu : ").append(e(sortie.getLieu())).append("<br>");
+        }
+        h.append("Dates : ").append(dates).append("<br>")
+                .append("Plongées : ").append(jours.size()).append("</div>")
+                .append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;border-collapse:collapse;font-size:13px;\">")
+                .append("<thead><tr>");
+        for (String titre : List.of("#", "Date", "Site", "Heure", "Prof.", "Durée", "Paliers")) {
+            h.append("<th style=\"").append(STYLE_TH).append("\">").append(titre).append("</th>");
+        }
+        h.append("</tr></thead><tbody>").append(lignes).append("</tbody></table>")
+                .append("<p style=\"font-size:13px;color:#4a5b68;\">« (prévue) » : le réalisé n'a pas encore été saisi sur la fiche.</p>")
+                .append("<p>Bonnes bulles,<br>").append(e(identite.nom())).append("</p>")
+                .append("</div></body></html>");
+        return h.toString();
+    }
+
+    private static final String STYLE_TH =
+            "text-align:left;padding:6px 4px;border-bottom:2px solid #0b4f6c;color:#0b4f6c;white-space:nowrap;";
+    private static final String STYLE_TD = "padding:6px 4px 2px;vertical-align:top;";
+
+    private String ligneHtml(int numero, Seance s, Palanquee p, Destinataire membre) {
+        String jour = s.getDateSeance().getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.FRENCH);
+        String date = majuscule(jour) + " " + s.getDateSeance().format(JOUR_MOIS);
+        boolean realise = p.getProfondeurRealisee() != null || p.getDureeRealisee() != null;
+        Integer profondeur = realise ? p.getProfondeurRealisee() : p.getProfondeurPrevue();
+        Integer duree = realise ? p.getDureeRealisee() : p.getDureePrevue();
+        String suffixe = realise ? "" : " (prévue)";
+
+        StringBuilder h = new StringBuilder("<tr>");
+        cellule(h, String.valueOf(numero));
+        cellule(h, date);
+        cellule(h, lieu(s));
+        cellule(h, p.getHeureImmersion() == null ? "" : heure(p.getHeureImmersion()));
+        cellule(h, profondeur == null ? "" : profondeur + " m" + suffixe);
+        cellule(h, duree == null ? "" : duree + " min" + suffixe);
+        cellule(h, p.getPaliers() == null ? "" : p.getPaliers());
+        h.append("</tr><tr><td style=\"border-bottom:1px solid #dde5eb;\"></td>")
+                .append("<td colspan=\"6\" style=\"padding:0 4px 6px;border-bottom:1px solid #dde5eb;font-size:12px;color:#4a5b68;\">")
+                .append(e(palanqueeEtCoequipiers(p, membre))).append("</td></tr>");
+        return h.toString();
+    }
+
+    private static void cellule(StringBuilder h, String texte) {
+        h.append("<td style=\"").append(STYLE_TD).append("\">").append(e(texte)).append("</td>");
+    }
+
+    private static String e(String texte) {
+        return texte == null ? "" : HtmlUtils.htmlEscape(texte, "UTF-8");
     }
 
     private int nombrePlongees(Destinataire membre, List<FicheSecurite> fichesSortie) {
@@ -169,8 +246,7 @@ public class EnvoiParametresSejourService {
         if (s.getOrdre() != null) texte.append(", plongée n° ").append(s.getOrdre());
         texte.append("\n");
 
-        String lieu = s.getLieu() == null ? "" : s.getLieu();
-        if (s.getSite() != null && !s.getSite().isBlank()) lieu += (lieu.isEmpty() ? "" : " — ") + s.getSite();
+        String lieu = lieu(s);
         if (!lieu.isEmpty()) texte.append("  Site : ").append(lieu).append("\n");
 
         boolean realise = p.getProfondeurRealisee() != null || p.getDureeRealisee() != null;
@@ -187,14 +263,23 @@ public class EnvoiParametresSejourService {
             texte.append("  Paliers : ").append(p.getPaliers()).append("\n");
         }
 
+        texte.append("  ").append(palanqueeEtCoequipiers(p, membre)).append("\n");
+        return texte.toString();
+    }
+
+    private static String lieu(Seance s) {
+        String lieu = s.getLieu() == null ? "" : s.getLieu();
+        if (s.getSite() != null && !s.getSite().isBlank()) lieu += (lieu.isEmpty() ? "" : " — ") + s.getSite();
+        return lieu;
+    }
+
+    private String palanqueeEtCoequipiers(Palanquee p, Destinataire membre) {
         List<String> autres = p.getMembres().stream()
                 .filter(m -> !correspond(membre, m))
                 .map(this::coequipier)
                 .toList();
-        texte.append("  Palanquée n° ").append(p.getNumero()).append(" : ")
-                .append(autres.isEmpty() ? "seul(e) inscrit(e)" : "avec " + String.join(", ", autres))
-                .append("\n");
-        return texte.toString();
+        return "Palanquée n° " + p.getNumero() + " : "
+                + (autres.isEmpty() ? "seul(e) inscrit(e)" : "avec " + String.join(", ", autres));
     }
 
     private String coequipier(MembrePalanquee m) {

@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(ParametresPlongeeSejourTest.BoiteAuxLettres.class)
 class ParametresPlongeeSejourTest {
 
-    record Courriel(String adresse, String sujet, String corps) {}
+    record Courriel(String adresse, String sujet, String corps, String html) {}
 
     static final List<Courriel> COURRIELS = new ArrayList<>();
 
@@ -49,7 +49,10 @@ class ParametresPlongeeSejourTest {
                 @Override public void envoyerLienReinitialisation(Utilisateur u, String jeton) {}
                 @Override public void envoyerLienInvitation(Utilisateur u, String jeton) {}
                 @Override public boolean envoyerCourriel(String adresse, String sujet, String corps) {
-                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps)); }
+                    return envoyerCourriel(adresse, sujet, corps, null);
+                }
+                @Override public boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
+                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps, html)); }
                     return true;
                 }
             };
@@ -146,6 +149,23 @@ class ParametresPlongeeSejourTest {
         assertThat(recus.getFirst().corps()).contains("Profondeur : 20 m (prévue)", "Anis Dulac").doesNotContain("Morel");
         assertThat(pour("coches-sami@club.fr")).isEmpty();
         assertThat(pour("coches-zoe@club.fr")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Les paramètres de plongée partent aussi en tableau HTML, avec le texte en secours")
+    void enTableau() throws Exception {
+        String dt = jeton("e3@club.fr");
+        Sejour s = sejour(dt, "tableau");
+        fiche(dt, s.seance());
+
+        envoyer("POST", s.base() + "/envoi-parametres", dt,
+                "{\"participantIds\":[%d]}".formatted(idDe(s.vue(), "Inès")), 200);
+
+        Courriel recu = pour("tableau-ines@club.fr").getFirst();
+        assertThat(recu.corps()).contains("Profondeur : 20 m (prévue)");
+        assertThat(recu.html()).isNotNull()
+                .contains("<table", "Prof.", "20 m (prévue)", "40 min (prévue)", "Cassis", "Anis Dulac")
+                .doesNotContain("Morel");
     }
 
     @Test

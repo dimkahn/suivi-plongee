@@ -26,4 +26,13 @@ public interface ServiceNotification {
      * Renvoie {@code false} si l'envoi a échoué, pour que l'appelant le signale.
      */
     boolean envoyerCourriel(String adresse, String sujet, String corps);
+
+    /**
+     * Même courriel, avec une version HTML (un tableau, par exemple) que la
+     * messagerie affiche à la place du texte, gardé pour celles qui n'affichent
+     * pas le HTML. Par défaut, seul le texte part.
+     */
+    default boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
+        return envoyerCourriel(adresse, sujet, corps);
+    }
 }

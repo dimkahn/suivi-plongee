@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 /**
@@ -62,6 +64,26 @@ public class ServiceNotificationEmail implements ServiceNotification {
         message.setSubject(sujet);
         message.setText(corps);
         try {
+            mailSender.send(message);
+            return true;
+        } catch (Exception e) {
+            // Seulement le type d'erreur : le message d'un refus SMTP cite souvent l'adresse.
+            log.error("Échec de l'envoi d'un courriel (destinataire non journalisé) : {}", e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    /** Texte et HTML dans un même message ({@code multipart/alternative}) : la messagerie choisit. */
+    @Override
+    public boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
+        if (html == null) return envoyerCourriel(adresse, sujet, corps);
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper aide = new MimeMessageHelper(message, true, "UTF-8");
+            aide.setFrom(expediteur);
+            aide.setTo(adresse);
+            aide.setSubject(sujet);
+            aide.setText(corps, html);
             mailSender.send(message);
             return true;
         } catch (Exception e) {

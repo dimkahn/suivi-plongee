@@ -95,9 +95,34 @@ class EnvoiParametresSejourServiceTest {
         assertThat(corpsMarc).contains("Le Donator", "La Gabinière", "Profondeur : 25 m (prévue)", "seul(e) inscrit(e)")
                 .doesNotContain("Perrot", "Dulac");
 
+        assertThat(courriel.html())
+                .contains("<table", "<th", "Date", "Site", "Heure", "Prof.", "Durée", "Paliers", "Palanquée",
+                        ">Sam. 10/10</td>", "Hyères — Le Donator", "09:12", "19 m", "38 min", "3 min à 3 m",
+                        "Anis Dulac (N3, guide de palanquée)")
+                .doesNotContain("Leroy", "La Gabinière", "40 m");
+        assertThat(service.composer(marc, sortie, List.of(matin, apresMidi)).orElseThrow().html())
+                .contains("25 m (prévue)", "45 min (prévue)", "seul(e) inscrit(e)");
+
         MembreGroupePlongeurs absent = new MembreGroupePlongeurs();
         absent.setPrenom("Zoé");
         absent.setNom("Martin");
         assertThat(service.composer(absent, sortie, List.of(matin, apresMidi))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Les noms saisis à la main sont échappés dans le tableau HTML du courriel")
+    void nomsEchappesDansLeHtml() {
+        Palanquee p = palanquee(1, plongeur("Léa", "Roux", null, FonctionPalanquee.PLONGEUR),
+                plongeur("<b>Jo</b>", "O'Brien & fils", null, FonctionPalanquee.PLONGEUR));
+        FicheSecurite f = fiche(LocalDate.of(2026, 10, 10), 1, "Récif <Sud>", p);
+        Sortie sortie = new Sortie();
+        sortie.setNom("Séjour <test>");
+        MembreGroupePlongeurs lea = new MembreGroupePlongeurs();
+        lea.setPrenom("Léa");
+        lea.setNom("Roux");
+
+        String html = service.composer(lea, sortie, List.of(f)).orElseThrow().html();
+        assertThat(html).contains("&lt;b&gt;Jo&lt;/b&gt;", "&amp; fils", "Récif &lt;Sud&gt;", "Séjour &lt;test&gt;")
+                .doesNotContain("<b>Jo</b>", "<Sud>");
     }
 }

@@ -3,7 +3,7 @@ titre: Groupes de plongeurs pour un séjour
 rubrique: Moniteur
 videos: M12
 ecran: /groupes
-mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, participant, lien, lié, synchroniser, même personne, créateur, organisateur, organisateurs, droits, qui modifie, lecture seule, choisir les organisateurs, ajouter un plongeur, chercher, rechercher, modifier un plongeur, niveau, niveau de plongeur, niveau d'encadrement, encadrant, niveau préparé, en formation, E1, E2, MF1, aptitude
+mots: groupe, séjour, plongeurs, liste, invités, extérieurs, voyage, week-end, réutiliser, e-mail, courriel, paramètres, carnet de plongée, tableau, tableau des plongées, récapitulatif, divelog, participant, lien, lié, synchroniser, même personne, créateur, organisateur, organisateurs, droits, qui modifie, lecture seule, choisir les organisateurs, ajouter un plongeur, chercher, rechercher, modifier un plongeur, niveau, niveau de plongeur, niveau d'encadrement, encadrant, niveau préparé, en formation, E1, E2, MF1, aptitude
 questions:
 - Comment indiquer le niveau d'encadrement d'un plongeur du groupe ?
 - Qui peut modifier un groupe de plongeurs ?
@@ -60,7 +60,7 @@ Lier ou délier demande le réseau.
 
 ## En fin de séjour : envoyer les paramètres par e-mail
 
-Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet : date, site, profondeur, durée, heures d'immersion et de sortie, paliers, et les membres de sa palanquée.
+Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet, **en tableau** (une ligne par plongée, numérotée) : date, site, heure d'immersion, profondeur, durée, paliers, et sous chaque ligne les membres de sa palanquée. En tête, le lieu, les dates et le nombre de plongées du séjour. Une messagerie qui n'affiche pas les tableaux montre la même chose en texte, avec aussi l'heure de sortie.
 
 1. Renseignez l'e-mail de chaque plongeur dans le groupe (« Modifier » sur le groupe, puis sur le plongeur). Pour un plongeur du club, laissez vide : l'e-mail de son dossier sert, il est rappelé sur sa ligne (« (dossier) ») et en grisé dans le champ. Une ligne « sans e-mail » n'en a aucun.
 2. Sur le groupe, « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».

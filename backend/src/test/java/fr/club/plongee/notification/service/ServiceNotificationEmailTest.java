@@ -44,6 +44,35 @@ class ServiceNotificationEmailTest {
         assertThat(journal.getAll()).doesNotContain("e3@club.fr");
     }
 
+    /** Serveur SMTP qui garde le dernier message MIME reçu. */
+    static class SmtpQuiGarde extends JavaMailSenderImpl {
+        jakarta.mail.internet.MimeMessage recu;
+
+        @Override
+        public void send(jakarta.mail.internet.MimeMessage mimeMessage) {
+            recu = mimeMessage;
+        }
+    }
+
+    @Test
+    @DisplayName("Un e-mail avec une version HTML part avec le texte et le HTML, la messagerie choisit")
+    void texteEtHtml() throws Exception {
+        SmtpQuiGarde smtp = new SmtpQuiGarde();
+        ServiceNotificationEmail service = new ServiceNotificationEmail(smtp, "club@exemple.fr", "http://localhost:4200");
+
+        boolean parti = service.envoyerCourriel("plongeur@exemple.fr", "Vos plongées — Séjour",
+                "Bonjour Léa", "<table><tr><td>Le Donator</td></tr></table>");
+
+        assertThat(parti).isTrue();
+        assertThat(smtp.recu).isNotNull();
+        smtp.recu.saveChanges();
+        var sortie = new java.io.ByteArrayOutputStream();
+        smtp.recu.writeTo(sortie);
+        String brut = sortie.toString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(brut).contains("multipart/alternative", "text/plain", "text/html");
+        assertThat(smtp.recu.getSubject()).isEqualTo("Vos plongées — Séjour");
+    }
+
     /** Serveur SMTP qui refuse le destinataire en le citant, comme un vrai « 550 ». */
     static class SmtpRefuseLeDestinataire extends JavaMailSenderImpl {
         @Override
