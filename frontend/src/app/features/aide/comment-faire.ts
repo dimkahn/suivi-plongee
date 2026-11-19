@@ -69,7 +69,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
 
   {
     adresse: '/materiel',
-    manuels: ['inventaire-materiel', 'ajouter-un-equipement', 'etiquettes-qr-code', 'classeur-excel-materiel']
+    manuels: ['inventaire-materiel', 'signaler-un-probleme-materiel', 'ajouter-un-equipement', 'etiquettes-qr-code', 'classeur-excel-materiel']
   },
   { adresse: '/materiel/nouveau', manuels: ['ajouter-un-equipement'] },
   { adresse: '/materiel/prets', manuels: ['preter-du-materiel', 'photos-du-pret', 'retour-d-un-pret', 'organiser-une-sortie'] },
@@ -77,7 +77,7 @@ const ECRANS: { adresse: string; manuels: string[]; pourEleve?: string[] }[] = [
   { adresse: '/materiel/scanner', manuels: ['etiquettes-qr-code'] },
   { adresse: '/materiel/tiv/:x', manuels: ['inspection-tiv'] },
   { adresse: '/materiel/:x/tiv', manuels: ['inspection-tiv'] },
-  { adresse: '/materiel/:x', manuels: ['fiche-de-gestion', 'controles-d-un-bloc', 'inspection-tiv', 'mise-au-rebut'] }
+  { adresse: '/materiel/:x', manuels: ['signaler-un-probleme-materiel', 'fiche-de-gestion', 'controles-d-un-bloc', 'inspection-tiv', 'mise-au-rebut'] }
 ];
 
 const PAR_DEFAUT = ['decouvrir-l-appli'];

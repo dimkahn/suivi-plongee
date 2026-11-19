@@ -1407,16 +1407,42 @@ export const TYPES_EQUIPEMENT: { valeur: TypeEquipement; libelle: string; plurie
   { valeur: 'COMBINAISON', libelle: 'Combinaison', pluriel: 'Combinaisons' }
 ];
 
-/** A_REGULARISER : une alerte bloque le prêt (TIV dépassée, contrôle non conforme...). */
-export type StatutEquipement = 'DISPONIBLE' | 'PRETE' | 'A_REGULARISER' | 'HORS_SERVICE' | 'REBUTE';
+/**
+ * A_REGULARISER : une alerte bloque le prêt (TIV dépassée, contrôle non conforme...).
+ * A_REPARER : un problème signalé pendant une séance, pas encore déclaré réparé.
+ */
+export type StatutEquipement = 'DISPONIBLE' | 'PRETE' | 'A_REGULARISER' | 'HORS_SERVICE' | 'REBUTE' | 'A_REPARER';
 
 export const LIBELLES_STATUT_EQUIPEMENT: Record<StatutEquipement, string> = {
   DISPONIBLE: 'Disponible',
   PRETE: 'Prêté',
   A_REGULARISER: 'À régulariser',
   HORS_SERVICE: 'Hors service',
-  REBUTE: 'Au rebut'
+  REBUTE: 'Au rebut',
+  A_REPARER: 'À réparer'
 };
+
+/** Un problème constaté sur un matériel pendant une séance, pas encore déclaré réparé. */
+export interface SignalementMaterielVue {
+  id: number;
+  equipementId: number;
+  type: TypeEquipement;
+  designation: string;
+  date: string;
+  description: string;
+  signalePar: string | null;
+  signaleLe: string;
+}
+
+/** Ce qu'un moniteur voit d'un matériel qu'il scanne : ce qu'il est, et ses problèmes en cours. */
+export interface ResumeEquipementVue {
+  id: number;
+  type: TypeEquipement;
+  typeLibelle: string;
+  designation: string;
+  rebute: boolean;
+  signalements: SignalementMaterielVue[];
+}
 
 export interface AlerteEquipement {
   gravite: 'BLOQUANT' | 'AVERTISSEMENT';
@@ -1503,7 +1529,7 @@ export interface EtiquetteMateriel {
 }
 
 export type TypeIntervention ='INSPECTION_VISUELLE' | 'REQUALIFICATION' | 'REVISION' | 'REPARATION'
-  | 'REMPLACEMENT_PIECE' | 'CONTROLE' | 'DESINFECTION' | 'INCIDENT';
+  | 'REMPLACEMENT_PIECE' | 'CONTROLE' | 'DESINFECTION' | 'INCIDENT' | 'SIGNALEMENT';
 
 export const TYPES_INTERVENTION: { valeur: TypeIntervention; libelle: string; blocSeulement?: boolean }[] = [
   { valeur: 'INSPECTION_VISUELLE', libelle: 'Inspection visuelle (TIV)', blocSeulement: true },

@@ -1,5 +1,5 @@
 // D1 — L'inventaire du matériel.
-// Tournage du 2026-10-16, 13e série, ancien numéro du matériel (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19, 14e série, problèmes signalés pendant les séances (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -17,7 +17,8 @@ export default {
       ordinateur: 'Le directeur technique a une entrée de plus dans le menu en haut : « Matériel ».'
     }), 0);
     await menu('Matériel');
-    await legende('En haut, les compteurs : disponible, prêté, à régulariser, hors service.', 3500);
+    await legende('En haut, les problèmes signalés par les moniteurs pendant les séances : à vérifier et réparer, ils ne se prêtent plus.', 4500);
+    await legende('Puis les compteurs : disponible, prêté, à réparer, à régulariser, hors service.', 3500);
     await vignette();
     await legende('« À surveiller » : les échéances proches ou dépassées, calculées par l\'appli.', 0);
     await page.getByRole('heading', { name: 'À surveiller' }).scrollIntoViewIfNeeded();

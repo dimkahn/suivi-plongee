@@ -6,7 +6,8 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import {
-  EquipementVue, LIBELLES_STATUT_EQUIPEMENT, RapportImportMateriel, StatutEquipement, TYPES_EQUIPEMENT, TypeEquipement
+  EquipementVue, LIBELLES_STATUT_EQUIPEMENT, RapportImportMateriel, SignalementMaterielVue, StatutEquipement,
+  TYPES_EQUIPEMENT, TypeEquipement
 } from '../../core/modeles';
 import { DateFrPipe } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
@@ -52,6 +53,24 @@ import { ChargementComponent } from '../../core/chargement.component';
     }
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
+
+    <!-- Les problèmes signalés par les moniteurs pendant les séances : à vérifier et réparer
+         (demande du club, 2026-11-19). Chacun ouvre la fiche, où « Déclarer réparé » le clôt. -->
+    @if (signalements().length > 0) {
+      <section class="carte problemes-signales" aria-labelledby="titre-problemes-signales">
+        <h2 id="titre-problemes-signales">Problèmes signalés ({{ signalements().length }})</h2>
+        <p class="secondaire">Ces matériels ne se prêtent plus tant qu'ils ne sont pas déclarés réparés.</p>
+        <ul>
+          @for (s of signalements(); track s.id) {
+            <li>
+              <a [routerLink]="['/materiel', s.equipementId]" class="designation">{{ s.designation }}</a>
+              <span class="secondaire"> — le {{ s.date | dateFr }}{{ s.signalePar ? ', par ' + s.signalePar : '' }} :</span>
+              {{ s.description }}
+            </li>
+          }
+        </ul>
+      </section>
+    }
 
     @if (rapport(); as r) {
       <section class="carte rapport" role="status">
@@ -210,6 +229,10 @@ import { ChargementComponent } from '../../core/chargement.component';
   styles: [`
     .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
     .entete h1 { margin-bottom: var(--pas); }
+    .problemes-signales { padding: var(--pas-2); margin: var(--pas-2) 0; border-left: 4px solid #B3261E; }
+    .problemes-signales h2 { margin: 0 0 4px; font-size: 1.125rem; }
+    .problemes-signales ul { margin: var(--pas) 0 0; padding-left: 1.25rem; display: grid; gap: 6px; }
+    .problemes-signales .designation { font-weight: 700; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; }
     .actions a { display: inline-flex; align-items: center; text-decoration: none; }
     .actions .bouton-discret { color: var(--encre); }
@@ -299,12 +322,15 @@ export class InventaireComponent {
   private enService = computed(() => this.liste().filter(e => this.avecRebut() || e.statut !== 'REBUTE'));
 
   compteurs = computed(() => {
-    const ordre: StatutEquipement[] = ['DISPONIBLE', 'PRETE', 'A_REGULARISER', 'HORS_SERVICE', 'REBUTE'];
+    const ordre: StatutEquipement[] = ['DISPONIBLE', 'PRETE', 'A_REPARER', 'A_REGULARISER', 'HORS_SERVICE', 'REBUTE'];
     const duType = this.enService().filter(e => this.type() === null || e.type === this.type());
     return ordre
       .map(statut => ({ statut, libelle: this.libelleStatut[statut], nombre: duType.filter(e => e.statut === statut).length }))
       .filter(c => c.nombre > 0 || c.statut === 'DISPONIBLE');
   });
+
+  /** Problèmes signalés pendant les séances et pas encore réparés. */
+  signalements = signal<SignalementMaterielVue[]>([]);
 
   aSurveiller = computed(() => this.liste().filter(e => e.statut !== 'REBUTE' && e.alertes.length > 0));
 
@@ -389,7 +415,12 @@ export class InventaireComponent {
   private async charger(): Promise<void> {
     this.chargement.set(true);
     try {
-      this.liste.set(await firstValueFrom(this.api.equipements()));
+      const [liste, signalements] = await Promise.all([
+        firstValueFrom(this.api.equipements()),
+        firstValueFrom(this.api.signalementsMateriel())
+      ]);
+      this.liste.set(liste);
+      this.signalements.set(signalements);
     } catch {
       this.message.set("Impossible de charger l'inventaire du matériel.");
     } finally {

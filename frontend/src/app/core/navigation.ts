@@ -141,6 +141,8 @@ export class NavigationService {
         // L'administrateur l'ouvre depuis « Administration » ; le DT et le TIV, depuis le menu.
         if (s.length === 1) return this.auth.estAdmin() ? { libelle: 'Administration', lien: '/admin' } : null;
         if (s.length === 3 && s[2] === 'tiv') return { libelle: 'Fiche du bloc', lien: `/materiel/${s[1]}` };
+        // Un moniteur n'a pas l'inventaire : l'étiquette scannée l'a mené au signalement d'un problème.
+        if (!this.auth.inspecteBlocs()) return { libelle: 'Aujourd’hui', lien: '/aujourdhui' };
         return { libelle: 'Matériel', lien: '/materiel' };
 
       default:

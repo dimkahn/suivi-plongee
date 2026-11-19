@@ -14,7 +14,8 @@ import {
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
   DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue,
-  SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue, EtatValidationVue
+  SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue, EtatValidationVue,
+  ResumeEquipementVue, SignalementMaterielVue
 } from './modeles';
 import { MAGASIN_CACHE, ecrire, lire, supprimer } from './base-locale';
 import {
@@ -1197,6 +1198,21 @@ export class ApiService {
 
   remettreEnStock(id: number): Observable<EquipementVue> {
     return this.http.delete<EquipementVue>(`/api/materiel/equipements/${id}/rebut`);
+  }
+
+  /** Ce qu'un moniteur voit d'un matériel qu'il scanne (sans la fiche de gestion). */
+  resumeEquipement(id: number): Observable<ResumeEquipementVue> {
+    return this.http.get<ResumeEquipementVue>(`/api/materiel/equipements/${id}/resume`);
+  }
+
+  /** Un problème constaté pendant une séance : le matériel ne se prête plus jusqu'à sa réparation. */
+  signalerProblemeMateriel(id: number, description: string): Observable<SignalementMaterielVue> {
+    return this.http.post<SignalementMaterielVue>(`/api/materiel/equipements/${id}/signalements`, { description });
+  }
+
+  /** Les problèmes signalés et pas encore réparés, de tout le matériel. */
+  signalementsMateriel(): Observable<SignalementMaterielVue[]> {
+    return this.http.get<SignalementMaterielVue[]>('/api/materiel/signalements');
   }
 
   ajouterIntervention(equipementId: number, demande: DemandeIntervention): Observable<InterventionVue> {

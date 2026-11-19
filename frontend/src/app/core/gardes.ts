@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanDeactivateFn, CanMatchFn, Router } from '@angular/router';
 import { filter, map, take } from 'rxjs';
 import { AuthService } from './auth.service';
 
@@ -91,6 +91,15 @@ export const gardeInspectionBlocs: CanActivateFn = () => {
   return apresResolutionSession().pipe(
     map(() => auth.inspecteBlocs() || router.createUrlTree(['/cursus']))
   );
+};
+
+/**
+ * L'adresse d'une étiquette de matériel (`/materiel/:id`) ouvre la fiche de gestion pour qui inspecte
+ * le matériel (DT, admin, TIV) ; sinon la route suivante, la page de signalement d'un moniteur.
+ */
+export const ficheMaterielComplete: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  return apresResolutionSession().pipe(map(() => auth.inspecteBlocs()));
 };
 
 /** Sorties : même public que le matériel (le DT y rattache ses prêts), admin compris. */

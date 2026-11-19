@@ -16,7 +16,13 @@ public enum TypeIntervention {
     REMPLACEMENT_PIECE("Remplacement d'une pièce", EnumSet.allOf(TypeEquipement.class)),
     CONTROLE("Contrôle", EnumSet.allOf(TypeEquipement.class)),
     DESINFECTION("Désinfection", EnumSet.allOf(TypeEquipement.class)),
-    INCIDENT("Incident", EnumSet.allOf(TypeEquipement.class));
+    INCIDENT("Incident", EnumSet.allOf(TypeEquipement.class)),
+    /**
+     * Un problème constaté pendant une séance par un moniteur (demande du
+     * club, 2026-11-19) : le matériel ne se prête plus jusqu'à une
+     * {@link #REPARATION} saisie ensuite (EcheancesEquipement).
+     */
+    SIGNALEMENT("Problème signalé", EnumSet.allOf(TypeEquipement.class));
 
     private final String libelle;
     private final Set<TypeEquipement> types;

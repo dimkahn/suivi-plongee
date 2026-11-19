@@ -2,7 +2,7 @@ import { EquipementVue, StatutEquipement } from '../../core/modeles';
 
 /** Le ton de l'étiquette d'état (styles.css, .etiquette-etat) de chaque statut d'équipement. */
 export const TON_STATUT_EQUIPEMENT: Record<StatutEquipement, string> = {
-  DISPONIBLE: 'ok', PRETE: '', A_REGULARISER: 'danger', HORS_SERVICE: 'attention', REBUTE: 'neutre'
+  DISPONIBLE: 'ok', PRETE: '', A_REGULARISER: 'danger', HORS_SERVICE: 'attention', REBUTE: 'neutre', A_REPARER: 'danger'
 };
 
 /** « 12 L acier nitrox, Roth », « Aqualung Legend », « Beuchat Focea, 7 mm, taille M ». */

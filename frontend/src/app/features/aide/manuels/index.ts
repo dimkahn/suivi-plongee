@@ -57,6 +57,7 @@ import miseAuRebut from './mise-au-rebut.md';
 import inspectionTiv from './inspection-tiv.md';
 import etiquettesQrCode from './etiquettes-qr-code.md';
 import classeurExcelMateriel from './classeur-excel-materiel.md';
+import signalerUnProblemeMateriel from './signaler-un-probleme-materiel.md';
 
 import suivreSaProgression from './suivre-sa-progression.md';
 import carnetDuSejour from './carnet-du-sejour.md';
@@ -125,6 +126,7 @@ const SOURCES: Record<string, string> = {
   'inspection-tiv': inspectionTiv,
   'etiquettes-qr-code': etiquettesQrCode,
   'classeur-excel-materiel': classeurExcelMateriel,
+  'signaler-un-probleme-materiel': signalerUnProblemeMateriel,
 
   'suivre-sa-progression': suivreSaProgression,
   'carnet-du-sejour': carnetDuSejour,

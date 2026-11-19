@@ -12,6 +12,9 @@ import fr.club.plongee.materiel.service.MaterielService;
 import fr.club.plongee.materiel.service.MaterielService.DemandeEquipement;
 import fr.club.plongee.materiel.service.MaterielService.DemandeIntervention;
 import fr.club.plongee.materiel.service.MaterielService.DemandeRebut;
+import fr.club.plongee.materiel.service.MaterielService.DemandeSignalement;
+import fr.club.plongee.materiel.service.MaterielService.ResumeEquipementVue;
+import fr.club.plongee.materiel.service.MaterielService.SignalementVue;
 import fr.club.plongee.materiel.service.MaterielService.EquipementVue;
 import fr.club.plongee.materiel.service.MaterielService.InterventionVue;
 import fr.club.plongee.materiel.service.PretService;
@@ -59,6 +62,13 @@ public class MaterielController {
 
     /** Remplace, sur les méthodes qui le portent, la restriction de la classe. */
     static final String LECTURE_ET_INSPECTION = "hasAnyRole('DIRECTEUR_TECHNIQUE','ADMIN','TIV')";
+
+    /**
+     * Signaler un problème constaté pendant une séance : tout encadrant, et les
+     * comptes du matériel (demande du club, 2026-11-19). Pas les élèves, qui le
+     * disent à leur moniteur.
+     */
+    static final String SIGNALEMENT = "hasAnyRole('MONITEUR','DIRECTEUR_TECHNIQUE','ADMIN','TIV')";
 
     /** La fiche de gestion d'un équipement : description, journal, prêts. */
     public record FicheEquipementVue(EquipementVue equipement, List<InterventionVue> journal, List<PretVue> prets) {}
@@ -138,6 +148,28 @@ public class MaterielController {
     @DeleteMapping("/equipements/{id}/rebut")
     public EquipementVue remettreEnStock(@PathVariable Long id) {
         return materiel.remettreEnStock(id);
+    }
+
+    /** Ce qu'un moniteur voit d'un matériel qu'il scanne, sans la fiche de gestion (prêts, journal). */
+    @GetMapping("/equipements/{id}/resume")
+    @PreAuthorize(SIGNALEMENT)
+    public ResumeEquipementVue resume(@PathVariable Long id) {
+        return materiel.resume(id);
+    }
+
+    @PostMapping("/equipements/{id}/signalements")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize(SIGNALEMENT)
+    public SignalementVue signaler(@PathVariable Long id, @RequestBody DemandeSignalement demande,
+                                   @AuthenticationPrincipal UtilisateurPrincipal auteur) {
+        return materiel.signaler(id, demande, auteur.id());
+    }
+
+    /** Les problèmes signalés et pas encore réparés : la liste de travail du directeur technique. */
+    @GetMapping("/signalements")
+    @PreAuthorize(LECTURE_ET_INSPECTION)
+    public List<SignalementVue> signalements() {
+        return materiel.signalementsOuverts();
     }
 
     @PostMapping("/equipements/{id}/interventions")

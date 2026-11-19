@@ -19,7 +19,7 @@ public interface InterventionEquipementRepository extends JpaRepository<Interven
            """)
     List<InterventionEquipement> parEquipement(@Param("equipementId") Long equipementId);
 
-    @Query("select i from InterventionEquipement i where i.equipement.id in :ids")
+    @Query("select i from InterventionEquipement i left join fetch i.saisiPar where i.equipement.id in :ids")
     List<InterventionEquipement> parEquipements(@Param("ids") Collection<Long> ids);
 
     boolean existsByEquipementId(Long equipementId);

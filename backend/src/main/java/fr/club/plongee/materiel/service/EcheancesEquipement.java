@@ -72,6 +72,13 @@ public final class EcheancesEquipement {
         if (e.isHorsService()) {
             alertes.add(new Alerte(Gravite.BLOQUANT, "Hors service."));
         }
+        // Motif neutre, sans le nom du moniteur ni son texte libre : il remonte jusqu'au 422 d'un
+        // emprunt déclaré depuis un séjour (lien sans compte, participants parfois mineurs). Le détail
+        // se lit dans les signalements, sous rôle (fiche, inventaire, résumé).
+        for (InterventionEquipement s : signalementsOuverts(journal)) {
+            alertes.add(new Alerte(Gravite.BLOQUANT, "Problème signalé le " + fr(s.getDateIntervention())
+                    + " : à vérifier et réparer avant tout prêt."));
+        }
 
         dernierAvecResultat(journal)
                 .filter(i -> i.getResultat() == Resultat.NON_CONFORME)
@@ -122,6 +129,28 @@ public final class EcheancesEquipement {
 
         return new Etat(derniereInspection, prochaineInspection, derniereRequalification, prochaineRequalification,
                 derniereRevision, prochaineRevision, alertes);
+    }
+
+    /**
+     * Les problèmes signalés qu'aucune réparation n'a suivis : une ligne
+     * {@code REPARATION} saisie après un signalement le clôt (ordre de saisie,
+     * le journal étant en ajout seul). Du plus ancien au plus récent.
+     */
+    public static List<InterventionEquipement> signalementsOuverts(List<InterventionEquipement> journal) {
+        InterventionEquipement derniereReparation = journal.stream()
+                .filter(i -> i.getType() == TypeIntervention.REPARATION)
+                .max(EcheancesEquipement::ordreDeSaisie).orElse(null);
+        return journal.stream()
+                .filter(i -> i.getType() == TypeIntervention.SIGNALEMENT)
+                .filter(i -> derniereReparation == null || ordreDeSaisie(i, derniereReparation) > 0)
+                .sorted(EcheancesEquipement::ordreDeSaisie)
+                .toList();
+    }
+
+    private static int ordreDeSaisie(InterventionEquipement a, InterventionEquipement b) {
+        int parDate = a.getSaisiLe().compareTo(b.getSaisiLe());
+        if (parDate != 0 || a.getId() == null || b.getId() == null) return parDate;
+        return a.getId().compareTo(b.getId());
     }
 
     public static Etat calculer(Equipement e, List<InterventionEquipement> journal) {

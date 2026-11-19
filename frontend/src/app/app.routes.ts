@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import {
-  gardeAdmin, gardeConnecte, gardeEncadrant, gardeFichesSecurite, gardeInspectionBlocs, gardeMateriel, gardeModifications,
+  ficheMaterielComplete, gardeAdmin, gardeConnecte, gardeEncadrant, gardeFichesSecurite, gardeInspectionBlocs, gardeMateriel, gardeModifications, gardeMoniteur,
   gardeSorties
 } from './core/gardes';
 
@@ -296,9 +296,17 @@ export const routes: Routes = [
   },
   {
     path: 'materiel/:id',
+    canMatch: [ficheMaterielComplete],
     canActivate: [gardeConnecte, gardeInspectionBlocs],
     loadComponent: () => import('./features/materiel/fiche-equipement.component')
       .then(m => m.FicheEquipementComponent)
+  },
+  // La même adresse (QR code, tag NFC) pour un moniteur : signaler un problème pendant une séance.
+  {
+    path: 'materiel/:id',
+    canActivate: [gardeConnecte, gardeMoniteur],
+    loadComponent: () => import('./features/materiel/signalement-materiel.component')
+      .then(m => m.SignalementMaterielComponent)
   },
   {
     path: 'trombinoscope',

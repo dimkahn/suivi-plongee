@@ -855,11 +855,12 @@ Blocs, détendeurs, gilets et combinaisons : leur état, et ce qui arrive à éc
 Compte : `e3@club.fr` · formats téléphone et ordinateur · 35 s
 
 1. Le directeur technique a une entrée de plus sous « Plus » : « Matériel ».
-2. En haut, les compteurs : disponible, prêté, à régulariser, hors service.
-3. « À surveiller » : les échéances proches ou dépassées, calculées par l'appli.
-4. TIV tous les 12 mois, requalification des blocs, révisions fabricant.
-5. Filtrez par type, ou cherchez une référence ou un ancien numéro : un matériel renuméroté le garde partout à côté du nouveau.
-6. Chaque ligne ouvre la fiche de l'équipement : sa fiche de gestion.
+2. En haut, les problèmes signalés par les moniteurs pendant les séances : à vérifier et réparer, ils ne se prêtent plus.
+3. Puis les compteurs : disponible, prêté, à réparer, à régulariser, hors service.
+4. « À surveiller » : les échéances proches ou dépassées, calculées par l'appli.
+5. TIV tous les 12 mois, requalification des blocs, révisions fabricant.
+6. Filtrez par type, ou cherchez une référence ou un ancien numéro : un matériel renuméroté le garde partout à côté du nouveau.
+7. Chaque ligne ouvre la fiche de l'équipement : sa fiche de gestion.
 
 ### D2 — Ajouter un équipement
 

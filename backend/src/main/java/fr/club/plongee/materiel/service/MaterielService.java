@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 @Service
 public class MaterielService {
 
-    public enum Statut { DISPONIBLE, PRETE, A_REGULARISER, HORS_SERVICE, REBUTE }
+    public enum Statut { DISPONIBLE, PRETE, A_REGULARISER, HORS_SERVICE, REBUTE, A_REPARER }
 
     public record PretEnCoursVue(Long id, String emprunteur, LocalDate dateRetourPrevue) {}
 
@@ -94,6 +94,17 @@ public class MaterielService {
     public record DemandeIntervention(@NotNull TypeIntervention type, @NotNull LocalDate dateIntervention,
                                       @Size(max = 120) String intervenant, Resultat resultat,
                                       String description) {}
+
+    /** Le problème constaté, sur le matériel : jamais sur une personne ni sa santé. */
+    public record DemandeSignalement(String description) {}
+
+    /** Un problème signalé que le directeur technique n'a pas encore déclaré réparé. */
+    public record SignalementVue(Long id, Long equipementId, TypeEquipement type, String designation,
+                                 LocalDate date, String description, String signalePar, Instant signaleLe) {}
+
+    /** Ce qu'un moniteur voit d'un matériel qu'il scanne : ce qu'il est, et ses problèmes en cours. */
+    public record ResumeEquipementVue(Long id, TypeEquipement type, String typeLibelle, String designation,
+                                      boolean rebute, List<SignalementVue> signalements) {}
 
     public record DemandeRebut(@NotNull LocalDate dateRebut, @NotBlank @Size(max = 255) String motif) {}
 
@@ -250,8 +261,63 @@ public class MaterielService {
         if (d.type() == TypeIntervention.INCIDENT && vide(d.description())) {
             throw new RegleMetierException("Décrivez l'incident.");
         }
+        if (d.type() == TypeIntervention.SIGNALEMENT && vide(d.description())) {
+            throw new RegleMetierException("Décrivez le problème constaté sur le matériel.");
+        }
         return vue(journaliser(e, d.type(), d.dateIntervention(), d.resultat(), d.description(), null,
                 utilisateurs.getReferenceById(auteurId), d.intervenant()), null);
+    }
+
+    /**
+     * Un problème constaté sur un matériel pendant une séance : une ligne du
+     * journal, qui bloque les prêts jusqu'à une réparation.
+     */
+    @Transactional
+    public SignalementVue signaler(Long id, DemandeSignalement d, Long auteurId) {
+        Equipement e = equipement(id);
+        if (d == null || vide(d.description())) {
+            throw new RegleMetierException("Décrivez le problème constaté sur le matériel.");
+        }
+        String description = d.description().trim();
+        if (description.length() > 500) {
+            throw new RegleMetierException("Décrivez le problème en 500 caractères au plus.");
+        }
+        if (e.estRebute()) {
+            throw new RegleMetierException("Ce matériel est au rebut : il n'est plus utilisé.");
+        }
+        InterventionEquipement i = journaliser(e, TypeIntervention.SIGNALEMENT, Calendrier.aujourdhui(), null,
+                description, null, utilisateurs.getReferenceById(auteurId));
+        return signalement(i);
+    }
+
+    /** Les problèmes signalés et pas encore réparés, de tout le matériel, du plus ancien au plus récent. */
+    @Transactional(readOnly = true)
+    public List<SignalementVue> signalementsOuverts() {
+        List<Equipement> liste = equipements.findAllByOrderByTypeAscReferenceAsc().stream()
+                .filter(e -> !e.estRebute()).toList();
+        if (liste.isEmpty()) return List.of();
+        Map<Long, List<InterventionEquipement>> journaux = interventions
+                .parEquipements(liste.stream().map(Equipement::getId).toList()).stream()
+                .collect(Collectors.groupingBy(i -> i.getEquipement().getId()));
+        return liste.stream()
+                .flatMap(e -> EcheancesEquipement.signalementsOuverts(journaux.getOrDefault(e.getId(), List.of())).stream())
+                .map(MaterielService::signalement)
+                .sorted(Comparator.comparing(SignalementVue::signaleLe))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ResumeEquipementVue resume(Long id) {
+        Equipement e = equipement(id);
+        return new ResumeEquipementVue(e.getId(), e.getType(), e.getType().libelle(), e.designation(), e.estRebute(),
+                EcheancesEquipement.signalementsOuverts(interventions.parEquipement(id)).stream()
+                        .map(MaterielService::signalement).toList());
+    }
+
+    private static SignalementVue signalement(InterventionEquipement i) {
+        Equipement e = i.getEquipement();
+        return new SignalementVue(i.getId(), e.getId(), e.getType(), e.designation(), i.getDateIntervention(),
+                i.getDescription(), i.getSaisiPar() == null ? null : i.getSaisiPar().nomComplet(), i.getSaisiLe());
     }
 
     /** État à une date donnée (fin d'un prêt), pour {@link PretService}, dans sa transaction. */
@@ -347,6 +413,7 @@ public class MaterielService {
         Etat etat = EcheancesEquipement.calculer(e, journal);
         Statut statut = e.estRebute() ? Statut.REBUTE
                 : e.isHorsService() ? Statut.HORS_SERVICE
+                : !EcheancesEquipement.signalementsOuverts(journal).isEmpty() ? Statut.A_REPARER
                 : pretEnCours != null ? Statut.PRETE
                 : etat.bloquant() ? Statut.A_REGULARISER
                 : Statut.DISPONIBLE;

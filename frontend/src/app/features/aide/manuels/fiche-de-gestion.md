@@ -21,6 +21,7 @@ La fiche d'un équipement tient lieu de fiche de gestion d'EPI (Code du sport) :
 
 ## Bon à savoir
 
+- Sous les boutons, « **Problèmes signalés** » : ceux constatés pendant les séances et pas encore réparés ; « Signaler un problème » en ajoute un, « Déclarer réparé » inscrit la réparation au journal (voir « Signaler un problème de matériel »).
 - Une erreur se corrige par **une nouvelle ligne** : le journal ne se modifie pas.
 - La fiche se garde trois ans après la mise au rebut.
 - Une révision fabricant en retard n'est qu'un avertissement : l'équipement reste prêtable.

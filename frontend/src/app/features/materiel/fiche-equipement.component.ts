@@ -17,6 +17,8 @@ import { DialogueComponent } from '../../core/dialogue.component';
 import { adresseFicheEquipement, lecteurNfc, NFC_DISPONIBLE, programmerTag } from '../../core/tag-nfc';
 import { RetourPretComponent } from './retour-pret.component';
 import { ChargementComponent } from '../../core/chargement.component';
+import { ProblemesMaterielComponent } from './problemes-materiel.component';
+import { SignalementMaterielVue } from '../../core/modeles';
 
 function demandeVide(type: TypeEquipement): DemandeEquipement {
   return {
@@ -55,7 +57,7 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
  */
 @Component({
   selector: 'app-fiche-equipement',
-  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, DialogueComponent, RetourPretComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, DialogueComponent, RetourPretComponent, ProblemesMaterielComponent],
   template: `
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
@@ -331,6 +333,11 @@ function nettoyer(d: DemandeEquipement): DemandeEquipement {
           </span>
         }
       </div>
+
+      @if (e.statut !== 'REBUTE') {
+        <app-problemes-materiel class="pas-imprime" [equipementId]="e.id" [signalements]="signalements()"
+                                [peutReparer]="gere()" (change)="charger(e.id)" />
+      }
 
       <app-retour-pret [pret]="retourOuvert() ? pretARendre() : null" [erreur]="erreurRetour()" [envoi]="envoi()"
                        (fermer)="retourOuvert.set(false)" (valider)="rendre($event)" />
@@ -869,11 +876,18 @@ export class FicheEquipementComponent {
     return iso ? dateFr(iso) : null;
   }
 
-  private async charger(id: number): Promise<void> {
+  /** Les problèmes signalés pendant les séances et pas encore réparés (demande du club, 2026-11-19). */
+  signalements = signal<SignalementMaterielVue[]>([]);
+
+  async charger(id: number): Promise<void> {
     this.chargement.set(this.fiche()?.equipement.id !== id);
     try {
-      const fiche = await firstValueFrom(this.api.ficheEquipement(id));
+      const [fiche, resume] = await Promise.all([
+        firstValueFrom(this.api.ficheEquipement(id)),
+        firstValueFrom(this.api.resumeEquipement(id))
+      ]);
       this.fiche.set(fiche);
+      this.signalements.set(resume.signalements);
       if (fiche.equipement.type === 'BLOC' && this.i.type === 'CONTROLE' && !this.i.description) {
         this.i = { ...this.i, type: 'INSPECTION_VISUELLE' };
       }

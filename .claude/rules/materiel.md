@@ -30,6 +30,14 @@ Paquet `fr.club.plongee.materiel`. Écrans : `/materiel` (inventaire), `/materie
 - Un prêt garde `emprunteur_nom` : supprimer un élève retire le lien, pas la trace.
 - Pas de mode hors ligne.
 
+## Problèmes signalés pendant une séance
+- *Demande du club, 2026-11-19.* Un moniteur scanne l'étiquette : `/materiel/:id` ouvre la fiche de gestion pour DT, ADMIN et TIV (`canMatch` `ficheMaterielComplete`), sinon la page de signalement (`SignalementMaterielComponent`, `GET …/equipements/{id}/resume` : désignation et problèmes en cours, ni journal ni prêts).
+- **Signaler** (`POST …/equipements/{id}/signalements`) : MONITEUR, TIV, DT, ADMIN (`MaterielController.SIGNALEMENT`), pas les élèves. Description obligatoire (422), 500 caractères, sur le matériel seulement (jamais la personne ni sa santé). Une ligne `SIGNALEMENT` (« Problème signalé ») du journal, en ajout seul : **pas de table** ; contrainte `ck_intervention_type` recréée par V99_17 (migration Java : la contrainte de V29 n'avait pas de nom).
+- **Bloque les prêts** jusqu'à une ligne `REPARATION` **saisie après** (ordre de saisie, `EcheancesEquipement.signalementsOuverts`) ; statut `A_REPARER`. Pas `INCIDENT`, déjà écrit par les retours de prêt sans bloquer.
+- **Motif bloquant neutre** (« Problème signalé le … : à vérifier et réparer avant tout prêt. ») : ni le nom du moniteur ni son texte, qui remonteraient dans le 422 d'un emprunt déclaré depuis un séjour (lien, participants parfois mineurs). Le détail ne se lit que dans `SignalementVue`, sous rôle.
+- **Déclarer réparé** : une `REPARATION` par `POST …/interventions` (DT, ADMIN), via `ProblemesMaterielComponent` de la fiche ; liste de travail `GET /api/materiel/signalements` (DT, ADMIN, TIV), encart « Problèmes signalés » de l'inventaire.
+- Démo V137 (G-01). Test : `SignalementMaterielTest`.
+
 ## Prêts déclarés depuis un séjour
 - Chacun déclare son emprunt dans le séjour ou par le lien (`PretsSejourService`, `sejour.md`) : un vrai prêt (`PretService.declarer`), rattaché à la sortie, mêmes contrôles ; `sejour_pret` (V84) garde le participant et qui a déclaré.
 - Détendeur déclaré par l'emprunteur : `desinfection_au_retour` (V99_6), rien au journal à la remise ; au retour, celui qui reçoit le matériel coche la désinfection, inscrite à cette date (422 sinon). Déclaré par un organisateur ou un moniteur pour un autre : attestée à la remise. *Choix du club, 2026-10-23.*
