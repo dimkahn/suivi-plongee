@@ -238,6 +238,24 @@ input, select, textarea {
   .dialogue-formulaire .actions-dialogue > button { flex: 1 1 auto; }
 }
 
+/* Vivier de personnes à placer (core/jeton-personne.component.ts) : plongeurs
+   d'un groupe sur la fiche de sécurité, élèves des groupes d'entraînement.
+   Une zone en pointillés, toujours assez grande pour y déposer un jeton ;
+   au téléphone, trois jetons par ligne. */
+.vivier-jetons {
+  display: flex; flex-wrap: wrap; gap: var(--pas); min-height: 44px;
+  padding: var(--pas); border: 1px dashed var(--trait); border-radius: var(--r-s);
+}
+@media (max-width: 600px) {
+  .vivier-jetons {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 6px; padding: 6px;
+  }
+  .vivier-jetons > :not(app-jeton-personne) { grid-column: 1 / -1; }
+}
+/* Boutons de destination projetés dans core/barre-placement.component.ts. */
+.barre-placement .bouton-principal { width: auto; margin: 0; }
+
 /* ------------------------------------------------------------------
    Tâche en cours. On anime pour dire qu'une tâche est en cours (ou
    montrer où son résultat est arrivé), jamais pour décorer, et toujours

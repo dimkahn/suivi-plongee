@@ -27,6 +27,8 @@ import {
   PlongeurVue, SeanceLieeVue, SeanceVue, SignatureFicheVue
 } from '../../core/modeles';
 import { ChargementComponent } from '../../core/chargement.component';
+import { JetonPersonneComponent } from '../../core/jeton-personne.component';
+import { BarrePlacementComponent } from '../../core/barre-placement.component';
 
 function plongeurVide(): PlongeurVue {
   return {
@@ -104,7 +106,7 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
 
 @Component({
   selector: 'app-fiche-securite',
-  imports: [ChargementComponent, FormsModule, RouterLink, DragDropModule, DateFrPipe, PlurielPipe, ComboboxComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DragDropModule, DateFrPipe, PlurielPipe, ComboboxComponent, DialogueComponent, JetonPersonneComponent, BarrePlacementComponent],
   template: `
     <datalist id="plongeurs-club">
       @for (c of plongeursConnus(); track libellePlongeurConnu(c)) {
@@ -360,17 +362,11 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
 
         @if (groupeSelectionne(); as g) {
           <div cdkDropList id="pool" [cdkDropListDisabled]="!modifiable()" [cdkDropListData]="poolDisponible()" [cdkDropListConnectedTo]="idsPalanquees()"
-               class="pool-plongeurs">
+               class="pool-plongeurs vivier-jetons">
             @for (m of poolDisponible(); track m) {
-              <button type="button" class="jeton-plongeur" cdkDrag [cdkDragData]="m"
-                      [cdkDragStartDelay]="delaiGlisser"
-                      [class.selectionne]="membreAPlacer() === m" [attr.aria-pressed]="membreAPlacer() === m"
-                      [attr.aria-label]="m.prenom + ' ' + m.nom + (aptitudeSurFiche(m) ? ', ' + aptitudeSurFiche(m) : '')"
-                      (click)="selectionnerPourPlacer(m)">
-                <span class="nom-long">{{ m.prenom }} {{ m.nom }}</span>
-                <span class="nom-court">{{ m.prenom }} {{ initiale(m.nom) }}</span>
-                @if (aptitudeSurFiche(m); as a) { <span class="niveau-jeton">{{ a }}</span> }
-              </button>
+              <app-jeton-personne cdkDrag [cdkDragData]="m" [cdkDragStartDelay]="delaiGlisser"
+                                  [prenom]="m.prenom" [nom]="m.nom" [detail]="aptitudeSurFiche(m)"
+                                  [selectionne]="membreAPlacer() === m" (choisir)="selectionnerPourPlacer(m)" />
             }
             @if (poolDisponible().length === 0) {
               <p class="vide">
@@ -764,41 +760,32 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       </app-dialogue>
 
       @if (membreAPlacer(); as m) {
-        <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée">
-          <p><strong>{{ m.prenom }} {{ m.nom }}</strong> → quelle palanquée ?</p>
-          <div class="choix-palanquees">
-            @for (p of palanquees(); track p; let iP = $index) {
-              <button type="button" class="bouton-principal" (click)="placer(m, iP)">
-                {{ nomPalanquee(p) }} ({{ p.membres.length }})
-              </button>
-            }
-            <button type="button" class="bouton-discret" (click)="ouvrirNouvellePalanquee(m)">
-              + Nouvelle palanquée
+        <app-barre-placement etiquette="Choisir la palanquée" [nom]="m.prenom + ' ' + m.nom"
+                             question="quelle palanquée ?" (annuler)="membreAPlacer.set(null)">
+          @for (p of palanquees(); track p; let iP = $index) {
+            <button type="button" class="bouton-principal" (click)="placer(m, iP)">
+              {{ nomPalanquee(p) }} ({{ p.membres.length }})
             </button>
-            <button type="button" class="bouton-discret" (click)="membreAPlacer.set(null)">Annuler</button>
-          </div>
-        </div>
+          }
+          <button type="button" class="bouton-discret" (click)="ouvrirNouvellePalanquee(m)">
+            + Nouvelle palanquée
+          </button>
+        </app-barre-placement>
       }
 
       @if (plongeurADeplacer(); as d) {
-        <div class="barre-placement" role="dialog" aria-label="Choisir la palanquée de destination">
-          <p>
-            <strong>{{ nomADeplacer() }}</strong>
-            ({{ palanquees()[d.palanquee] ? nomPalanquee(palanquees()[d.palanquee]).replace('Palanquée', 'palanquée') : '' }})
-            → vers quelle palanquée ?
-          </p>
-          <div class="choix-palanquees">
-            @for (p of palanquees(); track p; let iP = $index) {
-              @if (iP !== d.palanquee) {
-                <button type="button" class="bouton-principal" (click)="deplacerVers(iP)">
-                  {{ nomPalanquee(p) }} ({{ p.membres.length }})
-                </button>
-              }
+        <app-barre-placement etiquette="Choisir la palanquée de destination" [nom]="nomADeplacer()"
+                             [precision]="'(' + (palanquees()[d.palanquee] ? nomPalanquee(palanquees()[d.palanquee]).replace('Palanquée', 'palanquée') : '') + ')'"
+                             question="vers quelle palanquée ?" (annuler)="plongeurADeplacer.set(null)">
+          @for (p of palanquees(); track p; let iP = $index) {
+            @if (iP !== d.palanquee) {
+              <button type="button" class="bouton-principal" (click)="deplacerVers(iP)">
+                {{ nomPalanquee(p) }} ({{ p.membres.length }})
+              </button>
             }
-            <button type="button" class="bouton-discret" (click)="ouvrirNouvellePalanquee('deplacement')">+ Nouvelle palanquée</button>
-            <button type="button" class="bouton-discret" (click)="plongeurADeplacer.set(null)">Annuler</button>
-          </div>
-        </div>
+          }
+          <button type="button" class="bouton-discret" (click)="ouvrirNouvellePalanquee('deplacement')">+ Nouvelle palanquée</button>
+        </app-barre-placement>
       }
 
       </fieldset>
@@ -1063,61 +1050,15 @@ type FormulaireDuplication = Omit<DemandeDuplicationSeance, 'dpId'> & { dpId: nu
       border-left: 3px solid var(--profond); background: var(--brume, #eef4f5); border-radius: var(--r-s);
     }
 
-    .pool-plongeurs {
-      display: flex; flex-wrap: wrap; gap: var(--pas); min-height: 44px;
-      padding: var(--pas); border: 1px dashed var(--trait); border-radius: var(--r-s);
-    }
     /* Toujours une zone visible et suffisamment grande pour y déposer un plongeur, même sans aucun membre. */
     .zone-membres-vide {
       min-height: 60px; display: flex; align-items: center; justify-content: center;
       border: 1px dashed var(--trait); border-radius: var(--r-s); margin-top: var(--pas);
     }
     .zone-membres-vide .vide { margin: 0; }
-    .jeton-plongeur { display: inline-flex; align-items: center; gap: 6px; }
-    .nom-court { display: none; }
-    .niveau-jeton { font-weight: 700; color: var(--profond); }
-    .jeton-plongeur.selectionne .niveau-jeton { color: #fff; }
-
-    .jeton-plongeur.selectionne {
-      background: var(--profond); border-color: var(--profond); color: #fff; font-weight: 700;
-    }
-    /* Au-dessus de la barre d'onglets du téléphone, le temps du choix. */
-    .barre-placement {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-      max-height: 45vh; overflow-y: auto;
-      padding: var(--pas-2) var(--pas-3) calc(var(--pas-2) + env(safe-area-inset-bottom, 0px));
-      background: var(--carte); border-top: 1px solid var(--trait);
-      box-shadow: 0 -6px 16px rgba(0,0,0,.15);
-    }
-    .barre-placement p { margin: 0 0 var(--pas); }
-    .choix-palanquees { display: flex; flex-wrap: wrap; gap: var(--pas); }
-    .choix-palanquees .bouton-principal { width: auto; margin: 0; }
-    .jeton-plongeur {
-      padding: var(--pas) var(--pas-2); border-radius: 999px; background: var(--brume, #eef4f5);
-      border: 1px solid var(--trait); cursor: grab; font-size: .875rem; user-select: none;
-      min-height: 44px; color: var(--encre); font-weight: 400;
-    }
-    /*
-     * Téléphone : puces compactes, trois par ligne (nom de famille réduit à son
-     * initiale, niveau en dessous), en gardant 44 px de haut pour le doigt.
-     */
+    /* Téléphone : jetons compacts, trois par ligne (core/jeton-personne.component.ts, .vivier-jetons). */
     @media (max-width: 600px) {
       .panneau-groupe { padding: var(--pas-2); }
-      .pool-plongeurs {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-        gap: 6px; padding: 6px;
-      }
-      .jeton-plongeur {
-        flex-direction: column; justify-content: center; gap: 0;
-        padding: 2px 6px; border-radius: var(--r-s); line-height: 1.15; min-width: 0;
-      }
-      .nom-long { display: none; }
-      .nom-court {
-        display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        font-size: .8125rem;
-      }
-      .niveau-jeton { font-size: .75rem; }
-      .pool-plongeurs .vide { grid-column: 1 / -1; }
     }
 
     .bouton-proposer { width: auto; margin: var(--pas-2) 0 0; }
