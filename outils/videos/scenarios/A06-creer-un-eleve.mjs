@@ -1,5 +1,5 @@
 // A6 — Créer le dossier d'un élève.
-// Tournage du 2026-10-19, 14e série, carte « Élèves » de l'administration, inscription au club OK / KO (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19 : élèves en grille, filtre par groupe (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -39,6 +39,10 @@ export default {
     await choisir('#filtre-inscription', 'KO : pas à jour');
     await pause(3000);
     await choisir('#filtre-inscription', 'Tous');
+    await legende('Le filtre « Groupe » ne garde que les élèves d\'un groupe d\'entraînement, ou ceux sans groupe.', 0);
+    await choisir('#filtre-groupe', 'Débutants');
+    await pause(3000);
+    await choisir('#filtre-groupe', 'Tous les groupes');
     await legende('Un élève qui quitte le club s\'archive : son historique reste.', 3500);
     await legende(null, 0);
     await pause(500);

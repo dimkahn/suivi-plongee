@@ -679,7 +679,8 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 41 s
 5. Sur chaque carte, l'inscription au club de la saison : OK en vert, KO en rouge.
 6. Anis a réglé son inscription : un appui sur sa pastille la passe à OK.
 7. Le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.
-8. Un élève qui quitte le club s'archive : son historique reste.
+8. Le filtre « Groupe » ne garde que les élèves d'un groupe d'entraînement, ou ceux sans groupe.
+9. Un élève qui quitte le club s'archive : son historique reste.
 
 ### A7 — Inscrire un élève en formation
 

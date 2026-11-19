@@ -233,6 +233,14 @@ function trier(eleves: EleveVue[]): EleveVue[] {
         </select>
       </div>
       <div>
+        <label for="filtre-groupe">Groupe</label>
+        <select id="filtre-groupe" name="filtreGroupe" [ngModel]="filtreGroupe()" (ngModelChange)="filtreGroupe.set($event)">
+          <option [ngValue]="null">Tous les groupes</option>
+          @for (g of groupesSaison(); track g.id) { <option [ngValue]="g.id">{{ g.nom }}</option> }
+          <option [ngValue]="SANS_GROUPE">Sans groupe</option>
+        </select>
+      </div>
+      <div>
         <label for="filtre-statut">Statut de l'inscription</label>
         <select id="filtre-statut" name="filtreStatut" [ngModel]="filtreStatut()"
                 (ngModelChange)="filtreStatut.set($event)">
@@ -273,7 +281,8 @@ function trier(eleves: EleveVue[]): EleveVue[] {
     } @else if (listeFiltree().length === 0) {
       <div class="carte vide"><p>Aucun élève ne correspond aux filtres.</p></div>
     } @else {
-      <ul>
+      <p class="secondaire compte">{{ listeFiltree().length }} élève{{ listeFiltree().length > 1 ? 's' : '' }}</p>
+      <ul class="cartes">
         @for (e of listeFiltree(); track e.id) {
           <li class="carte">
               <div class="ligne">
@@ -302,6 +311,9 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                     <span class="secondaire">
                       Gilet {{ e.tailleGilet || '?' }} · Combinaison {{ e.tailleCombinaison || '?' }}
                     </span>
+                  }
+                  @if (filtreSaisonId()) {
+                    <span class="secondaire">Groupe : {{ groupeDe(e.id)?.nom ?? 'aucun' }}</span>
                   }
                   @if (filtreSaisonId(); as saisonId) {
                     <span class="secondaire">
@@ -464,9 +476,14 @@ function trier(eleves: EleveVue[]): EleveVue[] {
                            border-color: var(--acquis); }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    /* Plusieurs élèves par ligne dès que la largeur le permet ; un seul au téléphone. */
+    .cartes { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: stretch; }
+    .cartes > li { display: flex; flex-direction: column; }
+    .cartes .actions { margin-top: auto; padding-top: var(--pas-2); }
+    .compte { margin: 0 0 var(--pas); }
     li { padding: var(--pas-2); }
     .ligne { display: flex; align-items: flex-start; gap: var(--pas-2); }
-    .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
     app-avatar { --taille-avatar: 56px; }
     .nom { font-weight: 700; }
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
@@ -531,6 +548,11 @@ export class ElevesComponent {
   filtreStatut = signal('TOUS');
   filtreCaci = signal<'TOUS' | 'A_VERIFIER'>('TOUS');
   filtreInscription = signal<'TOUS' | 'OK' | 'KO'>('TOUS');
+  /** Valeur du filtre « Sans groupe » (un id de groupe est toujours positif). */
+  readonly SANS_GROUPE = 0;
+  /** Id du groupe d'entraînement filtré, SANS_GROUPE, ou null : tous. Groupes de la saison du filtre. */
+  filtreGroupe = signal<number | null>(null);
+  groupesSaison = signal<GroupeEntrainementVue[]>([]);
 
   readonly etatCaci = etatCaci;
   readonly libelleCaci = libelleCaci;
@@ -561,8 +583,10 @@ export class ElevesComponent {
       cursusParEleve.set(c.eleveId, liste);
     }
     const adhesionsParEleve = new Map(this.adhesionsDeLaSaison().map(a => [a.eleveId, a]));
+    const groupe = this.filtreGroupe();
     return this.liste().filter(e => {
       if (recherche && !`${e.prenom} ${e.nom}`.toLocaleLowerCase().includes(recherche)) return false;
+      if (groupe !== null && (this.groupeDe(e.id)?.id ?? this.SANS_GROUPE) !== groupe) return false;
       if (this.filtreCaci() === 'A_VERIFIER' && etatCaci(e.certificatValideJusquAu) === 'valide') return false;
       if (this.filtreInscription() !== 'TOUS' && this.inscrit(e) !== (this.filtreInscription() === 'OK')) return false;
       if (statut === 'TOUS') return true;
@@ -572,6 +596,11 @@ export class ElevesComponent {
       return cursus.some(c => c.statut === statut);
     });
   });
+
+  /** Le groupe d'entraînement de l'élève dans la saison du filtre, s'il y est rangé. */
+  groupeDe(eleveId: number): GroupeEntrainementVue | null {
+    return this.groupesSaison().find(g => g.eleves.some(x => x.id === eleveId)) ?? null;
+  }
 
   inscrit(e: EleveVue): boolean {
     return this.inscriptionsClub().some(i => i.eleveId === e.id);
@@ -686,12 +715,16 @@ export class ElevesComponent {
 
   async changerSaison(saisonId: number): Promise<void> {
     this.filtreSaisonId.set(saisonId);
+    // Un groupe n'existe que dans sa saison.
+    this.filtreGroupe.set(null);
     try {
-      const [cursus, adhesions, inscriptions] = await Promise.all([
+      const [cursus, adhesions, inscriptions, groupes] = await Promise.all([
         firstValueFrom(this.api.cursusDeLaSaison(saisonId)),
         firstValueFrom(this.api.adhesionsDeLaSaison(saisonId)),
-        firstValueFrom(this.api.inscriptionsClub(saisonId))
+        firstValueFrom(this.api.inscriptionsClub(saisonId)),
+        firstValueFrom(this.api.groupesEntrainement(saisonId))
       ]);
+      this.groupesSaison.set([...groupes].sort((a, b) => a.ordre - b.ordre));
       this.cursusDeLaSaison.set(cursus);
       this.adhesionsDeLaSaison.set(adhesions);
       this.inscriptionsClub.set(inscriptions);
@@ -791,6 +824,11 @@ export class ElevesComponent {
             eleveId: e.id, saisonId, niveau: this.formationCreation, groupeId: this.groupeCreationId
           }));
           if (this.filtreSaisonId() === saisonId) this.cursusDeLaSaison.set([...this.cursusDeLaSaison(), c]);
+        }
+        // Rangé dans un groupe à la création : la carte et le filtre « Groupe » le montrent aussitôt.
+        if (this.groupeCreationId !== null && this.filtreSaisonId() === saisonId) {
+          const groupes = await firstValueFrom(this.api.groupesEntrainement(saisonId));
+          this.groupesSaison.set([...groupes].sort((x, y) => x.ordre - y.ordre));
         }
       } catch (err) {
         echecs.push(`rattachement à la saison (${(err as HttpErrorResponse).error?.detail ?? 'erreur'})`);
