@@ -11,6 +11,8 @@ import { ProgrammeSeanceComponent } from '../../core/programme-seance.component'
 import { DialogueComponent } from '../../core/dialogue.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { ChargementComponent } from '../../core/chargement.component';
+import { separerSeancesPassees } from '../../core/seances-passees';
+import { pluriel } from '../../core/pluriel';
 
 interface FormulaireSeance {
   dateSeance: string;
@@ -205,6 +207,13 @@ function formulaireVide(): FormulaireSeance {
       <input id="recherche-seance" type="search" name="rechercheSeance"
              placeholder="Date (12/10, 2026-10), lieu, site, milieu ou info complémentaire"
              [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
+      @if (seancesPassees().length > 0) {
+        <button type="button" class="bouton-discret bascule-passees" [attr.aria-pressed]="voirPassees()"
+                (click)="voirPassees.set(!voirPassees())">
+          {{ voirPassees() ? 'Masquer les séances passées'
+                           : 'Voir aussi les séances passées (' + seancesPassees().length + ')' }}
+        </button>
+      }
     } @else {
       <section class="carte calendrier" aria-label="Calendrier des séances">
         <app-calendrier-seances [seances]="liste()" [(jourSelectionne)]="jourSelectionne" />
@@ -228,7 +237,19 @@ function formulaireVide(): FormulaireSeance {
     } @else if (vue() === 'LISTE' && liste().length === 0) {
       <div class="carte vide"><p>Aucune séance sur cette saison.</p></div>
     } @else if (vue() === 'LISTE' && listeFiltree().length === 0) {
-      <div class="carte vide"><p>Aucune séance ne correspond à la recherche.</p></div>
+      <div class="carte vide">
+        @if (passeesMasqueesCorrespondantes() > 0) {
+          <p>
+            {{ recherche() ? 'Aucune séance à venir ne correspond à la recherche' : 'Aucune séance à venir sur cette saison' }} ;
+            {{ pluriel(passeesMasqueesCorrespondantes(), 'séance passée', 'séances passées') }}
+            @if (passeesMasqueesCorrespondantes() === 1) { {{ recherche() ? 'correspond.' : 'est masquée.' }} }
+            @else { {{ recherche() ? 'correspondent.' : 'sont masquées.' }} }
+          </p>
+          <button type="button" class="bouton-discret" (click)="voirPassees.set(true)">Voir les séances passées</button>
+        } @else {
+          <p>Aucune séance ne correspond à la recherche.</p>
+        }
+      </div>
     } @else if (seancesAffichees().length > 0) {
       <ul>
         @for (s of seancesAffichees(); track s.id) {
@@ -323,6 +344,7 @@ function formulaireVide(): FormulaireSeance {
     textarea { resize: vertical; }
 
     #recherche-seance { max-width: 420px; margin-bottom: var(--pas-2); }
+    .bascule-passees { display: block; margin-bottom: var(--pas-2); }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
@@ -356,6 +378,7 @@ export class SeancesComponent {
   recherche = signal('');
 
   readonly lieuEtSite = lieuEtSite;
+  readonly pluriel = pluriel;
 
   vue = signal<'LISTE' | 'CALENDRIER'>('LISTE');
   readonly vues: OptionOnglet<'LISTE' | 'CALENDRIER'>[] = [
@@ -370,15 +393,27 @@ export class SeancesComponent {
     return this.liste().filter(s => s.date === jour);
   });
 
+  /** Par défaut, la liste ne montre que les séances du jour et à venir ; les passées à la demande. */
+  voirPassees = signal(false);
+  private separation = computed(() => separerSeancesPassees(this.liste(), dateDuJour()));
+  seancesPassees = computed(() => this.separation().passees);
+
   /** Un seul champ : date (ISO ou JJ/MM/AAAA), lieu, site, milieu ou info complémentaire, sans accents ni casse. */
-  listeFiltree = computed(() => {
+  listeFiltree = computed(() =>
+    this.correspondantes(this.voirPassees() ? this.liste() : this.separation().aVenir));
+
+  /** Séances passées, masquées, qui répondraient à la recherche : proposées quand la liste est vide. */
+  passeesMasqueesCorrespondantes = computed(() =>
+    this.voirPassees() ? 0 : this.correspondantes(this.seancesPassees()).length);
+
+  private correspondantes(seances: SeanceVue[]): SeanceVue[] {
     const recherche = normaliser(this.recherche());
-    if (!recherche) return this.liste();
-    return this.liste().filter(s =>
+    if (!recherche) return seances;
+    return seances.filter(s =>
       [s.date, dateFr(s.date), s.lieu ?? '', s.site ?? '', s.commentaire ?? '',
        s.milieu === 'NATUREL' ? 'milieu naturel' : 'milieu artificiel piscine fosse']
         .some(champ => normaliser(champ).includes(recherche)));
-  });
+  }
 
   formulaireCreation = signal<FormulaireSeance>(formulaireVide());
   formulaireSejour = signal<FormulaireSejour>(sejourVide());

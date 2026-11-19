@@ -1,12 +1,12 @@
 // A4 — Gérer les séances à la main.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
   id: 'A4',
   titre: 'Gérer les séances à la main',
   public: 'Administrateur',
-  resume: 'Ajouter une séance exceptionnelle, la modifier, voir le calendrier et le programme du mois.',
+  resume: 'Ajouter une séance exceptionnelle, la modifier, revoir les séances passées, voir le calendrier et le programme du mois.',
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
@@ -15,6 +15,9 @@ export default {
     await pause(1000);
     await administration('Séances');
     await legende('Chaque séance porte le programme de la progression du mois.', 3500);
+    await legende('La liste ne montre que les séances à venir ; les passées sont à un toucher.', 0);
+    await toucher(page.getByRole('button', { name: /Voir aussi les séances passées/ }), { apres: 2000 });
+    await toucher(page.getByRole('button', { name: 'Masquer les séances passées' }), { apres: 1000 });
     await legende('Une séance en plus : « Nouvelle séance ».', 0);
     await toucher(page.getByRole('button', { name: 'Nouvelle séance' }));
     await dater('#date', '2027-03-13');

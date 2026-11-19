@@ -639,15 +639,17 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 44 s
 
 ### A4 — Gérer les séances à la main
 
-Ajouter une séance exceptionnelle, la modifier, voir le calendrier et le programme du mois.
+Ajouter une séance exceptionnelle, la modifier, revoir les séances passées, voir le calendrier et le programme du mois.
 
-Compte : `presidente@club.fr` · formats téléphone et ordinateur · 38 s
+Compte : `presidente@club.fr` · formats téléphone et ordinateur · 42 s
 
 1. Chaque séance porte le programme de la progression du mois.
-2. Une séance en plus : « Nouvelle séance ».
-3. Milieu et profondeur se figent dès qu'une présence ou une note y est rattachée.
-4. La vue « Calendrier » montre le mois d'un coup d'œil.
-5. « Séjour de plongée » crée d'un coup les plongées d'un séjour (voir « Organiser une sortie »).
+2. La liste ne montre que les séances à venir ; les passées sont à un toucher.
+3. Une séance en plus : « Nouvelle séance ».
+4. Milieu et profondeur se figent dès qu'une présence ou une note y est rattachée.
+5. « Exercices » ouvre le programme de la séance, préparé groupe par groupe par les encadrants.
+6. La vue « Calendrier » montre le mois d'un coup d'œil.
+7. « Séjour de plongée » crée d'un coup les plongées d'un séjour (voir « Organiser une sortie »).
 
 ### A5 — Ajouter un moniteur
 
