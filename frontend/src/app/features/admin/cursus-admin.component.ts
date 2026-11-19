@@ -153,11 +153,19 @@ import { ChargementComponent } from '../../core/chargement.component';
     <section class="filtres">
       <div>
         <label for="filtre-saison">Saison</label>
-        <select id="filtre-saison" name="filtreSaison" [ngModel]="saisonAffichee()" (ngModelChange)="saisonAffichee.set($event)">
+        <select id="filtre-saison" name="filtreSaison" [ngModel]="saisonAffichee()" (ngModelChange)="choisirSaisonAffichee($event)">
           @for (s of saisons(); track s.id) {
             <option [ngValue]="s.libelle">{{ s.libelle }}{{ s.ouverte ? ' (en cours)' : '' }}</option>
           }
           <option [ngValue]="null">Toutes les saisons</option>
+        </select>
+      </div>
+      <div>
+        <label for="filtre-groupe">Groupe</label>
+        <select id="filtre-groupe" name="filtreGroupe" [ngModel]="groupeFiltre()" (ngModelChange)="groupeFiltre.set($event)">
+          <option [ngValue]="null">Tous les groupes</option>
+          @for (n of nomsGroupes(); track n) { <option [ngValue]="n">{{ n }}</option> }
+          <option [ngValue]="SANS_GROUPE">Sans groupe</option>
         </select>
       </div>
       <div>
@@ -173,7 +181,7 @@ import { ChargementComponent } from '../../core/chargement.component';
       <div class="carte vide"><p>Aucun cursus enregistré.</p></div>
     } @else if (listeFiltree().length === 0) {
       <div class="carte vide">
-        <p>{{ filtreNom().trim() ? 'Aucune inscription ne correspond à la recherche.' : 'Aucune inscription en formation pour cette saison.' }}</p>
+        <p>{{ filtreNom().trim() || groupeFiltre() !== null ? 'Aucune inscription ne correspond aux filtres.' : 'Aucune inscription en formation pour cette saison.' }}</p>
       </div>
     } @else {
       <p class="secondaire compte">{{ listeFiltree().length }} inscription{{ listeFiltree().length > 1 ? 's' : '' }} en formation</p>
@@ -377,7 +385,21 @@ export class CursusAdminComponent {
     const recherche = this.filtreNom().trim().toLocaleLowerCase();
     const saison = this.saisonAffichee();
     return this.liste().filter(c => (saison === null || c.saison === saison)
-      && (!recherche || c.eleve.toLocaleLowerCase().includes(recherche)));
+      && (!recherche || c.eleve.toLocaleLowerCase().includes(recherche))
+      && this.dansLeGroupeFiltre(c.eleveId, c.saison));
+  });
+
+  /** Valeur du filtre « Sans groupe » (un nom de groupe n'est jamais vide). */
+  readonly SANS_GROUPE = '';
+  /** Nom du groupe filtré, SANS_GROUPE, ou null : tous. Par nom, pour « Toutes les saisons ». */
+  groupeFiltre = signal<string | null>(null);
+  /** Les groupes des saisons affichées, dans l'ordre de l'écran des groupes, sans doublon de nom. */
+  nomsGroupes = computed(() => {
+    const saison = this.saisonAffichee();
+    const groupes = [...this.groupesParSaison().entries()]
+      .filter(([libelle]) => saison === null || libelle === saison)
+      .flatMap(([, g]) => [...g].sort((a, b) => a.ordre - b.ordre));
+    return [...new Set(groupes.map(g => g.nom))];
   });
 
   /** Dossiers des élèves actifs, pour la photo et les informations des cartes. */
@@ -415,7 +437,8 @@ export class CursusAdminComponent {
     const r = normaliser(this.filtreNom());
     const saison = this.saisonAffichee();
     return this.adhesions().filter(a => (saison === null || a.saison === saison)
-      && (!r || normaliser(a.eleve).includes(r)));
+      && (!r || normaliser(a.eleve).includes(r))
+      && this.dansLeGroupeFiltre(a.eleveId, a.saison));
   });
 
   /** Groupes d'entraînement de la saison choisie. */
@@ -707,6 +730,17 @@ export class CursusAdminComponent {
         paires => this.groupesParSaison.set(new Map(paires)),
         () => this.message.set("Impossible de charger les groupes d'entraînement.")
       );
+  }
+
+  /** Un groupe n'existe que dans sa saison : changer de saison remet « Tous les groupes ». */
+  choisirSaisonAffichee(libelle: string | null): void {
+    this.saisonAffichee.set(libelle);
+    this.groupeFiltre.set(null);
+  }
+
+  private dansLeGroupeFiltre(eleveId: number, saison: string): boolean {
+    const filtre = this.groupeFiltre();
+    return filtre === null || (this.groupeDe(eleveId, saison) ?? this.SANS_GROUPE) === filtre;
   }
 
   dossier(eleveId: number): EleveVue | null {

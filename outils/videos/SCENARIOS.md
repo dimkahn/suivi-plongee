@@ -688,7 +688,7 @@ N1, N2 ou N3 : le référentiel est figé à l'inscription, avec un groupe d'ent
 Compte : `presidente@club.fr` · formats téléphone et ordinateur · 33 s
 
 1. Les inscriptions de la saison en cours, en cartes : photo, naissance, licence, CACI et groupe de chaque élève.
-2. Le filtre « Saison » montre une autre saison, ou toutes.
+2. Les filtres « Saison » et « Groupe » montrent une autre saison, ou les inscrits d'un groupe.
 3. On cherche l'élève ; l'appli suggère le niveau d'après son parcours.
 4. Le groupe du niveau préparé est proposé d'office ; ses référents suivront l'élève.
 5. Le référentiel MFT actif est figé : une révision fédérale en cours d'année ne le change pas.
