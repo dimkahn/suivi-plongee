@@ -1,9 +1,14 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NgTemplateOutlet } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { AdhesionVue, CandidatInscription, CursusVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
+import { AdhesionVue, CandidatInscription, CursusVue, EleveVue, GroupeEntrainementVue, SaisonVue } from '../../core/modeles';
+import { etatCaci, libelleCaci } from '../../core/caci';
+import { DateFrPipe } from '../../core/date-fr';
+import { PhotoEleveComponent } from '../../core/photo-eleve.component';
 import { normaliser } from '../../core/seance-lieu';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { STATUTS_CURSUS, libelleStatutCursus } from '../../core/statuts-cursus';
@@ -12,7 +17,7 @@ import { ChargementComponent } from '../../core/chargement.component';
 
 @Component({
   selector: 'app-cursus-admin',
-  imports: [ChargementComponent, FormsModule, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, NgTemplateOutlet, RouterLink, DateFrPipe, PhotoEleveComponent],
   template: `
     <div class="entete">
       <div>
@@ -147,6 +152,15 @@ import { ChargementComponent } from '../../core/chargement.component';
 
     <section class="filtres">
       <div>
+        <label for="filtre-saison">Saison</label>
+        <select id="filtre-saison" name="filtreSaison" [ngModel]="saisonAffichee()" (ngModelChange)="saisonAffichee.set($event)">
+          @for (s of saisons(); track s.id) {
+            <option [ngValue]="s.libelle">{{ s.libelle }}{{ s.ouverte ? ' (en cours)' : '' }}</option>
+          }
+          <option [ngValue]="null">Toutes les saisons</option>
+        </select>
+      </div>
+      <div>
         <label for="filtre-nom">Rechercher un élève</label>
         <input id="filtre-nom" type="search" name="filtreNom" placeholder="Nom ou prénom"
                [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
@@ -158,27 +172,51 @@ import { ChargementComponent } from '../../core/chargement.component';
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun cursus enregistré.</p></div>
     } @else if (listeFiltree().length === 0) {
-      <div class="carte vide"><p>Aucune inscription ne correspond à la recherche.</p></div>
+      <div class="carte vide">
+        <p>{{ filtreNom().trim() ? 'Aucune inscription ne correspond à la recherche.' : 'Aucune inscription en formation pour cette saison.' }}</p>
+      </div>
     } @else {
-      <ul>
+      <p class="secondaire compte">{{ listeFiltree().length }} inscription{{ listeFiltree().length > 1 ? 's' : '' }} en formation</p>
+      <ul class="cartes">
         @for (c of listeFiltree(); track c.id) {
           <li class="carte">
-              <div class="ligne">
-                <div class="identite">
-                  <span class="nom">{{ c.eleve }}</span>
-                  <span class="secondaire">
-                    {{ c.niveau }} · {{ c.saison }}
-                  </span>
-                </div>
-                <span class="etat">{{ libelleStatut(c.statut) }}</span>
-              </div>
-              <div class="actions">
-                <button type="button" class="bouton-discret" (click)="commencerEdition(c)">Modifier</button>
-              </div>
+            <ng-container [ngTemplateOutlet]="fiche"
+                          [ngTemplateOutletContext]="{ eleveId: c.eleveId, nom: c.eleve, saison: c.saison,
+                                                       sousTitre: c.niveau + ' · ' + c.saison, etat: libelleStatut(c.statut) }" />
+            <div class="actions">
+              <button type="button" class="bouton-discret" (click)="commencerEdition(c)">Modifier</button>
+              <a class="bouton-discret" routerLink="/admin/eleves"
+                 [queryParams]="{ modifier: c.eleveId, retour: '/admin/cursus' }">Fiche de l'élève</a>
+            </div>
           </li>
         }
       </ul>
     }
+
+    <!-- Ce que l'on sait de l'élève : photo (droit à l'image), naissance, licence, CACI, groupe de la saison. -->
+    <ng-template #fiche let-eleveId="eleveId" let-nom="nom" let-saison="saison" let-sousTitre="sousTitre" let-etat="etat">
+      <div class="tete">
+        <app-photo-eleve [eleveId]="eleveId" [nom]="nom" [aPhoto]="dossier(eleveId)?.aPhoto ?? false" [taille]="56" />
+        <div class="identite">
+          <span class="nom">{{ nom }}</span>
+          <span class="secondaire">{{ sousTitre }}</span>
+          <span class="etat">{{ etat }}</span>
+        </div>
+      </div>
+      <dl class="infos">
+        @if (dossier(eleveId); as e) {
+          <dt>Naissance</dt>
+          <dd>{{ e.dateNaissance ? (e.dateNaissance | dateFr) : 'non renseignée' }}</dd>
+          <dt>Licence</dt>
+          <dd>{{ e.numeroLicence || 'aucune' }}</dd>
+          <dt>CACI</dt>
+          <dd><span class="etiquette-etat" [class]="'etiquette-etat ' + tonCaci(e.certificatValideJusquAu)">
+            {{ libelleCaci(e.certificatValideJusquAu) }}</span></dd>
+        }
+        <dt>Groupe</dt>
+        <dd>{{ groupeDe(eleveId, saison) ?? 'Sans groupe' }}</dd>
+      </dl>
+    </ng-template>
 
     <app-dialogue [ouvert]="cursusEnEdition() !== null" [erreur]="message()" (fermer)="annulerEdition()"
                   [titre]="'Modifier l’inscription de ' + (cursusEnEdition()?.eleve ?? '')">
@@ -226,18 +264,16 @@ import { ChargementComponent } from '../../core/chargement.component';
 
     @if (adhesionsFiltrees().length > 0) {
       <h2 class="titre-maintien">Maintien, sans formation</h2>
-      <ul>
+      <ul class="cartes">
         @for (a of adhesionsFiltrees(); track a.id) {
           <li class="carte">
-            <div class="ligne">
-              <div class="identite">
-                <span class="nom">{{ a.eleve }}</span>
-                <span class="secondaire">Maintien · {{ a.saison }}</span>
-              </div>
-              <span class="etat">Sans formation</span>
-            </div>
+            <ng-container [ngTemplateOutlet]="fiche"
+                          [ngTemplateOutletContext]="{ eleveId: a.eleveId, nom: a.eleve, saison: a.saison,
+                                                       sousTitre: 'Maintien · ' + a.saison, etat: 'Sans formation' }" />
             <div class="actions">
               <button type="button" class="bouton-discret" (click)="retirerAdhesion(a)">Retirer de la saison</button>
+              <a class="bouton-discret" routerLink="/admin/eleves"
+                 [queryParams]="{ modifier: a.eleveId, retour: '/admin/cursus' }">Fiche de l'élève</a>
             </div>
           </li>
         }
@@ -295,8 +331,20 @@ import { ChargementComponent } from '../../core/chargement.component';
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     li { padding: var(--pas-2); }
-    .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
-    .identite { display: flex; flex-direction: column; gap: 2px; }
+    /* Plusieurs cartes par ligne dès que la largeur le permet ; une seule au téléphone. */
+    .cartes { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-items: stretch; }
+    .cartes > li { display: flex; flex-direction: column; }
+    .compte { margin: 0 0 var(--pas); }
+    .tete { display: flex; align-items: flex-start; gap: var(--pas-2); }
+    .identite { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+    .infos {
+      display: grid; grid-template-columns: max-content 1fr; gap: 4px var(--pas-2); align-items: baseline;
+      margin: var(--pas-2) 0 0; font-size: .875rem;
+    }
+    .infos dt { color: var(--craie); }
+    .infos dd { margin: 0; }
+    .cartes .actions { margin-top: auto; padding-top: var(--pas-2); }
+    a.bouton-discret { display: inline-flex; align-items: center; text-decoration: none; }
     .nom { font-weight: 700; }
     .titre-maintien { margin: var(--pas-3) 0 var(--pas-2); }
     .etat {
@@ -306,9 +354,6 @@ import { ChargementComponent } from '../../core/chargement.component';
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .actions .bouton-principal { width: auto; margin-top: 0; }
 
-    @media (max-width: 600px) {
-      .ligne { flex-direction: column; }
-    }
   `]
 })
 export class CursusAdminComponent {
@@ -326,11 +371,20 @@ export class CursusAdminComponent {
   creationOuverte = signal(false);
 
   filtreNom = signal('');
+  /** Libellé de la saison affichée (la saison en cours par défaut) ; null : toutes. */
+  saisonAffichee = signal<string | null>(null);
   listeFiltree = computed(() => {
     const recherche = this.filtreNom().trim().toLocaleLowerCase();
-    if (!recherche) return this.liste();
-    return this.liste().filter(c => c.eleve.toLocaleLowerCase().includes(recherche));
+    const saison = this.saisonAffichee();
+    return this.liste().filter(c => (saison === null || c.saison === saison)
+      && (!recherche || c.eleve.toLocaleLowerCase().includes(recherche)));
   });
+
+  /** Dossiers des élèves actifs, pour la photo et les informations des cartes. */
+  private dossiers = signal<Map<number, EleveVue>>(new Map());
+  /** Groupes d'entraînement de chaque saison, par libellé de saison. */
+  private groupesParSaison = signal<Map<string, GroupeEntrainementVue[]>>(new Map());
+  readonly libelleCaci = libelleCaci;
 
   readonly niveaux = ['N1', 'N2', 'N3'] as const;
 
@@ -359,9 +413,10 @@ export class CursusAdminComponent {
   adhesions = signal<AdhesionVue[]>([]);
   adhesionsFiltrees = computed(() => {
     const r = normaliser(this.filtreNom());
-    return r ? this.adhesions().filter(a => normaliser(a.eleve).includes(r)) : this.adhesions();
+    const saison = this.saisonAffichee();
+    return this.adhesions().filter(a => (saison === null || a.saison === saison)
+      && (!r || normaliser(a.eleve).includes(r)));
   });
-  private saisonOuverteId: number | null = null;
 
   /** Groupes d'entraînement de la saison choisie. */
   groupes = signal<GroupeEntrainementVue[]>([]);
@@ -407,11 +462,14 @@ export class CursusAdminComponent {
       this.saisons.set(saisons);
       // Saison ouverte la plus récente par défaut : c'est presque toujours celle qu'on inscrit.
       const ouverte = saisons.find(s => s.ouverte);
-      if (ouverte) {
-        this.saisonOuverteId = ouverte.id;
-        this.choisirSaison(ouverte.id);
-        this.chargerAdhesions();
-      }
+      this.saisonAffichee.set((ouverte ?? saisons[0])?.libelle ?? null);
+      if (ouverte) this.choisirSaison(ouverte.id);
+      this.chargerAdhesions();
+      this.chargerGroupes();
+      this.api.eleves().subscribe({
+        next: eleves => this.dossiers.set(new Map(eleves.map(e => [e.id, e]))),
+        error: () => this.message.set('Impossible de charger les dossiers des élèves.')
+      });
     } catch {
       this.message.set("Impossible de charger les données d'inscription.");
     } finally {
@@ -570,6 +628,7 @@ export class CursusAdminComponent {
           + (groupe ? `, dans le groupe « ${groupe.nom} ».` : '.'));
         this.choisirSaison(saisonId);
         this.chargerAdhesions();
+        this.chargerGroupes();
       },
       error: (e: HttpErrorResponse) => {
         this.envoi.set(false);
@@ -594,6 +653,7 @@ export class CursusAdminComponent {
         this.liste.set(this.liste().filter(x => x.id !== c.id));
         this.annulerEdition();
         this.chargerAdhesions();
+        this.chargerGroupes();
         this.message.set(`${c.eleve} est passé·e en maintien, sans formation.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -614,6 +674,7 @@ export class CursusAdminComponent {
         this.liste.set(this.liste().filter(x => x.id !== c.id));
         this.annulerEdition();
         this.chargerAdhesions();
+        this.chargerGroupes();
         this.message.set(`L'inscription de ${c.eleve} en ${c.niveau} est supprimée.`);
       },
       error: (e: HttpErrorResponse) => {
@@ -631,12 +692,35 @@ export class CursusAdminComponent {
     });
   }
 
+  /** Maintiens de toutes les saisons : le filtre de saison choisit ceux qu'on voit. */
   private chargerAdhesions(): void {
-    if (this.saisonOuverteId === null) return;
-    this.api.adhesionsDeLaSaison(this.saisonOuverteId).subscribe({
-      next: a => this.adhesions.set(a),
-      error: () => this.message.set('Impossible de charger les élèves en maintien.')
-    });
+    Promise.all(this.saisons().map(s => firstValueFrom(this.api.adhesionsDeLaSaison(s.id)))).then(
+      listes => this.adhesions.set(listes.flat()),
+      () => this.message.set('Impossible de charger les élèves en maintien.')
+    );
+  }
+
+  /** Groupes de chaque saison, pour dire sur chaque carte dans quel groupe est l'élève. */
+  private chargerGroupes(): void {
+    Promise.all(this.saisons().map(s => firstValueFrom(this.api.groupesEntrainement(s.id)).then(g => [s.libelle, g] as const)))
+      .then(
+        paires => this.groupesParSaison.set(new Map(paires)),
+        () => this.message.set("Impossible de charger les groupes d'entraînement.")
+      );
+  }
+
+  dossier(eleveId: number): EleveVue | null {
+    return this.dossiers().get(eleveId) ?? null;
+  }
+
+  groupeDe(eleveId: number, saison: string): string | null {
+    return this.groupesParSaison().get(saison)?.find(g => g.eleves.some(e => e.id === eleveId))?.nom ?? null;
+  }
+
+  /** Ton de l'étiquette du CACI : vert valide, orange bientôt échu, rouge expiré ou non renseigné. */
+  tonCaci(finValidite: string | null): string {
+    const etat = etatCaci(finValidite);
+    return etat === 'valide' ? 'ok' : etat === 'bientot' ? 'attention' : 'danger';
   }
 
   annulerEdition(): void {

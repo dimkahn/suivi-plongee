@@ -1,5 +1,5 @@
 // A7 — Inscrire un élève en formation.
-// Tournage du 2026-11-08 : bouton « Supprimer l'inscription » (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19 : cartes avec photo et filtre de saison (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -14,6 +14,8 @@ export default {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await administration('Inscriptions');
+    await legende('Les inscriptions de la saison en cours, en cartes : photo, naissance, licence, CACI et groupe de chaque élève.', 4500);
+    await legende('Le filtre « Saison » montre une autre saison, ou toutes.', 3000);
     await toucher(page.getByRole('button', { name: 'Nouvelle inscription' }));
     await choisir('#saison', '2026-2027', { exact: false });
     await legende('On cherche l\'élève ; l\'appli suggère le niveau d\'après son parcours.', 0);

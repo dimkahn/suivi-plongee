@@ -687,12 +687,14 @@ N1, N2 ou N3 : le référentiel est figé à l'inscription, avec un groupe d'ent
 
 Compte : `presidente@club.fr` · formats téléphone et ordinateur · 33 s
 
-1. On cherche l'élève ; l'appli suggère le niveau d'après son parcours.
-2. Le groupe du niveau préparé est proposé d'office ; ses référents suivront l'élève.
-3. Le référentiel MFT actif est figé : une révision fédérale en cours d'année ne le change pas.
-4. « Modifier » change le statut ou le niveau, tant qu'aucune compétence n'est notée.
-5. Une inscription faite par erreur se supprime en bas de cette fenêtre, tant que rien n'y est noté.
-6. Un élève breveté puis inscrit au niveau suivant n'apparaît qu'une fois dans les listes : on garde ses deux inscriptions.
+1. Les inscriptions de la saison en cours, en cartes : photo, naissance, licence, CACI et groupe de chaque élève.
+2. Le filtre « Saison » montre une autre saison, ou toutes.
+3. On cherche l'élève ; l'appli suggère le niveau d'après son parcours.
+4. Le groupe du niveau préparé est proposé d'office ; ses référents suivront l'élève.
+5. Le référentiel MFT actif est figé : une révision fédérale en cours d'année ne le change pas.
+6. « Modifier » change le statut ou le niveau, tant qu'aucune compétence n'est notée.
+7. Une inscription faite par erreur se supprime en bas de cette fenêtre, tant que rien n'y est noté.
+8. Un élève breveté puis inscrit au niveau suivant n'apparaît qu'une fois dans les listes : on garde ses deux inscriptions.
 
 ### A8 — Garder un plongeur breveté sans formation
 

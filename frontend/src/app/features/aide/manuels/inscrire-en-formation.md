@@ -3,13 +3,15 @@ titre: Inscrire un élève en formation
 rubrique: Administrateur
 videos: A7
 ecran: /admin/cursus
-mots: inscription, inscrire, formation, cursus, N1, N2, N3, niveau, préparé, référentiel, groupe, statut, modifier, supprimer, suppression, erreur, annuler, inscription en trop, doublon, deux fois
+mots: inscription, inscrire, saison, filtre, carte, photo, CACI, licence, fiche élève, formation, cursus, N1, N2, N3, niveau, préparé, référentiel, groupe, statut, modifier, supprimer, suppression, erreur, annuler, inscription en trop, doublon, deux fois
 questions:
 - Comment inscrire un élève en N1, N2 ou N3 ?
 - Comment changer le niveau préparé par un élève ?
 - Pourquoi la grille d'un élève ne change pas après une révision du MFT ?
 - Comment supprimer une inscription faite par erreur ?
 - Pourquoi un élève apparaît deux fois ?
+- Comment voir les inscriptions d'une autre saison ?
+- Où voir la photo et le CACI d'un élève inscrit ?
 ---
 Administration, « Inscriptions » : cherchez l'élève, choisissez le niveau préparé et son groupe d'entraînement. Le référentiel MFT en vigueur est figé pour toute sa formation.
 
@@ -19,6 +21,13 @@ Administration, « Inscriptions » : cherchez l'élève, choisissez le niveau pr
 2. Cherchez l'élève : l'appli suggère le niveau d'après son parcours.
 3. Le groupe d'entraînement du niveau préparé est proposé d'office ; ses référents suivront l'élève.
 4. Enregistrez : la grille de l'élève est prête.
+
+## La liste des inscriptions
+
+- Elle montre la **saison en cours** ; le filtre « Saison » en choisit une autre, ou « Toutes les saisons ».
+- Une carte par inscription, plusieurs par ligne sur un grand écran : photo de l'élève (si le droit à l'image est recueilli, sinon ses initiales), niveau, saison, statut, date de naissance, licence, CACI (vert valide, orange bientôt échu, rouge expiré ou non renseigné) et groupe d'entraînement de la saison.
+- « Fiche de l'élève » ouvre son dossier complet dans « Élèves » ; « Enregistrer » ou « Annuler » y ramène aux inscriptions.
+- Les élèves en maintien de la saison choisie sont listés en dessous, de la même façon.
 
 ## Bon à savoir
 
