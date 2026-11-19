@@ -24,9 +24,8 @@ export default {
         ['Inscriptions', 'Qui prépare quel niveau, dans quel groupe.'],
         ['Groupes d\'entraînement', 'Les groupes du lundi soir, leurs référents, leurs encadrants et leur ligne d\'eau.']
       ]],
-      ['Chaque semaine', 'Chaque semaine : les soirées au bassin et les sorties.', [
-        ['Planning du bassin', 'Soir par soir : où va chaque groupe.'],
-        ['Sorties', 'Les week-ends et séjours en milieu naturel.']
+      ['Chaque semaine', 'Chaque semaine : les soirées au bassin ; les sorties se gèrent dans « Séjours ».', [
+        ['Planning du bassin', 'Soir par soir : où va chaque groupe.']
       ]],
       ['Personnes', 'Les personnes :', [
         ['Moniteurs', 'Les comptes des encadrants : niveau, rôles, CACI.'],

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { FileSejourService } from './file-sejour.service';
 import { cleListeSejours } from './sejour-hors-ligne';
@@ -7,6 +7,8 @@ import { periode } from '../../core/date-fr';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { SejourApi, SejourResumeVue } from './sejour-api';
 import { ChargementComponent } from '../../core/chargement.component';
+import { GestionSortieComponent } from '../sorties/gestion-sortie.component';
+import { SortieVue } from '../../core/modeles';
 
 /**
  * Les séjours : pour les encadrants, toutes les sorties (à venir ou toutes) ;
@@ -14,14 +16,22 @@ import { ChargementComponent } from '../../core/chargement.component';
  */
 @Component({
   selector: 'app-sejours-liste',
-  imports: [ChargementComponent, RouterLink, OngletsComponent],
+  imports: [ChargementComponent, RouterLink, OngletsComponent, GestionSortieComponent],
   template: `
-    <h1>Séjours</h1>
+    <div class="entete">
+      <h1>Séjours</h1>
+      @if (creeLesSorties()) {
+        <button type="button" class="bouton-principal nouvelle-sortie" (click)="gestion.ouvrirCreation()">Nouvelle sortie</button>
+      }
+    </div>
+    <app-gestion-sortie #gestion (creee)="sortieCreee()" (modifiee)="ouvrirSejour($event)"
+                        (annonce)="erreur.set($event)" />
     <p class="secondaire">
       @if (encadrant()) {
         Chaque sortie a son séjour : participants, arrivées et départs, voitures, chambres, repas,
         affaires à prévoir et programme.
-        @if (auth.gereMateriel()) { Les sorties se créent dans « Sorties ». }
+        @if (creeLesSorties()) { « Gérer la sortie », en tête du séjour, en change les dates et les plongées. }
+        @else if (auth.gereMateriel()) { Les sorties se créent dans « Sorties ». }
       } @else {
         Les séjours où vous êtes inscrit : votre voyage, votre chambre, le programme et les affaires à prévoir.
       }
@@ -68,6 +78,8 @@ import { ChargementComponent } from '../../core/chargement.component';
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .entete { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); flex-wrap: wrap; }
+    .entete .bouton-principal { width: auto; margin: 0; }
     .sejours { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
     .groupes { display: flex; flex-direction: column; gap: 2px; padding: var(--pas-2); min-height: 44px;
                margin: var(--pas-2) 0; text-decoration: none; color: inherit; }
@@ -93,6 +105,26 @@ export class SejoursListeComponent {
 
   constructor() {
     void this.charger();
+  }
+
+  private router = inject(Router);
+
+  /**
+   * Créer une sortie : ADMIN ou directeur technique (droit du serveur). Le directeur technique qui n'est
+   * pas moniteur garde l'écran « Sorties » : il n'ouvre pas les séjours.
+   */
+  creeLesSorties(): boolean {
+    return this.auth.gereMateriel() && (this.auth.estMoniteur() || this.auth.estAdmin());
+  }
+
+  /** La sortie créée paraît dans la liste ; la fenêtre de ses plongées est déjà ouverte. */
+  sortieCreee(): void {
+    void this.charger();
+  }
+
+  /** Ses plongées enregistrées : on ouvre son séjour, pour l'organiser. */
+  ouvrirSejour(s: SortieVue): void {
+    void this.router.navigate(['/sejours', s.id]);
   }
 
   encadrant(): boolean {

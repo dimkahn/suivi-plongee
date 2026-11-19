@@ -591,16 +591,15 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 61 s
 5. Séances : Le calendrier : à la main, ou toute l'année d'un coup.
 6. Inscriptions : Qui prépare quel niveau, dans quel groupe.
 7. Groupes d'entraînement : Les groupes du lundi soir, leurs référents, leurs encadrants et leur ligne d'eau.
-8. Chaque semaine : les soirées au bassin et les sorties.
+8. Chaque semaine : les soirées au bassin ; les sorties se gèrent dans « Séjours ».
 9. Planning du bassin : Soir par soir : où va chaque groupe.
-10. Sorties : Les week-ends et séjours en milieu naturel.
-11. Les personnes :
-12. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
-13. Sécurité surface : Qui n'est pas moniteur : les fiches des séances confiées, jusqu'à une date de fin.
-14. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
-15. Relances CACI : Les e-mails de relance des certificats médicaux déjà partis, gardés deux ans.
-16. Le matériel du club, que l'administrateur gère avec le directeur technique :
-17. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
+10. Les personnes :
+11. Moniteurs : Les comptes des encadrants : niveau, rôles, CACI.
+12. Sécurité surface : Qui n'est pas moniteur : les fiches des séances confiées, jusqu'à une date de fin.
+13. Élèves : Les dossiers : autorisations, droit à l'image, photo, tailles de matériel.
+14. Relances CACI : Les e-mails de relance des certificats médicaux déjà partis, gardés deux ans.
+15. Le matériel du club, que l'administrateur gère avec le directeur technique :
+16. Inventaire du matériel : Blocs, détendeurs, gilets et combinaisons, leurs contrôles et leurs échéances.
 18. Prêts de matériel : Prêter, rendre, avec les photos avant et après.
 19. Puis le contenu pédagogique, qui se règle rarement :
 20. Référentiel MFT : Les compétences fédérales, niveau par niveau.
@@ -805,11 +804,13 @@ Un week-end en mer : dates, lieu, et ses plongées créées d'un coup.
 
 Compte : `presidente@club.fr` · formats téléphone et ordinateur · 40 s
 
-1. Ses plongées : deux par jour, sur le site prévu.
-2. Elles sont créées et rattachées à la sortie, en un geste.
-3. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
-4. « Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée en décochant la case.
-5. « Gérer le séjour » : vols, voitures, chambres, repas et programme. Celui qui crée la sortie en est le créateur : lui seul le modifie, avec les organisateurs qu'il désigne. Voir la vidéo A17.
+1. Une sortie se crée dans « Séjours » : « Nouvelle sortie ».
+2. Ses plongées : deux par jour, sur le site prévu.
+3. Elles sont créées et rattachées à la sortie, en un geste, et son séjour s'ouvre.
+4. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
+5. En haut du séjour, « Gérer la sortie » : ses dates, ses plongées, ses fiches de sécurité, la supprimer.
+6. « Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée.
+7. Le séjour : vols, voitures, chambres, repas et programme. Celui qui crée la sortie en est le créateur : lui seul le modifie, avec les organisateurs qu'il désigne. Voir la vidéo A17.
 
 ### A16 — La base d'exercices
 

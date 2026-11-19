@@ -1,5 +1,5 @@
 // A15 — Organiser une sortie.
-// Tournage du 2026-10-17, 14e série, fiches imprimées regroupées ou non (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19 : créée dans « Séjours », gérée depuis le séjour (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -10,10 +10,11 @@ export default {
   compte: 'presidente@club.fr',
   format: 'ordinateur',
 
-  async jouer({ page, pause, legende, toucher, saisir, dater, administration, vignette }) {
+  async jouer({ page, pause, legende, toucher, saisir, dater, menu, vignette }) {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
-    await administration('Sorties');
+    await legende('Une sortie se crée dans « Séjours » : « Nouvelle sortie ».', 0);
+    await menu('Séjours');
     await toucher(page.getByRole('button', { name: 'Nouvelle sortie' }));
     await saisir('#nom', 'Week-end en mer — Marseille');
     await saisir('#lieu', 'Marseille');
@@ -28,13 +29,14 @@ export default {
     await saisir(page.locator('input[id^="site-"]').first(), 'Îles du Frioul');
     await saisir(page.locator('input[id^="profondeur-"]').first(), '20');
     await toucher(page.getByRole('button', { name: 'Créer les plongées' }), { apres: 1800 });
-    await legende('Elles sont créées et rattachées à la sortie, en un geste.', 3500);
+    await legende('Elles sont créées et rattachées à la sortie, en un geste, et son séjour s\'ouvre.', 3500);
     await vignette();
     await legende('Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s\'y rattache.', 4500);
-    await legende('« Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée en décochant la case.', 0);
-    await page.locator('#regrouper-sorties').scrollIntoViewIfNeeded();
-    await pause(4500);
-    await legende('« Gérer le séjour » : vols, voitures, chambres, repas et programme. Voir la vidéo A17.', 4500);
+    await legende('En haut du séjour, « Gérer la sortie » : ses dates, ses plongées, ses fiches de sécurité, la supprimer.', 0);
+    await toucher(page.getByRole('button', { name: /Gérer la sortie/ }), { apres: 3500 });
+    await legende('« Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée.', 4500);
+    await toucher(page.getByRole('button', { name: /Gérer la sortie/ }), { apres: 600 });
+    await legende('Le séjour : vols, voitures, chambres, repas et programme. Voir la vidéo A17.', 4500);
     await legende('Qui crée la sortie est le créateur du séjour : lui seul le modifie, avec les organisateurs qu\'il choisit.', 4500);
     await legende(null, 0);
     await pause(500);

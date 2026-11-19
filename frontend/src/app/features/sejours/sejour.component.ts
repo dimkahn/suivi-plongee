@@ -2,7 +2,7 @@ import {
   Component, ChangeDetectionStrategy, DestroyRef, Injector, afterNextRender, computed, effect, inject, signal, untracked, viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom, from, map, mergeMap, of, throwError } from 'rxjs';
 import { reduirePhoto } from '../../core/reduire-photo';
@@ -15,6 +15,7 @@ import { FichesSecuriteSejourVue, PortFichesSecurite } from './fiches-securite-s
 import { ModificationSejour, appliquerEnAttente, cleFichesSejour, cleSejour } from './sejour-hors-ligne';
 import { MoniteurOptionVue, PlongeurConnuVue } from '../../core/modeles';
 import { DialogueComponent } from '../../core/dialogue.component';
+import { GestionSortieComponent } from '../sorties/gestion-sortie.component';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { FiltreParticipants, filtrerParticipants, manqueDe } from './recherche-participants';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
@@ -120,7 +121,7 @@ function participantVide(): BrouillonParticipant {
             MesInformationsComponent, MonSejourComponent, CarteVoyageComponent, AttestationAssuranceComponent, PlurielPipe,
             TrombinoscopeSejourComponent, SejourCoursesComponent, SejourRestaurantComponent, SejourFichesSecuriteComponent,
             ActionsSejourComponent,
-            QrCodeComponent, NotificationsSejourComponent],
+            QrCodeComponent, NotificationsSejourComponent, GestionSortieComponent],
   template: `
     @if (sejour(); as s) {
       <!-- Le titre, et un seul bouton pour le reste : version imprimable, trombinoscope, gestes
@@ -133,11 +134,60 @@ function participantVide(): BrouillonParticipant {
             · {{ s.participants.length }} participant{{ s.participants.length > 1 ? 's' : '' }}
           </p>
         </div>
-        <button type="button" class="bouton-discret ouvrir-actions sans-impression" (click)="actionsOuvertes.set(true)"
-                [title]="organise() ? 'Version imprimable, trombinoscope, carnet, organisateurs…' : 'Version imprimable, trombinoscope'">
-          <span aria-hidden="true">⋯</span> {{ organise() ? 'Organiser' : 'Partager' }}
-        </button>
+        <div class="boutons-entete sans-impression">
+          <!-- La sortie elle-même (dates, plongées, fiches, suppression) : ADMIN et directeur technique, comme avant
+               dans « Sorties » (demande du club, 2026-11-19). Réseau obligatoire. -->
+          @if (gereLaSortie()) {
+            <div class="menu-actions">
+              <button type="button" class="bouton-discret gerer-sortie" aria-haspopup="menu"
+                      [attr.aria-expanded]="menuSortieOuvert()" [disabled]="copieDu() !== null"
+                      [title]="copieDu() !== null ? 'Réseau nécessaire' : 'Nom, lieu, dates, plongées et fiches de sécurité de la sortie'"
+                      (click)="menuSortieOuvert.set(!menuSortieOuvert())">
+                Gérer la sortie ▾
+              </button>
+              @if (menuSortieOuvert()) {
+                <div class="menu-actions-liste" role="menu" (click)="menuSortieOuvert.set(false)">
+                  <button type="button" role="menuitem" (click)="gestion.commencerEdition(s.sortie)">
+                    Modifier (nom, lieu, dates)
+                  </button>
+                  <button type="button" role="menuitem" (click)="gestion.ouvrirChoix(s.sortie)">Choisir les plongées</button>
+                  @if (encadreLaSortie() && s.sortie.nombrePlongees > 0) {
+                    <button type="button" role="menuitem" (click)="impressionOuverte.set(true)">
+                      Imprimer les fiches de sécurité…
+                    </button>
+                  }
+                  <button type="button" role="menuitem" class="danger" (click)="gestion.supprimer(s.sortie)">
+                    Supprimer la sortie
+                  </button>
+                </div>
+              }
+            </div>
+          }
+          <button type="button" class="bouton-discret ouvrir-actions" (click)="actionsOuvertes.set(true)"
+                  [title]="organise() ? 'Version imprimable, trombinoscope, carnet, organisateurs…' : 'Version imprimable, trombinoscope'">
+            <span aria-hidden="true">⋯</span> {{ organise() ? 'Organiser' : 'Partager' }}
+          </button>
+        </div>
       </header>
+
+      <app-gestion-sortie #gestion (modifiee)="sortieModifiee()" (supprimee)="sortieSupprimee()"
+                          (annonce)="message.set($event)" />
+
+      <app-dialogue [ouvert]="impressionOuverte()" titre="Imprimer les fiches de sécurité"
+                    (fermer)="impressionOuverte.set(false)">
+        <p class="secondaire">Les fiches de toutes les plongées de la sortie, dans un seul PDF.</p>
+        <label class="case">
+          <input type="checkbox" [checked]="regrouperFiches()" (change)="regrouperFiches.set(!regrouperFiches())">
+          Regrouper les 2 plongées du jour sur une feuille
+        </label>
+        <div class="actions-dialogue">
+          <button type="button" class="bouton-principal" [attr.aria-busy]="(gestion.impression() !== null) || null"
+                  [disabled]="gestion.impression() !== null" (click)="imprimerFiches(gestion)">
+            {{ gestion.impression() !== null ? 'Génération…' : 'Imprimer' }}
+          </button>
+          <button type="button" class="bouton-discret" (click)="impressionOuverte.set(false)">Annuler</button>
+        </div>
+      </app-dialogue>
 
       <!-- Sans réseau : la copie du téléphone, et ce qui attend d'être envoyé (demande du club, 2026). -->
       @if (copieDu() !== null || enAttente().length > 0) {
@@ -1337,6 +1387,14 @@ function participantVide(): BrouillonParticipant {
     .entete h1 { margin-bottom: 4px; }
     .entete p { margin: 0 0 var(--pas-2); }
     .ouvrir-actions { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+    .boutons-entete { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--pas); }
+    .boutons-entete .menu-actions-liste { left: auto; right: 0; }
+    /* Téléphone : les boutons passent sous le titre, le menu prend toute leur largeur. */
+    @media (max-width: 600px) {
+      .entete:has(.gerer-sortie) { flex-wrap: wrap; }
+      .entete:has(.gerer-sortie) .boutons-entete { position: relative; width: 100%; justify-content: flex-start; }
+      .boutons-entete .menu-actions-liste { left: 0; right: 0; }
+    }
     .liste-actions a { width: 100%; min-height: 48px; display: flex; align-items: center; gap: var(--pas);
                        box-sizing: border-box; text-decoration: none; color: var(--encre);
                        border: 1px solid var(--trait); border-radius: var(--r-s); }
@@ -1496,6 +1554,7 @@ export class SejourComponent {
   private apiClub = inject(ApiService);
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
+  private router = inject(Router);
   /** Les fiches de sécurité se lisent par les moniteurs et les administrateurs, pas par un directeur technique seul. */
   readonly litLesFiches = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
 
@@ -1540,6 +1599,15 @@ export class SejourComponent {
   trombinoscopeOuvert = signal(false);
   /** La fenêtre « Organiser » (encadrants) ou « Partager » (participants) de l'en-tête. */
   actionsOuvertes = signal(false);
+  /** La sortie se gère (dates, plongées, suppression) par l'ADMIN ou le directeur technique, comme le serveur l'exige. */
+  readonly gereLaSortie = computed(() => this.auth.gereMateriel() && (this.auth.estMoniteur() || this.auth.estAdmin())
+    && !this.commeParticipant());
+  /** Imprimer les fiches de la sortie : moniteur ou ADMIN (droit du serveur). */
+  readonly encadreLaSortie = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
+  menuSortieOuvert = signal(false);
+  impressionOuverte = signal(false);
+  /** Deux plongées du même jour au même lieu sur une feuille (1er et 2e tour), sinon une par plongée. */
+  regrouperFiches = signal(true);
   /** Un encadrant qui ne regarde pas comme un participant : « Organiser » plutôt que « Partager ». */
   readonly organise = computed(() => !!this.sejour()?.encadrant && !this.commeParticipant());
   /** Les icônes de la barre du séjour (tracés 24 × 24). */
@@ -2690,6 +2758,25 @@ export class SejourComponent {
       return;
     }
     this.api.lire(this.id, true).subscribe({ next: v => this.base.set(v), error: () => this.base.set(s) });
+  }
+
+  /** Nom, dates ou plongées de la sortie changés : le séjour relu (programme, fiches, en-tête). */
+  sortieModifiee(): void {
+    void this.charger();
+  }
+
+  /** Le séjour disparaît avec sa sortie : retour à la liste. */
+  sortieSupprimee(): void {
+    void this.fileSejour.oublierCopie(cleSejour(this.id, false));
+    void this.router.navigate(['/sejours']);
+  }
+
+  imprimerFiches(gestion: GestionSortieComponent): void {
+    const s = this.sejour();
+    if (!s) return;
+    this.message.set(null);
+    this.impressionOuverte.set(false);
+    gestion.imprimerFiches(s.sortie, this.regrouperFiches());
   }
 
   /** L'addition d'un restaurant payée : le séjour relu, pour que l'onglet « Frais » montre la part de chacun. */

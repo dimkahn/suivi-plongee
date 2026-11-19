@@ -259,7 +259,7 @@ const SEUIL_RECHERCHE = 6;
           }
         </select>
         @if (sorties().length === 0) {
-          <p class="vide">Aucune sortie récente : la sortie se crée dans « Sorties » (administration).</p>
+          <p class="vide">Aucune sortie récente : la sortie se crée dans « Séjours » (« Nouvelle sortie »).</p>
         }
         @if (bilan(); as b) {
           <div class="alerte" role="status">

@@ -27,12 +27,10 @@ const RUBRIQUES: { titre: string; aide: string; ecrans: Ecran[] }[] = [
   },
   {
     titre: 'Chaque semaine',
-    aide: 'Les soirées au bassin et les sorties en milieu naturel.',
+    aide: 'Les soirées au bassin. Les sorties en milieu naturel se créent et se gèrent dans « Séjours ».',
     ecrans: [
       { lien: '/admin/planning', nom: 'Planning du bassin',
-        detail: 'Soir par soir : ligne d\'eau ou fosse de chaque groupe, DP fosse et DP piscine' },
-      { lien: '/admin/sorties', nom: 'Sorties',
-        detail: 'Week-ends et séjours : dates, lieu, plongées qui en font partie ; prêts de matériel' }
+        detail: 'Soir par soir : ligne d\'eau ou fosse de chaque groupe, DP fosse et DP piscine' }
     ]
   },
   {
