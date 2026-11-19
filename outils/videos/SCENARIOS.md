@@ -728,9 +728,10 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 39 s
 4. Le référent est un encadrant attitré qui suit, en plus, les élèves du groupe.
 5. Les autres encadrants attitrés viennent en renfort, chaque lundi.
 6. Le référent s'affiche en tête, ici comme dans le planning des moniteurs.
-7. Plus bas, les élèves de la saison : chacun dans un groupe au plus.
-8. Le rangement est suggéré d'après le niveau préparé ; un adhérent sans formation se range à la main.
-9. Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
+7. Au-dessus des groupes, « À ranger » : les élèves et les moniteurs qui n'ont pas encore de groupe.
+8. Chaque groupe montre ses élèves. Pour en changer un de groupe : on le touche, puis son nouveau groupe.
+9. Un appui long (téléphone) ou la souris (ordinateur) permet aussi de le glisser sur un groupe, comme pour les palanquées.
+10. Les lignes d'eau et la fosse (capacité, profondeur) se règlent en bas de page.
 
 ### A11 — Tenir le planning des soirées
 

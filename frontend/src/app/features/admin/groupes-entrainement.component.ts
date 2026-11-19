@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
@@ -10,6 +11,9 @@ import {
   DemandeEspaceBassin, EleveSaisonGroupeVue, EspaceBassinVue, GroupeEntrainementVue, MoniteurOptionVue, SaisonVue
 } from '../../core/modeles';
 import { ChargementComponent } from '../../core/chargement.component';
+import { PlurielPipe } from '../../core/pluriel';
+import { JetonPersonneComponent } from '../../core/jeton-personne.component';
+import { BarrePlacementComponent } from '../../core/barre-placement.component';
 
 /** Formulaire d'un groupe ; id null : nouveau groupe. */
 interface FormulaireGroupe {
@@ -30,17 +34,20 @@ interface FormulaireEspace extends DemandeEspaceBassin {
 /**
  * Groupes d'entraînement de la saison (Débutants, Perfect N1, Prépa N2...) :
  * composition, référents et encadrants attitrés, lignes d'eau attitrées et rangement des
- * élèves. Les espaces du bassin (lignes d'eau, fosse) se décrivent en bas de
+ * élèves, comme les plongeurs dans les palanquées d'une fiche de sécurité : au-dessus des
+ * groupes, les élèves et les moniteurs à ranger ; un jeton touché puis placé, ou glissé
+ * sur un groupe. Les espaces du bassin (lignes d'eau, fosse) se décrivent en bas de
  * page. Le planning des soirées (qui est où, quel lundi) vient ensuite.
  */
 @Component({
   selector: 'app-groupes-entrainement',
-  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent, DragDropModule, JetonPersonneComponent,
+    BarrePlacementComponent, PlurielPipe],
   template: `
     <h1>Groupes d'entraînement</h1>
     <p class="secondaire">
-      Les groupes de la saison, leurs référents (qui suivent les élèves du groupe), leurs autres
-      encadrants attitrés et leur ligne d'eau habituelle, puis les élèves rangés dans chacun.
+      Les groupes de la saison : leurs référents (qui suivent les élèves du groupe), leurs autres
+      encadrants attitrés, leur ligne d'eau habituelle et leurs élèves. Au-dessus, ceux qui restent à ranger.
     </p>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
@@ -52,10 +59,54 @@ interface FormulaireEspace extends DemandeEspaceBassin {
       }
     </select>
 
-    <h2>Groupes</h2>
     @if (chargement()) {
       <app-chargement enLigne />
     } @else {
+      <h2>À ranger</h2>
+      <p class="secondaire">
+        Les élèves (inscrits en formation ou adhérents sur la saison) et les moniteurs actifs qui ne sont
+        encore dans aucun groupe. Touchez-en un puis choisissez son groupe, ou glissez-le sur un groupe
+        (appui long au téléphone). La suggestion d'un élève vient du niveau que prépare le groupe
+        (Débutants → N1…) ; un adhérent sans formation se range à la main.
+      </p>
+      <label for="recherche-eleve">Rechercher un élève ou un moniteur</label>
+      <input id="recherche-eleve" type="search" class="recherche" placeholder="Prénom ou nom…" autocomplete="off"
+             [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
+      @if (nombreSuggestions() > 0) {
+        <button type="button" class="bouton-discret suggestions" (click)="appliquerSuggestions()" [disabled]="envoi()">
+          Ranger {{ nombreSuggestions() | pluriel:'élève sans groupe':'élèves sans groupe' }} selon leur formation
+        </button>
+      }
+      <section class="carte zone-eleves zone-sans-groupe">
+        <h3>Élèves sans groupe ({{ nombreSansGroupe() }})</h3>
+        <div cdkDropList id="sans-groupe" class="vivier-jetons" [cdkDropListConnectedTo]="idsZones()"
+             [cdkDropListDisabled]="envoi()" (cdkDropListDropped)="deposer($event, null)">
+          @for (e of elevesDe(null); track e.eleveId) {
+            <app-jeton-personne cdkDrag [cdkDragData]="e" [cdkDragStartDelay]="delaiGlisser"
+                                [prenom]="e.prenom" [nom]="e.nom" [detail]="detailEleve(e)"
+                                [selectionne]="eleveAPlacer()?.eleveId === e.eleveId" (choisir)="choisirEleve(e)" />
+          } @empty {
+            <p class="vide">{{ texteZoneVide(null) }}</p>
+          }
+        </div>
+
+        <h3 class="moniteurs">Moniteurs sans groupe ({{ moniteursSansGroupe().length }})</h3>
+        <div cdkDropList id="moniteurs-sans-groupe" class="vivier-jetons" [cdkDropListConnectedTo]="idsGroupes()"
+             cdkDropListSortingDisabled [cdkDropListDisabled]="envoi()">
+          @for (m of moniteursAffiches(); track m.id) {
+            <app-jeton-personne cdkDrag [cdkDragData]="m" [cdkDragStartDelay]="delaiGlisser"
+                                [prenom]="prenomDe(m)" [nom]="nomDe(m)" [detail]="m.niveauEncadrement"
+                                [selectionne]="moniteurAPlacer()?.id === m.id" (choisir)="choisirMoniteur(m)" />
+          } @empty {
+            <p class="vide">
+              {{ moniteursSansGroupe().length === 0 ? 'Tous les moniteurs actifs ont un groupe.'
+                                                    : 'Aucun moniteur ne correspond à « ' + recherche().trim() + ' ».' }}
+            </p>
+          }
+        </div>
+      </section>
+
+      <h2>Groupes</h2>
       @if (groupes().length === 0) {
         <div class="carte vide"><p>Aucun groupe pour cette saison.</p></div>
       }
@@ -63,12 +114,13 @@ interface FormulaireEspace extends DemandeEspaceBassin {
         @for (g of groupes(); track g.id; let premier = $first, dernier = $last, i = $index) {
           <li class="carte groupe">
               <div class="entete-groupe">
-                <span class="nom">{{ g.nom }}</span>
-                <span class="secondaire">
-                  {{ g.espacesAttitres ?? 'Sans ligne attitrée' }}
-                  @if (g.niveauPrepare) { · prépare le {{ g.niveauPrepare }} }
-                  · {{ g.eleves.length }} élève{{ g.eleves.length > 1 ? 's' : '' }}
+                <span class="titre-groupe">
+                  <span class="nom">{{ g.nom }}</span>
+                  <span class="etiquette-etat" [class.fort]="g.espacesAttitres" [class.neutre]="!g.espacesAttitres">
+                    {{ g.espacesAttitres ?? 'Sans ligne attitrée' }}
+                  </span>
                 </span>
+                @if (g.niveauPrepare) { <span class="secondaire">Prépare le {{ g.niveauPrepare }}</span> }
                 <span class="encadrants">
                   @for (e of g.encadrants; track e.id) {
                     <span class="puce" [class.referent]="e.referent">
@@ -79,6 +131,17 @@ interface FormulaireEspace extends DemandeEspaceBassin {
                     <span class="secondaire">Aucun encadrant attitré</span>
                   }
                 </span>
+              </div>
+              <span class="etiquette-zone">{{ nombreDans(g.id) | pluriel:'élève' }}</span>
+              <div cdkDropList [id]="'groupe-' + g.id" class="vivier-jetons" [cdkDropListConnectedTo]="idsZones()"
+                   [cdkDropListDisabled]="envoi()" (cdkDropListDropped)="deposer($event, g.id)">
+                @for (e of elevesDe(g.id); track e.eleveId) {
+                  <app-jeton-personne cdkDrag [cdkDragData]="e" [cdkDragStartDelay]="delaiGlisser"
+                                      [prenom]="e.prenom" [nom]="e.nom" [detail]="detailEleve(e)"
+                                      [selectionne]="eleveAPlacer()?.eleveId === e.eleveId" (choisir)="choisirEleve(e)" />
+                } @empty {
+                  <p class="vide">{{ texteZoneVide(g.id) }}</p>
+                }
               </div>
               <div class="actions">
                 <button type="button" class="bouton-discret" (click)="modifier(g)">Modifier</button>
@@ -94,79 +157,6 @@ interface FormulaireEspace extends DemandeEspaceBassin {
       <button type="button" class="bouton-discret" (click)="nouveau()" [disabled]="saisonId() === null">
         Nouveau groupe
       </button>
-
-      <h2>Moniteurs sans groupe ({{ moniteursSansGroupe().length }})</h2>
-      <p class="secondaire">
-        Les moniteurs actifs qui n'encadrent encore aucun groupe de la saison. Choisissez un groupe pour
-        l'y ajouter comme encadrant attitré.
-      </p>
-      @if (moniteursSansGroupe().length === 0) {
-        <div class="carte vide"><p>Tous les moniteurs actifs ont un groupe.</p></div>
-      } @else {
-        <ul class="eleves">
-          @for (m of moniteursSansGroupe(); track m.id) {
-            <li class="carte eleve">
-              <div class="identite">
-                <span class="nom">{{ m.nomComplet }}</span>
-                @if (m.niveauEncadrement) { <span class="secondaire">{{ m.niveauEncadrement }}</span> }
-              </div>
-              <select [attr.aria-label]="'Groupe de ' + m.nomComplet" [ngModel]="null"
-                      (ngModelChange)="ajouterMoniteurAuGroupe(m, $event)"
-                      [disabled]="groupes().length === 0 || envoi()">
-                <option [ngValue]="null">— Ajouter à un groupe —</option>
-                @for (g of groupes(); track g.id) { <option [ngValue]="g.id">{{ g.nom }}</option> }
-              </select>
-            </li>
-          }
-        </ul>
-      }
-
-      <h2>Élèves de la saison</h2>
-      <p class="secondaire">
-        Les élèves inscrits en formation ou adhérents sur la saison. La suggestion vient du niveau que
-        prépare le groupe (Débutants → N1…) ; un adhérent sans formation se range à la main.
-      </p>
-      <label for="recherche-eleve">Rechercher un élève</label>
-      <input id="recherche-eleve" type="search" class="recherche" placeholder="Prénom ou nom…" autocomplete="off"
-             [ngModel]="recherche()" (ngModelChange)="recherche.set($event)">
-      <div class="barre-eleves">
-        <label class="case">
-          <input type="checkbox" [ngModel]="sansGroupeSeulement()" (ngModelChange)="sansGroupeSeulement.set($event)">
-          Seulement les élèves sans groupe ({{ nombreSansGroupe() }})
-        </label>
-        @if (nombreSuggestions() > 0) {
-          <button type="button" class="bouton-discret" (click)="appliquerSuggestions()" [disabled]="envoi()">
-            Ranger les {{ nombreSuggestions() }} élèves sans groupe selon leur formation
-          </button>
-        }
-      </div>
-      @if (elevesAffiches().length === 0) {
-        <div class="carte vide">
-          <p>{{ recherche().trim() ? 'Aucun élève ne correspond à « ' + recherche().trim() + ' ».' : 'Aucun élève à afficher.' }}</p>
-        </div>
-      }
-      <ul class="eleves">
-        @for (e of elevesAffiches(); track e.eleveId) {
-          <li class="carte eleve">
-            <div class="identite">
-              <span class="nom">{{ e.prenom }} {{ e.nom }}</span>
-              <span class="secondaire">
-                @if (e.niveauxEnCours.length > 0) { Prépare {{ e.niveauxEnCours.join(', ') }} }
-                @else if (e.adhesionSeule) { Adhérent sans formation }
-                @else { Formation terminée cette saison }
-                @if (e.groupeSuggereId && e.groupeSuggereId !== e.groupeId) {
-                  · suggéré : {{ nomGroupe(e.groupeSuggereId) }}
-                }
-              </span>
-            </div>
-            <select [attr.aria-label]="'Groupe de ' + e.prenom + ' ' + e.nom" [ngModel]="e.groupeId"
-                    (ngModelChange)="ranger(e, $event)" [disabled]="rangementEnCours() === e.eleveId">
-              <option [ngValue]="null">— Aucun groupe —</option>
-              @for (g of groupes(); track g.id) { <option [ngValue]="g.id">{{ g.nom }}</option> }
-            </select>
-          </li>
-        }
-      </ul>
 
       <details class="bassin">
         <summary>Bassin : lignes d'eau et fosse</summary>
@@ -194,6 +184,33 @@ interface FormulaireEspace extends DemandeEspaceBassin {
         </ul>
         <button type="button" class="bouton-discret" (click)="nouvelEspace()">Ajouter un espace</button>
       </details>
+    }
+
+    @if (eleveAPlacer(); as e) {
+      <app-barre-placement etiquette="Choisir le groupe" [nom]="e.prenom + ' ' + e.nom"
+                           [precision]="e.groupeId !== null ? '(' + nomGroupe(e.groupeId) + ')' : null"
+                           question="quel groupe ?" (annuler)="eleveAPlacer.set(null)">
+        @for (g of groupes(); track g.id) {
+          @if (g.id !== e.groupeId) {
+            <button type="button" class="bouton-principal" (click)="placer(e, g.id)">
+              {{ g.nom }}{{ g.espacesAttitres ? ' · ' + g.espacesAttitres : '' }} ({{ nombreDans(g.id) }}){{ g.id === e.groupeSuggereId ? ' · suggéré' : '' }}
+            </button>
+          }
+        }
+        @if (e.groupeId !== null) {
+          <button type="button" class="bouton-discret" (click)="placer(e, null)">Sans groupe</button>
+        }
+      </app-barre-placement>
+    }
+    @if (moniteurAPlacer(); as m) {
+      <app-barre-placement etiquette="Choisir le groupe" [nom]="m.nomComplet"
+                           question="quel groupe encadrer ?" (annuler)="moniteurAPlacer.set(null)">
+        @for (g of groupes(); track g.id) {
+          <button type="button" class="bouton-principal" (click)="placerMoniteur(m, g.id)">
+            {{ g.nom }}{{ g.espacesAttitres ? ' · ' + g.espacesAttitres : '' }}
+          </button>
+        }
+      </app-barre-placement>
     }
 
     <app-dialogue [ouvert]="formulaire() !== null" [erreur]="message()" (fermer)="formulaire.set(null)"
@@ -311,9 +328,12 @@ interface FormulaireEspace extends DemandeEspaceBassin {
     label, .etiquette { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .9375rem; }
     .saison, .recherche { max-width: 320px; }
     ul { list-style: none; margin: 0 0 var(--pas-2); padding: 0; display: grid; gap: var(--pas-2); }
-    .groupe, .eleve, .espace { padding: var(--pas-2); }
+    .groupe, .espace { padding: var(--pas-2); }
+    .etiquette-zone { display: block; margin: var(--pas-2) 0 var(--pas); font-weight: 700; font-size: .875rem; }
     .entete-groupe, .identite { display: flex; flex-direction: column; gap: 2px; }
     .nom { font-weight: 700; }
+    .titre-groupe { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
+    .titre-groupe .nom { font-size: 1.0625rem; }
     .encadrants { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
     .puce {
       display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px;
@@ -329,11 +349,16 @@ interface FormulaireEspace extends DemandeEspaceBassin {
     .actions .bouton-principal { width: auto; margin-top: 0; }
     .danger { color: #B3261E; border-color: #B3261E; }
     .formulaire input, .formulaire select { margin: 0; }
-    .barre-eleves { display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center; margin-bottom: var(--pas-2); }
+    .suggestions { margin-top: var(--pas-2); }
+    .zone-eleves { padding: var(--pas-2); margin: var(--pas-2) 0 var(--pas-2); }
+    .zone-eleves h3.moniteurs { margin-top: var(--pas-3); }
+    .zone-eleves h3 { margin: 0 0 var(--pas); font-size: 1rem; }
+    .zone-sans-groupe { border-left: 4px solid var(--accent); }
+    .vivier-jetons .vide { margin: 0; align-self: center; }
+    .cdk-drag-preview { box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+    .cdk-drag-placeholder { opacity: 0.3; }
     .case { display: flex; align-items: center; gap: var(--pas); min-height: 44px; margin: 0; font-weight: 400; }
     .case input { width: auto; }
-    .eleve { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
-    .eleve select { flex: 0 1 240px; margin: 0; }
     .lignes-attitrees { border: none; margin: 0; padding: 0; }
     .grille-lignes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0 var(--pas-2); }
     .bassin { margin-top: var(--pas-4); }
@@ -355,11 +380,15 @@ export class GroupesEntrainementComponent {
   chargement = signal(true);
   message = signal<string | null>(null);
   envoi = signal(false);
-  rangementEnCours = signal<number | null>(null);
   formulaire = signal<FormulaireGroupe | null>(null);
   formulaireEspace = signal<FormulaireEspace | null>(null);
-  sansGroupeSeulement = signal(false);
   recherche = signal('');
+  /** Élève touché, en attente du choix de son groupe (alternative au glisser-déposer). */
+  eleveAPlacer = signal<EleveSaisonGroupeVue | null>(null);
+  /** Moniteur sans groupe touché, en attente du groupe qu'il encadrera. */
+  moniteurAPlacer = signal<MoniteurOptionVue | null>(null);
+  /** Au doigt, le glisser ne démarre qu'après un appui long : un simple balayage fait défiler la page. */
+  readonly delaiGlisser = { touch: 400, mouse: 0 };
 
   /** Moniteurs actifs qui ne sont encadrant (ni référent) d'aucun groupe de la saison affichée. */
   moniteursSansGroupe = computed(() => {
@@ -368,11 +397,19 @@ export class GroupesEntrainementComponent {
   });
   nombreSansGroupe = computed(() => this.eleves().filter(e => e.groupeId === null).length);
   nombreSuggestions = computed(() => this.eleves().filter(e => e.groupeId === null && e.groupeSuggereId !== null).length);
-  /** Élèves filtrés par la case « sans groupe » et la recherche (sans tenir compte des accents ni des majuscules). */
-  elevesAffiches = computed(() => {
+  /** Zones des groupes, où déposer un élève ou un moniteur. */
+  idsGroupes = computed(() => this.groupes().map(g => 'groupe-' + g.id));
+  /** Zones où déposer un élève : « Élèves sans groupe », puis une par groupe. */
+  idsZones = computed(() => ['sans-groupe', ...this.idsGroupes()]);
+  /** Moniteurs sans groupe qui correspondent à la recherche. */
+  moniteursAffiches = computed(() => {
+    const termes = normaliser(this.recherche()).split(/\s+/).filter(t => t);
+    return this.moniteursSansGroupe().filter(m => termes.every(t => normaliser(m.nomComplet).includes(t)));
+  });
+  /** Élèves qui correspondent à la recherche (sans tenir compte des accents ni des majuscules). */
+  private elevesTrouves = computed(() => {
     const termes = normaliser(this.recherche()).split(/\s+/).filter(t => t);
     return this.eleves().filter(e => {
-      if (this.sansGroupeSeulement() && e.groupeId !== null) return false;
       const nom = normaliser(`${e.prenom} ${e.nom}`);
       return termes.every(t => nom.includes(t));
     });
@@ -404,6 +441,8 @@ export class GroupesEntrainementComponent {
   async choisirSaison(id: number): Promise<void> {
     this.saisonId.set(id);
     this.formulaire.set(null);
+    this.eleveAPlacer.set(null);
+    this.moniteurAPlacer.set(null);
     try {
       const [groupes, eleves] = await Promise.all([
         firstValueFrom(this.api.groupesEntrainement(id)),
@@ -415,6 +454,66 @@ export class GroupesEntrainementComponent {
     } catch {
       this.message.set('Impossible de charger cette saison.');
     }
+  }
+
+  /** Élèves d'un groupe (null : sans groupe) qui correspondent à la recherche. */
+  elevesDe(groupeId: number | null): EleveSaisonGroupeVue[] {
+    return this.elevesTrouves().filter(e => e.groupeId === groupeId);
+  }
+
+  nombreDans(groupeId: number): number {
+    return this.eleves().filter(e => e.groupeId === groupeId).length;
+  }
+
+  texteZoneVide(groupeId: number | null): string {
+    const tous = groupeId === null ? this.nombreSansGroupe() : this.nombreDans(groupeId);
+    if (tous > 0) return 'Aucun élève ne correspond à « ' + this.recherche().trim() + ' ».';
+    return groupeId === null ? 'Tous les élèves ont un groupe.' : 'Aucun élève : glissez-en un ici depuis « À ranger ».';
+  }
+
+  /** Sous le nom : le niveau préparé, « Adhérent » sans formation. */
+  detailEleve(e: EleveSaisonGroupeVue): string | null {
+    if (e.niveauxEnCours.length > 0) return e.niveauxEnCours.join(', ');
+    return e.adhesionSeule ? 'Adhérent' : null;
+  }
+
+  choisirEleve(e: EleveSaisonGroupeVue): void {
+    this.moniteurAPlacer.set(null);
+    this.eleveAPlacer.set(this.eleveAPlacer()?.eleveId === e.eleveId ? null : e);
+  }
+
+  choisirMoniteur(m: MoniteurOptionVue): void {
+    this.eleveAPlacer.set(null);
+    this.moniteurAPlacer.set(this.moniteurAPlacer()?.id === m.id ? null : m);
+  }
+
+  placerMoniteur(m: MoniteurOptionVue, groupeId: number): void {
+    this.moniteurAPlacer.set(null);
+    this.ajouterMoniteurAuGroupe(m, groupeId);
+  }
+
+  /** « Gwendoline Marchand » → « Gwendoline » / « Marchand », pour le jeton (initiale du nom au téléphone). */
+  prenomDe(m: MoniteurOptionVue): string {
+    return m.nomComplet.trim().split(/\s+/)[0] ?? '';
+  }
+
+  nomDe(m: MoniteurOptionVue): string {
+    return m.nomComplet.trim().split(/\s+/).slice(1).join(' ');
+  }
+
+  placer(e: EleveSaisonGroupeVue, groupeId: number | null): void {
+    this.eleveAPlacer.set(null);
+    this.ranger(e, groupeId);
+  }
+
+  /** Un élève, ou un moniteur sans groupe (seulement sur un groupe : sa zone n'est reliée qu'aux groupes). */
+  deposer(event: CdkDragDrop<unknown>, groupeId: number | null): void {
+    if (event.previousContainer === event.container) return;
+    this.eleveAPlacer.set(null);
+    this.moniteurAPlacer.set(null);
+    const donnee = event.item.data as EleveSaisonGroupeVue | MoniteurOptionVue;
+    if ('eleveId' in donnee) this.ranger(donnee, groupeId);
+    else if (groupeId !== null) this.ajouterMoniteurAuGroupe(donnee, groupeId);
   }
 
   nomGroupe(id: number | null): string {
@@ -562,18 +661,18 @@ export class GroupesEntrainementComponent {
   ranger(e: EleveSaisonGroupeVue, groupeId: number | null): void {
     const saisonId = this.saisonId();
     if (saisonId === null) return;
-    this.rangementEnCours.set(e.eleveId);
+    if (e.groupeId === groupeId) return;
     this.message.set(null);
+    // L'élève change de zone tout de suite ; il revient à sa place si le serveur refuse.
+    this.eleves.set(this.eleves().map(x => x.eleveId === e.eleveId ? { ...x, groupeId } : x));
     this.api.rangerEleveGroupe(saisonId, e.eleveId, groupeId).subscribe({
       next: maj => {
-        this.rangementEnCours.set(null);
         this.eleves.set(this.eleves().map(x => x.eleveId === maj.eleveId ? maj : x));
         void this.rechargerGroupes(saisonId);
       },
       error: (err: HttpErrorResponse) => {
-        this.rangementEnCours.set(null);
         this.message.set(err.error?.detail ?? "Le rangement n'a pas pu être enregistré.");
-        this.eleves.set([...this.eleves()]);
+        this.eleves.set(this.eleves().map(x => x.eleveId === e.eleveId ? { ...x, groupeId: e.groupeId } : x));
       }
     });
   }
