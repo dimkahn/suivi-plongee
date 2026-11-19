@@ -6,7 +6,7 @@ import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { RecadragePhotoComponent } from '../../core/recadrage-photo.component';
 import { DialogueComponent } from '../../core/dialogue.component';
-import { MoniteurVue } from '../../core/modeles';
+import { GroupeEntrainementVue, MoniteurVue } from '../../core/modeles';
 import { AvatarComponent } from '../../core/avatar.component';
 import { CACI_LIMITES, EtatCaci, etatCaci, libelleCaci } from '../../core/caci';
 import { SaisieCaciComponent } from '../../core/saisie-caci.component';
@@ -113,6 +113,14 @@ function aVerifier(m: MoniteurVue): boolean {
                [ngModel]="filtreNom()" (ngModelChange)="filtreNom.set($event)">
       </div>
       <div>
+        <label for="filtre-groupe">Groupe {{ saisonOuverte() ? '(' + saisonOuverte() + ')' : '' }}</label>
+        <select id="filtre-groupe" name="filtreGroupe" [ngModel]="filtreGroupe()" (ngModelChange)="filtreGroupe.set($event)">
+          <option [ngValue]="null">Tous les groupes</option>
+          @for (g of groupes(); track g.id) { <option [ngValue]="g.id">{{ g.nom }}</option> }
+          <option [ngValue]="SANS_GROUPE">Sans groupe</option>
+        </select>
+      </div>
+      <div>
         <label for="filtre-caci">CACI</label>
         <select id="filtre-caci" name="filtreCaci" [ngModel]="filtreCaci()" (ngModelChange)="filtreCaci.set($event)">
           <option value="TOUS">Tous</option>
@@ -132,9 +140,10 @@ function aVerifier(m: MoniteurVue): boolean {
     } @else if (liste().length === 0) {
       <div class="carte vide"><p>Aucun moniteur enregistré.</p></div>
     } @else if (listeFiltree().length === 0) {
-      <div class="carte vide"><p>Aucun moniteur ne correspond à la recherche.</p></div>
+      <div class="carte vide"><p>Aucun moniteur ne correspond aux filtres.</p></div>
     } @else {
-      <ul>
+      <p class="secondaire compte">{{ listeFiltree().length }} moniteur{{ listeFiltree().length > 1 ? 's' : '' }}</p>
+      <ul class="cartes">
         @for (m of listeFiltree(); track m.id) {
           <li class="carte">
             <div class="ligne">
@@ -145,6 +154,15 @@ function aVerifier(m: MoniteurVue): boolean {
                 <span class="secondaire">
                   {{ m.niveauEncadrement }}{{ m.niveauEncadrementPrepare ? ' (prépare ' + m.niveauEncadrementPrepare + ')' : '' }}{{ m.niveauPlongeur ? ' · plongeur ' + m.niveauPlongeur : '' }}{{ m.numeroLicence ? ' · licence ' + m.numeroLicence : '' }}
                   · Droit à l'image {{ m.autorisationImage ? (m.aPhoto ? 'recueilli, photo déposée' : 'recueilli') : 'non recueilli' }}
+                </span>
+                <span class="groupes-moniteur">
+                  @for (g of groupesDe(m.id); track g.id) {
+                    <span class="puce-groupe" [class.referent]="g.referent">
+                      {{ g.nom }}@if (g.referent) { <strong> · référent</strong> }
+                    </span>
+                  } @empty {
+                    <span class="secondaire">Sans groupe d'entraînement</span>
+                  }
                 </span>
                 <button type="button" [class]="'caci caci-' + etatCaci(m.certificatValideJusquAu)"
                         [attr.aria-label]="libelleCaci(m.certificatValideJusquAu) + ' — détail du CACI de ' + m.prenom + ' ' + m.nom"
@@ -362,19 +380,29 @@ function aVerifier(m: MoniteurVue): boolean {
     .caci-expire, .caci-absent { color: #B3261E; }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    /* Plusieurs moniteurs par ligne dès que la largeur le permet ; un seul au téléphone. */
+    .cartes { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: stretch; }
+    .cartes > li { display: flex; flex-direction: column; }
+    .cartes .actions { margin-top: auto; padding-top: var(--pas-2); }
+    .compte { margin: 0 0 var(--pas); }
     li { padding: var(--pas-2); }
-    .ligne { display: flex; align-items: flex-start; gap: var(--pas-2); }
+    .ligne { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--pas-2); }
+    .identite .secondaire { overflow-wrap: anywhere; }
+    .groupes-moniteur { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+    .puce-groupe {
+      padding: 2px 10px; border-radius: 999px; background: var(--fond); border: 1px solid var(--trait); font-size: .8125rem;
+    }
+    .puce-groupe.referent { border-color: var(--profond); }
     .identite { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
     app-avatar { --taille-avatar: 56px; }
     .nom { font-weight: 700; }
-    .badges { display: flex; gap: var(--pas); flex: none; }
+    .badges { display: flex; flex-wrap: wrap; gap: var(--pas); }
+    /* En carte de grille, les étiquettes (Admin, DT, Actif…) passent sous l'identité, sur toute la largeur. */
+    .cartes .badges { flex-basis: 100%; }
 
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; margin-top: var(--pas-2); }
     .danger { color: #B3261E; border-color: #B3261E; }
 
-    @media (max-width: 600px) {
-      .ligne { flex-wrap: wrap; }
-    }
   `]
 })
 export class MoniteursComponent {
@@ -390,12 +418,29 @@ export class MoniteursComponent {
 
   filtreNom = signal('');
   filtreCaci = signal<'TOUS' | 'A_VERIFIER'>('TOUS');
+  /** Valeur du filtre « Sans groupe » (un id de groupe est toujours positif). */
+  readonly SANS_GROUPE = 0;
+  /** Id du groupe filtré, SANS_GROUPE, ou null : tous. */
+  filtreGroupe = signal<number | null>(null);
+  /** Groupes d'entraînement de la saison ouverte, dans leur ordre. */
+  groupes = signal<GroupeEntrainementVue[]>([]);
+  saisonOuverte = signal<string | null>(null);
   listeFiltree = computed(() => {
     const recherche = this.filtreNom().trim().toLocaleLowerCase();
+    const groupe = this.filtreGroupe();
     return this.liste().filter(m =>
       (!recherche || `${m.prenom} ${m.nom}`.toLocaleLowerCase().includes(recherche))
-      && (this.filtreCaci() === 'TOUS' || aVerifier(m)));
+      && (this.filtreCaci() === 'TOUS' || aVerifier(m))
+      && (groupe === null || (groupe === this.SANS_GROUPE
+        ? this.groupesDe(m.id).length === 0
+        : this.groupesDe(m.id).some(g => g.id === groupe))));
   });
+
+  /** Les groupes de la saison ouverte qu'encadre ce moniteur (référent ou encadrant attitré). */
+  groupesDe(moniteurId: number): { id: number; nom: string; referent: boolean }[] {
+    return this.groupes().flatMap(g => g.encadrants.filter(e => e.id === moniteurId)
+      .map(e => ({ id: g.id, nom: g.nom, referent: e.referent })));
+  }
 
   /** Seuls les comptes actifs comptent : un moniteur désactivé n'encadre plus. */
   aVerifier = computed(() => this.liste().filter(m => m.actif && aVerifier(m)).length);
@@ -444,6 +489,7 @@ export class MoniteursComponent {
 
   constructor() {
     void this.charger();
+    void this.chargerGroupes();
     inject(DestroyRef).onDestroy(() => {
       for (const url of this.urlsPhotos().values()) URL.revokeObjectURL(url);
     });
@@ -471,6 +517,20 @@ export class MoniteursComponent {
 
   urlPhoto(moniteurId: number): string | null {
     return this.urlsPhotos().get(moniteurId) ?? null;
+  }
+
+  /** Les groupes d'entraînement de la saison ouverte : de quoi ranger les moniteurs par groupe. */
+  private async chargerGroupes(): Promise<void> {
+    try {
+      const saisons = await firstValueFrom(this.api.saisons());
+      const ouverte = saisons.find(s => s.ouverte);
+      if (!ouverte) return;
+      const groupes = await firstValueFrom(this.api.groupesEntrainement(ouverte.id));
+      this.saisonOuverte.set(ouverte.libelle);
+      this.groupes.set([...groupes].sort((a, b) => a.ordre - b.ordre));
+    } catch {
+      this.message.set("Impossible de charger les groupes d'entraînement.");
+    }
   }
 
   private async charger(): Promise<void> {

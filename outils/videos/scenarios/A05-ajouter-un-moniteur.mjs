@@ -1,5 +1,5 @@
 // A5 — Ajouter un moniteur.
-// Tournage du 2026-10-20, 13e série, la sécurité surface passe dans son propre écran (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19 : moniteurs en grille, filtre par groupe (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -14,7 +14,8 @@ export default {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await administration('Moniteurs');
-    await legende('La liste des encadrants, avec l\'état de leur CACI.', 3000);
+    await legende('Les encadrants, plusieurs par ligne : leurs groupes d\'entraînement et l\'état de leur CACI.', 3500);
+    await legende('Le filtre « Groupe » ne garde que les encadrants d\'un groupe, ou ceux sans groupe.', 3000);
     await toucher(page.getByRole('button', { name: 'Nouveau moniteur' }));
     await saisir('#prenom', 'Julien');
     await saisir('#nom', 'Robin');

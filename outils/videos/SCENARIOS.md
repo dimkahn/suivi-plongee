@@ -656,14 +656,15 @@ Créer le compte d'un encadrant : niveau d'encadrement, niveau de plongeur, rôl
 
 Compte : `presidente@club.fr` · formats téléphone et ordinateur · 38 s
 
-1. La liste des encadrants, avec l'état de leur CACI.
-2. Niveau d'encadrement et niveau de plongeur sont distincts : un E1 peut n'être que N2.
-3. Pour le CACI, la date de l'examen suffit : il vaut un an.
-4. Des rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel), TIV.
-5. Julien est E2 : pour qu'il établisse les fiches de sécurité comme un E3, cochez ce droit.
-6. Julien reçoit un e-mail pour choisir son mot de passe.
-7. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
-8. Pour qui n'est pas moniteur du club, l'écran « Sécurité surface » : voir la vidéo A18.
+1. Les encadrants, plusieurs par ligne : leurs groupes d'entraînement et l'état de leur CACI.
+2. Le filtre « Groupe » ne garde que les encadrants d'un groupe, ou ceux sans groupe.
+3. Niveau d'encadrement et niveau de plongeur sont distincts : un E1 peut n'être que N2.
+4. Pour le CACI, la date de l'examen suffit : il vaut un an.
+5. Des rôles en plus, à cocher si besoin : administrateur, directeur technique (matériel), TIV.
+6. Julien est E2 : pour qu'il établisse les fiches de sécurité comme un E3, cochez ce droit.
+7. Julien reçoit un e-mail pour choisir son mot de passe.
+8. Ici aussi : désactiver un compte, renvoyer un lien, recueillir le droit à l'image.
+9. Pour qui n'est pas moniteur du club, l'écran « Sécurité surface » : voir la vidéo A18.
 
 ### A6 — Créer le dossier d'un élève
 
