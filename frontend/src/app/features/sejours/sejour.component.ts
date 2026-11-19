@@ -305,9 +305,38 @@ function participantVide(): BrouillonParticipant {
         }
       </app-dialogue>
 
+      <!-- Onglets et sous-onglets en haut de la page, sous le titre ; les encarts de « Programme »
+           (À faire, Aujourd'hui, Mon séjour) viennent dessous (demande du club, 2026-11-19). -->
+      <span id="debut-onglet"></span>
+      <app-onglets class="sans-impression" id="onglets-sejour" [options]="onglets()" [choisi]="onglet()"
+                   (choisir)="choisirOnglet($event)" />
+
+      <!-- Sous 860 px, les cinq sections en bas de l'écran, à portée du pouce, à la place de la barre
+           de l'appli ; « ← Séjours » en haut pour en sortir (demande du club, 2026). -->
+      <nav class="barre-sejour sans-impression" aria-label="Sections du séjour">
+        <div role="tablist" aria-label="Sections du séjour">
+          @for (o of onglets(); track o.valeur) {
+            <button type="button" role="tab" class="section" [class.actif]="o.valeur === onglet()"
+                    [attr.aria-selected]="o.valeur === onglet()" (click)="choisirOnglet(o.valeur, true)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconesSections[o.valeur]" /></svg>
+              <span class="libelle-section">{{ o.libelle }}</span>
+              @if (o.alertes) {
+                <span class="point-alerte" aria-hidden="true"></span><span class="cache-ecran">, {{ o.alertes }} à vérifier</span>
+              }
+            </button>
+          }
+        </div>
+      </nav>
+
+      <!-- Un onglet de plusieurs rubriques : des sous-onglets, une rubrique à la fois (demande du club, 2026). -->
+      @if (rubriques().length > 1) {
+        <app-onglets class="sous-onglets sans-impression" libelle="Rubriques de l'onglet" [options]="rubriques()"
+                     [choisi]="rubrique()" (choisir)="rubriqueDemandee.set($event)" />
+      }
+
       @if (message(); as m) { <div class="alerte sans-impression" role="status">{{ m }}</div> }
 
-      <!-- Les encarts du haut ne sont plus que dans « Programme », l'accueil du séjour : les autres
+      <!-- Les encarts ne sont que dans « Programme », l'accueil du séjour, sous les sous-onglets : les autres
            sections s'ouvrent sur leur contenu (demande du club, 2026). -->
       @if (onglet() === 'programme') {
       <!-- Ce que l'encadrant a à faire sur les fiches de sécurité du séjour (demande du club, 2026). -->
@@ -341,32 +370,6 @@ function participantVide(): BrouillonParticipant {
         </app-dialogue>
       }
 
-      <span id="debut-onglet"></span>
-      <app-onglets class="sans-impression" id="onglets-sejour" [options]="onglets()" [choisi]="onglet()"
-                   (choisir)="choisirOnglet($event)" />
-
-      <!-- Sous 860 px, les cinq sections en bas de l'écran, à portée du pouce, à la place de la barre
-           de l'appli ; « ← Séjours » en haut pour en sortir (demande du club, 2026). -->
-      <nav class="barre-sejour sans-impression" aria-label="Sections du séjour">
-        <div role="tablist" aria-label="Sections du séjour">
-          @for (o of onglets(); track o.valeur) {
-            <button type="button" role="tab" class="section" [class.actif]="o.valeur === onglet()"
-                    [attr.aria-selected]="o.valeur === onglet()" (click)="choisirOnglet(o.valeur, true)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path [attr.d]="iconesSections[o.valeur]" /></svg>
-              <span class="libelle-section">{{ o.libelle }}</span>
-              @if (o.alertes) {
-                <span class="point-alerte" aria-hidden="true"></span><span class="cache-ecran">, {{ o.alertes }} à vérifier</span>
-              }
-            </button>
-          }
-        </div>
-      </nav>
-
-      <!-- Un onglet de plusieurs rubriques : des sous-onglets, une rubrique à la fois (demande du club, 2026). -->
-      @if (rubriques().length > 1) {
-        <app-onglets class="sous-onglets sans-impression" libelle="Rubriques de l'onglet" [options]="rubriques()"
-                     [choisi]="rubrique()" (choisir)="rubriqueDemandee.set($event)" />
-      }
 
       <!-- Programme -->
       @if (montrer('programme-sejour')) {
@@ -1481,6 +1484,10 @@ function participantVide(): BrouillonParticipant {
                         background: var(--accent); }
     .sous-onglets { margin: calc(var(--pas) * -1) 0 var(--pas-2); padding-bottom: var(--pas);
                     border-bottom: 2px solid var(--trait); font-size: .9375rem; }
+    /* Téléphone : les onglets sont dans la barre du bas, les sous-onglets suivent directement l'en-tête. */
+    @media (max-width: 860px) {
+      .sous-onglets { margin-top: var(--pas); }
+    }
     .liste-actions { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
     .liste-actions button { width: 100%; min-height: 48px; display: flex; align-items: center; gap: var(--pas);
                             justify-content: flex-start; text-align: left; }
