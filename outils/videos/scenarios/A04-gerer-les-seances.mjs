@@ -1,5 +1,5 @@
 // A4 — Gérer les séances à la main.
-// Tournage du 2026-11-19, 13e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-19, 14e série : séances en grille (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -14,7 +14,7 @@ export default {
     await page.goto(`${APPLI}/eleves`);
     await pause(1000);
     await administration('Séances');
-    await legende('Chaque séance porte le programme de la progression du mois.', 3500);
+    await legende('Une carte par séance, plusieurs par ligne ; chacune porte le programme de la progression du mois.', 4000);
     await legende('La liste ne montre que les séances à venir ; les passées sont à un toucher.', 0);
     await toucher(page.getByRole('button', { name: /Voir aussi les séances passées/ }), { apres: 2000 });
     await toucher(page.getByRole('button', { name: 'Masquer les séances passées' }), { apres: 1000 });

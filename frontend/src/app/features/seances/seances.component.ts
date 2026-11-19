@@ -251,7 +251,7 @@ function formulaireVide(): FormulaireSeance {
         }
       </div>
     } @else if (seancesAffichees().length > 0) {
-      <ul>
+      <ul class="cartes">
         @for (s of seancesAffichees(); track s.id) {
           <li class="carte">
               <div class="ligne">
@@ -347,6 +347,13 @@ function formulaireVide(): FormulaireSeance {
     .bascule-passees { display: block; margin-bottom: var(--pas-2); }
 
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    /* Plusieurs séances par ligne dès que la largeur le permet ; une seule au téléphone.
+       Dans la carte, les boutons passent sous le texte et restent en bas. */
+    .cartes { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-items: stretch; }
+    .cartes > li { display: flex; flex-direction: column; }
+    .cartes .ligne { flex: 1; flex-direction: column; justify-content: space-between; align-items: stretch; }
+    /* Trois boutons sur une ligne dans une carte de 300 px : un peu moins de marge intérieure, même hauteur (44 px). */
+    .cartes .actions .bouton-discret { padding-left: 12px; padding-right: 12px; }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--pas-2); }
     .identite { display: flex; flex-direction: column; gap: 2px; }

@@ -642,7 +642,7 @@ Ajouter une séance exceptionnelle, la modifier, revoir les séances passées, v
 
 Compte : `presidente@club.fr` · formats téléphone et ordinateur · 42 s
 
-1. Chaque séance porte le programme de la progression du mois.
+1. Une carte par séance, plusieurs par ligne ; chacune porte le programme de la progression du mois.
 2. La liste ne montre que les séances à venir ; les passées sont à un toucher.
 3. Une séance en plus : « Nouvelle séance ».
 4. Milieu et profondeur se figent dès qu'une présence ou une note y est rattachée.

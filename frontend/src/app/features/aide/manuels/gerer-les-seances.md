@@ -11,13 +11,13 @@ questions:
 - Où sont passées les séances déjà faites ?
 - Comment revoir une séance passée ?
 ---
-Administration, « Séances » : « Nouvelle séance » ajoute une séance, chaque ligne se modifie, et la vue « Calendrier » montre le mois d'un coup d'œil.
+Administration, « Séances » : « Nouvelle séance » ajoute une séance, chaque carte se modifie, et la vue « Calendrier » montre le mois d'un coup d'œil.
 
 ## Pas à pas
 
 1. Administration, puis « Séances ».
 2. « Nouvelle séance » : date, lieu, milieu, profondeur.
-3. Pour modifier une séance, ouvrez-la dans la liste.
+3. Pour modifier une séance, « Modifier » sur sa carte. Sur un grand écran, les séances s'affichent à plusieurs par ligne.
 4. La liste ne montre que les séances d'aujourd'hui et à venir ; « Voir aussi les séances passées » affiche les autres, « Masquer les séances passées » les cache à nouveau.
 5. La vue « Calendrier » montre le mois ; chaque séance porte le programme de la progression du mois.
 
