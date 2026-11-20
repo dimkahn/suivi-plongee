@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +8,8 @@ import { AuthService } from '../../core/auth.service';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { dateDuJour } from '../../core/date-fr';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
+import { nouvelleReference } from '../../core/base-locale';
+import { nouveauNumeroProvisoire } from '../../core/plongee-imprevue';
 import { peutSignerDepuisLaListe, signatureAVenir } from '../../core/fiche-securite';
 import { detailErreurFichier, telechargerFichier } from '../../core/telecharger';
 import { joursDuSejour } from './liste-courses';
@@ -25,11 +27,12 @@ import { ChargementComponent } from '../../core/chargement.component';
  * plongées de la sortie, jour par jour, avec l'état de leur fiche. Chaque
  * fiche s'ouvre dans ses écrans habituels (établir, compléter au retour,
  * signer), dont le retour ramène ici ; elle s'imprime seule ou avec toutes
- * celles du séjour. Les organisateurs ajoutent une plongée et suppriment
- * celle qui n'a pas encore de fiche ; un administrateur supprime une fiche.
- * Encadrants seulement. Sans réseau, la liste se lit sur sa copie et les
- * fiches emportées s'établissent et se complètent (file d'écritures habituelle) ;
- * ajouter, supprimer, signer et imprimer demandent le réseau.
+ * celles du séjour. Les organisateurs et les DP ajoutent une plongée ; les
+ * organisateurs suppriment celle qui n'a pas encore de fiche ; un
+ * administrateur supprime une fiche. Encadrants seulement. Sans réseau, la
+ * liste se lit sur sa copie, les fiches emportées s'établissent et se
+ * complètent, et une plongée imprévue s'ajoute (file d'écritures habituelle) ;
+ * supprimer, signer et imprimer demandent le réseau.
  */
 @Component({
   selector: 'app-sejour-fiches-securite',
@@ -37,7 +40,7 @@ import { ChargementComponent } from '../../core/chargement.component';
   template: `
     <div class="titre-section">
       <h2>Fiches de sécurité</h2>
-      @if (vue()?.peutAjouter && !vue()?.copie) {
+      @if (vue()?.peutAjouter) {
         <button type="button" class="bouton-principal ajouter-plongee" (click)="ouvrirAjout()">Ajouter une plongée</button>
       }
     </div>
@@ -47,13 +50,14 @@ import { ChargementComponent } from '../../core/chargement.component';
       @if (v.copie; as c) {
         <div class="alerte copie-fiches" role="status">
           Hors ligne. Les fiches telles qu'elles étaient le {{ c.du | date:'d/MM à HH:mm' }}. Celles emportées s'établissent et se
-          complètent : elles partiront au retour du réseau. Ajouter une plongée, signer et imprimer demandent le réseau.
+          complètent : elles partiront au retour du réseau. Une plongée imprévue s'ajoute aussi, créée au retour du
+          réseau. Signer et imprimer demandent le réseau.
         </div>
       }
       @if (v.plongees.length === 0) {
         <p class="vide">
           Aucune plongée dans ce séjour pour l'instant.
-          @if (v.peutAjouter && !v.copie) { « Ajouter une plongée » pour en établir la fiche. }
+          @if (v.peutAjouter) { « Ajouter une plongée » pour en établir la fiche. }
         </p>
       } @else {
         @if (fiches() > 0 && !v.copie) {
@@ -128,7 +132,7 @@ import { ChargementComponent } from '../../core/chargement.component';
                     @if (p.fiche && !p.signee && v.peutSupprimerFiche && !p.enAttente && !v.copie) {
                       <button type="button" class="bouton-discret danger" (click)="ficheASupprimer.set(p)">Supprimer la fiche</button>
                     }
-                    @if (v.peutAjouter && p.supprimable && !v.copie) {
+                    @if (v.peutSupprimer && p.supprimable && !v.copie) {
                       <button type="button" class="bouton-discret danger supprimer-plongee" (click)="plongeeASupprimer.set(p)">
                         Supprimer la plongée
                       </button>
@@ -144,7 +148,7 @@ import { ChargementComponent } from '../../core/chargement.component';
       <app-chargement />
     }
 
-    <!-- Ajouter une plongée (organisateurs) -->
+    <!-- Ajouter une plongée (organisateurs et DP, même sans réseau) -->
     <app-dialogue [ouvert]="ajoutOuvert()" [erreur]="erreur()" titre="Ajouter une plongée" (fermer)="ajoutOuvert.set(false)">
       @if (ajoutOuvert()) {
         <form class="dialogue-formulaire" (ngSubmit)="ajouter()">
@@ -170,7 +174,8 @@ import { ChargementComponent } from '../../core/chargement.component';
           <label for="plongee-info">Info complémentaire</label>
           <input id="plongee-info" name="commentaire" [(ngModel)]="brouillon.commentaire" maxlength="500"
                  placeholder="Bateau, groupe…">
-          <p class="secondaire">La plongée paraît aussitôt au programme du séjour ; sa fiche s'établit ensuite.</p>
+          <p class="secondaire">La plongée paraît aussitôt au programme du séjour ; sa fiche s'établit ensuite.
+            Sans réseau, elle est gardée sur ce téléphone et créée au retour du réseau.</p>
           <div class="actions-dialogue">
             <button [attr.aria-busy]="envoi() || null" type="submit" class="bouton-principal" [disabled]="envoi()">{{ envoi() ? 'Envoi…' : 'Ajouter' }}</button>
             <button type="button" class="bouton-discret" (click)="ajoutOuvert.set(false)">Annuler</button>
@@ -242,8 +247,11 @@ export class SejourFichesSecuriteComponent implements OnInit {
   /** Telle que lue, plus ce qui attend le réseau sur ce téléphone. */
   readonly vue = computed(() => {
     const v = this.lue();
-    return v ? avecEcrituresEnAttente(v, this.file.enAttente().map(e => e.ecriture)) : null;
+    return v ? avecEcrituresEnAttente(v, this.file.enAttente().map(e => e.ecriture), this.sejourId()) : null;
   });
+  /** Les plongées imprévues de ce séjour qui attendent encore le réseau sur ce téléphone. */
+  private readonly imprevuesEnAttente = computed(() => this.file.enAttente()
+    .filter(e => e.ecriture.type === 'plongee' && e.ecriture.sortieId === this.sejourId()).length);
   message = signal<string | null>(null);
   erreur = signal<string | null>(null);
   envoi = signal(false);
@@ -264,6 +272,13 @@ export class SejourFichesSecuriteComponent implements OnInit {
 
   constructor() {
     relireSelonLeReseau(() => this.charger());
+    // Une plongée imprévue partie au serveur : la liste relue la montre sous son vrai n°.
+    let avant = 0;
+    effect(() => {
+      const maintenant = this.imprevuesEnAttente();
+      if (maintenant < avant) untracked(() => this.charger());
+      avant = maintenant;
+    });
   }
 
   ngOnInit(): void {
@@ -304,12 +319,32 @@ export class SejourFichesSecuriteComponent implements OnInit {
     this.ajoutOuvert.set(true);
   }
 
-  ajouter(): void {
+  /**
+   * Par la file du téléphone : avec du réseau, la plongée est créée aussitôt ; sans réseau, elle attend sous un
+   * n° provisoire, sa fiche s'établit déjà, et tout part au retour du réseau, sans doublon.
+   */
+  async ajouter(): Promise<void> {
     const d = this.brouillon;
-    this.envoyer(this.port().ajouter({ ...d, ordre: d.ordre || null, profondeurMax: d.profondeurMax ?? null }), () => {
-      this.ajoutOuvert.set(false);
+    const demande = { ...d, ordre: d.ordre || null, profondeurMax: d.profondeurMax ?? null };
+    this.envoi.set(true);
+    this.erreur.set(null);
+    const issue = await this.file.enregistrer<FichesSecuriteSejourVue>({
+      type: 'plongee', seanceId: nouveauNumeroProvisoire(), sortieId: this.sejourId(), reference: nouvelleReference(),
+      demande
+    }, `Plongée du ${jourLong(d.date)}`, d.date);
+    this.envoi.set(false);
+    if (issue.etat === 'refusee') {
+      this.erreur.set(issue.raison);
+      return;
+    }
+    this.ajoutOuvert.set(false);
+    if (issue.etat === 'envoyee') {
+      this.lue.set(issue.reponse);
       this.message.set(`Plongée ajoutée le ${jourLong(d.date)} : établissez maintenant sa fiche.`);
-    });
+    } else {
+      this.message.set(`Plongée du ${jourLong(d.date)} gardée sur ce téléphone : elle sera créée au retour du réseau. `
+        + 'Sa fiche s’établit déjà.');
+    }
   }
 
   supprimerPlongee(p: PlongeeSejourVue): void {

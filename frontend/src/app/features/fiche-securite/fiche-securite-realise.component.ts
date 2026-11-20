@@ -1,9 +1,10 @@
 import { Component, DestroyRef, HostListener, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
+import { estProvisoire, seanceImprevue } from '../../core/plongee-imprevue';
 import { FicheSecuriteVue, PalanqueeVue, PlongeurVue, SeanceVue, SignatureFicheVue } from '../../core/modeles';
 import { DateFrPipe, dateDuJour } from '../../core/date-fr';
 import { lieuEtSite } from '../../core/seance-lieu';
@@ -339,6 +340,7 @@ export class FicheSecuriteRealiseComponent implements AvecModifications {
   private api = inject(ApiService);
   private file = inject(FileEcrituresService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private destroyRef = inject(DestroyRef);
   auth = inject(AuthService);
 
@@ -412,13 +414,23 @@ export class FicheSecuriteRealiseComponent implements AvecModifications {
 
   private async charger(): Promise<void> {
     try {
+      // Plongée imprévue créée depuis par le serveur : le profil s'ouvre sous son vrai n°.
+      if (estProvisoire(this.seanceId)) {
+        const creee = await this.file.seanceCreee(this.seanceId);
+        if (creee !== undefined) {
+          await this.router.navigate(['/fiches-securite', creee, 'realise'],
+            { replaceUrl: true, queryParamsHandling: 'preserve' });
+          return;
+        }
+      }
       // Retombe sur le cache hors ligne ; les saisies pas encore parties priment.
       const [seances, ficheLue] = await Promise.all([
         this.api.seances(),
         this.api.ficheSecurite(this.seanceId)
       ]);
       const { fiche, etablie } = this.file.ficheAJour(this.seanceId, ficheLue);
-      this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
+      this.seance.set(seances.find(s => s.id === this.seanceId)
+        ?? seanceImprevue(this.file.plongeeEnAttente(this.seanceId), seances));
       this.ficheEtablie.set(etablie);
       this.signature.set(fiche.signature ?? null);
       this.palanquees.set(fiche.palanquees);

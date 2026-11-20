@@ -2,7 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
 import { Atelier, FicheSecuriteVue, MoniteurOptionVue, PalanqueeVue, PlongeurVue, StatutPresence } from './modeles';
-import { MAGASIN_ECRITURES, MAGASIN_REFUS_ECRITURES, ecrire, lire, lireTout, supprimer } from './base-locale';
+import { MAGASIN_CACHE, MAGASIN_ECRITURES, MAGASIN_REFUS_ECRITURES, ecrire, lire, lireTout, supprimer } from './base-locale';
+import { EcriturePlongee, estProvisoire, rattacherALaSeance } from './plongee-imprevue';
 
 /** Établissement de la fiche de sécurité : DP, conditions, composition et profil prévu. */
 export interface DemandeFicheSecurite {
@@ -31,6 +32,17 @@ export interface ProfilRealise {
   heureSortie: string | null;
 }
 
+/** Une plongée ajoutée à un séjour ; {@code ordre} null : la suivante de ce jour-là. */
+export interface DemandePlongee {
+  date: string;
+  ordre: number | null;
+  milieu: 'NATUREL' | 'ARTIFICIEL';
+  lieu: string | null;
+  site: string | null;
+  profondeurMax: number | null;
+  commentaire: string | null;
+}
+
 /**
  * Une écriture qui remplace un état côté serveur. Rejouer la même écriture
  * donne le même résultat : c'est ce qui permet de la garder hors ligne.
@@ -41,7 +53,13 @@ export type Ecriture =
       /** Théorie en plus de la nage ou du bloc ; absent d'une écriture gardée avant son ajout. */
       theorie?: boolean }
   | { type: 'fiche'; seanceId: number; demande: DemandeFicheSecurite }
-  | { type: 'realise'; seanceId: number; profils: ProfilRealise[] };
+  | { type: 'realise'; seanceId: number; profils: ProfilRealise[] }
+  /**
+   * Plongée imprévue d'un séjour, ajoutée sans réseau : `seanceId` est son n°
+   * provisoire (`core/plongee-imprevue.ts`), `reference` la fait créer une
+   * seule fois même rejouée. Sa fiche et son profil réalisé attendent derrière.
+   */
+  | { type: 'plongee'; seanceId: number; sortieId: number; reference: string; demande: DemandePlongee };
 
 export interface EcritureEnAttente {
   /** Une entrée par cible : un nouveau choix remplace le précédent, rien ne s'empile. */
@@ -73,6 +91,10 @@ export type IssueEnvoi<T = unknown> =
 
 export function cleEcriture(e: Ecriture): string {
   return e.type === 'presence' ? `presence:${e.seanceId}:${e.cursusId}` : `${e.type}:${e.seanceId}`;
+}
+
+function clePlongeeCreee(provisoire: number): string {
+  return `plongee-creee:${provisoire}`;
 }
 
 /**
@@ -120,6 +142,11 @@ export class FileEcrituresService {
    * séance (une fiche avant son profil réalisé).
    */
   async enregistrer<T = unknown>(ecriture: Ecriture, libelle: string, dateSeance: string): Promise<IssueEnvoi<T>> {
+    // Une plongée imprévue déjà créée entre-temps : l'écriture va à sa vraie séance.
+    if (ecriture.type !== 'plongee' && estProvisoire(ecriture.seanceId)) {
+      const creee = await this.seanceCreee(ecriture.seanceId);
+      if (creee !== undefined) ecriture = { ...ecriture, seanceId: creee };
+    }
     const cle = cleEcriture(ecriture);
     const precedente = await lire<EcritureEnAttente>(MAGASIN_ECRITURES, cle);
     const maintenant = Date.now();
@@ -129,6 +156,11 @@ export class FileEcrituresService {
     await ecrire(MAGASIN_ECRITURES, entree);
     await this.relire();
     if (!navigator.onLine) return { etat: 'en-attente' };
+    // La fiche d'une plongée imprévue part derrière elle, avec toute la file.
+    if (ecriture.type !== 'plongee' && estProvisoire(ecriture.seanceId)) {
+      void this.vider();
+      return { etat: 'en-attente' };
+    }
 
     // Ce qui attend avant elle pour la même séance part d'abord.
     const avant = this.enAttente()
@@ -141,9 +173,20 @@ export class FileEcrituresService {
     }
 
     const issue = await this.envoyerUne<T>(entree);
+    if (issue.etat === 'envoyee') await this.apresEnvoi(entree, issue.reponse);
     if (issue.etat !== 'en-attente') await this.retirerSiInchangee(entree);
     await this.relire();
     return issue;
+  }
+
+  /** La plongée imprévue qui attend le réseau sous ce n° provisoire, s'il y en a une. */
+  plongeeEnAttente(seanceId: number): EcriturePlongee | undefined {
+    return this.pourSeance(seanceId, 'plongee').at(0);
+  }
+
+  /** Le vrai n° de séance d'une plongée imprévue, une fois créée par le serveur. */
+  async seanceCreee(provisoire: number): Promise<number | undefined> {
+    return (await lire<{ cle: string; valeur: number }>(MAGASIN_CACHE, clePlongeeCreee(provisoire)))?.valeur;
   }
 
   async vider(): Promise<void> {
@@ -218,7 +261,13 @@ export class FileEcrituresService {
         const issue = await this.envoyerUne(entree);
         // Serveur injoignable : inutile d'insister, on retentera au prochain réveil.
         if (issue.etat === 'en-attente') break;
+        if (issue.etat === 'envoyee') await this.apresEnvoi(entree, issue.reponse);
         await this.solder(entree, issue);
+        // Une plongée imprévue créée : sa fiche a changé de clé, la file se relit.
+        if (entree.ecriture.type === 'plongee') {
+          this.relancer = true;
+          break;
+        }
       }
     } finally {
       this.synchronisation.set(false);
@@ -226,13 +275,41 @@ export class FileEcrituresService {
     }
   }
 
-  /** Envoi différé terminé : un refus va au bandeau, puis l'entrée quitte la file. */
+  /**
+   * Envoi différé terminé : un refus va au bandeau, puis l'entrée quitte la file.
+   * Une plongée imprévue refusée emporte au bandeau sa fiche et son profil réalisé,
+   * qui n'ont plus de séance où partir.
+   */
   private async solder(entree: EcritureEnAttente, issue: IssueEnvoi): Promise<void> {
     if (issue.etat === 'refusee') {
       await ecrire<EcritureRefusee>(MAGASIN_REFUS_ECRITURES,
         { ...entree, raison: issue.raison, refuseeLe: Date.now() });
+      if (entree.ecriture.type === 'plongee') {
+        for (const e of this.enAttente().filter(x => x.ecriture.seanceId === entree.ecriture.seanceId && x.cle !== entree.cle)) {
+          await ecrire<EcritureRefusee>(MAGASIN_REFUS_ECRITURES, {
+            ...e, raison: `La plongée imprévue n'a pas été créée : ${issue.raison}`, refuseeLe: Date.now()
+          });
+          await supprimer(MAGASIN_ECRITURES, e.cle);
+        }
+      }
     }
     await this.retirerSiInchangee(entree);
+  }
+
+  /**
+   * Une plongée imprévue créée : son vrai n° est gardé (l'écran ouvert sous le
+   * provisoire s'y retrouve), et ce qui l'attendait passe sur sa séance.
+   */
+  private async apresEnvoi(entree: EcritureEnAttente, reponse: unknown): Promise<void> {
+    if (entree.ecriture.type !== 'plongee') return;
+    const reelle = (reponse as { plongeeAjoutee?: number | null } | null)?.plongeeAjoutee;
+    if (reelle === undefined || reelle === null) return;
+    const provisoire = entree.ecriture.seanceId;
+    await ecrire(MAGASIN_CACHE, { cle: clePlongeeCreee(provisoire), valeur: reelle, majLe: Date.now() });
+    const { retirees, rattachees } = rattacherALaSeance(
+      await lireTout<EcritureEnAttente>(MAGASIN_ECRITURES), provisoire, reelle);
+    for (const e of rattachees) await ecrire(MAGASIN_ECRITURES, e);
+    for (const cle of retirees) await supprimer(MAGASIN_ECRITURES, cle);
   }
 
   private async envoyerUne<T>(entree: EcritureEnAttente): Promise<IssueEnvoi<T>> {
@@ -258,6 +335,9 @@ export class FileEcrituresService {
         return this.http.put<FicheSecuriteVue>(`/api/seances/${e.seanceId}/fiche-securite`, e.demande);
       case 'realise':
         return this.http.put<FicheSecuriteVue>(`/api/seances/${e.seanceId}/fiche-securite/realise`, e.profils);
+      case 'plongee':
+        return this.http.post(`/api/sejours/${e.sortieId}/plongees`, e.demande,
+          { headers: { 'X-Reference-Client': e.reference } });
     }
   }
 

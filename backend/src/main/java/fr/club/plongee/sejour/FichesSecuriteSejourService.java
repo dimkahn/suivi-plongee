@@ -45,12 +45,16 @@ public class FichesSecuriteSejourService {
                                    boolean realise, boolean supprimable) {}
 
     /**
-     * {@code peutAjouter} : organisateur du séjour (ajout et suppression des
-     * plongées) ; {@code peutEtablir} : établir ou modifier les fiches ;
-     * {@code peutSupprimerFiche} : un administrateur, comme partout ailleurs.
+     * {@code peutAjouter} : organisateur du séjour, ou moniteur qui peut en
+     * être le DP (la plongée imprévue) ; {@code peutSupprimer} : organisateur
+     * seulement ; {@code peutEtablir} : établir ou modifier les fiches ;
+     * {@code peutSupprimerFiche} : un administrateur, comme partout ailleurs ;
+     * {@code plongeeAjoutee} : la séance que vient de créer (ou de retrouver,
+     * rejouée) un ajout, absente d'une lecture.
      */
-    public record FichesSecuriteSejourVue(boolean peutAjouter, boolean peutEtablir, boolean peutSupprimerFiche,
-                                          List<PlongeeSejourVue> plongees) {}
+    public record FichesSecuriteSejourVue(boolean peutAjouter, boolean peutSupprimer, boolean peutEtablir,
+                                          boolean peutSupprimerFiche, List<PlongeeSejourVue> plongees,
+                                          Long plongeeAjoutee) {}
 
     /** {@code ordre} absent : la plongée suivante de ce jour-là. */
     public record DemandePlongee(@NotNull LocalDate date, @Min(1) @Max(9) Integer ordre, @NotNull Milieu milieu,
@@ -111,9 +115,9 @@ public class FichesSecuriteSejourService {
                 });
     }
 
-    /** Une séance dans les dates du séjour, rattachée à sa sortie : elle paraît au programme. */
+    /** Une séance dans les dates du séjour, rattachée à sa sortie : elle paraît au programme. Rend son id. */
     @Transactional
-    public void ajouter(Long sortieId, DemandePlongee d) {
+    public Long ajouter(Long sortieId, DemandePlongee d) {
         Sortie sortie = sorties.sortie(sortieId);
         if (d.date().isBefore(sortie.getDateDebut()) || d.date().isAfter(sortie.getDateFin())) {
             throw new RegleMetierException("Le " + d.date().format(Calendrier.DATE_FR)
@@ -131,7 +135,9 @@ public class FichesSecuriteSejourService {
         s.setSite(texte(d.site()));
         s.setProfondeurMax(d.profondeurMax());
         s.setCommentaire(texte(d.commentaire()));
-        sortie.getSeances().add(seances.save(s));
+        Seance creee = seances.save(s);
+        sortie.getSeances().add(creee);
+        return creee.getId();
     }
 
     /**

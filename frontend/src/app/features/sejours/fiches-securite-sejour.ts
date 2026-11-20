@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
-import type { Ecriture } from '../../core/file-ecritures.service';
+import type { DemandePlongee, Ecriture } from '../../core/file-ecritures.service';
 import { peutSignerDepuisLaListe, signatureAVenir } from '../../core/fiche-securite';
+import { estProvisoire, ordreProvisoire } from '../../core/plongee-imprevue';
 
 // ----------------------------------------------------------------
 //  Les fiches de sécurité d'un séjour (FichesSecuriteSejourController) :
@@ -29,30 +30,28 @@ export interface PlongeeSejourVue {
   enAttente?: boolean;
 }
 
-/** Les droits guident l'écran : ajouter (organisateurs), établir les fiches, supprimer une fiche (ADMIN). */
+/**
+ * Les droits guident l'écran : ajouter une plongée (organisateurs, et un moniteur qui peut être DP, même sans
+ * réseau), la supprimer (organisateurs), établir les fiches, supprimer une fiche (ADMIN).
+ */
 export interface FichesSecuriteSejourVue {
   peutAjouter: boolean;
+  /** Absent d'une copie gardée avant son ajout. */
+  peutSupprimer?: boolean;
   peutEtablir: boolean;
   peutSupprimerFiche: boolean;
   plongees: PlongeeSejourVue[];
+  /** La séance que vient de créer un ajout ; absente d'une lecture. */
+  plongeeAjoutee?: number | null;
   /** Lue sur le téléphone, faute de réseau : quand, et les fiches qu'on y a emportées. */
   copie?: { du: number; fichesEmportees: number[] };
 }
 
-/** {@code ordre} null : la plongée suivante de ce jour-là. */
-export interface DemandePlongee {
-  date: string;
-  ordre: number | null;
-  milieu: 'NATUREL' | 'ARTIFICIEL';
-  lieu: string | null;
-  site: string | null;
-  profondeurMax: number | null;
-  commentaire: string | null;
-}
+export type { DemandePlongee };
 
+/** L'ajout d'une plongée passe par la file du téléphone (`FileEcrituresService`), pas par ce port. */
 export interface PortFichesSecurite {
   lire(): Observable<FichesSecuriteSejourVue>;
-  ajouter(d: DemandePlongee): Observable<FichesSecuriteSejourVue>;
   supprimer(seanceId: number): Observable<FichesSecuriteSejourVue>;
   /** La fiche seule (ADMIN) : la plongée reste ; la liste est relue ensuite. */
   supprimerFiche(seanceId: number): Observable<unknown>;
@@ -118,12 +117,27 @@ export function actionsAFaire(vue: FichesSecuriteSejourVue, moiId: number | unde
 /**
  * La liste telle qu'elle sera une fois partie la file du téléphone : une fiche gardée sans réseau y paraît
  * établie, comme dans ses écrans (`FileEcrituresService.ficheAJour`). Un DP changé n'a pas de nom ici.
+ * Avec `sortieId`, les plongées imprévues de ce séjour gardées sur le téléphone y paraissent, à la suite de
+ * leur journée.
  */
-export function avecEcrituresEnAttente(vue: FichesSecuriteSejourVue, ecritures: Ecriture[]): FichesSecuriteSejourVue {
+export function avecEcrituresEnAttente(vue: FichesSecuriteSejourVue, ecritures: Ecriture[],
+                                       sortieId?: number): FichesSecuriteSejourVue {
   const parSeance = (seanceId: number) => ecritures.filter(e => e.seanceId === seanceId);
+  const plongees = [...vue.plongees];
+  for (const e of ecritures) {
+    if (e.type !== 'plongee' || e.sortieId !== sortieId) continue;
+    const d = e.demande;
+    plongees.push({
+      seanceId: e.seanceId, date: d.date,
+      ordre: ordreProvisoire(e, plongees.filter(p => p.date === d.date).map(p => p.ordre)),
+      milieu: d.milieu, lieu: d.lieu, site: d.site, profondeurMax: d.profondeurMax, commentaire: d.commentaire,
+      fiche: false, signee: false, dpId: null, dp: null, palanquees: 0, plongeurs: 0, realise: false,
+      supprimable: false, enAttente: true
+    });
+  }
   return {
     ...vue,
-    plongees: vue.plongees.map(p => parSeance(p.seanceId).reduce((plongee, e): PlongeeSejourVue => {
+    plongees: plongees.map(p => parSeance(p.seanceId).reduce((plongee, e): PlongeeSejourVue => {
       if (e.type === 'realise') return { ...plongee, realise: true, enAttente: true };
       if (e.type !== 'fiche') return plongee;
       const d = e.demande;
@@ -139,9 +153,9 @@ export function avecEcrituresEnAttente(vue: FichesSecuriteSejourVue, ecritures: 
   };
 }
 
-/** Avec du réseau, toute fiche s'ouvre ; sans réseau, celles copiées sur le téléphone. */
+/** Avec du réseau, toute fiche s'ouvre ; sans réseau, celles copiées sur le téléphone et celles des plongées imprévues. */
 export function ficheEmportee(vue: FichesSecuriteSejourVue, seanceId: number): boolean {
-  return !vue.copie || vue.copie.fichesEmportees.includes(seanceId);
+  return !vue.copie || estProvisoire(seanceId) || vue.copie.fichesEmportees.includes(seanceId);
 }
 
 /** Le brouillon de « Ajouter une plongée » : le premier jour du séjour, à son lieu, en milieu naturel. */

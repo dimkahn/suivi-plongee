@@ -22,6 +22,7 @@ import {
   BilanPreparation, ChoixHorsLigne, ContenuHorsLigne, journeeAEmporter, resumePreparationSurface, seancesAEmbarquer,
   sejoursAEmporter
 } from './preparation-hors-ligne';
+import { estProvisoire, ficheVide } from './plongee-imprevue';
 import {
   cleFicheSecurite, cleFichesSejour, cleListeSejours, cleSejour, lectureEchouee
 } from '../features/sejours/sejour-hors-ligne';
@@ -459,6 +460,8 @@ export class ApiService {
    * par FileEcrituresService, qui les garde hors ligne.
    */
   ficheSecurite(seanceId: number): Promise<FicheSecuriteVue> {
+    // Plongée imprévue que le serveur ne connaît pas encore : sa fiche ne vit que dans la file.
+    if (estProvisoire(seanceId)) return Promise.resolve(ficheVide());
     return this.lireOuRetomber(cleFicheSecurite(seanceId),
       () => this.http.get<FicheSecuriteVue>(`/api/seances/${seanceId}/fiche-securite`));
   }

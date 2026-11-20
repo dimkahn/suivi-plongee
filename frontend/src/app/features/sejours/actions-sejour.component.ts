@@ -95,7 +95,7 @@ export class ActionsSejourComponent implements OnInit {
   readonly aFaire = computed(() => {
     const v = this.vue();
     if (!v) return null;
-    return actionsAFaire(avecEcrituresEnAttente(v, this.file.enAttente().map(e => e.ecriture)),
+    return actionsAFaire(avecEcrituresEnAttente(v, this.file.enAttente().map(e => e.ecriture), this.sejourId()),
       this.auth.session()?.id, dateDuJour());
   });
   /** Suivi par les écrans de la fiche : leur retour ramène au séjour. */

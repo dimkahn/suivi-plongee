@@ -124,6 +124,35 @@ describe('Les fiches du séjour sans réseau', () => {
     expect(ficheEmportee(vue([], copie), 2)).toBe(false);
   });
 
+  it('une plongée imprévue gardée sur le téléphone paraît dans son séjour, à la suite du jour, et sa fiche s’ouvre', () => {
+    const imprevue = {
+      date: '2027-06-04', ordre: null, milieu: 'NATUREL' as const, lieu: 'Port-Cros', site: null,
+      profondeurMax: null, commentaire: null
+    };
+    const lue = avecEcrituresEnAttente(vue([plongee({ seanceId: 1, ordre: 1 })], { du: 1000, fichesEmportees: [1] }), [
+      { type: 'plongee', seanceId: -5, sortieId: 3, reference: 'r', demande: imprevue },
+      { type: 'plongee', seanceId: -6, sortieId: 4, reference: 's', demande: imprevue },
+      { type: 'fiche', seanceId: -5, demande }
+    ], 3);
+    expect(lue.plongees.map(p => p.seanceId)).toEqual([1, -5]);
+    expect(lue.plongees[1]).toMatchObject({
+      date: '2027-06-04', ordre: 2, lieu: 'Port-Cros', fiche: true, palanquees: 2, enAttente: true, supprimable: false
+    });
+    expect(ficheEmportee(lue, -5)).toBe(true);
+  });
+
+  it('« À faire » propose d’établir la fiche d’une plongée imprévue gardée sur le téléphone', () => {
+    const imprevue = {
+      date: '2027-06-04', ordre: 3, milieu: 'NATUREL' as const, lieu: null, site: null, profondeurMax: null,
+      commentaire: null
+    };
+    const lue = avecEcrituresEnAttente(vue([], { du: 1000, fichesEmportees: [] }),
+      [{ type: 'plongee', seanceId: -5, sortieId: 3, reference: 'r', demande: imprevue }], 3);
+    expect(lue.plongees[0].ordre).toBe(3);
+    expect(actionsAFaire(lue, 7, '2027-06-05').actions.map(a => `${a.action}:${a.plongee.seanceId}`))
+      .toEqual(['etablir:-5']);
+  });
+
   it('« À faire » ne propose sans réseau ni la signature, ni une fiche restée au serveur', () => {
     const plongees = [
       plongee({ seanceId: 1, date: '2027-06-04', fiche: true, dpId: 7 }),

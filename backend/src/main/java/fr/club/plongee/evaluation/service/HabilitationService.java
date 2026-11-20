@@ -82,6 +82,19 @@ public class HabilitationService {
                     && p.niveauEncadrement().auMoins(FicheSecuriteService.NIVEAU_DP_MINIMUM));
     }
 
+    /**
+     * Un moniteur actif du niveau d'un directeur de plongée (E3 au moins) : il
+     * peut ajouter à un séjour la plongée imprévue qu'il dirige sur place,
+     * même hors ligne (demande du club, 2026-11-21). Ni un administrateur seul
+     * ni le rôle FICHE_SECURITE ne suffisent : ils ne font pas un DP.
+     */
+    public boolean peutEtreDp(Authentication authentication) {
+        UtilisateurPrincipal p = principal(authentication);
+        return p != null && p.actif() && aLeRole(authentication, RoleNom.MONITEUR)
+                && p.niveauEncadrement() != null
+                && p.niveauEncadrement().auMoins(FicheSecuriteService.NIVEAU_DP_MINIMUM);
+    }
+
     /** Même règle, avec un refus lisible par le moniteur (422) plutôt qu'un simple « accès refusé ». */
     public void verifierEtablissementFicheSecurite(Authentication authentication) {
         if (!peutEtablirFicheSecurite(authentication)) {

@@ -837,11 +837,13 @@ export class SejourApi {
     };
   }
 
-  /** Les fiches de sécurité des plongées du séjour : lues par les moniteurs, plongées ajoutées par les organisateurs. */
+  /**
+   * Les fiches de sécurité des plongées du séjour : lues par les moniteurs, plongées supprimées par les
+   * organisateurs. L'ajout d'une plongée passe par `FileEcrituresService`, qui la garde sans réseau.
+   */
   portFichesSecurite(id: number): PortFichesSecurite {
     return {
       lire: () => this.http.get<FichesSecuriteSejourVue>(`/api/sejours/${id}/fiches-securite`),
-      ajouter: d => this.http.post<FichesSecuriteSejourVue>(`/api/sejours/${id}/plongees`, d),
       supprimer: seanceId => this.http.delete<FichesSecuriteSejourVue>(`/api/sejours/${id}/plongees/${seanceId}`),
       supprimerFiche: seanceId => this.http.delete(`/api/seances/${seanceId}/fiche-securite`),
       pdf: (seanceId, regrouper) => this.http.get(`/api/seances/${seanceId}/fiche-securite/fiche.pdf`,

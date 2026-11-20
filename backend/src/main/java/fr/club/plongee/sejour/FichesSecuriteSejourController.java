@@ -11,38 +11,44 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Les fiches de sécurité d'un séjour ({@link FichesSecuriteSejourService}) :
  * lues par les encadrants qui lisent les fiches (moniteurs, administrateurs) ;
- * plongées ajoutées et supprimées par le créateur et les organisateurs du
- * séjour. Chaque écriture renvoie la liste à jour.
+ * plongées ajoutées par le créateur et les organisateurs du séjour, ou par un
+ * moniteur qui peut en être le DP (la plongée imprévue, même ajoutée hors
+ * ligne : rejouée par le téléphone, elle n'est créée qu'une fois) ; supprimées
+ * par les organisateurs seulement. Chaque écriture renvoie la liste à jour.
  */
 @RestController
 @RequestMapping("/api/sejours/{id}")
 public class FichesSecuriteSejourController {
 
     private static final String GERE = "@droitsSejour.organise(#id, authentication)";
+    private static final String AJOUTE = GERE + " or @habilitation.peutEtreDp(authentication)";
 
     private final FichesSecuriteSejourService service;
     private final DroitsSejour droits;
     private final HabilitationService habilitation;
+    private final RejeuSejour rejeu;
 
     public FichesSecuriteSejourController(FichesSecuriteSejourService service, DroitsSejour droits,
-                                          HabilitationService habilitation) {
+                                          HabilitationService habilitation, RejeuSejour rejeu) {
         this.service = service;
         this.droits = droits;
         this.habilitation = habilitation;
+        this.rejeu = rejeu;
     }
 
     @GetMapping("/fiches-securite")
     @PreAuthorize("hasAnyRole('MONITEUR','ADMIN')")
     public FichesSecuriteSejourVue lire(@PathVariable Long id, Authentication authentication) {
-        return vue(id, authentication);
+        return vue(id, authentication, null);
     }
 
     @PostMapping("/plongees")
-    @PreAuthorize(GERE)
+    @PreAuthorize(AJOUTE)
     public FichesSecuriteSejourVue ajouter(@PathVariable Long id, @Valid @RequestBody DemandePlongee d,
+                                           @RequestHeader(value = RejeuSejour.EN_TETE, required = false) String reference,
                                            Authentication authentication) {
-        service.ajouter(id, d);
-        return vue(id, authentication);
+        Long seanceId = rejeu.idCreeUneFois(id, reference, () -> service.ajouter(id, d));
+        return vue(id, authentication, seanceId);
     }
 
     @DeleteMapping("/plongees/{seanceId}")
@@ -50,12 +56,13 @@ public class FichesSecuriteSejourController {
     public FichesSecuriteSejourVue supprimer(@PathVariable Long id, @PathVariable Long seanceId,
                                              Authentication authentication) {
         service.supprimer(id, seanceId);
-        return vue(id, authentication);
+        return vue(id, authentication, null);
     }
 
-    private FichesSecuriteSejourVue vue(Long id, Authentication authentication) {
+    private FichesSecuriteSejourVue vue(Long id, Authentication authentication, Long plongeeAjoutee) {
         boolean admin = authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-        return new FichesSecuriteSejourVue(droits.organise(id, authentication),
-                habilitation.peutEtablirFicheSecurite(authentication), admin, service.plongees(id));
+        boolean organise = droits.organise(id, authentication);
+        return new FichesSecuriteSejourVue(organise || habilitation.peutEtreDp(authentication), organise,
+                habilitation.peutEtablirFicheSecurite(authentication), admin, service.plongees(id), plongeeAjoutee);
     }
 }

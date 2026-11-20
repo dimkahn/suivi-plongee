@@ -159,6 +159,60 @@ class FichesSecuriteSejourTest {
     }
 
     @Test
+    @DisplayName("Un moniteur qui peut être DP (E3) ajoute une plongée imprévue à un séjour qu'il n'organise pas, sans pouvoir en supprimer")
+    void plongeeImpreveParUnDp() throws Exception {
+        String organisatrice = jeton("presidente@club.fr");
+        String dp = jeton("e3@club.fr");
+        LocalDate samedi = AUJOURDHUI.plusDays(105).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        long id = sejour(organisatrice, "Séjour fiches 7", samedi);
+        String base = "/api/sejours/" + id;
+
+        JsonNode lue = envoyer("GET", base + "/fiches-securite", dp, null, 200);
+        assertThat(lue.get("peutAjouter").asBoolean()).isTrue();
+        assertThat(lue.get("peutSupprimer").asBoolean()).isFalse();
+
+        JsonNode liste = envoyer("POST", base + "/plongees", dp, """
+                {"date":"%s","milieu":"NATUREL"}""".formatted(samedi), 200);
+        long seance = liste.get("plongeeAjoutee").asLong();
+        assertThat(plongee(liste, seance).get("date").asText()).isEqualTo(samedi.toString());
+        envoyer("DELETE", base + "/plongees/" + seance, dp, null, 403);
+    }
+
+    @Test
+    @DisplayName("Un moniteur E2, même avec le droit d'établir les fiches, n'ajoute pas de plongée au séjour")
+    void plongeeRefuseeSansNiveauDeDp() throws Exception {
+        String organisatrice = jeton("presidente@club.fr");
+        String e2 = jeton("e2@club.fr");
+        LocalDate samedi = AUJOURDHUI.plusDays(112).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        long id = sejour(organisatrice, "Séjour fiches 8", samedi);
+        assertThat(envoyer("GET", "/api/sejours/" + id + "/fiches-securite", e2, null, 200)
+                .get("peutAjouter").asBoolean()).isFalse();
+        envoyer("POST", "/api/sejours/" + id + "/plongees", e2, """
+                {"date":"%s","milieu":"NATUREL"}""".formatted(samedi), 403);
+    }
+
+    @Test
+    @DisplayName("Rejouée par le téléphone avec la même référence, une plongée ajoutée sans réseau n'est créée qu'une fois")
+    void plongeeRejouee() throws Exception {
+        String dt = jeton("e3@club.fr");
+        LocalDate samedi = AUJOURDHUI.plusDays(119).with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY));
+        long id = sejour(dt, "Séjour fiches 9", samedi);
+        String corps = """
+                {"date":"%s","milieu":"NATUREL","site":"Imprévu"}""".formatted(samedi);
+        long[] ids = new long[2];
+        for (int i = 0; i < 2; i++) {
+            String reponse = mvc.perform(post("/api/sejours/" + id + "/plongees").header("Authorization", dt)
+                            .header("X-Reference-Client", "plongee-imprevue-1")
+                            .contentType(MediaType.APPLICATION_JSON).content(corps))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            JsonNode liste = json.readTree(reponse);
+            assertThat(liste.get("plongees")).hasSize(1);
+            ids[i] = liste.get("plongeeAjoutee").asLong();
+        }
+        assertThat(ids[1]).isEqualTo(ids[0]);
+    }
+
+    @Test
     @DisplayName("Une plongée du séjour se supprime tant qu'elle n'a pas de fiche de sécurité")
     void supprimerUnePlongee() throws Exception {
         String dt = jeton("e3@club.fr");

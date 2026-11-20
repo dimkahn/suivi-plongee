@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { FileEcrituresService } from '../../core/file-ecritures.service';
+import { estProvisoire, seanceImprevue } from '../../core/plongee-imprevue';
 import { DateFrPipe, dateDuJour, dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
@@ -1230,6 +1231,14 @@ export class FicheSecuriteComponent implements AvecModifications {
 
   private async charger(): Promise<void> {
     try {
+      // Plongée imprévue créée depuis par le serveur : la fiche s'ouvre sous son vrai n°.
+      if (estProvisoire(this.seanceId)) {
+        const creee = await this.file.seanceCreee(this.seanceId);
+        if (creee !== undefined) {
+          await this.router.navigate(['/fiches-securite', creee], { replaceUrl: true, queryParamsHandling: 'preserve' });
+          return;
+        }
+      }
       // Chaque lecture retombe sur le cache hors ligne (voir « Préparer hors ligne »).
       const [seances, moniteurs, plongeursConnus, ficheLue, saisons] = await Promise.all([
         this.api.seances(),
@@ -1240,7 +1249,8 @@ export class FicheSecuriteComponent implements AvecModifications {
       ]);
       const { fiche, enAttente } = this.file.ficheAJour(this.seanceId, ficheLue, moniteurs);
       this.enAttente.set(enAttente);
-      this.seance.set(seances.find(s => s.id === this.seanceId) ?? null);
+      this.seance.set(seances.find(s => s.id === this.seanceId)
+        ?? seanceImprevue(this.file.plongeeEnAttente(this.seanceId), seances));
       this.toutesSeances.set(seances);
       // Une fiche gardée hors ligne avant l'arrivée des séances liées n'a pas ce champ.
       this.seancesLiees.set(fiche.seancesLiees ?? []);
