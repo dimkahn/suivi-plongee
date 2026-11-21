@@ -1,5 +1,5 @@
 import { VoyageDuJour, decalerJour, jourDuDepart } from './programme-du-jour';
-import { ParticipantVue, Trajet, copieTrajet, heure, jourLong } from './sejour-api';
+import { ParticipantVue, TRANSPORTS, Trajet, autreJour, copieTrajet, heure, jourLong, nomComplet } from './sejour-api';
 
 // ----------------------------------------------------------------
 //  La carte d'un voyage (demande du club, 2026 : lisible comme la page
@@ -150,4 +150,50 @@ function moment(jour: string, h: string): Date {
   const [y, m, d] = jour.split('-').map(Number);
   const [hh, mm] = h.split(':').map(Number);
   return new Date(y, m - 1, d, hh, mm);
+}
+
+/** Un groupe d'arrivées (ou de départs) : même jour, même heure, même vol. */
+export interface GroupeTrajet {
+  quand: string;
+  comment: string;
+  lieu: string | null;
+  /** Retour seulement : quand arrive l’avion ou le train, « à 21h35 » ou « le mercredi 16/06/2027 à 06h10 ». */
+  arrivee: string | null;
+  noms: string[];
+  /** Le trajet commun et ceux qui le prennent, pour y ajouter d'autres participants. */
+  trajet: Trajet;
+  ids: number[];
+}
+
+/** Un vol déjà saisi, à poser sur d'autres : sans le dossier ni le lien de celui qui l'avait (propres à chacun). */
+export function volSansReservation(t: Trajet | null): Trajet {
+  return { ...copieTrajet(t), dossier: null, lienEnregistrement: null };
+}
+
+/** Les arrivées (ou départs) regroupées par jour, heure et vol : qui attendre ensemble. */
+export function groupesTrajets(participants: readonly ParticipantVue[], sens: 'arrivee' | 'depart'): GroupeTrajet[] {
+  const groupes = new Map<string, GroupeTrajet & { tri: string }>();
+  for (const p of participants) {
+    const t = p[sens];
+    if (!t || (!t.date && !t.heure)) continue;
+    const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu, t.heureDepart?.slice(0, 5), t.lieuDepart,
+      t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee, t.lieuArrivee, t.terminal,
+      t.ouvertureEnregistrement?.slice(0, 16)]
+      .join('|');
+    const g = groupes.get(cle) ?? {
+      tri: `${t.date ?? ''} ${t.heure ?? ''}`,
+      quand: t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : 'à ' + heure(t.heure),
+      comment: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' '),
+      lieu: t.lieu,
+      // « à 21h35 à Paris-Orly », ou « le mercredi 16/06/2027 à 06h10 » pour un vol qui arrive un autre jour.
+      arrivee: (autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')
+        + (t.lieuArrivee ? ' à ' + t.lieuArrivee : '')).trim() || null,
+      // Le vol du groupe, sans le dossier ni le lien de celui qui l'ouvre (propres à chacun).
+      noms: [], trajet: volSansReservation(t), ids: []
+    };
+    g.noms.push(nomComplet(p));
+    g.ids.push(p.id);
+    groupes.set(cle, g);
+  }
+  return [...groupes.values()].sort((a, b) => a.tri.localeCompare(b.tri));
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { VoyageDuJour, conseilDepart } from './programme-du-jour';
 import { ParticipantVue, Trajet, copieTrajet, trajetSaisi } from './sejour-api';
-import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, memeVoyageQue, voyageEnCarte } from './voyage';
+import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, groupesTrajets, memeVoyageQue, voyageEnCarte } from './voyage';
 
 describe("Carte d'embarquement à envoyer", () => {
   const Mo = 1024 * 1024;
@@ -129,5 +129,41 @@ describe('Voyage du rappel, en carte', () => {
     expect(voyageEnCarte(voyage('aller', [7]), undefined)).toBeNull();
     const enVoiture = { ...moi, arrivee: { ...aller, transport: 'VOITURE' } } as ParticipantVue;
     expect(voyageEnCarte(voyage('aller', [7]), enVoiture)).toBeNull();
+  });
+});
+
+describe('Arrivées et départs regroupés : qui attendre ensemble', () => {
+  const vol: Trajet = {
+    ...copieTrajet(null), date: '2027-06-03', heure: '18:30:00', transport: 'AVION', numero: 'AF7520',
+    lieu: 'Aéroport de Toulon-Hyères', heureDepart: '17:05:00', lieuDepart: 'Paris-Orly', terminal: '1'
+  };
+  const train: Trajet = {
+    ...copieTrajet(null), date: '2027-06-03', heure: '21:05:00', transport: 'TRAIN', numero: 'TGV 6171', lieu: 'Gare de Toulon'
+  };
+  const personne = (id: number, prenom: string, arrivee: Trajet | null) =>
+    ({ id, prenom, nom: 'Test', arrivee, depart: null }) as unknown as ParticipantVue;
+
+  it('Deux personnes sur le même vol, saisi pareil : une seule carte, avec les deux', () => {
+    const groupes = groupesTrajets([personne(1, 'Mateo', vol), personne(2, 'Flora', { ...vol })], 'arrivee');
+    expect(groupes).toHaveLength(1);
+    expect(groupes[0].noms).toEqual(['Mateo Test', 'Flora Test']);
+    expect(groupes[0].ids).toEqual([1, 2]);
+    expect(groupes[0].comment).toBe('Avion AF7520');
+  });
+
+  it('Des voyages différents : une carte chacun, dans l\'ordre des heures d\'arrivée', () => {
+    const groupes = groupesTrajets([personne(1, 'Sonia', train), personne(2, 'Mateo', vol)], 'arrivee');
+    expect(groupes.map(g => g.noms)).toEqual([['Mateo Test'], ['Sonia Test']]);
+  });
+
+  it('Sans jour ni heure, ou sans trajet : personne à attendre', () => {
+    const sansHeure = { ...vol, date: null, heure: null };
+    expect(groupesTrajets([personne(1, 'A', sansHeure), personne(2, 'B', null)], 'arrivee')).toEqual([]);
+  });
+
+  it('Le trajet de la carte ne garde ni le dossier ni le lien d\'enregistrement de celui qui l\'a saisi', () => {
+    const [g] = groupesTrajets([personne(1, 'Mateo', { ...vol, dossier: 'ABC123', lienEnregistrement: 'https://x' })], 'arrivee');
+    expect(g.trajet.dossier).toBeNull();
+    expect(g.trajet.lienEnregistrement).toBeNull();
   });
 });
