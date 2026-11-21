@@ -220,3 +220,30 @@ export function groupesTrajets(participants: readonly ParticipantVue[], sens: 'a
     .sort((a, b) => a.tri.localeCompare(b.tri))
     .map(({ tri: _tri, ...g }) => g);
 }
+
+/**
+ * Les cochés dont le trajet déjà saisi serait remplacé par un autre (heure,
+ * lieu, terminal…) : la fenêtre « Un même vol » les nomme avant d'enregistrer.
+ */
+export function trajetsEcrases(participants: readonly ParticipantVue[], ids: readonly number[],
+                               sens: 'arrivee' | 'depart', trajet: Trajet): string[] {
+  const champs = ['date', 'heure', 'transport', 'numero', 'lieu', 'heureDepart', 'lieuDepart', 'heureArrivee',
+    'lieuArrivee', 'dateDepart', 'dateArrivee', 'terminal', 'ouvertureEnregistrement'] as const;
+  // « 18:30 » et « 18:30:00 », « AF 7520 » et « AF7520 » disent la même chose.
+  const valeur = (t: Trajet, c: typeof champs[number]) => {
+    const v = t[c];
+    if (v == null || v === '') return null;
+    const texte = String(v).trim();
+    if (c === 'heure' || c === 'heureDepart' || c === 'heureArrivee') return texte.slice(0, 5);
+    if (c === 'ouvertureEnregistrement') return texte.slice(0, 16);
+    if (c === 'numero') return texte.replace(/\s+/g, '').toUpperCase();
+    return texte;
+  };
+  return participants
+    .filter(p => ids.includes(p.id))
+    .filter(p => {
+      const actuel = p[sens];
+      return !!actuel && champs.some(c => valeur(actuel, c) !== null && valeur(actuel, c) !== valeur(trajet, c));
+    })
+    .map(nomComplet);
+}

@@ -27,7 +27,7 @@ import {
   CONSEIL_ASSURANCE_TYPE, TRANSPORTS, Trajet, VoitureVue, copieTrajet, heure, jourLong, nomComplet,
   remboursementsDe, texteTrajet, trajetSaisi
 } from './sejour-api';
-import { GroupeTrajet, enCarte, groupesTrajets, memeVoyageQue, volSansReservation } from './voyage';
+import { GroupeTrajet, enCarte, groupesTrajets, memeVoyageQue, trajetsEcrases, volSansReservation } from './voyage';
 import { ChambreLibre, chambresLibres, placer, sansChambre } from './chambres-sejour';
 import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
 import { AttestationAssuranceComponent } from './attestation-assurance.component';
@@ -1302,6 +1302,13 @@ function participantVide(): BrouillonParticipant {
         </ul>
         <p class="secondaire">Les personnes cochées prennent ce trajet ; celui qu'elles avaient est remplacé. Les autres ne changent pas.</p>
       </fieldset>
+      <!-- Un même vol peut avoir été saisi avec une autre heure ou un autre lieu : rien n'est remplacé sans être vu. -->
+      @if (ecrases().length > 0) {
+        <div class="alerte trajets-ecrases" role="status">
+          Trajet différent déjà saisi pour <strong>{{ ecrases().join(', ') }}</strong> : il sera remplacé par celui-ci.
+          Décochez qui doit garder le sien.
+        </div>
+      }
       <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="enregistrerVolCommun()" [disabled]="envoi()">
           Enregistrer pour {{ vol.ids.length }} personne{{ vol.ids.length > 1 ? 's' : '' }}
@@ -2043,6 +2050,12 @@ export class SejourComponent {
   vol: { sens: 'ARRIVEE' | 'DEPART'; trajet: Trajet; ids: number[] } = { sens: 'ARRIVEE', trajet: trajetVide(), ids: [] };
   /** Les vols déjà saisis pour ce sens, pour en partir sans rien recopier. */
   volsConnus = signal<GroupeTrajet[]>([]);
+
+  /** Les cochés dont le trajet déjà saisi serait remplacé (heure, lieu, terminal… différents). */
+  ecrases(): string[] {
+    const sens = this.vol.sens === 'ARRIVEE' ? 'arrivee' : 'depart';
+    return trajetsEcrases(this.sejour()?.participants ?? [], this.vol.ids, sens, this.vol.trajet);
+  }
 
   /** g : un vol déjà saisi, à compléter de nouvelles personnes ; null : un vol à saisir. */
   ouvrirVolCommun(sens: 'ARRIVEE' | 'DEPART', g: GroupeTrajet | null): void {

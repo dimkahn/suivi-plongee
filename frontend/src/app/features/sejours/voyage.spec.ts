@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { VoyageDuJour, conseilDepart } from './programme-du-jour';
 import { ParticipantVue, Trajet, copieTrajet, trajetSaisi } from './sejour-api';
-import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, groupesTrajets, memeVoyageQue, voyageEnCarte } from './voyage';
+import { carteVoyage, compagnieDuVol, enregistrement, envoiCarte, groupesTrajets, memeVoyageQue, trajetsEcrases, voyageEnCarte } from './voyage';
 
 describe("Carte d'embarquement à envoyer", () => {
   const Mo = 1024 * 1024;
@@ -175,5 +175,20 @@ describe('Arrivées et départs regroupés : qui attendre ensemble', () => {
     const [g] = groupesTrajets([personne(1, 'Mateo', { ...vol, dossier: 'ABC123', lienEnregistrement: 'https://x' })], 'arrivee');
     expect(g.trajet.dossier).toBeNull();
     expect(g.trajet.lienEnregistrement).toBeNull();
+  });
+});
+
+describe('« Ajouter des personnes à ce vol » n\'écrase rien sans le dire', () => {
+  const vol: Trajet = {
+    ...copieTrajet(null), date: '2027-06-03', heure: '18:30:00', transport: 'AVION', numero: 'AF7520',
+    lieu: 'Aéroport de Toulon-Hyères', terminal: '1'
+  };
+  const personne = (id: number, prenom: string, arrivee: Trajet | null) =>
+    ({ id, prenom, nom: 'Test', arrivee, depart: null }) as unknown as ParticipantVue;
+
+  it('Nomme le passager coché dont l\'heure ou le lieu serait remplacé par le trajet enregistré', () => {
+    const participants = [personne(1, 'Mateo', vol), personne(2, 'Flora', { ...vol, heure: '18:45:00' }),
+      personne(3, 'Sonia', null)];
+    expect(trajetsEcrases(participants, [1, 2, 3], 'arrivee', vol)).toEqual(['Flora Test']);
   });
 });
