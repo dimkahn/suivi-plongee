@@ -127,6 +127,7 @@ import { ChargementComponent } from '../../core/chargement.component';
                                 placeholder="Commentaire obligatoire (ex. : bon palmage, poumon-ballast à reprendre)"
                                 [ngModel]="commentaireDe(c.id)"
                                 (ngModelChange)="changerCommentaire(c.id, $event)"></textarea>
+                      @if (!commentaireDe(c.id).trim()) { <p class="a-completer">À compléter</p> }
                     }
                   </li>
                 }
@@ -154,7 +155,7 @@ import { ChargementComponent } from '../../core/chargement.component';
   styles: [`
     h3 { margin: var(--pas-2) 0 var(--pas); }
     .formations { display: flex; flex-wrap: wrap; gap: var(--pas); }
-    .formations .actif { background: var(--profond); color: #fff; border-color: var(--profond); }
+    .formations .actif { background: var(--profond-fonce); color: #fff; border-color: var(--profond-fonce); }
     .entete-section { display: flex; align-items: center; justify-content: space-between; gap: var(--pas); }
     .entete-section h3 { margin-bottom: var(--pas); }
     .petit { min-height: 44px; padding: 6px 12px; }
@@ -180,11 +181,11 @@ import { ChargementComponent } from '../../core/chargement.component';
       font-size: .75rem; color: var(--craie); margin-right: 4px;
     }
     .programme {
-      background: var(--en-cours-clair); color: var(--en-cours); border-radius: var(--r-s);
+      background: var(--en-cours-clair); color: var(--en-cours-texte); border-radius: var(--r-s);
       padding: 0 8px; font-size: .75rem;
     }
     .compte {
-      background: var(--profond); color: #fff; border-radius: 999px; min-width: 24px;
+      background: var(--profond-fonce); color: #fff; border-radius: 999px; min-width: 24px;
       text-align: center; font-size: .8125rem; padding: 0 6px;
     }
 
@@ -193,7 +194,8 @@ import { ChargementComponent } from '../../core/chargement.component';
       display: block; width: 100%; box-sizing: border-box; min-height: 44px;
       margin: 0 0 var(--pas); font: inherit;
     }
-    .commentaire.manquant { border-color: var(--accent); }
+    .commentaire.manquant { border: 2px solid var(--accent-fonce); margin-bottom: 0; }
+    .a-completer { margin: 2px 0 var(--pas); color: var(--accent-fonce); font-size: .875rem; font-weight: 700; }
     .actions {
       display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2);
       margin-top: var(--pas-2); position: sticky; bottom: calc(-1 * var(--pas-2));

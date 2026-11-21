@@ -465,7 +465,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 81 s
 6. Puis cochez le ou les critères travaillés. Les compétences « Au programme » du mois viennent en premier.
 7. Chaque critère coché demande son commentaire : il s'ajoutera à la fiche de chaque élève.
 8. Un deuxième critère ? Même chose, avec son propre commentaire.
-9. Tant qu'un commentaire manque, « Valider la notation » reste grisé.
+9. Tant qu'un commentaire manque, il est marqué « À compléter » et « Valider la notation » reste grisé.
 10. Rien ne recule : un critère acquis reste acquis, un critère en cours reste en cours.
 11. Un critère non abordé passe « en cours ». Le commentaire s'ajoute dans tous les cas.
 12. La notation groupée demande le réseau.

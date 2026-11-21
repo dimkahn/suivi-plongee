@@ -1,5 +1,5 @@
 // M17 — Noter les présents en une fois, depuis la feuille de présence.
-// Tournage du 2026-10-19, 13e série, retourné après l'échec du 12 octobre (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, retourné pour la notation groupée plus lisible (changer cette date dans tous les scénarios les fait tous retourner).
 // Séance du lundi 21 septembre en piscine : les présences y sont déjà
 // (données de démo), l'appel du 28 reste à M3.
 import { critere } from '../grille.mjs';
@@ -41,7 +41,7 @@ export default {
 
     await legende('Un deuxième critère ? Même chose, avec son propre commentaire.', 0);
     await cocherCritere(g, dialogue, 'Vidage du masque');
-    await legende('Tant qu\'un commentaire manque, « Valider la notation » reste grisé.', 3000);
+    await legende('Tant qu\'un commentaire manque, il est marqué « À compléter » et « Valider la notation » reste grisé.', 3500);
     await saisir(dialogue.getByLabel('Commentaire : Vidage du masque'), 'Masque à moitié plein, à genoux au fond.');
     await pause(800);
 

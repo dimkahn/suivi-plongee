@@ -54,11 +54,15 @@
 
   --accent:    #F97316;
   --accent-clair: #FDBA74;
+  /* Bordure d'un champ à compléter : 5,2:1 sur blanc (--accent n'y fait que 2,8:1). */
+  --accent-fonce: #C2410C;
 
   --acquis:    #16A34A;
   --acquis-clair:  #F0FDF4;
   --en-cours:  #B26B00;
   --en-cours-clair: #FEF3C7;
+  /* Texte d'une pastille sur --en-cours-clair : 5,7:1, lisible en petit au soleil (--en-cours n'y fait que 3,8:1). */
+  --en-cours-texte: #8A5300;
 
   --r:  16px;
   --r-s: 8px;
