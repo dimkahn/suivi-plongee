@@ -25,7 +25,7 @@ Administration, « Base d'exercices » : pour chaque compétence, ses exercices 
 
 1. Administration, puis « Base d'exercices ».
 2. Choisissez la formation : le N1 est rempli d'après le document du club, le N2 (PA20 | PE40) d'après son MFT de mai 2026 et le N3 (PA40 | PE60) d'après son MFT de décembre 2025, avec 9 exercices par compétence.
-3. « + Ajouter un exercice » sous une compétence, ou « Modifier » sur un exercice : numéro, phase, intitulé, **critères travaillés** (au moins un), déroulement, critère de réussite, **conseils de l'encadrant** (points de vigilance, erreurs fréquentes, remédiation).
+3. Chaque compétence est repliée sur son titre (avec son nombre d'exercices) : touchez-la pour l'ouvrir. « + Ajouter un exercice » sous une compétence, ou « Modifier » sur un exercice : numéro, phase, intitulé, **critères travaillés** (au moins un), déroulement, critère de réussite, **conseils de l'encadrant** (points de vigilance, erreurs fréquentes, remédiation).
 4. Enregistrez.
 5. « Fiche » montre l'exercice tel que le voient les moniteurs.
 

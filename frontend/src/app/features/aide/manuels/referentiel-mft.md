@@ -16,7 +16,7 @@ Administration, « Référentiel MFT » : une version datée du MFT par niveau, 
 
 1. Administration, puis « Référentiel MFT ».
 2. Choisissez le niveau et la version.
-3. Chaque bloc et chaque critère peut être corrigé ici.
+3. Chaque bloc est replié sur son titre : touchez-le pour voir ses critères. Chaque bloc et chaque critère peut être corrigé ici.
 
 ## Attention
 

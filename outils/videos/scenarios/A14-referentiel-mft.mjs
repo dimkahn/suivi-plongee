@@ -1,5 +1,5 @@
 // A14 — Le référentiel MFT.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, blocs repliés (toucher pour ouvrir) ; 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -20,7 +20,8 @@ export default {
     await legende('Le N2 se scinde en qualifications : PA20 (autonome à 20 m) et PE40 (encadré à 40 m).', 4000);
     await vignette();
     await defiler(800, 2500);
-    await legende('Chaque bloc et chaque critère peut être corrigé ici…', 0);
+    await legende('Chaque bloc est replié sur son titre : touchez-le pour voir ses critères. Chaque bloc et chaque critère peut être corrigé ici…', 0);
+    await toucher(page.locator('li.bloc summary').first(), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Modifier', exact: true }).first(), { apres: 1500 });
     await legende('… mais attention : la correction s\'applique aussi aux élèves en cours de formation.', 4500);
     await toucher(page.getByRole('button', { name: 'Annuler' }).first(), { apres: 1000 });

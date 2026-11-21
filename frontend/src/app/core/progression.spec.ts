@@ -1,4 +1,4 @@
-import { periodeDeLaPlongee, periodeDuMois, plagePeriode } from './progression';
+import { etapeOuverte, periodeDeLaPlongee, periodeDuMois, plagePeriode } from './progression';
 
 const periode = (moisDebut: number | null, moisFin: number | null, nom: string,
   plongeeDebut: number | null = null, plongeeFin: number | null = null) =>
@@ -25,5 +25,20 @@ describe('Période d\'une progression', () => {
   it('Le libellé suit le découpage : plongées ou mois', () => {
     expect(plagePeriode(periode(null, null, '', 5, 6))).toBe('plongées 5 – 6');
     expect(plagePeriode(periode(9, 9, ''))).toBe('septembre');
+  });
+});
+
+describe('L\'étape ouverte du Parcours', () => {
+  const periodes = [
+    { id: 1, moisDebut: 9, moisFin: 10, plongeeDebut: null, plongeeFin: null },
+    { id: 2, moisDebut: 11, moisFin: 12, plongeeDebut: null, plongeeFin: null }
+  ];
+
+  it('Celle du mois en cours', () => {
+    expect(etapeOuverte(periodes as never, '2026-11-21')).toBe(2);
+  });
+
+  it('Hors saison, ou sans mois (par plongées) : la première', () => {
+    expect(etapeOuverte(periodes as never, '2027-07-14')).toBe(1);
   });
 });

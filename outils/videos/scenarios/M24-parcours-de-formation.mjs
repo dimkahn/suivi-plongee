@@ -1,5 +1,5 @@
 // M24 — Le parcours de formation et la fiche d'un exercice.
-// Tournage du 2026-10-19, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, une étape ouverte à la fois ; 2026-10-19, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 // Parcours N1 de la saison de démo (progression type rattachée par V107) ;
 // le texte ne cite aucun exercice précis, chaque geste vérifie que son
 // élément existe.
@@ -25,14 +25,14 @@ export default {
     const enCours = page.locator('li.periode.en-cours');
     if (await enCours.count() > 0) {
       await enCours.scrollIntoViewIfNeeded();
-      await legende('Chaque étape : ses mois, son milieu, les conseils du club. Celle du mois est marquée « En ce moment ».', 4500);
+      await legende('Chaque étape : ses mois, son milieu, les conseils du club. Celle du mois, « En ce moment », est ouverte ; touchez une autre étape pour l\'ouvrir.', 5000);
     } else {
       await defiler(400, 1500);
       await legende('Chaque étape : ses mois, son milieu, les conseils du club.', 3500);
     }
     await legende('Puis ses exercices, par compétence : I initiation, P perfectionnement, M maîtrise.', 4000);
     await legende('À droite, ce que l\'exercice a déjà : schéma, photos, vidéo.', 3500);
-    const obligatoire = page.locator('a.exercice .obligatoire').first();
+    const obligatoire = page.locator('li.periode details[open] a.exercice .obligatoire').first();
     if (await obligatoire.count() > 0) {
       await obligatoire.scrollIntoViewIfNeeded();
       await legende('« Obligatoire pour valider » : l\'élève doit avoir acquis cet exercice de maîtrise pour valider sa compétence.', 4500);

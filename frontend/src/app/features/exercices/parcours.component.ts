@@ -10,7 +10,7 @@ import {
   ReferentielVue
 } from '../../core/modeles';
 import { PHASES, PastillePhaseComponent } from '../../core/phase-exercice';
-import { periodeDuMois, plagePeriode } from '../../core/progression';
+import { etapeOuverte, periodeDuMois, plagePeriode } from '../../core/progression';
 import { dateDuJour } from '../../core/date-fr';
 import { OngletsComponent, OptionOnglet } from '../../core/onglets.component';
 import { ChargementComponent } from '../../core/chargement.component';
@@ -82,6 +82,9 @@ interface GroupeCompetence {
       <ol class="periodes">
         @for (periode of p.periodes; track periode.id; let i = $index) {
           <li class="carte periode" [class.en-cours]="periode.id === periodeDuJour()?.id">
+            <!-- Une étape à la fois ouverte (celle du mois) : l'année entière faisait huit mille pixels. -->
+            <details [open]="periode.id === etapeOuverte()">
+            <summary>
             <div class="entete-periode">
               <span class="etape">Étape {{ i + 1 }}</span>
               <span class="plage">{{ plage(periode) }}</span>
@@ -91,6 +94,7 @@ interface GroupeCompetence {
               @if (periode.id === periodeDuJour()?.id) { <span class="maintenant">En ce moment</span> }
             </div>
             <h3>{{ periode.intitule }}</h3>
+            </summary>
             @if (periode.note) { <p class="note">{{ periode.note }}</p> }
             @let groupes = groupesDe(periode);
             @if (groupes.length === 0) {
@@ -120,6 +124,7 @@ interface GroupeCompetence {
               </div>
             }
             @if (resume(periode); as r) { <p class="secondaire compte">{{ r }}</p> }
+            </details>
           </li>
         }
       </ol>
@@ -147,6 +152,10 @@ interface GroupeCompetence {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .periode summary { list-style: none; cursor: pointer; }
+    .periode summary::-webkit-details-marker { display: none; }
+    .periode summary h3::after { content: ' ▾'; color: var(--craie); font-size: .875rem; }
+    .periode details[open] summary h3::after { content: ' ▴'; }
     #progression { max-width: 480px; }
     .carte { padding: var(--pas-2) var(--pas-3); margin-top: var(--pas-2); }
     .entete h2 { margin: 0; font-size: 1.0625rem; }
@@ -210,6 +219,8 @@ export class ParcoursComponent {
   private exercicesParId = computed(() => new Map(this.exercices().map(e => [e.id, e])));
 
   /** La période qui couvre le mois en cours (aucune pour une progression par plongées). */
+  etapeOuverte = computed(() => etapeOuverte(this.progression()?.periodes ?? [], dateDuJour()));
+
   periodeDuJour = computed(() => {
     const p = this.progression();
     return p ? periodeDuMois(p.periodes, dateDuJour()) : null;

@@ -43,7 +43,7 @@ On se connecte avec son adresse e-mail et son mot de passe. Sur téléphone, les
 
 En haut de chaque écran :
 
-- Dans le bandeau du haut, à droite, **« Comment faire ? »** (« Aide » sur le téléphone, avec un point d'interrogation) ouvre les manuels de l'écran où vous êtes, avec leur vidéo d'aide, dans une fenêtre : ce que vous étiez en train de saisir reste en place, « Revenir à l'écran » le retrouve. « Toutes les questions » mène à la page Aide.
+- Dans le bandeau du haut, à droite, **« Comment faire ? »** (« Aide » sur le téléphone, avec un point d'interrogation) ouvre les manuels de l'écran où vous êtes, avec leur vidéo d'aide, dans une fenêtre : ce que vous étiez en train de saisir reste en place, « Revenir à l'écran » le retrouve. « Toutes les questions » mène à la page Aide (ses rubriques sont repliées : touchez-en une, ou son bouton en haut de la page, pour l'ouvrir ; la recherche, elle, parcourt tout).
 - À gauche, **« ← … »** remonte d'un cran : de la fiche d'un bloc vers « Matériel », de la vue globale vers la fiche de suivi, d'une fiche de suivi ouverte depuis l'appel vers la feuille de présence de la même séance. Les écrans du menu n'en ont pas : le menu y mène.
 
 ## Mot de passe oublié

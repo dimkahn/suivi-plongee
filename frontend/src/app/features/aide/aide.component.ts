@@ -61,14 +61,15 @@ import { MANUELS } from './manuels';
           <a routerLink="/videos" class="bouton-discret">Toutes les vidéos</a>
         </nav>
         @for (r of rubriques(); track r.nom) {
-          <section [id]="ancre(r.nom)">
-            <h2>{{ r.nom }}</h2>
+          <!-- Repliées : toutes ouvertes, la page faisait douze mille pixels au téléphone. -->
+          <details class="rubrique" [id]="ancre(r.nom)">
+            <summary><h2>{{ r.nom }} <span class="compte">{{ r.manuels.length }}</span></h2></summary>
             <ul class="manuels">
               @for (m of r.manuels; track m.id) {
                 <ng-container *ngTemplateOutlet="carte; context: { $implicit: m, rubrique: false }" />
               }
             </ul>
-          </section>
+          </details>
         }
       }
     }
@@ -104,7 +105,12 @@ import { MANUELS } from './manuels';
       margin-left: 6px; padding: 0 8px; border-radius: 999px;
       background: var(--fond); color: var(--craie); font-size: .8125rem; font-weight: 700;
     }
-    section { margin-top: var(--pas-4); scroll-margin-top: var(--pas-2); }
+    .rubrique { margin-top: var(--pas-3); scroll-margin-top: var(--pas-2); }
+    .rubrique summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+    .rubrique summary h2 { margin: 0; display: inline; }
+    .rubrique[open] summary { margin-bottom: var(--pas); }
+    .rubrique summary::after { content: '▾'; margin-left: auto; color: var(--craie); }
+    .rubrique[open] > summary::after { content: '▴'; }
     h2 { color: var(--profond); margin-bottom: var(--pas); }
 
     .manuels {
@@ -175,7 +181,11 @@ export class AideComponent {
     return 'rubrique-' + rubrique.normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase();
   }
 
+  /** Ouvre la rubrique, puis y descend. */
   allerA(rubrique: string): void {
-    document.getElementById(this.ancre(rubrique))?.scrollIntoView({ behavior: 'smooth' });
+    const section = document.getElementById(this.ancre(rubrique)) as HTMLDetailsElement | null;
+    if (!section) return;
+    section.open = true;
+    section.scrollIntoView({ behavior: 'smooth' });
   }
 }

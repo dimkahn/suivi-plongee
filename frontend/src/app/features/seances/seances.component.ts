@@ -1,3 +1,4 @@
+import { parMois } from '../../core/par-mois';
 import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -252,8 +253,13 @@ function formulaireVide(): FormulaireSeance {
         }
       </div>
     } @else if (seancesAffichees().length > 0) {
+      <!-- Par mois : le premier à venir ouvert, les autres repliés (toute la saison s'empilait au téléphone) ;
+           tous ouverts pendant une recherche. -->
+      @for (m of moisSeances(); track m.cle) {
+      <details class="mois" [open]="m.cle === premierMoisAVenir() || !!recherche()">
+        <summary>{{ m.libelle }} <span class="secondaire">({{ m.elements.length }})</span></summary>
       <ul class="cartes">
-        @for (s of seancesAffichees(); track s.id) {
+        @for (s of m.elements; track s.id) {
           <li class="carte">
               <div class="ligne">
                 <div class="identite">
@@ -280,6 +286,8 @@ function formulaireVide(): FormulaireSeance {
           </li>
         }
       </ul>
+      </details>
+      }
     }
 
     <app-dialogue [ouvert]="seanceEnEdition() !== null" titre="Modifier la séance" [erreur]="message()"
@@ -351,6 +359,14 @@ function formulaireVide(): FormulaireSeance {
     /* Plusieurs séances par ligne dès que la largeur le permet ; une seule au téléphone.
        Dans la carte, les boutons passent sous le texte et restent en bas. */
     .cartes { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-items: stretch; }
+    .mois { margin-top: var(--pas-2); }
+    .mois > .cartes { margin-top: var(--pas); }
+    .mois summary {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px; cursor: pointer;
+      font-family: var(--font-titres); font-weight: 700; font-size: 1.0625rem;
+    }
+    .mois summary::after { content: '▾'; margin-left: auto; color: var(--craie); }
+    .mois[open] > summary::after { content: '▴'; }
     .cartes > li { display: flex; flex-direction: column; }
     .cartes .ligne { flex: 1; flex-direction: column; justify-content: space-between; align-items: stretch; }
     /* Trois boutons sur une ligne dans une carte de 300 px : un peu moins de marge intérieure, même hauteur (44 px). */
@@ -405,6 +421,8 @@ export class SeancesComponent {
   voirPassees = signal(false);
   private separation = computed(() => separerSeancesPassees(this.liste(), dateDuJour()));
   seancesPassees = computed(() => this.separation().passees);
+  moisSeances = computed(() => parMois(this.seancesAffichees(), s => s.date, dateDuJour()));
+  premierMoisAVenir = computed(() => this.moisSeances().find(m => !m.passe)?.cle ?? null);
 
   /** Un seul champ : date (ISO ou JJ/MM/AAAA), lieu, site, milieu ou info complémentaire, sans accents ni casse. */
   listeFiltree = computed(() =>

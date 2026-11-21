@@ -60,8 +60,10 @@ interface Formulaire extends DemandeExerciceBase {
       <p class="secondaire compte">{{ exercices().length }} exercice(s) dans cette formation.</p>
       @for (bloc of ref.blocs; track bloc.id) {
         <section class="carte bloc">
+          <!-- Une compétence repliée sur son titre : toutes ouvertes, vingt mille pixels. -->
+          <details>
+          <summary><h2>{{ bloc.intitule }} <span class="secondaire">({{ exercicesDuBloc(bloc.id).length }})</span></h2></summary>
           <header>
-            <h2>{{ bloc.intitule }}</h2>
             <button type="button" class="bouton-discret" (click)="nouveau(bloc)">+ Ajouter un exercice</button>
           </header>
           @let duBloc = exercicesDuBloc(bloc.id);
@@ -106,6 +108,7 @@ interface Formulaire extends DemandeExerciceBase {
               Le MFT veut chaque critère validé : cochez « Obligatoire pour valider la compétence » sur un de leurs exercices de maîtrise.
             </p>
           }
+          </details>
         </section>
       }
     }
@@ -250,6 +253,10 @@ interface Formulaire extends DemandeExerciceBase {
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .bloc summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+    .bloc summary h2 { margin: 0; display: inline; }
+    .bloc summary::after { content: '▾'; margin-left: auto; color: var(--craie); }
+    .bloc details[open] > summary::after { content: '▴'; }
     #version { max-width: 480px; }
     .compte { margin-top: var(--pas-2); }
     .bloc { margin-top: var(--pas-3); padding: var(--pas-2) var(--pas-3); }

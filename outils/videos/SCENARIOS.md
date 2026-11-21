@@ -643,7 +643,7 @@ Ajouter une séance exceptionnelle, la modifier, revoir les séances passées, v
 
 Compte : `presidente@club.fr` · formats téléphone et ordinateur · 42 s
 
-1. Une carte par séance, plusieurs par ligne ; chacune porte le programme de la progression du mois.
+1. Une carte par séance, rangées par mois (le premier à venir ouvert) ; chacune porte le programme de la progression du mois.
 2. La liste ne montre que les séances à venir ; les passées sont à un toucher.
 3. Une séance en plus : « Nouvelle séance ».
 4. Milieu et profondeur se figent dès qu'une présence ou une note y est rattachée.
@@ -797,7 +797,7 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 45 s
 1. Une version datée du MFT par niveau, avec ses règles : âge, prérequis, encadrant requis…
 2. Ces règles sont appliquées par le serveur à chaque note et chaque validation.
 3. Le N2 se scinde en qualifications : PA20 (autonome à 20 m) et PE40 (encadré à 40 m).
-4. Chaque bloc et chaque critère peut être corrigé ici…
+4. Chaque bloc est replié sur son titre : touchez-le pour voir ses critères. Chaque bloc et chaque critère peut être corrigé ici…
 5. … mais attention : la correction s'applique aussi aux élèves en cours de formation.
 6. Une nouvelle révision fédérale s'importe plutôt comme une nouvelle version.
 

@@ -17,7 +17,7 @@ Administration, « Séances » : « Nouvelle séance » ajoute une séance, chaq
 
 1. Administration, puis « Séances ».
 2. « Nouvelle séance » : date, lieu, milieu, profondeur.
-3. Pour modifier une séance, « Modifier » sur sa carte. Sur un grand écran, les séances s'affichent à plusieurs par ligne.
+3. Pour modifier une séance, « Modifier » sur sa carte. Les séances sont rangées **par mois** : le premier à venir est ouvert, touchez un autre mois pour l'ouvrir (une recherche les ouvre tous). Sur un grand écran, plusieurs cartes par ligne.
 4. La liste ne montre que les séances d'aujourd'hui et à venir ; « Voir aussi les séances passées » affiche les autres, « Masquer les séances passées » les cache à nouveau.
 5. La vue « Calendrier » montre le mois ; chaque séance porte le programme de la progression du mois.
 

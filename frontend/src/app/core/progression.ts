@@ -53,6 +53,14 @@ export function periodeDuMois<P extends Plage>(periodes: P[], date: string): P |
 }
 
 /**
+ * L'étape ouverte dans le Parcours, les autres repliées : celle du mois en
+ * cours, sinon (progression par plongées, hors saison) la première.
+ */
+export function etapeOuverte<P extends Plage & { id: number }>(periodes: P[], date: string): number | null {
+  return (periodeDuMois(periodes, date) ?? periodes[0])?.id ?? null;
+}
+
+/**
  * Progression par plongées : la première étape qui contient la plongée n
  * (1 = première plongée en milieu naturel de l'élève). Au-delà de la
  * dernière étape, la dernière : l'élève qui fait une plongée de plus en est

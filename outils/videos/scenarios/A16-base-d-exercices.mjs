@@ -1,5 +1,5 @@
 // A16 — La base d'exercices.
-// Tournage du 2026-10-19, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, blocs repliés (toucher pour ouvrir) ; 2026-10-19, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -17,6 +17,8 @@ export default {
     await legende('Pour chaque compétence : ses exercices d\'initiation, de perfectionnement et de maîtrise.', 4500);
     await legende('Sous chaque exercice, les critères qu\'il fait travailler.', 3500);
     await vignette();
+    await legende('Chaque compétence est repliée : touchez son titre pour voir ses exercices.', 0);
+    await toucher(page.locator('section.bloc summary').first(), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Modifier', exact: true }).first(), { apres: 1500 });
     await legende('« Modifier » : numéro, phase, intitulé, et les critères travaillés, au moins un.', 4500);
     await defiler(400, 2000);
@@ -28,7 +30,9 @@ export default {
     await legende('Seul un exercice de maîtrise fait passer ses critères à « Acquis ».', 4000);
     await toucher(page.getByRole('button', { name: 'Annuler' }).first(), { apres: 1000 });
     await legende('Un exercice déjà noté ne se supprime pas : on le désactive.', 3500);
-    await page.locator('.pastille.obligatoire').first().scrollIntoViewIfNeeded();
+    await page.locator('section.bloc').filter({ has: page.locator('.pastille.obligatoire') }).first()
+      .locator('details').evaluate(d => { d.open = true; });
+    await page.locator('details[open] .pastille.obligatoire').first().scrollIntoViewIfNeeded();
     await pause(1000);
     await legende('« Obligatoire » : un exercice de maîtrise que l\'élève doit avoir acquis pour valider la compétence.', 5000);
     await legende('Le MFT veut chaque critère validé : chaque critère qui a une maîtrise en a une obligatoire, cochée dans « Modifier ».', 5000);

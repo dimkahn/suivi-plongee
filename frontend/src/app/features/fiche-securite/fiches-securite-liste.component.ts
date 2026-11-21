@@ -1,3 +1,5 @@
+import { NgTemplateOutlet } from '@angular/common';
+import { parMois } from '../../core/par-mois';
 import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -19,7 +21,7 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, IntroComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, IntroComponent, NgTemplateOutlet],
   template: `
     <h1>Fiches de sécurité</h1>
     <app-intro><p class="secondaire">
@@ -111,9 +113,8 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
     } @else if (seances().length === 0) {
       <div class="carte vide"><p>Aucune fiche ne correspond aux filtres.</p></div>
     } @else {
-      <ul>
-        @for (s of seances(); track s.id) {
-          <li class="carte">
+      <!-- Le contenu d'une fiche, le même à plat ou dans son mois. -->
+      <ng-template #fiche let-s>
             <div class="ligne">
               <div class="identite">
                 <span class="nom">
@@ -172,9 +173,27 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
                 }
               </div>
             </div>
-          </li>
+      </ng-template>
+      @if (mois(); as ms) {
+        <!-- Classées par date : par mois, seuls le mois en cours et le prochain ouverts (huit mille pixels
+             au téléphone sinon) ; tous ouverts dès qu'un filtre cherche quelque chose. -->
+        @for (m of ms; track m.cle) {
+          <details class="mois" [open]="moisOuverts().has(m.cle) || filtreActif()">
+            <summary>{{ m.libelle }} <span class="secondaire">({{ m.elements.length }})</span></summary>
+            <ul>
+              @for (s of m.elements; track s.id) {
+                <li class="carte"><ng-container *ngTemplateOutlet="fiche; context: { $implicit: s }" /></li>
+              }
+            </ul>
+          </details>
         }
-      </ul>
+      } @else {
+        <ul>
+          @for (s of seances(); track s.id) {
+            <li class="carte"><ng-container *ngTemplateOutlet="fiche; context: { $implicit: s }" /></li>
+          }
+        </ul>
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -193,6 +212,14 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
     .impression-jour { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas-2); margin: var(--pas-2) 0; }
 
     ul { list-style: none; margin: var(--pas-3) 0 0; padding: 0; display: grid; gap: var(--pas-2); }
+    .mois { margin-top: var(--pas-3); }
+    .mois > ul { margin-top: var(--pas); }
+    .mois summary {
+      display: flex; align-items: center; gap: var(--pas); min-height: 44px; cursor: pointer;
+      font-family: var(--font-titres); font-weight: 700; font-size: 1.0625rem;
+    }
+    .mois summary::after { content: '▾'; margin-left: auto; color: var(--craie); }
+    .mois[open] > summary::after { content: '▴'; }
     li { padding: var(--pas-2); }
     .ligne { display: flex; justify-content: space-between; align-items: center; gap: var(--pas-2); flex-wrap: wrap; }
     .identite { display: flex; flex-direction: column; gap: 2px; }
@@ -254,6 +281,16 @@ export class FichesSecuriteListeComponent {
         if (tri === 'NUMERO') return a.ordre - b.ordre || b.date.localeCompare(a.date);
         return b.date.localeCompare(a.date) || a.ordre - b.ordre;
       });
+  });
+
+  /** Par mois quand la liste est classée par date ; à plat par n° de plongée. */
+  mois = computed(() => this.tri() === 'NUMERO' ? null : parMois(this.seances(), s => s.date, dateDuJour()));
+  filtreActif = computed(() => !!this.filtreDate() || !!this.filtreLieu().trim());
+  /** Le mois en cours et le prochain mois qui a des fiches. */
+  moisOuverts = computed(() => {
+    const courant = dateDuJour().slice(0, 7);
+    const aVenir = (this.mois() ?? []).map(m => m.cle).filter(c => c > courant).sort()[0];
+    return new Set([courant, ...(aVenir ? [aVenir] : [])]);
   });
 
   dialogueOuvert = signal(false);

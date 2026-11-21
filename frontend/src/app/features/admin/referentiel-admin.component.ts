@@ -125,7 +125,9 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
           <ul class="blocs">
             @for (b of r.blocs; track b.id) {
               <li class="carte bloc">
-                  <div class="entete-bloc">
+                <!-- Bloc replié sur son en-tête : tous les critères dépliés faisaient vingt mille pixels. -->
+                <details>
+                  <summary class="entete-bloc">
                     <span class="nom">
                       {{ b.intitule }}
                       @if (b.regroupement) { <span class="regroupement">{{ b.regroupement }}</span> }
@@ -134,7 +136,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                       {{ b.evaluationTransverse ? 'Évaluation transverse' : 'Évaluation par bloc' }}
                       @if (b.validerEnDernier) { · à valider en dernier }
                     </span>
-                  </div>
+                  </summary>
 
                   @if (b.competenceAttendue) {
                     <p class="competence-attendue">{{ b.competenceAttendue }}</p>
@@ -183,6 +185,7 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
                       Supprimer ce bloc
                     </button>
                   </div>
+                </details>
               </li>
             }
           </ul>
@@ -349,6 +352,10 @@ function formulaireCritereDepuis(c: CritereReferentielVue): DemandeCritereRefere
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
+    .bloc summary { cursor: pointer; list-style: none; }
+    .bloc summary::-webkit-details-marker { display: none; }
+    .bloc summary .nom::after { content: ' ▾'; color: var(--craie); }
+    .bloc details[open] summary .nom::after { content: ' ▴'; }
     h1 { margin-bottom: var(--pas); }
     code { background: var(--fond); padding: 1px 6px; border-radius: var(--r-s); }
 
