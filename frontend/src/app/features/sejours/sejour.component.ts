@@ -488,7 +488,7 @@ function participantVide(): BrouillonParticipant {
                       @if (n.has(p.id)) {
                         <span class="etiquette-etat ok etat-notifications">🔔 Notifications activées</span>
                       } @else {
-                        <span class="etiquette-etat neutre etat-notifications">🔕 Pas de notifications</span>
+                        <span class="etat-notifications sans-notifications">🔕 Pas de notifications</span>
                       }
                     }
                   </summary>
@@ -515,7 +515,9 @@ function participantVide(): BrouillonParticipant {
                   </div>
                 }
                 </details>
-                <!-- Les gestes courants sans ouvrir la fiche ; « Retirer » reste dedans, à l'abri d'un geste malheureux. -->
+                <!-- Les gestes courants sans ouvrir la fiche, sur une ligne : Appeler, Modifier, et « ⋯ » pour le QR code
+                     et la demande d'informations (quatre boutons empilés doublaient la hauteur de chaque carte) ;
+                     « Retirer » reste dans la fiche, à l'abri d'un geste malheureux. -->
                 @if (p.telephone || s.gere) {
                   <div class="actions actions-rapides sans-impression">
                     @if (p.telephone) {
@@ -525,16 +527,10 @@ function participantVide(): BrouillonParticipant {
                     @if (s.gere) {
                       <button type="button" class="bouton-discret action-rapide" (click)="ouvrirParticipant(p)"
                               [attr.aria-label]="'Modifier ' + nomComplet(p)"><span aria-hidden="true">✏️</span> Modifier</button>
-                      <button type="button" class="bouton-discret action-rapide bouton-qr-connexion" (click)="montrerQrCode(p)"
-                              title="Un QR code d'une minute à scanner avec son téléphone : il entre dans le séjour sans e-mail ni code">
-                        <span aria-hidden="true">▦</span> QR code de connexion
+                      <button type="button" class="bouton-discret action-rapide plus-participant" (click)="plusPour.set(p)"
+                              [attr.aria-label]="'Autres actions pour ' + nomComplet(p)">
+                        <span aria-hidden="true">⋯</span>
                       </button>
-                      @if (p.email) {
-                        <button type="button" class="bouton-discret action-rapide" (click)="envoyerInvitations(p)" [disabled]="envoi()"
-                                title="Un e-mail pour qu'il renseigne lui-même son voyage, ses repas, la personne à prévenir et ses frais">
-                          <span aria-hidden="true">✉️</span> Lui demander ses informations
-                        </button>
-                      }
                     }
                   </div>
                 }
@@ -1093,6 +1089,28 @@ function participantVide(): BrouillonParticipant {
     </app-dialogue>
 
     <!-- Le QR code qui connecte un participant sur son téléphone, une minute (demande du club, 2026). -->
+    <app-dialogue [ouvert]="plusPour() !== null" [choix]="true" [titre]="plusPour() ? nomComplet(plusPour()!) : ''"
+                  (fermer)="plusPour.set(null)">
+      @if (plusPour(); as p) {
+        <ul class="liste-plus-participant">
+          <li>
+            <button type="button" class="bouton-discret bouton-qr-connexion" (click)="plusPour.set(null); montrerQrCode(p)">
+              <span aria-hidden="true">▦</span> QR code de connexion
+            </button>
+            <p class="secondaire">Un QR code d'une minute à scanner avec son téléphone : il entre dans le séjour sans e-mail ni code.</p>
+          </li>
+          @if (p.email) {
+            <li>
+              <button type="button" class="bouton-discret" (click)="plusPour.set(null); envoyerInvitations(p)" [disabled]="envoi()">
+                <span aria-hidden="true">✉️</span> Lui demander ses informations
+              </button>
+              <p class="secondaire">Un e-mail pour qu'il renseigne lui-même son voyage, ses repas, la personne à prévenir et ses frais.</p>
+            </li>
+          }
+        </ul>
+      }
+    </app-dialogue>
+
     <app-dialogue [ouvert]="!!qrPour()" [erreur]="erreurQr()"
                   [titre]="'Connecter ' + (qrPour() ? nomComplet(qrPour()!) : '')"
                   (fermer)="fermerQrCode()">
@@ -1447,6 +1465,12 @@ function participantVide(): BrouillonParticipant {
     .filtres-participants { margin: var(--pas) 0; }
     .actions-rapides { padding-bottom: var(--pas-2); }
     .action-rapide { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .actions-rapides { flex-wrap: nowrap; }
+    .plus-participant { min-width: 44px; justify-content: center; font-size: 1.25rem; line-height: 1; }
+    .sans-notifications { font-size: .8125rem; color: var(--craie); }
+    .liste-plus-participant { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2); }
+    .liste-plus-participant button { width: 100%; min-height: 48px; justify-content: flex-start; text-align: left; gap: 6px; }
+    .liste-plus-participant p { margin: 4px 0 0; }
     .qr-connexion { width: min(100%, 18rem); margin: var(--pas-2) auto; }
     .centre { text-align: center; }
     .etat-infos { margin-left: auto; font-size: .8125rem; color: var(--en-cours-texte); }
@@ -2101,6 +2125,9 @@ export class SejourComponent {
     if (!confirm(`Envoyer à ${nomComplet(p)} un e-mail pour qu'il renseigne ses informations pour le séjour ?`)) return;
     this.envoyerEmails('invitations', [p.id]);
   }
+
+  /** Le participant dont la fenêtre « ⋯ » (QR code, demande d'informations) est ouverte. */
+  plusPour = signal<ParticipantVue | null>(null);
 
   /** Le participant dont le QR code de connexion est montré. */
   qrPour = signal<ParticipantVue | null>(null);
