@@ -1,5 +1,5 @@
 // D2 — Ajouter un équipement.
-// Tournage du 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Ajouter un équipement » et « Sorties » dans « ⋯ » ; 2026-10-12, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -12,7 +12,8 @@ export default {
   async jouer({ page, pause, legende, toucher, saisir, dater, choisir, cocher, menu, vignette }) {
     await page.goto(`${APPLI}/materiel`);
     await pause(1200);
-    await legende('Un bloc neuf arrive au club : « Ajouter un équipement ».', 0);
+    await legende('Un bloc neuf arrive au club : « ⋯ », puis « Ajouter un équipement ».', 0);
+    await toucher(page.getByRole('button', { name: 'Autres actions pour le matériel' }), { apres: 800 });
     await toucher(page.getByRole('link', { name: 'Ajouter un équipement' }), { apres: 1500 });
     await legende('Un seul formulaire pour les quatre types : les champs suivent le type choisi.', 0);
     await toucher(page.locator('label.choix').filter({ hasText: 'Bloc' }).first(), { apres: 800 });

@@ -9,11 +9,11 @@ questions:
 - Comment enregistrer un nouvel équipement ?
 - Comment l'appli calcule les échéances d'un bloc ?
 ---
-Dans « Matériel », « Ajouter un équipement » : un seul formulaire pour les quatre types, dont les champs suivent le type choisi. Les dates de contrôle font démarrer les échéances.
+Dans « Matériel », « ⋯ », puis « Ajouter un équipement » : un seul formulaire pour les quatre types, dont les champs suivent le type choisi. Les dates de contrôle font démarrer les échéances.
 
 ## Pas à pas
 
-1. Menu, « Matériel », puis « Ajouter un équipement ».
+1. Menu, « Matériel », « ⋯ », puis « Ajouter un équipement ».
 2. Choisissez le type : bloc, détendeur, gilet ou combinaison.
 3. Remplissez la référence et les caractéristiques ; pour un bloc, son régime (TIV ou non).
 4. Indiquez les dates des derniers contrôles.

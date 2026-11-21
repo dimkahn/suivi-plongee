@@ -8,18 +8,18 @@ questions:
 - Comment exporter le matériel dans Excel ?
 - Peut-on réimporter le classeur sans faire de doublons ?
 ---
-Dans « Matériel », « Importer le classeur Excel » reprend les blocs et gilets de l'ancien classeur « Historique Blocs » ; « Exporter le classeur Excel » produit un fichier au même format.
+Dans « Matériel », sous « ⋯ » (à côté de « Prêts »), « Importer le classeur Excel » reprend les blocs et gilets de l'ancien classeur « Historique Blocs » ; « Exporter le classeur Excel » produit un fichier au même format.
 
 ## Importer
 
 1. Menu, « Matériel ».
-2. « Importer le classeur Excel », puis choisissez le fichier `.xlsx`.
+2. « ⋯ », « Importer le classeur Excel », puis choisissez le fichier `.xlsx`.
 3. Le bilan s'affiche : blocs et gilets ajoutés, lignes d'historique reprises au journal.
 
 ## Exporter
 
 1. Menu, « Matériel ».
-2. « Exporter le classeur Excel » : le fichier arrive dans les téléchargements.
+2. « ⋯ », « Exporter le classeur Excel » : le fichier arrive dans les téléchargements.
 
 ## Bon à savoir
 

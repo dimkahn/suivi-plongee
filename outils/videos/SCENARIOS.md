@@ -679,7 +679,7 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 41 s
 4. Sa formation sera choisie à l'inscription (vidéo suivante).
 5. Sur chaque carte, l'inscription au club de la saison : OK en vert, KO en rouge.
 6. Anis a réglé son inscription : un appui sur sa pastille la passe à OK.
-7. Le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.
+7. Sous « Filtres », le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.
 8. Le filtre « Groupe » ne garde que les élèves d'un groupe d'entraînement, ou ceux sans groupe.
 9. Un élève qui quitte le club s'archive : son historique reste.
 
@@ -869,7 +869,7 @@ Enregistrer un bloc neuf : caractéristiques, régime TIV, dates de contrôle.
 
 Compte : `e3@club.fr` · formats téléphone et ordinateur · 31 s
 
-1. Un bloc neuf arrive au club : « Ajouter un équipement ».
+1. Un bloc neuf arrive au club : « ⋯ », puis « Ajouter un équipement ».
 2. Un seul formulaire pour les quatre types : les champs suivent le type choisi.
 3. Les dates de contrôle font démarrer les échéances.
 4. Prochaine inspection, prochaine requalification : l'appli les calcule.
@@ -948,7 +948,7 @@ Rattacher les prêts à une sortie : retour prévu au dernier jour, et les éch�
 
 Compte : `e3@club.fr` · formats téléphone et ordinateur · 48 s
 
-1. Le directeur technique gère aussi les sorties : « Sorties ».
+1. Le directeur technique gère aussi les sorties : « ⋯ », puis « Sorties ».
 2. On choisit la sortie : le retour prévu se cale sur son dernier jour.
 3. Le bloc B-02 : son inspection TIV tombe avant la fin de la sortie…
 4. … l'appli refuse, et dit pourquoi : l'échéance doit couvrir tout le prêt.

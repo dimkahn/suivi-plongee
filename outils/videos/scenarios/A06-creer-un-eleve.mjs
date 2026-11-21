@@ -1,5 +1,5 @@
 // A6 — Créer le dossier d'un élève.
-// Tournage du 2026-11-19 : élèves en grille, filtre par groupe (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21 : filtres repliés sous « Filtres » ; 2026-11-19 : élèves en grille, filtre par groupe (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -35,7 +35,8 @@ export default {
     await legende('Anis a réglé son inscription : un appui sur sa pastille la passe à OK.', 0);
     await toucher(page.locator('li.carte').filter({ hasText: 'Anis Dulac' })
       .getByRole('button', { name: /Inscription .* KO/ }), { apres: 3000 });
-    await legende('Le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.', 0);
+    await legende('Sous « Filtres », le filtre « Inscription au club » retrouve ceux qui ne sont pas à jour.', 0);
+    await toucher(page.locator('.plus-filtres summary'), { apres: 800 });
     await choisir('#filtre-inscription', 'KO : pas à jour');
     await pause(3000);
     await choisir('#filtre-inscription', 'Tous');

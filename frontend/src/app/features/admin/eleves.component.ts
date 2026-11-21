@@ -1,3 +1,4 @@
+import { nombreFiltresActifs } from '../../core/filtres-actifs';
 import { Component, DestroyRef, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -232,6 +233,10 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           }
         </select>
       </div>
+      <!-- Les filtres moins courants, repliés (cinq listes passaient avant les élèves au téléphone). -->
+      <details class="plus-filtres" [open]="filtresOuverts()" (toggle)="filtresOuverts.set($any($event.target).open)">
+        <summary>Filtres{{ filtresActifs() ? ' (' + filtresActifs() + ')' : '' }}</summary>
+        <div class="filtres-replies">
       <div>
         <label for="filtre-groupe">Groupe</label>
         <select id="filtre-groupe" name="filtreGroupe" [ngModel]="filtreGroupe()" (ngModelChange)="filtreGroupe.set($event)">
@@ -265,6 +270,8 @@ function trier(eleves: EleveVue[]): EleveVue[] {
           <option value="OK">OK : à jour</option>
         </select>
       </div>
+        </div>
+      </details>
     </section>
 
     @if (aVerifier() > 0) {
@@ -459,7 +466,13 @@ function trier(eleves: EleveVue[]): EleveVue[] {
       display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); align-items: flex-end;
       margin-bottom: var(--pas-2);
     }
-    .filtres > div { min-width: 220px; flex: 1 1 220px; }
+    .filtres > div, .filtres-replies > div { min-width: 220px; flex: 1 1 220px; }
+    .plus-filtres { flex: 1 1 100%; }
+    .plus-filtres summary {
+      display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--pas-2); cursor: pointer;
+      border: 1px solid var(--trait); border-radius: var(--r-s); background: var(--carte); font-weight: 700;
+    }
+    .filtres-replies { display: flex; flex-wrap: wrap; gap: var(--pas-2) var(--pas-3); margin-top: var(--pas-2); }
     .filtres label { margin: 0 0 4px; }
     .filtres input, .filtres select { margin: 0; }
 
@@ -552,6 +565,11 @@ export class ElevesComponent {
   readonly SANS_GROUPE = 0;
   /** Id du groupe d'entraînement filtré, SANS_GROUPE, ou null : tous. Groupes de la saison du filtre. */
   filtreGroupe = signal<number | null>(null);
+  filtresOuverts = signal(false);
+  /** Les filtres repliés qui ne sont pas à « Tous » (la saison et la recherche restent visibles). */
+  readonly filtresActifs = computed(() => nombreFiltresActifs(
+    [this.filtreGroupe(), this.filtreStatut(), this.filtreCaci(), this.filtreInscription()],
+    [null, 'TOUS', 'TOUS', 'TOUS']));
   groupesSaison = signal<GroupeEntrainementVue[]>([]);
 
   readonly etatCaci = etatCaci;

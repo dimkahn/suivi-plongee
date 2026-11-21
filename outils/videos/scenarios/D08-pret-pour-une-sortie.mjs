@@ -1,5 +1,5 @@
 // D8 — Prêter pour une sortie.
-// Tournage du 2026-10-19, 13e série, sortie datée d'après le jour du tournage (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Ajouter un équipement » et « Sorties » dans « ⋯ » ; 2026-10-19, 13e série, sortie datée d'après le jour du tournage (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 // L'inspection TIV du bloc B-02 de démonstration tombe 15 jours après le
@@ -20,7 +20,8 @@ export default {
   async jouer({ page, pause, legende, toucher, saisir, dater, choisir, cocher, rechercherEtChoisir, vignette }) {
     await page.goto(`${APPLI}/materiel`);
     await pause(1200);
-    await legende('Le directeur technique gère aussi les sorties : « Sorties ».', 0);
+    await legende('Le directeur technique gère aussi les sorties : « ⋯ », puis « Sorties ».', 0);
+    await toucher(page.getByRole('button', { name: 'Autres actions pour le matériel' }), { apres: 800 });
     await toucher(page.getByRole('link', { name: 'Sorties' }), { apres: 1500 });
     await toucher(page.getByRole('button', { name: 'Nouvelle sortie' }), { apres: 800 });
     await saisir('#nom', 'Week-end de la Toussaint');

@@ -24,7 +24,7 @@ Administration, « Élèves » : identité, CACI (date de l'examen, fin de valid
 4. Pour un mineur, cochez l'autorisation du responsable légal : elle couvre la pratique.
 5. Le droit à l'image est un accord à part : sans lui, pas de photo. Avec lui, « Prendre une photo » ouvre l'appareil photo du téléphone, « Choisir dans mes photos » reprend une photo de la galerie ; recadrez, validez. Pour un élève déjà créé : menu « Actions » de sa ligne, mêmes choix.
 6. Enregistrez, puis inscrivez-le en formation (voir « Inscrire un élève en formation »).
-7. **Inscription au club** : sur chaque carte, une pastille pour la saison choisie en haut, « Inscription … : OK » en vert ou « KO » en rouge. Quand l'élève a réglé son inscription, touchez la pastille : elle passe à OK (un nouvel appui la remet à KO). Le filtre « Inscription au club » → « KO : pas à jour » liste ceux à relancer.
+7. **Inscription au club** : sur chaque carte, une pastille pour la saison choisie en haut, « Inscription … : OK » en vert ou « KO » en rouge. Quand l'élève a réglé son inscription, touchez la pastille : elle passe à OK (un nouvel appui la remet à KO). Le filtre « Inscription au club » → « KO : pas à jour » liste ceux à relancer (les filtres Groupe, Statut, CACI et Inscription sont sous « **Filtres** », en haut de la liste ; « Filtres (2) » dit combien sont actifs).
 8. **Par groupe** : chaque carte dit le groupe d'entraînement de l'élève pour la saison choisie en haut ; le filtre « **Groupe** » ne garde que les élèves d'un groupe, ou ceux « Sans groupe » (il revient à « Tous les groupes » quand la saison change). Les cartes s'affichent à plusieurs par ligne sur un grand écran.
 
 ## Bon à savoir

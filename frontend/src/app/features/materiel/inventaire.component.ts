@@ -1,3 +1,4 @@
+import { PlusActionsComponent } from '../../core/plus-actions.component';
 import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -21,7 +22,7 @@ import { ChargementComponent } from '../../core/chargement.component';
  */
 @Component({
   selector: 'app-inventaire',
-  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, IntroComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, IntroComponent, PlusActionsComponent],
   template: `
     <div class="entete">
       <div>
@@ -35,8 +36,10 @@ import { ChargementComponent } from '../../core/chargement.component';
         <a routerLink="/materiel/scanner" class="bouton-principal">Scanner une étiquette</a>
       @if (auth.gereMateriel()) {
         <a routerLink="/materiel/prets" class="bouton-principal">Prêts</a>
-        <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
+        <!-- Le reste dans « ⋯ » : six boutons passaient avant la liste au téléphone. -->
+        <app-plus-actions sujet="le matériel" titre="Matériel">
         <a routerLink="/materiel/nouveau" class="bouton-discret">Ajouter un équipement</a>
+        <a routerLink="/admin/sorties" class="bouton-discret">Sorties</a>
         <label class="bouton-discret import" [class.occupe]="importEnCours()" [attr.aria-busy]="importEnCours() || null">
           {{ importEnCours() ? 'Import en cours…' : 'Importer le classeur Excel' }}
           <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -46,6 +49,7 @@ import { ChargementComponent } from '../../core/chargement.component';
                 title="Blocs et gilets, au même format que le classeur importé">
           {{ exportEnCours() ? 'Export en cours…' : 'Exporter le classeur Excel' }}
         </button>
+        </app-plus-actions>
       }
       </div>
     </div>
