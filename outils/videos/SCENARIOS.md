@@ -462,16 +462,17 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 81 s
 3. Filtrez sur votre groupe, puis faites l'appel si ce n'est pas déjà fait.
 4. Touchez « Noter les présents ».
 5. Les présents du groupe sont tous cochés. Décochez celui qui n'a pas fait l'exercice.
-6. Puis cochez le ou les critères travaillés. Les compétences « Au programme » du mois viennent en premier.
-7. Chaque critère coché demande son commentaire : il s'ajoutera à la fiche de chaque élève.
-8. Un deuxième critère ? Même chose, avec son propre commentaire.
-9. Tant qu'un commentaire manque, il est marqué « À compléter » et « Valider la notation » reste grisé.
-10. Rien ne recule : un critère acquis reste acquis, un critère en cours reste en cours.
-11. Un critère non abordé passe « en cours ». Le commentaire s'ajoute dans tous les cas.
-12. La notation groupée demande le réseau.
-13. Le bilan s'affiche en haut de la feuille de présence.
-14. Dans la fiche de Hugo, le vidage de masque est passé « en cours », avec le commentaire.
-15. Pour noter un élève à part, sa grille reste là, comme avant.
+6. Votre groupe a préparé la séance ? Un bouton coche d'un coup les critères de ses exercices, marqués du nom de l'exercice.
+7. Sinon, cochez le ou les critères travaillés. Les compétences « Au programme » du mois viennent en premier.
+8. Chaque critère coché demande son commentaire : il s'ajoutera à la fiche de chaque élève.
+9. Un deuxième critère ? Même chose, avec son propre commentaire.
+10. Tant qu'un commentaire manque, il est marqué « À compléter » et « Valider la notation » reste grisé.
+11. Rien ne recule : un critère acquis reste acquis, un critère en cours reste en cours.
+12. Un critère non abordé passe « en cours ». Le commentaire s'ajoute dans tous les cas.
+13. La notation groupée demande le réseau.
+14. Le bilan s'affiche en haut de la feuille de présence.
+15. Dans la fiche de Hugo, le vidage de masque est passé « en cours », avec le commentaire.
+16. Pour noter un élève à part, sa grille reste là, comme avant.
 
 ### M20 — Noter au nom d'un autre encadrant
 

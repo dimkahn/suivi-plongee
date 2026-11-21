@@ -36,9 +36,7 @@ import { ChargementComponent } from '../../core/chargement.component';
     <app-dialogue titre="Noter les présents" [choix]="true" [large]="true" [ouvert]="ouvert()" (fermer)="ouvert.set(false)">
       @if (ouvert()) {
         <p class="secondaire">
-          Chaque critère coché demande son commentaire. Un critère déjà acquis reste acquis, un critère
-          en cours reste en cours : seul le commentaire s'ajoute. Un critère non abordé passe en cours,
-          avec le commentaire.
+          Chaque critère coché demande son commentaire. Rien ne recule : seul un critère non abordé passe en cours.
         </p>
 
         @if (!reseau.enLigne()) {
@@ -76,7 +74,7 @@ import { ChargementComponent } from '../../core/chargement.component';
           <div class="entete-section">
             <h3>Élèves ({{ cursusCoches().size }}/{{ elevesFormation().length }})</h3>
             <button type="button" class="bouton-discret petit" (click)="basculerTous()">
-              {{ cursusCoches().size === elevesFormation().length ? 'Aucun' : 'Tous' }}
+              {{ cursusCoches().size === elevesFormation().length ? 'Tout décocher' : 'Tout cocher' }}
             </button>
           </div>
           <ul class="liste-coches eleves">
@@ -115,10 +113,12 @@ import { ChargementComponent } from '../../core/chargement.component';
                       <input type="checkbox" [checked]="criteresCoches().has(c.id)"
                              (change)="basculer(criteresCoches, c.id)">
                       <!-- Le critère de réalisation, souvent commun à tout le bloc, alourdirait la liste. -->
-                      <span [attr.title]="c.critereRealisation">{{ c.savoirFaire }}</span>
-                      @if (criteresDesExercices().get(c.id); as exercice) {
-                        <span class="programme" [attr.title]="exercice">Exercice</span>
-                      }
+                      <span class="critere">
+                        <span [attr.title]="c.critereRealisation">{{ c.savoirFaire }}</span>
+                        @if (criteresDesExercices().get(c.id); as exercice) {
+                          <span class="programme">Exercice : {{ exercice }}</span>
+                        }
+                      </span>
                     </label>
                     @if (criteresCoches().has(c.id)) {
                       <textarea class="commentaire" rows="2" required
@@ -168,6 +168,7 @@ import { ChargementComponent } from '../../core/chargement.component';
     }
     .liste-coches label:hover { background: var(--fond); }
     .liste-coches input { width: 22px; height: 22px; flex-shrink: 0; margin: 0; }
+    .critere { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--pas); min-width: 0; }
 
     .bloc { border: 1px solid var(--trait); border-radius: var(--r-s); margin-bottom: var(--pas); }
     .bloc summary {

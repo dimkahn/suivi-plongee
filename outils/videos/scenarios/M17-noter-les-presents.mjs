@@ -32,7 +32,7 @@ export default {
     await legende('Les présents du groupe sont tous cochés. Décochez celui qui n\'a pas fait l\'exercice.', 4000);
     await vignette();
 
-    await legende('Votre groupe a préparé la séance ? Un bouton coche d\'un coup les critères de ses exercices.', 4000);
+    await legende('Votre groupe a préparé la séance ? Un bouton coche d\'un coup les critères de ses exercices, marqués du nom de l\'exercice.', 4500);
     await legende('Sinon, cochez le ou les critères travaillés. Les compétences « Au programme » du mois viennent en premier.', 0);
     await cocherCritere(g, dialogue, 'Palmage ventral en surface');
     await legende('Chaque critère coché demande son commentaire : il s\'ajoutera à la fiche de chaque élève.', 0);
