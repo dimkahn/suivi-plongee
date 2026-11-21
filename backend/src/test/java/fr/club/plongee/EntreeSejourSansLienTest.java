@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(EntreeSejourSansLienTest.BoiteAuxLettres.class)
 class EntreeSejourSansLienTest {
 
-    record Courriel(String adresse, String sujet, String corps) {}
+    record Courriel(String adresse, String sujet, String corps, String html) {}
 
     static final List<Courriel> COURRIELS = new ArrayList<>();
 
@@ -51,7 +51,10 @@ class EntreeSejourSansLienTest {
                 @Override public void envoyerLienReinitialisation(Utilisateur u, String jeton) {}
                 @Override public void envoyerLienInvitation(Utilisateur u, String jeton) {}
                 @Override public boolean envoyerCourriel(String adresse, String sujet, String corps) {
-                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps)); }
+                    return envoyerCourriel(adresse, sujet, corps, null);
+                }
+                @Override public boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
+                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps, html)); }
                     return true;
                 }
             };
@@ -130,6 +133,23 @@ class EntreeSejourSansLienTest {
 
         envoyer("DELETE", "/api/sorties/" + proche, dt, null, 204);
         envoyer("DELETE", "/api/sorties/" + loin, dt, null, 204);
+    }
+
+    @Test
+    @DisplayName("Le code part aussi mis en forme : le même code, en gros caractères, dans la version HTML")
+    void codeMisEnForme() throws Exception {
+        String dt = jeton("e3@club.fr");
+        String email = "noe.miseenforme@exemple.fr";
+        long sejour = sejourAvecInvite(dt, "Séjour du code mis en forme", 310, email);
+
+        envoyer("POST", "/api/public/sejours/code", null, "{\"email\":\"%s\"}".formatted(email), 204);
+        Courriel code = pour(email).getLast();
+        String chiffres = extraire(code.corps(), "(\\d{6})");
+
+        assertThat(code.html()).as("version HTML").isNotNull();
+        assertThat(code.html()).contains(chiffres, "letter-spacing", "cid:logo-structure", "Séjour du code mis en forme");
+
+        envoyer("DELETE", "/api/sorties/" + sejour, dt, null, 204);
     }
 
     @Test

@@ -1,7 +1,5 @@
 package fr.club.plongee.notification.courriel;
 
-import fr.club.plongee.identite.IdentiteStructureService;
-import fr.club.plongee.identite.IdentiteStructureService.IdentiteVue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,33 +10,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Le gabarit des e-mails : HTML aux couleurs de la structure, texte équivalent, rien de chargé de l'extérieur. */
 class GabaritCourrielTest {
-
-    /** L'identité de la structure, sans base : couleurs données, logo de quelques octets. */
-    static class IdentiteDonnee extends IdentiteStructureService {
-        private final String principale, foncee, accent;
-
-        IdentiteDonnee(String principale, String foncee, String accent) {
-            super(null, "Club de plongée d'essai");
-            this.principale = principale;
-            this.foncee = foncee;
-            this.accent = accent;
-        }
-
-        @Override
-        public IdentiteVue lire() {
-            return new IdentiteVue(null, null, null, principale, foncee, accent, false, 0);
-        }
-
-        @Override
-        public String nom() {
-            return "Club de plongée d'essai";
-        }
-
-        @Override
-        public byte[] logoPng() {
-            return new byte[] {1, 2, 3};
-        }
-    }
 
     private final GabaritCourriel gabarit = new GabaritCourriel(new IdentiteDonnee(null, null, null));
 

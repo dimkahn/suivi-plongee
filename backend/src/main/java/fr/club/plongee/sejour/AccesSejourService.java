@@ -1,5 +1,7 @@
 package fr.club.plongee.sejour;
 
+import fr.club.plongee.notification.courriel.Courriel;
+import fr.club.plongee.notification.courriel.GabaritCourriel;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
@@ -90,17 +92,19 @@ public class AccesSejourService {
     private final ServiceNotification notification;
     private final IdentiteStructureService identite;
     private final String urlFrontend;
+    private final GabaritCourriel gabarit;
     private final SecureRandom hasard = new SecureRandom();
 
     public AccesSejourService(NamedParameterJdbcTemplate jdbc, FraisService frais, SejourService sejours,
                               ServiceNotification notification, IdentiteStructureService identite,
-                              @Value("${app.frontend-url}") String urlFrontend) {
+                              @Value("${app.frontend-url}") String urlFrontend, GabaritCourriel gabarit) {
         this.jdbc = jdbc;
         this.frais = frais;
         this.sejours = sejours;
         this.notification = notification;
         this.identite = identite;
         this.urlFrontend = urlFrontend;
+        this.gabarit = gabarit;
     }
 
     // ------------------------------------------------------------------
@@ -224,10 +228,12 @@ public class AccesSejourService {
                         .addValue("maintenant", maintenant()));
         // À l'adresse enregistrée pour le participant, pas à celle tapée sur la page.
         String adresse = jdbc.queryForObject("SELECT email FROM sejour_participant WHERE id = :p", p, String.class);
-        notification.envoyerCourriel(adresse.trim(), "Votre code — séjour " + sejour.nom(),
-                "Votre code pour entrer dans le séjour « " + sejour.nom() + " » : " + chiffres + "\n\n"
-                        + "Il est valable " + MINUTES_VALIDITE_CODE + " minutes. Si vous n'avez rien demandé, "
-                        + "ignorez ce message.\n\n" + identite.nom() + "\n");
+        notification.envoyerCourriel(adresse.trim(), "Votre code — séjour " + sejour.nom(), gabarit.rendre(
+                Courriel.titre("Votre code").sousTitre(sejour.nom())
+                        .paragraphe("Votre code pour entrer dans le séjour «\u00A0" + sejour.nom() + "\u00A0» :")
+                        .code(chiffres)
+                        .note("Il est valable " + MINUTES_VALIDITE_CODE + " minutes. Si vous n'avez rien demandé, "
+                                + "ignorez ce message.")));
     }
 
     /** Le bon code ouvre un jeton ; un mauvais compte un essai. */

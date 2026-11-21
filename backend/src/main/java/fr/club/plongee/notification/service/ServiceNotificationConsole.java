@@ -1,5 +1,6 @@
 package fr.club.plongee.notification.service;
 
+import fr.club.plongee.notification.courriel.CourrielsComptes;
 import fr.club.plongee.notification.courriel.CourrielRendu;
 import fr.club.plongee.notification.courriel.GabaritCourriel;
 import java.io.IOException;
@@ -29,21 +30,23 @@ public class ServiceNotificationConsole implements ServiceNotification {
     private static final Logger log = LoggerFactory.getLogger(ServiceNotificationConsole.class);
 
     private final String urlFrontend;
+    private final GabaritCourriel gabarit;
 
-    public ServiceNotificationConsole(@Value("${app.frontend-url}") String urlFrontend) {
+    public ServiceNotificationConsole(@Value("${app.frontend-url}") String urlFrontend, GabaritCourriel gabarit) {
         this.urlFrontend = urlFrontend;
+        this.gabarit = gabarit;
     }
 
     @Override
     public void envoyerLienReinitialisation(Utilisateur destinataire, String jeton) {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton;
-        log.info("Lien de reinitialisation de mot de passe pour {} : {}", destinataire.getEmail(), lien);
+        log.info("Lien de reinitialisation de mot de passe pour {} : {}", destinataire.getEmail(), lien);        apercu(CourrielsComptes.SUJET_REINITIALISATION, gabarit.rendre(CourrielsComptes.reinitialisation(destinataire.getPrenom(), lien)));
     }
 
     @Override
     public void envoyerLienInvitation(Utilisateur destinataire, String jeton) {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton + "&invitation=1";
-        log.info("Lien d'invitation (definition du mot de passe) pour {} : {}", destinataire.getEmail(), lien);
+        log.info("Lien d'invitation (definition du mot de passe) pour {} : {}", destinataire.getEmail(), lien);        apercu(CourrielsComptes.SUJET_INVITATION, gabarit.rendre(CourrielsComptes.invitation(destinataire.getPrenom(), lien)));
     }
 
     @Override
@@ -62,8 +65,12 @@ public class ServiceNotificationConsole implements ServiceNotification {
     @Override
     public boolean envoyerCourriel(String adresse, String sujet, CourrielRendu rendu) {
         envoyerCourriel(adresse, sujet, rendu.texte());
-        apercu(sujet, rendu.html(), rendu.logo());
+        apercu(sujet, rendu);
         return true;
+    }
+
+    private void apercu(String sujet, CourrielRendu rendu) {
+        apercu(sujet, rendu.html(), rendu.logo());
     }
 
     /**

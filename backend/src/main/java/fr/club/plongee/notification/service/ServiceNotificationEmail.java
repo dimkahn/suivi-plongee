@@ -1,5 +1,6 @@
 package fr.club.plongee.notification.service;
 
+import fr.club.plongee.notification.courriel.CourrielsComptes;
 import fr.club.plongee.notification.courriel.CourrielRendu;
 import fr.club.plongee.notification.courriel.GabaritCourriel;
 import org.springframework.core.io.ByteArrayResource;
@@ -31,32 +32,30 @@ public class ServiceNotificationEmail implements ServiceNotification {
     private final JavaMailSender mailSender;
     private final String expediteur;
     private final String urlFrontend;
+    private final GabaritCourriel gabarit;
 
     public ServiceNotificationEmail(JavaMailSender mailSender,
                                     @Value("${app.mail.expediteur}") String expediteur,
-                                    @Value("${app.frontend-url}") String urlFrontend) {
+                                    @Value("${app.frontend-url}") String urlFrontend,
+                                    GabaritCourriel gabarit) {
         this.mailSender = mailSender;
         this.expediteur = expediteur;
         this.urlFrontend = urlFrontend;
+        this.gabarit = gabarit;
     }
 
     @Override
     public void envoyerLienReinitialisation(Utilisateur destinataire, String jeton) {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton;
-        envoyer(destinataire, "Réinitialisation de votre mot de passe",
-                "Bonjour " + destinataire.getPrenom() + ",\n\n"
-                        + "Une réinitialisation de mot de passe a été demandée pour votre compte du club.\n"
-                        + "Ce lien est valable une heure :\n" + lien + "\n\n"
-                        + "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message.");
+        envoyerCourriel(destinataire.getEmail(), CourrielsComptes.SUJET_REINITIALISATION,
+                gabarit.rendre(CourrielsComptes.reinitialisation(destinataire.getPrenom(), lien)));
     }
 
     @Override
     public void envoyerLienInvitation(Utilisateur destinataire, String jeton) {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton + "&invitation=1";
-        envoyer(destinataire, "Bienvenue : créez votre mot de passe",
-                "Bonjour " + destinataire.getPrenom() + ",\n\n"
-                        + "Un compte moniteur vient d'être créé pour vous sur le suivi des formations du club.\n"
-                        + "Ce lien, valable une heure, vous permet de choisir votre mot de passe :\n" + lien);
+        envoyerCourriel(destinataire.getEmail(), CourrielsComptes.SUJET_INVITATION,
+                gabarit.rendre(CourrielsComptes.invitation(destinataire.getPrenom(), lien)));
     }
 
     @Override
@@ -116,7 +115,4 @@ public class ServiceNotificationEmail implements ServiceNotification {
         }
     }
 
-    private void envoyer(Utilisateur destinataire, String sujet, String corps) {
-        envoyerCourriel(destinataire.getEmail(), sujet, corps);
-    }
 }
