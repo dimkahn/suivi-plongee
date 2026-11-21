@@ -58,6 +58,8 @@ interface Tuile {
       @if (manque().length > 0) {
         <p class="a-completer sans-impression">À compléter : {{ manque().join(', ') }}.</p>
       }
+      <!-- Replié : l'essentiel en une ligne, « Déplier » pour les tuiles. -->
+      @if (replie() && resume()) { <p class="resume-replie">{{ resume() }}</p> }
       @if (materiel()?.etat === 'question') {
         <div class="question-materiel sans-impression" role="group" aria-labelledby="question-materiel">
           <p id="question-materiel" class="question">Avez-vous emprunté du matériel du club ?</p>
@@ -111,6 +113,7 @@ interface Tuile {
     .tete { display: flex; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .tete h2 { margin: 0; }
     .tete .bouton-principal, .tete .replier { margin-left: auto; }
+    .resume-replie { margin: var(--pas) 0 0; color: var(--craie); font-size: .9375rem; }
     .tete .replier + .bouton-principal { margin-left: 0; }
     .pastille { padding: 2px 10px; border-radius: var(--r-s); font-size: .8125rem; font-weight: 700;
                 background: #E0F2FE; color: var(--profond-fonce); }
@@ -214,6 +217,12 @@ export class MonSejourComponent implements OnInit {
       { etiquette: 'Voyage retour', trajet: m.depart, aller: false }
     ].filter((v): v is { etiquette: string; trajet: Trajet; aller: boolean } => enCarte(v.trajet));
   });
+
+  /** « Mes comptes : On vous doit 536,00 € · Chambre : Chambre 1 · … » : ce qui est renseigné, sur une ligne. */
+  readonly resume = computed(() => this.tuiles()
+    .filter(t => t.principal)
+    .map(t => `${t.etiquette} : ${t.principal}`)
+    .join(' · '));
 
   readonly tuiles = computed<Tuile[]>(() => {
     const s = this.sejour();

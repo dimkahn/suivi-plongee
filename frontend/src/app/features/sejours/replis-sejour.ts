@@ -5,6 +5,17 @@ import { MAGASIN_CACHE, ecrire, lire } from '../../core/base-locale';
 export type EncartRepliable = 'aujourdhui' | 'mon-sejour';
 
 const CLE = 'preference:replis-sejour';
+
+/**
+ * Replié ou non : le choix gardé sur ce téléphone, sinon (jamais rien choisi)
+ * « Mon séjour » replié pour un organisateur, qui vient surtout organiser :
+ * sa carte poussait le programme plus de deux écrans plus bas.
+ */
+export function encartReplie(enregistres: ReadonlySet<EncartRepliable> | null, encart: EncartRepliable,
+                             organise: boolean): boolean {
+  if (enregistres) return enregistres.has(encart);
+  return organise && encart === 'mon-sejour';
+}
 const ENCARTS: readonly EncartRepliable[] = ['aujourdhui', 'mon-sejour'];
 
 /**
@@ -13,7 +24,8 @@ const ENCARTS: readonly EncartRepliable[] = ['aujourdhui', 'mon-sejour'];
  */
 @Injectable({ providedIn: 'root' })
 export class ReplisSejourService {
-  readonly replies = signal<ReadonlySet<EncartRepliable>>(new Set());
+  /** Le choix gardé sur ce téléphone ; null tant que rien n'a été choisi (réglage par défaut). */
+  readonly replies = signal<ReadonlySet<EncartRepliable> | null>(null);
 
   constructor() {
     lire<{ cle: string; valeur: string[] }>(MAGASIN_CACHE, CLE)
@@ -25,12 +37,13 @@ export class ReplisSejourService {
       .catch(() => { /* navigateur sans IndexedDB : tout déplié */ });
   }
 
-  replie(encart: EncartRepliable): boolean {
-    return this.replies().has(encart);
+  replie(encart: EncartRepliable, organise = false): boolean {
+    return encartReplie(this.replies(), encart, organise);
   }
 
-  choisir(encart: EncartRepliable, replie: boolean): void {
-    const s = new Set(this.replies());
+  /** Le premier choix fige aussi l'autre encart tel qu'il est montré. */
+  choisir(encart: EncartRepliable, replie: boolean, organise = false): void {
+    const s = new Set(ENCARTS.filter(e => this.replie(e, organise)));
     if (replie) s.add(encart); else s.delete(encart);
     this.replies.set(s);
     void ecrire(MAGASIN_CACHE, { cle: CLE, valeur: [...s], majLe: Date.now() }).catch(() => {});

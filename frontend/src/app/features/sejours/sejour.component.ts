@@ -331,12 +331,12 @@ function participantVide(): BrouillonParticipant {
       <app-journee-sejour class="sans-impression" [participants]="voyageurs()" [montrerNoms]="s.encadrant" [encadrant]="s.encadrant"
                           [moiId]="moi()?.id ?? null" [dateDebut]="s.sortie.dateDebut" [dateFin]="s.sortie.dateFin"
                           [programme]="programme()" [affaires]="s.affaires" [comptes]="mesComptes()"
-                          [cartes]="portCartes" [repliable]="true" [replie]="replis.replie('aujourdhui')"
-                          (replieChange)="replis.choisir('aujourdhui', $event)" />
+                          [cartes]="portCartes" [repliable]="true" [replie]="replis.replie('aujourdhui', gereLeSejour())"
+                          (replieChange)="replis.choisir('aujourdhui', $event, gereLeSejour())" />
 
       @if (moi(); as m) {
         <app-mon-sejour [sejour]="s" [moi]="m" [prets]="prets" [cartes]="portCartes" [repliable]="true"
-                        [replie]="replis.replie('mon-sejour')" (replieChange)="replis.choisir('mon-sejour', $event)"
+                        [replie]="replis.replie('mon-sejour', gereLeSejour())" (replieChange)="replis.choisir('mon-sejour', $event, gereLeSejour())"
                         [attestations]="portAttestations" (ouvrir)="ouvrirDepuisMonSejour($event)" />
         <app-notifications-sejour class="sans-impression" [notifications]="notifications" />
       }
@@ -1627,6 +1627,8 @@ export class SejourComponent {
   regrouperFiches = signal(true);
   /** Un encadrant qui ne regarde pas comme un participant : « Organiser » plutôt que « Partager ». */
   readonly organise = computed(() => !!this.sejour()?.encadrant && !this.commeParticipant());
+  /** Créateur ou organisateur désigné, hors « Voir comme un participant » : « Mon séjour » replié par défaut. */
+  readonly gereLeSejour = computed(() => !!this.sejour()?.gere && !this.commeParticipant());
   /** Les icônes de la barre du séjour (tracés 24 × 24). */
   readonly iconesSections: Record<OngletSejour, string> = {
     programme: 'M3 4h18v17H3zM3 9h18M8 2v4M16 2v4',
