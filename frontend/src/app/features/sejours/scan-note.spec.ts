@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Coins, Pixels, Point, appliquerHomographie, detecterBords, filtrer, homographie, redresser } from './scan-note';
+import {
+  Coins, Pixels, Point, appliquerHomographie, detecterBords, filtrer, homographie, lisserCoins, redresser
+} from './scan-note';
 
 /** Une image unie, en gris. */
 function imageUnie(largeur: number, hauteur: number, gris: number): Pixels {
@@ -56,6 +58,24 @@ describe('Détection des bords de la note', () => {
   it('ne retient pas une tache claire trop petite pour être la note', () => {
     expect(detecterBords(noteSurTable([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }])))
       .toBeNull();
+  });
+});
+
+describe('Contour en direct sur l’aperçu de l’appareil photo', () => {
+  const carre = (x: number): Coins => ({
+    hautGauche: { x, y: 0 }, hautDroit: { x: x + 10, y: 0 }, basDroit: { x: x + 10, y: 10 }, basGauche: { x, y: 10 }
+  });
+
+  it('adoucit le passage d’une image à la suivante : le cadre ne tremble pas', () => {
+    expect(lisserCoins(carre(0), carre(10), 0.5)).toEqual(carre(5));
+  });
+
+  it('montre tout de suite le premier contour trouvé', () => {
+    expect(lisserCoins(null, carre(10), 0.5)).toEqual(carre(10));
+  });
+
+  it('efface le contour quand la note n’est plus trouvée', () => {
+    expect(lisserCoins(carre(0), null, 0.5)).toBeNull();
   });
 });
 

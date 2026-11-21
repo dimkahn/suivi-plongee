@@ -129,6 +129,20 @@ export function detecterBords(p: Pixels): Coins | null {
   };
 }
 
+/**
+ * Le contour montré en direct sur l'aperçu de l'appareil photo : chaque coin
+ * avance de `poids` vers celui trouvé sur la nouvelle image (le cadre suit la
+ * note sans trembler) ; plus de note trouvée, plus de contour.
+ */
+export function lisserCoins(precedents: Coins | null, trouves: Coins | null, poids: number): Coins | null {
+  if (!trouves || !precedents) return trouves;
+  const vers = (a: Point, b: Point): Point => ({ x: a.x + (b.x - a.x) * poids, y: a.y + (b.y - a.y) * poids });
+  return {
+    hautGauche: vers(precedents.hautGauche, trouves.hautGauche), hautDroit: vers(precedents.hautDroit, trouves.hautDroit),
+    basDroit: vers(precedents.basDroit, trouves.basDroit), basGauche: vers(precedents.basGauche, trouves.basGauche)
+  };
+}
+
 /** Aire du quadrilatère (formule du lacet). */
 export function aire(c: Coins): number {
   const q = [c.hautGauche, c.hautDroit, c.basDroit, c.basGauche];

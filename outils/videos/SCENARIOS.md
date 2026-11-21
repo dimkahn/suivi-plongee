@@ -561,7 +561,7 @@ Inscrit au séjour, le moniteur voit ses comptes dans sa carte « Mon séjour »
 
 Compte : `e2@club.fr` · formats téléphone et ordinateur
 
-_Pas encore tournée : le texte viendra au premier enregistrement._ Elle montre aussi le scanner de la note (bords trouvés, « Recadrer », filtre « Document »).
+_Pas encore tournée : le texte viendra au premier enregistrement._ Elle montre aussi le contour de la note en direct sur l'aperçu (« Déclencher ») et le scanner de la note (bords trouvés, « Recadrer », filtre « Document »).
 
 ### M26 — Signer la fiche de sécurité
 

@@ -15,6 +15,7 @@ import {
 } from './sejour-api';
 import { leconDuTicket } from './lecture-ticket';
 import { ScanNoteComponent } from './scan-note.component';
+import { CameraNoteComponent, cameraDisponible } from './camera-note.component';
 import { montrerCarte } from './carte-voyage.component';
 import { envoiCarte } from './voyage';
 import { preuveEnAttente, preuvesAConfirmer, texteBilanDecompte } from './fin-des-comptes';
@@ -56,7 +57,7 @@ interface PhotoAEnvoyer {
  */
 @Component({
   selector: 'app-sejour-frais',
-  imports: [FormsModule, DialogueComponent, OngletsComponent, ScanNoteComponent],
+  imports: [FormsModule, DialogueComponent, OngletsComponent, ScanNoteComponent, CameraNoteComponent],
   template: `
     @let f = frais();
     @let d = f.droits;
@@ -346,10 +347,15 @@ interface PhotoAEnvoyer {
             </span>
           }
         </div>
-        <!-- Trois champs : « capture » ouvre directement l'appareil photo,
-             sans lui le téléphone propose la galerie ; le PDF ouvre les fichiers. -->
+        <!-- « Prendre une photo » ouvre l'appareil photo dans l'appli (contour de la note en direct) ;
+             sinon le champ « capture », celui du téléphone. Sans « capture », le téléphone propose la
+             galerie ; le PDF ouvre les fichiers. -->
         <div class="actions">
-          <label class="bouton-discret choisir-photo" for="d-photo-prendre">📷 Prendre une photo</label>
+          @if (camera) {
+            <button type="button" class="bouton-discret choisir-photo" (click)="cameraOuverte.set(true)">📷 Prendre une photo</button>
+          } @else {
+            <label class="bouton-discret choisir-photo" for="d-photo-prendre">📷 Prendre une photo</label>
+          }
           <label class="bouton-discret choisir-photo" for="d-photo-choisir">🖼️ Choisir dans mes photos</label>
           <label class="bouton-discret choisir-photo" for="d-pdf-choisir">📄 Joindre un PDF</label>
         </div>
@@ -367,7 +373,10 @@ interface PhotoAEnvoyer {
           Sur un PDF, saisissez-les.</p>
       </fieldset>
       <!-- Dans le contenu de la fenêtre : le reste de la page est inerte tant que la fenêtre est ouverte. -->
-      @if (aScanner()[0]; as photo) {
+      @if (cameraOuverte()) {
+        <app-camera-note (photo)="cameraOuverte.set(false); aScanner.set([...aScanner(), $event])"
+                         (annule)="cameraOuverte.set(false)" (indisponible)="cameraIndisponible()" />
+      } @else if (aScanner()[0]; as photo) {
         <app-scan-note [fichier]="photo" (valide)="joindreScan($event)" (annule)="photoScannee()"
                        (illisible)="photoScannee(); erreur.set('Cette image n’a pas pu être lue : prenez une photo JPEG ou PNG.')" />
       }
@@ -614,6 +623,9 @@ export class SejourFraisComponent {
   aEnvoyer = signal<PhotoAEnvoyer[]>([]);
   /** Les photos choisies qui attendent leur passage au scanner, la première ouverte. */
   aScanner = signal<File[]>([]);
+  /** L'appareil photo s'ouvre dans l'appli (contour de la note en direct) ; faux après un échec. */
+  camera = cameraDisponible();
+  cameraOuverte = signal(false);
   photosExistantes = signal<number[]>([]);
   /** Parmi les justificatifs déjà envoyés de la dépense ouverte, les PDF. */
   pdfsExistants = signal<number[]>([]);
@@ -789,6 +801,14 @@ export class SejourFraisComponent {
     }
   }
 
+  /** L'appareil photo ne s'ouvre pas dans l'appli (refusé, absent) : celui du téléphone, par le champ « capture ». */
+  cameraIndisponible(): void {
+    this.cameraOuverte.set(false);
+    this.camera = false;
+    this.erreur.set('L’appareil photo n’a pas pu s’ouvrir dans l’appli : touchez de nouveau « Prendre une photo », '
+      + 'celui du téléphone s’ouvrira.');
+  }
+
   /** La photo au scanner est faite (jointe, gardée telle quelle ou abandonnée) : la suivante. */
   photoScannee(): void {
     this.aScanner.set(this.aScanner().slice(1));
@@ -878,6 +898,7 @@ export class SejourFraisComponent {
   }
 
   private viderPhotosAEnvoyer(): void {
+    this.cameraOuverte.set(false);
     this.aScanner.set([]);
     this.aEnvoyer().forEach(p => { if (p.apercu) URL.revokeObjectURL(p.apercu); });
     this.aEnvoyer.set([]);
