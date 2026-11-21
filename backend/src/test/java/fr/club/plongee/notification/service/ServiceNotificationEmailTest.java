@@ -18,7 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(OutputCaptureExtension.class)
 class ServiceNotificationEmailTest {
     private static final fr.club.plongee.notification.courriel.GabaritCourriel GABARIT =
-            new fr.club.plongee.notification.courriel.GabaritCourriel(new fr.club.plongee.notification.courriel.IdentiteDonnee());
+            new fr.club.plongee.notification.courriel.GabaritCourriel(
+                            new fr.club.plongee.notification.courriel.IdentiteDonnee(), "https://club.exemple");
 
 
     /** Serveur SMTP qui refuse tout message, sans citer le destinataire. */

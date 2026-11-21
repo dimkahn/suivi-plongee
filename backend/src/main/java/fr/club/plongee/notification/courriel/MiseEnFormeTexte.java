@@ -11,8 +11,8 @@ import java.util.regex.Pattern;
  * Le texte d'un e-mail déjà écrit pour la version texte, découpé en blocs pour
  * la version HTML, d'après ses conventions : « Bonjour X, » en tête, titres de
  * section en MAJUSCULES, éléments en retrait de deux espaces (« - » facultatif),
- * détails en retrait de quatre, une adresse seule sur sa ligne devient un
- * bouton, la formule de fin (« Bon séjour, ») puis le nom de la structure.
+ * détails en retrait de quatre, une adresse de l'appli seule sur sa ligne
+ * devient un bouton, la formule de fin (« Bon séjour, ») puis le nom de la structure.
  * La version texte, elle, part telle qu'écrite.
  */
 public final class MiseEnFormeTexte {
@@ -22,7 +22,9 @@ public final class MiseEnFormeTexte {
 
     private MiseEnFormeTexte() {}
 
-    public static Courriel courriel(String titre, String sousTitre, String texte, String nomStructure) {
+    /** {@code adresseAppli} : l'adresse de l'appli ; une adresse qui n'en est pas reste en texte. */
+    public static Courriel courriel(String titre, String sousTitre, String texte, String nomStructure,
+                                    String adresseAppli) {
         Courriel c = Courriel.titre(titre).sousTitre(sousTitre);
         List<List<String>> paragraphes = paragraphes(texte);
 
@@ -73,7 +75,9 @@ public final class MiseEnFormeTexte {
                         c.liste(elements);
                         elements = new ArrayList<>();
                     }
-                    if (ADRESSE.matcher(contenu).matches()) {
+                    // Seules les pages de l'appli font un bouton : une adresse tapée dans un message
+                    // (« Nouvelles informations ») reste du texte, comme dans la version texte.
+                    if (ADRESSE.matcher(contenu).matches() && adresseAppli != null && contenu.startsWith(adresseAppli)) {
                         vider(c, paragraphe);
                         c.bouton(contenu.contains("/sejour") ? "Ouvrir le séjour" : "Ouvrir l'appli", contenu);
                     } else {

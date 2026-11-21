@@ -11,6 +11,7 @@ import fr.club.plongee.notification.courriel.Courriel.Liste;
 import fr.club.plongee.notification.courriel.Courriel.Paragraphe;
 import fr.club.plongee.notification.courriel.Courriel.Section;
 import fr.club.plongee.notification.courriel.Courriel.Tableau;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
@@ -46,9 +47,12 @@ public class GabaritCourriel {
     private static final String POLICE = "Arial,Helvetica,sans-serif";
 
     private final IdentiteStructureService identite;
+    /** L'adresse de l'appli : seules ses pages deviennent des boutons dans un texte mis en forme. */
+    private final String urlFrontend;
 
-    public GabaritCourriel(IdentiteStructureService identite) {
+    public GabaritCourriel(IdentiteStructureService identite, @Value("${app.frontend-url}") String urlFrontend) {
         this.identite = identite;
+        this.urlFrontend = urlFrontend;
     }
 
     /**
@@ -56,7 +60,7 @@ public class GabaritCourriel {
      * quel, et sa version HTML en est tirée par {@link MiseEnFormeTexte}.
      */
     public CourrielRendu rendreTexte(String titre, String sousTitre, String texte) {
-        CourrielRendu rendu = rendre(MiseEnFormeTexte.courriel(titre, sousTitre, texte, identite.nom()));
+        CourrielRendu rendu = rendre(MiseEnFormeTexte.courriel(titre, sousTitre, texte, identite.nom(), urlFrontend));
         return new CourrielRendu(texte, rendu.html(), rendu.logo());
     }
 

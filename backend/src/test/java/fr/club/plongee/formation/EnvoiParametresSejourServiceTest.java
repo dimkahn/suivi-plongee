@@ -22,7 +22,7 @@ class EnvoiParametresSejourServiceTest {
                             return "Club de test";
                         }
                     }, new fr.club.plongee.notification.courriel.GabaritCourriel(
-                            new fr.club.plongee.notification.courriel.IdentiteDonnee()));
+                            new fr.club.plongee.notification.courriel.IdentiteDonnee(), "https://club.exemple"));
 
     private static MembrePalanquee plongeur(String prenom, String nom, String aptitude, FonctionPalanquee fonction) {
         MembrePalanquee m = new MembrePalanquee();

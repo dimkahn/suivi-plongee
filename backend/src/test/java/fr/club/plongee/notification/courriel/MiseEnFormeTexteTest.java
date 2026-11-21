@@ -38,7 +38,7 @@ class MiseEnFormeTexteTest {
             """;
 
     private final Courriel courriel = MiseEnFormeTexte.courriel("Décompte des frais", "Port-Cros", DECOMPTE,
-            "Club de plongée d'essai");
+            "Club de plongée d'essai", "https://club.exemple");
 
     @Test
     @DisplayName("« Bonjour Léa, » devient la salutation, la formule de fin la signature, sans répéter le nom du club")
@@ -86,7 +86,8 @@ class MiseEnFormeTexteTest {
                 - Dulac Anis, élève, valable jusqu'au 03/12/2026
                 - Morel Léa, moniteur, valable jusqu'au 05/12/2026
 
-                Message envoyé automatiquement par le suivi des formations du club.""", "Club de plongée d'essai");
+                Message envoyé automatiquement par le suivi des formations du club.""", "Club de plongée d'essai",
+                "https://club.exemple");
 
         assertThat(recap.getBlocs()).containsSubsequence(
                 new Paragraphe("CACI qui expirent bientôt :", true),
@@ -95,9 +96,30 @@ class MiseEnFormeTexteTest {
     }
 
     @Test
+    @DisplayName("Une adresse extérieure tapée dans un message reste du texte : seules les pages de l'appli font un bouton")
+    void adresseExterieureSansBouton() {
+        Courriel nouvelles = MiseEnFormeTexte.courriel("Nouvelles informations", "Port-Cros", """
+                Bonjour Léa,
+
+                Il y a de nouvelles informations sur le séjour « Port-Cros » :
+
+                Programme mis à jour :
+                https://autre-site.exemple/sejour/faux
+
+                Ouvrez l'appli pour les voir :
+                https://club.exemple/sejour/abc123
+
+                Club de plongée d'essai""", "Club de plongée d'essai", "https://club.exemple");
+
+        assertThat(nouvelles.getBlocs()).noneMatch(b -> b instanceof Bouton bt && bt.lien().contains("autre-site"));
+        assertThat(nouvelles.getBlocs()).contains(new Paragraphe("Programme mis à jour :\nhttps://autre-site.exemple/sejour/faux", false),
+                new Bouton("Ouvrir le séjour", "https://club.exemple/sejour/abc123"));
+    }
+
+    @Test
     @DisplayName("La version texte envoyée reste celle écrite, mot pour mot")
     void texteInchange() {
-        CourrielRendu rendu = new GabaritCourriel(new IdentiteDonnee()).rendreTexte("Décompte des frais", "Port-Cros", DECOMPTE);
+        CourrielRendu rendu = new GabaritCourriel(new IdentiteDonnee(), "https://club.exemple").rendreTexte("Décompte des frais", "Port-Cros", DECOMPTE);
         assertThat(rendu.texte()).isEqualTo(DECOMPTE);
         assertThat(rendu.html()).contains("Vos dépenses", "Glaces", "href=\"https://club.exemple/sejour/abc123\"");
     }

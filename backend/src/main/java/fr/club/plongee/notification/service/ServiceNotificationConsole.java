@@ -40,13 +40,17 @@ public class ServiceNotificationConsole implements ServiceNotification {
     @Override
     public void envoyerLienReinitialisation(Utilisateur destinataire, String jeton) {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton;
-        log.info("Lien de reinitialisation de mot de passe pour {} : {}", destinataire.getEmail(), lien);        apercu(CourrielsComptes.SUJET_REINITIALISATION, gabarit.rendre(CourrielsComptes.reinitialisation(destinataire.getPrenom(), lien)));
+        log.info("Lien de reinitialisation de mot de passe pour {} : {}", destinataire.getEmail(), lien);
+        apercu(CourrielsComptes.SUJET_REINITIALISATION,
+                gabarit.rendre(CourrielsComptes.reinitialisation(destinataire.getPrenom(), lien)));
     }
 
     @Override
     public void envoyerLienInvitation(Utilisateur destinataire, String jeton) {
         String lien = urlFrontend + "/reinitialiser-mot-de-passe?jeton=" + jeton + "&invitation=1";
-        log.info("Lien d'invitation (definition du mot de passe) pour {} : {}", destinataire.getEmail(), lien);        apercu(CourrielsComptes.SUJET_INVITATION, gabarit.rendre(CourrielsComptes.invitation(destinataire.getPrenom(), lien)));
+        log.info("Lien d'invitation (definition du mot de passe) pour {} : {}", destinataire.getEmail(), lien);
+        apercu(CourrielsComptes.SUJET_INVITATION,
+                gabarit.rendre(CourrielsComptes.invitation(destinataire.getPrenom(), lien)));
     }
 
     @Override

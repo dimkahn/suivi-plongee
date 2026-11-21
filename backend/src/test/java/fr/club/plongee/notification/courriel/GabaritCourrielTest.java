@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Le gabarit des e-mails : HTML aux couleurs de la structure, texte équivalent, rien de chargé de l'extérieur. */
 class GabaritCourrielTest {
 
-    private final GabaritCourriel gabarit = new GabaritCourriel(new IdentiteDonnee(null, null, null));
+    private final GabaritCourriel gabarit = new GabaritCourriel(new IdentiteDonnee(null, null, null), "https://club.exemple");
 
     @Test
     @DisplayName("Un texte saisi est échappé dans le HTML : un nom ne peut pas injecter de balise")
@@ -49,7 +49,7 @@ class GabaritCourrielTest {
     @DisplayName("Aux couleurs de la structure, celles d'origine si rien n'est réglé")
     void couleurs() {
         CourrielRendu origine = gabarit.rendre(Courriel.titre("Votre code").bouton("Ouvrir", "https://x"));
-        CourrielRendu reglee = new GabaritCourriel(new IdentiteDonnee("#1E6091", "#123456", "#E76F51"))
+        CourrielRendu reglee = new GabaritCourriel(new IdentiteDonnee("#1E6091", "#123456", "#E76F51"), "https://club.exemple")
                 .rendre(Courriel.titre("Votre code").bouton("Ouvrir", "https://x"));
 
         assertThat(origine.html()).contains("#0C3547");
@@ -60,7 +60,7 @@ class GabaritCourrielTest {
     @Test
     @DisplayName("Un bouton sur une couleur claire garde un texte lisible (foncé, pas blanc)")
     void boutonClair() {
-        CourrielRendu rendu = new GabaritCourriel(new IdentiteDonnee(null, "#FDE68A", null))
+        CourrielRendu rendu = new GabaritCourriel(new IdentiteDonnee(null, "#FDE68A", null), "https://club.exemple")
                 .rendre(Courriel.titre("Votre code").bouton("Ouvrir", "https://x"));
 
         assertThat(rendu.html()).containsPattern("background(-color)?:#FDE68A;[^\"]*color:#0F172A");
