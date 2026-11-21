@@ -28,6 +28,7 @@ import {
   remboursementsDe, texteTrajet, trajetSaisi
 } from './sejour-api';
 import { GroupeTrajet, enCarte, groupesTrajets, memeVoyageQue, volSansReservation } from './voyage';
+import { ChambreLibre, chambresLibres, placer, sansChambre } from './chambres-sejour';
 import { CarteVoyageComponent, montrerCarte } from './carte-voyage.component';
 import { AttestationAssuranceComponent } from './attestation-assurance.component';
 import { boutonJour, jourOuvertParDefaut, programmeParJour } from './programme-du-jour';
@@ -662,7 +663,20 @@ function participantVide(): BrouillonParticipant {
         <section id="logements-sejour">
           @if (avertissementsDe().hebergement.length > 0) {
             <ul class="avertissements sans-impression" aria-label="À vérifier">
-              @for (a of avertissementsDe().hebergement; track a) { <li>{{ a }}</li> }
+              @for (a of avertissementsDe().hebergement; track a) {
+                <!-- Sans chambre : pour un organisateur, une ligne par personne et de quoi la placer. -->
+                @if (s.gere && a.startsWith('Sans chambre')) {
+                  @for (p of personnesSansChambre(); track p.id) {
+                    <li class="sans-chambre">
+                      <span>Sans chambre : {{ nomComplet(p) }}</span>
+                      <button type="button" class="bouton-discret placer" (click)="placerPour.set(p)"
+                              [attr.aria-label]="'Placer ' + nomComplet(p) + ' dans une chambre'">Placer</button>
+                    </li>
+                  }
+                } @else {
+                  <li>{{ a }}</li>
+                }
+              }
             </ul>
           }
           <div class="titre-section">
@@ -1102,6 +1116,25 @@ function participantVide(): BrouillonParticipant {
     </app-dialogue>
 
     <!-- Le QR code qui connecte un participant sur son téléphone, une minute (demande du club, 2026). -->
+    <app-dialogue [ouvert]="placerPour() !== null" [choix]="true" [erreur]="erreur()"
+                  [titre]="placerPour() ? 'Placer ' + nomComplet(placerPour()!) : ''" (fermer)="placerPour.set(null)">
+      @if (chambresLibres().length === 0) {
+        <p>Aucune chambre n'a de lit libre : ajoutez une chambre au logement (« Modifier »), ou un couchage.</p>
+      } @else {
+        <p class="secondaire">Les chambres qui ont encore un lit :</p>
+        <ul class="liste-chambres-libres">
+          @for (c of chambresLibres(); track c.chambreId) {
+            <li>
+              <button type="button" class="bouton-discret" (click)="placerDans(c)" [disabled]="envoi()">
+                <span>{{ c.libelle }}</span>
+                <span class="secondaire">{{ c.libres }} lit{{ c.libres > 1 ? 's' : '' }} libre{{ c.libres > 1 ? 's' : '' }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </app-dialogue>
+
     <app-dialogue [ouvert]="plusPour() !== null" [choix]="true" [titre]="plusPour() ? nomComplet(plusPour()!) : ''"
                   (fermer)="plusPour.set(null)">
       @if (plusPour(); as p) {
@@ -1459,7 +1492,12 @@ function participantVide(): BrouillonParticipant {
     .actions { display: flex; gap: var(--pas); flex-wrap: wrap; align-items: center; }
     .titre-section { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap; }
     .avertissements { margin: var(--pas-2) 0; padding: var(--pas) var(--pas-2) var(--pas) 2rem; border-radius: var(--r-s);
-                      background: var(--en-cours-clair); color: var(--en-cours); }
+                      background: var(--en-cours-clair); color: var(--en-cours-texte); }
+    .avertissements .sans-chambre > * { vertical-align: middle; }
+    .avertissements .placer { margin-left: var(--pas); min-height: 44px; background: var(--carte); color: var(--encre); }
+    .liste-chambres-libres { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
+    .liste-chambres-libres button { width: 100%; min-height: 48px; display: flex; justify-content: space-between;
+                                    align-items: center; gap: var(--pas); text-align: left; }
     summary { min-height: 44px; display: flex; align-items: center; gap: 4px var(--pas); flex-wrap: wrap; cursor: pointer; }
     .liste-participants { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: var(--pas); }
     .liste-participants > li { padding: 0 var(--pas-2); }
@@ -2134,6 +2172,20 @@ export class SejourComponent {
   envoyerInvitations(p: ParticipantVue): void {
     if (!confirm(`Envoyer à ${nomComplet(p)} un e-mail pour qu'il renseigne ses informations pour le séjour ?`)) return;
     this.envoyerEmails('invitations', [p.id]);
+  }
+
+  /** Les participants dans aucune chambre, et celui qu'on est en train de placer. */
+  readonly personnesSansChambre = computed(() => sansChambre(this.sejour()?.participants ?? [], this.sejour()?.logements ?? []));
+  readonly chambresLibres = computed(() => chambresLibres(this.sejour()?.logements ?? []));
+  placerPour = signal<ParticipantVue | null>(null);
+
+  /** Ajoute le participant à la chambre choisie : le logement est renvoyé tel quel, avec lui en plus. */
+  placerDans(c: ChambreLibre): void {
+    const p = this.placerPour();
+    const l = this.sejour()?.logements.find(x => x.id === c.logementId);
+    if (!p || !l) return;
+    this.modifier({ type: 'logement', id: l.id, demande: placer(l, c.chambreId, p.id) },
+      `${nomComplet(p)} dans « ${c.libelle} »`, () => this.placerPour.set(null));
   }
 
   /** Le participant dont la fenêtre « ⋯ » (QR code, demande d'informations) est ouverte. */
