@@ -170,17 +170,44 @@ export function volSansReservation(t: Trajet | null): Trajet {
   return { ...copieTrajet(t), dossier: null, lienEnregistrement: null };
 }
 
-/** Les arrivées (ou départs) regroupées par jour, heure et vol : qui attendre ensemble. */
+/**
+ * Ce qui fait « le même voyage » : le jour, le moyen et le numéro (« AF 7520 »
+ * et « AF7520 » sont le même vol) ; sans numéro, l'heure et le lieu. Le reste
+ * (terminal, ouverture de l'enregistrement…) peut n'avoir été saisi que par un
+ * seul : il ne sépare pas les voyageurs.
+ */
+function cleTrajet(t: Trajet): string {
+  const numero = t.numero?.replace(/\s+/g, '').toUpperCase();
+  return numero
+    ? [t.date, t.transport, numero].join('|')
+    : [t.date, t.heure?.slice(0, 5), t.transport, t.lieu].join('|');
+}
+
+/** Le trajet du groupe complété par celui d'un autre voyageur : ce que le premier n'avait pas saisi. */
+function completer(groupe: Trajet, autre: Trajet): Trajet {
+  const complet: Record<string, unknown> = { ...groupe };
+  for (const [champ, valeur] of Object.entries(volSansReservation(autre))) {
+    if ((complet[champ] ?? null) === null && valeur != null) complet[champ] = valeur;
+  }
+  return complet as unknown as Trajet;
+}
+
+/** Les arrivées (ou départs) regroupées par voyage : qui attendre ensemble. */
 export function groupesTrajets(participants: readonly ParticipantVue[], sens: 'arrivee' | 'depart'): GroupeTrajet[] {
-  const groupes = new Map<string, GroupeTrajet & { tri: string }>();
+  const groupes = new Map<string, { trajet: Trajet; noms: string[]; ids: number[] }>();
   for (const p of participants) {
     const t = p[sens];
     if (!t || (!t.date && !t.heure)) continue;
-    const cle = [t.date, t.heure?.slice(0, 5), t.transport, t.numero, t.lieu, t.heureDepart?.slice(0, 5), t.lieuDepart,
-      t.heureArrivee?.slice(0, 5), t.dateDepart, t.dateArrivee, t.lieuArrivee, t.terminal,
-      t.ouvertureEnregistrement?.slice(0, 16)]
-      .join('|');
-    const g = groupes.get(cle) ?? {
+    const cle = cleTrajet(t);
+    // Le vol du groupe, sans le dossier ni le lien de celui qui l'ouvre (propres à chacun).
+    const g = groupes.get(cle) ?? { trajet: volSansReservation(t), noms: [], ids: [] };
+    g.trajet = completer(g.trajet, t);
+    g.noms.push(nomComplet(p));
+    g.ids.push(p.id);
+    groupes.set(cle, g);
+  }
+  return [...groupes.values()]
+    .map(({ trajet: t, noms, ids }) => ({
       tri: `${t.date ?? ''} ${t.heure ?? ''}`,
       quand: t.date ? jourLong(t.date) + (t.heure ? ' à ' + heure(t.heure) : '') : 'à ' + heure(t.heure),
       comment: [TRANSPORTS.find(x => x.code === t.transport)?.libelle, t.numero].filter(Boolean).join(' '),
@@ -188,12 +215,8 @@ export function groupesTrajets(participants: readonly ParticipantVue[], sens: 'a
       // « à 21h35 à Paris-Orly », ou « le mercredi 16/06/2027 à 06h10 » pour un vol qui arrive un autre jour.
       arrivee: (autreJour(t, t.dateArrivee) + (t.heureArrivee ? ' à ' + heure(t.heureArrivee) : '')
         + (t.lieuArrivee ? ' à ' + t.lieuArrivee : '')).trim() || null,
-      // Le vol du groupe, sans le dossier ni le lien de celui qui l'ouvre (propres à chacun).
-      noms: [], trajet: volSansReservation(t), ids: []
-    };
-    g.noms.push(nomComplet(p));
-    g.ids.push(p.id);
-    groupes.set(cle, g);
-  }
-  return [...groupes.values()].sort((a, b) => a.tri.localeCompare(b.tri));
+      noms, trajet: t, ids
+    }))
+    .sort((a, b) => a.tri.localeCompare(b.tri))
+    .map(({ tri: _tri, ...g }) => g);
 }

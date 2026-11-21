@@ -151,6 +151,16 @@ describe('Arrivées et départs regroupés : qui attendre ensemble', () => {
     expect(groupes[0].comment).toBe('Avion AF7520');
   });
 
+  it('Le même vol reste une seule carte quand un seul a saisi l\'ouverture de l\'enregistrement', () => {
+    const groupes = groupesTrajets([
+      personne(1, 'Camille', { ...vol, ouvertureEnregistrement: '2027-06-02T17:05:00' }),
+      personne(2, 'Mateo', vol), personne(3, 'Flora', { ...vol, numero: 'AF 7520' })
+    ], 'arrivee');
+    expect(groupes).toHaveLength(1);
+    expect(groupes[0].noms).toEqual(['Camille Test', 'Mateo Test', 'Flora Test']);
+    expect(groupes[0].trajet.ouvertureEnregistrement).toBe('2027-06-02T17:05');
+  });
+
   it('Des voyages différents : une carte chacun, dans l\'ordre des heures d\'arrivée', () => {
     const groupes = groupesTrajets([personne(1, 'Sonia', train), personne(2, 'Mateo', vol)], 'arrivee');
     expect(groupes.map(g => g.noms)).toEqual([['Mateo Test'], ['Sonia Test']]);
