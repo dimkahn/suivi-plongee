@@ -142,11 +142,15 @@ input, select, textarea {
 .bouton-principal:disabled { background: var(--craie); cursor: not-allowed; }
 
 .bouton-discret {
-  border-color: var(--trait);
+  /* La bordure entière, pas seulement sa couleur : un lien <a class="bouton-discret"> n'hérite pas
+     de celle des <button> et ressemblait à un simple lien à côté de vrais boutons. */
+  border: 1px solid var(--trait);
+  border-radius: var(--r-s);
   background: var(--carte);
   padding: 10px 16px;
   min-height: 44px;
 }
+a.bouton-discret { display: inline-flex; align-items: center; text-decoration: none; }
 
 .carte {
   background: var(--carte);

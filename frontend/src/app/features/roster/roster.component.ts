@@ -51,6 +51,9 @@ const LIBELLES: Record<string, string> = {
           </p>
         </div>
       } @else {
+      @if (r.seances.length > 0) {
+        <p class="glisser" aria-hidden="true">Faites glisser le tableau vers la gauche pour voir les séances →</p>
+      }
       <div class="tableau-scroll">
         <table>
           <thead>
@@ -144,7 +147,15 @@ const LIBELLES: Record<string, string> = {
     .etiquette-recherche { display: block; margin: var(--pas-2) 0 4px; font-weight: 700; font-size: .9375rem; }
     /* Espacement porté par le champ : il vaut pour le tableau comme pour le message « aucun élève ». */
     .recherche { max-width: 320px; margin-bottom: var(--pas-3); }
-    .tableau-scroll { overflow-x: auto; }
+    /* Une ombre au bord droit tant qu'il reste des séances à voir (fond « local » qui défile avec le contenu). */
+    .tableau-scroll {
+      overflow-x: auto;
+      background:
+        linear-gradient(to left, var(--carte) 30%, transparent) right center / 40px 100% no-repeat local,
+        radial-gradient(farthest-side at 100% 50%, rgba(15, 23, 42, .18), transparent) right center / 14px 100% no-repeat scroll;
+    }
+    .glisser { display: none; margin: 0 0 var(--pas); font-size: .875rem; color: var(--craie); }
+    @media (max-width: 600px) { .glisser { display: block; } }
     table { border-collapse: collapse; white-space: nowrap; }
     th, td {
       padding: 8px 12px; border-bottom: 1px solid var(--trait); text-align: left; font-size: .875rem;
@@ -180,6 +191,8 @@ const LIBELLES: Record<string, string> = {
     .eleve-cellule:hover, .eleve-cellule:focus-visible { background: var(--fond); }
     th.figee { background: var(--fond); }
     td.figee { background: var(--carte); }
+    /* Au téléphone, la colonne des noms laisse voir au moins une séance. */
+    @media (max-width: 600px) { .figee { min-width: 150px; } }
     .identite-cellule { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
     .identite-cellule .nom { font-weight: 700; color: var(--profond); text-decoration: underline; }
     /* Progression de la formation sous le nom : critères effectués sur le total. */
