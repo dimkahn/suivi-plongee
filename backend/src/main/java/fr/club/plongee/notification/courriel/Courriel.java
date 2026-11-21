@@ -12,7 +12,7 @@ import java.util.Map;
 public final class Courriel {
 
     /** Les blocs, dans l'ordre où ils s'affichent. */
-    public sealed interface Bloc permits Paragraphe, Bouton, Encadre, Code, Tableau, Note {}
+    public sealed interface Bloc permits Paragraphe, Bouton, Encadre, Code, Tableau, Note, Section, Liste {}
 
     /** Un paragraphe ; {@code fort} : en gras (une phrase à ne pas manquer). */
     public record Paragraphe(String texte, boolean fort) implements Bloc {}
@@ -31,6 +31,14 @@ public final class Courriel {
 
     /** Un petit texte discret (précision, rappel de confidentialité). */
     public record Note(String texte) implements Bloc {}
+
+    /** Un intertitre (« Votre voyage », « Programme »). */
+    public record Section(String titre) implements Bloc {}
+
+    /** Une liste à puces ; chaque élément peut avoir des lignes de détail, plus discrètes. */
+    public record Liste(List<Element> elements) implements Bloc {
+        public record Element(String texte, List<String> details) {}
+    }
 
     private final String titre;
     private String sousTitre;
@@ -86,6 +94,16 @@ public final class Courriel {
 
     public Courriel tableau(List<String> entetes, List<List<String>> lignes) {
         blocs.add(new Tableau(List.copyOf(entetes), lignes.stream().map(List::copyOf).toList()));
+        return this;
+    }
+
+    public Courriel section(String titre) {
+        blocs.add(new Section(titre));
+        return this;
+    }
+
+    public Courriel liste(List<Liste.Element> elements) {
+        blocs.add(new Liste(List.copyOf(elements)));
         return this;
     }
 

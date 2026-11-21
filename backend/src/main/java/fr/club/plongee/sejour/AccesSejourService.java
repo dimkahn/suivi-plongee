@@ -158,7 +158,8 @@ public class AccesSejourService {
                             + "Donnez-y cette adresse e-mail (" + email.trim() + ") : vous recevrez un code à "
                             + "6 chiffres pour entrer. Pas de compte ni de mot de passe à créer.\n\n";
             corps += "Bon séjour,\n" + identite.nom() + "\n";
-            if (notification.envoyerCourriel(email.trim(), "Vos informations pour le séjour — " + sejour.nom(), corps)) {
+            if (notification.envoyerCourriel(email.trim(), "Vos informations pour le séjour — " + sejour.nom(),
+                    gabarit.rendreTexte("Vos informations pour le séjour", sejour.nom(), corps))) {
                 envoyes.add(nom);
             } else {
                 echecs.add(nom);

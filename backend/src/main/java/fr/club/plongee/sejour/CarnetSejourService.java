@@ -1,5 +1,6 @@
 package fr.club.plongee.sejour;
 
+import fr.club.plongee.notification.courriel.GabaritCourriel;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
@@ -37,14 +38,16 @@ public class CarnetSejourService {
     public record BilanEnvoiCarnet(List<String> envoyes, List<String> sansEmail, List<String> echecs) {}
 
     private final SejourService sejours;
+    private final GabaritCourriel gabarit;
     private final ServiceNotification notification;
     private final IdentiteStructureService identite;
 
     public CarnetSejourService(SejourService sejours, ServiceNotification notification,
-                               IdentiteStructureService identite) {
+                               IdentiteStructureService identite, GabaritCourriel gabarit) {
         this.sejours = sejours;
         this.notification = notification;
         this.identite = identite;
+        this.gabarit = gabarit;
     }
 
     /**
@@ -71,7 +74,7 @@ public class CarnetSejourService {
             if (SejourService.blanc(p.email())) {
                 sansEmail.add(nom);
             } else if (notification.envoyerCourriel(p.email().trim(), "Carnet du séjour — " + s.sortie().nom(),
-                    composer(s, p))) {
+                    gabarit.rendreTexte("Carnet du séjour", s.sortie().nom(), composer(s, p)))) {
                 envoyes.add(nom);
             } else {
                 echecs.add(nom);

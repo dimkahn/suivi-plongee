@@ -7,7 +7,9 @@ import fr.club.plongee.notification.courriel.Courriel.Bouton;
 import fr.club.plongee.notification.courriel.Courriel.Code;
 import fr.club.plongee.notification.courriel.Courriel.Encadre;
 import fr.club.plongee.notification.courriel.Courriel.Note;
+import fr.club.plongee.notification.courriel.Courriel.Liste;
 import fr.club.plongee.notification.courriel.Courriel.Paragraphe;
+import fr.club.plongee.notification.courriel.Courriel.Section;
 import fr.club.plongee.notification.courriel.Courriel.Tableau;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
@@ -47,6 +49,15 @@ public class GabaritCourriel {
 
     public GabaritCourriel(IdentiteStructureService identite) {
         this.identite = identite;
+    }
+
+    /**
+     * Un e-mail dont le texte est déjà écrit (carnet, décompte…) : il part tel
+     * quel, et sa version HTML en est tirée par {@link MiseEnFormeTexte}.
+     */
+    public CourrielRendu rendreTexte(String titre, String sousTitre, String texte) {
+        CourrielRendu rendu = rendre(MiseEnFormeTexte.courriel(titre, sousTitre, texte, identite.nom()));
+        return new CourrielRendu(texte, rendu.html(), rendu.logo());
     }
 
     public CourrielRendu rendre(Courriel courriel) {
@@ -95,6 +106,14 @@ public class GabaritCourriel {
                     t.setLength(t.length() - 1);
                 }
                 case Note n -> t.append(n.texte());
+                case Section sec -> t.append(sec.titre().toUpperCase());
+                case Liste l -> {
+                    for (Liste.Element el : l.elements()) {
+                        t.append("- ").append(el.texte()).append('\n');
+                        el.details().forEach(d -> t.append("    ").append(d).append('\n'));
+                    }
+                    t.setLength(t.length() - 1);
+                }
             }
             t.append("\n\n");
         }
@@ -157,6 +176,21 @@ public class GabaritCourriel {
                 case Tableau t -> tableau(h, t, titreCouleur);
                 case Note n -> h.append("<p style=\"margin:0 0 16px;font-size:13px;line-height:20px;color:").append(CRAIE).append(";\">")
                         .append(e(n.texte())).append("</p>");
+                case Section sec -> h.append("<h2 style=\"margin:24px 0 8px;padding-bottom:6px;border-bottom:1px solid ").append(TRAIT)
+                        .append(";font-family:").append(POLICE).append(";font-size:17px;line-height:24px;color:").append(titreCouleur)
+                        .append(";\">").append(e(sec.titre())).append("</h2>");
+                case Liste l -> {
+                    h.append("<ul style=\"margin:0 0 16px;padding-left:20px;\">");
+                    for (Liste.Element el : l.elements()) {
+                        h.append("<li style=\"margin:0 0 8px;\">").append(e(el.texte()).replace("\n", "<br>"));
+                        for (String d : el.details()) {
+                            h.append("<br><span style=\"font-size:14px;line-height:21px;color:").append(CRAIE).append(";\">")
+                                    .append(e(d).replace("\n", "<br>")).append("</span>");
+                        }
+                        h.append("</li>");
+                    }
+                    h.append("</ul>");
+                }
             }
         }
         h.append("</td></tr>");
@@ -251,7 +285,14 @@ public class GabaritCourriel {
         return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     }
 
+    /**
+     * Échappé, et à la française : une espace insécable après « et avant » : ; ? !,
+     * pour qu'un guillemet ou un deux-points ne reste pas seul en début de ligne.
+     */
     private static String e(String texte) {
-        return texte == null ? "" : HtmlUtils.htmlEscape(texte, "UTF-8");
+        if (texte == null) return "";
+        String insecable = texte.replace("« ", "«\u00A0").replace(" »", "\u00A0»")
+                .replaceAll(" ([:;?!])", "\u00A0$1");
+        return HtmlUtils.htmlEscape(insecable, "UTF-8");
     }
 }

@@ -212,6 +212,9 @@ class ClotureFraisTest {
         // Flora, encadrante, est attendue dans l'appli ; on lui doit de l'argent.
         String flora = dernierPour("e2@club.fr").corps();
         assertThat(flora).contains("/sejours/").contains("Paul Invité vous doit 130,00 €");
+        // Le décompte part aussi mis en forme : mêmes montants, rubriques en intertitres, bouton vers le séjour.
+        assertThat(dernierPour("paul.decompte@exemple.fr").html()).as("décompte en HTML").isNotNull()
+                .contains("Vos dépenses", "Votre part\u00A0: 130,00 €", "Ouvrir le séjour", "cid:logo-structure");
     }
 
     @Test

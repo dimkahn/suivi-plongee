@@ -1,5 +1,6 @@
 package fr.club.plongee.sejour;
 
+import fr.club.plongee.notification.courriel.GabaritCourriel;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
@@ -38,19 +39,21 @@ public class DecompteFraisService {
     private final NamedParameterJdbcTemplate jdbc;
     private final FraisService frais;
     private final AccesSejourService acces;
+    private final GabaritCourriel gabarit;
     private final ServiceNotification notification;
     private final IdentiteStructureService identite;
     private final String urlFrontend;
 
     public DecompteFraisService(NamedParameterJdbcTemplate jdbc, FraisService frais, AccesSejourService acces,
                                 ServiceNotification notification, IdentiteStructureService identite,
-                                @Value("${app.frontend-url}") String urlFrontend) {
+                                @Value("${app.frontend-url}") String urlFrontend, GabaritCourriel gabarit) {
         this.jdbc = jdbc;
         this.frais = frais;
         this.acces = acces;
         this.notification = notification;
         this.identite = identite;
         this.urlFrontend = urlFrontend;
+        this.gabarit = gabarit;
     }
 
     /** {@code participantIds} null : à tous ; sinon aux seuls choisis (relancer). Frais clos seulement. */
@@ -85,7 +88,7 @@ public class DecompteFraisService {
             } else if (SejourService.blanc(d.email())) {
                 sansEmail.add(d.nomComplet());
             } else if (notification.envoyerCourriel(d.email().trim(), "Décompte des frais — " + sejour.nom(),
-                    composer(sejour, sortieId, code, d, vue, noms))) {
+                    gabarit.rendreTexte("Décompte des frais", sejour.nom(), composer(sejour, sortieId, code, d, vue, noms)))) {
                 envoyes.add(d.nomComplet());
             } else {
                 echecs.add(d.nomComplet());

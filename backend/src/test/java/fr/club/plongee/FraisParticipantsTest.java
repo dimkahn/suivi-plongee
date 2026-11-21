@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class FraisParticipantsTest {
 
     /** Les courriels partis, pour y lire le lien et le code. */
-    record Courriel(String adresse, String sujet, String corps) {}
+    record Courriel(String adresse, String sujet, String corps, String html) {}
 
     static final List<Courriel> COURRIELS = new ArrayList<>();
 
@@ -54,7 +54,10 @@ class FraisParticipantsTest {
                 @Override public void envoyerLienReinitialisation(Utilisateur u, String jeton) {}
                 @Override public void envoyerLienInvitation(Utilisateur u, String jeton) {}
                 @Override public boolean envoyerCourriel(String adresse, String sujet, String corps) {
-                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps)); }
+                    return envoyerCourriel(adresse, sujet, corps, null);
+                }
+                @Override public boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
+                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps, html)); }
                     return true;
                 }
             };
@@ -176,6 +179,9 @@ class FraisParticipantsTest {
         assertThat(courrielFlora).contains("/sejours/" + sortie).doesNotContain("/sejour/");
         String code = extraire(dernierPour("paul@exemple.fr").corps(), "/sejour/([A-Za-z0-9_-]+)");
         assertThat(dernierPour("camille.sejour@exemple.fr").corps()).contains("/sejour/" + code);
+        // La demande d'informations part aussi mise en forme : le même lien, en bouton, et le logo joint.
+        assertThat(dernierPour("camille.sejour@exemple.fr").html()).as("demande d'informations en HTML").isNotNull()
+                .contains("href=\"http", "/sejour/" + code, "cid:logo-structure");
         String pub = "/api/public/sejour/" + code;
         assertThat(envoyer("GET", pub, null, null, 200).get("nom").asText()).isEqualTo("Séjour frais");
 
@@ -189,6 +195,9 @@ class FraisParticipantsTest {
         bilan = envoyer("POST", base + "/envoi-carnet", dt, "{\"participantIds\":[%d]}".formatted(pCamille), 200);
         assertThat(bilan.get("envoyes").toString()).isEqualTo("[\"Camille Berthier\"]");
         assertThat(COURRIELS).hasSize(avantChoix + 3);
+        // Le carnet part aussi mis en forme, ses rubriques en intertitres.
+        assertThat(dernierPour("camille.sejour@exemple.fr").html()).as("carnet en HTML").isNotNull()
+                .contains("Votre voyage", "cid:logo-structure");
         envoyer("POST", base + "/envoi-carnet", dt, "{\"participantIds\":[]}", 422);
         envoyer("POST", base + "/invitations", dt, "{\"participantIds\":[%d,999999]}".formatted(pPaul), 404);
 

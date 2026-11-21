@@ -51,7 +51,7 @@ class NotificationsSejourTest {
 
     record Pousse(String endpoint, String json) {}
 
-    record Courriel(String adresse, String sujet, String corps) {}
+    record Courriel(String adresse, String sujet, String corps, String html) {}
 
     static final List<Pousse> POUSSES = new ArrayList<>();
     static final List<Courriel> COURRIELS = new ArrayList<>();
@@ -72,7 +72,10 @@ class NotificationsSejourTest {
                 @Override public void envoyerLienReinitialisation(Utilisateur u, String jeton) {}
                 @Override public void envoyerLienInvitation(Utilisateur u, String jeton) {}
                 @Override public boolean envoyerCourriel(String adresse, String sujet, String corps) {
-                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps)); }
+                    return envoyerCourriel(adresse, sujet, corps, null);
+                }
+                @Override public boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
+                    synchronized (COURRIELS) { COURRIELS.add(new Courriel(adresse, sujet, corps, html)); }
                     return true;
                 }
             };
@@ -285,6 +288,9 @@ class NotificationsSejourTest {
         }
         assertThat(c.sujet()).contains("Séjour prévenu par e-mail");
         assertThat(c.corps()).contains("Programme du dimanche ajouté").contains("/sejour/");
+        // Mis en forme aussi : le message de l'organisateur, échappé, et un bouton vers le séjour.
+        assertThat(c.html()).as("nouvelles informations en HTML").isNotNull()
+                .contains("Programme du dimanche ajouté", "Ouvrir le séjour", "cid:logo-structure");
 
         envoyer("DELETE", "/api/sorties/" + sortie, dt, null, 204);
     }

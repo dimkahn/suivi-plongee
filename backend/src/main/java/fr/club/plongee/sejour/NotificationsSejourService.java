@@ -1,5 +1,6 @@
 package fr.club.plongee.sejour;
 
+import fr.club.plongee.notification.courriel.GabaritCourriel;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.identite.IdentiteStructureService;
 import fr.club.plongee.notification.push.AbonnementPush;
@@ -53,6 +54,7 @@ public class NotificationsSejourService {
     private final NamedParameterJdbcTemplate jdbc;
     private final AccesSejourService acces;
     private final EnvoiPush envoi;
+    private final GabaritCourriel gabarit;
     private final ServiceNotification courriels;
     private final IdentiteStructureService identite;
     private final ObjectMapper json;
@@ -60,7 +62,7 @@ public class NotificationsSejourService {
 
     public NotificationsSejourService(NamedParameterJdbcTemplate jdbc, AccesSejourService acces, EnvoiPush envoi,
                                       ServiceNotification courriels, IdentiteStructureService identite,
-                                      ObjectMapper json, @Value("${app.frontend-url}") String urlFrontend) {
+                                      ObjectMapper json, @Value("${app.frontend-url}") String urlFrontend, GabaritCourriel gabarit) {
         this.jdbc = jdbc;
         this.acces = acces;
         this.envoi = envoi;
@@ -68,6 +70,7 @@ public class NotificationsSejourService {
         this.identite = identite;
         this.json = json;
         this.urlFrontend = urlFrontend;
+        this.gabarit = gabarit;
     }
 
     // ------------------------------------------------------------------
@@ -145,7 +148,8 @@ public class NotificationsSejourService {
                         + "Il y a de nouvelles informations sur le séjour « " + sejour.nom() + " »"
                         + (texte.isEmpty() ? "." : " :\n\n" + texte) + "\n\n"
                         + "Ouvrez l'appli pour les voir :\n" + lien + "\n\n" + identite.nom() + "\n";
-                if (courriels.envoyerCourriel(d.email().trim(), "Nouvelles informations — " + sejour.nom(), corps)) {
+                if (courriels.envoyerCourriel(d.email().trim(), "Nouvelles informations — " + sejour.nom(),
+                        gabarit.rendreTexte("Nouvelles informations", sejour.nom(), corps))) {
                     parEmail.add(d.nom());
                 } else {
                     echecs.add(d.nom());
