@@ -14,6 +14,11 @@ let compteur = 0;
  * est projeté : il garde les styles de l'écran parent. Un toucher à côté de
  * la fenêtre ne la ferme pas, pour ne pas perdre une saisie.
  *
+ * Avec `confirmerFermeture` (une question), la croix, « Fermer » et Échap
+ * la posent d'abord : la fenêtre ne se ferme que sur « OK ». À donner
+ * seulement quand une saisie serait perdue ; `ouvert` repassé à faux ferme
+ * sans question (après un enregistrement réussi).
+ *
  * Avec `choix`, une fenêtre de choix plus légère (choisir une séance, une
  * date, une action) : pas plein écran sur téléphone, « Fermer » en toutes
  * lettres (styles.css, `.dialogue-seance`).
@@ -22,15 +27,15 @@ let compteur = 0;
   selector: 'app-dialogue',
   template: `
     <dialog #fenetre [class]="choix() ? 'dialogue-seance' : 'dialogue-formulaire'" [class.large]="large()"
-            [attr.aria-labelledby]="idTitre" (close)="fermer.emit()">
+            [attr.aria-labelledby]="idTitre" (cancel)="surEchap($event)" (close)="fermer.emit()">
       @if (ouvert()) {
         <div class="entete-dialogue">
           <h2 [id]="idTitre">{{ titre() }}</h2>
           @if (choix()) {
-            <button type="button" class="bouton-discret" (click)="fenetre.close()">Fermer</button>
+            <button type="button" class="bouton-discret" (click)="demanderFermeture()">Fermer</button>
           } @else {
             <button type="button" class="bouton-discret fermer-dialogue" aria-label="Fermer"
-                    (click)="fenetre.close()">✕</button>
+                    (click)="demanderFermeture()">✕</button>
           }
         </div>
         @if (erreur(); as e) { <div class="alerte" role="alert">{{ e }}</div> }
@@ -48,6 +53,8 @@ export class DialogueComponent {
   large = input(false);
   /** Fenêtre de choix plutôt que formulaire. */
   choix = input(false);
+  /** Question posée avant de fermer par la croix, « Fermer » ou Échap ; null : fermer sans question. */
+  confirmerFermeture = input<string | null>(null);
   fermer = output<void>();
 
   readonly idTitre = `titre-dialogue-${++compteur}`;
@@ -59,5 +66,19 @@ export class DialogueComponent {
       if (this.ouvert() && !d.open) d.showModal();
       else if (!this.ouvert() && d.open) d.close();
     });
+  }
+
+  demanderFermeture(): void {
+    if (this.fermetureAcceptee()) this.fenetre().nativeElement.close();
+  }
+
+  /** Échap : le navigateur fermerait la fenêtre ; on la garde si la question est refusée. */
+  surEchap(evenement: Event): void {
+    if (!this.fermetureAcceptee()) evenement.preventDefault();
+  }
+
+  private fermetureAcceptee(): boolean {
+    const question = this.confirmerFermeture();
+    return question == null || confirm(question);
   }
 }

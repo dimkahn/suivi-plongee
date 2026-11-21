@@ -13,6 +13,7 @@ import { periodeDuMois } from '../../core/progression';
 import { PlurielPipe, pluriel } from '../../core/pluriel';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { ChargementComponent } from '../../core/chargement.component';
+import { notationEntamee } from '../../core/notation-entamee';
 
 /**
  * Notation groupée depuis la feuille de présence : le moniteur coche des
@@ -33,7 +34,8 @@ import { ChargementComponent } from '../../core/chargement.component';
       Noter les présents
     </button>
 
-    <app-dialogue titre="Noter les présents" [choix]="true" [large]="true" [ouvert]="ouvert()" (fermer)="ouvert.set(false)">
+    <app-dialogue titre="Noter les présents" [choix]="true" [large]="true" [ouvert]="ouvert()" (fermer)="ouvert.set(false)"
+                  [confirmerFermeture]="entamee() ? 'Abandonner la notation ? Les critères cochés et les commentaires seront perdus.' : null">
       @if (ouvert()) {
         <p class="secondaire">
           Chaque critère coché demande son commentaire. Rien ne recule : seul un critère non abordé passe en cours.
@@ -308,6 +310,9 @@ export class NotationGroupeeComponent {
   cocherExercices(): void {
     this.criteresCoches.set(new Set([...this.criteresCoches(), ...this.criteresDesExercices().keys()]));
   }
+
+  /** Fermer sans enregistrer perdrait des coches ou des commentaires : on demande d'abord. */
+  entamee = computed(() => notationEntamee(this.criteresCoches(), this.commentaires()));
 
   commentairesManquants = computed(() =>
     [...this.criteresCoches()].filter(id => !this.commentaireDe(id).trim()).length);
