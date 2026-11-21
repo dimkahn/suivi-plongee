@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -33,14 +34,14 @@ interface GroupeCompetence {
  */
 @Component({
   selector: 'app-parcours',
-  imports: [ChargementComponent, FormsModule, RouterLink, OngletsComponent, PastillePhaseComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, OngletsComponent, PastillePhaseComponent, IntroComponent],
   template: `
     <h1>Parcours de formation</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       L'année de chaque niveau, période par période : les compétences travaillées et les exercices
       prévus, de l'initiation à la maîtrise. Touchez un exercice pour voir sa fiche complète
       (déroulement, réussite, conseils, schéma, photos, vidéos).
-    </p>
+    </p></app-intro>
 
     @if (!reseau.enLigne()) { <div class="alerte" role="status">Le parcours de formation demande le réseau.</div> }
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }

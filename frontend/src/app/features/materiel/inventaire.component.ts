@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -20,15 +21,15 @@ import { ChargementComponent } from '../../core/chargement.component';
  */
 @Component({
   selector: 'app-inventaire',
-  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, IntroComponent],
   template: `
     <div class="entete">
       <div>
         <h1>Matériel</h1>
-        <p class="secondaire">
+        <app-intro><p class="secondaire">
           Blocs, détendeurs, gilets et combinaisons du club. Chaque fiche tient lieu de fiche de gestion
           (Code du sport, annexe III-27) : à conserver trois ans après la mise au rebut.
-        </p>
+        </p></app-intro>
       </div>
       <div class="actions">
         <a routerLink="/materiel/scanner" class="bouton-principal">Scanner une étiquette</a>

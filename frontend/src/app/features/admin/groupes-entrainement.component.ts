@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -42,13 +43,13 @@ interface FormulaireEspace extends DemandeEspaceBassin {
 @Component({
   selector: 'app-groupes-entrainement',
   imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent, DragDropModule, JetonPersonneComponent,
-    BarrePlacementComponent, PlurielPipe],
+    BarrePlacementComponent, PlurielPipe, IntroComponent],
   template: `
     <h1>Groupes d'entraînement</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Les groupes de la saison : leurs référents (qui suivent les élèves du groupe), leurs autres
       encadrants attitrés, leur ligne d'eau habituelle et leurs élèves. Au-dessus, ceux qui restent à ranger.
-    </p>
+    </p></app-intro>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 

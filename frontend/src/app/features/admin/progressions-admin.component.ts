@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -48,16 +49,16 @@ function formulaireDepuis(p: ProgressionVue): FormulaireProgression {
 
 @Component({
   selector: 'app-progressions-admin',
-  imports: [ChargementComponent, FormsModule, RouterLink, DialogueComponent, OngletsComponent, PastillePhaseComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DialogueComponent, OngletsComponent, PastillePhaseComponent, IntroComponent],
   template: `
     <h1>Progressions types</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       La formation d'un niveau découpée en périodes, avec les blocs du référentiel
       travaillés dans chacune et les exercices de la base prévus, de l'initiation à la maîtrise : c'est
       le parcours que les moniteurs consultent (menu « Parcours »). Une progression est rattachée à une
       version du référentiel MFT. Elle se découpe en mois de la saison (club, formation sur l'année) ou
       en plongées de l'élève (stage court en mer : « plongée 1 », « plongées 5 à 6 »).
-    </p>
+    </p></app-intro>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 

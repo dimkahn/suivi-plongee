@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -20,13 +21,13 @@ const JOURS: { valeur: JourSemaine; libelle: string }[] = [
  */
 @Component({
   selector: 'app-generation-saison',
-  imports: [FormsModule, DateFrPipe],
+  imports: [FormsModule, DateFrPipe, IntroComponent],
   template: `
     <h1>Générer les séances d'une saison</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Choisissez les jours de la semaine et décrivez la séance : elle est créée chaque semaine de la
       période, sauf pendant les vacances scolaires de la zone choisie et les jours fériés.
-    </p>
+    </p></app-intro>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 

@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -18,16 +19,16 @@ type Tri = 'DATE_RECENTE' | 'DATE_ANCIENNE' | 'NUMERO';
 
 @Component({
   selector: 'app-fiches-securite-liste',
-  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, CalendrierSeancesComponent, DialogueComponent, IntroComponent],
   template: `
     <h1>Fiches de sécurité</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Article A322-72 du Code du sport : noms, aptitudes et fonction des
       plongeurs par palanquée, paramètres prévus et réalisés. Non obligatoire
       en piscine ou fosse de 6 m ou moins (A322-98) — cette liste ne montre
       donc que les séances en milieu naturel ou de plus de 6 m ; au DP de
       juger si une fiche reste utile pour les autres.
-    </p>
+    </p></app-intro>
 
     <section class="filtres">
       <div>

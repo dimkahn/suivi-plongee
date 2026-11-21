@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -17,14 +18,14 @@ import { ChargementComponent } from '../../core/chargement.component';
  */
 @Component({
   selector: 'app-relances-caci',
-  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, PlurielPipe],
+  imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, PlurielPipe, IntroComponent],
   template: `
     <h1>Relances CACI</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Les e-mails partis chaque matin vers 7 h : relance d'un moniteur dont le CACI arrive à échéance,
       récapitulatif aux administrateurs. Gardés deux ans. Pour agir, saisissez le nouveau CACI dans
       <a routerLink="/admin/eleves">Élèves</a> ou <a routerLink="/admin/moniteurs">Moniteurs</a>.
-    </p>
+    </p></app-intro>
 
     @if (message(); as m) { <div class="alerte" role="alert">{{ m }}</div> }
 

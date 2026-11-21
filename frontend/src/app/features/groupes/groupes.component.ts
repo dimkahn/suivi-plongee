@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -47,13 +48,13 @@ const SEUIL_RECHERCHE = 6;
  */
 @Component({
   selector: 'app-groupes',
-  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent, PlusActionsComponent],
+  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent, PlusActionsComponent, IntroComponent],
   template: `
     <h1>Groupes de plongeurs</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Composez une fois la liste des plongeurs d'un séjour, puis reprenez-la dans chaque fiche de sécurité.
       Seuls le créateur d'une liste et les organisateurs qu'il désigne la modifient.
-    </p>
+    </p></app-intro>
 
     <div class="barre">
       <div class="champ-saison">

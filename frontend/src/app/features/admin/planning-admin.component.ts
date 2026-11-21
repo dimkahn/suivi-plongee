@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, ElementRef, HostListener, computed, inject, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -75,14 +76,14 @@ interface EditionSoiree {
  */
 @Component({
   selector: 'app-planning-admin',
-  imports: [ChargementComponent, FormsModule, RouterLink, ComboboxComponent],
+  imports: [ChargementComponent, FormsModule, RouterLink, ComboboxComponent, IntroComponent],
   template: `
     <h1>Planning du bassin</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Touchez une case pour placer un groupe ce soir-là, ou les lignes « DP fosse » et « DP piscine » pour
       choisir les directeurs de plongée et les présences annoncées des encadrants. Une case en gris clair est la ligne
       attitrée du groupe.
-    </p>
+    </p></app-intro>
     <p class="secondaire aide-selection">
       Plusieurs cases d'un coup : glissez la souris sur les cases (Ctrl + clic pour en ajouter ou en retirer) ;
       sur téléphone, appui long sur une case puis touchez les autres. Une barre en bas propose alors

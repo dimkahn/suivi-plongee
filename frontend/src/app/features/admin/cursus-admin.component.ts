@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
@@ -17,15 +18,15 @@ import { ChargementComponent } from '../../core/chargement.component';
 
 @Component({
   selector: 'app-cursus-admin',
-  imports: [ChargementComponent, FormsModule, DialogueComponent, NgTemplateOutlet, RouterLink, DateFrPipe, PhotoEleveComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, NgTemplateOutlet, RouterLink, DateFrPipe, PhotoEleveComponent, IntroComponent],
   template: `
     <div class="entete">
       <div>
         <h1>Inscriptions</h1>
-        <p class="secondaire">
+        <app-intro><p class="secondaire">
           Inscrit un élève dans une formation : le référentiel actif du niveau choisi est figé
           automatiquement, il ne bougera plus même si le MFT est révisé en cours de saison.
-        </p>
+        </p></app-intro>
       </div>
       <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouvelle inscription</button>
     </div>

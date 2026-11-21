@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -31,10 +32,10 @@ interface Formulaire extends DemandeExerciceBase {
 @Component({
   selector: 'app-exercices-admin',
   imports: [ChargementComponent, FormsModule, RouterLink, DialogueComponent, PastillePhaseComponent, SchemaExerciceComponent,
-            PhotoExerciceComponent],
+            PhotoExerciceComponent, IntroComponent],
   template: `
     <h1>Base d'exercices</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Chaque compétence a ses exercices d'initiation, de perfectionnement et de maîtrise, avec leurs
       conseils, leur schéma, leurs photos et leurs vidéos (« Fiche » montre ce que voient les moniteurs). Les moniteurs
       les ajoutent au programme d'une séance et notent l'exercice réalisé avec chaque critère :
@@ -42,7 +43,7 @@ interface Formulaire extends DemandeExerciceBase {
       <strong>obligatoire</strong> doit être acquis pour que sa compétence se valide : le MFT veut chaque critère
       validé, l'écran signale un critère qui n'en a aucun. Un exercice
       déjà noté ne se supprime pas, désactivez-le : il n'est plus proposé mais reste lisible sur les notes passées.
-    </p>
+    </p></app-intro>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 

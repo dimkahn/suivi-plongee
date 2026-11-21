@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -57,16 +58,16 @@ function formulaireVide(): FormulaireSeance {
 @Component({
   selector: 'app-seances',
   imports: [ChargementComponent, FormsModule, RouterLink, DateFrPipe, OngletsComponent, CalendrierSeancesComponent, ProgrammeSeanceComponent,
-            DialogueComponent],
+            DialogueComponent, IntroComponent],
   template: `
     <div class="entete">
       <div>
         <h1>Séances</h1>
-        <p class="secondaire">
+        <app-intro><p class="secondaire">
           Ouvre une séance sur la saison courante, pour y rattacher présences et
           notations. Milieu et profondeur se figent dès qu'une présence ou une
           évaluation y est rattachée.
-        </p>
+        </p></app-intro>
       </div>
       <div class="boutons-entete">
         <button type="button" class="bouton-principal" (click)="ouvrir('SEANCE')">Nouvelle séance</button>

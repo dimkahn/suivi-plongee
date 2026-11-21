@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { PlusActionsComponent } from '../../core/plus-actions.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -27,16 +28,16 @@ type Mode = 'creation' | 'modification' | 'reactivation';
  */
 @Component({
   selector: 'app-comptes-securite-surface',
-  imports: [ChargementComponent, FormsModule, DialogueComponent, DateFrPipe, PlusActionsComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, DateFrPipe, PlusActionsComponent, IntroComponent],
   template: `
     <div class="entete">
       <div>
         <h1>Sécurité surface</h1>
-        <p class="secondaire">
+        <app-intro><p class="secondaire">
           Pour une personne qui n'est pas moniteur du club : elle ne voit que les fiches de sécurité des
           séances qui lui sont confiées, et ne peut que les compléter au retour de plongée (heures, profondeurs,
           durées, paliers). Son compte se désactive tout seul après la date de fin d'accès.
-        </p>
+        </p></app-intro>
       </div>
       <button type="button" class="bouton-principal" (click)="ouvrir(null, 'creation')">Nouveau compte sécurité surface</button>
     </div>

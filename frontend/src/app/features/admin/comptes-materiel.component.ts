@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { PlusActionsComponent } from '../../core/plus-actions.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -17,16 +18,16 @@ import { ChargementComponent } from '../../core/chargement.component';
  */
 @Component({
   selector: 'app-comptes-materiel',
-  imports: [ChargementComponent, FormsModule, DialogueComponent, PlusActionsComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, PlusActionsComponent, IntroComponent],
   template: `
     <div class="entete">
       <div>
         <h1>Directeurs techniques non moniteurs</h1>
-        <p class="secondaire">
+        <app-intro><p class="secondaire">
           Pour une personne qui gère le matériel du club sans être moniteur : inventaire, prêts et retours (scanner
           compris), sorties. Elle ne voit ni les élèves, ni la notation, ni le planning, ni les séjours. Un directeur
           technique qui est aussi moniteur se gère dans « Moniteurs ».
-        </p>
+        </p></app-intro>
       </div>
       <button type="button" class="bouton-principal" (click)="ouvrir(null)">Nouveau directeur technique</button>
     </div>

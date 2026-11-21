@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
@@ -15,16 +16,16 @@ type Format = 'petit' | 'grand';
  */
 @Component({
   selector: 'app-etiquettes-materiel',
-  imports: [QrCodeComponent],
+  imports: [QrCodeComponent, IntroComponent],
   template: `
     <div class="pas-imprime">
       <h1>Étiquettes QR code</h1>
-      <p class="secondaire">
+      <app-intro><p class="secondaire">
         Imprimez la planche, découpez et collez chaque étiquette sur son équipement. Le QR code ouvre la fiche :
         avec l'appareil photo du téléphone, ou avec le bouton « Scanner » de la page Matériel.
         Pour le matériel qui va à l'eau, imprimez sur papier étanche ou protégez l'étiquette (plastification,
         adhésif transparent).
-      </p>
+      </p></app-intro>
 
       @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 

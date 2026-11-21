@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,14 +18,14 @@ type CleCouleur = keyof typeof COULEURS_ORIGINE;
  */
 @Component({
   selector: 'app-identite-admin',
-  imports: [ChargementComponent, FormsModule, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, IntroComponent],
   template: `
     <h1>Identité de la structure</h1>
-    <p class="secondaire">
+    <app-intro><p class="secondaire">
       Le nom, le logo et les couleurs de votre club ou de votre centre : sur la page de connexion, en haut
       de chaque écran, sur l'icône de l'appli installée sur un téléphone et en tête des documents (fiche
       de sécurité, compte rendu TIV, courriels). Un champ laissé vide garde l'identité d'origine de l'appli.
-    </p>
+    </p></app-intro>
 
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 

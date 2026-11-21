@@ -1,3 +1,4 @@
+import { IntroComponent } from '../../core/intro.component';
 import { Component, inject, signal, computed, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -21,16 +22,16 @@ function aVerifier(m: MoniteurVue): boolean {
 
 @Component({
   selector: 'app-moniteurs',
-  imports: [ChargementComponent, FormsModule, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent],
+  imports: [ChargementComponent, FormsModule, AvatarComponent, RecadragePhotoComponent, DialogueComponent, SaisieCaciComponent, DetailCaciComponent, IntroComponent],
   template: `
     <div class="entete">
       <div>
         <h1>Moniteurs</h1>
-        <p class="secondaire">
+        <app-intro><p class="secondaire">
           Ajout, modification, activation, mot de passe, droit à l'image : les gestes réservés aux
           administrateurs. Le niveau d'encadrement et les rôles (administrateur, directeur technique) ne se changent qu'ici.
           Pour qui n'est pas moniteur du club, voir l'écran « Sécurité surface » de l'administration.
-        </p>
+        </p></app-intro>
       </div>
       <button type="button" class="bouton-principal" (click)="ouvrirCreation()">Nouveau moniteur</button>
     </div>
