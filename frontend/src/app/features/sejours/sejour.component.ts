@@ -117,37 +117,9 @@ function participantVide(): BrouillonParticipant {
           </p>
         </div>
         <div class="boutons-entete sans-impression">
-          <!-- La sortie elle-même (dates, plongées, fiches, suppression) : ADMIN et directeur technique, comme avant
-               dans « Sorties » (demande du club, 2026-11-19). Réseau obligatoire. -->
-          @if (gereLaSortie()) {
-            <div class="menu-actions">
-              <button type="button" class="bouton-discret gerer-sortie" aria-haspopup="menu"
-                      [attr.aria-expanded]="menuSortieOuvert()" [disabled]="copieDu() !== null"
-                      [title]="copieDu() !== null ? 'Réseau nécessaire' : 'Nom, lieu, dates, plongées et fiches de sécurité de la sortie'"
-                      (click)="menuSortieOuvert.set(!menuSortieOuvert())">
-                Gérer la sortie ▾
-              </button>
-              @if (menuSortieOuvert()) {
-                <div class="menu-actions-liste" role="menu" (click)="menuSortieOuvert.set(false)">
-                  <button type="button" role="menuitem" (click)="gestion.commencerEdition(s.sortie)">
-                    Modifier (nom, lieu, dates)
-                  </button>
-                  <button type="button" role="menuitem" (click)="gestion.ouvrirChoix(s.sortie)">Choisir les plongées</button>
-                  @if (encadreLaSortie() && s.sortie.nombrePlongees > 0) {
-                    <button type="button" role="menuitem" (click)="impressionOuverte.set(true)">
-                      Imprimer les fiches de sécurité…
-                    </button>
-                  }
-                  <button type="button" role="menuitem" class="danger" (click)="gestion.supprimer(s.sortie)">
-                    Supprimer la sortie
-                  </button>
-                </div>
-              }
-            </div>
-          }
           <button type="button" class="bouton-discret ouvrir-actions" (click)="actionsOuvertes.set(true)"
-                  [title]="organise() ? 'Version imprimable, trombinoscope, carnet, organisateurs…' : 'Version imprimable, trombinoscope'">
-            <span aria-hidden="true">⋯</span> {{ organise() ? 'Organiser' : 'Partager' }}
+                  [title]="organise() || gereLaSortie() ? 'La sortie, version imprimable, trombinoscope, carnet, organisateurs…' : 'Version imprimable, trombinoscope'">
+            <span aria-hidden="true">⋯</span> {{ organise() || gereLaSortie() ? 'Organiser' : 'Partager' }}
           </button>
         </div>
       </header>
@@ -204,7 +176,7 @@ function participantVide(): BrouillonParticipant {
       }
 
       <!-- Les gestes d'organisation, rangés hors du bandeau pour l'alléger (demande du club, 2026). -->
-      <app-dialogue [ouvert]="actionsOuvertes()" [choix]="true" [titre]="organise() ? 'Partager et organiser' : 'Partager'"
+      <app-dialogue [ouvert]="actionsOuvertes()" [choix]="true" [titre]="organise() || gereLaSortie() ? 'Partager et organiser' : 'Partager'"
                     (fermer)="actionsOuvertes.set(false)">
         <!-- Seuls le créateur et les organisateurs qu'il désigne modifient le séjour (choix du club, 2026). -->
         <div class="organisateurs">
@@ -226,6 +198,36 @@ function participantVide(): BrouillonParticipant {
             <span class="pastille">Lecture seule</span>
           }
         </div>
+        <!-- La sortie elle-même (dates, plongées, fiches, suppression) : ADMIN et directeur technique, comme avant
+             dans « Sorties » (demande du club, 2026-11-19), ici plutôt que dans un second menu en tête de page.
+             Réseau obligatoire. -->
+        @if (gereLaSortie()) {
+          <h3 class="titre-actions">La sortie</h3>
+          @if (copieDu() !== null) { <p class="secondaire">Réseau nécessaire pour modifier la sortie.</p> }
+          <ul class="liste-actions gestion-sortie">
+            <li>
+              <button type="button" class="bouton-discret" [disabled]="copieDu() !== null"
+                      (click)="actionsOuvertes.set(false); gestion.commencerEdition(s.sortie)">
+                <span aria-hidden="true">✏️</span> Modifier la sortie (nom, lieu, dates)
+              </button>
+            </li>
+            <li>
+              <button type="button" class="bouton-discret" [disabled]="copieDu() !== null"
+                      (click)="actionsOuvertes.set(false); gestion.ouvrirChoix(s.sortie)">
+                <span aria-hidden="true">🤿</span> Choisir les plongées
+              </button>
+            </li>
+            @if (encadreLaSortie() && s.sortie.nombrePlongees > 0) {
+              <li>
+                <button type="button" class="bouton-discret" [disabled]="copieDu() !== null"
+                        (click)="actionsOuvertes.set(false); impressionOuverte.set(true)">
+                  <span aria-hidden="true">🖨</span> Imprimer les fiches de sécurité…
+                </button>
+              </li>
+            }
+          </ul>
+          <h3 class="titre-actions">Le séjour</h3>
+        }
         <ul class="liste-actions">
           <li>
             <a class="bouton-discret" [routerLink]="['/sejours', s.sortie.id, 'imprimer']" (click)="actionsOuvertes.set(false)">
@@ -276,6 +278,17 @@ function participantVide(): BrouillonParticipant {
             </li>
           }
         </ul>
+              @if (gereLaSortie()) {
+          <!-- Tout en bas, à l'écart des gestes de tous les jours. -->
+          <ul class="liste-actions gestion-sortie supprimer-sortie">
+            <li>
+              <button type="button" class="bouton-discret danger" [disabled]="copieDu() !== null"
+                      (click)="actionsOuvertes.set(false); gestion.supprimer(s.sortie)">
+                Supprimer la sortie
+              </button>
+            </li>
+          </ul>
+        }
       </app-dialogue>
 
       <!-- Les visages par groupe de plongeurs, pour tous les participants ; le serveur choisit les photos (demande du club, 2026). -->
@@ -1395,13 +1408,6 @@ function participantVide(): BrouillonParticipant {
     .entete p { margin: 0 0 var(--pas-2); }
     .ouvrir-actions { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
     .boutons-entete { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--pas); }
-    .boutons-entete .menu-actions-liste { left: auto; right: 0; }
-    /* Téléphone : les boutons passent sous le titre, le menu prend toute leur largeur. */
-    @media (max-width: 600px) {
-      .entete:has(.gerer-sortie) { flex-wrap: wrap; }
-      .entete:has(.gerer-sortie) .boutons-entete { position: relative; width: 100%; justify-content: flex-start; }
-      .boutons-entete .menu-actions-liste { left: 0; right: 0; }
-    }
     .liste-actions a { width: 100%; min-height: 48px; display: flex; align-items: center; gap: var(--pas);
                        box-sizing: border-box; text-decoration: none; color: var(--encre);
                        border: 1px solid var(--trait); border-radius: var(--r-s); }
@@ -1499,6 +1505,9 @@ function participantVide(): BrouillonParticipant {
       .sous-onglets { margin-top: var(--pas); }
     }
     .liste-actions { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
+    .titre-actions { margin: var(--pas-2) 0 var(--pas); font-size: .875rem; text-transform: uppercase; color: var(--craie); }
+    .gestion-sortie .danger { color: #B3261E; }
+    .supprimer-sortie { margin-top: var(--pas-3); padding-top: var(--pas-2); border-top: 1px solid var(--trait); }
     .liste-actions button { width: 100%; min-height: 48px; display: flex; align-items: center; gap: var(--pas);
                             justify-content: flex-start; text-align: left; }
     .passagers { margin-top: var(--pas); padding-top: var(--pas); border-top: 1px solid var(--trait); }
@@ -1621,7 +1630,6 @@ export class SejourComponent {
     && !this.commeParticipant());
   /** Imprimer les fiches de la sortie : moniteur ou ADMIN (droit du serveur). */
   readonly encadreLaSortie = computed(() => this.auth.estMoniteur() || this.auth.estAdmin());
-  menuSortieOuvert = signal(false);
   impressionOuverte = signal(false);
   /** Deux plongées du même jour au même lieu sur une feuille (1er et 2e tour), sinon une par plongée. */
   regrouperFiches = signal(true);

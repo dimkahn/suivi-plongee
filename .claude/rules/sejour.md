@@ -8,7 +8,7 @@ paths:
 
 # Séjours
 
-Paquet `fr.club.plongee.sejour`. Écrans `/sejours` (« Nouvelle sortie », ADMIN et DT), `/sejours/:id` (« Gérer la sortie » en tête : modifier, plongées, fiches imprimées, supprimer, par `GestionSortieComponent`, ADMIN et DT). `/admin/sorties` ne reste que pour le DT non moniteur, qui n'ouvre pas les séjours (*demande du club, 2026-11-19*). Migrations V75 (séjour), V76 (frais), V77 (saisie par les participants, photos, accès sans compte).
+Paquet `fr.club.plongee.sejour`. Écrans `/sejours` (« Nouvelle sortie », ADMIN et DT), `/sejours/:id` (la sortie se gère dans la fenêtre « ⋯ Organiser », rubrique « La sortie » : modifier, plongées, fiches imprimées, et « Supprimer la sortie » tout en bas, par `GestionSortieComponent`, ADMIN et DT ; plus de menu « Gérer la sortie » séparé, *2026-11-21*). `/admin/sorties` ne reste que pour le DT non moniteur, qui n'ouvre pas les séjours (*demande du club, 2026-11-19*). Migrations V75 (séjour), V76 (frais), V77 (saisie par les participants, photos, accès sans compte).
 
 ## Page du séjour
 - **Cinq onglets, les mêmes pour tous** (`onglets-sejour.ts`) : Programme (jour par jour, fiches de sécurité), Qui et où (participants, arrivées et départs, voitures, logements), Repas (régimes, courses, restaurant), Frais, Pratique (affaires, infos pratiques, matériel emprunté). *Demande du club, 2026.*

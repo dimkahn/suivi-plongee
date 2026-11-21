@@ -1,5 +1,5 @@
 // A15 — Organiser une sortie.
-// Tournage du 2026-11-19 : créée dans « Séjours », gérée depuis le séjour (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21 : la sortie se gère dans « ⋯ Organiser » du séjour (plus de menu « Gérer la sortie ») ; 2026-11-19 : créée dans « Séjours », gérée depuis le séjour (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -32,10 +32,10 @@ export default {
     await legende('Elles sont créées et rattachées à la sortie, en un geste, et son séjour s\'ouvre.', 3500);
     await vignette();
     await legende('Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s\'y rattache.', 4500);
-    await legende('En haut du séjour, « Gérer la sortie » : ses dates, ses plongées, ses fiches de sécurité, la supprimer.', 0);
-    await toucher(page.getByRole('button', { name: /Gérer la sortie/ }), { apres: 3500 });
-    await legende('« Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée.', 4500);
-    await toucher(page.getByRole('button', { name: /Gérer la sortie/ }), { apres: 600 });
+    await legende('En haut du séjour, « Organiser », rubrique « La sortie » : ses dates, ses plongées, ses fiches de sécurité.', 0);
+    await toucher(page.locator('.ouvrir-actions'), { apres: 3500 });
+    await legende('« Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée. « Supprimer la sortie » est tout en bas.', 5000);
+    await toucher(page.locator('dialog[open]').getByRole('button', { name: 'Fermer' }), { apres: 600 });
     await legende('Le séjour : vols, voitures, chambres, repas et programme. Voir la vidéo A17.', 4500);
     await legende('Qui crée la sortie est le créateur du séjour : lui seul le modifie, avec les organisateurs qu\'il choisit.', 4500);
     await legende(null, 0);

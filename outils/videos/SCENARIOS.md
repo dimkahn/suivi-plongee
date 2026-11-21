@@ -811,8 +811,8 @@ Compte : `presidente@club.fr` · formats téléphone et ordinateur · 40 s
 2. Ses plongées : deux par jour, sur le site prévu.
 3. Elles sont créées et rattachées à la sortie, en un geste, et son séjour s'ouvre.
 4. Les moniteurs y établiront les fiches de sécurité ; le matériel prêté s'y rattache.
-5. En haut du séjour, « Gérer la sortie » : ses dates, ses plongées, ses fiches de sécurité, la supprimer.
-6. « Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée.
+5. En haut du séjour, « Organiser », rubrique « La sortie » : ses dates, ses plongées, ses fiches de sécurité.
+6. « Imprimer les fiches de sécurité » : les deux plongées du jour sur une feuille, ou une feuille par plongée. « Supprimer la sortie » est tout en bas.
 7. Le séjour : vols, voitures, chambres, repas et programme. Celui qui crée la sortie en est le créateur : lui seul le modifie, avec les organisateurs qu'il désigne. Voir la vidéo A17.
 
 ### A16 — La base d'exercices
