@@ -1835,6 +1835,22 @@ export interface SyntheseSeanceVue {
   eleves: EleveSyntheseVue[];
 }
 
+/** Ce qu'un groupe a travaillé pendant une séance, d'après les notes (`groupeId` null : sans groupe). */
+export interface TravailGroupeVue {
+  groupeId: number | null;
+  nom: string;
+  elevesNotes: number;
+  /** Exercices notés (de la base ou libres), avec le nombre d'élèves notés dessus. */
+  exercices: { exercice: ExerciceNoteVue; eleves: number }[];
+  /** Critères notés sans exercice (notation groupée, par exemple). */
+  criteres: { critereId: number; bloc: string; savoirFaire: string; eleves: number }[];
+}
+
+export interface TravailSeanceVue {
+  seanceId: number;
+  groupes: TravailGroupeVue[];
+}
+
 /** État d'une compétence : NT non travaillée, ECA en cours d'acquisition, A acquise (validée). */
 export type EtatCompetence = 'NT' | 'ECA' | 'A';
 

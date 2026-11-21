@@ -13,7 +13,7 @@ import {
   DemandeEquipement, DemandeIntervention, DemandePret, DemandeRetour, EmprunteurVue, EquipementVue,
   EtiquetteMateriel, FicheEquipementVue, InterventionVue, DemandeInspectionTiv, InspectionTivVue, ModeleInspectionTivVue,MomentPhotoPret, PhotoPretVue, PretVue, RapportImportMateriel,
   DemandeSortie, SeancePossibleVue, SortieVue, BilanEnvoiParametres, BilanNotationGroupee, DemandeNotationGroupee,
-  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue,
+  DemandeExercice, ProgrammeVue, ExerciceBaseVue, DemandeExerciceBase, SyntheseSeanceVue, TravailSeanceVue,
   SyntheseGroupeVue, FicheExerciceVue, PhotoExerciceVue, VideoExerciceVue, EtatValidationVue,
   ResumeEquipementVue, SignalementMaterielVue
 } from './modeles';
@@ -416,6 +416,11 @@ export class ApiService {
   syntheseSeance(seanceId: number, niveau: string | null): Observable<SyntheseSeanceVue> {
     return this.http.get<SyntheseSeanceVue>(`/api/seances/${seanceId}/synthese`,
       { params: niveau ? { niveau } : {} });
+  }
+
+  /** Ce que chaque groupe a travaillé pendant une séance, d'après les notes (encadrants). Nécessite le réseau. */
+  travailSeance(seanceId: number): Observable<TravailSeanceVue> {
+    return this.http.get<TravailSeanceVue>(`/api/seances/${seanceId}/travail`);
   }
 
   /** Synthèse des compétences des élèves d'un groupe d'entraînement (encadrants). Nécessite le réseau. */

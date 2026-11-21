@@ -3,8 +3,10 @@ titre: Faire l'appel d'une séance
 rubrique: Moniteur
 videos: M3
 ecran: /presences
-mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, théorie seule, cours, en plus, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté, exercices, programme, schéma, critère de réussite, déroulement, replier, déplier, retour, revenir, élève suivant, séance du jour, prochaine séance, date par défaut, changer de séance
+mots: présence, présent, absent, feuille, appel, nage, bloc, théorie, théorie seule, cours, en plus, séance, émargement, pas encore évalué, sans évaluation, oublié, non noté, exercices, programme, schéma, critère de réussite, déroulement, replier, déplier, retour, revenir, élève suivant, séance du jour, prochaine séance, date par défaut, changer de séance, séance passée, précédente, ancienne, historique, travaillé, travail noté, ce qu'ont fait les groupes, notation groupée, sans programme
 questions:
+- Comment voir ce que les groupes ont fait à une séance précédente ?
+- Pourquoi « Exercices de la séance » est vide alors que les élèves ont été notés ?
 - Où voir le détail et le schéma des exercices de la séance ?
 - Comment replier les exercices de la séance ?
 - Où sont passés les exercices de la séance ?
@@ -56,7 +58,7 @@ Une note en piscine ou en fosse d'un N2/N3 (suivi d'entraînement) compte comme 
 - **L'appel d'abord** : seul un élève noté présent peut être évalué sur la séance.
 - Un élève sans choix est absent. Pas de bouton « Enregistrer ».
 - Les présences s'annoncent jusqu'à une semaine avant la séance ; elles ne comptent qu'une fois la séance passée.
-- « Au programme » rappelle ce que la progression du club prévoit ce mois-ci, et « Exercices de la séance » ce que chaque groupe a préparé.
+- « Au programme » rappelle ce que la progression du club prévoit ce mois-ci, et « Exercices de la séance » ce que chaque groupe a préparé et, une fois la séance passée, ce qu'il a travaillé d'après les notes.
 - Une fois la séance commencée, « Synthèse des notes » réunit tout ce qui a été noté pour un niveau (voir « La synthèse des notes d'une séance »).
 
 ## Un élève inscrit à deux niveaux
@@ -70,3 +72,13 @@ Un élève breveté en cours de saison puis inscrit au niveau suivant n'a qu'une
 - « Tout déplier » ouvre tous les exercices affichés d'un coup, « Tout replier » les referme.
 - Filtré sur un groupe, la partie ne montre que le programme de ce groupe et le programme commun.
 - Sans réseau, les choix restent sur le téléphone et partent au retour du réseau.
+
+## Ce que les groupes ont fait à une séance passée
+
+Pas de programme préparé, ou une séance notée avec « Noter les présents » ? Les notes suffisent : choisissez la séance passée (« Changer », puis le jour dans le calendrier) et ouvrez « Exercices de la séance ». Sous les programmes, **« Travaillé ce jour-là (d'après les notes) »** montre, groupe par groupe :
+
+- les **exercices notés**, avec le nombre d'élèves notés sur chacun ;
+- les **critères notés sans exercice** (notation groupée, par exemple), rangés par compétence ;
+- le nombre d'élèves notés dans le groupe ; « Sans groupe » réunit les élèves rangés dans aucun groupe.
+
+Quand rien n'a été préparé, le titre « Exercices de la séance » porte « (travail noté) ». Filtré sur un groupe, seul son travail s'affiche. Tout vient des notes : une note ajoutée après coup apparaît aussitôt. Le groupe d'un élève est celui où il est rangé aujourd'hui. Réseau nécessaire.

@@ -1,10 +1,10 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-11-21, « Comment faire ? » dans le bandeau du haut ; 2026-10-19, 14e série, choix sur la carte à l'ordinateur (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Travaillé ce jour-là » d'après les notes, et « Comment faire ? » dans le bandeau du haut ; 2026-10-19, 14e série, choix sur la carte à l'ordinateur (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
   public: 'Moniteur',
-  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office), nage ou bloc pour chaque élève, avec ou sans théorie, ou théorie seule, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où « ← Feuille de présence » ramène à la feuille.',
+  resume: 'La feuille de présence d\'une séance : le détail des exercices préparés (replié d\'office) et, pour une séance passée, ce que chaque groupe a travaillé d\'après les notes, nage ou bloc pour chaque élève, avec ou sans théorie, ou théorie seule, le bilan du groupe filtré, puis qui reste à évaluer et le bouton « Noter », d\'où « ← Feuille de présence » ramène à la feuille.',
   compte: 'e2@club.fr',
 
   async jouer({ page, pause, legende, toucher, menu, choisirDerniereSeance, format, selon }) {
@@ -31,6 +31,13 @@ export default {
       await legende('Touchez un exercice : déroulement, critère de réussite, critères travaillés et schéma.', 0);
       await toucher(exercice.first(), { apres: 3500 });
       await toucher(exercice.first(), { apres: 600 });
+    }
+    const travail = page.locator('section.exercices .travail');
+    if (await travail.count() > 0) {
+      await legende('Séance passée : « Travaillé ce jour-là » retrouve, d\'après les notes, les exercices et critères travaillés par chaque groupe, même sans programme préparé.', 0);
+      await travail.scrollIntoViewIfNeeded();
+      await pause(5000);
+      await page.locator('.bascule-exercices').scrollIntoViewIfNeeded();
     }
     await legende('Touchez de nouveau le titre pour replier la partie.', 0);
     await toucher(page.locator('.bascule-exercices'), { apres: 2000 });

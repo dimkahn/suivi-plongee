@@ -12,7 +12,7 @@ import { FileAttenteService } from '../../core/file-attente.service';
 import { dateDansJours, dateDuJour, dateFr } from '../../core/date-fr';
 import { PlurielPipe } from '../../core/pluriel';
 import {
-  ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue
+  ExerciceVue, GroupeEntrainementVue, LignePresence, ProgressionVue, SeanceVue, TravailGroupeVue
 } from '../../core/modeles';
 import { RouterLink } from '@angular/router';
 import { FiltreGroupe, FiltreGroupeComponent, passeFiltreGroupe } from '../../core/filtre-groupe.component';
@@ -158,6 +158,8 @@ function normaliser(texte: string): string {
               Exercices de la séance
               @if (exercicesAffiches().length > 0) {
                 <span class="secondaire compte-exercices">({{ exercicesAffiches().length }})</span>
+              } @else if (travailAffiche().length > 0) {
+                <span class="secondaire compte-exercices">(travail noté)</span>
               }
             </button>
           </h2>
@@ -237,6 +239,40 @@ function normaliser(texte: string): string {
               <p class="secondaire">Aucun exercice préparé pour cette séance.</p>
             } @else {
               <p class="secondaire">Le programme d'exercices s'affiche avec du réseau.</p>
+            }
+            @if (travailAffiche().length > 0) {
+              <div class="travail">
+                <h3 class="titre-travail">Travaillé ce jour-là (d'après les notes)</h3>
+                <p class="secondaire">Ce que les encadrants ont noté, même sans programme préparé.</p>
+                @for (t of travailAffiche(); track t.groupeId) {
+                  <div class="travail-groupe">
+                    <h4>{{ t.nom }} <span class="secondaire">· {{ t.elevesNotes | pluriel:'élève noté':'élèves notés' }}</span></h4>
+                    @if (t.exercices.length > 0) {
+                      <ul class="liste-travail">
+                        @for (x of t.exercices; track $index) {
+                          <li>
+                            <app-pastille-phase [phase]="x.exercice.phase" [numero]="x.exercice.numero"
+                                                [intitule]="x.exercice.id ? x.exercice.intitule : 'exercice libre'" />
+                            <span>{{ x.exercice.numero ? x.exercice.numero + ' ' : '' }}{{ x.exercice.intitule }}</span>
+                            <span class="secondaire">· {{ x.eleves | pluriel:'élève' }}</span>
+                          </li>
+                        }
+                      </ul>
+                    }
+                    @if (t.criteres.length > 0) {
+                      <p class="rubrique-travail">Critères notés sans exercice</p>
+                      <ul class="liste-travail">
+                        @for (c of t.criteres; track c.critereId) {
+                          <li>
+                            <span><span class="secondaire">{{ c.bloc }} —</span> {{ c.savoirFaire }}</span>
+                            <span class="secondaire">· {{ c.eleves | pluriel:'élève' }}</span>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                }
+              </div>
             }
           </div>
         }
@@ -397,6 +433,14 @@ function normaliser(texte: string): string {
     .detail-exercice .texte-libre { margin-top: 4px; white-space: pre-line; }
     .criteres-exercice { margin: 4px 0 0; padding-left: 1.25rem; display: grid; gap: 2px; }
     .detail-exercice app-schema-exercice { margin-top: var(--pas); }
+    .travail { margin-top: var(--pas-3); padding-top: var(--pas-2); border-top: 1px solid var(--trait); }
+    .exercices h3.titre-travail { margin-top: 0; }
+    .travail-groupe { margin-top: var(--pas-2); }
+    .travail-groupe h4 { margin: 0; font-size: .9375rem; }
+    .travail-groupe h4 .secondaire { font-weight: 400; font-size: .8125rem; }
+    .rubrique-travail { font-weight: 700; font-size: .875rem; color: var(--profond); }
+    .liste-travail { list-style: none; margin: var(--pas) 0 0; padding: 0; display: grid; gap: 4px; font-size: .875rem; }
+    .liste-travail li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--pas); }
     .filtres {
       display: flex; flex-wrap: wrap; gap: var(--pas-2); align-items: center;
       margin: var(--pas-3) 0 var(--pas-2);
@@ -573,6 +617,16 @@ export class PresencesComponent implements OnDestroy {
     return typeof filtre === 'number'
       ? this.exercices().filter(e => e.groupeId == null || e.groupeId === filtre)
       : this.exercices();
+  });
+
+  /** Ce que chaque groupe a travaillé d'après les notes de la séance (séance passée ou du jour, avec du réseau). */
+  travail = signal<TravailGroupeVue[]>([]);
+
+  /** Filtrée sur un groupe (ou « sans groupe ») : son seul travail ; sinon tous. */
+  travailAffiche = computed(() => {
+    const filtre = this.groupeFiltre();
+    if (filtre === 'TOUS') return this.travail();
+    return this.travail().filter(t => t.groupeId === (filtre === 'SANS' ? null : filtre));
   });
 
   /** Le programme commun d'abord, puis un programme par groupe, dans l'ordre du planning. */
@@ -802,10 +856,17 @@ export class PresencesComponent implements OnDestroy {
   /** Facultatif : sans réseau ou sans programme, la liste reste vide. */
   private chargerExercices(seanceId: number): void {
     this.exercices.set([]);
+    this.travail.set([]);
     if (!this.reseau.enLigne()) return;
     this.api.programmeSeance(seanceId).subscribe({
       next: p => { if (this.seanceId() === seanceId) this.exercices.set(p.exercices); },
       error: () => { /* le programme n'est qu'un complément de la feuille */ }
+    });
+    // Rien n'est noté avant le jour de la séance : inutile de demander.
+    if (this.seanceAVenir()) return;
+    this.api.travailSeance(seanceId).subscribe({
+      next: t => { if (this.seanceId() === seanceId) this.travail.set(t.groupes); },
+      error: () => { /* complément aussi */ }
     });
   }
 
