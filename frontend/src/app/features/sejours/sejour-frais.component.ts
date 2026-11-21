@@ -14,6 +14,7 @@ import {
   remboursementsDe
 } from './sejour-api';
 import { leconDuTicket } from './lecture-ticket';
+import { ScanNoteComponent } from './scan-note.component';
 import { montrerCarte } from './carte-voyage.component';
 import { envoiCarte } from './voyage';
 import { preuveEnAttente, preuvesAConfirmer, texteBilanDecompte } from './fin-des-comptes';
@@ -55,7 +56,7 @@ interface PhotoAEnvoyer {
  */
 @Component({
   selector: 'app-sejour-frais',
-  imports: [FormsModule, DialogueComponent, OngletsComponent],
+  imports: [FormsModule, DialogueComponent, OngletsComponent, ScanNoteComponent],
   template: `
     @let f = frais();
     @let d = f.droits;
@@ -361,9 +362,15 @@ interface PhotoAEnvoyer {
         @if (lectureNote(); as l) { <p class="lecture-note" role="status">{{ l }}</p> }
         <p class="secondaire">Une photo lisible du ticket, ou la facture en PDF (5 Mo au plus) : tous les participants
           peuvent la voir, évitez une facture qui montre votre adresse ou votre numéro de carte.
+          Une photo est recadrée sur les bords de la note et rendue plus nette, comme un scanner.
           Sur une photo, le montant total, la date et la catégorie sont lus pour remplir les cases vides : vérifiez-les.
           Sur un PDF, saisissez-les.</p>
       </fieldset>
+      <!-- Dans le contenu de la fenêtre : le reste de la page est inerte tant que la fenêtre est ouverte. -->
+      @if (aScanner()[0]; as photo) {
+        <app-scan-note [fichier]="photo" (valide)="joindreScan($event)" (annule)="photoScannee()"
+                       (illisible)="photoScannee(); erreur.set('Cette image n’a pas pu être lue : prenez une photo JPEG ou PNG.')" />
+      }
 
       <fieldset>
         <legend>Partagé entre</legend>
@@ -605,6 +612,8 @@ export class SejourFraisComponent {
   /** La part de chacun d'après le montant saisi, recalculée à chaque frappe (affichage seulement). */
   apercu = signal<Record<number, string>>({});
   aEnvoyer = signal<PhotoAEnvoyer[]>([]);
+  /** Les photos choisies qui attendent leur passage au scanner, la première ouverte. */
+  aScanner = signal<File[]>([]);
   photosExistantes = signal<number[]>([]);
   /** Parmi les justificatifs déjà envoyés de la dépense ouverte, les PDF. */
   pdfsExistants = signal<number[]>([]);
@@ -775,13 +784,25 @@ export class SejourFraisComponent {
         this.aEnvoyer.set([...this.aEnvoyer(), { fichier, apercu: null }]);
         continue;
       }
-      try {
-        const reduit = await reduirePhoto(fichier);
-        this.aEnvoyer.set([...this.aEnvoyer(), { fichier: reduit, apercu: URL.createObjectURL(reduit) }]);
-        await this.lireNote(reduit);
-      } catch {
-        this.erreur.set('Cette image n’a pas pu être lue : prenez une photo JPEG ou PNG.');
-      }
+      // Une photo passe d'abord par le scanner (bords, recadrage, filtre), une à la fois.
+      this.aScanner.set([...this.aScanner(), fichier]);
+    }
+  }
+
+  /** La photo au scanner est faite (jointe, gardée telle quelle ou abandonnée) : la suivante. */
+  photoScannee(): void {
+    this.aScanner.set(this.aScanner().slice(1));
+  }
+
+  /** La note mise au propre (ou la photo telle quelle) est réduite, jointe, puis lue. */
+  async joindreScan(photo: File): Promise<void> {
+    this.photoScannee();
+    try {
+      const reduit = await reduirePhoto(photo);
+      this.aEnvoyer.set([...this.aEnvoyer(), { fichier: reduit, apercu: URL.createObjectURL(reduit) }]);
+      await this.lireNote(reduit);
+    } catch {
+      this.erreur.set('Cette image n’a pas pu être lue : prenez une photo JPEG ou PNG.');
     }
   }
 
@@ -857,6 +878,7 @@ export class SejourFraisComponent {
   }
 
   private viderPhotosAEnvoyer(): void {
+    this.aScanner.set([]);
     this.aEnvoyer().forEach(p => { if (p.apercu) URL.revokeObjectURL(p.apercu); });
     this.aEnvoyer.set([]);
   }

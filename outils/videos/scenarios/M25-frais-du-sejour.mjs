@@ -1,5 +1,5 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo ou le PDF de la note.
-// Tournage du 2026-11-21, « Ajouter une dépense » en toutes lettres au téléphone aussi (plus de bouton rond) ; 2026-11-16, la facture en PDF (« Joindre un PDF »), 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, la photo de la note passe au scanner (bords trouvés, recadrage, filtre « Document ») ; même jour, « Ajouter une dépense » en toutes lettres au téléphone aussi (plus de bouton rond) ; 2026-11-16, la facture en PDF (« Joindre un PDF »), 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -34,6 +34,7 @@ export default {
       telephone: '« Prendre une photo » ouvre l\'appareil photo sur la note ; « Choisir dans mes photos », la galerie du téléphone ; « Joindre un PDF », une facture reçue par e-mail.',
       ordinateur: '« Choisir dans mes photos » prend une photo de la note déjà sur l\'ordinateur ; « Joindre un PDF », une facture reçue par e-mail ; au téléphone, « Prendre une photo » ouvre l\'appareil photo.'
     }), 4500);
+    await legende('La photo passe au scanner : les bords de la note sont trouvés tout seuls, un coin se glisse du doigt ; « Recadrer » la remet droite, le filtre « Document » la rend bien lisible.', 5000);
     await legende('L\'appli lit sur la photo le montant total, la date et la catégorie, et remplit les cases vides : on vérifie. Sur un PDF, on les saisit.', 4500);
     await legende('Par défaut, partagée entre tout le monde. « Choisir qui partage » : seulement ceux qui en ont profité.', 0);
     await toucher(page.getByRole('button', { name: 'Choisir qui partage' }), { apres: 1200 });
