@@ -26,8 +26,11 @@ public final class Courriel {
     /** Un code à recopier, en gros caractères espacés. */
     public record Code(String code) implements Bloc {}
 
-    /** Un tableau ; chaque ligne a autant de cases que d'en-têtes. */
-    public record Tableau(List<String> entetes, List<List<String>> lignes) implements Bloc {}
+    /**
+     * Un tableau ; chaque ligne a autant de cases que d'en-têtes. {@code details} : vide, ou une
+     * ligne discrète sous chaque ligne (la palanquée d'une plongée), {@code null} pour aucune.
+     */
+    public record Tableau(List<String> entetes, List<List<String>> lignes, List<String> details) implements Bloc {}
 
     /** Un petit texte discret (précision, rappel de confidentialité). */
     public record Note(String texte) implements Bloc {}
@@ -93,7 +96,12 @@ public final class Courriel {
     }
 
     public Courriel tableau(List<String> entetes, List<List<String>> lignes) {
-        blocs.add(new Tableau(List.copyOf(entetes), lignes.stream().map(List::copyOf).toList()));
+        return tableau(entetes, lignes, List.of());
+    }
+
+    public Courriel tableau(List<String> entetes, List<List<String>> lignes, List<String> details) {
+        blocs.add(new Tableau(List.copyOf(entetes), lignes.stream().map(List::copyOf).toList(),
+                java.util.Collections.unmodifiableList(new java.util.ArrayList<>(details))));
         return this;
     }
 

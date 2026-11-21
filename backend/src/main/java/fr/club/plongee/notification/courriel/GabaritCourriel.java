@@ -94,7 +94,8 @@ public class GabaritCourriel {
                 }
                 case Code code -> t.append("Code : ").append(code.code());
                 case Tableau tab -> {
-                    for (List<String> ligne : tab.lignes()) {
+                    for (int n = 0; n < tab.lignes().size(); n++) {
+                        List<String> ligne = tab.lignes().get(n);
                         t.append("- ");
                         for (int i = 0; i < ligne.size(); i++) {
                             if (i > 0) t.append(" · ");
@@ -102,6 +103,9 @@ public class GabaritCourriel {
                             t.append(ligne.get(i));
                         }
                         t.append('\n');
+                        if (n < tab.details().size() && tab.details().get(n) != null) {
+                            t.append("    ").append(tab.details().get(n)).append('\n');
+                        }
                     }
                     t.setLength(t.length() - 1);
                 }
@@ -245,16 +249,25 @@ public class GabaritCourriel {
                     .append(";color:").append(couleurTitres).append(";font-size:13px;\">").append(e(entete)).append("</th>");
         }
         h.append("</tr>");
-        for (List<String> ligne : t.lignes()) {
+        for (int n = 0; n < t.lignes().size(); n++) {
+            List<String> ligne = t.lignes().get(n);
+            String detail = n < t.details().size() ? t.details().get(n) : null;
+            // Avec une ligne de détail dessous, le trait passe sous le détail.
+            String trait = detail == null ? "border-bottom:1px solid " + TRAIT + ";" : "";
             h.append("<tr>");
             for (String c : ligne) {
                 // Un montant ou une date (« 720,00 € », « 05/06 ») ne se coupe pas en deux au téléphone.
                 String insecable = c != null && c.length() <= 12 ? "white-space:nowrap;" : "";
-                h.append("<td style=\"padding:8px 6px;border-bottom:1px solid ").append(TRAIT).append(";vertical-align:top;")
+                h.append("<td style=\"padding:8px 6px 4px;").append(trait).append("vertical-align:top;")
                         .append(insecable).append("\">")
                         .append(e(c)).append("</td>");
             }
             h.append("</tr>");
+            if (detail != null) {
+                h.append("<tr><td colspan=\"").append(ligne.size()).append("\" style=\"padding:0 6px 8px;border-bottom:1px solid ")
+                        .append(TRAIT).append(";font-size:12px;line-height:18px;color:").append(CRAIE).append(";\">")
+                        .append(e(detail)).append("</td></tr>");
+            }
         }
         h.append("</table>");
     }

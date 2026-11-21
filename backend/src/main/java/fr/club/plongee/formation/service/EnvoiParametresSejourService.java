@@ -1,5 +1,7 @@
 package fr.club.plongee.formation.service;
 
+import fr.club.plongee.notification.courriel.CourrielRendu;
+import fr.club.plongee.notification.courriel.GabaritCourriel;
 import fr.club.plongee.commun.Calendrier;
 import fr.club.plongee.commun.RegleMetierException;
 import fr.club.plongee.commun.RessourceIntrouvableException;
@@ -12,7 +14,6 @@ import fr.club.plongee.identite.IdentiteStructureService;
 import fr.club.plongee.securite.domain.Utilisateur;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.HtmlUtils;
 
 import java.text.Normalizer;
 import java.time.LocalDate;
@@ -56,19 +57,21 @@ public class EnvoiParametresSejourService {
         }
     }
 
-    /** Un courriel prêt à partir : texte brut et la même chose en tableau HTML. */
-    public record Courriel(String adresse, String sujet, String corps, String html) {}
+    /** Un courriel prêt à partir : texte brut et la même chose en tableau HTML, au gabarit du club (logo joint). */
+    public record Courriel(String adresse, String sujet, String corps, String html, byte[] logo) {}
 
     private final GroupePlongeursRepository groupes;
     private final SortieRepository sorties;
     private final FicheSecuriteRepository fiches;
     private final ServiceNotification notification;
     private final IdentiteStructureService identite;
+    private final GabaritCourriel gabarit;
 
     public EnvoiParametresSejourService(GroupePlongeursRepository groupes, SortieRepository sorties,
                                         FicheSecuriteRepository fiches, ServiceNotification notification,
-                                        IdentiteStructureService identite) {
+                                        IdentiteStructureService identite, GabaritCourriel gabarit) {
         this.groupes = groupes;
+        this.gabarit = gabarit;
         this.sorties = sorties;
         this.fiches = fiches;
         this.notification = notification;
@@ -116,7 +119,7 @@ public class EnvoiParametresSejourService {
                 continue;
             }
             Courriel c = courriel.get();
-            if (notification.envoyerCourriel(adresse, c.sujet(), c.corps(), c.html())) {
+            if (notification.envoyerCourriel(adresse, c.sujet(), new CourrielRendu(c.corps(), c.html(), c.logo()))) {
                 envoyes.add(new DestinataireVue(nom, adresse, nombrePlongees(membre, fichesSortie)));
             } else {
                 echecs.add(nom);
@@ -132,7 +135,8 @@ public class EnvoiParametresSejourService {
 
     Optional<Courriel> composer(Destinataire membre, Sortie sortie, List<FicheSecurite> fichesSortie) {
         StringBuilder corps = new StringBuilder();
-        StringBuilder lignes = new StringBuilder();
+        List<List<String>> lignes = new ArrayList<>();
+        List<String> palanquees = new ArrayList<>();
         List<LocalDate> jours = new ArrayList<>();
         int nombre = 0;
         for (FicheSecurite fiche : fichesSortie) {
@@ -141,7 +145,8 @@ public class EnvoiParametresSejourService {
                 nombre++;
                 jours.add(fiche.getSeance().getDateSeance());
                 corps.append("\n").append(plongee(fiche.getSeance(), p, membre));
-                lignes.append(ligneHtml(nombre, fiche.getSeance(), p, membre));
+                lignes.add(ligne(nombre, fiche.getSeance(), p));
+                palanquees.add(palanqueeEtCoequipiers(p, membre));
             }
         }
         if (nombre == 0) return Optional.empty();
@@ -151,78 +156,47 @@ public class EnvoiParametresSejourService {
                 + (sortie.getLieu() == null ? "" : " (" + sortie.getLieu() + ")")
                 + ", relevés sur les fiches de sécurité, pour votre carnet de plongée.\n";
         String pied = "\nBonnes bulles,\n" + identite.nom() + "\n";
+        CourrielRendu rendu = gabarit.rendre(html(membre, sortie, jours, lignes, palanquees));
         return Optional.of(new Courriel(membre.email(), "Vos plongées — " + sortie.getNom(),
-                entete + corps + pied, html(membre, sortie, jours, lignes)));
+                entete + corps + pied, rendu.html(), rendu.logo()));
     }
 
     /**
-     * Même contenu que le texte, en tableau (une ligne par plongée, la palanquée dessous),
-     * styles en ligne pour les messageries. Tout texte saisi est échappé.
+     * Même contenu que le texte, au gabarit des e-mails du club : un tableau (une ligne
+     * par plongée, la palanquée dessous). Tout texte saisi est échappé par le gabarit.
      */
-    private String html(Destinataire membre, Sortie sortie, List<LocalDate> jours, CharSequence lignes) {
+    private fr.club.plongee.notification.courriel.Courriel html(Destinataire membre, Sortie sortie, List<LocalDate> jours,
+                                                               List<List<String>> lignes, List<String> palanquees) {
         LocalDate premier = Collections.min(jours);
         LocalDate dernier = Collections.max(jours);
         String dates = premier.equals(dernier) ? premier.format(Calendrier.DATE_FR)
                 : premier.format(Calendrier.DATE_FR) + " au " + dernier.format(Calendrier.DATE_FR);
-        StringBuilder h = new StringBuilder();
-        h.append("<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"UTF-8\"></head>")
-                .append("<body style=\"margin:0;padding:8px;background:#f4f7fa;font-family:Arial,Helvetica,sans-serif;color:#1d2b36;\">")
-                .append("<div style=\"max-width:720px;margin:0 auto;background:#ffffff;border-radius:8px;padding:14px;\">")
-                .append("<h1 style=\"margin:0 0 4px;font-size:22px;color:#0b4f6c;\">Vos plongées</h1>")
-                .append("<p style=\"margin:0 0 16px;font-size:15px;color:#4a5b68;\">").append(e(sortie.getNom())).append("</p>")
-                .append("<p>Bonjour ").append(e(membre.prenom())).append(",</p>")
-                .append("<p>Voici les paramètres de vos plongées, relevés sur les fiches de sécurité, pour votre carnet de plongée.</p>")
-                .append("<div style=\"background:#eef4f8;border-radius:6px;padding:10px 14px;margin:16px 0;font-size:14px;\">")
-                .append("<strong>Informations du séjour</strong><br>");
-        if (sortie.getLieu() != null && !sortie.getLieu().isBlank()) {
-            h.append("Lieu : ").append(e(sortie.getLieu())).append("<br>");
-        }
-        h.append("Dates : ").append(dates).append("<br>")
-                .append("Plongées : ").append(jours.size()).append("</div>")
-                .append("<table role=\"presentation\" cellspacing=\"0\" cellpadding=\"0\" style=\"width:100%;border-collapse:collapse;font-size:13px;\">")
-                .append("<thead><tr>");
-        for (String titre : List.of("#", "Date", "Site", "Heure", "Prof.", "Durée", "Paliers")) {
-            h.append("<th style=\"").append(STYLE_TH).append("\">").append(titre).append("</th>");
-        }
-        h.append("</tr></thead><tbody>").append(lignes).append("</tbody></table>")
-                .append("<p style=\"font-size:13px;color:#4a5b68;\">« (prévue) » : le réalisé n'a pas encore été saisi sur la fiche.</p>")
-                .append("<p>Bonnes bulles,<br>").append(e(identite.nom())).append("</p>")
-                .append("</div></body></html>");
-        return h.toString();
+        List<Map.Entry<String, String>> infos = new ArrayList<>();
+        if (sortie.getLieu() != null && !sortie.getLieu().isBlank()) infos.add(Map.entry("Lieu", sortie.getLieu()));
+        infos.add(Map.entry("Dates", dates));
+        infos.add(Map.entry("Plongées", String.valueOf(jours.size())));
+        return fr.club.plongee.notification.courriel.Courriel.titre("Vos plongées").sousTitre(sortie.getNom())
+                .bonjour(membre.prenom())
+                .paragraphe("Voici les paramètres de vos plongées, relevés sur les fiches de sécurité, pour votre carnet de plongée.")
+                .encadre("Informations du séjour", infos)
+                .tableau(List.of("#", "Date", "Site", "Heure", "Prof.", "Durée", "Paliers"), lignes, palanquees)
+                .note("« (prévue) » : le réalisé n'a pas encore été saisi sur la fiche.")
+                .signature("Bonnes bulles");
     }
 
-    private static final String STYLE_TH =
-            "text-align:left;padding:6px 4px;border-bottom:2px solid #0b4f6c;color:#0b4f6c;white-space:nowrap;";
-    private static final String STYLE_TD = "padding:6px 4px 2px;vertical-align:top;";
-
-    private String ligneHtml(int numero, Seance s, Palanquee p, Destinataire membre) {
+    /** Une plongée : numéro, date, site, heure d'immersion, profondeur, durée, paliers. */
+    private static List<String> ligne(int numero, Seance s, Palanquee p) {
         String jour = s.getDateSeance().getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.FRENCH);
         String date = majuscule(jour) + " " + s.getDateSeance().format(JOUR_MOIS);
         boolean realise = p.getProfondeurRealisee() != null || p.getDureeRealisee() != null;
         Integer profondeur = realise ? p.getProfondeurRealisee() : p.getProfondeurPrevue();
         Integer duree = realise ? p.getDureeRealisee() : p.getDureePrevue();
         String suffixe = realise ? "" : " (prévue)";
-
-        StringBuilder h = new StringBuilder("<tr>");
-        cellule(h, String.valueOf(numero));
-        cellule(h, date);
-        cellule(h, lieu(s));
-        cellule(h, p.getHeureImmersion() == null ? "" : heure(p.getHeureImmersion()));
-        cellule(h, profondeur == null ? "" : profondeur + " m" + suffixe);
-        cellule(h, duree == null ? "" : duree + " min" + suffixe);
-        cellule(h, p.getPaliers() == null ? "" : p.getPaliers());
-        h.append("</tr><tr><td style=\"border-bottom:1px solid #dde5eb;\"></td>")
-                .append("<td colspan=\"6\" style=\"padding:0 4px 6px;border-bottom:1px solid #dde5eb;font-size:12px;color:#4a5b68;\">")
-                .append(e(palanqueeEtCoequipiers(p, membre))).append("</td></tr>");
-        return h.toString();
-    }
-
-    private static void cellule(StringBuilder h, String texte) {
-        h.append("<td style=\"").append(STYLE_TD).append("\">").append(e(texte)).append("</td>");
-    }
-
-    private static String e(String texte) {
-        return texte == null ? "" : HtmlUtils.htmlEscape(texte, "UTF-8");
+        return List.of(String.valueOf(numero), date, lieu(s),
+                p.getHeureImmersion() == null ? "" : heure(p.getHeureImmersion()),
+                profondeur == null ? "" : profondeur + " m" + suffixe,
+                duree == null ? "" : duree + " min" + suffixe,
+                p.getPaliers() == null ? "" : p.getPaliers());
     }
 
     private int nombrePlongees(Destinataire membre, List<FicheSecurite> fichesSortie) {

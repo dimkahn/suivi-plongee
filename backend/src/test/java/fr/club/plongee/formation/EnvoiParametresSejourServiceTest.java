@@ -21,7 +21,8 @@ class EnvoiParametresSejourServiceTest {
                         public String nom() {
                             return "Club de test";
                         }
-                    });
+                    }, new fr.club.plongee.notification.courriel.GabaritCourriel(
+                            new fr.club.plongee.notification.courriel.IdentiteDonnee()));
 
     private static MembrePalanquee plongeur(String prenom, String nom, String aptitude, FonctionPalanquee fonction) {
         MembrePalanquee m = new MembrePalanquee();
@@ -100,6 +101,8 @@ class EnvoiParametresSejourServiceTest {
                         ">Sam. 10/10</td>", "Hyères — Le Donator", "09:12", "19 m", "38 min", "3 min à 3 m",
                         "Anis Dulac (N3, guide de palanquée)")
                 .doesNotContain("Leroy", "La Gabinière", "40 m");
+        // Au gabarit commun des e-mails du club : logo joint, rien à télécharger.
+        assertThat(courriel.html()).contains("cid:logo-structure").doesNotContain("src=\"http");
         assertThat(service.composer(marc, sortie, List.of(matin, apresMidi)).orElseThrow().html())
                 .contains("25 m (prévue)", "45 min (prévue)", "seul(e) inscrit(e)");
 

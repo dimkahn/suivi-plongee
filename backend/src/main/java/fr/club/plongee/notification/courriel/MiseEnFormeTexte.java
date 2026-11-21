@@ -60,7 +60,12 @@ public final class MiseEnFormeTexte {
                     List<String> details = new ArrayList<>(dernier.details());
                     details.add(contenu.startsWith("- ") ? contenu.substring(2) : contenu);
                     elements.add(new Liste.Element(dernier.texte(), details));
-                } else if (retrait >= 2) {
+                } else if (retrait >= 2 || contenu.startsWith("- ")) {
+                    // Le titre de la liste (« CACI qui expirent bientôt : ») en gras.
+                    if (paragraphe.toString().endsWith(":") && paragraphe.indexOf("\n") < 0) {
+                        c.paragrapheFort(paragraphe.toString());
+                        paragraphe.setLength(0);
+                    }
                     vider(c, paragraphe);
                     elements.add(new Liste.Element(contenu.startsWith("- ") ? contenu.substring(2) : contenu, List.of()));
                 } else {

@@ -1,5 +1,6 @@
 package fr.club.plongee.notification.relance;
 
+import fr.club.plongee.notification.courriel.GabaritCourriel;
 import fr.club.plongee.formation.repository.SaisonRepository;
 import fr.club.plongee.notification.relance.CalculRelancesCaci.Eleve;
 import fr.club.plongee.notification.relance.CalculRelancesCaci.Moment;
@@ -66,13 +67,16 @@ public class RelancesCaciService {
     public record PersonneTracee(String nom, String prenom) {}
 
     private final NamedParameterJdbcTemplate jdbc;
+    private final GabaritCourriel gabarit;
     private final ServiceNotification notification;
     private final TransactionTemplate transaction;
     private final SaisonRepository saisons;
 
     public RelancesCaciService(NamedParameterJdbcTemplate jdbc, ServiceNotification notification,
-                               PlatformTransactionManager transactions, SaisonRepository saisons) {
+                               PlatformTransactionManager transactions, SaisonRepository saisons,
+                               GabaritCourriel gabarit) {
         this.jdbc = jdbc;
+        this.gabarit = gabarit;
         this.notification = notification;
         this.saisons = saisons;
         this.transaction = new TransactionTemplate(transactions);
@@ -137,7 +141,8 @@ public class RelancesCaciService {
         for (Compte admin : admins) {
             Courriel courriel = TextesRelancesCaci.recapitulatif(admin.prenom(), jour, resultat.dues(),
                     resultat.sansCaci(), injoignables);
-            if (notification.envoyerCourriel(admin.email(), courriel.sujet(), courriel.corps())) {
+            if (notification.envoyerCourriel(admin.email(), courriel.sujet(),
+                    gabarit.rendreTexte("CACI à suivre", null, courriel.corps()))) {
                 parti = true;
                 ecrire(jour, "la trace d'un récapitulatif parti n'a pas pu être écrite", () -> tracer(jour, admin,
                         Stream.concat(resultat.dues().stream(), resultat.sansCaci().stream()).toList()));
@@ -171,7 +176,8 @@ public class RelancesCaciService {
         Courriel courriel = relance.moment() == Moment.JOUR_J
                 ? TextesRelancesCaci.jourJ(compte.prenom(), relance.finValidite())
                 : TextesRelancesCaci.bientot(compte.prenom(), relance.finValidite());
-        if (notification.envoyerCourriel(compte.email(), courriel.sujet(), courriel.corps())) {
+        if (notification.envoyerCourriel(compte.email(), courriel.sujet(),
+                gabarit.rendreTexte("Votre CACI", null, courriel.corps()))) {
             ecrire(jour, "la trace d'un e-mail de relance parti n'a pas pu être écrite",
                     () -> noterRelanceMoniteur(jour, compte, relance));
             return true;

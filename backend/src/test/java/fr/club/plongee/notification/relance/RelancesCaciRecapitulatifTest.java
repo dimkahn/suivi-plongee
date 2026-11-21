@@ -169,6 +169,9 @@ class RelancesCaciRecapitulatifTest {
                 .containsExactly("- Marin Paul, moniteur, valable jusqu'au " + DATE_FR.format(jour));
         assertThat(rubrique(recap.corps(), SANS_CACI)).contains("- Vidal Tom, moniteur");
         assertThat(recap.corps()).doesNotContain(INJOIGNABLES);
+        // Mis en forme aussi, sans lien (R15) : chaque rubrique en liste.
+        assertThat(recap.html()).as("récapitulatif en HTML").isNotNull()
+                .contains("<ul", "Vidal Tom, moniteur", "cid:logo-structure").doesNotContain("href=");
         // R19 : une ligne de trace pour Claire, qui cite les personnes des trois rubriques.
         assertThat(tracesVers(CLAIRE, jour)).singleElement()
                 .satisfies(personnes -> assertThat(personnes).contains("Lemaire Hugo", "Marin Paul", "Vidal Tom"));

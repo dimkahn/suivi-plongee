@@ -108,6 +108,9 @@ class RelancesCaciMoniteursTest {
         assertThat(recus).hasSize(1);
         assertThat(recus.getFirst().sujet()).isEqualTo("Votre CACI expire le " + DATE_FR.format(fin));
         assertThat(recus.getFirst().corps()).isEqualTo(corpsBientot("Paul", fin));
+        // Mis en forme aussi, sans lien (R13) : le même texte, aux couleurs du club, logo joint.
+        assertThat(recus.getFirst().html()).as("relance en HTML").isNotNull()
+                .contains("Paul", "cid:logo-structure").doesNotContain("href=");
         // R19 : une ligne de trace, le moniteur destinataire et seule personne concernée.
         assertThat(jdbc.queryForList("""
                 SELECT e.envoye_le, e.destinataire_nom, e.destinataire_prenom, p.nom, p.prenom

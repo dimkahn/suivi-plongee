@@ -75,6 +75,26 @@ class MiseEnFormeTexteTest {
     }
 
     @Test
+    @DisplayName("Des lignes « - … » sans retrait, sous une ligne qui finit par « : », font une liste sous un titre en gras")
+    void listeSansRetrait() {
+        Courriel recap = MiseEnFormeTexte.courriel("CACI à suivre", null, """
+                Bonjour Claire,
+
+                Voici les CACI à suivre au 20/11/2026.
+
+                CACI qui expirent bientôt :
+                - Dulac Anis, élève, valable jusqu'au 03/12/2026
+                - Morel Léa, moniteur, valable jusqu'au 05/12/2026
+
+                Message envoyé automatiquement par le suivi des formations du club.""", "Club de plongée d'essai");
+
+        assertThat(recap.getBlocs()).containsSubsequence(
+                new Paragraphe("CACI qui expirent bientôt :", true),
+                new Liste(List.of(new Liste.Element("Dulac Anis, élève, valable jusqu'au 03/12/2026", List.of()),
+                        new Liste.Element("Morel Léa, moniteur, valable jusqu'au 05/12/2026", List.of()))));
+    }
+
+    @Test
     @DisplayName("La version texte envoyée reste celle écrite, mot pour mot")
     void texteInchange() {
         CourrielRendu rendu = new GabaritCourriel(new IdentiteDonnee()).rendreTexte("Décompte des frais", "Port-Cros", DECOMPTE);
