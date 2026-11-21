@@ -22,7 +22,8 @@ import java.util.Set;
 @TestConfiguration
 public class FausseMessagerie {
 
-    public record Message(String adresse, String sujet, String corps) {}
+    /** {@code html} : la version HTML, {@code null} pour un courriel en texte seul. */
+    public record Message(String adresse, String sujet, String corps, String html) {}
 
     public static class Boite implements ServiceNotification {
 
@@ -36,8 +37,13 @@ public class FausseMessagerie {
 
         @Override
         public synchronized boolean envoyerCourriel(String adresse, String sujet, String corps) {
+            return envoyerCourriel(adresse, sujet, corps, null);
+        }
+
+        @Override
+        public synchronized boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
             if (refusees.contains(adresse)) return false;
-            messages.add(new Message(adresse, sujet, corps));
+            messages.add(new Message(adresse, sujet, corps, html));
             apresEnvoi.getOrDefault(adresse, () -> {}).run();
             return true;
         }

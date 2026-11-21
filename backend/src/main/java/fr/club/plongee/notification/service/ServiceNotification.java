@@ -35,4 +35,12 @@ public interface ServiceNotification {
     default boolean envoyerCourriel(String adresse, String sujet, String corps, String html) {
         return envoyerCourriel(adresse, sujet, corps);
     }
+
+    /**
+     * Un e-mail mis en forme par {@link fr.club.plongee.notification.courriel.GabaritCourriel} :
+     * texte, HTML, et le logo de la structure joint au message. Par défaut, le logo ne part pas.
+     */
+    default boolean envoyerCourriel(String adresse, String sujet, fr.club.plongee.notification.courriel.CourrielRendu rendu) {
+        return envoyerCourriel(adresse, sujet, rendu.texte(), rendu.html());
+    }
 }

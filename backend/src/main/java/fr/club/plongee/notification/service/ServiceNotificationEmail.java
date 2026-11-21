@@ -1,5 +1,8 @@
 package fr.club.plongee.notification.service;
 
+import fr.club.plongee.notification.courriel.CourrielRendu;
+import fr.club.plongee.notification.courriel.GabaritCourriel;
+import org.springframework.core.io.ByteArrayResource;
 import fr.club.plongee.securite.domain.Utilisateur;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,6 +91,26 @@ public class ServiceNotificationEmail implements ServiceNotification {
             return true;
         } catch (Exception e) {
             // Seulement le type d'erreur : le message d'un refus SMTP cite souvent l'adresse.
+            log.error("Échec de l'envoi d'un courriel (destinataire non journalisé) : {}", e.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    /** Texte, HTML et logo joint ({@code multipart/related}) : le HTML l'affiche par {@code cid:}, rien n'est téléchargé. */
+    @Override
+    public boolean envoyerCourriel(String adresse, String sujet, CourrielRendu rendu) {
+        if (rendu.logo() == null) return envoyerCourriel(adresse, sujet, rendu.texte(), rendu.html());
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper aide = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED, "UTF-8");
+            aide.setFrom(expediteur);
+            aide.setTo(adresse);
+            aide.setSubject(sujet);
+            aide.setText(rendu.texte(), rendu.html());
+            aide.addInline(GabaritCourriel.CID_LOGO, new ByteArrayResource(rendu.logo()), "image/png");
+            mailSender.send(message);
+            return true;
+        } catch (Exception e) {
             log.error("Échec de l'envoi d'un courriel (destinataire non journalisé) : {}", e.getClass().getSimpleName());
             return false;
         }

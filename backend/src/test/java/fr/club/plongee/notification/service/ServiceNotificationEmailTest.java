@@ -73,6 +73,23 @@ class ServiceNotificationEmailTest {
         assertThat(smtp.recu.getSubject()).isEqualTo("Vos plongées — Séjour");
     }
 
+    @Test
+    @DisplayName("Un e-mail mis en forme part avec son logo joint au message, référencé par cid:, rien à télécharger")
+    void logoJoint() throws Exception {
+        SmtpQuiGarde smtp = new SmtpQuiGarde();
+        ServiceNotificationEmail service = new ServiceNotificationEmail(smtp, "club@exemple.fr", "http://localhost:4200");
+        var rendu = new fr.club.plongee.notification.courriel.CourrielRendu("Bonjour Léa",
+                "<img src=\"cid:logo-structure\"><p>Bonjour Léa</p>", new byte[] {(byte) 0x89, 'P', 'N', 'G'});
+
+        assertThat(service.envoyerCourriel("plongeur@exemple.fr", "Votre code", rendu)).isTrue();
+
+        smtp.recu.saveChanges();
+        var sortie = new java.io.ByteArrayOutputStream();
+        smtp.recu.writeTo(sortie);
+        String brut = sortie.toString(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(brut).contains("multipart/related", "text/plain", "text/html", "image/png", "Content-ID: <logo-structure>");
+    }
+
     /** Serveur SMTP qui refuse le destinataire en le citant, comme un vrai « 550 ». */
     static class SmtpRefuseLeDestinataire extends JavaMailSenderImpl {
         @Override
