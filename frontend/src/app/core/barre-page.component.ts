@@ -1,4 +1,5 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked, ChangeDetectionStrategy } from '@angular/core';
+import { AideEcranService } from './aide-ecran.service';
 import { RouterLink } from '@angular/router';
 import { AuthService } from './auth.service';
 import { DialogueComponent } from './dialogue.component';
@@ -8,21 +9,23 @@ import { ManuelComponent } from '../features/aide/manuel.component';
 
 /**
  * La barre en tête de chaque page : à gauche le retour vers l'écran
- * parent (« ← Matériel », même règle partout, voir core/navigation.ts),
- * à droite « Comment faire ? », qui ouvre sans quitter la page les manuels
- * de l'écran (features/aide/comment-faire.ts) : une saisie en cours n'est
- * pas perdue. Rien sur la page Aide elle-même, hormis son retour.
+ * parent (« ← Matériel », même règle partout, voir core/navigation.ts).
+ * « Comment faire ? » ouvre sans quitter la page les manuels de l'écran
+ * (features/aide/comment-faire.ts) : une saisie en cours n'est pas perdue.
+ * Connecté, son bouton est dans le bandeau du haut (AideEcranService) : la
+ * barre ne prend une ligne que s'il y a un retour ; sans compte, il reste ici.
+ * Rien sur la page Aide elle-même, hormis son retour.
  */
 @Component({
   selector: 'app-barre-page',
   imports: [RouterLink, DialogueComponent, ManuelComponent],
   template: `
-    @if (retour() || avecAide()) {
+    @if (retour() || boutonIci()) {
       <nav class="barre-page" aria-label="Navigation de la page">
         @if (retour(); as r) {
           <a class="retour-page" [routerLink]="r.lien" [queryParams]="r.parametres ?? {}">← {{ r.libelle }}</a>
         }
-        @if (avecAide()) {
+        @if (boutonIci()) {
           <button type="button" class="bouton-discret comment-faire" (click)="ouvrir()"
                   aria-haspopup="dialog" title="Les manuels et vidéos d'aide de cet écran">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -112,6 +115,12 @@ export class BarrePageComponent {
    * montre que l'aide des écrans publics (connexion, séjour par lien).
    */
   avecAide = computed(() => this.navigation.chemin() !== '/aide');
+  /** Sans compte, pas de bandeau : le bouton reste dans la barre de la page. */
+  boutonIci = computed(() => this.avecAide() && !this.auth.connecte());
+  private aideEcran = inject(AideEcranService);
+  private readonly ouvrirSurDemande = effect(() => {
+    if (this.aideEcran.demande() > 0) untracked(() => this.ouvrir());
+  });
 
   ouvert = signal(false);
   manuels = signal<Manuel[]>([]);

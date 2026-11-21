@@ -46,7 +46,8 @@
   --fond:      #F8FAFC;
   --carte:     #FFFFFF;
   --encre:     #0F172A;
-  --profond:   #0891B2;
+  /* #0891B2 de la charte, assombri juste assez (4,5:1 sur blanc, et blanc dessus) : liens, onglets, pastilles. */
+  --profond:   #07819E;
   --profond-fonce: #0C3547;
   /* Gris des textes secondaires : assez foncé pour se lire au soleil, au bord du bassin. */
   --craie:     #475569;

@@ -1,5 +1,5 @@
 // M1 — Se connecter et s'y retrouver.
-// Tournage du 2026-10-25, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Comment faire ? » dans le bandeau du haut (« Aide » au téléphone) ; 2026-10-25, 12e série (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -46,7 +46,10 @@ export default {
       await toucher(page.locator('nav.onglets').getByRole('button', { name: 'Plus' }), { apres: 600 });
     }
 
-    await legende('Sur chaque écran, « Comment faire ? », en haut à droite, ouvre les manuels et vidéos de cet écran.', 0);
+    await legende(selon({
+      telephone: 'Sur chaque écran, « Aide », dans le bandeau du haut, ouvre les manuels et vidéos de cet écran.',
+      ordinateur: 'Sur chaque écran, « Comment faire ? », dans le bandeau du haut à droite, ouvre les manuels et vidéos de cet écran.'
+    }), 0);
     await toucher(page.getByRole('button', { name: 'Comment faire ?' }), { apres: 1500 });
     await legende('Votre saisie reste en place derrière la fenêtre : « Revenir à l\'écran » la retrouve.', 3500);
     await toucher(page.getByRole('dialog').getByRole('button', { name: 'Revenir à l\'écran' }), { apres: 800 });

@@ -1,3 +1,4 @@
+import { couleurLisible } from './couleur-lisible';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, firstValueFrom } from 'rxjs';
@@ -77,7 +78,8 @@ export class IdentiteService {
     const racine = document.documentElement.style;
     const jeton = (nom: string, valeur: string | null) =>
       valeur ? racine.setProperty(nom, valeur) : racine.removeProperty(nom);
-    jeton('--profond', i.couleurPrincipale);
+    // Une couleur trop claire pour du texte est assombrie dans sa teinte (couleur-lisible.ts).
+    jeton('--profond', i.couleurPrincipale ? couleurLisible(i.couleurPrincipale) : null);
     jeton('--profond-fonce', i.couleurFoncee);
     jeton('--accent', i.couleurAccent);
     jeton('--accent-clair', i.couleurAccent ? `color-mix(in srgb, ${i.couleurAccent} 55%, white)` : null);

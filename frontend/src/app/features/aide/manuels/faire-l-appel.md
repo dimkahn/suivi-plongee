@@ -33,7 +33,7 @@ Menu, « Présences » : choisissez la séance, puis touchez chaque élève et c
    - **Théorie seule** : touchez seulement « Théorie ».
 5. Le compteur en haut de la liste fait le bilan : présents, absents, et présents sans évaluation. Il reste en haut de l'écran pendant qu'on fait défiler les élèves. Filtré sur un groupe, il ne compte que les élèves de ce groupe (la recherche d'un élève, elle, ne change pas le compte).
 
-Un doute en cours de route ? « Comment faire ? », en haut à droite de l'écran, rappelle les règles de l'appel.
+Un doute en cours de route ? « Comment faire ? » (« Aide » sur le téléphone), dans le bandeau du haut à droite, rappelle les règles de l'appel.
 
 ## Corriger
 

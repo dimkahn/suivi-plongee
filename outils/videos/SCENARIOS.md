@@ -46,7 +46,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 70 s
 8. Trombinoscope, fiches de sécurité, séjours…
 9. « Préparer hors ligne » avant d'aller au bassin, s'il n'y a pas de réseau.
 10. « Aide » : les questions fréquentes et les vidéos. Votre nom : votre compte (photo, e-mail, mot de passe), et « Se déconnecter ».
-11. Sur chaque écran, « Comment faire ? », en haut à droite, ouvre les manuels et vidéos de cet écran.
+11. Sur chaque écran, « Comment faire ? » (« Aide » au téléphone), dans le bandeau du haut à droite, ouvre les manuels et vidéos de cet écran.
 12. Votre saisie reste en place derrière la fenêtre : « Revenir à l'écran » la retrouve.
 13. En haut à gauche des autres écrans, « ← … » remonte d'un cran, toujours au même endroit.
 14. Astuce : ajoutez l'appli à l'écran d'accueil du téléphone, elle s'ouvrira comme une application.
@@ -82,7 +82,7 @@ La feuille de présence d'une séance : le détail des exercices préparés (rep
 Compte : `e2@club.fr` · formats téléphone et ordinateur · 1 min 10
 
 1. Au bord du bassin : « Présences », en bas de l'écran.
-2. Un doute ? « Comment faire ? », en haut à droite, rappelle les règles de l'appel.
+2. Un doute ? « Comment faire ? », dans le bandeau du haut à droite, rappelle les règles de l'appel.
 3. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine.
 4. Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.
 5. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.
@@ -112,7 +112,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur · 1 min 10
 Au format ordinateur :
 
 1. Dans le menu en haut : « Présences ».
-2. Un doute ? « Comment faire ? », en haut à droite, rappelle les règles de l'appel.
+2. Un doute ? « Comment faire ? », dans le bandeau du haut à droite, rappelle les règles de l'appel.
 3. La feuille s'ouvre sur la séance du jour, sinon sur la prochaine.
 4. Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.
 5. Les jours marqués portent une séance. Le lundi, la piscine et la fosse sont deux séances distinctes.

@@ -1,5 +1,5 @@
 // M3 — Faire l'appel d'une séance.
-// Tournage du 2026-10-19, 14e série, choix sur la carte à l'ordinateur (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Comment faire ? » dans le bandeau du haut ; 2026-10-19, 14e série, choix sur la carte à l'ordinateur (changer cette date dans tous les scénarios les fait tous retourner).
 export default {
   id: 'M3',
   titre: 'Faire l\'appel d\'une séance',
@@ -15,7 +15,7 @@ export default {
       ordinateur: 'Dans le menu en haut : « Présences ».'
     }), 0);
     await menu('Présences');
-    await legende('Un doute ? « Comment faire ? », en haut à droite, rappelle les règles de l\'appel.', 3000);
+    await legende('Un doute ? « Comment faire ? », dans le bandeau du haut à droite, rappelle les règles de l\'appel.', 3000);
 
     await legende('La feuille s\'ouvre sur la séance du jour, sinon sur la prochaine.', 3500);
     await legende('Une autre séance ? Touchez « Changer » pour ouvrir le calendrier.', 0);

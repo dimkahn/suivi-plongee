@@ -7,6 +7,7 @@ import { FileSejourService } from './features/sejours/file-sejour.service';
 import { MiseAJourService } from './core/mise-a-jour.service';
 import { IdentiteService } from './core/identite.service';
 import { BandeauSyncComponent } from './features/synchronisation/bandeau-sync.component';
+import { AideEcranService } from './core/aide-ecran.service';
 import { BarrePageComponent } from './core/barre-page.component';
 import { PreparerHorsLigneComponent } from './features/synchronisation/preparer-hors-ligne.component';
 import { ChargementComponent } from './core/chargement.component';
@@ -53,6 +54,17 @@ const ICONES = {
             <img [src]="identite.logo()" alt="" width="44" height="44">
             <span>Suivi des formations</span>
           </a>
+
+          <!-- « Comment faire ? » de l'écran, toujours à portée, sans prendre une ligne au-dessus du titre. -->
+          @if (aideEcran.disponible()) {
+            <button type="button" class="aide-entete" (click)="aideEcran.ouvrir()" aria-label="Comment faire ?"
+                    aria-haspopup="dialog" title="Comment faire ? Les manuels et vidéos d'aide de cet écran">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01" />
+              </svg>
+              <span class="libelle-long">Comment faire ?</span><span class="libelle-court">Aide</span>
+            </button>
+          }
 
           <!-- Tout le menu. Sur grand écran, dans l'en-tête ; sur téléphone, il s'ouvre au-dessus
                de la barre du bas par « Plus ». -->
@@ -193,6 +205,21 @@ const ICONES = {
       color: #fff; text-decoration: none; font-weight: 700;
     }
     .marque img { flex: none; width: 44px; height: 44px; object-fit: contain; }
+    .aide-entete {
+      order: 3; flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px;
+      padding: 0 12px; justify-content: center; color: #fff; background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.4); border-radius: 22px; font-weight: 700;
+    }
+    .aide-entete svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2;
+                       stroke-linecap: round; stroke-linejoin: round; }
+    .aide-entete:hover { background: rgba(255,255,255,.22); }
+    .aide-entete .libelle-court { display: none; }
+    /* Au téléphone, la place manque à côté du nom : « Aide » (le nom accessible reste « Comment faire ? »). */
+    @media (max-width: 860px) {
+      .aide-entete .libelle-long { display: none; }
+      .aide-entete .libelle-court { display: inline; }
+    }
+    @media print { .aide-entete { display: none; } }
 
     .identite { display: flex; align-items: center; gap: var(--pas-2); font-size: .9375rem; flex-wrap: wrap; }
     .identite .bouton-discret {
@@ -278,6 +305,7 @@ const ICONES = {
 export class AppComponent {
   readonly version = VERSION_APPLI;
   auth = inject(AuthService);
+  aideEcran = inject(AideEcranService);
   private file = inject(FileAttenteService);
   private ecritures = inject(FileEcrituresService);
   private fileSejour = inject(FileSejourService);
