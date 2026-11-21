@@ -17,8 +17,8 @@ Administration, « Directeurs techniques non moniteurs » : un compte pour une p
 1. Administration, rubrique « Personnes », « Directeurs techniques non moniteurs ».
 2. « Nouveau directeur technique » : prénom, nom, e-mail, puis « Créer le compte ».
 3. La personne reçoit un e-mail pour choisir son mot de passe.
-4. « Désactiver » met fin à son accès ; « Réactiver » le lui rend.
-5. « Supprimer » efface un compte qui n'a rien enregistré (créé par erreur, jamais servi).
+4. « Désactiver » (dans « **⋯** », à côté de « Modifier ») met fin à son accès ; « Réactiver » le lui rend.
+5. « Supprimer », en dernier dans « ⋯ », efface un compte qui n'a rien enregistré (créé par erreur, jamais servi).
 
 ## Ce qu'il voit
 

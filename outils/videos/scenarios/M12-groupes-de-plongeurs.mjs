@@ -1,5 +1,5 @@
 // M12 — Groupes de plongeurs pour un séjour.
-// Tournage du 2026-10-17, 15e série, trois niveaux par plongeur (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Choisir les organisateurs » dans « ⋯ » ; 2026-10-17, 15e série, trois niveaux par plongeur (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -44,8 +44,9 @@ export default {
     await vignette();
     await toucher(page.getByRole('button', { name: 'Créer le groupe' }), { apres: 1800 });
 
-    await legende('Vous en êtes le créateur : vous seul, et les organisateurs que vous choisissez, la modifiez.', 0);
-    await toucher(page.getByRole('button', { name: 'Choisir les organisateurs' }).last(), { apres: 2500 });
+    await legende('Vous en êtes le créateur : vous seul, et les organisateurs que vous choisissez (« ⋯ », puis « Choisir les organisateurs »), la modifiez.', 0);
+    await toucher(page.getByRole('button', { name: /^Autres actions pour / }).last(), { apres: 1000 });
+    await toucher(page.getByRole('button', { name: 'Choisir les organisateurs' }), { apres: 2500 });
     await toucher(page.getByRole('button', { name: 'Annuler' }), { apres: 800 });
     await legende('Les autres moniteurs la voient en lecture seule et la reprennent dans leurs fiches de sécurité.', 4500);
     await legende('Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d\'un coup.', 4500);

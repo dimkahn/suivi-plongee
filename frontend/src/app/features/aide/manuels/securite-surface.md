@@ -25,6 +25,6 @@ Administration, « Sécurité surface » : un compte pour une personne qui n'est
 - En se connectant, elle ne voit que « Fiches de sécurité », avec les seules séances qui lui sont confiées, et « Compléter au retour de plongée » pour chaque fiche établie. Elle ne peut ni établir ni modifier une fiche, et ne voit ni les élèves, ni les présences, ni le planning.
 - Chaque compte affiche ses séances et sa date de fin d'accès ; « Accès terminé » une fois la date passée.
 - « Réactiver » : pour une autre sortie, choisissez les nouvelles séances et une nouvelle date de fin d'accès. Son mot de passe reste le même.
-- « Modifier » change le nom, l'e-mail, les séances ou la date d'un compte actif ; « Désactiver » met fin à l'accès avant la date prévue ; « Supprimer » efface le compte (ce qu'elle a saisi sur les fiches reste).
+- « Modifier » change le nom, l'e-mail, les séances ou la date d'un compte actif. Les autres gestes sont dans « **⋯** », à côté : « Envoyer un lien de mot de passe », « Désactiver » (fin de l'accès avant la date prévue) et, en dernier, « Supprimer » (efface le compte ; ce qu'elle a saisi sur les fiches reste).
 - Sans réseau sur le bateau : avant de partir (la veille au soir suffit), elle touche « Plus », puis « Préparer hors ligne ». L'appli copie les fiches établies de sa journée de plongée, rien d'autre ; ce qu'elle complète en mer part seul au retour du réseau (voir « Travailler sans réseau au bord du bassin »).
 - Réseau obligatoire pour cet écran d'administration.

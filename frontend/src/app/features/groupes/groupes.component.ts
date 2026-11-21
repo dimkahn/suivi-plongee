@@ -9,6 +9,7 @@ import {
 import { dateDuJour } from '../../core/date-fr';
 import { normaliser } from '../../core/seance-lieu';
 import { ComboboxComponent, OptionCombobox } from '../../core/combobox.component';
+import { PlusActionsComponent } from '../../core/plus-actions.component';
 import { DialogueComponent } from '../../core/dialogue.component';
 import { ChargementComponent } from '../../core/chargement.component';
 
@@ -46,7 +47,7 @@ const SEUIL_RECHERCHE = 6;
  */
 @Component({
   selector: 'app-groupes',
-  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent],
+  imports: [ChargementComponent, FormsModule, ComboboxComponent, DialogueComponent, PlusActionsComponent],
   template: `
     <h1>Groupes de plongeurs</h1>
     <p class="secondaire">
@@ -99,13 +100,12 @@ const SEUIL_RECHERCHE = 6;
             </div>
             <div class="actions">
               <button type="button" class="bouton-discret" (click)="ouvrirGroupe(g)">{{ g.gere ? 'Modifier' : 'Voir' }}</button>
-              <button type="button" class="bouton-discret" (click)="ouvrirEnvoi(g)">Envoyer les paramètres par e-mail</button>
-              @if (g.peutDesigner) {
-                <button type="button" class="bouton-discret" (click)="ouvrirOrganisateurs(g)">Choisir les organisateurs</button>
-              }
-              @if (g.gere) {
-                <button type="button" class="bouton-discret danger" (click)="supprimer(g)">Supprimer</button>
-              }
+              <app-plus-actions [sujet]="g.nom">
+                <button type="button" class="bouton-discret envoyer-parametres" (click)="ouvrirEnvoi(g)">Envoyer les paramètres par e-mail</button>
+                @if (g.peutDesigner) {
+                  <button type="button" class="bouton-discret" (click)="ouvrirOrganisateurs(g)">Choisir les organisateurs</button>
+                }
+              </app-plus-actions>
             </div>
           </li>
         }
@@ -214,6 +214,9 @@ const SEUIL_RECHERCHE = 6;
             <button [attr.aria-busy]="envoi() || null" type="button" class="bouton-principal" [disabled]="envoi()" (click)="enregistrer()">
               {{ envoi() ? 'Enregistrement…' : (editeurId() === null ? 'Créer le groupe' : 'Enregistrer') }}
             </button>
+            @if (editeurId() !== null) {
+              <button type="button" class="bouton-discret danger" (click)="supprimerOuvert()">Supprimer le groupe</button>
+            }
             <button type="button" class="bouton-discret" (click)="fermerEditeur()">Annuler</button>
           }
         </div>
@@ -601,11 +604,20 @@ export class GroupesComponent {
     });
   }
 
+  /** Depuis sa fenêtre « Modifier » : plus à côté de « Modifier » sur la carte. */
+  supprimerOuvert(): void {
+    const g = this.liste().find(x => x.id === this.editeurId());
+    if (g) this.supprimer(g);
+  }
+
   supprimer(g: GroupePlongeursVue): void {
     if (!confirm(`Supprimer le groupe « ${g.nom} » ? Les fiches déjà établies ne sont pas modifiées.`)) return;
     this.message.set(null);
     this.api.supprimerGroupePlongeurs(g.id).subscribe({
-      next: () => this.liste.set(this.liste().filter(x => x.id !== g.id)),
+      next: () => {
+        this.liste.set(this.liste().filter(x => x.id !== g.id));
+        this.fermerEditeur();
+      },
       error: () => this.message.set('La suppression du groupe a échoué.')
     });
   }

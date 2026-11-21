@@ -1,3 +1,4 @@
+import { PlusActionsComponent } from '../../core/plus-actions.component';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -26,7 +27,7 @@ type Mode = 'creation' | 'modification' | 'reactivation';
  */
 @Component({
   selector: 'app-comptes-securite-surface',
-  imports: [ChargementComponent, FormsModule, DialogueComponent, DateFrPipe],
+  imports: [ChargementComponent, FormsModule, DialogueComponent, DateFrPipe, PlusActionsComponent],
   template: `
     <div class="entete">
       <div>
@@ -75,14 +76,19 @@ type Mode = 'creation' | 'modification' | 'reactivation';
               }
             </div>
             <div class="actions">
+              <!-- L'action courante visible, le reste dans « ⋯ » (quatre boutons empilés au téléphone). -->
               @if (c.actif) {
                 <button type="button" class="bouton-discret" (click)="ouvrir(c, 'modification')">Modifier</button>
-                <button type="button" class="bouton-discret" (click)="desactiver(c)">Désactiver</button>
-                <button type="button" class="bouton-discret" (click)="envoyerLien(c)">Envoyer un lien de mot de passe</button>
               } @else {
                 <button type="button" class="bouton-discret" (click)="ouvrir(c, 'reactivation')">Réactiver</button>
               }
-              <button type="button" class="bouton-discret danger" (click)="supprimer(c)">Supprimer</button>
+              <app-plus-actions [sujet]="c.prenom + ' ' + c.nom">
+                @if (c.actif) {
+                  <button type="button" class="bouton-discret" (click)="envoyerLien(c)">Envoyer un lien de mot de passe</button>
+                  <button type="button" class="bouton-discret" (click)="desactiver(c)">Désactiver</button>
+                }
+                <button type="button" class="bouton-discret danger" (click)="supprimer(c)">Supprimer</button>
+              </app-plus-actions>
             </div>
           </li>
         }

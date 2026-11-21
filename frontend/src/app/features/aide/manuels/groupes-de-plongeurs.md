@@ -41,7 +41,7 @@ Pour un plongeur du club, les trois viennent de son dossier ; vous pouvez les co
 
 ## Qui modifie un groupe
 
-- **Le créateur** de la liste (le compte qui l'a créée, ici ou depuis une fiche de sécurité) et **les organisateurs qu'il désigne** : « Choisir les organisateurs » sur le groupe, cochez des moniteurs, « Enregistrer ». Sous le nom du groupe, « Organisé par … ».
+- **Le créateur** de la liste (le compte qui l'a créée, ici ou depuis une fiche de sécurité) et **les organisateurs qu'il désigne** : « **⋯** » sur le groupe, puis « Choisir les organisateurs », cochez des moniteurs, « Enregistrer ». Pour supprimer le groupe : « Modifier », puis « Supprimer le groupe » en bas de la fenêtre. Sous le nom du groupe, « Organisé par … ».
 - Les autres moniteurs la **voient** (« Voir », lecture seule), la reprennent dans leurs fiches de sécurité et envoient les paramètres de fin de séjour, mais ne la modifient ni ne la suppriment.
 - Être administrateur ne suffit pas pour modifier : un administrateur peut seulement choisir les organisateurs, pour reprendre un groupe dont le créateur a quitté le club ou un groupe créé avant cette règle (« Aucun organisateur »).
 - Corriger le nom ou l'e-mail d'un participant dans un séjour le corrige aussi dans le groupe lié, même si vous n'organisez pas le groupe.
@@ -63,7 +63,7 @@ Lier ou délier demande le réseau.
 Chaque plongeur reçoit un e-mail avec ses plongées pour son carnet, **en tableau** (une ligne par plongée, numérotée) : date, site, heure d'immersion, profondeur, durée, paliers, et sous chaque ligne les membres de sa palanquée. En tête, le lieu, les dates et le nombre de plongées du séjour. Une messagerie qui n'affiche pas les tableaux montre la même chose en texte, avec aussi l'heure de sortie.
 
 1. Renseignez l'e-mail de chaque plongeur dans le groupe (« Modifier » sur le groupe, puis sur le plongeur). Pour un plongeur du club, laissez vide : l'e-mail de son dossier sert, il est rappelé sur sa ligne (« (dossier) ») et en grisé dans le champ. Une ligne « sans e-mail » n'en a aucun.
-2. Sur le groupe, « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».
+2. Sur le groupe, « ⋯ », puis « Envoyer les paramètres par e-mail », choisissez la sortie, puis « Envoyer les e-mails ».
 3. Le bilan indique qui l'a reçu, et qui n'a rien reçu faute d'e-mail ou parce qu'il n'était dans aucune palanquée de la sortie.
 
 L'organisateur d'un séjour peut aussi l'envoyer à un ou plusieurs participants cochés, sans passer par un groupe : « ⋯ Organiser », « Envoyer les paramètres de plongée… » (voir « Organiser un séjour »).

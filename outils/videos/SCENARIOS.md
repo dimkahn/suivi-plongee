@@ -363,7 +363,7 @@ Compte : `e2@club.fr` · formats téléphone et ordinateur
 5. Chacun tient sur une ligne, le dernier ajouté en tête de liste.
 6. Un plongeur d'un autre club : « + Plongeur extérieur au club », sa ligne s'ouvre en tête.
 7. Trois niveaux à part : niveau de plongeur, niveau d'encadrement, niveau préparé.
-8. Vous en êtes le créateur : vous seul, et les organisateurs que vous choisissez, la modifiez.
+8. Vous en êtes le créateur : vous seul, et les organisateurs que vous choisissez (« ⋯ », puis « Choisir les organisateurs »), la modifiez.
 9. Les autres moniteurs la voient en lecture seule et la reprennent dans leurs fiches de sécurité.
 10. Dans chaque fiche de sécurité du séjour, choisissez ce groupe : ses plongeurs arrivent d'un coup.
 11. Inscrit au séjour, chaque plongeur y reste lié : son nom ou son e-mail corrigé ici l'est aussi dans le séjour.
