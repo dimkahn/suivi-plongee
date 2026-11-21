@@ -1,5 +1,5 @@
 // M25 — Moniteur du séjour : saisir une dépense, pour soi ou pour un élève, avec la photo ou le PDF de la note.
-// Tournage du 2026-11-16, la facture en PDF (« Joindre un PDF »), 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
+// Tournage du 2026-11-21, « Ajouter une dépense » en toutes lettres au téléphone aussi (plus de bouton rond) ; 2026-11-16, la facture en PDF (« Joindre un PDF »), 17e série, la barre du séjour en bas de l'écran du téléphone, « Ajouter une dépense » en bouton rond « + » sur le téléphone, les frais en trois vues (Dépenses, Qui doit quoi, Comptes), les frais ouverts par l'onglet « Frais » (l'encart du haut de page retiré), les élèves notent aussi leurs frais (changer cette date dans tous les scénarios les fait tous retourner).
 import { APPLI } from '../commun.mjs';
 
 export default {
@@ -25,10 +25,7 @@ export default {
     }), 0);
     await toucher(page.getByRole('tab', { name: 'Frais' }), { apres: 3000 });
 
-    await legende(selon({
-      telephone: 'Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle : le bouton rond « + », en bas à droite.',
-      ordinateur: 'Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle : « Ajouter une dépense ».'
-    }), 0);
+    await legende('Camille, élève, a payé les glaces et a donné la note à Flora, qui la saisit pour elle : « Ajouter une dépense ».', 0);
     await toucher(page.getByRole('button', { name: 'Ajouter une dépense' }), { apres: 900 });
     await saisir('#d-libelle', 'Glaces sur le port');
     await saisir('#d-montant', '18,00');

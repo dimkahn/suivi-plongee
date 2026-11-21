@@ -17,18 +17,27 @@ import { ChargementComponent } from '../../core/chargement.component';
   selector: 'app-sejour-courses',
   imports: [ChargementComponent, DialogueComponent],
   template: `
-    <div class="titre-section">
-      <h2>Liste de courses</h2>
-      @if (gere() && repasDehors() !== null) {
-        <button type="button" class="bouton-principal choisir-restaurant" (click)="ouvrir()">Choisir les repas au restaurant</button>
-      }
-    </div>
+    <h2>Liste de courses</h2>
     <p class="secondaire">Pour chaque repas que l'on prépare : les personnes présentes (selon leur arrivée et leur départ)
       et les régimes de chacun. Des quantités moyennes, arrondies au-dessus, à ajuster.</p>
     @if (message(); as m) { <div class="alerte" role="status">{{ m }}</div> }
 
     @if (repasDehors() !== null) {
-      <div class="defilant">
+      <!-- Téléphone : une ligne par jour ; le tableau à trois colonnes ne tenait pas en largeur. -->
+      <ul class="repas-jours" aria-label="Repas du séjour">
+        @for (j of tableau(); track j.jour) {
+          <li>
+            <strong>{{ jourLong(j.jour) }}</strong>
+            <span class="repas-du-jour">
+              @for (c of j.repas; track c.repas; let i = $index) {
+                <span [class.restaurant]="c.restaurant">{{ REPAS[i].libelle }} :
+                  @if (c.restaurant) { restaurant } @else if (c.presents === 0) { personne } @else { {{ c.presents }} }</span>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+      <div class="defilant tableau-ordinateur">
         <table class="table-repas" aria-label="Repas du séjour">
           <thead>
             <tr><th scope="col">Jour</th>@for (r of REPAS; track r.code) { <th scope="col">{{ r.libelle }}</th> }</tr>
@@ -47,6 +56,9 @@ import { ChargementComponent } from '../../core/chargement.component';
           </tbody>
         </table>
       </div>
+      @if (gere()) {
+        <button type="button" class="bouton-discret choisir-restaurant" (click)="ouvrir()">Choisir les repas au restaurant…</button>
+      }
 
       @if (liste().rayons.length === 0) {
         <p class="vide">Rien à acheter : aucun repas à préparer avec des participants présents.</p>
@@ -127,7 +139,16 @@ import { ChargementComponent } from '../../core/chargement.component';
     .table-repas { border-collapse: collapse; width: 100%; margin-bottom: var(--pas-2); }
     .table-repas th, .table-repas td { padding: var(--pas); border-bottom: 1px solid var(--trait); text-align: left; }
     .table-repas thead th { font-size: .875rem; color: var(--craie); }
-    .table-repas td.restaurant { color: var(--en-cours); font-weight: 600; }
+    .table-repas td.restaurant { color: var(--en-cours-texte); font-weight: 600; }
+    .repas-jours { display: none; list-style: none; margin: 0 0 var(--pas-2); padding: 0; }
+    .repas-jours li { display: flex; flex-direction: column; gap: 2px; padding: var(--pas) 0; border-bottom: 1px solid var(--trait); }
+    .repas-du-jour { display: flex; flex-wrap: wrap; gap: 2px var(--pas-2); }
+    .repas-du-jour .restaurant { color: var(--en-cours-texte); font-weight: 600; }
+    .choisir-restaurant { margin-bottom: var(--pas-2); }
+    @media (max-width: 600px) {
+      .repas-jours { display: block; }
+      .tableau-ordinateur { display: none; }
+    }
     .rayons { display: grid; gap: var(--pas-2); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
     .rayon h3 { margin-top: 0; }
     .rayon ul, .precisions { list-style: none; margin: 0; padding: 0; }

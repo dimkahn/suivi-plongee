@@ -482,18 +482,8 @@ interface PhotoAEnvoyer {
     .liste-gestes button { width: 100%; min-height: 48px; justify-content: flex-start; text-align: left; }
     .ajouter-depense { display: inline-flex; align-items: center; gap: 6px; }
     .ajouter-depense svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
-    /* Sur téléphone, « Ajouter une dépense » devient un bouton rond au-dessus de la barre du bas, à portée du pouce. */
-    @media (max-width: 860px) {
-      /* La fin de la liste ne reste pas cachée sous le bouton rond. */
-      :host { display: block; padding-bottom: 72px; }
-      .ajouter-depense {
-        position: fixed; right: var(--pas-2); bottom: calc(var(--hauteur-onglets) + var(--pas-2)); z-index: 20;
-        width: 60px; height: 60px; padding: 0; border-radius: 50%; justify-content: center;
-        box-shadow: 0 6px 20px rgba(8, 145, 178, .4);
-      }
-      .ajouter-depense svg { width: 28px; height: 28px; }
-      .libelle-ajouter { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    }
+    /* Sur téléphone, « Ajouter une dépense » reste en toutes lettres dans l'en-tête : en bouton rond flottant,
+       il cachait les sous-onglets « Comptes » et la fin de la liste. */
     .lignes-cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas); }
     .lignes-cartes p { margin: var(--pas) 0 0; }
     .remboursement { display: flex; justify-content: space-between; align-items: center; gap: var(--pas); flex-wrap: wrap;

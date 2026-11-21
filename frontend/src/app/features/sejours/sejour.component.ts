@@ -640,7 +640,6 @@ function participantVide(): BrouillonParticipant {
                 @if (s.gere) {
                   <div class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirVoiture(v)">Modifier</button>
-                    <button type="button" class="bouton-discret danger" (click)="supprimerVoiture(v)">Supprimer</button>
                   </div>
                 }
               </li>
@@ -673,7 +672,6 @@ function participantVide(): BrouillonParticipant {
                 @if (s.gere) {
                   <span class="actions sans-impression">
                     <button type="button" class="bouton-discret" (click)="ouvrirLogement(l)">Modifier</button>
-                    <button type="button" class="bouton-discret danger" (click)="supprimerLogement(l)">Supprimer</button>
                   </span>
                 }
               </div>
@@ -993,6 +991,9 @@ function participantVide(): BrouillonParticipant {
       <textarea id="v-remarques" rows="2" [(ngModel)]="voiture.remarques"></textarea>
       <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="enregistrerVoiture()" [disabled]="envoi()">Enregistrer</button>
+        @if (voitureId !== null) {
+          <button type="button" class="bouton-discret danger" (click)="supprimerVoiture()">Supprimer la voiture</button>
+        }
         <button type="button" class="bouton-discret" (click)="voitureOuverte.set(false)">Annuler</button>
       </div>
     </app-dialogue>
@@ -1031,6 +1032,9 @@ function participantVide(): BrouillonParticipant {
       <button type="button" class="bouton-discret" (click)="ajouterChambre()">+ Ajouter une chambre</button>
       <div class="actions-dialogue">
         <button type="button" class="bouton-principal" (click)="enregistrerLogement()" [disabled]="envoi()">Enregistrer</button>
+        @if (logementId !== null) {
+          <button type="button" class="bouton-discret danger" (click)="supprimerLogement()">Supprimer le logement</button>
+        }
         <button type="button" class="bouton-discret" (click)="logementOuvert.set(false)">Annuler</button>
       </div>
     </app-dialogue>
@@ -1445,7 +1449,7 @@ function participantVide(): BrouillonParticipant {
     .action-rapide { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     .qr-connexion { width: min(100%, 18rem); margin: var(--pas-2) auto; }
     .centre { text-align: center; }
-    .etat-infos { margin-left: auto; font-size: .8125rem; color: var(--en-cours); }
+    .etat-infos { margin-left: auto; font-size: .8125rem; color: var(--en-cours-texte); }
     .etat-infos.complet { color: #047857; }
     .lignes-repas { margin: 0; padding-left: 1.25rem; display: grid; gap: 4px; }
     .cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--pas-2);
@@ -2359,9 +2363,12 @@ export class SejourComponent {
       () => this.voitureOuverte.set(false));
   }
 
-  supprimerVoiture(v: VoitureVue): void {
-    if (!confirm(`Supprimer la voiture « ${v.nom} » ?`)) return;
-    this.modifier({ type: 'suppression', objet: 'voiture', id: v.id }, `Suppression de la voiture « ${v.nom} »`);
+  /** Depuis sa fenêtre « Modifier » : le bouton n'est plus à côté de « Modifier », trop près pour un pouce mouillé. */
+  supprimerVoiture(): void {
+    const v = this.sejour()?.voitures.find(x => x.id === this.voitureId);
+    if (!v || !confirm(`Supprimer la voiture « ${v.nom} » ?`)) return;
+    this.modifier({ type: 'suppression', objet: 'voiture', id: v.id }, `Suppression de la voiture « ${v.nom} »`,
+      () => this.voitureOuverte.set(false));
   }
 
   // ---------------- Logements ----------------
@@ -2401,9 +2408,12 @@ export class SejourComponent {
       () => this.logementOuvert.set(false));
   }
 
-  supprimerLogement(l: LogementVue): void {
-    if (!confirm(`Supprimer « ${l.nom} » et ses chambres ?`)) return;
-    this.modifier({ type: 'suppression', objet: 'logement', id: l.id }, `Suppression de « ${l.nom} »`);
+  /** Depuis sa fenêtre « Modifier », comme la voiture. */
+  supprimerLogement(): void {
+    const l = this.sejour()?.logements.find(x => x.id === this.logementId);
+    if (!l || !confirm(`Supprimer « ${l.nom} » et ses chambres ?`)) return;
+    this.modifier({ type: 'suppression', objet: 'logement', id: l.id }, `Suppression de « ${l.nom} »`,
+      () => this.logementOuvert.set(false));
   }
 
   // ---------------- Affaires ----------------
